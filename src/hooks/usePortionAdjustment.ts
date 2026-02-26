@@ -1,5 +1,6 @@
+import { logger } from '../utils/logger';
 import { useState, useEffect } from "react";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import { RecognizedFood } from "../services/foodRecognitionService";
 
 export interface PortionAdjustment {
@@ -134,15 +135,17 @@ export const usePortionAdjustment = (
         (adj) => adj.adjustmentRatio !== 1.0,
       );
       if (changedFoods.length > 0) {
-        Alert.alert(
+        crossPlatformAlert(
           "✅ Portions Adjusted!",
-          `Updated portion sizes for ${changedFoods.length} food item${changedFoods.length !== 1 ? "s" : ""}.\n\nNutrition values have been recalculated automatically.`,
+          `Updated portion sizes for ${changedFoods.length} food item${changedFoods.length !== 1 ? "s" : ""}.
+
+Nutrition values have been recalculated automatically.`,
           [{ text: "Perfect!" }],
         );
       }
     } catch (error) {
-      console.error("Error applying portion adjustments:", error);
-      Alert.alert(
+      logger.error('Error applying portion adjustments', { error: String(error) });
+      crossPlatformAlert(
         "Error",
         "Failed to apply portion adjustments. Please try again.",
       );

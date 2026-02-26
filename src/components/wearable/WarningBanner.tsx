@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf } from "../../utils/responsive";
+import { rf, rp } from "../../utils/responsive";
 
 interface WarningBannerProps {
   platformName: string;
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     fontSize: rf(14),
     fontWeight: "600",
     color: "#FFA726",
-    marginBottom: 4,
+    marginBottom: rp(4),
   },
   description: {
     fontSize: rf(13),

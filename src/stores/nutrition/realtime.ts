@@ -21,7 +21,6 @@ export const createRealtimeActions = (set: any, get: () => NutritionState) => ({
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          console.log("📡 Meal log change detected:", payload.eventType);
           get().loadData();
         },
       )

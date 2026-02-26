@@ -1,5 +1,6 @@
+import { logger } from '../utils/logger';
 import { useState, useRef, useEffect } from "react";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 
 export interface UseCameraProps {
@@ -44,8 +45,8 @@ export const useCamera = ({
         });
         onCapture(photo.uri);
       } catch (error) {
-        console.error("Camera capture error:", error);
-        Alert.alert("Error", "Failed to take picture. Please try again.");
+        logger.error('Camera capture error', { error: String(error) });
+        crossPlatformAlert("Error", "Failed to take picture. Please try again.");
       } finally {
         setIsCapturing(false);
       }
@@ -69,7 +70,6 @@ export const useCamera = ({
   }) => {
     if (!isScanning && onBarcodeScanned) {
       setIsScanning(true);
-      console.log("Barcode scanned:", { type, data });
       onBarcodeScanned(data, type);
 
       // Reset scanning state after a delay to prevent multiple scans

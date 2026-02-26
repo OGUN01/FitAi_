@@ -14,7 +14,6 @@ export class InsightsService {
   async getHeartRateZones(age: number): Promise<UnifiedHeartRateZones | null> {
     try {
       const platform = this.getPlatform();
-      console.log(`💓 Getting heart rate zones from ${platform} wearables...`);
 
       switch (platform) {
         case "ios": {
@@ -28,7 +27,6 @@ export class InsightsService {
         }
 
         default:
-          console.warn("⚠️ Heart rate zones not supported on this platform");
           return null;
       }
     } catch (error) {
@@ -40,9 +38,6 @@ export class InsightsService {
   async getSleepBasedWorkoutRecommendations(): Promise<UnifiedSleepRecommendations | null> {
     try {
       const platform = this.getPlatform();
-      console.log(
-        `😴 Getting sleep recommendations from ${platform} wearables...`,
-      );
 
       switch (platform) {
         case "ios": {
@@ -58,9 +53,6 @@ export class InsightsService {
         }
 
         default:
-          console.warn(
-            "⚠️ Sleep recommendations not supported on this platform",
-          );
           return null;
       }
     } catch (error) {
@@ -74,9 +66,6 @@ export class InsightsService {
   ): Promise<UnifiedActivityAdjustedCalories | null> {
     try {
       const platform = this.getPlatform();
-      console.log(
-        `🔥 Getting activity-adjusted calories from ${platform} wearables...`,
-      );
 
       switch (platform) {
         case "ios": {
@@ -92,9 +81,6 @@ export class InsightsService {
         }
 
         default:
-          console.warn(
-            "⚠️ Activity-adjusted calories not supported on this platform",
-          );
           return null;
       }
     } catch (error) {
@@ -106,7 +92,6 @@ export class InsightsService {
   async detectAndLogActivities(): Promise<UnifiedDetectedActivities | null> {
     try {
       const platform = this.getPlatform();
-      console.log(`🎯 Detecting activities from ${platform} wearables...`);
 
       switch (platform) {
         case "ios": {
@@ -120,7 +105,6 @@ export class InsightsService {
         }
 
         default:
-          console.warn("⚠️ Activity detection not supported on this platform");
           return null;
       }
     } catch (error) {
@@ -142,9 +126,6 @@ export class InsightsService {
   }> {
     try {
       const platform = this.getPlatform();
-      console.log(
-        `🧠 Getting comprehensive wearable insights from ${platform}...`,
-      );
 
       const [
         heartRateZones,

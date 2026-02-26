@@ -11,7 +11,6 @@ if (Platform.OS === "ios") {
   try {
     HealthKitModule = require("expo-health-kit");
   } catch (error) {
-    console.log("HealthKit not available on this platform");
   }
 }
 
@@ -98,23 +97,19 @@ class HealthKitService {
   async initialize(): Promise<boolean> {
     try {
       if (!Platform.OS || Platform.OS !== "ios") {
-        console.log("🍎 HealthKit is only available on iOS");
         return false;
       }
 
       if (!HealthKitModule) {
-        console.log("🍎 HealthKit module not available");
         return false;
       }
 
       const supported = await isHealthKitSupported();
       if (!supported) {
-        console.log("🍎 HealthKit is not supported on this device");
         return false;
       }
 
       this.isInitialized = true;
-      console.log("🍎 HealthKit initialized successfully");
       return true;
     } catch (error) {
       console.error("Failed to initialize HealthKit:", error);
@@ -325,7 +320,6 @@ class HealthKitService {
       const success = await saveWorkout(workoutData);
 
       if (success) {
-        console.log("🍎 Workout saved to HealthKit successfully");
       }
 
       return success;
@@ -350,7 +344,6 @@ class HealthKitService {
       const success = await saveSteps(stepData);
 
       if (success) {
-        console.log("🍎 Steps saved to HealthKit successfully");
       }
 
       return success;
@@ -380,7 +373,6 @@ class HealthKitService {
       const success = await saveBodyMass(weightData);
 
       if (success) {
-        console.log("🍎 Weight saved to HealthKit successfully");
       }
 
       return success;
@@ -397,28 +389,22 @@ class HealthKitService {
     }
 
     if (Platform.OS !== "ios" || !HealthKitModule) {
-      console.log("🍎 HealthKit auto-sync not available on this platform");
       return;
     }
 
     this.syncInterval = setInterval(
       async () => {
-        console.log("🍎 Running HealthKit auto-sync...");
         await this.fetchHealthData();
       },
       intervalMinutes * 60 * 1000,
     );
 
-    console.log(
-      `🍎 HealthKit auto-sync started (every ${intervalMinutes} minutes)`,
-    );
   }
 
   stopAutoSync(): void {
     if (this.syncInterval) {
       clearInterval(this.syncInterval);
       this.syncInterval = null;
-      console.log("🍎 HealthKit auto-sync stopped");
     }
   }
 
@@ -529,12 +515,6 @@ class HealthKitService {
     // 3. Wait for expo-health-kit to add saveHealthData() support
     //
     // For now, nutrition data is tracked locally in FitAI but not synced to Apple Health.
-    console.log(
-      "ℹ️ Nutrition export to HealthKit not available - expo-health-kit library limitation",
-    );
-    console.log(
-      `   Nutrition data for ${nutrition.date.toDateString()}: ${nutrition.calories} cal, ${nutrition.protein}g protein`,
-    );
     return false;
   }
 
@@ -607,7 +587,6 @@ class HealthKitService {
 
     // If no sleep data, return null recommendations
     if (!sleepDuration) {
-      console.warn("[HealthKit] No sleep data available for recommendations");
       return { sleepQuality: null, sleepDuration: null, recommendations: null };
     }
 

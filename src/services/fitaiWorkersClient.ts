@@ -267,8 +267,8 @@ export class FitAIWorkersClient {
   constructor(config: WorkersClientConfig = {}) {
     this.baseUrl =
       config.baseUrl || "https://fitai-workers.sharmaharsh9887.workers.dev";
-    // AI generation can take 60-90+ seconds, so we need a longer timeout
-    this.timeout = config.timeout || 120000; // 120 seconds (2 minutes)
+    // Cloudflare Workers Free plan has 30s hard limit; 35s gives a small buffer
+    this.timeout = config.timeout || 35000; // 35 seconds
     this.maxRetries = config.maxRetries || 3;
     this.retryDelay = config.retryDelay || 1000; // 1 second
   }
@@ -343,10 +343,17 @@ export class FitAIWorkersClient {
       if (!response.ok) {
         // Check if we should retry
         if (this.shouldRetry(response.status) && retryCount < this.maxRetries) {
-          const delay = this.retryDelay * Math.pow(2, retryCount);
-          console.log(
-            `[WorkersClient] Retrying request (${retryCount + 1}/${this.maxRetries}) after ${delay}ms`,
-          );
+          let delay = this.retryDelay * Math.pow(2, retryCount);
+          // Parse Retry-After header for 429 responses
+          if (response.status === 429) {
+            const retryAfter = response.headers.get('Retry-After');
+            if (retryAfter) {
+              const retryAfterSeconds = Number(retryAfter);
+              if (!isNaN(retryAfterSeconds) && retryAfterSeconds > 0) {
+                delay = retryAfterSeconds * 1000;
+              }
+            }
+          }
           await this.sleep(delay);
           return this.makeRequest(endpoint, options, retryCount + 1);
         }
@@ -379,9 +386,6 @@ export class FitAIWorkersClient {
       if (error instanceof TypeError || (error as any).name === "AbortError") {
         if (retryCount < this.maxRetries) {
           const delay = this.retryDelay * Math.pow(2, retryCount);
-          console.log(
-            `[WorkersClient] Network error, retrying (${retryCount + 1}/${this.maxRetries}) after ${delay}ms`,
-          );
           await this.sleep(delay);
           return this.makeRequest(endpoint, options, retryCount + 1);
         }

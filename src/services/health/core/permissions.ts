@@ -28,10 +28,6 @@ export class PermissionsManager {
         Array.isArray(grantedPermissions) && grantedPermissions.length > 0;
       this.permissionsGranted = hasPermissions;
 
-      if (!hasPermissions) {
-        console.warn("⚠️ No Health Connect permissions were granted");
-      }
-
       await AsyncStorage.setItem(
         STORAGE_KEYS.PERMISSIONS_KEY,
         this.permissionsGranted ? "granted" : "denied",
@@ -80,7 +76,6 @@ export class PermissionsManager {
 
         return hasPermissions;
       } catch (sdkError) {
-        console.warn("⚠️ SDK check failed, falling back to cache:", sdkError);
         const cachedPermissions = await AsyncStorage.getItem(
           STORAGE_KEYS.PERMISSIONS_KEY,
         );

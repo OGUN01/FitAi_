@@ -8,7 +8,6 @@ export async function createBodyMeasurement(
   try {
     await initialize();
     await dataBridge.storeBodyMeasurement(measurement);
-    console.log(`Body measurement ${measurement.id} created successfully`);
   } catch (error) {
     console.error("Failed to create body measurement:", error);
     throw error;
@@ -63,7 +62,6 @@ export async function updateBodyMeasurement(
     };
 
     await dataBridge.storeBodyMeasurement(updated);
-    console.log(`Body measurement ${measurementId} updated successfully`);
   } catch (error) {
     console.error("Failed to update body measurement:", error);
     throw error;
@@ -84,7 +82,6 @@ export async function deleteBodyMeasurement(
       },
       initialize,
     );
-    console.log(`Body measurement ${measurementId} marked as deleted`);
   } catch (error) {
     console.error("Failed to delete body measurement:", error);
     throw error;

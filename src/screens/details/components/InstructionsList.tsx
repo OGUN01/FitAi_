@@ -1,6 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Card, THEME } from "../../../components/ui";
+import { Card } from "../../../components/ui";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rf, rw, rh, rbr } from '../../../utils/responsive';
 
 interface ExerciseInstruction {
   step: number;
@@ -80,79 +82,79 @@ export const InstructionsList: React.FC<InstructionsListProps> = ({
 
 const styles = StyleSheet.create({
   instructionsCard: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   instructionsTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   instructionItem: {
-    marginBottom: THEME.spacing.lg,
-    padding: THEME.spacing.sm,
-    borderRadius: THEME.borderRadius.md,
+    marginBottom: ResponsiveTheme.spacing.lg,
+    padding: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.md,
     borderWidth: 1,
     borderColor: "transparent",
   },
   instructionItemActive: {
-    backgroundColor: THEME.colors.primary + "10",
-    borderColor: THEME.colors.primary + "30",
+    backgroundColor: ResponsiveTheme.colors.primary + "10",
+    borderColor: ResponsiveTheme.colors.primary + "30",
   },
   instructionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   stepNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: THEME.colors.surface,
+    width: rw(28),
+    height: rh(28),
+    borderRadius: rbr(14),
+    backgroundColor: ResponsiveTheme.colors.surface,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: THEME.spacing.sm,
+    marginRight: ResponsiveTheme.spacing.sm,
   },
   stepNumberActive: {
-    backgroundColor: THEME.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary,
   },
   stepNumberText: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.textSecondary,
   },
   stepNumberTextActive: {
-    color: THEME.colors.white,
+    color: ResponsiveTheme.colors.white,
   },
   instructionTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
   },
   instructionTitleActive: {
-    color: THEME.colors.primary,
+    color: ResponsiveTheme.colors.primary,
   },
   instructionDescription: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    lineHeight: 20,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(20),
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   tipsContainer: {
-    backgroundColor: THEME.colors.surface,
-    padding: THEME.spacing.sm,
-    borderRadius: THEME.borderRadius.md,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    padding: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
   tipsTitle: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   tipText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    lineHeight: 18,
-    marginBottom: THEME.spacing.xs / 2,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(18),
+    marginBottom: ResponsiveTheme.spacing.xs / 2,
   },
 });

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { safeAsyncStorage } from "../../utils/safeAsyncStorage";
 import { NutritionState } from "./types";
 import { getConsumedNutrition, getTodaysConsumedNutrition } from "./selectors";
 import * as sessionHandlers from "./sessions";
@@ -84,7 +85,7 @@ export const useNutritionStore = create<NutritionState>()(
     },
     {
       name: "nutrition-storage",
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => safeAsyncStorage),
       partialize: (state) => ({
         weeklyMealPlan: state.weeklyMealPlan,
         mealProgress: state.mealProgress,

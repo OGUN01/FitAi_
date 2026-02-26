@@ -49,7 +49,6 @@ export async function saveWorkoutToHealthKit(
     const success = await saveWorkout(workoutData);
 
     if (success) {
-      console.log("🍎 Workout saved to HealthKit successfully");
     }
 
     return success;
@@ -77,7 +76,6 @@ export async function saveStepsToHealthKit(
     const success = await saveSteps(stepData);
 
     if (success) {
-      console.log("🍎 Steps saved to HealthKit successfully");
     }
 
     return success;
@@ -107,7 +105,6 @@ export async function saveWeightToHealthKit(
     const success = await saveBodyMass(weightData);
 
     if (success) {
-      console.log("🍎 Weight saved to HealthKit successfully");
     }
 
     return success;

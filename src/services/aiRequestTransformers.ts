@@ -90,9 +90,6 @@ export function transformForDietRequest(
 
   // Validate required profile data - NO FALLBACKS for critical values
   if (!personalInfo.age || !personalInfo.weight || !personalInfo.height) {
-    console.warn(
-      "[aiRequestTransformers] Missing required profile data - onboarding may be incomplete",
-    );
   }
 
   return {
@@ -631,9 +628,6 @@ function calculateEstimatedCalories(_workout: WorkoutPlan): number {
   // NO DEFAULT VALUES - return 0 at generation time
   // Actual calories calculated at workout completion using user's real weight from profile
   // This prevents inaccurate data from fake default weights
-  console.log(
-    "[aiRequestTransformers] Calories set to 0 at generation, will be calculated at completion",
-  );
   return 0;
 }
 

@@ -76,7 +76,6 @@ export class RealTimeSyncService {
       }
 
       this.isInitialized = true;
-      console.log("Real-time sync service initialized");
     } catch (error) {
       console.error("Failed to initialize sync service:", error);
       throw error;
@@ -181,7 +180,6 @@ export class RealTimeSyncService {
     await saveSyncQueue(this.syncQueue);
 
     this.isInitialized = false;
-    console.log("Real-time sync service stopped");
   }
 
   async queueOperation(

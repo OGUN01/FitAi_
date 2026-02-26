@@ -14,7 +14,8 @@ import { SyncStatusCard } from "../../components/settings/SyncStatusCard";
 import { HealthSummaryCard } from "../../components/settings/HealthSummaryCard";
 import { DataTypesSection } from "../../components/settings/DataTypesSection";
 import { AdditionalSettingsCard } from "../../components/settings/AdditionalSettingsCard";
-import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr, rs } from '../../utils/responsive';
 
 interface HealthKitSettingsScreenProps {
   onBack: () => void;
@@ -89,27 +90,27 @@ export const HealthKitSettingsScreen: React.FC<
   if (Platform.OS !== "ios") {
     return (
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: THEME.colors.background }}
+        style={{ flex: 1, backgroundColor: ResponsiveTheme.colors.background }}
       >
         <View
           style={{
             flex: 1,
             justifyContent: "center",
             alignItems: "center",
-            padding: 20,
+            padding: rp(20),
           }}
         >
           <Ionicons
             name="phone-portrait-outline"
-            size={64}
-            color={THEME.colors.textSecondary}
+            size={rs(64)}
+            color={ResponsiveTheme.colors.textSecondary}
           />
           <Text
             style={{
-              fontSize: 20,
+              fontSize: rf(20),
               fontWeight: "bold",
-              color: THEME.colors.text,
-              marginTop: 16,
+              color: ResponsiveTheme.colors.text,
+              marginTop: rp(16),
               textAlign: "center",
             }}
           >
@@ -117,9 +118,9 @@ export const HealthKitSettingsScreen: React.FC<
           </Text>
           <Text
             style={{
-              fontSize: 16,
-              color: THEME.colors.textSecondary,
-              marginTop: 8,
+              fontSize: rf(16),
+              color: ResponsiveTheme.colors.textSecondary,
+              marginTop: rp(8),
               textAlign: "center",
             }}
           >
@@ -132,25 +133,25 @@ export const HealthKitSettingsScreen: React.FC<
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: THEME.colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: ResponsiveTheme.colors.background }}>
       {/* Header */}
       <View
         style={{
           flexDirection: "row",
           alignItems: "center",
-          padding: 16,
+          padding: rp(16),
           borderBottomWidth: 1,
-          borderBottomColor: THEME.colors.border,
+          borderBottomColor: ResponsiveTheme.colors.border,
         }}
       >
-        <TouchableOpacity onPress={onBack} style={{ marginRight: 16 }}>
-          <Ionicons name="arrow-back" size={24} color={THEME.colors.text} />
+        <TouchableOpacity onPress={onBack} style={{ marginRight: rp(16) }}>
+          <Ionicons name="arrow-back" size={rs(24)} color={ResponsiveTheme.colors.text} />
         </TouchableOpacity>
         <Text
           style={{
-            fontSize: 20,
+            fontSize: rf(20),
             fontWeight: "bold",
-            color: THEME.colors.text,
+            color: ResponsiveTheme.colors.text,
             flex: 1,
           }}
         >
@@ -158,8 +159,8 @@ export const HealthKitSettingsScreen: React.FC<
         </Text>
         <Ionicons
           name="fitness-outline"
-          size={24}
-          color={THEME.colors.primary}
+          size={rs(24)}
+          color={ResponsiveTheme.colors.primary}
         />
       </View>
 
@@ -206,33 +207,33 @@ export const HealthKitSettingsScreen: React.FC<
 
         <View
           style={{
-            marginHorizontal: 16,
-            marginBottom: 32,
+            marginHorizontal: rp(16),
+            marginBottom: rp(32),
           }}
         >
           <TouchableOpacity
             onPress={handleOpenHealthApp}
             style={{
-              backgroundColor: THEME.colors.surface,
-              borderRadius: 12,
-              padding: 16,
+              backgroundColor: ResponsiveTheme.colors.surface,
+              borderRadius: rbr(12),
+              padding: rp(16),
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
               borderWidth: 1,
-              borderColor: THEME.colors.border,
+              borderColor: ResponsiveTheme.colors.border,
             }}
           >
             <Ionicons
               name="help-circle-outline"
-              size={20}
-              color={THEME.colors.primary}
+              size={rs(20)}
+              color={ResponsiveTheme.colors.primary}
             />
             <Text
               style={{
-                fontSize: 16,
-                color: THEME.colors.primary,
-                marginLeft: 8,
+                fontSize: rf(16),
+                color: ResponsiveTheme.colors.primary,
+                marginLeft: rp(8),
               }}
             >
               Manage Permissions in Health App

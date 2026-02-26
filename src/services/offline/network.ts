@@ -21,7 +21,6 @@ export class NetworkManager {
         }
       });
     } catch (error) {
-      console.warn("Failed to initialize network listener:", error);
     }
   }
 

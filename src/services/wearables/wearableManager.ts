@@ -111,7 +111,6 @@ class WearableManager {
    */
   async initialize(): Promise<boolean> {
     try {
-      console.log(`🚀 Initializing wearable manager for ${this.currentPlatform}...`);
 
       switch (this.currentPlatform) {
         case 'ios':
@@ -121,11 +120,9 @@ class WearableManager {
           return await googleFitService.initialize();
         
         case 'web':
-          console.log('💻 Web platform detected - wearables not supported');
           return false;
         
         default:
-          console.warn('⚠️ Unknown platform - wearables not supported');
           return false;
       }
     } catch (error) {
@@ -139,7 +136,6 @@ class WearableManager {
    */
   async requestPermissions(): Promise<boolean> {
     try {
-      console.log(`🔐 Requesting wearable permissions for ${this.currentPlatform}...`);
 
       switch (this.currentPlatform) {
         case 'ios':
@@ -149,7 +145,6 @@ class WearableManager {
           return await googleFitService.requestPermissions();
         
         default:
-          console.warn('⚠️ Platform does not support wearable permissions');
           return false;
       }
     } catch (error) {
@@ -188,7 +183,6 @@ class WearableManager {
     error?: string;
   }> {
     try {
-      console.log(`🔄 Syncing health data from ${this.currentPlatform} wearables...`);
 
       let platformData: HealthKitData | GoogleFitData | null = null;
 
@@ -240,7 +234,6 @@ class WearableManager {
    */
   async exportWorkout(workout: WearableExportData): Promise<boolean> {
     try {
-      console.log(`📤 Exporting workout to ${this.currentPlatform} wearables...`);
 
       switch (this.currentPlatform) {
         case 'ios':
@@ -250,7 +243,6 @@ class WearableManager {
           return await googleFitService.exportWorkoutToGoogleFit(workout);
         
         default:
-          console.warn('⚠️ Workout export not supported on this platform');
           return false;
       }
     } catch (error) {
@@ -264,7 +256,6 @@ class WearableManager {
    */
   async exportNutrition(nutrition: NutritionExportData): Promise<boolean> {
     try {
-      console.log(`📤 Exporting nutrition to ${this.currentPlatform} wearables...`);
 
       switch (this.currentPlatform) {
         case 'ios':
@@ -274,7 +265,6 @@ class WearableManager {
           return await googleFitService.exportNutritionToGoogleFit(nutrition);
         
         default:
-          console.warn('⚠️ Nutrition export not supported on this platform');
           return false;
       }
     } catch (error) {
@@ -288,7 +278,6 @@ class WearableManager {
    */
   async exportBodyWeight(weight: number, date: Date = new Date()): Promise<boolean> {
     try {
-      console.log(`📤 Exporting body weight to ${this.currentPlatform} wearables...`);
 
       switch (this.currentPlatform) {
         case 'ios':
@@ -298,7 +287,6 @@ class WearableManager {
           return await googleFitService.exportBodyWeightToGoogleFit(weight, date);
         
         default:
-          console.warn('⚠️ Body weight export not supported on this platform');
           return false;
       }
     } catch (error) {
@@ -402,7 +390,6 @@ class WearableManager {
    */
   async clearCache(): Promise<void> {
     try {
-      console.log(`🧹 Clearing ${this.currentPlatform} wearable cache...`);
 
       switch (this.currentPlatform) {
         case 'ios':
@@ -414,11 +401,9 @@ class WearableManager {
           break;
         
         default:
-          console.log('💻 No cache to clear on this platform');
           break;
       }
 
-      console.log('✅ Wearable cache cleared successfully');
     } catch (error) {
       console.error('❌ Error clearing wearable cache:', error);
     }
@@ -504,7 +489,6 @@ class WearableManager {
    */
   async getHeartRateZones(age: number): Promise<UnifiedHeartRateZones | null> {
     try {
-      console.log(`💓 Getting heart rate zones from ${this.currentPlatform} wearables...`);
 
       switch (this.currentPlatform) {
         case 'ios': {
@@ -518,7 +502,6 @@ class WearableManager {
         }
         
         default:
-          console.warn('⚠️ Heart rate zones not supported on this platform');
           return null;
       }
     } catch (error) {
@@ -532,7 +515,6 @@ class WearableManager {
    */
   async getSleepBasedWorkoutRecommendations(): Promise<UnifiedSleepRecommendations | null> {
     try {
-      console.log(`😴 Getting sleep recommendations from ${this.currentPlatform} wearables...`);
 
       switch (this.currentPlatform) {
         case 'ios': {
@@ -546,7 +528,6 @@ class WearableManager {
         }
         
         default:
-          console.warn('⚠️ Sleep recommendations not supported on this platform');
           return null;
       }
     } catch (error) {
@@ -560,7 +541,6 @@ class WearableManager {
    */
   async getActivityAdjustedCalories(baseCalories: number): Promise<UnifiedActivityAdjustedCalories | null> {
     try {
-      console.log(`🔥 Getting activity-adjusted calories from ${this.currentPlatform} wearables...`);
 
       switch (this.currentPlatform) {
         case 'ios': {
@@ -574,7 +554,6 @@ class WearableManager {
         }
         
         default:
-          console.warn('⚠️ Activity-adjusted calories not supported on this platform');
           return null;
       }
     } catch (error) {
@@ -588,7 +567,6 @@ class WearableManager {
    */
   async detectAndLogActivities(): Promise<UnifiedDetectedActivities | null> {
     try {
-      console.log(`🎯 Detecting activities from ${this.currentPlatform} wearables...`);
 
       switch (this.currentPlatform) {
         case 'ios': {
@@ -602,7 +580,6 @@ class WearableManager {
         }
         
         default:
-          console.warn('⚠️ Activity detection not supported on this platform');
           return null;
       }
     } catch (error) {
@@ -623,7 +600,6 @@ class WearableManager {
     timestamp: string;
   }> {
     try {
-      console.log(`🧠 Getting comprehensive wearable insights from ${this.currentPlatform}...`);
 
       const [heartRateZones, sleepRecommendations, adjustedCalories, recentActivities] = await Promise.all([
         this.getHeartRateZones(age),

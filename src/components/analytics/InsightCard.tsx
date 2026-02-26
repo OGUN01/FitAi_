@@ -36,7 +36,7 @@ const getInsightConfig = (type: InsightType) => {
     case "positive":
       return {
         icon: "checkmark-circle" as const,
-        color: "#4CAF50",
+        color: ResponsiveTheme.colors.success,
         gradientColors: ["rgba(76,175,80,0.15)", "rgba(76,175,80,0.05)"] as [
           string,
           string,
@@ -46,7 +46,7 @@ const getInsightConfig = (type: InsightType) => {
     case "negative":
       return {
         icon: "alert-circle" as const,
-        color: "#F44336",
+        color: ResponsiveTheme.colors.error,
         gradientColors: ["rgba(244,67,54,0.15)", "rgba(244,67,54,0.05)"] as [
           string,
           string,
@@ -56,7 +56,7 @@ const getInsightConfig = (type: InsightType) => {
     case "neutral":
       return {
         icon: "information-circle" as const,
-        color: "#FF9800",
+        color: ResponsiveTheme.colors.warning,
         gradientColors: ["rgba(255,152,0,0.15)", "rgba(255,152,0,0.05)"] as [
           string,
           string,
@@ -66,7 +66,7 @@ const getInsightConfig = (type: InsightType) => {
     case "achievement":
       return {
         icon: "trophy" as const,
-        color: "#FFD700",
+        color: ResponsiveTheme.colors.gold,
         gradientColors: ["rgba(255,215,0,0.15)", "rgba(255,215,0,0.05)"] as [
           string,
           string,
@@ -76,7 +76,7 @@ const getInsightConfig = (type: InsightType) => {
     case "recommendation":
       return {
         icon: "bulb" as const,
-        color: "#FF6B35",
+        color: ResponsiveTheme.colors.primary,
         gradientColors: [
           "rgba(255,107,53,0.15)",
           "rgba(255,107,53,0.05)",
@@ -86,7 +86,7 @@ const getInsightConfig = (type: InsightType) => {
     default:
       return {
         icon: "information-circle" as const,
-        color: "#9E9E9E",
+        color: ResponsiveTheme.colors.neutral,
         gradientColors: [
           "rgba(158,158,158,0.15)",
           "rgba(158,158,158,0.05)",
@@ -233,12 +233,12 @@ export const AIRecommendationBanner: React.FC<{
           <View style={styles.aiContent}>
             <View style={styles.aiHeader}>
               <LinearGradient
-                colors={["#FF6B35", "#FF8A5C"]}
+                colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.accent]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.aiIconContainer}
               >
-                <Ionicons name="sparkles" size={rf(14)} color="#FFFFFF" />
+                <Ionicons name="sparkles" size={rf(14)} color={ResponsiveTheme.colors.white} />
               </LinearGradient>
               <Text style={styles.aiTitle}>AI Recommendation</Text>
             </View>
@@ -246,7 +246,7 @@ export const AIRecommendationBanner: React.FC<{
             {onLearnMore && (
               <View style={styles.aiAction}>
                 <Text style={styles.aiActionText}>Learn More</Text>
-                <Ionicons name="arrow-forward" size={rf(14)} color="#FF6B35" />
+                <Ionicons name="arrow-forward" size={rf(14)} color={ResponsiveTheme.colors.primary} />
               </View>
             )}
           </View>
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
   aiTitle: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: "#FF6B35",
+    color: ResponsiveTheme.colors.primary,
     letterSpacing: 0.3,
   },
   aiText: {
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
   aiActionText: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: "#FF6B35",
+    color: ResponsiveTheme.colors.primary,
   },
 });
 

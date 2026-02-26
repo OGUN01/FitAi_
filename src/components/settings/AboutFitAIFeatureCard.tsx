@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw } from "../../utils/responsive";
+import { rf, rw, rbr } from "../../utils/responsive";
 import { FeatureItem } from "../../hooks/useAboutFitAILogic";
 
 interface AboutFitAIFeatureCardProps {
@@ -50,12 +50,12 @@ const styles = StyleSheet.create({
   featureCard: {
     alignItems: "center",
     paddingVertical: ResponsiveTheme.spacing.lg,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
   },
   featureIcon: {
     width: rw(44),
     height: rw(44),
-    borderRadius: rw(22),
+    borderRadius: rbr(22),
     justifyContent: "center",
     alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.sm,
@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
   featureTitle: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.xs,
     textAlign: "center",
   },

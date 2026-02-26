@@ -27,7 +27,6 @@ export class SyncOperations {
   }
 
   async syncPersonalInfo(userId: string, data: any): Promise<void> {
-    console.log("[SyncEngine] Syncing personal info to profiles table...");
 
     const {
       data: { session },
@@ -93,11 +92,9 @@ export class SyncOperations {
       throw new Error(`Failed to sync personal info: ${error.message}`);
     }
 
-    console.log("[SyncEngine] Personal info synced successfully");
   }
 
   async syncDietPreferences(userId: string, data: any): Promise<void> {
-    console.log("[SyncEngine] Syncing diet preferences...");
 
     const dietPreferencesData = {
       user_id: userId,
@@ -157,11 +154,9 @@ export class SyncOperations {
       throw new Error(`Failed to sync diet preferences: ${error.message}`);
     }
 
-    console.log("[SyncEngine] Diet preferences synced successfully");
   }
 
   async syncBodyAnalysis(userId: string, data: any): Promise<void> {
-    console.log("[SyncEngine] Syncing body analysis...");
 
     const bodyAnalysisData = {
       user_id: userId,
@@ -219,18 +214,13 @@ export class SyncOperations {
       throw new Error(`Failed to sync body analysis: ${error.message}`);
     }
 
-    console.log("[SyncEngine] Body analysis synced successfully");
   }
 
   async syncWorkoutPreferences(userId: string, data: any): Promise<void> {
-    console.log("[SyncEngine] Syncing workout preferences...");
 
     if (!data.location || !data.intensity || !data.activity_level) {
-      console.warn(
-        "[SyncEngine] Missing required workout preferences - using DB defaults",
-      );
-    }
 
+    }
     const workoutPreferencesData = {
       user_id: userId,
       location: data.location ?? "home",
@@ -275,11 +265,9 @@ export class SyncOperations {
       throw new Error(`Failed to sync workout preferences: ${error.message}`);
     }
 
-    console.log("[SyncEngine] Workout preferences synced successfully");
   }
 
   async syncAdvancedReview(userId: string, data: any): Promise<void> {
-    console.log("[SyncEngine] Syncing advanced review...");
 
     const advancedReviewData = {
       user_id: userId,
@@ -405,6 +393,5 @@ export class SyncOperations {
       throw new Error(`Failed to sync advanced review: ${error.message}`);
     }
 
-    console.log("[SyncEngine] Advanced review synced successfully");
   }
 }

@@ -18,27 +18,27 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 // Macro ring colors
 const MACROS = {
   protein: {
-    color: "#FF6B6B",
+    color: ResponsiveTheme.colors.errorLight,
     gradientEnd: "#FF8E53",
     icon: "fitness" as const,
     label: "Protein",
   },
   carbs: {
-    color: "#4ECDC4",
+    color: ResponsiveTheme.colors.teal,
     gradientEnd: "#44A08D",
     icon: "leaf" as const,
     label: "Carbs",
   },
   fat: {
-    color: "#FFC107",
-    gradientEnd: "#FF9800",
+    color: ResponsiveTheme.colors.amber,
+    gradientEnd: ResponsiveTheme.colors.warning,
     icon: "water" as const,
     label: "Fat",
   },
@@ -164,8 +164,8 @@ export const NutritionOverview: React.FC<NutritionOverviewProps> = ({
                 progress={calorieProgress}
                 size={outerSize}
                 strokeWidth={strokeWidth}
-                color="#FF6B35"
-                gradientEnd="#FF8A5C"
+                color={ResponsiveTheme.colors.primary}
+                gradientEnd={ResponsiveTheme.colors.primaryLight}
                 gradientId="calorieGrad"
                 delay={0}
               />
@@ -286,13 +286,13 @@ const styles = StyleSheet.create({
     fontSize: rf(11),
     fontWeight: "600",
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: rp(2),
   },
   calorieTarget: {
     fontSize: rf(10),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textMuted || "rgba(255,255,255,0.4)",
-    marginTop: 2,
+    color: ResponsiveTheme.colors.textMuted || `${ResponsiveTheme.colors.white}66`,
+    marginTop: rp(2),
   },
   macrosContainer: {
     flex: 1,
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
   macroIconContainer: {
     width: rw(32),
     height: rw(32),
-    borderRadius: rw(8),
+    borderRadius: rbr(8),
     justifyContent: "center",
     alignItems: "center",
   },
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 4,
+    marginBottom: rp(4),
   },
   macroLabel: {
     fontSize: rf(12),
@@ -336,13 +336,13 @@ const styles = StyleSheet.create({
   },
   progressBarBg: {
     height: rh(4),
-    borderRadius: rh(2),
-    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: rbr(2),
+    backgroundColor: ResponsiveTheme.colors.glassBorder,
     overflow: "hidden",
   },
   progressBarFill: {
     height: "100%",
-    borderRadius: rh(2),
+    borderRadius: rbr(2),
   },
 });
 

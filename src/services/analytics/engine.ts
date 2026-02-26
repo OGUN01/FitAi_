@@ -43,14 +43,10 @@ class AnalyticsEngine extends EventEmitter {
   }
 
   private async initializeAnalytics(): Promise<void> {
-    console.log("📊 Initializing FitAI Analytics Engine...");
 
     try {
       await this.loadMetricsHistory();
       this.isInitialized = true;
-      console.log(
-        `✅ Analytics Engine initialized with ${this.metricsHistory.length} data points`,
-      );
     } catch (error) {
       console.error("❌ Analytics initialization failed:", error);
     }
@@ -74,7 +70,6 @@ class AnalyticsEngine extends EventEmitter {
 
       this.emit("metricsUpdated", metrics);
 
-      console.log(`📈 Daily metrics added for ${metrics.date}`);
     } catch (error) {
       console.error("❌ Error adding daily metrics:", error);
     }
@@ -95,9 +90,6 @@ class AnalyticsEngine extends EventEmitter {
       throw new Error("Insufficient data for analytics generation");
     }
 
-    console.log(
-      `📊 Generating ${period} analytics with ${relevantMetrics.length} data points...`,
-    );
 
     const analytics: ComprehensiveAnalytics = {
       period,
@@ -122,9 +114,6 @@ class AnalyticsEngine extends EventEmitter {
     analytics.achievements = identifyAchievements(relevantMetrics);
     analytics.trends = analyzeTrends(relevantMetrics);
 
-    console.log(
-      `✅ Analytics generated - Overall Score: ${analytics.overallScore}/100`,
-    );
 
     return analytics;
   }
@@ -173,9 +162,6 @@ class AnalyticsEngine extends EventEmitter {
       const stored = await AsyncStorage.getItem(this.METRICS_HISTORY_KEY);
       if (stored) {
         this.metricsHistory = JSON.parse(stored);
-        console.log(
-          `✅ Loaded ${this.metricsHistory.length} historical metrics`,
-        );
       }
     } catch (error) {
       console.error("❌ Error loading metrics history:", error);

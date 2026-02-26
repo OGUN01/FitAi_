@@ -191,7 +191,7 @@ export class ScreenReaderUtils {
     try {
       return await AccessibilityInfo.isScreenReaderEnabled();
     } catch (error) {
-      console.warn("Failed to check screen reader status:", error);
+      // Silently fail - screen reader check is non-critical
       return false;
     }
   }
@@ -200,7 +200,7 @@ export class ScreenReaderUtils {
     try {
       AccessibilityInfo.announceForAccessibility(message);
     } catch (error) {
-      console.warn("Failed to announce for accessibility:", error);
+      // Silently fail - accessibility announcement is non-critical
     }
   }
 
@@ -210,7 +210,7 @@ export class ScreenReaderUtils {
         AccessibilityInfo.setAccessibilityFocus(reactTag);
       }
     } catch (error) {
-      console.warn("Failed to set accessibility focus:", error);
+      // Silently fail - focus management is non-critical
     }
   }
 }

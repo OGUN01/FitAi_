@@ -21,16 +21,12 @@ export class HealthConnectService {
 
   async initializeHealthConnect(): Promise<boolean> {
     try {
-      console.log("🔗 Starting Health Connect initialization...");
-
       if (Platform.OS !== "android") {
-        console.log("📱 Health Connect only available on Android devices");
         return false;
       }
 
       const hcModule = await getHealthConnectModule();
       if (!hcModule) {
-        console.log("❌ Health Connect native module not available");
         this.isInitialized = false;
         return false;
       }
@@ -43,8 +39,6 @@ export class HealthConnectService {
       } = hcModule;
 
       const sdkStatus = await getSdkStatus();
-      console.log("🔗 Health Connect SDK Status:", sdkStatus);
-
       const SDK_UNAVAILABLE =
         ModuleSdkStatus?.SDK_UNAVAILABLE ||
         SdkAvailabilityStatus.SDK_UNAVAILABLE;
@@ -55,21 +49,15 @@ export class HealthConnectService {
         ModuleSdkStatus?.SDK_AVAILABLE || SdkAvailabilityStatus.SDK_AVAILABLE;
 
       if (sdkStatus === SDK_UNAVAILABLE) {
-        console.log("❌ Health Connect SDK is unavailable on this device");
         return false;
       }
 
       if (sdkStatus === SDK_UPDATE_REQUIRED) {
-        console.log("⚠️ Health Connect provider update required");
         await openHealthConnectSettings();
         return false;
       }
 
       if (sdkStatus !== SDK_AVAILABLE && sdkStatus !== "SDK_AVAILABLE") {
-        console.log(
-          "❌ Health Connect not available - Unknown status:",
-          sdkStatus,
-        );
         return false;
       }
 
@@ -81,7 +69,6 @@ export class HealthConnectService {
         isInitialized.toString(),
       );
 
-      console.log("✅ Health Connect initialized:", isInitialized);
       return isInitialized;
     } catch (error) {
       console.error("❌ Health Connect initialization failed:", error);
@@ -162,7 +149,6 @@ export class HealthConnectService {
       }
 
       const { openHealthConnectSettings } = hcModule;
-      console.log("⚙️ Opening Health Connect settings...");
       await openHealthConnectSettings();
     } catch (error) {
       console.error("❌ Failed to open Health Connect settings:", error);
@@ -238,11 +224,9 @@ export class HealthConnectService {
 
   async disconnect(): Promise<boolean> {
     try {
-      console.log("🔌 Disconnecting from Health Connect...");
       await this.clearCache();
       this.permissionsManager.setPermissionsGranted(false);
       this.isInitialized = false;
-      console.log("✅ Successfully disconnected from Health Connect");
       return true;
     } catch (error) {
       console.error("❌ Failed to disconnect from Health Connect:", error);
@@ -252,8 +236,6 @@ export class HealthConnectService {
 
   async reauthorize(): Promise<boolean> {
     try {
-      console.log("🔄 Re-authorizing Health Connect...");
-
       const hcModule = await getHealthConnectModule();
       if (!hcModule) {
         console.error("❌ Health Connect module not available");
@@ -279,7 +261,6 @@ export class HealthConnectService {
       const permissionsGranted = await this.requestPermissions();
 
       if (permissionsGranted) {
-        console.log("✅ Re-authorization successful!");
       } else {
         console.warn("⚠️ Re-authorization incomplete");
       }
@@ -316,21 +297,16 @@ export class HealthConnectService {
 
   async runBackgroundSyncOnce(): Promise<boolean> {
     try {
-      console.log("🔄 Running background Health Connect sync...");
-
       const shouldSync = await this.shouldSync(1);
       if (!shouldSync) {
-        console.log("⏭️ Skipping sync - recent sync exists");
         return false;
       }
 
       const result = await this.syncHealthData(1);
       if (result.success && result.data) {
-        console.log("✅ Background sync completed successfully");
         return true;
       }
 
-      console.log("⚠️ Background sync completed with no new data");
       return false;
     } catch (error) {
       console.error("❌ Background sync failed:", error);
@@ -347,8 +323,6 @@ export class HealthConnectService {
     notes?: string;
   }): Promise<{ success: boolean; recordId?: string; error?: string }> {
     try {
-      console.log("📝 Writing workout session to Health Connect...");
-
       if (Platform.OS !== "android") {
         return {
           success: false,
@@ -422,10 +396,6 @@ export class HealthConnectService {
         }
       }
 
-      console.log(
-        "✅ Workout session written to Health Connect:",
-        recordIds[0],
-      );
       return { success: true, recordId: recordIds[0] };
     } catch (error) {
       console.error("❌ Failed to write workout session:", error);

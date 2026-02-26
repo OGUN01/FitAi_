@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import {
   View,
   Text,
@@ -6,7 +6,8 @@ import {
   TouchableOpacity,
   TextInput,
 } from "react-native";
-import { Card, THEME } from "../../ui";
+import { Card } from "../../ui";
+import { ResponsiveTheme } from '../../../utils/constants';
 
 interface WorkoutSettingsProps {
   reminderMinutes: string;
@@ -75,77 +76,77 @@ export const WorkoutSettings: React.FC<WorkoutSettingsProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: THEME.spacing.lg,
-    marginBottom: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
   sectionTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold as "600",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   sectionDescription: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.md,
     lineHeight: 20,
   },
   card: {
-    padding: THEME.spacing.lg,
-    marginBottom: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   cardContent: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   inputLabel: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium as "500",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   textInput: {
     borderWidth: 1,
-    borderColor: THEME.colors.border,
-    borderRadius: THEME.borderRadius.md,
-    padding: THEME.spacing.md,
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.text,
-    backgroundColor: THEME.colors.backgroundSecondary,
+    borderColor: ResponsiveTheme.colors.border,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    padding: ResponsiveTheme.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
   },
   presetButtons: {
     flexDirection: "row",
     justifyContent: "space-around",
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
   presetButton: {
     flex: 1,
-    paddingVertical: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
     borderWidth: 1,
-    borderColor: THEME.colors.border,
-    backgroundColor: THEME.colors.backgroundSecondary,
+    borderColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     alignItems: "center" as const,
   },
   presetButtonActive: {
-    borderColor: THEME.colors.primary,
-    backgroundColor: THEME.colors.primary + "20",
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary + "20",
   },
   presetButtonText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    fontWeight: THEME.fontWeight.medium as "500",
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
   },
   presetButtonTextActive: {
-    color: THEME.colors.primary,
+    color: ResponsiveTheme.colors.primary,
   },
   infoCard: {
-    padding: THEME.spacing.lg,
-    backgroundColor: THEME.colors.backgroundTertiary,
+    padding: ResponsiveTheme.spacing.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
   },
   infoText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
     lineHeight: 20,
     fontStyle: "italic",
   },

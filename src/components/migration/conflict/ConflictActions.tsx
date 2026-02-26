@@ -1,5 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { rf, rp, rbr } from "../../../utils/responsive";
+import { ResponsiveTheme } from "../../../utils/constants";
 
 interface ConflictActionsProps {
   resolved: number;
@@ -38,39 +40,39 @@ export const ConflictActions: React.FC<ConflictActionsProps> = ({
 const styles = StyleSheet.create({
   footer: {
     flexDirection: "row",
-    padding: 20,
-    paddingBottom: 40,
-    gap: 15,
+    padding: rp(20),
+    paddingBottom: rp(40),
+    gap: rp(15),
     borderTopWidth: 1,
-    borderTopColor: "rgba(75, 85, 99, 0.3)",
+    borderTopColor: ResponsiveTheme.colors.glassBorder,
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: "rgba(239, 68, 68, 0.2)",
-    paddingVertical: 15,
-    borderRadius: 12,
+    backgroundColor: ResponsiveTheme.colors.errorTint,
+    paddingVertical: rp(15),
+    borderRadius: rbr(12),
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#EF4444",
+    borderColor: ResponsiveTheme.colors.errorAlt,
   },
   cancelButtonText: {
-    color: "#EF4444",
-    fontSize: 16,
+    color: ResponsiveTheme.colors.errorAlt,
+    fontSize: rf(16),
     fontWeight: "600",
   },
   resolveButton: {
     flex: 2,
-    backgroundColor: "#10B981",
-    paddingVertical: 15,
-    borderRadius: 12,
+    backgroundColor: ResponsiveTheme.colors.successAlt,
+    paddingVertical: rp(15),
+    borderRadius: rbr(12),
     alignItems: "center",
   },
   resolveButtonDisabled: {
-    backgroundColor: "rgba(107, 114, 128, 0.3)",
+    backgroundColor: ResponsiveTheme.colors.glassBorder,
   },
   resolveButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    color: ResponsiveTheme.colors.white,
+    fontSize: rf(16),
     fontWeight: "600",
   },
 });

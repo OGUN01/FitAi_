@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh } from "../../../utils/responsive";
+import { rf, rw, rh, rp } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 
 interface CompletedWorkout {
@@ -169,7 +169,7 @@ const WorkoutHistoryCard: React.FC<{
           style={styles.actionButton}
         >
           <View style={[styles.actionContent, styles.repeatAction]}>
-            <Ionicons name="repeat" size={rf(20)} color="#fff" />
+            <Ionicons name="repeat" size={rf(20)} color={ResponsiveTheme.colors.white} />
             <Text style={styles.actionText}>Repeat</Text>
           </View>
         </AnimatedPressable>
@@ -181,7 +181,7 @@ const WorkoutHistoryCard: React.FC<{
           style={styles.actionButton}
         >
           <View style={[styles.actionContent, styles.deleteAction]}>
-            <Ionicons name="trash-outline" size={rf(20)} color="#fff" />
+            <Ionicons name="trash-outline" size={rf(20)} color={ResponsiveTheme.colors.white} />
             <Text style={styles.actionText}>Delete</Text>
           </View>
         </AnimatedPressable>
@@ -211,15 +211,15 @@ const WorkoutHistoryCard: React.FC<{
                   styles.iconContainer,
                   {
                     backgroundColor: isCompleted
-                      ? "rgba(16, 185, 129, 0.15)"
-                      : "rgba(255, 107, 107, 0.15)",
+                      ? `${ResponsiveTheme.colors.successAlt}25`
+                      : ResponsiveTheme.colors.errorTint,
                   },
                 ]}
               >
                 <Ionicons
                   name={getCategoryIcon()}
                   size={rf(20)}
-                  color={isCompleted ? "#10b981" : "#FF6B6B"}
+                  color={isCompleted ? ResponsiveTheme.colors.successAlt : ResponsiveTheme.colors.errorLight}
                 />
               </View>
 
@@ -232,7 +232,7 @@ const WorkoutHistoryCard: React.FC<{
                   {workout.title}
                 </Text>
                 <Text style={styles.meta}>
-                  {workout.duration} min • {workout.caloriesBurned} cal
+                  {workout.duration || 0} min • {workout.caloriesBurned || 0} cal
                 </Text>
               </View>
 
@@ -243,7 +243,7 @@ const WorkoutHistoryCard: React.FC<{
                     <Ionicons
                       name="checkmark-circle"
                       size={rf(18)}
-                      color="#10b981"
+                      color={ResponsiveTheme.colors.success}
                     />
                   </View>
                 ) : (
@@ -276,15 +276,27 @@ export const WorkoutHistoryList: React.FC<WorkoutHistoryListProps> = ({
           borderRadius="lg"
         >
           <View style={styles.emptyState}>
-            <Ionicons
-              name="time-outline"
-              size={rf(32)}
-              color={ResponsiveTheme.colors.textSecondary}
-            />
-            <Text style={styles.emptyTitle}>No Workout History</Text>
-            <Text style={styles.emptySubtitle}>
-              Complete your first workout to see it here
-            </Text>
+            <View style={styles.emptyIconContainer}>
+              <Ionicons
+                name="barbell-outline"
+                size={rf(36)}
+                color={ResponsiveTheme.colors.primary}
+              />
+            </View>
+            <View style={styles.emptyTextContainer}>
+              <Text style={styles.emptyTitle}>No Workouts Yet</Text>
+              <Text style={styles.emptySubtitle}>
+                Complete your first workout to start tracking your progress. Every rep counts!
+              </Text>
+            </View>
+            <View style={styles.emptyHint}>
+              <Ionicons
+                name="arrow-up-circle-outline"
+                size={rf(14)}
+                color={ResponsiveTheme.colors.primary}
+              />
+              <Text style={styles.emptyHintText}>Start a workout above to begin</Text>
+            </View>
           </View>
         </GlassCard>
       </AnimatedRN.View>
@@ -367,18 +379,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: ResponsiveTheme.borderRadius.md,
-    gap: 4,
+    gap: rp(4),
   },
   repeatAction: {
-    backgroundColor: "#10b981",
+    backgroundColor: ResponsiveTheme.colors.successAlt,
   },
   deleteAction: {
-    backgroundColor: "#ef4444",
+    backgroundColor: ResponsiveTheme.colors.errorAlt,
   },
   actionText: {
     fontSize: rf(9),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
   cardContainer: {
     backgroundColor: ResponsiveTheme.colors.background,
@@ -399,9 +411,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   date: {
-    fontSize: rf(10),
+    fontSize: rf(11),
     color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: 2,
+    marginBottom: rp(2),
+    fontWeight: "500",
   },
   title: {
     fontSize: rf(14),
@@ -411,41 +424,74 @@ const styles = StyleSheet.create({
   meta: {
     fontSize: rf(11),
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: rp(2),
   },
   statusContainer: {
     alignItems: "flex-end",
   },
   completedBadge: {
-    backgroundColor: "rgba(16, 185, 129, 0.15)",
+    backgroundColor: `${ResponsiveTheme.colors.successAlt}25`,
     padding: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.full,
   },
   progressBadge: {
-    backgroundColor: "rgba(255, 142, 83, 0.15)",
+    backgroundColor: ResponsiveTheme.colors.primaryTint,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: rp(4),
     borderRadius: ResponsiveTheme.borderRadius.full,
   },
   progressText: {
     fontSize: rf(11),
     fontWeight: "700",
-    color: "#FF8E53",
+    color: ResponsiveTheme.colors.accent,
   },
   emptyState: {
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.lg,
-    gap: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xxl,
+    gap: ResponsiveTheme.spacing.lg,
+  },
+  emptyIconContainer: {
+    width: rw(72),
+    height: rw(72),
+    borderRadius: rw(36),
+    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    borderWidth: 1,
+    borderColor: `${ResponsiveTheme.colors.primary}30`,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+  emptyTextContainer: {
+    alignItems: "center",
+    gap: ResponsiveTheme.spacing.xs,
   },
   emptyTitle: {
-    fontSize: rf(14),
-    fontWeight: "600",
+    fontSize: rf(16),
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
   },
   emptySubtitle: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: ResponsiveTheme.colors.text,
+    opacity: 0.7,
     textAlign: "center",
+    lineHeight: rf(18),
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+  },
+  emptyHint: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: ResponsiveTheme.spacing.xs,
+    marginTop: ResponsiveTheme.spacing.xs,
+    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.full,
+  },
+  emptyHintText: {
+    fontSize: rf(11),
+    fontWeight: "600",
+    color: ResponsiveTheme.colors.primary,
   },
 });
 

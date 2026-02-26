@@ -10,7 +10,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 
 interface DayInfo {
   key: string;
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     fontSize: rf(11),
     fontWeight: "600",
     color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: 4,
+    marginBottom: rp(4),
   },
   dayLabelSelected: {
     color: ResponsiveTheme.colors.white,
@@ -217,9 +217,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: rh(6),
     backgroundColor: "rgba(255, 107, 53, 0.2)",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingHorizontal: rp(6),
+    paddingVertical: rp(2),
+    borderRadius: rbr(8),
   },
   mealIndicatorSelected: {
     backgroundColor: "rgba(255,255,255,0.25)",

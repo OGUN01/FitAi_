@@ -168,7 +168,6 @@ export class RealTimeSyncService {
       }
 
       this.isInitialized = true;
-      console.log("Real-time sync service initialized");
     } catch (error) {
       console.error("Failed to initialize sync service:", error);
       throw error;
@@ -279,7 +278,6 @@ export class RealTimeSyncService {
     await this.saveSyncQueue();
 
     this.isInitialized = false;
-    console.log("Real-time sync service stopped");
   }
 
   /**
@@ -680,7 +678,6 @@ export class RealTimeSyncService {
             ? new Date(parsed.nextSyncTime)
             : null,
         };
-        console.log("✅ Loaded sync status from storage");
       }
     } catch (error) {
       console.error("Failed to load sync status:", error);
@@ -703,7 +700,6 @@ export class RealTimeSyncService {
         nextSyncTime: this.status.nextSyncTime?.toISOString() || null,
       };
       await AsyncStorage.setItem(SYNC_STATUS_KEY, JSON.stringify(toStore));
-      console.log("✅ Saved sync status to storage");
     } catch (error) {
       console.error("Failed to save sync status:", error);
     }
@@ -719,7 +715,6 @@ export class RealTimeSyncService {
           timestamp: new Date(op.timestamp),
         }));
         this.updateSyncStatus({ queuedOperations: this.syncQueue.length });
-        console.log(`✅ Loaded ${this.syncQueue.length} queued operations`);
       }
     } catch (error) {
       console.error("Failed to load sync queue:", error);
@@ -747,8 +742,6 @@ export class RealTimeSyncService {
   ): Promise<void> {
     const { type, table, recordId, data } = operation;
 
-    console.log(`📤 Executing ${type} on ${table}:${recordId}`);
-
     switch (type) {
       case "create":
         const { error: createError } = await supabase.from(table).insert(data);
@@ -772,7 +765,6 @@ export class RealTimeSyncService {
         break;
     }
 
-    console.log(`✅ Successfully executed ${type} on ${table}:${recordId}`);
   }
 
   private async getDeltaSyncInfo(): Promise<DeltaSyncInfo> {
@@ -821,7 +813,6 @@ export class RealTimeSyncService {
           .order("updated_at", { ascending: true });
 
         if (error) {
-          console.warn(`⚠️ Failed to fetch changes from ${table}:`, error);
           continue;
         }
 
@@ -833,14 +824,11 @@ export class RealTimeSyncService {
               type: "remote_update",
             })),
           );
-          console.log(`📥 Found ${data.length} changes in ${table}`);
         }
       } catch (error) {
-        console.warn(`⚠️ Error fetching from ${table}:`, error);
       }
     }
 
-    console.log(`📥 Total remote changes: ${changes.length}`);
     return changes;
   }
 
@@ -876,7 +864,6 @@ export class RealTimeSyncService {
 
         // Save back to storage
         await AsyncStorage.setItem(storageKey, JSON.stringify(history));
-        console.log(`✅ Applied remote change to ${table}:${record.id}`);
       } catch (error) {
         console.error(`Failed to apply change to ${table}:`, error);
         throw error;
@@ -892,7 +879,6 @@ export class RealTimeSyncService {
         checksums: deltaInfo.checksums,
       };
       await AsyncStorage.setItem(DELTA_SYNC_KEY, JSON.stringify(toStore));
-      console.log("✅ Updated delta sync info");
     } catch (error) {
       console.error("Failed to update delta sync info:", error);
     }
@@ -989,10 +975,6 @@ export class RealTimeSyncService {
         break;
     }
 
-    console.log(
-      `🔄 Resolved conflict for ${conflict.table}:${conflict.recordId} using ${appliedStrategy}`,
-    );
-
     return {
       resolvedValue,
       strategy: appliedStrategy,
@@ -1010,9 +992,6 @@ export class RealTimeSyncService {
       const maxRetriesReached = op.retryCount >= op.maxRetries;
 
       if (expired || maxRetriesReached) {
-        console.log(
-          `🗑️ Removing ${expired ? "expired" : "failed"} operation: ${op.id}`,
-        );
         return false;
       }
       return true;

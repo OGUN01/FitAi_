@@ -265,15 +265,11 @@ class ExerciseVisualService {
    * Preload local exercise mappings into cache for faster access
    */
   private preloadLocalMappingsToCache(): void {
-    console.log("📋 Preloading local exercise mappings to cache...");
     for (const [key, exercise] of this.localExerciseMapping.entries()) {
       this.cache.set(key, exercise);
       this.cache.set(exercise.exerciseId, exercise);
       this.cache.set(exercise.name.toLowerCase(), exercise);
     }
-    console.log(
-      `✅ Preloaded ${this.localExerciseMapping.size} local exercise mappings`,
-    );
   }
 
   /**
@@ -286,7 +282,6 @@ class ExerciseVisualService {
     // Direct match
     if (this.localExerciseMapping.has(cleanName)) {
       const exercise = this.localExerciseMapping.get(cleanName)!;
-      console.log(`✅ Direct local match found for "${cleanName}"`);
       return exercise;
     }
 
@@ -329,7 +324,6 @@ class ExerciseVisualService {
 
     for (const fuzzyName of fuzzyMatches) {
       if (fuzzyName && this.localExerciseMapping.has(fuzzyName)) {
-        console.log(`🔍 Fuzzy matched "${cleanName}" to "${fuzzyName}"`);
         return this.localExerciseMapping.get(fuzzyName)!;
       }
     }
@@ -359,13 +353,10 @@ class ExerciseVisualService {
             this.cache.set(exercise.name.toLowerCase(), exercise);
             this.cache.set(exercise.exerciseId, exercise);
           });
-          console.log(`🏋️ Loaded ${exercises.length} exercises from cache`);
         } else {
-          console.log("🏋️ Cache expired, will refresh exercises");
           await this.preloadPopularExercises();
         }
       } else {
-        console.log("🏋️ No cache found, preloading exercises");
         await this.preloadPopularExercises();
       }
     } catch (error) {
@@ -378,7 +369,6 @@ class ExerciseVisualService {
    */
   private async preloadPopularExercises(): Promise<void> {
     try {
-      console.log("🏋️ Preloading popular exercises...");
       const exercises: ExerciseData[] = [];
 
       // Load first 30 pages (300 exercises) - covers most common exercises
@@ -394,7 +384,6 @@ class ExerciseVisualService {
 
       // Cache the exercises
       await this.cacheExercises(exercises);
-      console.log(`🏋️ Preloaded ${exercises.length} exercises successfully`);
     } catch (error) {
       console.error("Failed to preload exercises:", error);
     }
@@ -411,7 +400,6 @@ class ExerciseVisualService {
 
     // Try verified Vercel API endpoint
     try {
-      console.log(`🌐 Fetching exercises from Vercel API (page ${page})...`);
       const offset = (page - 1) * limit;
       const response = await fetch(
         `${this.baseURL}/exercises?offset=${offset}&limit=${limit}`,
@@ -422,9 +410,6 @@ class ExerciseVisualService {
       }
 
       const data = await response.json();
-      console.log(
-        `✅ Successfully fetched ${data.data?.length || 0} exercises from Vercel API`,
-      );
       return data;
     } catch (error) {
       errors.push(`Vercel API failed: ${error}`);
@@ -433,7 +418,6 @@ class ExerciseVisualService {
 
     // Try API Ninjas fallback
     try {
-      console.log("🌐 Trying API Ninjas fallback...");
       const response = await fetch(
         `https://api.api-ninjas.com/v1/exercises?offset=${(page - 1) * limit}`,
         {
@@ -457,9 +441,6 @@ class ExerciseVisualService {
           instructions: [ex.instructions || "Follow proper form and technique"],
         }));
 
-        console.log(
-          `✅ Successfully fetched ${transformedData.length} exercises from API Ninjas`,
-        );
         return {
           success: true,
           metadata: {
@@ -479,7 +460,6 @@ class ExerciseVisualService {
 
     // Try free exercise database
     try {
-      console.log("🌐 Trying Free Exercise Database...");
       const response = await fetch(
         "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json",
       );
@@ -505,9 +485,6 @@ class ExerciseVisualService {
           instructions: ex.instructions || ["Follow proper form and technique"],
         }));
 
-        console.log(
-          `✅ Successfully fetched ${transformedData.length} exercises from Free Exercise DB`,
-        );
         return {
           success: true,
           metadata: {
@@ -558,14 +535,12 @@ class ExerciseVisualService {
       // First check cache for exact matches
       const cacheMatch = this.cache.get(query.toLowerCase());
       if (cacheMatch) {
-        console.log(`✅ Found cached exercise for "${query}"`);
         return [cacheMatch];
       }
 
       // Check local mappings first - this provides 100% reliability for basic exercises
       const localMatch = this.findLocalExerciseMapping(query);
       if (localMatch) {
-        console.log(`✅ Found local mapping for "${query}"`);
         this.cache.set(query.toLowerCase(), localMatch);
         return [localMatch];
       }
@@ -573,14 +548,12 @@ class ExerciseVisualService {
       // Use verified working Vercel API endpoints
       const netInfo = await NetInfo.fetch();
       if (netInfo.isConnected) {
-        console.log(`🌐 Searching Vercel API for "${query}"`);
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000);
 
         try {
           // Primary search endpoint - verified working
           const searchUrl = `${this.baseURL}/exercises/search?q=${encodeURIComponent(query)}&limit=5`;
-          console.log(`🔄 Using verified endpoint: ${searchUrl}`);
 
           const response = await fetch(searchUrl, {
             signal: controller.signal,
@@ -599,9 +572,6 @@ class ExerciseVisualService {
           const result: ExerciseAPIResponse = await response.json();
 
           if (result.success && result.data?.length > 0) {
-            console.log(
-              `✅ Vercel API found ${result.data.length} exercises for "${query}"`,
-            );
 
             // Cache new results for faster future access (fix URLs first)
             result.data.forEach((exercise) => {
@@ -615,21 +585,18 @@ class ExerciseVisualService {
 
             return result.data;
           } else {
-            console.log(`⚠️ No results from Vercel API for "${query}"`);
           }
         } catch (apiError) {
           clearTimeout(timeoutId);
           console.warn(`❌ Vercel API search failed for "${query}":`, apiError);
         }
       } else {
-        console.log("📴 Network offline, skipping API call");
       }
 
       // If API fails, try general endpoint as fallback
       const netInfoFallback = await NetInfo.fetch();
       if (netInfoFallback.isConnected) {
         try {
-          console.log(`🔄 Trying general exercises endpoint as fallback...`);
           const fallbackUrl = `${this.baseURL}/exercises?limit=10`;
           const response = await fetch(fallbackUrl);
 
@@ -646,9 +613,6 @@ class ExerciseVisualService {
               );
 
               if (filteredResults.length > 0) {
-                console.log(
-                  `✅ Fallback found ${filteredResults.length} matching exercises`,
-                );
                 return filteredResults;
               }
             }
@@ -676,9 +640,6 @@ class ExerciseVisualService {
         ],
       };
 
-      console.log(
-        `🔄 Using intelligent fallback exercise: "${fallbackExercise.name}"`,
-      );
       return [fallbackExercise];
     } catch (error) {
       console.error("Search exercises failed:", error);
@@ -768,7 +729,6 @@ class ExerciseVisualService {
         "v1.cdn.exercisedb.dev",
         "static.exercisedb.dev",
       );
-      console.log(`🔧 Fixed broken CDN URL: ${originalUrl} -> ${fixedUrl}`);
       return fixedUrl;
     }
 
@@ -785,9 +745,6 @@ class ExerciseVisualService {
     const normalized = exerciseName.toLowerCase();
     const query = originalQuery.toLowerCase();
 
-    console.log(
-      `🔧 Finding working GIF for "${exerciseName}" (originally "${originalQuery}")`,
-    );
 
     // Map common exercises to working Giphy URLs
     const workingGifMap: { [key: string]: string } = {
@@ -826,7 +783,6 @@ class ExerciseVisualService {
 
     // Direct match
     if (workingGifMap[normalized]) {
-      console.log(`✅ Direct match found for "${normalized}"`);
       return workingGifMap[normalized];
     }
 
@@ -895,7 +851,6 @@ class ExerciseVisualService {
     }
 
     // Default workout GIF
-    console.log(`🔄 Using default workout GIF for "${exerciseName}"`);
     return "https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif";
   }
 
@@ -968,13 +923,10 @@ class ExerciseVisualService {
     preventCircularCalls: boolean = false,
   ): Promise<ExerciseMatchResult | null> {
     const cleanName = exerciseName.toLowerCase().trim();
-    console.log(`🎯 BULLETPROOF SEARCH: "${exerciseName}" -> "${cleanName}"`);
 
     // TIER 1: Local exercise mappings for instant results (MOVED TO TOP FOR RELIABILITY)
-    console.log(`🎯 Tier 1: Local mappings with working GIFs...`);
     const localExercise = this.findLocalExerciseMapping(cleanName);
     if (localExercise && localExercise.gifUrl) {
-      console.log(`✅ TIER 1 SUCCESS: "${localExercise.name}" (Local mapping)`);
       return {
         exercise: localExercise,
         confidence: 1.0,
@@ -983,12 +935,10 @@ class ExerciseVisualService {
     }
 
     // TIER 2: Cache exact match
-    console.log(`📋 Tier 2: Cache exact match...`);
     const exactMatch = this.cache.get(cleanName);
     if (exactMatch && exactMatch.gifUrl) {
       // Fix broken CDN URLs even in cache using the new dedicated method
       exactMatch.gifUrl = this.fixBrokenCdnUrl(exactMatch.gifUrl);
-      console.log(`✅ TIER 2 SUCCESS: "${exactMatch.name}"`);
       return {
         exercise: exactMatch,
         confidence: 1.0,
@@ -999,7 +949,6 @@ class ExerciseVisualService {
     // TIER 3: Advanced matching system
     if (useAdvancedMatching && !preventCircularCalls) {
       try {
-        console.log(`🧠 Tier 3: Advanced matching...`);
         const advancedResult =
           await advancedExerciseMatching.findExerciseWithFullCoverage(
             exerciseName,
@@ -1009,7 +958,6 @@ class ExerciseVisualService {
           advancedResult.exercise &&
           advancedResult.exercise.gifUrl
         ) {
-          console.log(`✅ TIER 3 SUCCESS: "${advancedResult.exercise.name}"`);
           return {
             exercise: advancedResult.exercise,
             confidence: advancedResult.confidence,
@@ -1022,7 +970,6 @@ class ExerciseVisualService {
     }
 
     // TIER 4: API search with verified endpoints
-    console.log(`🌐 Tier 4: API search...`);
     const searchResults = await this.searchExercises(exerciseName);
     if (searchResults.length > 0) {
       let bestMatch = searchResults[0];
@@ -1040,9 +987,6 @@ class ExerciseVisualService {
           cleanName,
           bestMatch.name.toLowerCase(),
         );
-        console.log(
-          `✅ TIER 4 SUCCESS: "${bestMatch.name}" (${Math.round(confidence * 100)}%)`,
-        );
         return {
           exercise: bestMatch,
           confidence,
@@ -1052,10 +996,8 @@ class ExerciseVisualService {
     }
 
     // TIER 5: Intelligent cache partial matching
-    console.log(`🔍 Tier 5: Cache partial matching...`);
     const partialMatch = this.findPartialMatch(cleanName);
     if (partialMatch && partialMatch.exercise.gifUrl) {
-      console.log(`✅ TIER 5 SUCCESS: "${partialMatch.exercise.name}"`);
       return partialMatch;
     }
 
@@ -1257,7 +1199,6 @@ class ExerciseVisualService {
     this.cache.clear();
     await AsyncStorage.removeItem(this.cacheKey);
     await AsyncStorage.removeItem(this.lastCacheUpdate);
-    console.log("🏋️ Exercise cache cleared");
   }
 
   /**
@@ -1267,9 +1208,6 @@ class ExerciseVisualService {
   async preloadWorkoutVisuals(
     exerciseNames: string[],
   ): Promise<Map<string, ExerciseMatchResult | null>> {
-    console.log(
-      `🚀 Preloading visuals for ${exerciseNames.length} exercises...`,
-    );
     const results = new Map<string, ExerciseMatchResult | null>();
     const startTime = Date.now();
 
@@ -1290,12 +1228,6 @@ class ExerciseVisualService {
     const successCount = loadResults.filter((r) => r.success).length;
     const loadTime = Date.now() - startTime;
 
-    console.log(
-      `✅ Preloaded ${successCount}/${exerciseNames.length} exercise visuals in ${loadTime}ms`,
-    );
-    console.log(
-      `📊 Success rate: ${Math.round((successCount / exerciseNames.length) * 100)}%`,
-    );
 
     return results;
   }
@@ -1311,9 +1243,6 @@ class ExerciseVisualService {
       .flatMap((workout) => workout.exercises)
       .filter((exercise, index, array) => array.indexOf(exercise) === index); // Remove duplicates
 
-    console.log(
-      `🎯 Preloading entire workout plan: ${allExercises.length} unique exercises`,
-    );
     await this.preloadWorkoutVisuals(allExercises);
   }
 

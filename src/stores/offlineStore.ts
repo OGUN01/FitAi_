@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { safeAsyncStorage } from "../utils/safeAsyncStorage";
 import { offlineService, SyncResult, OfflineAction } from "../services/offline";
 import { dataBridge } from "../services/DataBridge";
 import {
@@ -92,7 +93,6 @@ export const useOfflineStore = create<OfflineState>()(
           await get().updateDataStats();
 
           set({ isInitialized: true });
-          console.log("Enhanced offline store initialized successfully");
         } catch (error) {
           console.error("Failed to initialize enhanced offline store:", error);
           throw error;
@@ -143,7 +143,6 @@ export const useOfflineStore = create<OfflineState>()(
             lastSyncAttempt: null,
           });
         } catch (error) {
-          console.warn("Failed to clear offline data:", error);
         }
       },
 
@@ -305,7 +304,7 @@ export const useOfflineStore = create<OfflineState>()(
     }),
     {
       name: "enhanced-offline-storage",
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => safeAsyncStorage),
       partialize: (state) => ({
         autoSyncEnabled: state.autoSyncEnabled,
         lastSyncResult: state.lastSyncResult,

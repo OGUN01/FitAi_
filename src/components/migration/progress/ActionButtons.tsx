@@ -4,6 +4,8 @@ import {
   MigrationProgress,
   MigrationResult,
 } from "../../../services/migration";
+import { rf, rp, rbr } from "../../../utils/responsive";
+import { ResponsiveTheme } from "../../../utils/constants";
 
 interface ActionButtonsProps {
   progress: MigrationProgress | null;
@@ -56,44 +58,44 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 15,
+    gap: rp(15),
   },
   completeButton: {
-    backgroundColor: "#10B981",
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 12,
+    backgroundColor: ResponsiveTheme.colors.successAlt,
+    paddingVertical: rp(15),
+    paddingHorizontal: rp(30),
+    borderRadius: rbr(12),
     alignItems: "center",
   },
   completeButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    color: ResponsiveTheme.colors.white,
+    fontSize: rf(16),
     fontWeight: "600",
   },
   retryButton: {
     flex: 1,
-    backgroundColor: "#E55A2B",
-    paddingVertical: 15,
-    borderRadius: 12,
+    backgroundColor: ResponsiveTheme.colors.primaryDark,
+    paddingVertical: rp(15),
+    borderRadius: rbr(12),
     alignItems: "center",
   },
   retryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    color: ResponsiveTheme.colors.white,
+    fontSize: rf(16),
     fontWeight: "600",
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: "rgba(239, 68, 68, 0.2)",
-    paddingVertical: 15,
-    borderRadius: 12,
+    backgroundColor: ResponsiveTheme.colors.errorTint,
+    paddingVertical: rp(15),
+    borderRadius: rbr(12),
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#EF4444",
+    borderColor: ResponsiveTheme.colors.errorAlt,
   },
   cancelButtonText: {
-    color: "#EF4444",
-    fontSize: 16,
+    color: ResponsiveTheme.colors.errorAlt,
+    fontSize: rf(16),
     fontWeight: "600",
   },
 });

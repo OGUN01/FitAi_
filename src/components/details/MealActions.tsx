@@ -1,6 +1,7 @@
-import React from "react";
+﻿import React from "react";
 import { View, StyleSheet } from "react-native";
-import { Button, THEME } from "../ui";
+import { Button } from "../ui";
+import { ResponsiveTheme } from '../../utils/constants';
 
 interface MealActionsProps {
   onEdit?: () => void;
@@ -36,15 +37,15 @@ export const MealActions: React.FC<MealActionsProps> = ({
 
 const styles = StyleSheet.create({
   bottomContainer: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
-    backgroundColor: THEME.colors.background,
+    borderTopColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
 
   actionButtons: {
     flexDirection: "row",
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   actionButton: {
@@ -52,10 +53,10 @@ const styles = StyleSheet.create({
   },
 
   deleteButton: {
-    borderColor: THEME.colors.error,
+    borderColor: ResponsiveTheme.colors.error,
   },
 
   deleteButtonText: {
-    color: THEME.colors.error,
+    color: ResponsiveTheme.colors.error,
   },
 });

@@ -41,7 +41,6 @@ export const validateHealthConnectRegistration = (
     passed: [],
   };
 
-  console.log("🔍 Health Connect Registration Validation Starting...");
 
   try {
     // Validate AndroidManifest.xml
@@ -65,22 +64,11 @@ export const validateHealthConnectRegistration = (
     result.isValid = result.errors.length === 0;
 
     // Print summary
-    console.log(`\n📊 Health Connect Registration Validation Summary:`);
-    console.log(`✅ Passed: ${result.passed.length}`);
-    console.log(`⚠️ Warnings: ${result.warnings.length}`);
-    console.log(`❌ Errors: ${result.errors.length}`);
-    console.log(
-      `\n🎯 Overall Status: ${result.isValid ? "✅ VALID" : "❌ INVALID"}`,
-    );
 
     if (result.errors.length > 0) {
-      console.log(`\n🚨 Critical Issues:`);
-      result.errors.forEach((error) => console.log(`   ❌ ${error}`));
     }
 
     if (result.warnings.length > 0) {
-      console.log(`\n⚠️ Warnings:`);
-      result.warnings.forEach((warning) => console.log(`   ⚠️ ${warning}`));
     }
 
     return result;
@@ -338,12 +326,8 @@ export const runHealthConnectValidation = () => {
   const result = validateHealthConnectRegistration(projectRoot);
 
   if (!result.isValid) {
-    console.log("\n🚨 Health Connect registration validation FAILED!");
-    console.log("Fix the issues above before building for production.");
     process.exit(1);
   } else {
-    console.log("\n✅ Health Connect registration validation PASSED!");
-    console.log("Your app should be properly registered with Health Connect.");
   }
 };
 

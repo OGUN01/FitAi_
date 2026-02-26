@@ -9,7 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh } from "../../../utils/responsive";
+import { rf, rw, rh, rp } from "../../../utils/responsive";
 
 // Professional icon mapping for achievements
 const ACHIEVEMENT_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -78,9 +78,11 @@ const BadgeCard: React.FC<{
     hapticFeedback={true}
     hapticType="light"
     style={styles.badgeCard}
+    accessibilityRole="button"
+    accessibilityLabel={title}
   >
     <View style={styles.badgeIconContainer}>
-      <Ionicons name={getAchievementIcon(icon)} size={rf(22)} color="#FFB300" />
+      <Ionicons name={getAchievementIcon(icon)} size={rf(22)} color={ResponsiveTheme.colors.amber} />
     </View>
     <Text style={styles.badgeTitle} numberOfLines={2}>
       {title}
@@ -101,6 +103,8 @@ const ProgressBadge: React.FC<{
     hapticFeedback={true}
     hapticType="light"
     style={styles.progressBadgeCard}
+    accessibilityRole="button"
+    accessibilityLabel={`${title} ${progress} percent`}
   >
     <View style={styles.progressBadgeIconContainer}>
       <Ionicons
@@ -114,7 +118,7 @@ const ProgressBadge: React.FC<{
           style={[
             styles.progressRingFill,
             {
-              borderColor: "#FF6B35",
+              borderColor: ResponsiveTheme.colors.primary,
               transform: [{ rotate: `${(progress / 100) * 360 - 90}deg` }],
             },
           ]}
@@ -149,7 +153,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.headerIconBg}>
-            <Ionicons name="trophy" size={rf(16)} color="#FFB300" />
+            <Ionicons name="trophy" size={rf(16)} color={ResponsiveTheme.colors.amber} />
           </View>
           <Text style={styles.headerTitle}>Achievements</Text>
           <View style={styles.countBadge}>
@@ -162,6 +166,8 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
           scaleValue={0.95}
           hapticFeedback={true}
           hapticType="light"
+          accessibilityRole="button"
+          accessibilityLabel="View all achievements"
         >
           <View style={styles.viewAllBtn}>
             <Text style={styles.viewAllText}>View All</Text>
@@ -199,7 +205,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
               icon={achievement.icon}
               title={achievement.title}
               progress={achievement.progress}
-              onPress={() => onAchievementPress?.(achievement as any)}
+              onPress={() => onAchievementPress?.({ id: achievement.id, icon: achievement.icon, title: achievement.title })}
             />
           ))}
         </ScrollView>
@@ -209,6 +215,8 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
           scaleValue={0.98}
           hapticFeedback={true}
           hapticType="light"
+          accessibilityRole="button"
+          accessibilityLabel="Start earning achievements"
         >
           <View style={styles.emptyState}>
             <View style={styles.emptyIconRow}>
@@ -273,7 +281,7 @@ const styles = StyleSheet.create({
   countBadge: {
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     paddingHorizontal: ResponsiveTheme.spacing.xs,
-    paddingVertical: 2,
+    paddingVertical: rp(2),
     borderRadius: ResponsiveTheme.borderRadius.sm,
   },
   countText: {
@@ -284,7 +292,7 @@ const styles = StyleSheet.create({
   viewAllBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 2,
+    gap: rp(2),
   },
   viewAllText: {
     fontSize: rf(12),
@@ -356,7 +364,7 @@ const styles = StyleSheet.create({
     bottom: -2,
     borderRadius: rw(26),
     borderWidth: 2,
-    borderTopColor: "#FF6B35",
+    borderTopColor: ResponsiveTheme.colors.primary,
     borderRightColor: "transparent",
     borderBottomColor: "transparent",
     borderLeftColor: "transparent",
@@ -370,8 +378,8 @@ const styles = StyleSheet.create({
   progressPercent: {
     fontSize: rf(9),
     fontWeight: "700",
-    color: "#FF6B35",
-    marginTop: 2,
+    color: ResponsiveTheme.colors.primary,
+    marginTop: rp(2),
   },
   emptyState: {
     alignItems: "center",
@@ -398,7 +406,7 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     fontSize: rf(11),
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: rp(2),
   },
 });
 

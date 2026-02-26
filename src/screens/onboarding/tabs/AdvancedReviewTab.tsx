@@ -1,9 +1,9 @@
 import React from "react";
-import { View, StyleSheet, ScrollView, Text } from "react-native";
+import { View, StyleSheet, ScrollView, Text, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rp } from "../../../utils/responsive";
+import { rf, rp, rbr, rh } from "../../../utils/responsive";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { Button } from "../../../components/ui";
+
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { HeroSection } from "../../../components/ui/aurora";
 import { gradients } from "../../../theme/gradients";
@@ -21,6 +21,8 @@ import { DataSummarySection } from "../../../components/onboarding/review/DataSu
 import { MetabolicProfileSection } from "../../../components/onboarding/review/MetabolicProfileSection";
 import { NutritionalNeedsSection } from "../../../components/onboarding/review/NutritionalNeedsSection";
 import { WeightManagementSection } from "../../../components/onboarding/review/WeightManagementSection";
+import { WarningCard } from "../../../components/onboarding/WarningCard";
+import { ValidationResult } from "../../../services/validationEngine";
 
 interface AdvancedReviewTabProps {
   personalInfo: PersonalInfoData | null;
@@ -46,6 +48,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
   dietPreferences,
   bodyAnalysis,
   workoutPreferences,
+  onBack,
   onComplete,
   onUpdate,
   onUpdateBodyAnalysis,
@@ -59,13 +62,17 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
     validationResults,
     isCalculating,
     calculationError,
-    showAdjustmentWizard,
-    setShowAdjustmentWizard,
+    showErrorWizard,
+    setShowErrorWizard,
+    showWarningWizard,
+    setShowWarningWizard,
     successMessage,
     smartAlternatives,
     selectedAlternativeId,
     handleRateSelection,
     performCalculations,
+    warningsAcknowledged,
+    setWarningsAcknowledged,
   } = useAdvancedReviewForm({
     personalInfo,
     dietPreferences,
@@ -76,11 +83,13 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
     onUpdateWorkoutPreferences,
   });
 
+  const [selectedWarning, setSelectedWarning] = React.useState<ValidationResult | null>(null);
   return (
     <View style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <HeroSection
           image={{
@@ -88,8 +97,8 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
           }}
           overlayGradient={gradients.overlay.dark}
         >
-          <Text style={styles.heroTitle}>Review Your Plan</Text>
-          <Text style={styles.heroSubtitle}>
+          <Text style={styles.heroTitle} numberOfLines={2}>Review Your Plan</Text>
+          <Text style={styles.heroSubtitle} numberOfLines={2}>
             We've analyzed your data to create a personalized plan.
           </Text>
         </HeroSection>
@@ -102,12 +111,12 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
               color={ResponsiveTheme.colors.error}
             />
             <Text style={styles.errorText}>{calculationError}</Text>
-            <Button
-              title="Retry"
+            <Pressable
               onPress={performCalculations}
-              size="sm"
-              variant="outline"
-            />
+              style={{ paddingHorizontal: rp(12), paddingVertical: rp(6), borderRadius: rbr(8), borderWidth: 1, borderColor: ResponsiveTheme.colors.error }}
+            >
+              <Text style={{ color: ResponsiveTheme.colors.error, fontSize: rf(14) }}>Retry</Text>
+            </Pressable>
           </GlassCard>
         )}
 
@@ -144,23 +153,55 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
           onNavigateToTab={onNavigateToTab}
         />
 
-        <View style={styles.buttonContainer}>
-          <Button
-            title="Complete Setup"
-            onPress={onComplete}
-            disabled={!isComplete || isCalculating || !!calculationError}
-            loading={isLoading || isCalculating}
-            style={styles.completeButton}
-          />
-        </View>
+        {!isCalculating && validationResults && validationResults.warnings.length > 0 && (
+          <View style={{ paddingHorizontal: rp(20), marginTop: rp(16) }}>
+            <WarningCard
+              warnings={validationResults.warnings}
+              onAcknowledgmentChange={(acknowledged) => {
+                setWarningsAcknowledged(acknowledged);
+              }}
+              onAdjust={(warning) => {
+                setSelectedWarning(warning);
+                setShowWarningWizard(true);
+              }}
+            />
+          </View>
+        )}
+
+        <View style={{ height: rh(80) }} />
       </ScrollView>
 
-      {showAdjustmentWizard &&
+      <View style={styles.footer}>
+        <Pressable style={styles.backButtonCompact} onPress={onBack}>
+          <Ionicons name="chevron-back" size={rf(18)} color={ResponsiveTheme.colors.text} />
+          <Text style={styles.backButtonText}>Back</Text>
+        </Pressable>
+        <Pressable
+          style={[
+            styles.completeButtonCompact,
+            {
+              backgroundColor: (!isComplete || isCalculating || !!calculationError || ((validationResults?.warnings?.length ?? 0) > 0 && !warningsAcknowledged))
+                ? ResponsiveTheme.colors.textMuted
+                : ResponsiveTheme.colors.primary,
+              opacity: (!isComplete || isCalculating || !!calculationError || ((validationResults?.warnings?.length ?? 0) > 0 && !warningsAcknowledged)) ? 0.5 : 1,
+            }
+          ]}
+          onPress={onComplete}
+          disabled={!isComplete || isCalculating || !!calculationError || ((validationResults?.warnings?.length ?? 0) > 0 && !warningsAcknowledged)}
+        >
+          <Text style={styles.completeButtonText}>
+            {isLoading || isCalculating ? 'Processing...' : 'Complete Setup'}
+          </Text>
+          <Ionicons name="checkmark-circle" size={rf(18)} color={ResponsiveTheme.colors.white} />
+        </Pressable>
+      </View>
+
+      {showErrorWizard &&
         validationResults &&
         validationResults.errors.length > 0 && (
           <AdjustmentWizard
-            visible={showAdjustmentWizard}
-            onClose={() => setShowAdjustmentWizard(false)}
+            visible={showErrorWizard}
+            onClose={() => setShowErrorWizard(false)}
             error={validationResults.errors[0]}
             currentData={{
               bmr: calculatedData?.calculated_bmr || 0,
@@ -175,8 +216,8 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             onSelectAlternative={(alt) => {
               const smartAlt = smartAlternatives?.alternatives.find(
                 (sa) =>
-                  sa.weeklyRate === alt.weeklyRate &&
-                  sa.dailyCalories === alt.dailyCalories,
+                  Math.abs(sa.weeklyRate - alt.weeklyRate) < 0.005 &&
+                  Math.abs(sa.dailyCalories - alt.dailyCalories) < 5,
               );
               if (smartAlt) {
                 handleRateSelection(smartAlt);
@@ -199,6 +240,54 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             }}
           />
         )}
+
+      {showWarningWizard &&
+        selectedWarning && (
+          <AdjustmentWizard
+            visible={showWarningWizard}
+            onClose={() => {
+              setShowWarningWizard(false);
+              setSelectedWarning(null);
+            }}
+            error={selectedWarning}
+            currentData={{
+              bmr: calculatedData?.calculated_bmr || 0,
+              tdee: calculatedData?.calculated_tdee || 0,
+              currentWeight: bodyAnalysis?.current_weight_kg || 0,
+              targetWeight: bodyAnalysis?.target_weight_kg || 0,
+              currentTimeline: bodyAnalysis?.target_timeline_weeks || 0,
+              currentFrequency: workoutPreferences?.workout_frequency_per_week || 0,
+            }}
+            primaryGoals={workoutPreferences?.primary_goals || []}
+            onSelectAlternative={(alt) => {
+              const smartAlt = smartAlternatives?.alternatives.find(
+                (sa) =>
+                  Math.abs(sa.weeklyRate - alt.weeklyRate) < 0.005 &&
+                  Math.abs(sa.dailyCalories - alt.dailyCalories) < 5,
+              );
+              if (smartAlt) {
+                handleRateSelection(smartAlt);
+              } else {
+                handleRateSelection({
+                  id: "warning-adj-" + alt.name,
+                  label: alt.name,
+                  description: alt.approach,
+                  dailyCalories: alt.dailyCalories,
+                  weeklyRate: alt.weeklyRate,
+                  riskLevel: "moderate",
+                  isRecommended: false,
+                  isUserOriginal: false,
+                  bmrDifference: 0,
+                  isBlocked: false,
+                  requiresExercise: !!alt.newWorkoutFrequency,
+                  timelineWeeks: alt.newTimeline || 12,
+                } as SmartAlternative);
+              }
+              setSelectedWarning(null);
+              setShowWarningWizard(false);
+            }}
+          />
+        )}
     </View>
   );
 };
@@ -209,14 +298,57 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.background,
   },
   scrollContent: {
-    paddingBottom: rp(100),
+    paddingBottom: rp(120),
   },
-  buttonContainer: {
-    padding: rp(20),
-    paddingBottom: rp(40),
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    backgroundColor: ResponsiveTheme.colors.background,
+    borderTopWidth: 1,
+    borderTopColor: `${ResponsiveTheme.colors.white}0F`,
+    elevation: 4,
   },
-  completeButton: {
-    width: "100%",
+  backButtonCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.xs,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: ResponsiveTheme.colors.border,
+    minHeight: 52,
+  },
+  backButtonText: {
+    color: ResponsiveTheme.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    lineHeight: rf(18),
+  },
+  completeButtonCompact: {
+    flex: 1,
+    marginLeft: ResponsiveTheme.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: ResponsiveTheme.spacing.xs,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    minHeight: 52,
+  },
+  completeButtonText: {
+    color: ResponsiveTheme.colors.white,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
   },
   successCard: {
     margin: rp(20),
@@ -235,20 +367,20 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: rf(24),
     fontWeight: "bold",
-    color: "#FFFFFF",
+    color: ResponsiveTheme.colors.white,
     marginBottom: rp(8),
     textAlign: "center",
   },
   heroSubtitle: {
     fontSize: rf(16),
-    color: "rgba(255, 255, 255, 0.8)",
+    color: `${ResponsiveTheme.colors.white}CC`,
     textAlign: "center",
     marginBottom: rp(20),
   },
   errorCard: {
     margin: rp(20),
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
-    borderColor: "rgba(239, 68, 68, 0.3)",
+    backgroundColor: `${ResponsiveTheme.colors.error}1A`,
+    borderColor: `${ResponsiveTheme.colors.error}4D`,
     borderWidth: 1,
     padding: rp(16),
     alignItems: "center",

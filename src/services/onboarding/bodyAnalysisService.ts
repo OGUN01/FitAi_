@@ -8,12 +8,6 @@ import {
 export class BodyAnalysisService {
   static async save(userId: string, data: BodyAnalysisData): Promise<boolean> {
     try {
-      console.log(
-        "[DB-SERVICE] BodyAnalysisService.save - Starting save for user:",
-        userId,
-      );
-      console.log("[DB-SERVICE] Input data:", data);
-
       const bodyData: Partial<BodyAnalysisRow> = {
         user_id: userId,
         height_cm: data.height_cm,
@@ -45,8 +39,6 @@ export class BodyAnalysisService {
         updated_at: new Date().toISOString(),
       };
 
-      console.log("[DB-SERVICE] Transformed bodyData for upsert:", bodyData);
-
       const { error } = await supabase.from("body_analysis").upsert(bodyData, {
         onConflict: "user_id",
         ignoreDuplicates: false,
@@ -60,9 +52,6 @@ export class BodyAnalysisService {
         return false;
       }
 
-      console.log(
-        "[DB-SERVICE] BodyAnalysisService: Body analysis saved successfully to database",
-      );
       return true;
     } catch (error) {
       console.error(
@@ -75,11 +64,6 @@ export class BodyAnalysisService {
 
   static async load(userId: string): Promise<BodyAnalysisData | null> {
     try {
-      console.log(
-        "[DB-SERVICE] BodyAnalysisService.load - Loading for user:",
-        userId,
-      );
-
       const { data, error } = await supabase
         .from("body_analysis")
         .select("*")
@@ -95,13 +79,8 @@ export class BodyAnalysisService {
       }
 
       if (!data) {
-        console.log(
-          "[DB-SERVICE] BodyAnalysisService: No body analysis found in database",
-        );
         return null;
       }
-
-      console.log("[DB-SERVICE] Raw data from database:", data);
 
       if (!data.height_cm || data.height_cm === 0) {
         throw new Error("Height is required for BMI and health calculations");
@@ -141,10 +120,6 @@ export class BodyAnalysisService {
         waist_hip_ratio: data.waist_hip_ratio || undefined,
       };
 
-      console.log(
-        "[DB-SERVICE] BodyAnalysisService: Transformed BodyAnalysisData:",
-        bodyAnalysis,
-      );
       return bodyAnalysis;
     } catch (error) {
       console.error("BodyAnalysisService: Unexpected error:", error);
@@ -153,40 +128,23 @@ export class BodyAnalysisService {
   }
 
   static validate(data: BodyAnalysisData | null): TabValidationResult {
-    console.log(
-      "[VALIDATION] validateBodyAnalysis called with data:",
-      data ? "Data provided" : "NULL data",
-    );
     const errors: string[] = [];
     const warnings: string[] = [];
 
     if (!data) {
-      console.log("[VALIDATION] BodyAnalysis data is null - allowing skip");
       warnings.push(
-        "Body analysis skipped - continuing with default recommendations",
+        "No body data entered yet - you can fill in measurements above or continue with defaults",
       );
       return { is_valid: true, errors, warnings, completion_percentage: 0 };
     }
-
-    console.log("[VALIDATION] BodyAnalysis key fields:", {
-      height_cm: data.height_cm,
-      current_weight_kg: data.current_weight_kg,
-      target_weight_kg: data.target_weight_kg,
-      target_timeline_weeks: data.target_timeline_weeks,
-      bmi: data.bmi,
-      bmr: data.bmr,
-    });
 
     const hasMinimumData =
       (data.height_cm && data.height_cm > 0) ||
       (data.current_weight_kg && data.current_weight_kg > 0);
 
     if (!hasMinimumData) {
-      console.log(
-        "[VALIDATION] No minimum data (height or weight) - allowing skip",
-      );
       warnings.push(
-        "Body analysis skipped - continuing with default recommendations",
+        "No body data entered yet - you can fill in measurements above or continue with defaults",
       );
       return { is_valid: true, errors, warnings, completion_percentage: 0 };
     }
@@ -296,38 +254,12 @@ export class BodyAnalysisService {
         (completedOptional / optionalFields.length) * 30,
     );
 
-    console.log(
-      "[VALIDATION] BodyAnalysis completion:",
-      completionPercentage,
-      "% - Basic:",
-      completedBasic,
-      "/",
-      basicFields.length,
-      "Goals:",
-      completedGoals,
-      "/",
-      goalFields.length,
-      "Optional:",
-      completedOptional,
-      "/",
-      optionalFields.length,
-    );
-
     const result = {
       is_valid: errors.length === 0,
       errors,
       warnings,
       completion_percentage: completionPercentage,
     };
-
-    console.log(
-      "[VALIDATION] BodyAnalysis result:",
-      result.is_valid ? "VALID" : "INVALID",
-      "- Errors:",
-      errors.length,
-      "Warnings:",
-      warnings.length,
-    );
 
     return result;
   }

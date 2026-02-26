@@ -36,7 +36,6 @@ export class SyncMonitoringService {
       }, 10000);
 
       this.isMonitoring = true;
-      console.log("Sync monitoring started");
     } catch (error) {
       console.error("Failed to start sync monitoring:", error);
       throw error;
@@ -54,7 +53,6 @@ export class SyncMonitoringService {
     await this.metricsManager.saveMetrics();
     await this.healthMonitor.saveHistory();
     this.isMonitoring = false;
-    console.log("Sync monitoring stopped");
   }
 
   getMetrics(): SyncMetrics {

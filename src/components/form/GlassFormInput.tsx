@@ -133,10 +133,10 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
     borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: ResponsiveTheme.colors.glassHighlight,
     overflow: "hidden",
   },
   inputError: {
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: rw(48),
     fontSize: rf(15),
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     paddingHorizontal: ResponsiveTheme.spacing.md,
   },
   inputNoIcon: {

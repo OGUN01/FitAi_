@@ -208,7 +208,6 @@ export function findLocalExerciseMapping(
 
   if (LOCAL_EXERCISE_MAPPING.has(cleanName)) {
     const exercise = LOCAL_EXERCISE_MAPPING.get(cleanName)!;
-    console.log(`✅ Direct local match found for "${cleanName}"`);
     return exercise;
   }
 
@@ -245,7 +244,6 @@ export function findLocalExerciseMapping(
 
   for (const fuzzyName of fuzzyMatches) {
     if (fuzzyName && LOCAL_EXERCISE_MAPPING.has(fuzzyName)) {
-      console.log(`🔍 Fuzzy matched "${cleanName}" to "${fuzzyName}"`);
       return LOCAL_EXERCISE_MAPPING.get(fuzzyName)!;
     }
   }

@@ -17,7 +17,7 @@ import Svg, {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { ResponsiveTheme } from "../../../../utils/constants";
-import { rf, rw, rh } from "../../../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../../../utils/responsive";
 import {
   GridLines,
   YAxisLabels,
@@ -175,20 +175,20 @@ export const LineChart: React.FC<LineChartProps> = ({
               styles.trendBadge,
               {
                 backgroundColor: isPositiveTrend
-                  ? "rgba(76, 175, 80, 0.15)"
-                  : "rgba(244, 67, 54, 0.15)",
+                  ? ResponsiveTheme.colors.successTint
+                  : ResponsiveTheme.colors.errorTint,
               },
             ]}
           >
             <Ionicons
               name={isPositiveTrend ? "trending-up" : "trending-down"}
               size={rf(12)}
-              color={isPositiveTrend ? "#4CAF50" : "#F44336"}
+              color={isPositiveTrend ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.error}
             />
             <Text
               style={[
                 styles.trendText,
-                { color: isPositiveTrend ? "#4CAF50" : "#F44336" },
+                { color: isPositiveTrend ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.error },
               ]}
             >
               {Math.abs(parseFloat(trendPercent))}%
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    marginBottom: 2,
+    marginBottom: rp(2),
   },
   currentValue: {
     fontSize: rf(28),
@@ -336,9 +336,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: 4,
-    borderRadius: rw(12),
-    gap: 4,
+    paddingVertical: rp(4),
+    borderRadius: rbr(12),
+    gap: rp(4),
   },
   trendText: {
     fontSize: rf(12),
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
     fontSize: rf(9),
     fontWeight: "500",
     color: ResponsiveTheme.colors.textMuted,
-    marginTop: 4,
+    marginTop: rp(4),
   },
   chartInsight: {
     flexDirection: "row",
@@ -357,8 +357,8 @@ const styles = StyleSheet.create({
     marginTop: ResponsiveTheme.spacing.md,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.sm,
-    backgroundColor: "rgba(255,255,255,0.03)",
-    borderRadius: rw(20),
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    borderRadius: rbr(20),
   },
   chartInsightText: {
     fontSize: rf(11),
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
   emptyChartIconContainer: {
     width: rw(70),
     height: rw(70),
-    borderRadius: rw(35),
+    borderRadius: rbr(35),
     justifyContent: "center",
     alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.sm,
@@ -408,8 +408,8 @@ const styles = StyleSheet.create({
     marginTop: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.xs,
-    backgroundColor: "rgba(255, 107, 53, 0.1)",
-    borderRadius: rw(16),
+    backgroundColor: ResponsiveTheme.colors.primaryTint,
+    borderRadius: rbr(16),
   },
   emptyChartHintText: {
     fontSize: rf(11),

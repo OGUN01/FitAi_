@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf } from "../../utils/responsive";
+import { rf, rp } from "../../utils/responsive";
 
 interface AboutFitAISocialButtonsProps {
   onSocialPress: (platform: string) => void;
@@ -89,11 +89,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: ResponsiveTheme.spacing.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
   },
   socialText: {
     fontSize: rf(12),
     fontWeight: "500",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
   },
 });

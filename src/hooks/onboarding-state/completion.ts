@@ -14,14 +14,6 @@ export const useCompletion = (
 ) => {
   const completeOnboarding = useCallback(async (): Promise<boolean> => {
     try {
-      console.log("🎯 completeOnboarding called");
-      console.log(
-        "👤 User authenticated:",
-        isAuthenticated,
-        "User ID:",
-        userId,
-      );
-
       const validationResults = validateAllTabs();
       const allValid = Object.values(validationResults).every(
         (result) => result.is_valid,
@@ -36,18 +28,11 @@ export const useCompletion = (
         return false;
       }
 
-      console.log("✅ All tabs validated successfully");
-
       if (isAuthenticated && userId) {
-        console.log("💾 Attempting to save to database...");
         try {
           const dbSuccess = await saveToDatabase();
           if (dbSuccess) {
-            console.log("✅ Database save successful");
             invalidateMetricsCache();
-            console.log(
-              "🔄 Metrics cache invalidated - screens will load fresh data",
-            );
           } else {
             console.warn(
               "⚠️ Database save failed, continuing with local save for guest mode",
@@ -66,7 +51,6 @@ export const useCompletion = (
           }));
         }
       } else {
-        console.log("👤 Guest user - skipping database save");
         invalidateMetricsCache();
       }
 
@@ -94,7 +78,6 @@ export const useCompletion = (
 
       try {
         await AsyncStorage.setItem("onboarding_completed", "true");
-        console.log("✅ Onboarding marked as complete in AsyncStorage");
       } catch (error) {
         console.error(
           "❌ Failed to mark onboarding complete in AsyncStorage:",
@@ -102,7 +85,6 @@ export const useCompletion = (
         );
       }
 
-      console.log("🎉 Onboarding completion successful - returning true");
       return true;
     } catch (error) {
       const message =

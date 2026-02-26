@@ -281,6 +281,7 @@ export function useAsyncMealGeneration(): UseAsyncMealGenerationResult {
           // Timeout after max attempts
           setError("Generation timeout - please check your jobs later");
           setIsLoading(false);
+          AsyncStorage.removeItem(STORAGE_KEY);
         }
       };
 

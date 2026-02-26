@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh } from "../../../utils/responsive";
+import { rf, rw, rh, rp } from "../../../utils/responsive";
 import { colors } from "../../../theme/aurora-tokens";
 import { useProfileStore } from "../../../stores/profileStore";
 
@@ -163,7 +163,7 @@ const RecoveryTipCard: React.FC<{ tip: RecoveryTip; index: number }> = ({
           end={{ x: 1, y: 1 }}
           style={styles.tipIconContainer}
         >
-          <Ionicons name={tip.icon} size={rf(20)} color="#fff" />
+          <Ionicons name={tip.icon} size={rf(20)} color={ResponsiveTheme.colors.white} />
         </LinearGradient>
         <View style={styles.tipTextContainer}>
           <View style={styles.tipHeader}>
@@ -226,7 +226,7 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
                   end={{ x: 1, y: 1 }}
                   style={styles.headerIconContainer}
                 >
-                  <Ionicons name="leaf" size={rf(24)} color="#fff" />
+                  <Ionicons name="leaf" size={rf(24)} color={ResponsiveTheme.colors.white} />
                 </LinearGradient>
                 <View style={styles.headerText}>
                   <Text style={styles.headerTitle}>Recovery Tips</Text>
@@ -240,6 +240,7 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
                   hapticFeedback={true}
                   hapticType="light"
                   style={styles.closeButton}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <Ionicons
                     name="close"
@@ -258,7 +259,7 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
                 {/* Intro Card */}
                 <Animated.View entering={FadeIn.delay(50).duration(300)}>
                   <View style={styles.introCard}>
-                    <Ionicons name="sparkles" size={rf(18)} color="#FFD700" />
+                    <Ionicons name="sparkles" size={rf(18)} color={ResponsiveTheme.colors.gold} />
                     <Text style={styles.introText}>
                       Rest days are crucial for muscle recovery, preventing
                       overtraining, and achieving your fitness goals. Here's how
@@ -305,7 +306,7 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
                     <Ionicons
                       name="checkmark-circle"
                       size={rf(18)}
-                      color="#fff"
+                      color={ResponsiveTheme.colors.white}
                     />
                   </LinearGradient>
                 </AnimatedPressable>
@@ -337,7 +338,7 @@ const styles = StyleSheet.create({
     maxHeight: "85%",
   },
   modalContent: {
-    backgroundColor: "#1a1a2e",
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     borderRadius: ResponsiveTheme.borderRadius.xl,
     overflow: "hidden",
     borderWidth: 1,
@@ -369,7 +370,7 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: rf(12),
     color: colors.text.secondary,
-    marginTop: 2,
+    marginTop: rp(2),
   },
   closeButton: {
     width: rw(36),
@@ -427,7 +428,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 4,
+    marginBottom: rp(4),
   },
   tipTitle: {
     fontSize: rf(14),
@@ -437,10 +438,10 @@ const styles = StyleSheet.create({
   durationBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 3,
+    gap: rp(3),
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     paddingHorizontal: ResponsiveTheme.spacing.xs,
-    paddingVertical: 2,
+    paddingVertical: rp(2),
     borderRadius: ResponsiveTheme.borderRadius.sm,
   },
   durationText: {
@@ -491,7 +492,7 @@ const styles = StyleSheet.create({
   gotItButtonText: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     letterSpacing: 0.5,
   },
 });

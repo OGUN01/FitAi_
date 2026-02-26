@@ -31,8 +31,9 @@ export function warnMedicalConditions(
 export function warnHeartDisease(
   medicalConditions: string[],
   intensity: string,
+  isAggressive: boolean,
 ): ValidationResult {
-  if (medicalConditions.includes("heart-disease")) {
+  if (medicalConditions.includes("heart-disease") && isAggressive) {
     return {
       status: "WARNING",
       code: "HEART_DISEASE_CLEARANCE",

@@ -2,7 +2,8 @@ import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
-import { rf } from "../../utils/responsive";
+import { rf, rp, rbr } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
 import { UsageCounter } from "./UsageCounter";
 
 // ============================================================================
@@ -21,9 +22,9 @@ interface PremiumBadgeProps {
 // ============================================================================
 
 const TIER_GRADIENTS: Record<string, readonly [string, string, ...string[]]> = {
-  pro: ["#FF8A5C", "#EC4899"],
-  basic: ["#4ADE80", "#3B82F6"],
-  free: ["#FBBF24", "#F97316"],
+  pro: [ResponsiveTheme.colors.primaryLight, ResponsiveTheme.colors.pink],
+  basic: [ResponsiveTheme.colors.successBright, ResponsiveTheme.colors.blue],
+  free: [ResponsiveTheme.colors.amberBright, ResponsiveTheme.colors.orange],
 };
 
 const TIER_LABELS: Record<string, string> = {
@@ -60,19 +61,19 @@ const PremiumBadge: React.FC<PremiumBadgeProps> = ({
     switch (size) {
       case "small":
         return {
-          containerPadding: { paddingHorizontal: 8, paddingVertical: 4 },
+          containerPadding: { paddingHorizontal: rp(8), paddingVertical: rp(4) },
           textStyle: { fontSize: rf(12) },
           iconStyle: { fontSize: rf(14) },
         };
       case "large":
         return {
-          containerPadding: { paddingHorizontal: 16, paddingVertical: 8 },
+          containerPadding: { paddingHorizontal: rp(16), paddingVertical: rp(8) },
           textStyle: { fontSize: rf(16), fontWeight: "700" as const },
           iconStyle: { fontSize: rf(18) },
         };
       default:
         return {
-          containerPadding: { paddingHorizontal: 12, paddingVertical: 6 },
+          containerPadding: { paddingHorizontal: rp(12), paddingVertical: rp(6) },
           textStyle: { fontSize: rf(14), fontWeight: "600" as const },
           iconStyle: { fontSize: rf(16) },
         };
@@ -232,20 +233,20 @@ const styles = StyleSheet.create({
   badgeContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 9999,
+    borderRadius: rbr(9999),
   },
-  badgeText: { color: "#FFFFFF" },
+  badgeText: { color: ResponsiveTheme.colors.white },
   badgeWithUsage: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: rp(8),
   },
-  icon: { marginRight: 4 },
+  icon: { marginRight: rp(4) },
   banner: {
-    padding: 16,
-    borderRadius: 16,
-    marginHorizontal: 16,
-    marginVertical: 8,
+    padding: rp(16),
+    borderRadius: rbr(16),
+    marginHorizontal: rp(16),
+    marginVertical: rp(8),
   },
   bannerContent: {
     flexDirection: "row",
@@ -254,34 +255,34 @@ const styles = StyleSheet.create({
   },
   bannerTextContainer: { flex: 1 },
   bannerHeader: { flexDirection: "row", alignItems: "center" },
-  bannerIcon: { fontSize: rf(24), marginRight: 8 },
-  bannerTitle: { color: "#FFFFFF", fontWeight: "700", fontSize: rf(18) },
+  bannerIcon: { fontSize: rf(24), marginRight: rp(8) },
+  bannerTitle: { color: ResponsiveTheme.colors.white, fontWeight: "700", fontSize: rf(18) },
   bannerSubtitle: {
     color: "rgba(255, 255, 255, 0.9)",
     fontSize: rf(14),
-    marginTop: 4,
+    marginTop: rp(4),
   },
   bannerButton: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 9999,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    borderRadius: rbr(9999),
+    paddingHorizontal: rp(16),
+    paddingVertical: rp(8),
   },
-  bannerButtonText: { color: "#FFFFFF", fontWeight: "700", fontSize: rf(14) },
+  bannerButtonText: { color: ResponsiveTheme.colors.white, fontWeight: "700", fontSize: rf(14) },
   bannerUsageRow: {
     flexDirection: "row",
     justifyContent: "space-around",
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: rp(12),
+    paddingTop: rp(12),
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.2)",
   },
   inlineContainer: { flexDirection: "row", alignItems: "center" },
-  inlineIconYellow: { fontSize: rf(16), marginRight: 4 },
-  inlineTextYellow: { color: "#D97706", fontSize: rf(14), fontWeight: "500" },
-  inlineTextPurple: { color: "#9333EA", fontSize: rf(14), fontWeight: "500" },
-  inlineTextGreen: { color: "#16A34A", fontSize: rf(14), fontWeight: "500" },
-  inlineUsageSpacer: { marginLeft: 8 },
+  inlineIconYellow: { fontSize: rf(16), marginRight: rp(4) },
+  inlineTextYellow: { color: ResponsiveTheme.colors.warningAlt, fontSize: rf(14), fontWeight: "500" },
+  inlineTextPurple: { color: ResponsiveTheme.colors.purple, fontSize: rf(14), fontWeight: "500" },
+  inlineTextGreen: { color: ResponsiveTheme.colors.successAlt, fontSize: rf(14), fontWeight: "500" },
+  inlineUsageSpacer: { marginLeft: rp(8) },
 });
 
 export default PremiumBadge;

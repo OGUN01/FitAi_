@@ -1,6 +1,8 @@
-import React from "react";
+﻿import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { THEME } from "../ui";
+import { ResponsiveTheme } from '../../utils/constants';
+import { rw, rh, rbr } from '../../utils/responsive';
+
 
 interface MealDetailHeaderProps {
   onBack?: () => void;
@@ -29,42 +31,42 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: THEME.colors.border,
+    borderBottomColor: ResponsiveTheme.colors.border,
   },
 
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: THEME.colors.surface,
+    width: rw(40),
+    height: rh(40),
+    borderRadius: rbr(20),
+    backgroundColor: ResponsiveTheme.colors.surface,
     alignItems: "center" as const,
     justifyContent: "center" as const,
   },
 
   backIcon: {
-    fontSize: THEME.fontSize.lg,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    color: ResponsiveTheme.colors.text,
   },
 
   headerTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
   },
 
   editButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: THEME.colors.surface,
+    width: rw(40),
+    height: rh(40),
+    borderRadius: rbr(20),
+    backgroundColor: ResponsiveTheme.colors.surface,
     alignItems: "center" as const,
     justifyContent: "center" as const,
   },
 
   editIcon: {
-    fontSize: THEME.fontSize.md,
+    fontSize: ResponsiveTheme.fontSize.md,
   },
 });

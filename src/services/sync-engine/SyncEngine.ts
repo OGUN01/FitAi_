@@ -24,7 +24,6 @@ export class SyncEngine {
 
   private handleAuthChange(userId: string | null): void {
     if (userId && this.lifecycleManager.getIsOnline()) {
-      console.log("[SyncEngine] Triggering auto-sync after login...");
       this.syncAll(userId);
     }
   }
@@ -42,9 +41,6 @@ export class SyncEngine {
       this.lifecycleManager.getIsOnline() &&
       this.queueManager.getQueueLength() > 0
     ) {
-      console.log(
-        `[SyncEngine] Found ${this.queueManager.getQueueLength()} pending operations, processing...`,
-      );
       this.processQueue();
     }
   }
@@ -87,10 +83,8 @@ export class SyncEngine {
   }
 
   private async syncAllInternal(userId: string): Promise<SyncResult> {
-    console.log(`[SyncEngine] Syncing all data for user: ${userId}`);
 
     if (!this.lifecycleManager.getIsOnline()) {
-      console.warn("[SyncEngine] Cannot sync: offline");
       return {
         success: false,
         syncedItems: 0,
@@ -121,9 +115,6 @@ export class SyncEngine {
     await this.lifecycleManager.setLastSyncAt(new Date().toISOString());
 
     result.success = result.failedItems === 0;
-    console.log(
-      `[SyncEngine] Sync all complete. Synced: ${result.syncedItems}, Failed: ${result.failedItems}`,
-    );
 
     return result;
   }
@@ -135,9 +126,6 @@ export class SyncEngine {
     workoutPreferences: any | null;
     advancedReview: any | null;
   }> {
-    console.log(
-      `[SyncEngine] Loading all data from database for user: ${userId}`,
-    );
 
     const result: {
       personalInfo: any | null;
@@ -162,7 +150,6 @@ export class SyncEngine {
 
       if (profileData && !profileError) {
         result.personalInfo = profileData;
-        console.log("[SyncEngine] Loaded personal info");
       }
 
       const { data: dietData, error: dietError } = await supabase
@@ -173,7 +160,6 @@ export class SyncEngine {
 
       if (dietData && !dietError) {
         result.dietPreferences = dietData;
-        console.log("[SyncEngine] Loaded diet preferences");
       }
 
       const { data: bodyData, error: bodyError } = await supabase
@@ -184,7 +170,6 @@ export class SyncEngine {
 
       if (bodyData && !bodyError) {
         result.bodyAnalysis = bodyData;
-        console.log("[SyncEngine] Loaded body analysis");
       }
 
       const { data: workoutData, error: workoutError } = await supabase
@@ -195,7 +180,6 @@ export class SyncEngine {
 
       if (workoutData && !workoutError) {
         result.workoutPreferences = workoutData;
-        console.log("[SyncEngine] Loaded workout preferences");
       }
 
       const { data: advancedData, error: advancedError } = await supabase
@@ -206,10 +190,8 @@ export class SyncEngine {
 
       if (advancedData && !advancedError) {
         result.advancedReview = advancedData;
-        console.log("[SyncEngine] Loaded advanced review");
       }
 
-      console.log("[SyncEngine] Database load complete");
       return result;
     } catch (error) {
       console.error("[SyncEngine] Failed to load from database:", error);
@@ -229,8 +211,6 @@ export class SyncEngine {
   }
 
   destroy(): void {
-    console.log("[SyncEngine] Destroying...");
     this.lifecycleManager.destroy();
-    console.log("[SyncEngine] Destroyed");
   }
 }

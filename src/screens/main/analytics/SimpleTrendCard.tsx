@@ -1,10 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh } from "../../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../../utils/responsive";
 import { TrendData } from "../../../hooks/useProgressTrendsLogic";
+import { haptics } from "../../../utils/haptics";
 
 interface SimpleTrendCardProps {
   title: string;
@@ -12,6 +13,7 @@ interface SimpleTrendCardProps {
   trend: TrendData | null;
   unit: string;
   color: string;
+  ctaLabel?: string;
 }
 
 export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
@@ -20,6 +22,7 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
   trend,
   unit,
   color,
+  ctaLabel,
 }) => {
   return (
     <Animated.View
@@ -55,7 +58,7 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
               <Text
                 style={[
                   styles.trendStatValue,
-                  { color: trend.change >= 0 ? "#4CAF50" : "#FF5252" },
+                  { color: trend.change >= 0 ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.error },
                 ]}
               >
                 {trend.change >= 0 ? "+" : ""}
@@ -85,6 +88,15 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
           <Text style={styles.noDataSubtext}>
             Keep tracking to see your trends
           </Text>
+          {ctaLabel ? (
+            <TouchableOpacity
+              style={styles.ctaButton}
+              onPress={() => haptics.light()}
+              activeOpacity={0.75}
+            >
+              <Text style={styles.ctaButtonText}>{ctaLabel}</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       )}
     </Animated.View>
@@ -94,21 +106,21 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
 const styles = StyleSheet.create({
   trendCard: {
     backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: 16,
-    padding: rw(16),
+    borderRadius: rbr(16),
+    padding: rp(16),
   },
   trendHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: rh(12),
+    marginBottom: rp(12),
   },
   trendIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: rw(36),
+    height: rw(36),
+    borderRadius: rbr(10),
     alignItems: "center",
     justifyContent: "center",
-    marginRight: rw(12),
+    marginRight: rp(12),
   },
   trendTitle: {
     fontSize: rf(16),
@@ -118,7 +130,7 @@ const styles = StyleSheet.create({
   trendStats: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: rh(12),
+    marginBottom: rp(12),
   },
   trendStatItem: {
     alignItems: "center",
@@ -131,32 +143,46 @@ const styles = StyleSheet.create({
     fontSize: rf(16),
     fontWeight: "600",
     color: ResponsiveTheme.colors.text,
-    marginTop: rh(2),
+    marginTop: rp(2),
   },
   miniChart: {
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "space-between",
-    height: 50,
-    paddingTop: rh(10),
+    height: rh(50),
+    paddingTop: rp(10),
   },
   chartBar: {
-    width: 8,
-    borderRadius: 4,
+    width: rw(8),
+    borderRadius: rbr(4),
     opacity: 0.8,
   },
   noDataContainer: {
-    alignItems: "center",
-    paddingVertical: rh(20),
+    alignItems: "flex-start",
+    paddingVertical: rp(20),
   },
   noDataText: {
     fontSize: rf(14),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: ResponsiveTheme.colors.text,
   },
   noDataSubtext: {
     fontSize: rf(12),
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: rh(4),
+    marginTop: rp(4),
+  },
+  ctaButton: {
+    marginTop: rp(12),
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderRadius: rbr(24),
+    paddingHorizontal: rp(20),
+    paddingVertical: rp(10),
+    alignSelf: "flex-start",
+  },
+  ctaButtonText: {
+    fontSize: rf(13),
+    fontWeight: "600",
+    color: ResponsiveTheme.colors.background,
+    letterSpacing: 0.3,
   },
 });

@@ -11,7 +11,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { DayWorkout } from "../../types/ai";
 
 interface SuggestedWorkout {
@@ -134,7 +134,7 @@ export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
                   <Ionicons
                     name={categoryConfig.icon}
                     size={rf(28)}
-                    color="#fff"
+                    color={ResponsiveTheme.colors.white}
                   />
                 </LinearGradient>
 
@@ -160,7 +160,7 @@ export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
                       color={ResponsiveTheme.colors.textSecondary}
                     />
                     <Text style={styles.metaText}>
-                      {workout.estimatedCalories} cal
+                      {workout.estimatedCalories || 0} cal
                     </Text>
                   </View>
                 </View>
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   metaItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 3,
+    gap: rp(3),
   },
   metaText: {
     fontSize: rf(10),
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
   },
   difficultyBadge: {
     paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: 3,
+    paddingVertical: rp(3),
     borderRadius: ResponsiveTheme.borderRadius.full,
     marginBottom: ResponsiveTheme.spacing.md,
   },
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
   startButtonText: {
     fontSize: rf(11),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     letterSpacing: 0.5,
   },
 });

@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { THEME } from "../../ui";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rf, rp, rbr } from "../../../utils/responsive";
 import { Exercise } from "../../../types/workout";
 
 interface ExerciseCardSectionsProps {
@@ -85,91 +86,91 @@ export const ExerciseCardSections: React.FC<ExerciseCardSectionsProps> = ({
 
 const styles = StyleSheet.create({
   sectionTitle: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   muscleGroupsSection: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   muscleGroupsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: THEME.spacing.xs,
+    gap: ResponsiveTheme.spacing.xs,
   },
 
   muscleGroupChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: rp(8),
+    paddingVertical: rp(4),
+    borderRadius: rbr(12),
   },
 
   muscleGroupText: {
-    color: THEME.colors.white,
-    fontSize: THEME.fontSize.xs,
-    fontWeight: THEME.fontWeight.medium,
+    color: ResponsiveTheme.colors.white,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
     textTransform: "capitalize",
   },
 
   equipmentSection: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   equipmentContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: THEME.spacing.xs,
+    gap: ResponsiveTheme.spacing.xs,
   },
 
   equipmentChip: {
-    backgroundColor: THEME.colors.backgroundSecondary,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    paddingHorizontal: rp(8),
+    paddingVertical: rp(4),
+    borderRadius: rbr(12),
   },
 
   equipmentText: {
-    color: THEME.colors.text,
-    fontSize: THEME.fontSize.xs,
-    fontWeight: THEME.fontWeight.medium,
+    color: ResponsiveTheme.colors.text,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
     textTransform: "capitalize",
   },
 
   instructionsSection: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   instructionItem: {
     flexDirection: "row",
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   instructionNumber: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.primary,
-    marginRight: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
+    marginRight: ResponsiveTheme.spacing.sm,
     minWidth: 20,
   },
 
   instructionText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
     flex: 1,
-    lineHeight: 20,
+    lineHeight: rf(20),
   },
 
   tipsSection: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   tipText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.xs,
-    lineHeight: 18,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.xs,
+    lineHeight: rf(18),
   },
 });

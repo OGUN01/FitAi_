@@ -1,16 +1,25 @@
-import { useState, useEffect } from "react";
-import { Alert } from "react-native";
+import { useState, useEffect, useCallback } from "react";
+import { Alert, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "./useAuth";
 import { useUser } from "./useUser";
+import { useProfileStore } from "../stores/profileStore";
 import { useUnifiedStats } from "./useUnifiedStats";
 import { clearAllUserData } from "../utils/clearUserData";
 import type { SettingItem } from "../screens/main/profile";
+
+// AsyncStorage keys for settings preferences
+const STORAGE_KEY_THEME = "@fitai_theme_preference";
+const STORAGE_KEY_UNITS = "@fitai_units_preference";
+
+export type ThemePreference = "dark" | "light" | "system";
+export type UnitsPreference = "metric" | "imperial";
 
 export const useProfileLogic = () => {
   const { user, isAuthenticated, isGuestMode, logout, guestId } = useAuth();
   const { profile, clearProfile } = useUser();
   const userStats = useUnifiedStats();
+  const { bodyAnalysis } = useProfileStore();
 
   // State
   const [currentSettingsScreen, setCurrentSettingsScreen] = useState<
@@ -19,6 +28,43 @@ export const useProfileLogic = () => {
   const [showGuestSignUp, setShowGuestSignUp] = useState(false);
   const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
   const [showEditModal, setShowEditModal] = useState<string | null>(null);
+
+  // Settings modal state
+  const [showThemeModal, setShowThemeModal] = useState(false);
+  const [showUnitsModal, setShowUnitsModal] = useState(false);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [showClearCacheModal, setShowClearCacheModal] = useState(false);
+
+  // Persisted preferences
+  const [themePreference, setThemePreference] =
+    useState<ThemePreference>("system");
+  const [unitsPreference, setUnitsPreference] =
+    useState<UnitsPreference>("metric");
+
+  // Load persisted preferences on mount
+  useEffect(() => {
+    const loadPreferences = async () => {
+      try {
+        const [savedTheme, savedUnits] = await Promise.all([
+          AsyncStorage.getItem(STORAGE_KEY_THEME),
+          AsyncStorage.getItem(STORAGE_KEY_UNITS),
+        ]);
+        if (
+          savedTheme === "dark" ||
+          savedTheme === "light" ||
+          savedTheme === "system"
+        ) {
+          setThemePreference(savedTheme);
+        }
+        if (savedUnits === "metric" || savedUnits === "imperial") {
+          setUnitsPreference(savedUnits);
+        }
+      } catch (error) {
+        console.error("[useProfileLogic] Error loading preferences:", error);
+      }
+    };
+    loadPreferences();
+  }, []);
 
   // Check for profile edit intent on mount
   useEffect(() => {
@@ -82,6 +128,61 @@ export const useProfileLogic = () => {
     setShowLogoutConfirmation(false);
   };
 
+  // Theme handler — persist and apply
+  const handleThemeSelect = useCallback(async (value: string) => {
+    const theme = value as ThemePreference;
+    setThemePreference(theme);
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY_THEME, theme);
+      console.log("[useProfileLogic] Theme preference saved:", theme);
+    } catch (error) {
+      console.error("[useProfileLogic] Error saving theme:", error);
+    }
+    setShowThemeModal(false);
+  }, []);
+
+  // Units handler — persist choice
+  const handleUnitsSelect = useCallback(async (value: string) => {
+    const units = value as UnitsPreference;
+    setUnitsPreference(units);
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY_UNITS, units);
+      console.log("[useProfileLogic] Units preference saved:", units);
+    } catch (error) {
+      console.error("[useProfileLogic] Error saving units:", error);
+    }
+    setShowUnitsModal(false);
+  }, []);
+
+  // Language handler — currently single-language, just close
+  const handleLanguageSelect = useCallback((_value: string) => {
+    // English is currently the only supported language
+    setShowLanguageModal(false);
+  }, []);
+
+  // Clear cache handler
+  const handleClearCache = useCallback(async () => {
+    try {
+      // Clear image / fetch caches stored in AsyncStorage (preserve auth & preferences)
+      const allKeys = await AsyncStorage.getAllKeys();
+      const cacheKeys = allKeys.filter(
+        (key) =>
+          key.startsWith("@fitai_cache_") ||
+          key.startsWith("@fitai_image_") ||
+          key.startsWith("@fitai_temp_"),
+      );
+      if (cacheKeys.length > 0) {
+        await AsyncStorage.multiRemove(cacheKeys);
+      }
+      console.log(
+        `[useProfileLogic] Cache cleared (${cacheKeys.length} entries removed)`,
+      );
+    } catch (error) {
+      console.error("[useProfileLogic] Error clearing cache:", error);
+    }
+    setShowClearCacheModal(false);
+  }, []);
+
   const handleSettingItemPress = (item: SettingItem) => {
     console.log("[ProfileScreen] Setting item pressed:", item.id);
 
@@ -105,13 +206,13 @@ export const useProfileLogic = () => {
         setCurrentSettingsScreen("notifications");
         break;
       case "theme":
-        Alert.alert("Theme", "Theme selection coming soon!");
+        setShowThemeModal(true);
         break;
       case "units":
-        Alert.alert("Units", "Units selection coming soon!");
+        setShowUnitsModal(true);
         break;
       case "language":
-        Alert.alert("Language", "Language selection coming soon!");
+        setShowLanguageModal(true);
         break;
       case "privacy":
         setCurrentSettingsScreen("privacy");
@@ -126,32 +227,69 @@ export const useProfileLogic = () => {
         Alert.alert("Terms & Privacy", "Opening legal documents...");
         break;
       case "export":
-        Alert.alert("Export Data", "Export feature coming soon!");
+        if (Platform.OS === 'web') {
+          window.alert('Export Data\n\nExport feature coming soon!');
+        } else {
+          Alert.alert('Export Data', 'Export feature coming soon!');
+        }
         break;
       case "sync":
-        Alert.alert("Sync", "Sync settings coming soon!");
+        if (Platform.OS === 'web') {
+          window.alert('Sync\n\nSync settings coming soon!');
+        } else {
+          Alert.alert('Sync', 'Sync settings coming soon!');
+        }
         break;
       case "wearables":
         setCurrentSettingsScreen("wearables");
         break;
       case "cache":
-        Alert.alert(
-          "Clear Cache",
-          "Are you sure you want to clear the cache?",
-          [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Clear",
-              style: "destructive",
-              onPress: () => console.log("Cache cleared"),
-            },
-          ],
-        );
+        setShowClearCacheModal(true);
         break;
       default:
         console.log("[ProfileScreen] Unknown setting:", item.id);
     }
   };
+
+  // Stat card press handlers
+  const handleStatPress = useCallback((statId: string) => {
+    const showAlert = (title: string, message: string) => {
+      if (Platform.OS === 'web') {
+        window.alert(`${title}\n\n${message}`);
+      } else {
+        Alert.alert(title, message);
+      }
+    };
+    switch (statId) {
+      case 'current-streak': {
+        const streak = userStats?.currentStreak || 0;
+        showAlert('🔥 Day Streak', `You're on a ${streak} day streak! Keep it up!`);
+        break;
+      }
+      case 'workouts': {
+        const workouts = userStats?.totalWorkouts || 0;
+        showAlert('💪 Workouts', `You've completed ${workouts} workout${workouts === 1 ? '' : 's'}. ${workouts === 0 ? 'Start your first workout!' : 'Amazing progress!'}`);
+        break;
+      }
+      case 'calories': {
+        const cals = userStats?.totalCaloriesBurned || 0;
+        showAlert('🔥 Calories Burned', `${cals} calories burned. Great progress!`);
+        break;
+      }
+      case 'best-streak': {
+        const best = userStats?.longestStreak || 0;
+        showAlert('🏆 Best Streak', `Your best streak is ${best} day${best === 1 ? '' : 's'}. Can you beat it?`);
+        break;
+      }
+      case 'achievements': {
+        const count = userStats?.achievements || 0;
+        showAlert('🎖️ Achievements', `${count} achievement${count === 1 ? '' : 's'} earned. ${count === 0 ? 'Complete workouts to unlock achievements!' : 'Keep going!'}`);
+        break;
+      }
+      default:
+        break;
+    }
+  }, [userStats]);
 
   // Check profile completion
   const isProfileIncomplete = (section: string): boolean => {
@@ -165,7 +303,9 @@ export const useProfileLogic = () => {
           profile.fitnessGoals.primary_goals.length === 0
         );
       case "measurements":
-        return !profile.bodyMetrics?.height || !profile.bodyMetrics?.weight;
+        const height = profile.bodyMetrics?.height_cm || bodyAnalysis?.height_cm;
+        const weight = profile.bodyMetrics?.current_weight_kg || bodyAnalysis?.current_weight_kg;
+        return !height || !weight;
       default:
         return false;
     }
@@ -207,6 +347,19 @@ export const useProfileLogic = () => {
     },
   ];
 
+  // Derive theme subtitle from current preference
+  const themeSubtitleMap: Record<ThemePreference, string> = {
+    dark: "Dark mode",
+    light: "Light mode",
+    system: "System default",
+  };
+
+  // Derive units subtitle from current preference
+  const unitsSubtitleMap: Record<UnitsPreference, string> = {
+    metric: "Metric (kg, cm)",
+    imperial: "Imperial (lbs, in)",
+  };
+
   const preferencesItems: SettingItem[] = [
     {
       id: "notifications",
@@ -218,14 +371,14 @@ export const useProfileLogic = () => {
     {
       id: "theme",
       title: "Theme Preference",
-      subtitle: "Dark, light, auto",
+      subtitle: themeSubtitleMap[themePreference],
       icon: "color-palette-outline",
       iconColor: "#FF6B35",
     },
     {
       id: "units",
       title: "Units",
-      subtitle: "Metric or Imperial",
+      subtitle: unitsSubtitleMap[unitsPreference],
       icon: "speedometer-outline",
       iconColor: "#00BCD4",
     },
@@ -296,12 +449,20 @@ export const useProfileLogic = () => {
 
   // Get user display info
   const userName = profile?.personalInfo?.name; // NO FALLBACK - single source of truth
-  const memberSince = user?.createdAt
-    ? new Date(user.createdAt).toLocaleDateString("en-US", {
-        month: "short",
-        year: "numeric",
-      })
-    : "Recently";
+  const memberSince = (() => {
+    if (!user?.createdAt) return null; // null = show 'Just joined today' fallback
+    const created = new Date(user.createdAt);
+    const now = new Date();
+    const diffMs = now.getTime() - created.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return null; // today
+    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'}`;
+    if (diffDays < 30) {
+      const weeks = Math.floor(diffDays / 7);
+      return `${weeks} week${weeks === 1 ? '' : 's'}`;
+    }
+    return created.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  })();
 
   return {
     // Auth state
@@ -320,6 +481,26 @@ export const useProfileLogic = () => {
     showEditModal,
     setShowEditModal,
 
+    // Settings modals state
+    showThemeModal,
+    setShowThemeModal,
+    showUnitsModal,
+    setShowUnitsModal,
+    showLanguageModal,
+    setShowLanguageModal,
+    showClearCacheModal,
+    setShowClearCacheModal,
+
+    // Persisted preferences
+    themePreference,
+    unitsPreference,
+
+    // Settings modal handlers
+    handleThemeSelect,
+    handleUnitsSelect,
+    handleLanguageSelect,
+    handleClearCache,
+
     // Handlers
     handleEditProfile,
     handleSignUpRedirect,
@@ -327,6 +508,7 @@ export const useProfileLogic = () => {
     confirmLogout,
     cancelLogout,
     handleSettingItemPress,
+    handleStatPress,
 
     // Settings data
     accountItems,

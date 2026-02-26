@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rh } from "../../utils/responsive";
+import { rf, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import type {
   ValidationError,
@@ -41,27 +41,27 @@ export interface ValidationAlertProps {
 const SEVERITY_CONFIG = {
   error: {
     icon: "alert-circle" as const,
-    color: "#EF4444",
-    backgroundColor: "rgba(239, 68, 68, 0.15)",
-    borderColor: "rgba(239, 68, 68, 0.3)",
+    color: ResponsiveTheme.colors.errorAlt,
+    backgroundColor: `${ResponsiveTheme.colors.errorAlt}26`,
+    borderColor: `${ResponsiveTheme.colors.errorAlt}4D`,
   },
   warning: {
     icon: "warning" as const,
-    color: "#F59E0B",
-    backgroundColor: "rgba(245, 158, 11, 0.15)",
-    borderColor: "rgba(245, 158, 11, 0.3)",
+    color: ResponsiveTheme.colors.warningAlt,
+    backgroundColor: `${ResponsiveTheme.colors.warningAlt}26`,
+    borderColor: `${ResponsiveTheme.colors.warningAlt}4D`,
   },
   info: {
     icon: "information-circle" as const,
-    color: "#3B82F6",
-    backgroundColor: "rgba(59, 130, 246, 0.15)",
-    borderColor: "rgba(59, 130, 246, 0.3)",
+    color: ResponsiveTheme.colors.blue,
+    backgroundColor: `${ResponsiveTheme.colors.blue}26`,
+    borderColor: `${ResponsiveTheme.colors.blue}4D`,
   },
   success: {
     icon: "checkmark-circle" as const,
-    color: "#10B981",
-    backgroundColor: "rgba(16, 185, 129, 0.15)",
-    borderColor: "rgba(16, 185, 129, 0.3)",
+    color: ResponsiveTheme.colors.successAlt,
+    backgroundColor: `${ResponsiveTheme.colors.successAlt}26`,
+    borderColor: `${ResponsiveTheme.colors.successAlt}4D`,
   },
 };
 
@@ -181,7 +181,7 @@ export const ValidationAlert: React.FC<ValidationAlertProps> = ({
                 onPress={handleRetry}
                 style={styles.retryButton}
               >
-                <Ionicons name="refresh" size={rf(16)} color="#FFFFFF" />
+                <Ionicons name="refresh" size={rf(16)} color={ResponsiveTheme.colors.white} />
                 <Text style={styles.retryText}>Regenerate Plan</Text>
               </TouchableOpacity>
             )}
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   dismissButton: {
-    padding: 4,
+    padding: rp(4),
   },
   message: {
     fontSize: rf(13),
@@ -276,13 +276,13 @@ const styles = StyleSheet.create({
     fontSize: rf(12),
     fontWeight: "600",
     color: ResponsiveTheme.colors.text,
-    marginBottom: 4,
+    marginBottom: rp(4),
   },
   itemRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 2,
+    gap: rp(8),
+    marginBottom: rp(2),
   },
   itemText: {
     fontSize: rf(12),
@@ -292,19 +292,19 @@ const styles = StyleSheet.create({
     marginTop: ResponsiveTheme.spacing.sm,
     paddingTop: ResponsiveTheme.spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.1)",
+    borderTopColor: ResponsiveTheme.colors.glassHighlight,
   },
   suggestionsHeader: {
     fontSize: rf(12),
     fontWeight: "600",
     color: ResponsiveTheme.colors.text,
-    marginBottom: 4,
+    marginBottom: rp(4),
   },
   suggestionRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 8,
-    marginBottom: 4,
+    gap: rp(8),
+    marginBottom: rp(4),
   },
   suggestionText: {
     flex: 1,
@@ -316,8 +316,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#FF6B35",
+    gap: rp(8),
+    backgroundColor: ResponsiveTheme.colors.primary,
     borderRadius: ResponsiveTheme.borderRadius.md,
     paddingVertical: ResponsiveTheme.spacing.sm,
     marginTop: ResponsiveTheme.spacing.sm,
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
   retryText: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: ResponsiveTheme.colors.white,
   },
 });
 

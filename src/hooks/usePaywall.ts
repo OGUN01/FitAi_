@@ -34,6 +34,34 @@ interface SubscriptionPlanRow {
 }
 
 // ============================================================================
+// Fallback plans shown when Supabase returns no data (e.g. guest users)
+// ============================================================================
+
+const FALLBACK_PLANS: PlanConfig[] = [
+  {
+    id: "fallback-basic-monthly",
+    tier: "basic",
+    name: "Basic Plan",
+    price_monthly: 299,
+    billing_cycle: "monthly",
+  },
+  {
+    id: "fallback-pro-monthly",
+    tier: "pro",
+    name: "Pro Plan (Monthly)",
+    price_monthly: 599,
+    billing_cycle: "monthly",
+  },
+  {
+    id: "fallback-pro-yearly",
+    tier: "pro",
+    name: "Pro Plan (Yearly)",
+    price_monthly: 499,
+    billing_cycle: "yearly",
+  },
+];
+
+// ============================================================================
 // Hook
 // ============================================================================
 
@@ -61,7 +89,12 @@ export const usePaywall = () => {
         .neq("tier", "free")
         .order("price_monthly");
 
-      if (cancelled || error || !data) return;
+      if (cancelled) return;
+
+      if (error || !data || data.length === 0) {
+        setPlans(FALLBACK_PLANS);
+        return;
+      }
 
       const configs: PlanConfig[] = [];
 
@@ -71,7 +104,7 @@ export const usePaywall = () => {
         // Monthly entry (always present for paid plans)
         if (row.price_monthly != null) {
           configs.push({
-            id: row.id,
+            id: `${row.id}_monthly`,
             tier,
             name: tier === "basic" ? "Basic Plan" : "Pro Plan (Monthly)",
             price_monthly: Math.round(row.price_monthly / 100),
@@ -82,7 +115,7 @@ export const usePaywall = () => {
         // Yearly entry (only if the plan offers yearly pricing)
         if (row.price_yearly != null) {
           configs.push({
-            id: row.id,
+            id: `${row.id}_yearly`,
             tier,
             name: `${row.name} Plan (Yearly)`,
             price_monthly: Math.round(row.price_yearly / 100 / 12),
@@ -91,7 +124,7 @@ export const usePaywall = () => {
         }
       }
 
-      setPlans(configs);
+      setPlans(configs.length > 0 ? configs : FALLBACK_PLANS);
     };
 
     fetchPlans();
@@ -126,13 +159,14 @@ export const usePaywall = () => {
   const subscribe = async (planId: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // Derive billing_cycle from the selected plan config
+      // Parse composite ID: "<uuid>_monthly" or "<uuid>_yearly"
       const plan = plans.find((p) => p.id === planId);
       const billingCycle = plan?.billing_cycle ?? "monthly";
+      const originalPlanId = planId.replace(/_monthly$|_yearly$/, "");
 
       // Step 1: Create subscription on backend
       const { subscription_id, key_id } =
-        await razorpayService.createSubscription(planId, billingCycle);
+        await razorpayService.createSubscription(originalPlanId, billingCycle);
 
       // Step 2: Get user info for checkout
       const {

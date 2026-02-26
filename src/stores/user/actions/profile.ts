@@ -211,10 +211,8 @@ export const createProfileActions: StateCreator<
     });
   },
 
+  /** @deprecated Use profileStore.updatePersonalInfo() instead */
   updatePersonalInfo: (personalInfo: PersonalInfo) => {
-    console.warn(
-      "[userStore] DEPRECATED: updatePersonalInfo called. Use profileStore.updatePersonalInfo() instead.",
-    );
     const currentProfile = get().profile;
     if (currentProfile) {
       const updatedProfile = {

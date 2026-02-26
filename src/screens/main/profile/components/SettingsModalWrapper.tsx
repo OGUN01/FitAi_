@@ -32,7 +32,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../../utils/constants";
-import { rf, rw, rh } from "../../../../utils/responsive";
+import { rf, rp, rbr, rw, rh } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
 
 interface SettingsModalWrapperProps {
@@ -103,6 +103,8 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                 scaleValue={0.9}
                 hapticFeedback={false}
                 style={styles.closeButton}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
               >
                 <Ionicons
                   name="close"
@@ -147,8 +149,6 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                 {children}
               </Animated.View>
 
-              {/* Bottom spacing for save button */}
-              <View style={styles.bottomSpacing} />
             </ScrollView>
 
             {/* Save Button */}
@@ -163,6 +163,8 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                   hapticFeedback={false}
                   disabled={saveDisabled || isSaving}
                   style={styles.saveButtonContainer}
+                  accessibilityRole="button"
+                  accessibilityLabel={saveLabel}
                 >
                   <LinearGradient
                     colors={
@@ -176,13 +178,13 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                     ]}
                   >
                     {isSaving ? (
-                      <ActivityIndicator color="#fff" size="small" />
+                      <ActivityIndicator color={ResponsiveTheme.colors.white} size="small" />
                     ) : (
                       <>
                         <Ionicons
                           name="checkmark-circle"
                           size={rf(18)}
-                          color="#fff"
+                          color={ResponsiveTheme.colors.white}
                         />
                         <Text style={styles.saveButtonText}>{saveLabel}</Text>
                       </>
@@ -239,18 +241,18 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
   headerSubtitle: {
     fontSize: rf(12),
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: rp(2),
   },
   headerSpacer: {
     width: rw(40),
   },
   divider: {
-    height: 1,
+    height: rp(1),
     backgroundColor: "rgba(255, 255, 255, 0.06)",
     marginHorizontal: ResponsiveTheme.spacing.md,
   },
@@ -260,15 +262,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingTop: ResponsiveTheme.spacing.lg,
-  },
-  bottomSpacing: {
-    height: rh(100),
+    paddingBottom: ResponsiveTheme.spacing.md,
   },
   footer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.md,
     backgroundColor: ResponsiveTheme.colors.background,
@@ -293,7 +289,7 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
 });
 

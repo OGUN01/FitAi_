@@ -8,7 +8,8 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rs, rp, rbr } from "../../utils/responsive";
 
 interface WorkoutDay {
   date: string;
@@ -59,15 +60,15 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({
 
   // Get intensity color
   const getIntensityColor = (intensity: number) => {
-    if (intensity === 0) return THEME.colors.surface;
+    if (intensity === 0) return ResponsiveTheme.colors.surface;
 
     const colors = [
-      THEME.colors.surface,
+      ResponsiveTheme.colors.surface,
       "#1a3d2e", // Very light green
       "#2d5a3d", // Light green
       "#40774c", // Medium green
       "#53945b", // Dark green
-      THEME.colors.success, // Darkest green
+      ResponsiveTheme.colors.success, // Darkest green
     ];
 
     return colors[Math.min(intensity, 5)];
@@ -203,35 +204,35 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: THEME.colors.backgroundTertiary,
-    borderRadius: THEME.borderRadius.lg,
-    padding: THEME.spacing.md,
-    marginVertical: THEME.spacing.sm,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    padding: ResponsiveTheme.spacing.md,
+    marginVertical: ResponsiveTheme.spacing.sm,
   },
 
   header: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   title: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
   },
 
   subtitle: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.xs / 2,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs / 2,
   },
 
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    marginBottom: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.md,
-    backgroundColor: THEME.colors.surface,
-    borderRadius: THEME.borderRadius.md,
+    marginBottom: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
   statItem: {
@@ -239,89 +240,89 @@ const styles = StyleSheet.create({
   },
 
   statValue: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.primary,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
   },
 
   statLabel: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.xs / 2,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs / 2,
   },
 
   calendarContainer: {
-    marginVertical: THEME.spacing.md,
+    marginVertical: ResponsiveTheme.spacing.md,
   },
 
   dayLabelsContainer: {
     flexDirection: "column",
-    marginRight: THEME.spacing.sm,
+    marginRight: ResponsiveTheme.spacing.sm,
   },
 
   dayLabel: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textMuted,
-    height: 14,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
+    height: rs(14),
     textAlign: "center",
-    marginBottom: 2,
+    marginBottom: rp(2),
   },
 
   calendarGrid: {
     flexDirection: "row",
     position: "absolute",
-    left: 20,
+    left: rp(20),
     top: 0,
   },
 
   weekColumn: {
     flexDirection: "column",
-    marginRight: 2,
+    marginRight: rp(2),
   },
 
   dayCell: {
-    width: 12,
-    height: 12,
-    borderRadius: 2,
-    marginBottom: 2,
+    width: rs(12),
+    height: rs(12),
+    borderRadius: rbr(2),
+    marginBottom: rp(2),
   },
 
   legendContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: THEME.spacing.md,
+    marginTop: ResponsiveTheme.spacing.md,
   },
 
   legendLabel: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textMuted,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
   },
 
   legendScale: {
     flexDirection: "row",
-    marginHorizontal: THEME.spacing.sm,
+    marginHorizontal: ResponsiveTheme.spacing.sm,
   },
 
   legendCell: {
-    width: 12,
-    height: 12,
-    borderRadius: 2,
-    marginHorizontal: 1,
+    width: rs(12),
+    height: rs(12),
+    borderRadius: rbr(2),
+    marginHorizontal: rp(1),
   },
 
   selectedDayContainer: {
-    marginTop: THEME.spacing.md,
-    padding: THEME.spacing.md,
-    backgroundColor: THEME.colors.surface,
-    borderRadius: THEME.borderRadius.md,
+    marginTop: ResponsiveTheme.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
   selectedDayDate: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   selectedDayStats: {
@@ -334,14 +335,14 @@ const styles = StyleSheet.create({
   },
 
   selectedDayStatLabel: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   selectedDayStatValue: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.text,
-    marginTop: THEME.spacing.xs / 2,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.text,
+    marginTop: ResponsiveTheme.spacing.xs / 2,
   },
 });

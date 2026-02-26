@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 import { useState, useEffect } from "react";
 import { Alternative, UseAdjustmentWizardProps } from "./types";
 import { transformSmartAlternativeToAlternative } from "./utils";
@@ -18,20 +19,16 @@ export const useAdjustmentWizard = ({
 
   useEffect(() => {
     if (visible && error.code) {
-      console.log("[AdjustmentWizard] Visible with error:", {
+      logger.debug('[AdjustmentWizard] Visible with error', {
         errorCode: error.code,
-        hasPrecomputedAlternatives: !!(
-          error.alternatives && error.alternatives.length > 0
-        ),
-        precomputedCount: error.alternatives?.length || 0,
-        currentData: {
-          bmr: currentData.bmr,
-          tdee: currentData.tdee,
-          currentWeight: currentData.currentWeight,
-          targetWeight: currentData.targetWeight,
-          currentTimeline: currentData.currentTimeline,
-          currentFrequency: currentData.currentFrequency,
-        },
+        hasPrecomputedAlternatives: !!(error.alternatives && error.alternatives.length > 0),
+        precomputedCount: error.alternatives?.length ?? 0,
+        bmr: currentData.bmr,
+        tdee: currentData.tdee,
+        currentWeight: currentData.currentWeight,
+        targetWeight: currentData.targetWeight,
+        currentTimeline: currentData.currentTimeline,
+        currentFrequency: currentData.currentFrequency,
       });
 
       const hasCompleteAlternatives =
@@ -45,44 +42,27 @@ export const useAdjustmentWizard = ({
         );
 
       if (hasCompleteAlternatives && error.alternatives) {
-        console.log(
-          "[AdjustmentWizard] Using complete pre-computed alternatives:",
-          error.alternatives.length,
-        );
+        logger.debug('[AdjustmentWizard] Using pre-computed alternatives', { count: error.alternatives!.length });
         const transformedAlternatives = error.alternatives!.map((alt: any) => {
           if ("name" in alt && "pros" in alt && "cons" in alt) {
             return alt as Alternative;
           }
           return transformSmartAlternativeToAlternative(alt);
         });
-        console.log("[AdjustmentWizard] Transformed alternatives:", {
-          count: transformedAlternatives.length,
-          alternatives: transformedAlternatives.map((a: Alternative) => ({
-            name: a.name,
-            dailyCalories: a.dailyCalories,
-            weeklyRate: a.weeklyRate,
-            prosCount: a.pros?.length || 0,
-            consCount: a.cons?.length || 0,
-          })),
-        });
         setAlternatives(transformedAlternatives);
+        logger.debug('[AdjustmentWizard] Alternatives set', {
+          source: 'precomputed',
+          count: transformedAlternatives.length,
+        });
       } else {
-        console.log(
-          "[AdjustmentWizard] Calculating alternatives for error code:",
-          error.code,
-        );
         const calculatedAlternatives = calculateAlternativesForError(
           error.code,
           currentData,
           primaryGoals,
         );
-        console.log("[AdjustmentWizard] Calculated alternatives:", {
+        logger.debug('[AdjustmentWizard] Calculated alternatives', {
+          errorCode: error.code,
           count: calculatedAlternatives.length,
-          alternatives: calculatedAlternatives.map((a) => ({
-            name: a.name,
-            dailyCalories: a.dailyCalories,
-            weeklyRate: a.weeklyRate,
-          })),
         });
         setAlternatives(calculatedAlternatives);
       }
@@ -100,9 +80,9 @@ export const useAdjustmentWizard = ({
         await new Promise((resolve) => setTimeout(resolve, 100));
         try {
           await onSaveToDatabase();
-          console.log("[AdjustmentWizard] Successfully saved to database");
+          logger.debug('[AdjustmentWizard] Saved to database successfully');
         } catch (err) {
-          console.error("[AdjustmentWizard] Failed to save to database:", err);
+          logger.error('[AdjustmentWizard] Failed to save to database', { error: String(err) });
         }
       }
 

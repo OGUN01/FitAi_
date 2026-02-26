@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { ValidationResult } from "../../services/validationEngine";
 
 export interface Alternative {
   name: string;
@@ -31,7 +32,7 @@ export interface Alternative {
 
 export interface UseAdjustmentWizardProps {
   visible: boolean;
-  error: any; // ValidationResult from validationEngine
+  error: ValidationResult;
   currentData: {
     bmr: number;
     tdee: number;

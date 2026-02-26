@@ -118,9 +118,9 @@ const TIME_COMMITMENT_OPTIONS = [
 export const GoalsPreferencesEditModal: React.FC<
   GoalsPreferencesEditModalProps
 > = ({ visible, onClose }) => {
-  const { profile } = useUser();
+  const { profile, updateFitnessGoalsLocal } = useUser();
   const { user } = useAuth();
-  const { updateWorkoutPreferences } = useProfileStore();
+  const { updateWorkoutPreferences, workoutPreferences } = useProfileStore();
 
   // Form state
   const [primaryGoals, setPrimaryGoals] = useState<string[]>([]);
@@ -130,50 +130,77 @@ export const GoalsPreferencesEditModal: React.FC<
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Load current values when modal opens
+  // Prefer profileStore.workoutPreferences (where saves go) over userStore.profile.fitnessGoals
   useEffect(() => {
-    if (visible && profile?.fitnessGoals) {
-      const goals = profile.fitnessGoals;
-      console.log(
-        "📊 [GoalsModal] Loading fitnessGoals:",
-        JSON.stringify(goals, null, 2),
-      );
+    if (visible) {
+      // Primary source: profileStore.workoutPreferences (persisted save target)
+      // Fallback source: userStore.profile.fitnessGoals (populated from Supabase/onboarding)
+      const wpGoals = workoutPreferences?.primary_goals;
+      // The modal saves experience/time_commitment (FitnessGoals fields) into workoutPreferences
+      // These are stored alongside native WorkoutPreferencesData fields
+      const wp = workoutPreferences as Record<string, unknown> | null;
+      const wpExperience = (wp?.experience as string) || (wp?.experience_level as string) || workoutPreferences?.intensity;
+      const wpTime = (wp?.time_commitment as string) || (workoutPreferences?.time_preference ? String(workoutPreferences.time_preference) : undefined);
+      const profileGoals = profile?.fitnessGoals;
 
-      // Check both camelCase and snake_case formats
-      const rawGoals = goals.primaryGoals || goals.primary_goals || [];
+      // Goals: prefer profileStore, fall back to userStore
+      let loadedGoals: string[] = [];
+      if (wpGoals && wpGoals.length > 0) {
+        loadedGoals = wpGoals.map((goal: string) => goal.replace(/-/g, "_"));
+      } else if (profileGoals) {
+        const rawGoals = profileGoals.primaryGoals || profileGoals.primary_goals || [];
+        loadedGoals = rawGoals.map((goal: string) => goal.replace(/-/g, "_"));
+      }
 
-      // Normalize goals: convert hyphens to underscores for consistency
-      // Onboarding stores 'weight-loss' but modal expects 'weight_loss'
-      const loadedGoals = rawGoals.map((goal: string) =>
-        goal.replace(/-/g, "_"),
-      );
+      // Experience: prefer profileStore, fall back to userStore
+      let loadedExperience = "";
+      if (wpExperience) {
+        loadedExperience = wpExperience;
+      } else if (profileGoals) {
+        loadedExperience = profileGoals.experience || profileGoals.experience_level || "";
+      }
 
-      // Handle time commitment - could be '30' (old format) or '15-30' (new format)
-      const rawTime = goals.timeCommitment || goals.time_commitment || "";
-      // If it's a plain number, convert to range
-      const loadedTime = /^\d+$/.test(rawTime)
-        ? parseInt(rawTime) <= 30
-          ? "15-30"
-          : parseInt(rawTime) <= 45
-            ? "30-45"
-            : parseInt(rawTime) <= 60
-              ? "45-60"
-              : "60+"
-        : rawTime;
+      // Time: prefer profileStore, fall back to userStore
+      let loadedTime = "";
+      if (wpTime) {
+        // wpTime could be a range string ("15-30") or a number from time_preference
+        if (/^\d+-/.test(wpTime) || wpTime === "60+") {
+          // Already a range format like "15-30", "30-45", "45-60", "60+"
+          loadedTime = wpTime;
+        } else {
+          // Numeric minutes format - convert to range
+          const minutes = parseInt(wpTime);
+          if (!isNaN(minutes)) {
+            loadedTime = minutes <= 30 ? "15-30" : minutes <= 45 ? "30-45" : minutes <= 60 ? "45-60" : "60+";
+          } else {
+            loadedTime = wpTime;
+          }
+        }
+      } else if (profileGoals) {
+        const rawTime = profileGoals.timeCommitment || profileGoals.time_commitment || "";
+        loadedTime = /^\d+$/.test(rawTime)
+          ? parseInt(rawTime) <= 30
+            ? "15-30"
+            : parseInt(rawTime) <= 45
+              ? "30-45"
+              : parseInt(rawTime) <= 60
+                ? "45-60"
+                : "60+"
+          : rawTime;
+      }
 
-      console.log("📊 [GoalsModal] Parsed values:", {
-        rawGoals,
-        loadedGoals,
-        rawTime,
-        loadedTime,
-        experience: goals.experience || goals.experience_level,
+      console.log("📊 [GoalsModal] Loading from sources:", {
+        fromProfileStore: { wpGoals, wpExperience, wpTime },
+        fromUserStore: profileGoals ? "available" : "none",
+        resolved: { loadedGoals, loadedExperience, loadedTime },
       });
 
       setPrimaryGoals(loadedGoals);
-      setExperience(goals.experience || goals.experience_level || "");
+      setExperience(loadedExperience);
       setTimeCommitment(loadedTime);
       setErrors({});
     }
-  }, [visible, profile]);
+  }, [visible, workoutPreferences, profile]);
 
   // Validation
   const validate = useCallback((): boolean => {
@@ -209,13 +236,19 @@ export const GoalsPreferencesEditModal: React.FC<
         time_commitment: timeCommitment,
         experience,
         experience_level: experience, // For backward compatibility
+        // Also set camelCase aliases for read-back compatibility
+        primaryGoals: primaryGoals,
+        timeCommitment: timeCommitment,
         // Preserve existing optional fields
         preferred_equipment: profile?.fitnessGoals?.preferred_equipment,
         target_areas: profile?.fitnessGoals?.target_areas,
       };
 
-      // Update local state
+      // Update profileStore (primary save target)
       updateWorkoutPreferences(updatedGoals);
+
+      // Also update userStore so reads from profile.fitnessGoals stay in sync
+      updateFitnessGoalsLocal(updatedGoals);
 
       // Sync to Supabase
       if (user?.id) {
@@ -258,15 +291,49 @@ export const GoalsPreferencesEditModal: React.FC<
     timeCommitment,
     profile,
     updateWorkoutPreferences,
+    updateFitnessGoalsLocal,
     onClose,
     validate,
+    user,
   ]);
 
   const hasChanges = useCallback(() => {
-    if (!profile?.fitnessGoals) return true;
-    const goals = profile.fitnessGoals;
+    // Check against profileStore first (primary source), then userStore
+    const wpGoals = workoutPreferences?.primary_goals;
+    const profileGoals = profile?.fitnessGoals;
+    const wp = workoutPreferences as Record<string, unknown> | null;
 
-    const currentGoalsSet = new Set(goals.primaryGoals || []);
+    // Get current goals from the same source hierarchy as loading
+    let currentGoals: string[] = [];
+    let currentExperience = "";
+    let currentTime = "";
+
+    if (wpGoals && wpGoals.length > 0) {
+      currentGoals = wpGoals.map((g: string) => g.replace(/-/g, "_"));
+      currentExperience = (wp?.experience as string) || (wp?.experience_level as string) || workoutPreferences?.intensity || "";
+      const wpTime = (wp?.time_commitment as string) || (workoutPreferences?.time_preference ? String(workoutPreferences.time_preference) : "");
+      if (wpTime) {
+        if (/^\d+-/.test(wpTime) || wpTime === "60+") {
+          currentTime = wpTime;
+        } else {
+          const minutes = parseInt(wpTime);
+          if (!isNaN(minutes)) {
+            currentTime = minutes <= 30 ? "15-30" : minutes <= 45 ? "30-45" : minutes <= 60 ? "45-60" : "60+";
+          } else {
+            currentTime = wpTime;
+          }
+        }
+      }
+    } else if (profileGoals) {
+      const rawGoals = profileGoals.primaryGoals || profileGoals.primary_goals || [];
+      currentGoals = rawGoals.map((g: string) => g.replace(/-/g, "_"));
+      currentExperience = profileGoals.experience || profileGoals.experience_level || "";
+      currentTime = profileGoals.timeCommitment || profileGoals.time_commitment || "";
+    } else {
+      return true; // No saved data yet, always allow save
+    }
+
+    const currentGoalsSet = new Set(currentGoals);
     const newGoalsSet = new Set(primaryGoals);
     const goalsChanged =
       currentGoalsSet.size !== newGoalsSet.size ||
@@ -274,10 +341,10 @@ export const GoalsPreferencesEditModal: React.FC<
 
     return (
       goalsChanged ||
-      experience !== (goals.experience || goals.experience_level || "") ||
-      timeCommitment !== (goals.timeCommitment || "")
+      experience !== currentExperience ||
+      timeCommitment !== currentTime
     );
-  }, [primaryGoals, experience, timeCommitment, profile]);
+  }, [primaryGoals, experience, timeCommitment, workoutPreferences, profile]);
 
   return (
     <SettingsModalWrapper

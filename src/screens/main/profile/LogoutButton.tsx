@@ -64,7 +64,7 @@ export const LogoutButton: React.FC<LogoutButtonProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
     marginBottom: ResponsiveTheme.spacing.lg,
   },
   card: {

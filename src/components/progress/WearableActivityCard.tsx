@@ -36,7 +36,7 @@ export const WearableActivityCard: React.FC<WearableActivityCardProps> = ({
             <Ionicons
               name="walk-outline"
               size={rf(24)}
-              color="#4CAF50"
+              color={ResponsiveTheme.colors.success}
               style={{
                 marginBottom: ResponsiveTheme.spacing.xs,
               }}
@@ -54,7 +54,7 @@ export const WearableActivityCard: React.FC<WearableActivityCardProps> = ({
             <Ionicons
               name="flame-outline"
               size={rf(24)}
-              color="#FF9800"
+              color={ResponsiveTheme.colors.warning}
               style={{
                 marginBottom: ResponsiveTheme.spacing.xs,
               }}
@@ -72,7 +72,7 @@ export const WearableActivityCard: React.FC<WearableActivityCardProps> = ({
             <Ionicons
               name="heart-outline"
               size={rf(24)}
-              color="#F44336"
+              color={ResponsiveTheme.colors.error}
               style={{
                 marginBottom: ResponsiveTheme.spacing.xs,
               }}
@@ -91,7 +91,7 @@ export const WearableActivityCard: React.FC<WearableActivityCardProps> = ({
               <Ionicons
                 name="bed-outline"
                 size={rf(24)}
-                color="#FF6B35"
+                color={ResponsiveTheme.colors.primary}
                 style={{
                   marginBottom: ResponsiveTheme.spacing.xs,
                 }}
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.md,
     paddingBottom: ResponsiveTheme.spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.1)",
+    borderBottomColor: ResponsiveTheme.colors.glassBorder,
   },
   wearableLabel: {
     fontSize: ResponsiveTheme.fontSize.sm,

@@ -144,7 +144,6 @@ class UnifiedAIService {
       workoutPreferences?: WorkoutPreferences;
     },
   ): Promise<AIResponse<Workout>> {
-    console.log("🏋️ [aiService] generateWorkout called");
 
     try {
       // Transform request for backend
@@ -160,7 +159,6 @@ class UnifiedAIService {
         },
       );
 
-      console.log("🏋️ [aiService] Calling backend /workout/generate");
       const response = await fitaiWorkersClient.generateWorkoutPlan(request);
 
       // Store metadata
@@ -190,7 +188,6 @@ class UnifiedAIService {
         };
       }
 
-      console.log("✅ [aiService] Workout generated successfully");
       return {
         success: true,
         data: workout,
@@ -213,7 +210,6 @@ class UnifiedAIService {
       calorieTarget?: number;
     },
   ): Promise<AIResponse<DayMeal>> {
-    console.log("🍽️ [aiService] generateMeal called for:", mealType);
     try {
       const request = transformForDietRequest(
         personalInfo,
@@ -222,7 +218,6 @@ class UnifiedAIService {
         preferences?.dietPreferences,
         preferences?.calorieTarget,
       );
-      console.log("🍽️ [aiService] Calling backend /diet/generate");
       const response = await fitaiWorkersClient.generateDietPlan(request);
       if (response.metadata) {
         this.lastMetadata = response.metadata as AIServiceMetadata;
@@ -255,7 +250,6 @@ class UnifiedAIService {
         weeklyPlan.meals.find(
           (m) => m.type?.toLowerCase() === mealType,
         ) ?? weeklyPlan.meals[0];
-      console.log("✅ [aiService] Meal generated successfully");
       return {
         success: true,
         data: meal,
@@ -277,7 +271,6 @@ class UnifiedAIService {
       calorieTarget?: number;
     },
   ): Promise<AIResponse<DailyMealPlan>> {
-    console.log("🍽️ [aiService] generateDailyMealPlan called");
 
     try {
       const request = transformForDietRequest(
@@ -288,7 +281,6 @@ class UnifiedAIService {
         preferences?.calorieTarget,
       );
 
-      console.log("🍽️ [aiService] Calling backend /diet/generate");
       const response = await fitaiWorkersClient.generateDietPlan(request);
 
       if (response.metadata) {
@@ -315,7 +307,6 @@ class UnifiedAIService {
         waterIntake: 0, // Default to 0, will be tracked separately
       };
 
-      console.log("✅ [aiService] Daily meal plan generated successfully");
       return {
         success: true,
         data: dailyPlan,
@@ -394,10 +385,6 @@ class UnifiedAIService {
       workoutPreferences?: WorkoutPreferences;
     },
   ): Promise<AIResponse<WeeklyWorkoutPlan>> {
-    console.log(
-      "🏋️ [aiService] generateWeeklyWorkoutPlan called for week:",
-      weekNumber,
-    );
 
     try {
       // ✅ NEW: Transform request with weekly plan (NO FALLBACK)
@@ -412,20 +399,11 @@ class UnifiedAIService {
         },
       );
 
-      console.log(
-        "🏋️ [aiService] Calling backend /workout/generate with weekly plan request",
-      );
       const response = await fitaiWorkersClient.generateWorkoutPlan(request);
 
       // Store metadata for UI display
       if (response.metadata) {
         this.lastMetadata = response.metadata as AIServiceMetadata;
-        console.log("📊 [aiService] Generation metadata:", {
-          cached: response.metadata.cached,
-          cacheSource: response.metadata.cacheSource,
-          generationTime: response.metadata.generationTime,
-          model: response.metadata.model,
-        });
       }
 
       if (!response.success || !response.data) {
@@ -438,10 +416,6 @@ class UnifiedAIService {
 
       // ✅ Backend ALWAYS returns weekly plan (NO FALLBACK)
       const weeklyPlanData = response.data as any;
-      console.log(
-        "✅ [aiService] Received weekly plan with workouts:",
-        weeklyPlanData.workouts?.length,
-      );
 
       // Transform each workout in the weekly plan
       const workouts = weeklyPlanData.workouts.map((w: any) =>
@@ -458,13 +432,6 @@ class UnifiedAIService {
         totalEstimatedCalories: weeklyPlanData.totalEstimatedCalories || 0,
       };
 
-      console.log(
-        "✅ [aiService] Weekly workout plan transformed successfully:",
-        {
-          workouts: weeklyPlan.workouts.length,
-          title: weeklyPlan.planTitle,
-        },
-      );
 
       return {
         success: true,
@@ -491,11 +458,6 @@ class UnifiedAIService {
       calorieTarget?: number;
     },
   ): Promise<AIResponse<WeeklyMealPlan>> {
-    console.log(
-      "🍽️ [aiService] generateWeeklyMealPlan called for week:",
-      weekNumber,
-    );
-    console.log("🍽️ [aiService] calorieTarget:", options?.calorieTarget);
 
     try {
       // Transform request for backend - include calorieTarget from frontend
@@ -507,19 +469,11 @@ class UnifiedAIService {
         options?.calorieTarget,
       );
 
-      console.log("🍽️ [aiService] Calling backend /diet/generate");
       const response = await fitaiWorkersClient.generateDietPlan(request);
 
       // Store metadata for UI display
       if (response.metadata) {
         this.lastMetadata = response.metadata as AIServiceMetadata;
-        console.log("📊 [aiService] Generation metadata:", {
-          cached: response.metadata.cached,
-          cacheSource: response.metadata.cacheSource,
-          generationTime: response.metadata.generationTime,
-          model: response.metadata.model,
-          cuisineDetected: response.metadata.cuisineDetected,
-        });
       }
 
       if (!response.success || !response.data) {
@@ -543,10 +497,6 @@ class UnifiedAIService {
         };
       }
 
-      console.log("✅ [aiService] Weekly meal plan generated successfully:", {
-        meals: weeklyPlan.meals.length,
-        title: weeklyPlan.planTitle,
-      });
 
       return {
         success: true,
@@ -579,8 +529,6 @@ class UnifiedAIService {
       | { type: "job_started"; jobId: string; estimatedTimeMinutes: number }
     >
   > {
-    console.log("generateWeeklyMealPlanAsync called for week:", weekNumber);
-    console.log("calorieTarget:", options?.calorieTarget);
 
     try {
       // Transform request for backend - include calorieTarget from frontend
@@ -592,7 +540,6 @@ class UnifiedAIService {
         options?.calorieTarget,
       );
 
-      console.log("Calling backend /diet/generate (async mode)");
       const response = await fitaiWorkersClient.generateDietPlanAsync(request);
 
       if (!response.success || !response.data) {
@@ -605,7 +552,6 @@ class UnifiedAIService {
 
       // Check if we got a cache hit (immediate result)
       if (isDietPlanResponse(response.data)) {
-        console.log("Cache hit - immediate result");
 
         // Store metadata for UI display
         if (response.metadata) {
@@ -633,7 +579,6 @@ class UnifiedAIService {
 
       // Async job was created
       if (isAsyncJobResponse(response.data)) {
-        console.log("Async job created:", response.data.jobId);
         return {
           success: true,
           data: {
@@ -690,7 +635,7 @@ class UnifiedAIService {
           success: true,
           data: {
             status: "completed",
-            plan: weeklyPlan,
+            plan: weeklyPlan ?? undefined,
             generationTimeMs: jobData.metadata?.generationTimeMs,
           },
         };
@@ -713,7 +658,6 @@ class UnifiedAIService {
    * Test backend connection
    */
   async testConnection(): Promise<AIResponse<string>> {
-    console.log("🔗 [aiService] Testing backend connection...");
 
     try {
       const status = await fitaiWorkersClient.testConnection();
@@ -734,7 +678,6 @@ class UnifiedAIService {
         };
       }
 
-      console.log("✅ [aiService] Backend connection successful");
       return {
         success: true,
         data: `Connected to FitAI Workers ${status.backendVersion}`,

@@ -28,7 +28,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rh, rw, rs, rp } from "../../utils/responsive";
+import { rf, rh, rw, rs, rp, rbr } from "../../utils/responsive";
 import type { DayMeal } from "../../types/ai";
 import { useNutritionStore } from "../../stores/nutritionStore";
 import { supabase } from "../../services/supabase";
@@ -413,7 +413,7 @@ export const MealEditModal: React.FC<MealEditModalProps> = ({
                 disabled={isSaving}
               >
                 {isSaving ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={ResponsiveTheme.colors.white} />
                 ) : (
                   <Text style={styles.saveButtonText}>Save Changes</Text>
                 )}
@@ -429,7 +429,7 @@ export const MealEditModal: React.FC<MealEditModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: ResponsiveTheme.colors.overlay,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
     maxHeight: "85%",
   },
   modalContent: {
-    borderRadius: rf(20),
+    borderRadius: rbr(20),
     padding: rp(20),
   },
   header: {
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: rf(12),
+    borderRadius: rbr(12),
     padding: rp(12),
     fontSize: rf(16),
     color: ResponsiveTheme.colors.text,
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: rh(12),
     paddingHorizontal: rw(16),
-    borderRadius: rf(12),
+    borderRadius: rbr(12),
     backgroundColor: ResponsiveTheme.colors.surface,
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
@@ -500,13 +500,13 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.text,
   },
   typeButtonTextActive: {
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
   ingredientRow: {
     flexDirection: "row",
     alignItems: "center" as const,
     backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: rf(12),
+    borderRadius: rbr(12),
     padding: rp(12),
     marginBottom: rh(8),
   },
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: "45%",
     backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: rf(12),
+    borderRadius: rbr(12),
     padding: rp(12),
     alignItems: "center" as const,
   },
@@ -572,7 +572,7 @@ const styles = StyleSheet.create({
   button: {
     flex: 1,
     paddingVertical: rh(14),
-    borderRadius: rf(12),
+    borderRadius: rbr(12),
     alignItems: "center" as const,
     justifyContent: "center" as const,
   },
@@ -592,7 +592,7 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
 });
 

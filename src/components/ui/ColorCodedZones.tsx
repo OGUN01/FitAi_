@@ -98,10 +98,10 @@ export const ColorCodedZones: React.FC<ColorCodedZonesProps> = ({
 // Default color palette for zones
 export const HEART_RATE_ZONE_COLORS = {
   zone1: "#8B9DC3", // Light blue - Recovery
-  zone2: "#4CAF50", // Green - Fat burn
-  zone3: "#FFC107", // Yellow - Cardio
-  zone4: "#FF9800", // Orange - Hard
-  zone5: "#F44336", // Red - Max
+  zone2: ResponsiveTheme.colors.success, // Green - Fat burn
+  zone3: ResponsiveTheme.colors.amber, // Yellow - Cardio
+  zone4: ResponsiveTheme.colors.warning, // Orange - Hard
+  zone5: ResponsiveTheme.colors.error, // Red - Max
 };
 
 // Helper function to calculate zones based on max HR

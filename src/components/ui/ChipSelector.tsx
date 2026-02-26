@@ -115,7 +115,7 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
   onSelectionChange,
   multiSelect = true,
   animated = true,
-  gradient = ["#4CAF50", "#45A049"],
+  gradient = [ResponsiveTheme.colors.success, "#45A049"],
   style,
 }) => {
   const handleChipPress = (id: string) => {
@@ -167,10 +167,7 @@ const styles = StyleSheet.create({
     borderRadius: ResponsiveTheme.borderRadius.full,
     borderWidth: 2,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
     elevation: 2,
     minHeight: 44,
     minWidth: 44,

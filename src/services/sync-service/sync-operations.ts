@@ -19,7 +19,6 @@ export async function executeUploadOperation(
 ): Promise<void> {
   const { type, table, recordId, data } = operation;
 
-  console.log(`📤 Executing ${type} on ${table}:${recordId}`);
 
   switch (type) {
     case "create":
@@ -44,7 +43,6 @@ export async function executeUploadOperation(
       break;
   }
 
-  console.log(`✅ Successfully executed ${type} on ${table}:${recordId}`);
 }
 
 export async function uploadLocalChanges(
@@ -119,7 +117,6 @@ export async function fetchRemoteChanges(
         .order("updated_at", { ascending: true });
 
       if (error) {
-        console.warn(`⚠️ Failed to fetch changes from ${table}:`, error);
         continue;
       }
 
@@ -131,14 +128,11 @@ export async function fetchRemoteChanges(
             type: "remote_update" as const,
           })),
         );
-        console.log(`📥 Found ${data.length} changes in ${table}`);
       }
     } catch (error) {
-      console.warn(`⚠️ Error fetching from ${table}:`, error);
     }
   }
 
-  console.log(`📥 Total remote changes: ${changes.length}`);
   return changes;
 }
 
@@ -160,7 +154,6 @@ export async function applyRemoteChange(change: RemoteChange): Promise<void> {
       }
 
       await AsyncStorage.setItem(storageKey, JSON.stringify(history));
-      console.log(`✅ Applied remote change to ${table}:${record.id}`);
     } catch (error) {
       console.error(`Failed to apply change to ${table}:`, error);
       throw error;
@@ -224,9 +217,6 @@ export function cleanupSyncQueue(queue: SyncOperation[]): SyncOperation[] {
     const maxRetriesReached = op.retryCount >= op.maxRetries;
 
     if (expired || maxRetriesReached) {
-      console.log(
-        `🗑️ Removing ${expired ? "expired" : "failed"} operation: ${op.id}`,
-      );
       return false;
     }
     return true;

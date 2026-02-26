@@ -34,19 +34,19 @@ export async function completeWorkout(
             .insert({
               user_id: userId,
               workout_id: workoutId,
-              workout_name: workout.title,
-              workout_type: workout.category || "general",
-              duration_minutes:
-                workout.duration || sessionData?.duration || null,
-              calories_burned: actualCaloriesBurned,
-              exercises_completed:
-                sessionData?.exercisesCompleted ||
-                workout.exercises?.length ||
-                0,
               started_at: sessionData?.startedAt || new Date().toISOString(),
               completed_at: new Date().toISOString(),
+              duration:
+                sessionData?.duration || sessionData?.totalDuration || workout.duration || null,
+              calories_burned: actualCaloriesBurned,
+              exercises:
+                sessionData?.exercisesCompleted ||
+                workout.exercises ||
+                null,
               notes:
                 sessionData?.notes || `Weekly workout plan: ${workout.title}`,
+              rating: sessionData?.rating || 0,
+              is_completed: true,
             });
 
           if (supabaseResult.error) {

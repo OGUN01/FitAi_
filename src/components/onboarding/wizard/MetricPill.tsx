@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../../utils/responsive";
+import { rf, rp } from "../../../utils/responsive";
 import { ResponsiveTheme } from "../../../utils/constants";
 
 interface MetricPillProps {
@@ -36,18 +36,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.05)",
-    paddingVertical: 4,
+    paddingVertical: rp(4),
     paddingHorizontal: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.sm,
     borderWidth: 1,
   },
   metricIcon: {
-    marginRight: 4,
+    marginRight: rp(4),
   },
   metricTextContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: rp(4),
   },
   metricLabel: {
     fontSize: rf(9),

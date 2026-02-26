@@ -12,8 +12,6 @@ export async function register(
 ): Promise<AuthResponse> {
   try {
     const { email, password, confirmPassword } = credentials;
-    console.log("🔐 Auth Service: Attempting register for:", email);
-    console.log("🔐 Auth Service: Password length:", password.length);
 
     // Validate passwords match
     if (password !== confirmPassword) {
@@ -74,9 +72,6 @@ export async function register(
         await AsyncStorage.setItem("auth_session", JSON.stringify(session));
       } else {
         // Don't save session for unverified users - they need to verify email first
-        console.log(
-          "🔐 Auth Service: User registered but email not verified, not saving session",
-        );
       }
 
       return {

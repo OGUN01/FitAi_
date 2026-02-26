@@ -69,7 +69,6 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
           text: "Not Now",
           style: "cancel",
           onPress: () => {
-            console.log("🚫 User declined migration");
           },
         },
         {
@@ -100,7 +99,6 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
       // Handle migration result
       if (migration.result) {
         if (migration.result.success) {
-          console.log("✅ Migration completed successfully");
           onMigrationComplete?.(true);
 
           if (showProgressModal) {
@@ -110,7 +108,6 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
             }, 2000);
           }
         } else if (migration.result.conflicts?.length > 0) {
-          console.log("⚖️ Migration conflicts detected");
           setConflicts(migration.result.conflicts);
           setShowProgress(false);
           setShowConflicts(true);
@@ -152,7 +149,6 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
   const handleConflictResolution = async (
     resolutions: ConflictResolution[],
   ) => {
-    console.log("🔧 Resolving conflicts:", resolutions);
 
     setShowConflicts(false);
 
@@ -168,7 +164,6 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
       await migration.startProfileMigration();
 
       if (migration.result?.success) {
-        console.log("✅ Migration completed after conflict resolution");
         onMigrationComplete?.(true);
 
         if (showProgressModal) {
@@ -230,7 +225,6 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
           style: "destructive",
           onPress: () => {
             // Migration cancellation - pending full implementation
-            console.log("🚫 Migration cancelled by user");
           },
         },
       ],

@@ -7,7 +7,6 @@ import {
   Text,
 } from "react-native";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
-import { THEME } from "../../utils/constants";
 import { ResponsiveTheme } from "../../utils/constants";
 
 interface CardProps {
@@ -123,7 +122,7 @@ const styles = StyleSheet.create({
 
   elevated: {
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    ...THEME.shadows.md,
+    ...ResponsiveTheme.shadows.md,
   },
 
   outlined: {

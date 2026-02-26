@@ -6,7 +6,6 @@ export async function preloadPopularExercises(
   cacheService: ExerciseCacheService,
 ): Promise<void> {
   try {
-    console.log("🏋️ Preloading popular exercises...");
     const exercises: ExerciseData[] = [];
 
     for (let page = 1; page <= 30; page++) {
@@ -19,7 +18,6 @@ export async function preloadPopularExercises(
     }
 
     await cacheService.saveExercises(exercises);
-    console.log(`🏋️ Preloaded ${exercises.length} exercises successfully`);
   } catch (error) {
     console.error("Failed to preload exercises:", error);
   }
@@ -32,7 +30,6 @@ export async function preloadWorkoutVisuals(
     useAdvanced: boolean,
   ) => Promise<ExerciseMatchResult | null>,
 ): Promise<Map<string, ExerciseMatchResult | null>> {
-  console.log(`🚀 Preloading visuals for ${exerciseNames.length} exercises...`);
   const results = new Map<string, ExerciseMatchResult | null>();
   const startTime = Date.now();
 
@@ -52,12 +49,6 @@ export async function preloadWorkoutVisuals(
   const successCount = loadResults.filter((r) => r.success).length;
   const loadTime = Date.now() - startTime;
 
-  console.log(
-    `✅ Preloaded ${successCount}/${exerciseNames.length} exercise visuals in ${loadTime}ms`,
-  );
-  console.log(
-    `📊 Success rate: ${Math.round((successCount / exerciseNames.length) * 100)}%`,
-  );
 
   return results;
 }
@@ -73,8 +64,5 @@ export async function preloadWorkoutPlanVisuals(
     .flatMap((workout) => workout.exercises)
     .filter((exercise, index, array) => array.indexOf(exercise) === index);
 
-  console.log(
-    `🎯 Preloading entire workout plan: ${allExercises.length} unique exercises`,
-  );
   await preloadWorkoutVisuals(allExercises, findExercise);
 }

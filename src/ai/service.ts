@@ -120,9 +120,6 @@ class UnifiedAIService {
     personalInfo: PersonalInfo,
     currentStreak: number = 0,
   ): Promise<AIResponse<MotivationalContent>> {
-    console.warn(
-      "⚠️ [aiService] Motivational content uses placeholder (not yet migrated)",
-    );
     return {
       success: true,
       data: {
@@ -168,7 +165,6 @@ class UnifiedAIService {
   }
 
   async testConnection(): Promise<AIResponse<string>> {
-    console.log("🔗 [aiService] Testing backend connection...");
 
     try {
       const status = await fitaiWorkersClient.testConnection();
@@ -189,7 +185,6 @@ class UnifiedAIService {
         };
       }
 
-      console.log("✅ [aiService] Backend connection successful");
       return {
         success: true,
         data: `Connected to FitAI Workers ${status.backendVersion}`,

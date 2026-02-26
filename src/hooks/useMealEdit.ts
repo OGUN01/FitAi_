@@ -1,10 +1,11 @@
+import { logger } from '../utils/logger';
 /**
  * useMealEdit - Hook for meal editing logic
  * Extracts all state management and business logic from MealEditModal
  */
 
 import { useState, useEffect } from "react";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import type { DayMeal } from "../types/ai";
 import { useNutritionStore } from "../stores/nutritionStore";
 import { supabase } from "../services/supabase";
@@ -108,12 +109,12 @@ export const useMealEdit = (
   // Save changes
   const handleSave = async () => {
     if (!meal || !mealName.trim()) {
-      Alert.alert("Error", "Please enter a meal name");
+      crossPlatformAlert("Error", "Please enter a meal name");
       return;
     }
 
     if (ingredients.length === 0) {
-      Alert.alert("Error", "Please add at least one ingredient");
+      crossPlatformAlert("Error", "Please add at least one ingredient");
       return;
     }
 
@@ -178,17 +179,17 @@ export const useMealEdit = (
           .eq("id", mealProgressData.logId);
 
         if (error) {
-          console.error("Error updating meal in database:", error);
+          logger.error('Error updating meal in database', { error: String(error) });
         }
       }
 
       haptics.success();
-      Alert.alert("Success", "Meal updated successfully");
+      crossPlatformAlert("Success", "Meal updated successfully");
       onSave(updatedMeal);
       onClose();
     } catch (error) {
-      console.error("Error saving meal:", error);
-      Alert.alert("Error", "Failed to save changes. Please try again.");
+      logger.error('Error saving meal', { error: String(error) });
+      crossPlatformAlert("Error", "Failed to save changes. Please try again.");
     } finally {
       setIsSaving(false);
     }

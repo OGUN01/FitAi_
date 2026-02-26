@@ -5,6 +5,8 @@ import {
   DataConflict,
   ResolutionStrategy,
 } from "../../../services/conflictResolution";
+import { rf, rp, rbr } from "../../../utils/responsive";
+import { ResponsiveTheme } from "../../../utils/constants";
 
 interface ConflictItemProps {
   conflict: DataConflict;
@@ -15,15 +17,15 @@ interface ConflictItemProps {
 const getSeverityColor = (severity: string) => {
   switch (severity) {
     case "critical":
-      return "#EF4444";
+      return ResponsiveTheme.colors.errorAlt;
     case "high":
-      return "#F59E0B";
+      return ResponsiveTheme.colors.warningAlt;
     case "medium":
-      return "#3B82F6";
+      return ResponsiveTheme.colors.info;
     case "low":
-      return "#10B981";
+      return ResponsiveTheme.colors.successAlt;
     default:
-      return "#6B7280";
+      return ResponsiveTheme.colors.textTertiary;
   }
 };
 
@@ -92,7 +94,7 @@ export const ConflictItem: React.FC<ConflictItemProps> = ({
         <View style={styles.conflictInfo}>
           <Ionicons
             name={getConflictTypeIcon(conflict.type) as any}
-            size={20}
+            size={rf(20)}
             color={getSeverityColor(conflict.severity)}
           />
           <Text style={styles.conflictField}>{conflict.field}</Text>
@@ -162,7 +164,11 @@ export const ConflictItem: React.FC<ConflictItemProps> = ({
               </Text>
             </View>
             {selectedStrategy === option.strategy && (
-              <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+              <Ionicons
+                name="checkmark-circle"
+                size={rf(20)}
+                color={ResponsiveTheme.colors.successAlt}
+              />
             )}
           </TouchableOpacity>
         ))}
@@ -173,100 +179,100 @@ export const ConflictItem: React.FC<ConflictItemProps> = ({
 
 const styles = StyleSheet.create({
   conflictItem: {
-    backgroundColor: "rgba(31, 41, 55, 0.8)",
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: rbr(15),
+    padding: rp(20),
+    marginBottom: rp(20),
     borderWidth: 1,
-    borderColor: "rgba(75, 85, 99, 0.3)",
+    borderColor: ResponsiveTheme.colors.glassBorder,
   },
   conflictHeader: {
-    marginBottom: 15,
+    marginBottom: rp(15),
   },
   conflictInfo: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: rp(10),
   },
   conflictField: {
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: ResponsiveTheme.colors.white,
     flex: 1,
   },
   severityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingHorizontal: rp(8),
+    paddingVertical: rp(4),
+    borderRadius: rbr(6),
   },
   severityText: {
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: "bold",
-    color: "#FFFFFF",
+    color: ResponsiveTheme.colors.white,
   },
   conflictValues: {
-    marginBottom: 20,
+    marginBottom: rp(20),
   },
   valueContainer: {
-    marginBottom: 12,
+    marginBottom: rp(12),
   },
   valueLabel: {
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: "600",
-    color: "#9CA3AF",
-    marginBottom: 6,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: rp(6),
   },
   valueBox: {
-    backgroundColor: "rgba(17, 24, 39, 0.8)",
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: ResponsiveTheme.colors.background,
+    borderRadius: rbr(8),
+    padding: rp(12),
     borderWidth: 1,
-    borderColor: "rgba(75, 85, 99, 0.3)",
+    borderColor: ResponsiveTheme.colors.glassBorder,
   },
   valueText: {
-    fontSize: 14,
-    color: "#E5E7EB",
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.text,
     fontFamily: "monospace",
   },
   resolutionOptions: {
-    gap: 8,
+    gap: rp(8),
   },
   resolutionLabel: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "600",
-    color: "#FFFFFF",
-    marginBottom: 12,
+    color: ResponsiveTheme.colors.white,
+    marginBottom: rp(12),
   },
   resolutionOption: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(17, 24, 39, 0.6)",
-    borderRadius: 10,
-    padding: 15,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: rbr(10),
+    padding: rp(15),
     borderWidth: 1,
-    borderColor: "rgba(75, 85, 99, 0.3)",
+    borderColor: ResponsiveTheme.colors.glassBorder,
   },
   resolutionOptionSelected: {
-    backgroundColor: "rgba(16, 185, 129, 0.1)",
-    borderColor: "#10B981",
+    backgroundColor: ResponsiveTheme.colors.successTint,
+    borderColor: ResponsiveTheme.colors.successAlt,
   },
   resolutionOptionContent: {
     flex: 1,
   },
   resolutionOptionLabel: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "600",
-    color: "#E5E7EB",
-    marginBottom: 2,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rp(2),
   },
   resolutionOptionLabelSelected: {
-    color: "#10B981",
+    color: ResponsiveTheme.colors.successAlt,
   },
   resolutionOptionDescription: {
-    fontSize: 14,
-    color: "#9CA3AF",
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.textSecondary,
   },
   resolutionOptionDescriptionSelected: {
-    color: "#A7F3D0",
+    color: ResponsiveTheme.colors.successLight,
   },
 });

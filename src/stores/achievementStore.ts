@@ -95,32 +95,68 @@ interface AchievementStore {
 // Custom storage to handle Map serialization
 const achievementStorage = {
   getItem: async (name: string): Promise<string | null> => {
-    const value = await AsyncStorage.getItem(name);
-    if (!value) return null;
+    try {
+      const value = await AsyncStorage.getItem(name);
+      if (!value) return null;
 
-    // Parse and convert userAchievementsArray back to Map
-    const parsed = JSON.parse(value);
-    if (parsed.state?.userAchievementsArray) {
-      parsed.state.userAchievements = new Map(
-        parsed.state.userAchievementsArray,
-      );
-      delete parsed.state.userAchievementsArray;
+      // Parse and convert userAchievementsArray back to Map
+      try {
+        const parsed = JSON.parse(value);
+        if (parsed.state?.userAchievementsArray) {
+          parsed.state.userAchievements = new Map(
+            parsed.state.userAchievementsArray,
+          );
+          delete parsed.state.userAchievementsArray;
+        }
+        return JSON.stringify(parsed);
+      } catch {
+        console.warn(`⚠️ [achievementStorage] Corrupt data for key "${name}", clearing`);
+        await AsyncStorage.removeItem(name);
+        return null;
+      }
+    } catch (e) {
+      console.warn(`⚠️ [achievementStorage] Failed to read "${name}":`, e);
+      return null;
     }
-    return JSON.stringify(parsed);
   },
   setItem: async (name: string, value: string): Promise<void> => {
-    // Parse and convert Map to array for storage
-    const parsed = JSON.parse(value);
-    if (parsed.state?.userAchievements instanceof Map) {
-      parsed.state.userAchievementsArray = Array.from(
-        parsed.state.userAchievements.entries(),
-      );
-      delete parsed.state.userAchievements;
+    try {
+      // Parse and convert Map to array for storage
+      const parsed = JSON.parse(value);
+      // Bug 9 fix: after JSON round-trip, Map becomes a plain object.
+      // Check for object with entries instead of instanceof Map.
+      const userAchievements = parsed.state?.userAchievements;
+      if (
+        userAchievements &&
+        typeof userAchievements === 'object' &&
+        !(userAchievements instanceof Map)
+      ) {
+        // Convert plain object (from JSON round-trip) to array format for storage
+        parsed.state.userAchievementsArray = Object.entries(userAchievements);
+        delete parsed.state.userAchievements;
+      } else if (userAchievements instanceof Map) {
+        parsed.state.userAchievementsArray = Array.from(
+          userAchievements.entries(),
+        );
+        delete parsed.state.userAchievements;
+      }
+      await AsyncStorage.setItem(name, JSON.stringify(parsed));
+    } catch (e) {
+      console.warn(`⚠️ [achievementStorage] Failed to write "${name}":`, e);
+      // Fallback: try to write the raw value
+      try {
+        await AsyncStorage.setItem(name, typeof value === 'string' ? value : JSON.stringify(value));
+      } catch {
+        // Silently fail — data will be reloaded from Supabase on next login
+      }
     }
-    await AsyncStorage.setItem(name, JSON.stringify(parsed));
   },
   removeItem: async (name: string): Promise<void> => {
-    await AsyncStorage.removeItem(name);
+    try {
+      await AsyncStorage.removeItem(name);
+    } catch (e) {
+      console.warn(`⚠️ [achievementStorage] Failed to remove "${name}":`, e);
+    }
   },
 };
 
@@ -316,9 +352,12 @@ export const useAchievementStore = create<AchievementStore>()(
         return Array.from(state.userAchievements.values())
           .filter((ua) => ua.isCompleted)
           .sort(
-            (a, b) =>
-              new Date(b.unlockedAt).getTime() -
-              new Date(a.unlockedAt).getTime(),
+            (a, b) => {
+              // Bug 6 fix: guard against undefined unlockedAt causing NaN comparisons
+              const timeA = a.unlockedAt ? new Date(a.unlockedAt).getTime() : 0;
+              const timeB = b.unlockedAt ? new Date(b.unlockedAt).getTime() : 0;
+              return timeB - timeA;
+            },
           )
           .slice(0, count)
           .map((ua) => {
@@ -366,6 +405,8 @@ export const useAchievementStore = create<AchievementStore>()(
         const todayProgress = Array.from(
           state.userAchievements.values(),
         ).filter((ua) => {
+          // Bug 7 fix: guard against undefined unlockedAt causing throws
+          if (!ua.unlockedAt) return false;
           const lastUpdate = new Date(ua.unlockedAt).toDateString();
           return lastUpdate === today;
         });
@@ -466,8 +507,9 @@ export const useAchievementStore = create<AchievementStore>()(
               0,
             );
             const completionRate =
-              mergedAchievements.size > 0
-                ? (completed.length / mergedAchievements.size) * 100
+              // Bug 8 fix: divide by total achievements count, not just user-tracked ones
+              state.achievements.length > 0
+                ? (completed.length / state.achievements.length) * 100
                 : 0;
 
             set({
@@ -487,6 +529,12 @@ export const useAchievementStore = create<AchievementStore>()(
 
       // Reset store to initial state (for logout)
       reset: () => {
+        // Bug 5 fix: cleanup achievement engine listeners on reset
+        if (typeof achievementEngine !== 'undefined' && achievementEngine.removeAllListeners) {
+          achievementEngine.removeAllListeners();
+        }
+        achievementListenerAttached = false;
+
         set({
           isLoading: false,
           isInitialized: false,

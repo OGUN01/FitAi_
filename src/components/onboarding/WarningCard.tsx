@@ -13,7 +13,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
-import { rf, rw } from "../../utils/responsive";
+import { rf, rw, rp, rbr } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { ValidationResult } from "../../services/validationEngine";
 
@@ -91,7 +91,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerIcon}>
-          <Ionicons name={headerIcon} size={rf(20)} color="#F59E0B" />
+          <Ionicons name={headerIcon} size={rf(20)} color={ResponsiveTheme.colors.warningAlt} />
         </View>
         <Text style={styles.headerTitle}>{headerTitle}</Text>
       </View>
@@ -103,7 +103,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
 
           {warning.impact && (
             <View style={styles.impactContainer}>
-              <Ionicons name="flash-outline" size={rf(12)} color="#F59E0B" />
+              <Ionicons name="flash-outline" size={rf(12)} color={ResponsiveTheme.colors.warningAlt} />
               <Text style={styles.impactText}>{warning.impact}</Text>
             </View>
           )}
@@ -114,7 +114,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
                 <Ionicons
                   name="warning-outline"
                   size={rf(12)}
-                  color="#F97316"
+                  color={ResponsiveTheme.colors.warning}
                 />
                 <Text style={styles.risksTitle}>Risks</Text>
               </View>
@@ -138,21 +138,21 @@ export const WarningCard: React.FC<WarningCardProps> = ({
           >
             <LinearGradient
               colors={
-                isLoading ? ["#9CA3AF", "#6B7280"] : ["#F59E0B", "#D97706"]
+                isLoading ? [ResponsiveTheme.colors.neutral, ResponsiveTheme.colors.textTertiary] : [ResponsiveTheme.colors.warningAlt, ResponsiveTheme.colors.warningAlt]
               }
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.adjustButtonGradient}
             >
               {isLoading ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color={ResponsiveTheme.colors.white} />
               ) : (
-                <Ionicons name="options-outline" size={rf(16)} color="#fff" />
+                <Ionicons name="options-outline" size={rf(16)} color={ResponsiveTheme.colors.white} />
               )}
               <Text style={styles.adjustButtonText}>
                 {isLoading ? "Loading..." : "Adjust Plan"}
               </Text>
-              <Ionicons name="chevron-forward" size={rf(16)} color="#fff" />
+              <Ionicons name="chevron-forward" size={rf(16)} color={ResponsiveTheme.colors.white} />
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -165,7 +165,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
 
           {warning.impact && (
             <View style={styles.impactContainer}>
-              <Ionicons name="flash-outline" size={rf(12)} color="#F59E0B" />
+              <Ionicons name="flash-outline" size={rf(12)} color={ResponsiveTheme.colors.warningAlt} />
               <Text style={styles.impactText}>{warning.impact}</Text>
             </View>
           )}
@@ -176,7 +176,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
                 <Ionicons
                   name="warning-outline"
                   size={rf(12)}
-                  color="#F97316"
+                  color={ResponsiveTheme.colors.warning}
                 />
                 <Text style={styles.risksTitle}>Risks</Text>
               </View>
@@ -195,7 +195,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
                   <Ionicons
                     name="checkmark-circle"
                     size={rf(14)}
-                    color="#10B981"
+                    color={ResponsiveTheme.colors.successAlt}
                   />
                   <Text style={styles.recommendationText}>{rec}</Text>
                 </View>
@@ -220,7 +220,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
             ]}
           >
             {acknowledged && (
-              <Ionicons name="checkmark" size={rf(14)} color="#fff" />
+              <Ionicons name="checkmark" size={rf(14)} color={ResponsiveTheme.colors.white} />
             )}
           </Animated.View>
           <Text style={styles.checkboxLabel}>
@@ -238,39 +238,39 @@ export const WarningCard: React.FC<WarningCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "rgba(245, 158, 11, 0.08)",
+    backgroundColor: ResponsiveTheme.colors.warningTint,
     borderWidth: 1,
-    borderColor: "rgba(245, 158, 11, 0.3)",
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.md,
+    borderColor: `${ResponsiveTheme.colors.warning}4D`,
+    borderRadius: rbr(ResponsiveTheme.borderRadius.lg),
+    padding: rp(ResponsiveTheme.spacing.md),
+    marginBottom: rp(ResponsiveTheme.spacing.md),
   },
 
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: rp(ResponsiveTheme.spacing.md),
   },
 
   headerIcon: {
     width: rw(32),
     height: rw(32),
     borderRadius: rw(16),
-    backgroundColor: "rgba(245, 158, 11, 0.15)",
+    backgroundColor: `${ResponsiveTheme.colors.warningAlt}26`,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: rp(ResponsiveTheme.spacing.sm),
   },
 
   headerTitle: {
     fontSize: rf(16),
     fontWeight: "700",
-    color: "#FCD34D",
+    color: ResponsiveTheme.colors.warning,
     letterSpacing: -0.3,
   },
 
   warningItem: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: rp(ResponsiveTheme.spacing.md),
   },
 
   warningMessage: {
@@ -283,35 +283,35 @@ const styles = StyleSheet.create({
   impactContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: ResponsiveTheme.spacing.xs,
-    gap: ResponsiveTheme.spacing.xs,
+    marginTop: rp(ResponsiveTheme.spacing.xs),
+    gap: rp(ResponsiveTheme.spacing.xs),
   },
 
   impactText: {
     flex: 1,
     fontSize: rf(12),
-    color: "#FBBF24",
+    color: ResponsiveTheme.colors.warning,
     fontWeight: "500",
   },
 
   risksContainer: {
-    marginTop: ResponsiveTheme.spacing.sm,
-    backgroundColor: "rgba(249, 115, 22, 0.1)",
-    padding: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    marginTop: rp(ResponsiveTheme.spacing.sm),
+    backgroundColor: `${ResponsiveTheme.colors.warning}1A`,
+    padding: rp(ResponsiveTheme.spacing.sm),
+    borderRadius: rbr(ResponsiveTheme.borderRadius.sm),
   },
 
   riskHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    gap: rp(ResponsiveTheme.spacing.xs),
+    marginBottom: rp(ResponsiveTheme.spacing.xs),
   },
 
   risksTitle: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: "#F97316",
+    color: ResponsiveTheme.colors.warning,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
@@ -320,18 +320,18 @@ const styles = StyleSheet.create({
     fontSize: rf(12),
     color: ResponsiveTheme.colors.textSecondary,
     lineHeight: rf(16),
-    marginLeft: ResponsiveTheme.spacing.sm,
+    marginLeft: rp(ResponsiveTheme.spacing.sm),
   },
 
   recommendationsContainer: {
-    marginTop: ResponsiveTheme.spacing.sm,
-    gap: ResponsiveTheme.spacing.xs,
+    marginTop: rp(ResponsiveTheme.spacing.sm),
+    gap: rp(ResponsiveTheme.spacing.xs),
   },
 
   recommendationItem: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: rp(ResponsiveTheme.spacing.xs),
   },
 
   recommendationText: {
@@ -343,8 +343,8 @@ const styles = StyleSheet.create({
 
   // Adjust Plan Button
   adjustButton: {
-    marginTop: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    marginTop: rp(ResponsiveTheme.spacing.md),
+    borderRadius: rbr(ResponsiveTheme.borderRadius.md),
     overflow: "hidden",
   },
 
@@ -356,16 +356,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    gap: ResponsiveTheme.spacing.xs,
+    paddingVertical: rp(ResponsiveTheme.spacing.sm),
+    paddingHorizontal: rp(ResponsiveTheme.spacing.md),
+    gap: rp(ResponsiveTheme.spacing.xs),
   },
 
   adjustButtonText: {
     flex: 1,
     fontSize: rf(14),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     textAlign: "center",
   },
 
@@ -373,27 +373,27 @@ const styles = StyleSheet.create({
   checkboxContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: ResponsiveTheme.spacing.md,
-    paddingTop: ResponsiveTheme.spacing.md,
+    marginTop: rp(ResponsiveTheme.spacing.md),
+    paddingTop: rp(ResponsiveTheme.spacing.md),
     borderTopWidth: 1,
-    borderTopColor: "rgba(245, 158, 11, 0.2)",
+    borderTopColor: `${ResponsiveTheme.colors.warning}33`,
   },
 
   checkboxBox: {
     width: rw(22),
     height: rw(22),
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    borderRadius: rbr(ResponsiveTheme.borderRadius.sm),
     borderWidth: 2,
-    borderColor: "rgba(245, 158, 11, 0.5)",
-    backgroundColor: "rgba(255,255,255,0.05)",
+    borderColor: `${ResponsiveTheme.colors.warning}80`,
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: rp(ResponsiveTheme.spacing.sm),
   },
 
   checkboxBoxChecked: {
-    borderColor: "#10B981",
-    backgroundColor: "#10B981",
+    borderColor: ResponsiveTheme.colors.successAlt,
+    backgroundColor: ResponsiveTheme.colors.successAlt,
   },
 
   checkboxLabel: {

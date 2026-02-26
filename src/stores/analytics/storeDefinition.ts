@@ -5,7 +5,9 @@ import {
   createJSONStorage,
 } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { safeAsyncStorage } from "../../utils/safeAsyncStorage";
 import { analyticsEngine } from "../../services/analyticsEngine";
+import { logger } from "../../utils/logger";
 import {
   AnalyticsStore,
   AnalyticsSummary,
@@ -117,7 +119,7 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
         set({ isLoading: true });
 
         try {
-          console.log(`🔄 Generating ${period} analytics...`);
+          logger.debug(`🔄 Generating ${period} analytics...`);
 
           const analytics = await analyticsEngine.generateAnalytics(period);
 
@@ -134,7 +136,7 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
           const errorMessage =
             error instanceof Error ? error.message : String(error);
           if (errorMessage.includes("Insufficient data")) {
-            console.log(
+            logger.debug(
               "📊 No analytics data yet - user needs to log workouts/meals first",
             );
           } else {
@@ -262,7 +264,7 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
     })),
     {
       name: "analytics-storage",
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => safeAsyncStorage),
       partialize: (state) => ({
         metricsHistory: state.metricsHistory,
         analyticsSummary: state.analyticsSummary,

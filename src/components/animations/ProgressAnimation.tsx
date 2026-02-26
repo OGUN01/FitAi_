@@ -8,7 +8,7 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
 
 interface ProgressAnimationProps {
   progress: number; // 0-100
@@ -26,8 +26,8 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
   progress,
   type = "linear",
   size = "md",
-  color = THEME.colors.primary,
-  backgroundColor = THEME.colors.surface,
+  color = ResponsiveTheme.colors.primary,
+  backgroundColor = ResponsiveTheme.colors.surface,
   showPercentage = true,
   label,
   duration = 1000,
@@ -195,7 +195,7 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
             <Text
               style={[
                 styles.circularLabel,
-                { color: THEME.colors.textSecondary },
+                { color: ResponsiveTheme.colors.textSecondary },
               ]}
             >
               {label}
@@ -262,7 +262,7 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
           )}
           {label && (
             <Text
-              style={[styles.ringLabel, { color: THEME.colors.textSecondary }]}
+              style={[styles.ringLabel, { color: ResponsiveTheme.colors.textSecondary }]}
             >
               {label}
             </Text>
@@ -294,31 +294,31 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   progressRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   linearTrack: {
     flex: 1,
-    borderRadius: THEME.borderRadius.sm,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
     overflow: "hidden",
   },
 
   linearFill: {
-    borderRadius: THEME.borderRadius.sm,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
   },
 
   percentageText: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.semibold,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
     minWidth: 40,
     textAlign: "right",
   },
@@ -348,13 +348,13 @@ const styles = StyleSheet.create({
   },
 
   circularPercentage: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
   },
 
   circularLabel: {
-    fontSize: THEME.fontSize.xs,
-    marginTop: THEME.spacing.xs / 2,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    marginTop: ResponsiveTheme.spacing.xs / 2,
   },
 
   ringContainer: {
@@ -374,12 +374,12 @@ const styles = StyleSheet.create({
   },
 
   ringPercentage: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
   },
 
   ringLabel: {
-    fontSize: THEME.fontSize.xs,
-    marginTop: THEME.spacing.xs / 2,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    marginTop: ResponsiveTheme.spacing.xs / 2,
   },
 });

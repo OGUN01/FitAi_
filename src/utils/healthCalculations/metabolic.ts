@@ -12,8 +12,27 @@ import {
 
 export class MetabolicCalculations {
   static calculateBMI(weightKg: number, heightCm: number): number {
-    return calculateBMICore(weightKg, heightCm);
+    // Guard clause: replace 0/negative with population defaults
+    let w = weightKg;
+    let h = heightCm;
+    if (w <= 0 || h <= 0) {
+      const fb = this.FALLBACK_BODY['default'];
+      if (w <= 0) w = fb.weight;
+      if (h <= 0) h = fb.height;
+    }
+    return calculateBMICore(w, h);
   }
+
+  /**
+   * Population-average defaults used defensively when inputs are 0/negative.
+   * The master engine should apply fallbacks before calling this, but this
+   * guard clause provides a safety net.
+   */
+  private static readonly FALLBACK_BODY = {
+    male:   { weight: 75, height: 175 },
+    female: { weight: 62, height: 163 },
+    default: { weight: 70, height: 170 },
+  } as const;
 
   static calculateBMR(
     weightKg: number,
@@ -21,7 +40,22 @@ export class MetabolicCalculations {
     age: number,
     gender: string,
   ): number {
-    return calculateBMRCore(weightKg, heightCm, age, gender);
+    // Guard clause: replace 0/negative weight or height with population defaults
+    let w = weightKg;
+    let h = heightCm;
+    if (w <= 0 || h <= 0) {
+      const key = gender === 'male' || gender === 'female' ? gender : 'default';
+      const fb = this.FALLBACK_BODY[key];
+      if (w <= 0) {
+        console.warn(`⚠️ [MetabolicCalculations.calculateBMR] weight is ${w}, using fallback ${fb.weight}kg`);
+        w = fb.weight;
+      }
+      if (h <= 0) {
+        console.warn(`⚠️ [MetabolicCalculations.calculateBMR] height is ${h}, using fallback ${fb.height}cm`);
+        h = fb.height;
+      }
+    }
+    return calculateBMRCore(w, h, age, gender);
   }
 
   static calculateTDEE(bmr: number, activityLevel: string): number {

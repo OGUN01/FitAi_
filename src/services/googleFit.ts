@@ -73,17 +73,14 @@ class GoogleFitService {
    */
   async initialize(): Promise<boolean> {
     try {
-      console.log("🤖 Initializing Google Fit integration...");
 
       // Google Fit is only available on Android
       if (Platform.OS !== "android") {
-        console.log("📱 Google Fit only available on Android devices");
         return false;
       }
 
       // Check if Google Play Services is available
       const isAvailable = await GoogleFit.checkIsAuthorized();
-      console.log(`📊 Google Fit availability check: ${isAvailable}`);
 
       this.isInitialized = true;
       return true;
@@ -103,7 +100,6 @@ class GoogleFitService {
         if (!initSuccess) return false;
       }
 
-      console.log("🔐 Requesting Google Fit permissions...");
 
       const authResult = await GoogleFit.authorize({
         scopes: this.scopes,
@@ -112,7 +108,6 @@ class GoogleFitService {
       this.permissionsGranted = authResult.success;
 
       if (authResult.success) {
-        console.log("✅ Google Fit permissions granted");
         await AsyncStorage.setItem("fitai_googlefit_permissions", "granted");
 
         // Start observing data updates
@@ -154,17 +149,14 @@ class GoogleFitService {
    */
   private async startObservers(): Promise<void> {
     try {
-      console.log("👀 Starting Google Fit data observers...");
 
       // Start observing step count
       await GoogleFit.startRecording(
         (callback: any) => {
-          console.log("📊 Google Fit data update received:", callback);
         },
         ["step", "distance", "activity"],
       );
 
-      console.log("✅ Google Fit observers started");
     } catch (error) {
       console.error("❌ Failed to start Google Fit observers:", error);
     }
@@ -187,7 +179,6 @@ class GoogleFitService {
         };
       }
 
-      console.log(`📥 Syncing Google Fit data from last ${daysBack} days...`);
 
       const endDate = new Date();
       const startDate = new Date();
@@ -206,7 +197,6 @@ class GoogleFitService {
           // Get total steps from most recent day
           const latestSteps = stepsData[stepsData.length - 1] as any;
           googleFitData.steps = latestSteps.steps || 0;
-          console.log(`👟 Steps: ${googleFitData.steps}`);
         }
       } catch (error) {
         console.warn("⚠️ Failed to fetch steps data:", error);
@@ -225,7 +215,6 @@ class GoogleFitService {
             0,
           );
           googleFitData.calories = Math.round(totalCalories);
-          console.log(`🔥 Calories: ${googleFitData.calories}`);
         }
       } catch (error) {
         console.warn("⚠️ Failed to fetch calories data:", error);
@@ -244,7 +233,6 @@ class GoogleFitService {
             0,
           );
           googleFitData.distance = Math.round(totalDistance); // in meters
-          console.log(`📏 Distance: ${googleFitData.distance}m`);
         }
       } catch (error) {
         console.warn("⚠️ Failed to fetch distance data:", error);
@@ -261,7 +249,6 @@ class GoogleFitService {
           // Get most recent heart rate reading
           const latestHR = heartRateData[heartRateData.length - 1];
           googleFitData.heartRate = Math.round(latestHR.value || 0);
-          console.log(`❤️ Heart Rate: ${googleFitData.heartRate} BPM`);
         }
       } catch (error) {
         console.warn("⚠️ Failed to fetch heart rate data:", error);
@@ -278,7 +265,6 @@ class GoogleFitService {
           const latestWeight = weightData[weightData.length - 1];
           googleFitData.weight =
             Math.round((latestWeight.value || 0) * 10) / 10;
-          console.log(`⚖️ Weight: ${googleFitData.weight} kg`);
         }
       } catch (error) {
         console.warn("⚠️ Failed to fetch weight data:", error);
@@ -313,7 +299,6 @@ class GoogleFitService {
             }),
           );
 
-          console.log(`😴 Sleep sessions: ${googleFitData.sleepData.length}`);
         }
       } catch (error) {
         console.warn("⚠️ Failed to fetch sleep data:", error);
@@ -326,7 +311,6 @@ class GoogleFitService {
       await this.cacheHealthData(googleFitData);
 
       const syncTime = Date.now() - startTime;
-      console.log(`✅ Google Fit sync completed in ${syncTime}ms`);
 
       return {
         success: true,
@@ -363,7 +347,6 @@ class GoogleFitService {
         return false;
       }
 
-      console.log(`📤 Exporting FitAI workout to Google Fit: ${workout.name}`);
 
       // Map FitAI workout types to Google Fit activity types
       const activityTypeMapping: Record<string, string> = {
@@ -397,7 +380,6 @@ class GoogleFitService {
       const result = await GoogleFit.saveWorkout(workoutData as any);
 
       if (result) {
-        console.log(`✅ Successfully exported workout to Google Fit`);
         return true;
       } else {
         console.error("❌ Failed to export workout to Google Fit");
@@ -425,9 +407,6 @@ class GoogleFitService {
         return false;
       }
 
-      console.log(
-        `📤 Exporting FitAI nutrition data to Google Fit for ${nutritionData.date.toDateString()}`,
-      );
 
       const nutritionEntry = {
         date: nutritionData.date.toISOString(),
@@ -450,11 +429,6 @@ class GoogleFitService {
         },
       );
 
-      console.log(`✅ Nutrition data exported to Google Fit:
-        - Calories: ${nutritionData.calories}
-        - Protein: ${nutritionData.protein || 0}g
-        - Carbs: ${nutritionData.carbs || 0}g
-        - Fat: ${nutritionData.fat || 0}g`);
 
       return true;
     } catch (error) {
@@ -476,7 +450,6 @@ class GoogleFitService {
         return false;
       }
 
-      console.log(`📤 Exporting body weight to Google Fit: ${weight}kg`);
 
       const weightData = {
         value: weight,
@@ -495,7 +468,6 @@ class GoogleFitService {
 
       // @ts-ignore - Type issue with result void check
       if (result) {
-        console.log(`✅ Successfully exported body weight to Google Fit`);
         return true;
       } else {
         console.error("❌ Failed to export body weight to Google Fit");
@@ -612,7 +584,6 @@ class GoogleFitService {
         this.STORAGE_KEY,
         this.SYNC_INTERVAL_KEY,
       ]);
-      console.log("✅ Google Fit cache cleared");
     } catch (error) {
       console.error("❌ Error clearing Google Fit cache:", error);
     }
@@ -623,7 +594,6 @@ class GoogleFitService {
    */
   async disconnect(): Promise<boolean> {
     try {
-      console.log("🔌 Disconnecting from Google Fit...");
 
       await GoogleFit.disconnect();
       await this.clearCache();
@@ -631,7 +601,6 @@ class GoogleFitService {
 
       this.permissionsGranted = false;
 
-      console.log("✅ Successfully disconnected from Google Fit");
       return true;
     } catch (error) {
       console.error("❌ Failed to disconnect from Google Fit:", error);
@@ -655,7 +624,6 @@ class GoogleFitService {
     };
   }> {
     try {
-      console.log("❤️ Calculating heart rate zones from Google Fit data...");
 
       // Try to get actual resting heart rate from Google Fit
       let restingHR: number | undefined;
@@ -725,9 +693,6 @@ class GoogleFitService {
         },
       };
 
-      console.log(
-        `❤️ Heart rate zones calculated - Max HR: ${maxHR}, Resting: ${restingHR || "estimated"}`,
-      );
       return { restingHR, maxHR, zones };
     } catch (error) {
       console.error("❌ Failed to calculate heart rate zones:", error);
@@ -777,9 +742,6 @@ class GoogleFitService {
     };
   }> {
     try {
-      console.log(
-        "😴 Analyzing Google Fit sleep data for workout recommendations...",
-      );
 
       // Get last night's sleep data
       const today = new Date();
@@ -873,9 +835,6 @@ class GoogleFitService {
           break;
       }
 
-      console.log(
-        `😴 Sleep analysis: ${sleepDuration}h (${sleepQuality}) -> ${workoutType} workout`,
-      );
 
       return {
         sleepQuality,
@@ -918,9 +877,6 @@ class GoogleFitService {
     recommendations: string[];
   }> {
     try {
-      console.log(
-        "🔥 Calculating activity-adjusted calorie targets from Google Fit...",
-      );
 
       // Get today's activity data
       const today = new Date();
@@ -1006,9 +962,6 @@ class GoogleFitService {
         recommendations.push("Excellent step count! Step bonus applied");
       }
 
-      console.log(
-        `🔥 Calorie adjustment: ${baseCalories} -> ${adjustedCalories} (${activityMultiplier}x multiplier)`,
-      );
 
       return {
         adjustedCalories,
@@ -1057,7 +1010,6 @@ class GoogleFitService {
     autoLoggedCount: number;
   }> {
     try {
-      console.log("🤖 Detecting activities from Google Fit data...");
 
       const today = new Date();
       const startOfDay = new Date(
@@ -1154,7 +1106,6 @@ class GoogleFitService {
               calories: Math.round(activity.duration * 5), // Rough estimate
             });
             autoLoggedCount++;
-            console.log(`✅ Auto-logged ${activity.type} activity`);
           } catch (error) {
             console.warn(
               `⚠️ Failed to auto-log ${activity.type} activity:`,
@@ -1164,9 +1115,6 @@ class GoogleFitService {
         }
       }
 
-      console.log(
-        `🤖 Activity detection complete: ${activities.length} detected, ${autoLoggedCount} auto-logged`,
-      );
 
       return {
         detectedActivities: activities,

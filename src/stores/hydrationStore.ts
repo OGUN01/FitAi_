@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { safeAsyncStorage } from "../utils/safeAsyncStorage";
 import { hydrationDataService } from "../services/hydrationData";
 
 /**
@@ -70,10 +71,6 @@ export const useHydrationStore = create<HydrationState>()(
 
         // Sync to Supabase in background (fire and forget)
         hydrationDataService.logWaterIntake(amountML).catch((err) => {
-          console.warn(
-            "[HydrationStore] Failed to sync water to Supabase:",
-            err,
-          );
         });
       },
 
@@ -106,10 +103,6 @@ export const useHydrationStore = create<HydrationState>()(
             waterIntakeML: 0,
             lastResetDate: today,
           });
-          console.log(
-            "[HydrationStore] Daily reset triggered for new day:",
-            today,
-          );
         }
       },
 
@@ -147,32 +140,47 @@ export const useHydrationStore = create<HydrationState>()(
       syncWithSupabase: async () => {
         try {
           const result = await hydrationDataService.syncHydrationWithSupabase();
-          if (result.success && result.total_ml > 0) {
-            // If remote has more water than local, use remote as source of truth
-            const state = get();
-            if (result.total_ml > state.waterIntakeML) {
-              set({ waterIntakeML: result.total_ml });
-              console.log(
-                "[HydrationStore] Synced from Supabase:",
-                result.total_ml,
-                "ml",
-              );
-            }
+          if (result.success) {
+            // Supabase is authoritative: always sync local to remote value
+            // This prevents stale persisted values from showing incorrect data
+            set({ waterIntakeML: result.total_ml });
           }
         } catch (error) {
-          console.warn("[HydrationStore] Sync failed:", error);
+          console.error(
+            "[HydrationStore] Sync failed:",
+            error instanceof Error ? error.message : error,
+          );
+          // Retry once after a short delay
+          setTimeout(async () => {
+            try {
+              const retryResult =
+                await hydrationDataService.syncHydrationWithSupabase();
+              if (retryResult.success) {
+                set({ waterIntakeML: retryResult.total_ml });
+              }
+            } catch (retryError) {
+              console.error(
+                "[HydrationStore] Sync retry also failed:",
+                retryError instanceof Error ? retryError.message : retryError,
+              );
+            }
+          }, 3000);
         }
       },
     }),
     {
       name: "fitai-hydration-storage",
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => safeAsyncStorage),
       // Only persist these fields
       partialize: (state) => ({
         waterIntakeML: state.waterIntakeML,
         dailyGoalML: state.dailyGoalML,
         lastResetDate: state.lastResetDate,
       }),
+      // After AsyncStorage rehydrates, check if it's a new day and reset if needed
+      onRehydrateStorage: () => (state) => {
+        state?.checkAndResetIfNewDay?.();
+      },
     },
   ),
 );

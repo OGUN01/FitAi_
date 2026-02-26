@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { THEME } from "../ui";
-
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr, rh, rw } from "../../utils/responsive";
 interface WorkoutHeaderProps {
   workoutTitle: string;
   currentExercise: number;
@@ -52,7 +52,7 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
         </Text>
       </View>
 
-      <View style={styles.headerRight} pointerEvents="none">
+      <View style={[styles.headerRight, { pointerEvents: "none" }]}>
         <Text style={styles.timerText}>{safeString(duration)}m</Text>
         <Text style={styles.caloriesText}>{safeString(calories)} cal</Text>
       </View>
@@ -65,48 +65,48 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.md,
-    backgroundColor: THEME.colors.surface,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    backgroundColor: ResponsiveTheme.colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: THEME.colors.border,
+    borderBottomColor: ResponsiveTheme.colors.border,
     elevation: 2,
   },
 
   exitButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: THEME.colors.error + "20",
+    width: rw(44),
+    height: rw(44),
+    borderRadius: rbr(22),
+    backgroundColor: ResponsiveTheme.colors.error + "20",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: THEME.colors.error + "40",
+    borderColor: ResponsiveTheme.colors.error + "40",
   },
 
   exitButtonText: {
-    fontSize: 18,
-    color: THEME.colors.error,
-    fontWeight: THEME.fontWeight.bold,
+    fontSize: rf(18),
+    color: ResponsiveTheme.colors.error,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
   },
 
   headerInfo: {
     flex: 1,
     alignItems: "center",
-    marginHorizontal: THEME.spacing.md,
+    marginHorizontal: ResponsiveTheme.spacing.md,
   },
 
   workoutTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
     textAlign: "center",
   },
 
   progressText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
 
   headerRight: {
@@ -115,14 +115,14 @@ const styles = StyleSheet.create({
   },
 
   timerText: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   caloriesText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginTop: 2,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: rp(2),
   },
 });

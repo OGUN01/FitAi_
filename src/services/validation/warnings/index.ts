@@ -16,7 +16,8 @@ export {
 export { warnVeganProteinLimitations } from "./nutritionWarnings";
 export {
   warnLowSleep,
-  warnSubstanceImpact,
+  warnAlcoholImpact,
+  warnTobaccoImpact,
   warnMultipleBadHabits,
 } from "./lifestyleWarnings";
 export {

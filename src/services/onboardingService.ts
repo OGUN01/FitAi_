@@ -22,12 +22,6 @@ import {
 export class PersonalInfoService {
   static async save(userId: string, data: PersonalInfoData): Promise<boolean> {
     try {
-      console.log(
-        "💾 [DB-SERVICE] PersonalInfoService.save - Starting save for user:",
-        userId,
-      );
-      console.log("💾 [DB-SERVICE] Input data:", data);
-
       // CRITICAL: Get user email from auth session - required NOT NULL field in profiles table
       const {
         data: { session },
@@ -62,11 +56,6 @@ export class PersonalInfoService {
         updated_at: new Date().toISOString(),
       };
 
-      console.log(
-        "💾 [DB-SERVICE] Transformed profileData for upsert:",
-        profileData,
-      );
-
       const { error } = await supabase.from("profiles").upsert(profileData, {
         onConflict: "id",
         ignoreDuplicates: false,
@@ -80,9 +69,6 @@ export class PersonalInfoService {
         return false;
       }
 
-      console.log(
-        "✅ [DB-SERVICE] PersonalInfoService: Personal info saved successfully to database",
-      );
       return true;
     } catch (error) {
       console.error(
@@ -95,11 +81,6 @@ export class PersonalInfoService {
 
   static async load(userId: string): Promise<PersonalInfoData | null> {
     try {
-      console.log(
-        "📥 [DB-SERVICE] PersonalInfoService.load - Loading for user:",
-        userId,
-      );
-
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -115,13 +96,8 @@ export class PersonalInfoService {
       }
 
       if (!data) {
-        console.log(
-          "📭 [DB-SERVICE] PersonalInfoService: No personal info found in database",
-        );
         return null;
       }
-
-      console.log("📥 [DB-SERVICE] Raw data from database:", data);
 
       // VALIDATION: CRITICAL FIELDS - no fallbacks allowed
       if (!data.age || data.age === 0) {
@@ -147,10 +123,6 @@ export class PersonalInfoService {
         occupation_type: data.occupation_type || "desk_job",
       };
 
-      console.log(
-        "✅ [DB-SERVICE] PersonalInfoService: Transformed PersonalInfoData:",
-        personalInfo,
-      );
       return personalInfo;
     } catch (error) {
       console.error(
@@ -163,11 +135,6 @@ export class PersonalInfoService {
 
   static async delete(userId: string): Promise<boolean> {
     try {
-      console.log(
-        "🗑️ PersonalInfoService: Deleting personal info for user:",
-        userId,
-      );
-
       const { error } = await supabase
         .from("profiles")
         .delete()
@@ -178,7 +145,6 @@ export class PersonalInfoService {
         return false;
       }
 
-      console.log("✅ PersonalInfoService: Personal info deleted successfully");
       return true;
     } catch (error) {
       console.error("❌ PersonalInfoService: Unexpected error:", error);
@@ -197,12 +163,6 @@ export class DietPreferencesService {
     data: DietPreferencesData,
   ): Promise<boolean> {
     try {
-      console.log(
-        "💾 [DB-SERVICE] DietPreferencesService.save - Starting save for user:",
-        userId,
-      );
-      console.log("💾 [DB-SERVICE] Input data:", data);
-
       const dietData: Partial<DietPreferencesRow> = {
         user_id: userId,
         diet_type: data.diet_type || "omnivore", // NOT NULL - default to omnivore
@@ -247,8 +207,6 @@ export class DietPreferencesService {
         updated_at: new Date().toISOString(),
       };
 
-      console.log("💾 [DB-SERVICE] Transformed dietData for upsert:", dietData);
-
       const { error } = await supabase
         .from("diet_preferences")
         .upsert(dietData, {
@@ -264,9 +222,6 @@ export class DietPreferencesService {
         return false;
       }
 
-      console.log(
-        "✅ [DB-SERVICE] DietPreferencesService: Diet preferences saved successfully to database",
-      );
       return true;
     } catch (error) {
       console.error(
@@ -279,11 +234,6 @@ export class DietPreferencesService {
 
   static async load(userId: string): Promise<DietPreferencesData | null> {
     try {
-      console.log(
-        "📥 [DB-SERVICE] DietPreferencesService.load - Loading for user:",
-        userId,
-      );
-
       const { data, error } = await supabase
         .from("diet_preferences")
         .select("*")
@@ -300,13 +250,8 @@ export class DietPreferencesService {
       }
 
       if (!data) {
-        console.log(
-          "📭 [DB-SERVICE] DietPreferencesService: No diet preferences found in database",
-        );
         return null;
       }
-
-      console.log("📥 [DB-SERVICE] Raw data from database:", data);
 
       const dietPreferences: DietPreferencesData = {
         diet_type: data.diet_type || "non-veg",
@@ -350,10 +295,6 @@ export class DietPreferencesService {
         takes_supplements: data.takes_supplements || false,
       };
 
-      console.log(
-        "✅ [DB-SERVICE] DietPreferencesService: Transformed DietPreferencesData:",
-        dietPreferences,
-      );
       return dietPreferences;
     } catch (error) {
       console.error("❌ DietPreferencesService: Unexpected error:", error);
@@ -369,12 +310,6 @@ export class DietPreferencesService {
 export class BodyAnalysisService {
   static async save(userId: string, data: BodyAnalysisData): Promise<boolean> {
     try {
-      console.log(
-        "💾 [DB-SERVICE] BodyAnalysisService.save - Starting save for user:",
-        userId,
-      );
-      console.log("💾 [DB-SERVICE] Input data:", data);
-
       const bodyData: Partial<BodyAnalysisRow> = {
         user_id: userId,
 
@@ -423,8 +358,6 @@ export class BodyAnalysisService {
         updated_at: new Date().toISOString(),
       };
 
-      console.log("💾 [DB-SERVICE] Transformed bodyData for upsert:", bodyData);
-
       const { error } = await supabase.from("body_analysis").upsert(bodyData, {
         onConflict: "user_id",
         ignoreDuplicates: false,
@@ -438,9 +371,6 @@ export class BodyAnalysisService {
         return false;
       }
 
-      console.log(
-        "✅ [DB-SERVICE] BodyAnalysisService: Body analysis saved successfully to database",
-      );
       return true;
     } catch (error) {
       console.error(
@@ -453,11 +383,6 @@ export class BodyAnalysisService {
 
   static async load(userId: string): Promise<BodyAnalysisData | null> {
     try {
-      console.log(
-        "📥 [DB-SERVICE] BodyAnalysisService.load - Loading for user:",
-        userId,
-      );
-
       const { data, error } = await supabase
         .from("body_analysis")
         .select("*")
@@ -473,13 +398,8 @@ export class BodyAnalysisService {
       }
 
       if (!data) {
-        console.log(
-          "📭 [DB-SERVICE] BodyAnalysisService: No body analysis found in database",
-        );
         return null;
       }
-
-      console.log("📥 [DB-SERVICE] Raw data from database:", data);
 
       // VALIDATION: CRITICAL FIELDS - no fallbacks for weight/height
       if (!data.height_cm || data.height_cm === 0) {
@@ -527,10 +447,6 @@ export class BodyAnalysisService {
         waist_hip_ratio: data.waist_hip_ratio || undefined,
       };
 
-      console.log(
-        "✅ [DB-SERVICE] BodyAnalysisService: Transformed BodyAnalysisData:",
-        bodyAnalysis,
-      );
       return bodyAnalysis;
     } catch (error) {
       console.error("❌ BodyAnalysisService: Unexpected error:", error);
@@ -549,12 +465,6 @@ export class WorkoutPreferencesService {
     data: WorkoutPreferencesData,
   ): Promise<boolean> {
     try {
-      console.log(
-        "💾 [DB-SERVICE] WorkoutPreferencesService.save - Starting save for user:",
-        userId,
-      );
-      console.log("💾 [DB-SERVICE] Input data:", data);
-
       const workoutData: Partial<WorkoutPreferencesRow> = {
         user_id: userId,
         location: data.location || "home", // NOT NULL - default to home
@@ -580,11 +490,6 @@ export class WorkoutPreferencesService {
         updated_at: new Date().toISOString(),
       };
 
-      console.log(
-        "💾 [DB-SERVICE] Transformed workoutData for upsert:",
-        workoutData,
-      );
-
       const { error } = await supabase
         .from("workout_preferences")
         .upsert(workoutData, {
@@ -600,9 +505,6 @@ export class WorkoutPreferencesService {
         return false;
       }
 
-      console.log(
-        "✅ [DB-SERVICE] WorkoutPreferencesService: Workout preferences saved successfully to database",
-      );
       return true;
     } catch (error) {
       console.error(
@@ -615,11 +517,6 @@ export class WorkoutPreferencesService {
 
   static async load(userId: string): Promise<WorkoutPreferencesData | null> {
     try {
-      console.log(
-        "📥 [DB-SERVICE] WorkoutPreferencesService.load - Loading for user:",
-        userId,
-      );
-
       const { data, error } = await supabase
         .from("workout_preferences")
         .select("*")
@@ -635,13 +532,8 @@ export class WorkoutPreferencesService {
       }
 
       if (!data) {
-        console.log(
-          "📭 [DB-SERVICE] WorkoutPreferencesService: No workout preferences found in database",
-        );
         return null;
       }
-
-      console.log("📥 [DB-SERVICE] Raw data from database:", data);
 
       const workoutPreferences: WorkoutPreferencesData = {
         location: data.location || "both",
@@ -666,10 +558,6 @@ export class WorkoutPreferencesService {
         prefers_variety: data.prefers_variety ?? true,
       };
 
-      console.log(
-        "✅ [DB-SERVICE] WorkoutPreferencesService: Transformed WorkoutPreferencesData:",
-        workoutPreferences,
-      );
       return workoutPreferences;
     } catch (error) {
       console.error("❌ WorkoutPreferencesService: Unexpected error:", error);
@@ -695,11 +583,6 @@ export class AdvancedReviewService {
     dietPreferences: DietPreferencesData,
   ): Promise<AdvancedReviewData | null> {
     try {
-      console.log(
-        "💾 [DB-SERVICE] AdvancedReviewService.calculateAndSave - Starting for user:",
-        userId,
-      );
-
       // Import facade dynamically to avoid circular dependencies
       const { HealthCalculatorFacade } = await import(
         "../utils/healthCalculations/HealthCalculatorFacade"
@@ -730,9 +613,6 @@ export class AdvancedReviewService {
         restingHR: bodyAnalysis.body_fat_percentage ? undefined : undefined,
       };
 
-      console.log(
-        "💾 [DB-SERVICE] Calculating metrics with HealthCalculatorFacade...",
-      );
       const metrics = HealthCalculatorFacade.calculateAllMetrics(
         userProfile as any,
       );
@@ -776,9 +656,6 @@ export class AdvancedReviewService {
         return null;
       }
 
-      console.log(
-        "✅ [DB-SERVICE] AdvancedReviewService: Metrics calculated and saved successfully",
-      );
       return advancedReviewData;
     } catch (error) {
       console.error(
@@ -794,22 +671,11 @@ export class AdvancedReviewService {
     data: AdvancedReviewData,
   ): Promise<boolean> {
     try {
-      console.log(
-        "💾 [DB-SERVICE] AdvancedReviewService.save - Starting save for user:",
-        userId,
-      );
-      console.log("💾 [DB-SERVICE] Input data:", data);
-
       const reviewData: Partial<AdvancedReviewRow> = {
         user_id: userId,
         ...data,
         updated_at: new Date().toISOString(),
       };
-
-      console.log(
-        "💾 [DB-SERVICE] Transformed reviewData for upsert:",
-        reviewData,
-      );
 
       const { error } = await supabase
         .from("advanced_review")
@@ -826,9 +692,6 @@ export class AdvancedReviewService {
         return false;
       }
 
-      console.log(
-        "✅ [DB-SERVICE] AdvancedReviewService: Advanced review saved successfully to database",
-      );
       return true;
     } catch (error) {
       console.error(
@@ -841,11 +704,6 @@ export class AdvancedReviewService {
 
   static async load(userId: string): Promise<AdvancedReviewData | null> {
     try {
-      console.log(
-        "📥 [DB-SERVICE] AdvancedReviewService.load - Loading for user:",
-        userId,
-      );
-
       const { data, error } = await supabase
         .from("advanced_review")
         .select("*")
@@ -861,16 +719,9 @@ export class AdvancedReviewService {
       }
 
       if (!data) {
-        console.log(
-          "📭 [DB-SERVICE] AdvancedReviewService: No advanced review found in database",
-        );
         return null;
       }
 
-      console.log("📥 [DB-SERVICE] Raw data from database:", data);
-      console.log(
-        "✅ [DB-SERVICE] AdvancedReviewService: Advanced review loaded successfully",
-      );
       return data as AdvancedReviewData;
     } catch (error) {
       console.error("❌ AdvancedReviewService: Unexpected error:", error);
@@ -889,12 +740,6 @@ export class OnboardingProgressService {
     progress: OnboardingProgressData,
   ): Promise<boolean> {
     try {
-      console.log(
-        "💾 [DB-SERVICE] OnboardingProgressService.save - Starting save for user:",
-        userId,
-      );
-      console.log("💾 [DB-SERVICE] Input progress data:", progress);
-
       const progressData: Partial<OnboardingProgressRow> = {
         user_id: userId,
         current_tab: progress.current_tab,
@@ -903,11 +748,6 @@ export class OnboardingProgressService {
         total_completion_percentage: progress.total_completion_percentage,
         last_updated: new Date().toISOString(),
       };
-
-      console.log(
-        "💾 [DB-SERVICE] Transformed progressData for upsert:",
-        progressData,
-      );
 
       const { error } = await supabase
         .from("onboarding_progress")
@@ -924,9 +764,6 @@ export class OnboardingProgressService {
         return false;
       }
 
-      console.log(
-        "✅ [DB-SERVICE] OnboardingProgressService: Progress saved successfully to database",
-      );
       return true;
     } catch (error) {
       console.error(
@@ -939,11 +776,6 @@ export class OnboardingProgressService {
 
   static async load(userId: string): Promise<OnboardingProgressData | null> {
     try {
-      console.log(
-        "📥 [DB-SERVICE] OnboardingProgressService.load - Loading for user:",
-        userId,
-      );
-
       const { data, error } = await supabase
         .from("onboarding_progress")
         .select("*")
@@ -960,9 +792,6 @@ export class OnboardingProgressService {
       }
 
       if (!data) {
-        console.log(
-          "📭 [DB-SERVICE] OnboardingProgressService: No progress found, creating initial progress record",
-        );
         // Create initial progress record
         const initialProgress: OnboardingProgressData = {
           current_tab: 1,
@@ -971,15 +800,9 @@ export class OnboardingProgressService {
           total_completion_percentage: 0,
         };
 
-        console.log(
-          "📥 [DB-SERVICE] Creating initial progress:",
-          initialProgress,
-        );
         await this.save(userId, initialProgress);
         return initialProgress;
       }
-
-      console.log("📥 [DB-SERVICE] Raw data from database:", data);
 
       const progress: OnboardingProgressData = {
         current_tab: data.current_tab || 1,
@@ -991,10 +814,6 @@ export class OnboardingProgressService {
         last_updated: data.last_updated,
       };
 
-      console.log(
-        "✅ [DB-SERVICE] OnboardingProgressService: Transformed progress data:",
-        progress,
-      );
       return progress;
     } catch (error) {
       console.error("❌ OnboardingProgressService: Unexpected error:", error);
@@ -1004,11 +823,6 @@ export class OnboardingProgressService {
 
   static async markComplete(userId: string): Promise<boolean> {
     try {
-      console.log(
-        "🎉 OnboardingProgressService: Marking onboarding complete for user:",
-        userId,
-      );
-
       const { error } = await supabase
         .from("onboarding_progress")
         .update({
@@ -1024,7 +838,6 @@ export class OnboardingProgressService {
         return false;
       }
 
-      console.log("✅ OnboardingProgressService: Onboarding marked complete");
       return true;
     } catch (error) {
       console.error("❌ OnboardingProgressService: Unexpected error:", error);
@@ -1064,17 +877,10 @@ export class OnboardingUtils {
   static validatePersonalInfo(
     data: PersonalInfoData | null,
   ): TabValidationResult {
-    console.log(
-      "🔍 [VALIDATION] validatePersonalInfo called with data:",
-      data ? "Data provided" : "NULL data",
-    );
     const errors: string[] = [];
     const warnings: string[] = [];
 
     if (!data) {
-      console.log(
-        "❌ [VALIDATION] PersonalInfo validation failed: data is null",
-      );
       return {
         is_valid: false,
         errors: [
@@ -1090,18 +896,6 @@ export class OnboardingUtils {
         completion_percentage: 0,
       };
     }
-
-    console.log("🔍 [VALIDATION] PersonalInfo key fields:", {
-      first_name: data.first_name,
-      last_name: data.last_name,
-      age: data.age,
-      gender: data.gender,
-      country: data.country,
-      state: data.state,
-      occupation_type: data.occupation_type,
-      wake_time: data.wake_time,
-      sleep_time: data.sleep_time,
-    });
 
     // Required field validation
     if (!data.first_name?.trim()) errors.push("First name is required");
@@ -1121,7 +915,6 @@ export class OnboardingUtils {
         data.wake_time,
         data.sleep_time,
       );
-      console.log("🔍 [VALIDATION] Sleep duration:", sleepHours, "hours");
       if (sleepHours < 6)
         warnings.push("Consider getting more sleep (7-9 hours recommended)");
       if (sleepHours > 10) warnings.push("Very long sleep duration detected");
@@ -1149,15 +942,6 @@ export class OnboardingUtils {
     const completionPercentage = Math.round(
       (completedFields / requiredFields.length) * 100,
     );
-    console.log(
-      "🔍 [VALIDATION] PersonalInfo completion:",
-      completionPercentage,
-      "% (",
-      completedFields,
-      "/",
-      requiredFields.length,
-      "fields)",
-    );
 
     const result = {
       is_valid: errors.length === 0,
@@ -1165,15 +949,6 @@ export class OnboardingUtils {
       warnings,
       completion_percentage: completionPercentage,
     };
-
-    console.log(
-      "🔍 [VALIDATION] PersonalInfo result:",
-      result.is_valid ? "✅ VALID" : "❌ INVALID",
-      "- Errors:",
-      errors.length,
-      "Warnings:",
-      warnings.length,
-    );
 
     return result;
   }
@@ -1184,14 +959,7 @@ export class OnboardingUtils {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // Add debug logging
-    console.log(
-      "🔍 validateDietPreferences called with data:",
-      data ? "Data provided" : "NULL data",
-    );
-
     if (!data) {
-      console.log("❌ Validation failed: data is null or undefined");
       return {
         is_valid: false,
         errors: ["Diet preferences data is missing"],
@@ -1199,15 +967,6 @@ export class OnboardingUtils {
         completion_percentage: 0,
       };
     }
-
-    // Log key fields for debugging
-    console.log("🔍 Diet data fields:", {
-      diet_type: data.diet_type,
-      breakfast_enabled: data.breakfast_enabled,
-      lunch_enabled: data.lunch_enabled,
-      dinner_enabled: data.dinner_enabled,
-      snacks_enabled: data.snacks_enabled,
-    });
 
     // Required fields
     if (!data.diet_type) errors.push("Diet type selection is required");
@@ -1310,29 +1069,15 @@ export class OnboardingUtils {
   static validateBodyAnalysis(
     data: BodyAnalysisData | null,
   ): TabValidationResult {
-    console.log(
-      "🔍 [VALIDATION] validateBodyAnalysis called with data:",
-      data ? "Data provided" : "NULL data",
-    );
     const errors: string[] = [];
     const warnings: string[] = [];
 
     if (!data) {
-      console.log("⚠️ [VALIDATION] BodyAnalysis data is null - allowing skip");
       warnings.push(
         "Body analysis skipped - continuing with default recommendations",
       );
       return { is_valid: true, errors, warnings, completion_percentage: 0 };
     }
-
-    console.log("🔍 [VALIDATION] BodyAnalysis key fields:", {
-      height_cm: data.height_cm,
-      current_weight_kg: data.current_weight_kg,
-      target_weight_kg: data.target_weight_kg,
-      target_timeline_weeks: data.target_timeline_weeks,
-      bmi: data.bmi,
-      bmr: data.bmr,
-    });
 
     // Minimum required: height and current weight (to calculate BMI)
     const hasMinimumData =
@@ -1340,9 +1085,6 @@ export class OnboardingUtils {
       (data.current_weight_kg && data.current_weight_kg > 0);
 
     if (!hasMinimumData) {
-      console.log(
-        "⚠️ [VALIDATION] No minimum data (height or weight) - allowing skip",
-      );
       warnings.push(
         "Body analysis skipped - continuing with default recommendations",
       );
@@ -1462,38 +1204,12 @@ export class OnboardingUtils {
         (completedOptional / optionalFields.length) * 30,
     );
 
-    console.log(
-      "🔍 [VALIDATION] BodyAnalysis completion:",
-      completionPercentage,
-      "% - Basic:",
-      completedBasic,
-      "/",
-      basicFields.length,
-      "Goals:",
-      completedGoals,
-      "/",
-      goalFields.length,
-      "Optional:",
-      completedOptional,
-      "/",
-      optionalFields.length,
-    );
-
     const result = {
       is_valid: errors.length === 0,
       errors,
       warnings,
       completion_percentage: completionPercentage,
     };
-
-    console.log(
-      "🔍 [VALIDATION] BodyAnalysis result:",
-      result.is_valid ? "✅ VALID" : "❌ INVALID",
-      "- Errors:",
-      errors.length,
-      "Warnings:",
-      warnings.length,
-    );
 
     return result;
   }
@@ -1504,14 +1220,7 @@ export class OnboardingUtils {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // Add debug logging
-    console.log(
-      "🔍 validateWorkoutPreferences called with data:",
-      data ? "Data provided" : "NULL data",
-    );
-
     if (!data) {
-      console.log("❌ Validation failed: data is null or undefined");
       return {
         is_valid: false,
         errors: ["Workout preferences data is missing"],
@@ -1519,14 +1228,6 @@ export class OnboardingUtils {
         completion_percentage: 0,
       };
     }
-
-    // Log key fields for debugging
-    console.log("🔍 Workout data fields:", {
-      location: data.location,
-      intensity: data.intensity,
-      activity_level: data.activity_level,
-      primary_goals: data.primary_goals,
-    });
 
     // Required fields
     if (!data.location) errors.push("Workout location is required");

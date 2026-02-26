@@ -231,7 +231,7 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
             <Ionicons
               name={nextCard.iconName as any}
               size={rf(36)}
-              color="#FFFFFF"
+              color={ResponsiveTheme.colors.white}
               style={styles.cardIcon}
             />
             <Text style={styles.cardTitle}>{nextCard.title}</Text>
@@ -277,7 +277,7 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
               <Ionicons
                 name={currentCard.iconName as any}
                 size={rf(36)}
-                color="#FFFFFF"
+                color={ResponsiveTheme.colors.white}
                 style={styles.cardIcon}
               />
               <Text style={styles.cardTitle}>{currentCard.title}</Text>
@@ -342,7 +342,7 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
                 <Ionicons
                   name={currentCard.iconName as any}
                   size={rf(36)}
-                  color="#FFFFFF"
+                  color={ResponsiveTheme.colors.white}
                   style={styles.cardIcon}
                 />
                 <Text style={styles.cardTitle}>{currentCard.title}</Text>
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
     borderRadius: ResponsiveTheme.borderRadius.xl,
     position: "absolute",
     overflow: "hidden",
-    shadowColor: "#000",
+    shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
 
   cardDescription: {
     fontSize: ResponsiveTheme.fontSize.sm, // Reduced from md
-    color: "rgba(255, 255, 255, 0.9)",
+    color: ResponsiveTheme.colors.glassHighlight,
     textAlign: "center",
     lineHeight: rf(18),
     paddingHorizontal: ResponsiveTheme.spacing.md,
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
 
   detailText: {
     fontSize: ResponsiveTheme.fontSize.sm,
-    color: "rgba(255, 255, 255, 0.85)",
+    color: ResponsiveTheme.colors.glassHighlight,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -466,14 +466,14 @@ const styles = StyleSheet.create({
 
   swipeLeft: {
     left: ResponsiveTheme.spacing.sm, // Reduced from xl
-    borderColor: "#FF4444",
-    backgroundColor: "rgba(255, 68, 68, 0.2)",
+    borderColor: ResponsiveTheme.colors.error,
+    backgroundColor: ResponsiveTheme.colors.errorTint,
   },
 
   swipeRight: {
     right: ResponsiveTheme.spacing.sm, // Reduced from xl
-    borderColor: "#44FF44",
-    backgroundColor: "rgba(68, 255, 68, 0.2)",
+    borderColor: ResponsiveTheme.colors.success,
+    backgroundColor: ResponsiveTheme.colors.successTint,
   },
 
   swipeIndicatorText: {
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: ResponsiveTheme.spacing.md,
     alignSelf: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    backgroundColor: ResponsiveTheme.colors.overlay,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.full,

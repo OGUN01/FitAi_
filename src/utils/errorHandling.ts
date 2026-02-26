@@ -4,7 +4,7 @@
  */
 
 import * as crypto from "expo-crypto";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "./crossPlatformAlert";
 
 // ============================================================================
 // ERROR TYPES
@@ -154,7 +154,6 @@ class ErrorLogger {
 
   private logToCrashlytics(error: AppError) {
     // In a real app, you would integrate with Firebase Crashlytics or similar
-    console.log("📊 Logging to crash reporting service:", error.id);
   }
 
   private getSeverityEmoji(severity: ErrorSeverity): string {
@@ -206,7 +205,7 @@ export class ErrorHandler {
       appError.severity === ErrorSeverity.HIGH ||
       appError.severity === ErrorSeverity.CRITICAL
     ) {
-      Alert.alert("Error", appError.userFriendlyMessage, [{ text: "OK" }]);
+      crossPlatformAlert("Error", appError.userFriendlyMessage, [{ text: "OK" }]);
     }
 
     return appError;
@@ -220,12 +219,12 @@ export class ErrorHandler {
     const appError = this.handle(error, context);
 
     if (appError.retryable) {
-      Alert.alert("Error", appError.userFriendlyMessage, [
+      crossPlatformAlert("Error", appError.userFriendlyMessage, [
         { text: "Cancel", style: "cancel" },
         { text: "Retry", onPress: retryCallback },
       ]);
     } else {
-      Alert.alert("Error", appError.userFriendlyMessage, [{ text: "OK" }]);
+      crossPlatformAlert("Error", appError.userFriendlyMessage, [{ text: "OK" }]);
     }
 
     return appError;
@@ -410,7 +409,6 @@ export const handleComponentError = (error: Error, errorInfo: any) => {
 
   // In production, you might want to show a fallback UI
   if (!__DEV__) {
-    console.log("🔄 Component error handled, showing fallback UI");
   }
 
   return appError;

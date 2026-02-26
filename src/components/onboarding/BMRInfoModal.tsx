@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import { rf, rw, rh, rp } from "../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 
 // ============================================================================
@@ -72,7 +72,7 @@ export const BMRInfoModal: React.FC<BMRInfoModalProps> = ({
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.headerIcon}>
-                <Ionicons name="warning" size={rf(28)} color="#F59E0B" />
+                <Ionicons name="warning" size={rf(28)} color={ResponsiveTheme.colors.warningAlt} />
               </View>
               <Text style={styles.headerTitle}>Eating Below BMR</Text>
               <TouchableOpacity
@@ -148,7 +148,7 @@ export const BMRInfoModal: React.FC<BMRInfoModalProps> = ({
                       <Ionicons
                         name={risk.icon}
                         size={rf(18)}
-                        color="#EF4444"
+                        color={ResponsiveTheme.colors.errorAlt}
                       />
                     </View>
                     <View style={styles.riskContent}>
@@ -201,12 +201,12 @@ const styles = StyleSheet.create({
     width: "90%",
     maxWidth: rw(400),
     maxHeight: "85%",
-    borderRadius: rp(20),
+    borderRadius: rbr(20),
     overflow: "hidden",
   },
   modalContent: {
     backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: rp(20),
+    borderRadius: rbr(20),
     padding: rp(20),
   },
   header: {
@@ -217,8 +217,8 @@ const styles = StyleSheet.create({
   headerIcon: {
     width: rf(44),
     height: rf(44),
-    borderRadius: rf(22),
-    backgroundColor: "rgba(245, 158, 11, 0.15)",
+    borderRadius: rbr(22),
+    backgroundColor: `${ResponsiveTheme.colors.warningAlt}26`,
     justifyContent: "center",
     alignItems: "center",
     marginRight: rp(12),
@@ -236,13 +236,13 @@ const styles = StyleSheet.create({
     maxHeight: rh(400),
   },
   bmrCard: {
-    backgroundColor: "rgba(59, 130, 246, 0.1)",
-    borderRadius: rp(12),
+    backgroundColor: `${ResponsiveTheme.colors.info}1A`,
+    borderRadius: rbr(12),
     padding: rp(16),
     alignItems: "center",
     marginBottom: rp(16),
     borderWidth: 1,
-    borderColor: "rgba(59, 130, 246, 0.2)",
+    borderColor: `${ResponsiveTheme.colors.info}33`,
   },
   bmrLabel: {
     fontSize: rf(12),
@@ -303,8 +303,8 @@ const styles = StyleSheet.create({
   riskIconContainer: {
     width: rf(32),
     height: rf(32),
-    borderRadius: rf(8),
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    borderRadius: rbr(8),
+    backgroundColor: `${ResponsiveTheme.colors.errorAlt}1A`,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -324,8 +324,8 @@ const styles = StyleSheet.create({
   },
   noteCard: {
     flexDirection: "row",
-    backgroundColor: "rgba(59, 130, 246, 0.08)",
-    borderRadius: rp(10),
+    backgroundColor: `${ResponsiveTheme.colors.info}14`,
+    borderRadius: rbr(10),
     padding: rp(12),
     marginTop: rp(8),
   },
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     backgroundColor: ResponsiveTheme.colors.primary,
-    borderRadius: rp(12),
+    borderRadius: rbr(12),
     paddingVertical: rp(14),
     alignItems: "center",
     marginTop: rp(16),
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: ResponsiveTheme.colors.white,
   },
 });
 

@@ -4,14 +4,14 @@
  */
 
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { DayWorkout } from "../../types/ai";
 
 interface TodayWorkoutCardProps {
@@ -79,15 +79,13 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
         padding="none"
         borderRadius="xl"
       >
-        <AnimatedPressable
-          onPress={onViewDetails}
-          scaleValue={0.98}
-          hapticFeedback={true}
-          hapticType="light"
-          accessibilityLabel={`${isRestDay ? "Rest & Recover" : workout?.title || "Today's Workout"}, ${config.label}`}
-          accessibilityHint="Double tap to view details"
-        >
+        <Animated.View>
           <View style={styles.container}>
+            <Pressable
+              onPress={onViewDetails}
+              accessibilityLabel={`${isRestDay ? "Rest & Recover" : workout?.title || "Today's Workout"}, ${config.label}`}
+              accessibilityHint="Double tap to view details"
+            >
             {/* Top Section - Status + Info */}
             <View style={styles.topSection}>
               {/* Left: Icon */}
@@ -97,7 +95,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                 end={{ x: 1, y: 1 }}
                 style={styles.iconContainer}
               >
-                <Ionicons name={config.icon} size={rf(28)} color="#fff" />
+                <Ionicons name={config.icon} size={rf(28)} color={ResponsiveTheme.colors.white} />
               </LinearGradient>
 
               {/* Middle: Workout Info */}
@@ -145,7 +143,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                         color={ResponsiveTheme.colors.textSecondary}
                       />
                       <Text style={styles.metaText}>
-                        {workout.estimatedCalories} cal
+                        {workout.estimatedCalories || 0} cal
                       </Text>
                     </View>
                     <View style={styles.metaItem}>
@@ -183,6 +181,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                 </View>
               </View>
             )}
+            </Pressable>
 
             {/* Bottom Section - Action Button */}
             <View style={styles.bottomSection}>
@@ -207,13 +206,13 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                   <Ionicons
                     name={isCompleted ? "eye-outline" : "arrow-forward"}
                     size={rf(18)}
-                    color="#fff"
+                    color={ResponsiveTheme.colors.white}
                   />
                 </LinearGradient>
               </AnimatedPressable>
             </View>
           </View>
-        </AnimatedPressable>
+        </Animated.View>
       </GlassCard>
     </Animated.View>
   );
@@ -254,15 +253,15 @@ const styles = StyleSheet.create({
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
+    gap: rp(5),
     paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: rp(4),
     borderRadius: ResponsiveTheme.borderRadius.full,
   },
   statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: rp(6),
+    height: rp(6),
+    borderRadius: rbr(3),
   },
   statusText: {
     fontSize: rf(11),
@@ -277,7 +276,7 @@ const styles = StyleSheet.create({
   metaItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: rp(4),
   },
   metaText: {
     fontSize: rf(12),
@@ -320,7 +319,7 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     letterSpacing: 0.5,
   },
 });

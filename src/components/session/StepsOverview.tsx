@@ -1,6 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Card, THEME } from "../ui";
+import { Card } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr, rw, rh } from '../../utils/responsive';
 import { DayMeal } from "../../types/ai";
 
 interface StepsOverviewProps {
@@ -66,23 +68,23 @@ export const StepsOverview: React.FC<StepsOverviewProps> = ({
 
 const styles = StyleSheet.create({
   stepsOverview: {
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: "600",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   stepOverviewCard: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
   },
   currentStepOverview: {
-    borderColor: THEME.colors.primary,
+    borderColor: ResponsiveTheme.colors.primary,
     borderWidth: 2,
   },
   completedStepOverview: {
-    backgroundColor: THEME.colors.success + "10",
+    backgroundColor: ResponsiveTheme.colors.success + "10",
   },
   stepOverviewContent: {
     flexDirection: "row",
@@ -95,40 +97,40 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stepOverviewNumber: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: THEME.colors.primary,
+    width: rw(24),
+    height: rh(24),
+    borderRadius: rbr(12),
+    backgroundColor: ResponsiveTheme.colors.primary,
     color: "white",
     textAlign: "center",
-    lineHeight: 24,
-    fontSize: 12,
+    lineHeight: rf(24),
+    fontSize: rf(12),
     fontWeight: "600",
-    marginRight: THEME.spacing.md,
+    marginRight: ResponsiveTheme.spacing.md,
   },
   stepOverviewInfo: {
     flex: 1,
   },
   stepOverviewName: {
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: "500",
-    color: THEME.colors.text,
+    color: ResponsiveTheme.colors.text,
   },
   stepOverviewQuantity: {
-    fontSize: 12,
-    color: THEME.colors.textSecondary,
-    marginTop: 2,
+    fontSize: rf(12),
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: rp(2),
   },
   stepOverviewRight: {
-    marginLeft: THEME.spacing.md,
+    marginLeft: ResponsiveTheme.spacing.md,
   },
   stepCompleteIcon: {
-    fontSize: 20,
+    fontSize: rf(20),
   },
   stepCurrentIcon: {
-    fontSize: 20,
+    fontSize: rf(20),
   },
   stepPendingIcon: {
-    fontSize: 16,
+    fontSize: rf(16),
   },
 });

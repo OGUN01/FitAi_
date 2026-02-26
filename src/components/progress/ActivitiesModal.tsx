@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, Modal, FlatList } from "react-native";
+import { View, Text, StyleSheet, Modal, FlatList, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
@@ -29,7 +29,7 @@ export const ActivitiesModal: React.FC<ActivitiesModalProps> = ({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="pageSheet"
+      {...(Platform.OS === 'ios' ? { presentationStyle: 'pageSheet' as const } : {})}
       onRequestClose={onClose}
     >
       <SafeAreaView style={styles.modalContainer}>
@@ -50,7 +50,7 @@ export const ActivitiesModal: React.FC<ActivitiesModalProps> = ({
 
         <FlatList
           data={activities}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item, index) => item?.id?.toString() || String(index)}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.modalContent}
           renderItem={({ item: activity }) => {

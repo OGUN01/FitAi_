@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw } from "../../../utils/responsive";
+import { rf, rw, rbr } from "../../../utils/responsive";
 
 export const ExpoGoMessage: React.FC = () => {
   return (
@@ -20,10 +20,10 @@ export const ExpoGoMessage: React.FC = () => {
         >
           <View style={styles.expoGoIconContainer}>
             <LinearGradient
-              colors={["#FF9800", "#FF5722"]}
+              colors={[ResponsiveTheme.colors.warning, ResponsiveTheme.colors.primaryDark]}
               style={styles.expoGoIcon}
             >
-              <Ionicons name="warning-outline" size={rf(28)} color="#fff" />
+              <Ionicons name="warning-outline" size={rf(28)} color={ResponsiveTheme.colors.text} />
             </LinearGradient>
           </View>
           <Text style={styles.expoGoTitle}>Notifications Unavailable</Text>
@@ -53,22 +53,23 @@ const styles = StyleSheet.create({
   },
   expoGoCard: {
     alignItems: "center" as const,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
   },
   expoGoIconContainer: {
     marginBottom: ResponsiveTheme.spacing.lg,
+    alignItems: "center" as const,
   },
   expoGoIcon: {
     width: rw(64),
     height: rw(64),
-    borderRadius: rw(32),
+    borderRadius: rbr(32),
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
   expoGoTitle: {
     fontSize: rf(20),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.sm,
     textAlign: "center",
   },
@@ -81,14 +82,16 @@ const styles = StyleSheet.create({
   },
   codeContainer: {
     width: "100%",
+    alignItems: "center" as const,
   },
   codeLabel: {
     fontSize: rf(12),
     color: ResponsiveTheme.colors.textMuted,
     marginBottom: ResponsiveTheme.spacing.xs,
+    textAlign: "center" as const,
   },
   codeBox: {
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    backgroundColor: ResponsiveTheme.colors.overlayDark,
     borderRadius: ResponsiveTheme.borderRadius.md,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.sm,

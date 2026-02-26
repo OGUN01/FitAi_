@@ -1,3 +1,4 @@
+import { storeLogger } from '../../utils/logger';
 import type {
   HealthDataState,
   GoogleFitSyncResult,
@@ -20,20 +21,16 @@ export const createGoogleFitActions = (
 ) => ({
   initializeGoogleFit: async (): Promise<boolean> => {
     try {
-      console.log("🤖 Initializing Google Fit in store...");
       const isAvailable = await googleFitService.initialize();
 
       if (isAvailable) {
         const hasPermissions = await googleFitService.hasPermissions();
-        console.log(
-          `🤖 Google Fit available: ${isAvailable}, permissions: ${hasPermissions}`,
-        );
         return hasPermissions;
       }
 
       return false;
     } catch (error) {
-      console.error("❌ Failed to initialize Google Fit:", error);
+      storeLogger.error('Failed to initialize Google Fit', { error: String(error) });
       return false;
     }
   },
@@ -42,7 +39,6 @@ export const createGoogleFitActions = (
     daysBack: number = 7,
   ): Promise<GoogleFitSyncResult> => {
     try {
-      console.log("🤖 Syncing data from Google Fit...");
       set({ syncStatus: "syncing" });
 
       const result =
@@ -89,13 +85,12 @@ export const createGoogleFitActions = (
           weightTrackingService.setWeight(result.data.weight);
         }
 
-        console.log("✅ Google Fit sync completed successfully");
       } else {
         set({
           syncStatus: "error",
           syncError: result.error || "Unknown Google Fit sync error",
         });
-        console.error("❌ Google Fit sync failed:", result.error);
+        storeLogger.error('Google Fit sync failed', { error: result.error });
       }
 
       return result;
@@ -106,7 +101,7 @@ export const createGoogleFitActions = (
         syncStatus: "error",
         syncError: errorMessage,
       });
-      console.error("❌ Google Fit sync failed:", error);
+      storeLogger.error('Google Fit sync failed', { error: String(error) });
       return {
         success: false,
         error: errorMessage,
@@ -118,13 +113,9 @@ export const createGoogleFitActions = (
     age: number,
   ): Promise<GoogleFitHeartRateZones> => {
     try {
-      console.log("❤️ Getting heart rate zones from Google Fit...");
       return await googleFitService.getHeartRateZones(age);
     } catch (error) {
-      console.error(
-        "❌ Failed to get heart rate zones from Google Fit:",
-        error,
-      );
+      storeLogger.error('Failed to get heart rate zones from Google Fit', { error: String(error) });
       const maxHR = 220 - age;
       return {
         maxHR,
@@ -161,9 +152,6 @@ export const createGoogleFitActions = (
 
   getGoogleFitSleepRecommendations: async (): Promise<SleepRecommendations> => {
     try {
-      console.log(
-        "😴 Getting sleep-based workout recommendations from Google Fit...",
-      );
       const recommendations =
         await googleFitService.getSleepBasedWorkoutRecommendations();
       return {
@@ -172,10 +160,7 @@ export const createGoogleFitActions = (
         workoutRecommendations: recommendations.recommendations,
       };
     } catch (error) {
-      console.error(
-        "❌ Failed to get sleep recommendations from Google Fit:",
-        error,
-      );
+      storeLogger.error('Failed to get sleep recommendations from Google Fit', { error: String(error) });
       return {
         sleepQuality: "fair",
         sleepDuration: 7,
@@ -193,13 +178,9 @@ export const createGoogleFitActions = (
     baseCalories: number,
   ): Promise<ActivityAdjustedCalories> => {
     try {
-      console.log("🔥 Getting activity-adjusted calories from Google Fit...");
       return await googleFitService.getActivityAdjustedCalories(baseCalories);
     } catch (error) {
-      console.error(
-        "❌ Failed to get activity-adjusted calories from Google Fit:",
-        error,
-      );
+      storeLogger.error('Failed to get activity-adjusted calories from Google Fit', { error: String(error) });
       return {
         adjustedCalories: baseCalories,
         activityMultiplier: 1.0,
@@ -218,10 +199,9 @@ export const createGoogleFitActions = (
 
   detectAndLogGoogleFitActivities: async (): Promise<DetectedActivities> => {
     try {
-      console.log("🤖 Detecting and logging activities from Google Fit...");
       return await googleFitService.detectAndLogActivities();
     } catch (error) {
-      console.error("❌ Failed to detect activities from Google Fit:", error);
+      storeLogger.error('Failed to detect activities from Google Fit', { error: String(error) });
       return {
         detectedActivities: [],
         autoLoggedCount: 0,

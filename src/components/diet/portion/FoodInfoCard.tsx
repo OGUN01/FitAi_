@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Card } from "../../ui";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { RecognizedFood } from "../../../services/foodRecognitionService";
+import { rbr } from "../../../utils/responsive";
 
 interface FoodInfoCardProps {
   currentFood: RecognizedFood;
@@ -79,7 +80,7 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: 12,
+    borderRadius: rbr(12),
   },
   originalText: {
     fontSize: ResponsiveTheme.fontSize.xs,

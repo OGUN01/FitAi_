@@ -256,28 +256,10 @@ export const useNutritionData = (): UseNutritionDataReturn => {
           const meals = response.data;
           const stats = meals.reduce(
             (acc, meal) => ({
-              // Use database column names (snake_case) with fallback for compatibility
-              calories:
-                acc.calories +
-                ((meal as any).total_calories ||
-                  (meal as any).totalCalories ||
-                  0),
-              protein:
-                acc.protein +
-                ((meal as any).total_protein ||
-                  (meal as any).totalMacros?.protein ||
-                  0),
-              carbs:
-                acc.carbs +
-                ((meal as any).total_carbohydrates ||
-                  (meal as any).total_carbs ||
-                  (meal as any).totalMacros?.carbs ||
-                  0),
-              fat:
-                acc.fat +
-                ((meal as any).total_fat ||
-                  (meal as any).totalMacros?.fat ||
-                  0),
+              calories: acc.calories + (meal.total_calories || 0),
+              protein: acc.protein + (meal.total_protein || 0),
+              carbs: acc.carbs + (meal.total_carbs || 0),
+              fat: acc.fat + (meal.total_fat || 0),
               mealsCount: acc.mealsCount + 1,
             }),
             {
@@ -390,11 +372,9 @@ export const useNutritionData = (): UseNutritionDataReturn => {
   useEffect(() => {
     if (isAuthenticated && user?.id) {
       const unsubscribe = nutritionRefreshService.onRefreshNeeded(refreshAll);
-      console.log("📡 Registered nutrition data hook with refresh service");
 
       return () => {
         unsubscribe();
-        console.log("📡 Unregistered nutrition data hook from refresh service");
       };
     }
   }, [isAuthenticated, user?.id]); // Removed refreshAll from deps - it's stable via useCallback

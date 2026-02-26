@@ -5,7 +5,7 @@ import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { PremiumMealCard } from "./PremiumMealCard";
 import { ResponsiveTheme } from "../../utils/constants";
 import { getMealTime } from "../../utils/mealSchedule";
-import { rs } from "../../utils/responsive";
+import { rs, rw, rh, rbr } from "../../utils/responsive";
 
 interface MealPlanViewProps {
   weeklyMealPlan: any;
@@ -15,6 +15,7 @@ interface MealPlanViewProps {
   storeGetMealProgress: (id: string) => any;
   mealSchedule: any;
   handleStartMeal: (meal: any) => void;
+  onMealPress?: (meal: any) => void;
   completeMealPreparation: (meal: any) => void;
   macroTargets: {
     protein: number;
@@ -35,6 +36,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
   completeMealPreparation,
   macroTargets,
   calorieTarget,
+  onMealPress,
 }) => {
   return (
     <View style={styles.section}>
@@ -104,7 +106,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
                 key={meal.id}
                 meal={meal}
                 mealTime={mealTime}
-                onPress={() => handleStartMeal(meal)}
+                onPress={() => onMealPress ? onMealPress(meal) : handleStartMeal(meal)}
                 onStartMeal={() => handleStartMeal(meal)}
                 onCompleteMeal={() => completeMealPreparation(meal)}
                 progress={progress?.progress}
@@ -162,9 +164,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   todayIndicator: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: rw(6),
+    height: rh(6),
+    borderRadius: rbr(3),
     backgroundColor: ResponsiveTheme.colors.primary,
     position: "absolute",
     bottom: -2,
@@ -176,7 +178,8 @@ const styles = StyleSheet.create({
   dayButtonText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: ResponsiveTheme.colors.text,
+    opacity: 0.75,
   },
   selectedDayButtonText: { color: ResponsiveTheme.colors.surface },
   sectionHeader: {

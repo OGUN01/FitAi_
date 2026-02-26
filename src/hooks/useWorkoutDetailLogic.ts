@@ -1,6 +1,6 @@
 import React from "react";
 import { useFitnessStore } from "../stores/fitnessStore";
-import { THEME } from "../components/ui";
+import { ResponsiveTheme } from "../utils/constants";
 
 interface Exercise {
   id: string;
@@ -87,13 +87,13 @@ export const useWorkoutDetailLogic = (workoutId: string) => {
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Beginner":
-        return THEME.colors.success;
+        return ResponsiveTheme.colors.success;
       case "Intermediate":
-        return THEME.colors.warning;
+        return ResponsiveTheme.colors.warning;
       case "Advanced":
-        return THEME.colors.error;
+        return ResponsiveTheme.colors.error;
       default:
-        return THEME.colors.textSecondary;
+        return ResponsiveTheme.colors.textSecondary;
     }
   };
 

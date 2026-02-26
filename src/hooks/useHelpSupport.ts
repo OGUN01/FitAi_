@@ -1,7 +1,15 @@
 import { useState, useCallback } from "react";
-import { Alert, Linking } from "react-native";
+import { Alert, Linking, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { haptics } from "../utils/haptics";
+
+const openUrl = (url: string) => {
+  if (Platform.OS === 'web') {
+    window.open(url, '_blank');
+  } else {
+    Linking.openURL(url);
+  }
+};
 
 export interface FAQItem {
   id: string;
@@ -64,147 +72,199 @@ export const useHelpSupport = () => {
   }, []);
 
   const handleContactSupport = useCallback(() => {
-    Alert.alert(
-      "Contact Support",
-      "Choose how you'd like to contact our support team:",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Email",
-          onPress: () => {
-            Linking.openURL(
-              "mailto:support@fitai.app?subject=FitAI Support Request",
-            );
+    if (Platform.OS === 'web') {
+      const choice = window.confirm(
+        "Contact Support\n\nClick OK to send an email to our support team, or Cancel to go back."
+      );
+      if (choice) {
+        window.open("mailto:support@fitai.app?subject=FitAI Support Request", '_blank');
+      }
+    } else {
+      Alert.alert(
+        "Contact Support",
+        "Choose how you'd like to contact our support team:",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Email",
+            onPress: () => {
+              Linking.openURL(
+                "mailto:support@fitai.app?subject=FitAI Support Request",
+              );
+            },
           },
-        },
-        {
-          text: "Live Chat",
-          onPress: () => {
-            Alert.alert(
-              "Live Chat",
-              "Live chat support will be available in the next update!",
-            );
+          {
+            text: "Live Chat",
+            onPress: () => {
+              Alert.alert(
+                "Live Chat",
+                "Live chat support will be available in the next update!",
+              );
+            },
           },
-        },
-      ],
-    );
+        ],
+      );
+    }
   }, []);
 
   const handleReportBug = useCallback(() => {
-    Alert.alert(
-      "Report a Bug",
-      "Help us improve FitAI by reporting any issues you encounter.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Report Bug",
-          onPress: () => {
-            Linking.openURL("mailto:bugs@fitai.app?subject=Bug Report - FitAI");
+    const url = "mailto:bugs@fitai.app?subject=Bug Report - FitAI";
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(
+        "Report a Bug\n\nHelp us improve FitAI by reporting any issues you encounter.\n\nClick OK to send a bug report via email."
+      );
+      if (confirmed) {
+        window.open(url, '_blank');
+      }
+    } else {
+      Alert.alert(
+        "Report a Bug",
+        "Help us improve FitAI by reporting any issues you encounter.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Report Bug",
+            onPress: () => {
+              Linking.openURL(url);
+            },
           },
-        },
-      ],
-    );
+        ],
+      );
+    }
   }, []);
 
   const handleFeatureRequest = useCallback(() => {
-    Alert.alert(
-      "Feature Request",
-      "We'd love to hear your ideas for improving FitAI!",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Send Request",
-          onPress: () => {
-            Linking.openURL(
-              "mailto:features@fitai.app?subject=Feature Request - FitAI",
-            );
+    const url = "mailto:features@fitai.app?subject=Feature Request - FitAI";
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(
+        "Feature Request\n\nWe'd love to hear your ideas for improving FitAI!\n\nClick OK to send a feature request via email."
+      );
+      if (confirmed) {
+        window.open(url, '_blank');
+      }
+    } else {
+      Alert.alert(
+        "Feature Request",
+        "We'd love to hear your ideas for improving FitAI!",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Send Request",
+            onPress: () => {
+              Linking.openURL(url);
+            },
           },
-        },
-      ],
-    );
+        ],
+      );
+    }
   }, []);
 
   const handleTutorials = useCallback(() => {
     haptics.light();
-    Linking.openURL("https://fitai.app/tutorials").catch(() =>
-      Alert.alert(
-        "Getting Started",
-        "Welcome to FitAI! Here's how to get started:\n\n" +
-          "1. Complete your profile in Settings\n" +
-          "2. Set your fitness goals\n" +
-          "3. Try the AI workout generator\n" +
-          "4. Scan your first meal\n" +
-          "5. Track your daily water intake\n\n" +
-          "Visit https://fitai.app/tutorials for interactive guides!",
-      ),
-    );
+    const url = "https://fitai.app/tutorials";
+    if (Platform.OS === 'web') {
+      window.open(url, '_blank');
+    } else {
+      Linking.openURL(url).catch(() =>
+        Alert.alert(
+          "Getting Started",
+          "Welcome to FitAI! Here's how to get started:\n\n" +
+            "1. Complete your profile in Settings\n" +
+            "2. Set your fitness goals\n" +
+            "3. Try the AI workout generator\n" +
+            "4. Scan your first meal\n" +
+            "5. Track your daily water intake\n\n" +
+            "Visit https://fitai.app/tutorials for interactive guides!",
+        ),
+      );
+    }
   }, []);
 
   const handleUserGuide = useCallback(() => {
     haptics.light();
-    Linking.openURL("https://fitai.app/guide").catch(() =>
-      Alert.alert(
-        "User Guide",
-        "Visit https://fitai.app/guide for the complete user guide.\n\n" +
-          "Quick Tips:\n\n" +
-          "• Tap the + button to log workouts and meals\n" +
-          "• Use the AI chat for personalized recommendations\n" +
-          "• Track progress in the Analytics tab\n" +
-          "• Customize your goals in Settings",
-      ),
-    );
+    const url = "https://fitai.app/guide";
+    if (Platform.OS === 'web') {
+      window.open(url, '_blank');
+    } else {
+      Linking.openURL(url).catch(() =>
+        Alert.alert(
+          "User Guide",
+          "Visit https://fitai.app/guide for the complete user guide.\n\n" +
+            "Quick Tips:\n\n" +
+            "• Tap the + button to log workouts and meals\n" +
+            "• Use the AI chat for personalized recommendations\n" +
+            "• Track progress in the Analytics tab\n" +
+            "• Customize your goals in Settings",
+        ),
+      );
+    }
   }, []);
 
   const handleVideoTutorials = useCallback(() => {
     haptics.light();
-    Linking.openURL("https://youtube.com/@fitai_app").catch(() =>
-      Alert.alert(
-        "Video Tutorials",
-        "Subscribe to our YouTube channel for video tutorials:\n\n" +
-          "https://youtube.com/@fitai_app\n\n" +
-          "Topics covered:\n" +
-          "• Getting started with FitAI\n" +
-          "• Creating custom workout plans\n" +
-          "• Food scanning and meal logging\n" +
-          "• Understanding your analytics",
-      ),
-    );
+    const url = "https://youtube.com/@fitai_app";
+    if (Platform.OS === 'web') {
+      window.open(url, '_blank');
+    } else {
+      Linking.openURL(url).catch(() =>
+        Alert.alert(
+          "Video Tutorials",
+          "Subscribe to our YouTube channel for video tutorials:\n\n" +
+            "https://youtube.com/@fitai_app\n\n" +
+            "Topics covered:\n" +
+            "• Getting started with FitAI\n" +
+            "• Creating custom workout plans\n" +
+            "• Food scanning and meal logging\n" +
+            "• Understanding your analytics",
+        ),
+      );
+    }
   }, []);
 
   const handleCommunityForum = useCallback(() => {
     haptics.light();
-    Linking.openURL("https://community.fitai.app").catch(() =>
-      Alert.alert(
-        "Join Our Community",
-        "Connect with fellow fitness enthusiasts!\n\n" +
-          "• Share your progress and achievements\n" +
-          "• Get tips from experienced users\n" +
-          "• Participate in community challenges\n" +
-          "• Request new features\n\n" +
-          "Visit: https://community.fitai.app",
-      ),
-    );
+    const url = "https://community.fitai.app";
+    if (Platform.OS === 'web') {
+      window.open(url, '_blank');
+    } else {
+      Linking.openURL(url).catch(() =>
+        Alert.alert(
+          "Join Our Community",
+          "Connect with fellow fitness enthusiasts!\n\n" +
+            "• Share your progress and achievements\n" +
+            "• Get tips from experienced users\n" +
+            "• Participate in community challenges\n" +
+            "• Request new features\n\n" +
+            "Visit: https://community.fitai.app",
+        ),
+      );
+    }
   }, []);
 
   const handleSystemStatus = useCallback(() => {
     haptics.light();
-    Linking.openURL("https://status.fitai.app").catch(() =>
-      Alert.alert(
-        "System Status",
-        "All FitAI systems are currently operational.\n\n" +
-          "✅ Authentication Services\n" +
-          "✅ AI Workout Generation\n" +
-          "✅ Food Recognition\n" +
-          "✅ Data Sync Services\n" +
-          "✅ Push Notifications\n\n" +
-          "For real-time status updates, visit:\nhttps://status.fitai.app",
-      ),
-    );
+    const url = "https://status.fitai.app";
+    if (Platform.OS === 'web') {
+      window.open(url, '_blank');
+    } else {
+      Linking.openURL(url).catch(() =>
+        Alert.alert(
+          "System Status",
+          "All FitAI systems are currently operational.\n\n" +
+            "✅ Authentication Services\n" +
+            "✅ AI Workout Generation\n" +
+            "✅ Food Recognition\n" +
+            "✅ Data Sync Services\n" +
+            "✅ Push Notifications\n\n" +
+            "For real-time status updates, visit:\nhttps://status.fitai.app",
+        ),
+      );
+    }
   }, []);
 
   const handleContactEmail = useCallback(() => {
     haptics.light();
-    Linking.openURL("mailto:support@fitai.app");
+    openUrl("mailto:support@fitai.app");
   }, []);
 
   return {

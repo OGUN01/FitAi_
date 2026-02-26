@@ -13,7 +13,7 @@ import { View, Text, StyleSheet, Switch, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../../utils/constants";
-import { rf, rw } from "../../../../utils/responsive";
+import { rf, rp, rbr, rw } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
 
 interface GlassFormSwitchProps {
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: rf(15),
     fontWeight: "500",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
   labelDisabled: {
     color: ResponsiveTheme.colors.textMuted,
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   description: {
     fontSize: rf(12),
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: rp(2),
     lineHeight: rf(16),
   },
 });

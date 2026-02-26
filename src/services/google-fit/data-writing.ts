@@ -22,11 +22,8 @@ export class GoogleFitDataWriter {
   ): Promise<boolean> {
     try {
       if (!(await hasPermissions())) {
-        console.warn("❌ Cannot export to Google Fit: permissions not granted");
         return false;
       }
-
-      console.log(`📤 Exporting FitAI workout to Google Fit: ${workout.name}`);
 
       const activityType =
         this.activityTypeMapping[workout.type.toLowerCase()] || "other";
@@ -44,7 +41,6 @@ export class GoogleFitDataWriter {
       const result = await GoogleFit.saveWorkout(workoutData as any);
 
       if (result) {
-        console.log(`✅ Successfully exported workout to Google Fit`);
         return true;
       } else {
         console.error("❌ Failed to export workout to Google Fit");
@@ -62,13 +58,9 @@ export class GoogleFitDataWriter {
   ): Promise<boolean> {
     try {
       if (!(await hasPermissions())) {
-        console.warn("❌ Cannot export to Google Fit: permissions not granted");
         return false;
       }
 
-      console.log(
-        `📤 Exporting FitAI nutrition data to Google Fit for ${nutritionData.date.toDateString()}`,
-      );
 
       const nutritionEntry = {
         date: nutritionData.date.toISOString(),
@@ -84,17 +76,10 @@ export class GoogleFitDataWriter {
         nutritionEntry as any,
         (err: any, res: any) => {
           if (err) {
-            console.warn("⚠️ Nutrition save error:", err);
+            // error handled silently
           }
         },
       );
-
-      console.log(`✅ Nutrition data exported to Google Fit:
-        - Calories: ${nutritionData.calories}
-        - Protein: ${nutritionData.protein || 0}g
-        - Carbs: ${nutritionData.carbs || 0}g
-        - Fat: ${nutritionData.fat || 0}g`);
-
       return true;
     } catch (error) {
       console.error("❌ Failed to export nutrition to Google Fit:", error);
@@ -109,11 +94,9 @@ export class GoogleFitDataWriter {
   ): Promise<boolean> {
     try {
       if (!(await hasPermissions())) {
-        console.warn("❌ Cannot export to Google Fit: permissions not granted");
         return false;
       }
 
-      console.log(`📤 Exporting body weight to Google Fit: ${weight}kg`);
 
       const weightData = {
         value: weight,
@@ -125,14 +108,12 @@ export class GoogleFitDataWriter {
         weightData as any,
         (err: any, res: any) => {
           if (err) {
-            console.warn("⚠️ Weight save error:", err);
+            // error handled silently
           }
         },
       );
-
       // @ts-ignore - Type issue with result void check
       if (result) {
-        console.log(`✅ Successfully exported body weight to Google Fit`);
         return true;
       } else {
         console.error("❌ Failed to export body weight to Google Fit");

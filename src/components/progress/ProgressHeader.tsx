@@ -32,6 +32,8 @@ export const ProgressHeader: React.FC<ProgressHeaderProps> = ({
           style={styles.backButton}
           onPress={() => navigation.goBack()}
           scaleValue={0.95}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
         >
           <Ionicons
             name="arrow-back"
@@ -60,6 +62,8 @@ export const ProgressHeader: React.FC<ProgressHeaderProps> = ({
           }
           onPress={() => setShowAnalytics(!showAnalytics)}
           scaleValue={0.95}
+          accessibilityRole="button"
+          accessibilityLabel="Toggle analytics"
         >
           <Ionicons
             name="stats-chart-outline"
@@ -77,6 +81,8 @@ export const ProgressHeader: React.FC<ProgressHeaderProps> = ({
           scaleValue={0.95}
           hapticFeedback={true}
           hapticType="medium"
+          accessibilityRole="button"
+          accessibilityLabel="Add entry"
         >
           <Ionicons
             name="add"
@@ -88,6 +94,8 @@ export const ProgressHeader: React.FC<ProgressHeaderProps> = ({
           style={styles.shareButton}
           onPress={onShare}
           scaleValue={0.95}
+          accessibilityRole="button"
+          accessibilityLabel="Share"
         >
           <Ionicons
             name="share-outline"

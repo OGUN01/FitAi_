@@ -153,7 +153,6 @@ export class SyncMonitoringService {
       }, 10000); // Every 10 seconds
 
       this.isMonitoring = true;
-      console.log('Sync monitoring started');
     } catch (error) {
       console.error('Failed to start sync monitoring:', error);
       throw error;
@@ -173,7 +172,6 @@ export class SyncMonitoringService {
 
     await this.saveMetrics();
     this.isMonitoring = false;
-    console.log('Sync monitoring stopped');
   }
 
   /**

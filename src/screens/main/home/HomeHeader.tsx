@@ -4,12 +4,19 @@
  */
 
 import React, { useMemo } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh, rp } from "../../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../../utils/responsive";
+
+const avatarGradientShadow = {
+  shadowColor: ResponsiveTheme.colors.black,
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.2,
+  shadowRadius: 8,
+};
 
 interface HomeHeaderProps {
   userName: string;
@@ -43,13 +50,13 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
       return {
         greeting: "Good afternoon",
         icon: "partly-sunny" as const,
-        gradientColors: ["#FF6B6B", "#FF8E53"] as [string, string],
+        gradientColors: [ResponsiveTheme.colors.errorLight, ResponsiveTheme.colors.accent] as [string, string],
       };
     }
     return {
       greeting: "Good evening",
       icon: "moon" as const,
-      gradientColors: ["#FF6B35", "#E55A2B"] as [string, string],
+      gradientColors: [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark] as [string, string],
     };
   }, []);
 
@@ -72,12 +79,14 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
           scaleValue={0.95}
           hapticFeedback={true}
           hapticType="light"
+          accessibilityRole="button"
+          accessibilityLabel="Profile"
         >
           <LinearGradient
             colors={gradientColors}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.avatarGradient}
+            style={[styles.avatarGradient, Platform.OS !== 'web' && avatarGradientShadow]}
           >
             <Text style={styles.avatarText}>{userInitial.toUpperCase()}</Text>
           </LinearGradient>
@@ -110,8 +119,10 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
               hapticFeedback={true}
               hapticType="light"
               style={styles.streakBadge}
+              accessibilityRole="button"
+              accessibilityLabel={`${streak} day streak`}
             >
-              <Ionicons name="flame" size={rf(16)} color="#FF6B6B" />
+              <Ionicons name="flame" size={rf(16)} color={ResponsiveTheme.colors.errorLight} />
               <Text style={styles.streakNumber}>{streak}</Text>
             </AnimatedPressable>
           )}
@@ -123,6 +134,8 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
             hapticFeedback={true}
             hapticType="light"
             style={styles.notificationBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
           >
             <Ionicons
               name="notifications-outline"
@@ -160,16 +173,12 @@ const styles = StyleSheet.create({
     borderRadius: rw(24),
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
     elevation: 4,
   },
   avatarText: {
     fontSize: rf(20),
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: ResponsiveTheme.colors.white,
   },
   greetingSection: {
     flex: 1,
@@ -184,20 +193,21 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textSecondary,
   },
   greetingIcon: {
-    marginLeft: 4,
+    marginLeft: rp(4),
   },
   userName: {
     fontSize: rf(22),
     fontWeight: "800",
     color: ResponsiveTheme.colors.text,
     letterSpacing: -0.5,
-    marginTop: 2,
+    marginTop: rp(2),
   },
   dateText: {
-    fontSize: rf(11),
-    fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: 2,
+    fontSize: rf(12),
+    fontWeight: '500',
+    color: ResponsiveTheme.colors.text,
+    marginTop: rp(2),
+    opacity: 0.75,
   },
   rightSection: {
     flexDirection: "row",
@@ -207,29 +217,29 @@ const styles = StyleSheet.create({
   streakBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(255, 107, 107, 0.15)",
+    gap: rp(4),
+    backgroundColor: ResponsiveTheme.colors.errorTint,
     paddingHorizontal: rp(10),
     paddingVertical: rp(6),
     borderRadius: rw(20),
     borderWidth: 1,
-    borderColor: "rgba(255, 107, 107, 0.3)",
+    borderColor: ResponsiveTheme.colors.primaryFaded,
   },
   streakNumber: {
     fontSize: rf(15),
     fontWeight: "800",
-    color: "#FF6B6B",
+    color: ResponsiveTheme.colors.errorLight,
   },
   notificationBtn: {
     width: rw(42),
     height: rw(42),
     borderRadius: rw(21),
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: ResponsiveTheme.colors.glassBorder,
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: ResponsiveTheme.colors.glassHighlight,
   },
   notificationBadge: {
     position: "absolute",
@@ -238,17 +248,17 @@ const styles = StyleSheet.create({
     minWidth: rw(18),
     height: rw(18),
     borderRadius: rw(9),
-    backgroundColor: "#FF3B30",
+    backgroundColor: ResponsiveTheme.colors.error,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 4,
+    paddingHorizontal: rp(4),
     borderWidth: 2,
     borderColor: ResponsiveTheme.colors.background,
   },
   notificationBadgeText: {
     fontSize: rf(10),
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: ResponsiveTheme.colors.white,
   },
 });
 

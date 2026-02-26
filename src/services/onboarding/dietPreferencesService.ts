@@ -11,12 +11,6 @@ export class DietPreferencesService {
     data: DietPreferencesData,
   ): Promise<boolean> {
     try {
-      console.log(
-        "[DB-SERVICE] DietPreferencesService.save - Starting save for user:",
-        userId,
-      );
-      console.log("[DB-SERVICE] Input data:", data);
-
       const dietData: Partial<DietPreferencesRow> = {
         user_id: userId,
         diet_type: data.diet_type || "omnivore",
@@ -52,8 +46,6 @@ export class DietPreferencesService {
         updated_at: new Date().toISOString(),
       };
 
-      console.log("[DB-SERVICE] Transformed dietData for upsert:", dietData);
-
       const { error } = await supabase
         .from("diet_preferences")
         .upsert(dietData, {
@@ -69,9 +61,6 @@ export class DietPreferencesService {
         return false;
       }
 
-      console.log(
-        "[DB-SERVICE] DietPreferencesService: Diet preferences saved successfully to database",
-      );
       return true;
     } catch (error) {
       console.error(
@@ -84,11 +73,6 @@ export class DietPreferencesService {
 
   static async load(userId: string): Promise<DietPreferencesData | null> {
     try {
-      console.log(
-        "[DB-SERVICE] DietPreferencesService.load - Loading for user:",
-        userId,
-      );
-
       const { data, error } = await supabase
         .from("diet_preferences")
         .select("*")
@@ -104,13 +88,8 @@ export class DietPreferencesService {
       }
 
       if (!data) {
-        console.log(
-          "[DB-SERVICE] DietPreferencesService: No diet preferences found in database",
-        );
         return null;
       }
-
-      console.log("[DB-SERVICE] Raw data from database:", data);
 
       const dietPreferences: DietPreferencesData = {
         diet_type: data.diet_type || "non-veg",
@@ -146,10 +125,6 @@ export class DietPreferencesService {
         takes_supplements: data.takes_supplements || false,
       };
 
-      console.log(
-        "[DB-SERVICE] DietPreferencesService: Transformed DietPreferencesData:",
-        dietPreferences,
-      );
       return dietPreferences;
     } catch (error) {
       console.error("DietPreferencesService: Unexpected error:", error);
@@ -161,13 +136,7 @@ export class DietPreferencesService {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    console.log(
-      "validateDietPreferences called with data:",
-      data ? "Data provided" : "NULL data",
-    );
-
     if (!data) {
-      console.log("Validation failed: data is null or undefined");
       return {
         is_valid: false,
         errors: ["Diet preferences data is missing"],
@@ -175,14 +144,6 @@ export class DietPreferencesService {
         completion_percentage: 0,
       };
     }
-
-    console.log("Diet data fields:", {
-      diet_type: data.diet_type,
-      breakfast_enabled: data.breakfast_enabled,
-      lunch_enabled: data.lunch_enabled,
-      dinner_enabled: data.dinner_enabled,
-      snacks_enabled: data.snacks_enabled,
-    });
 
     if (!data.diet_type) errors.push("Diet type selection is required");
 

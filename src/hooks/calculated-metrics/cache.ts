@@ -38,7 +38,6 @@ export function setCachedMetrics(
 }
 
 export function invalidateMetricsCache(): void {
-  console.log("📊 [useCalculatedMetrics] Global cache invalidation");
   metricsCache = {
     metrics: null,
     timestamp: 0,
@@ -47,7 +46,6 @@ export function invalidateMetricsCache(): void {
 }
 
 export function clearMetricsCache(): void {
-  console.log("📊 [useCalculatedMetrics] Clearing cache");
   metricsCache = {
     metrics: null,
     timestamp: 0,

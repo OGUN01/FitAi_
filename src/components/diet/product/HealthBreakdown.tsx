@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { THEME } from "../../ui";
+import { ResponsiveTheme } from "../../../utils/constants";
 
 interface HealthBreakdownProps {
   breakdown: {
@@ -42,42 +42,42 @@ export const HealthBreakdown: React.FC<HealthBreakdownProps> = ({
 
 const styles = StyleSheet.create({
   breakdownContainer: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: ResponsiveTheme.colors.border,
   },
   sectionTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold as "700",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   breakdownItem: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   breakdownHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: THEME.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   breakdownLabel: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold as "600",
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
+    color: ResponsiveTheme.colors.text,
   },
   breakdownScore: {
-    paddingHorizontal: THEME.spacing.sm,
-    paddingVertical: THEME.spacing.xs,
-    borderRadius: THEME.borderRadius.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
   },
   breakdownScoreText: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.bold as "700",
-    color: THEME.colors.white,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
+    color: ResponsiveTheme.colors.white,
   },
   breakdownMessage: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 });

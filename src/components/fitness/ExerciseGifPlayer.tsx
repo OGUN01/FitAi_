@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,9 @@ import {
   ViewStyle,
 } from "react-native";
 import { Image } from "expo-image"; // ✅ Use Expo Image for GIF animation support
-import { Card, THEME } from "../ui";
+import { Card } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr, rs } from "../../utils/responsive";
 import { exerciseFilterService } from "../../services/exerciseFilterService";
 
 interface ExerciseGifPlayerProps {
@@ -43,28 +45,25 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Direct lookup by exercise ID with fallbacks
-  let exercise = exerciseFilterService.getExerciseById(exerciseId);
+  // Direct lookup by exercise ID with fallbacks (memoized to avoid side effects in render)
+  const exercise = useMemo(() => {
+    let result = exerciseFilterService.getExerciseById(exerciseId);
 
-  // Fallback: Try case-insensitive and trimmed lookup if first attempt fails
-  if (!exercise && exerciseId) {
-    const cleanId = exerciseId.trim();
-    const allIds = exerciseFilterService.getAllExerciseIds();
-    const matchingId = allIds.find(
-      (id) => id.toLowerCase() === cleanId.toLowerCase(),
-    );
-    if (matchingId) {
-      exercise = exerciseFilterService.getExerciseById(matchingId);
-      console.log(`🔄 Used fallback lookup: "${exerciseId}" → "${matchingId}"`);
+    // Fallback: Try case-insensitive and trimmed lookup if first attempt fails
+    if (!result && exerciseId) {
+      const cleanId = exerciseId.trim();
+      const allIds = exerciseFilterService.getAllExerciseIds();
+      const matchingId = allIds.find(
+        (id) => id.toLowerCase() === cleanId.toLowerCase(),
+      );
+      if (matchingId) {
+        result = exerciseFilterService.getExerciseById(matchingId);
+      }
     }
-  }
 
-  // 🐛 DEBUG: Log exercise lookup details (DISABLED TO STOP SPAM)
-  if (exerciseId && !exercise) {
-    console.log(
-      `🔍 ExerciseGifPlayer - Exercise NOT FOUND for ID: "${exerciseId}"`,
-    );
-  }
+    return result;
+  }, [exerciseId]);
+
 
   // Always prioritize database name over passed name to avoid showing IDs
   const displayName = exercise?.name || exerciseName || "Exercise";
@@ -214,7 +213,7 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
       <View style={[styles.gifContainer, { height, width }]}>
         {isLoading && (
           <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color={THEME.colors.primary} />
+            <ActivityIndicator size="large" color={ResponsiveTheme.colors.primary} />
             <Text style={styles.loadingText}>Loading demonstration...</Text>
           </View>
         )}
@@ -305,16 +304,16 @@ const styles = StyleSheet.create({
 
   gifContainer: {
     position: "relative",
-    backgroundColor: THEME.colors.backgroundSecondary,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
-    borderTopLeftRadius: THEME.borderRadius.lg,
-    borderTopRightRadius: THEME.borderRadius.lg,
+    borderTopLeftRadius: ResponsiveTheme.borderRadius.lg,
+    borderTopRightRadius: ResponsiveTheme.borderRadius.lg,
     alignSelf: "center",
     // Enhanced visual quality perception
     borderWidth: 1,
-    borderColor: THEME.colors.primary + "20",
-    shadowColor: THEME.colors.text,
+    borderColor: ResponsiveTheme.colors.primary + "20",
+    shadowColor: ResponsiveTheme.colors.text,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -322,12 +321,12 @@ const styles = StyleSheet.create({
   },
 
   gif: {
-    borderTopLeftRadius: THEME.borderRadius.lg,
-    borderTopRightRadius: THEME.borderRadius.lg,
+    borderTopLeftRadius: ResponsiveTheme.borderRadius.lg,
+    borderTopRightRadius: ResponsiveTheme.borderRadius.lg,
     // Enhanced sharpness perception
     backgroundColor: "#ffffff",
     borderWidth: 0.5,
-    borderColor: THEME.colors.primary + "10",
+    borderColor: ResponsiveTheme.colors.primary + "10",
   },
 
   loadingOverlay: {
@@ -338,60 +337,60 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: THEME.colors.backgroundSecondary,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     zIndex: 2,
   },
 
   loadingText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.sm,
   },
 
   playbackOverlay: {
     position: "absolute",
-    top: THEME.spacing.sm,
-    right: THEME.spacing.sm,
+    top: ResponsiveTheme.spacing.sm,
+    right: ResponsiveTheme.spacing.sm,
     zIndex: 3,
   },
 
   playbackButton: {
     backgroundColor: "rgba(0, 0, 0, 0.6)",
-    borderRadius: 20,
-    width: 40,
-    height: 40,
+    borderRadius: rbr(20),
+    width: rs(40),
+    height: rs(40),
     justifyContent: "center",
     alignItems: "center",
   },
 
   playbackIcon: {
-    fontSize: 16,
+    fontSize: rf(16),
   },
 
   placeholder: {
-    backgroundColor: THEME.colors.backgroundSecondary,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
-    borderTopLeftRadius: THEME.borderRadius.lg,
-    borderTopRightRadius: THEME.borderRadius.lg,
+    borderTopLeftRadius: ResponsiveTheme.borderRadius.lg,
+    borderTopRightRadius: ResponsiveTheme.borderRadius.lg,
   },
 
   placeholderEmoji: {
-    fontSize: 48,
-    marginBottom: THEME.spacing.md,
+    fontSize: rf(48),
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   placeholderText: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
     fontWeight: "500",
   },
 
   placeholderSubtext: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
   },
 
@@ -402,95 +401,95 @@ const styles = StyleSheet.create({
   },
 
   errorEmoji: {
-    fontSize: 32,
-    marginBottom: THEME.spacing.sm,
+    fontSize: rf(32),
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   errorText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.error,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.error,
     textAlign: "center",
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   retryButton: {
-    backgroundColor: THEME.colors.primary,
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.sm,
-    borderRadius: THEME.borderRadius.md,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
   retryButtonText: {
-    color: THEME.colors.surface,
-    fontSize: THEME.fontSize.sm,
+    color: ResponsiveTheme.colors.surface,
+    fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: "600",
   },
 
   exerciseInfo: {
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
 
   titleRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   exerciseTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
     flex: 1,
-    marginRight: THEME.spacing.sm,
+    marginRight: ResponsiveTheme.spacing.sm,
   },
 
   qualityIndicator: {
-    backgroundColor: THEME.colors.success + "20",
-    paddingHorizontal: THEME.spacing.sm,
-    paddingVertical: THEME.spacing.xs,
-    borderRadius: THEME.borderRadius.sm,
+    backgroundColor: ResponsiveTheme.colors.success + "20",
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
   },
 
   qualityText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.success,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.success,
     fontWeight: "600",
   },
 
   infoRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: THEME.spacing.sm,
-    marginBottom: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   infoChip: {
-    backgroundColor: THEME.colors.backgroundSecondary,
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.xs,
-    borderRadius: THEME.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
   },
 
   infoChipText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
     fontWeight: "500",
   },
 
   instructionsButton: {
-    backgroundColor: THEME.colors.primary + "10",
+    backgroundColor: ResponsiveTheme.colors.primary + "10",
     borderWidth: 1,
-    borderColor: THEME.colors.primary + "30",
-    paddingVertical: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.md,
+    borderColor: ResponsiveTheme.colors.primary + "30",
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
     alignSelf: "flex-start",
   },
 
   instructionsButtonText: {
-    color: THEME.colors.primary,
-    fontSize: THEME.fontSize.sm,
+    color: ResponsiveTheme.colors.primary,
+    fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: "600",
   },
 
@@ -501,17 +500,17 @@ const styles = StyleSheet.create({
 
   zoomHint: {
     position: "absolute",
-    bottom: 8,
-    right: 8,
+    bottom: rp(8),
+    right: rp(8),
     backgroundColor: "rgba(0, 0, 0, 0.7)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: rp(8),
+    paddingVertical: rp(4),
+    borderRadius: rbr(12),
   },
 
   zoomHintText: {
     color: "white",
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: "500",
   },
 
@@ -524,48 +523,48 @@ const styles = StyleSheet.create({
 
   fullscreenContainer: {
     alignItems: "center",
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
 
   closeButton: {
     position: "absolute",
-    top: 20,
-    right: 20,
+    top: rp(20),
+    right: rp(20),
     zIndex: 10,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 20,
-    width: 40,
-    height: 40,
+    borderRadius: rbr(20),
+    width: rs(40),
+    height: rs(40),
     justifyContent: "center",
     alignItems: "center",
   },
 
   closeButtonText: {
     color: "white",
-    fontSize: 20,
+    fontSize: rf(20),
     fontWeight: "bold",
   },
 
   fullscreenTitle: {
     color: "white",
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
     textAlign: "center",
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
     textTransform: "capitalize",
   },
 
   fullscreenGif: {
     backgroundColor: "rgba(255, 255, 255, 0.05)",
-    borderRadius: THEME.borderRadius.lg,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
   },
 
   fullscreenHint: {
     color: "rgba(255, 255, 255, 0.7)",
-    fontSize: THEME.fontSize.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
     textAlign: "center",
-    marginTop: THEME.spacing.md,
+    marginTop: ResponsiveTheme.spacing.md,
   },
 });

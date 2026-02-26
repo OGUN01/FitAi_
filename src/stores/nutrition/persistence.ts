@@ -30,17 +30,10 @@ export const createPersistenceActions = (
 
           if (!error && weeklyMealPlans && weeklyMealPlans.length > 0) {
             const latestPlan = weeklyMealPlans[0];
-            console.log(
-              `✅ Found weekly meal plan in database: ${latestPlan.plan_title}`,
-            );
 
             const planData = latestPlan.plan_data;
             if (planData && planData.meals) {
               set({ weeklyMealPlan: planData });
-              console.log(
-                "📋 Restored weekly meal plan from database to local storage",
-              );
-              return planData;
             }
           } else {
             console.log("📋 No weekly meal plan found in database");
@@ -55,11 +48,6 @@ export const createPersistenceActions = (
 
       const mealLogs = await crudOperations.readMealLogs();
       if (mealLogs.length > 0) {
-        console.log("📋 Found existing meal logs in database:", {
-          totalLogs: mealLogs.length,
-        });
-      } else {
-        console.log("📭 No meal logs found in database");
       }
 
       return null;
@@ -107,7 +95,6 @@ export const createPersistenceActions = (
         await crudOperations.createMealLog(mealLog);
       }
 
-      console.log("💾 Nutrition data persisted");
     } catch (error) {
       console.error("❌ Failed to persist nutrition data:", error);
     }
@@ -115,7 +102,6 @@ export const createPersistenceActions = (
 
   loadData: async () => {
     try {
-      console.log("📂 NutritionStore: Loading data...");
 
       const currentMealProgress = get().mealProgress;
 
@@ -131,7 +117,6 @@ export const createPersistenceActions = (
         new Date().toISOString().split("T")[0],
       );
 
-      console.log("📂 Nutrition data loaded");
     } catch (error) {
       console.error("❌ Failed to load nutrition data:", error);
     }

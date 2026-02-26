@@ -88,7 +88,6 @@ export class MigrationManager {
     const startTime = new Date().toISOString();
 
     try {
-      console.log("💾 Creating backup before migration...");
       const backupCreated = await backupManager.createMigrationBackup();
 
       const checkpoint: MigrationCheckpoint = {
@@ -105,7 +104,6 @@ export class MigrationManager {
         errors: [],
       };
       await checkpointManager.saveCheckpoint(checkpoint);
-      console.log("📍 Initial checkpoint created");
 
       this.currentMigration.unsubscribe = migrationEngine.onProgress(
         async (progress: MigrationProgress) => {
@@ -121,11 +119,9 @@ export class MigrationManager {
         },
       );
 
-      console.log("🚀 Starting migration with checkpoint tracking...");
       const result = await migrationEngine.migrateToSupabase(userId);
 
       if (result.success) {
-        console.log("✅ Migration completed successfully, cleaning up...");
         await checkpointManager.clearCheckpoint();
         await backupManager.clearBackup();
       } else {
@@ -136,7 +132,6 @@ export class MigrationManager {
           timestamp: new Date().toISOString(),
         });
         await checkpointManager.saveCheckpoint(checkpoint);
-        console.log("⚠️ Migration failed, checkpoint preserved for resume");
       }
 
       this.currentMigration.result = result;
@@ -224,7 +219,6 @@ export class MigrationManager {
     }
 
     try {
-      console.log("Migration cancellation requested");
 
       if (this.currentMigration.unsubscribe) {
         this.currentMigration.unsubscribe();

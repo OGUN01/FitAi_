@@ -8,7 +8,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import { Button, THEME } from "../../components/ui";
+import { Button } from "../../components/ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rw, rh, rbr } from '../../utils/responsive';
 import { useWorkoutDetailLogic } from "../../hooks/useWorkoutDetailLogic";
 import { WorkoutInfoCard } from "../../components/details/WorkoutInfoCard";
 import { ExerciseListItem } from "../../components/details/ExerciseListItem";
@@ -38,7 +40,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={THEME.colors.primary} />
+          <ActivityIndicator size="large" color={ResponsiveTheme.colors.primary} />
           <Text style={styles.loadingText}>Loading workout...</Text>
         </View>
       </SafeAreaView>
@@ -66,7 +68,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
             onPress={onBack ?? (() => {})}
             disabled={!onBack}
             variant="primary"
-            style={{ marginTop: THEME.spacing.lg }}
+            style={{ marginTop: ResponsiveTheme.spacing.lg }}
           />
         </View>
       </SafeAreaView>
@@ -138,7 +140,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
 
   loadingContainer: {
@@ -148,33 +150,33 @@ const styles = StyleSheet.create({
   },
 
   loadingText: {
-    marginTop: THEME.spacing.md,
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: THEME.spacing.xl,
+    padding: ResponsiveTheme.spacing.xl,
   },
 
   emptyIcon: {
-    fontSize: 64,
-    marginBottom: THEME.spacing.md,
+    fontSize: rf(64),
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   emptyTitle: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   emptySubtitle: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
   },
 
@@ -182,66 +184,66 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: THEME.colors.border,
+    borderBottomColor: ResponsiveTheme.colors.border,
   },
 
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: THEME.colors.surface,
+    width: rw(40),
+    height: rh(40),
+    borderRadius: rbr(20),
+    backgroundColor: ResponsiveTheme.colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
 
   backIcon: {
-    fontSize: THEME.fontSize.lg,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    color: ResponsiveTheme.colors.text,
   },
 
   headerTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
   },
 
   favoriteButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: THEME.colors.surface,
+    width: rw(40),
+    height: rh(40),
+    borderRadius: rbr(20),
+    backgroundColor: ResponsiveTheme.colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
 
   favoriteIcon: {
-    fontSize: THEME.fontSize.lg,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    color: ResponsiveTheme.colors.text,
   },
 
   scrollView: {
     flex: 1,
-    paddingHorizontal: THEME.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
   },
 
   exercisesSection: {
-    marginBottom: THEME.spacing.xxl,
+    marginBottom: ResponsiveTheme.spacing.xxl,
   },
 
   sectionTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   bottomContainer: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
-    backgroundColor: THEME.colors.background,
+    borderTopColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
 });

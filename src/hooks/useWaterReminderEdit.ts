@@ -1,5 +1,6 @@
+import { logger } from '../utils/logger';
 import { useState, useEffect } from "react";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 
 interface WaterReminderConfig {
   dailyGoalLiters: number;
@@ -76,7 +77,7 @@ export const useWaterReminderEdit = (
     });
 
     setIsLoading(false);
-    Alert.alert(
+    crossPlatformAlert(
       "Settings Saved!",
       "Your water reminder settings have been updated. Smart notifications will be rescheduled accordingly.",
       [{ text: "OK", onPress: onClose }],
@@ -91,7 +92,7 @@ export const useWaterReminderEdit = (
 
       // Validation
       if (isNaN(goalLiters) || goalLiters < 1 || goalLiters > 10) {
-        Alert.alert(
+        crossPlatformAlert(
           "Invalid Goal",
           "Please enter a daily water goal between 1 and 10 liters.",
         );
@@ -100,7 +101,7 @@ export const useWaterReminderEdit = (
       }
 
       if (!isValidTimeFormat(wakeUpTime) || !isValidTimeFormat(sleepTime)) {
-        Alert.alert(
+        crossPlatformAlert(
           "Invalid Time",
           "Please enter times in HH:MM format (e.g., 07:30).",
         );
@@ -113,7 +114,7 @@ export const useWaterReminderEdit = (
       const sleepMinutes = timeToMinutes(sleepTime);
 
       if (wakeMinutes >= sleepMinutes && sleepMinutes !== 0) {
-        Alert.alert(
+        crossPlatformAlert(
           "Time Conflict",
           "Wake up time should be before sleep time. Are you sure about these times?",
           [
@@ -127,8 +128,8 @@ export const useWaterReminderEdit = (
 
       await saveTimes();
     } catch (error) {
-      console.error("Error saving water reminder settings:", error);
-      Alert.alert(
+      logger.error('Error saving water reminder settings', { error: String(error) });
+      crossPlatformAlert(
         "Error",
         "Failed to save water reminder settings. Please try again.",
       );

@@ -29,6 +29,7 @@ import {
   RecoveryTipsModal,
 } from "./fitness";
 import { PlanSection } from "../../components/fitness/PlanSection";
+import { GuestSignUpScreen } from "./GuestSignUpScreen";
 
 interface FitnessScreenProps {
   navigation: any;
@@ -36,7 +37,7 @@ interface FitnessScreenProps {
 
 export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const { state, actions } = useFitnessLogic(navigation);
+  const { state, actions, setShowGuestSignUp } = useFitnessLogic(navigation);
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
@@ -122,7 +123,14 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
           </Animated.ScrollView>
         </Animated.View>
 
-        {/* Workout Start Dialog */}
+        {/* Guest Sign Up Overlay */}
+        {state.showGuestSignUp && (
+          <GuestSignUpScreen
+            onBack={() => setShowGuestSignUp(false)}
+            onSignUpSuccess={() => setShowGuestSignUp(false)}
+          />
+        )}
+
         <WorkoutStartDialog
           visible={state.showWorkoutStartDialog}
           workoutTitle={state.selectedWorkout?.title || ""}

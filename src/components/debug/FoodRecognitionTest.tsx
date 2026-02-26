@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
-  Alert,
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
@@ -17,7 +16,10 @@ import {
   foodRecognitionService,
   MealType,
 } from "../../services/foodRecognitionService";
+import { rf, rp, rbr } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
 
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 interface TestResult {
   timestamp: string;
   imageUri: string;
@@ -42,7 +44,7 @@ export const FoodRecognitionTest: React.FC = () => {
   const requestPermissions = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(
+      crossPlatformAlert(
         "Permission required",
         "Please grant camera roll permissions to test food recognition.",
       );
@@ -71,11 +73,6 @@ export const FoodRecognitionTest: React.FC = () => {
       const startTime = Date.now();
 
       try {
-        console.log("🔍 Testing food recognition with:", {
-          imageUri,
-          mealType: selectedMealType,
-        });
-
         const recognitionResult = await foodRecognitionService.recognizeFood(
           imageUri,
           selectedMealType,
@@ -94,7 +91,7 @@ export const FoodRecognitionTest: React.FC = () => {
 
         setTestResults((prev) => [testResult, ...prev]);
 
-        Alert.alert(
+        crossPlatformAlert(
           "✅ Test Completed",
           `Food recognition completed in ${(processingTime / 1000).toFixed(2)}s\\n\\n` +
             `Detected: ${recognitionResult.foods?.length || 0} food items\\n` +
@@ -114,7 +111,7 @@ export const FoodRecognitionTest: React.FC = () => {
 
         setTestResults((prev) => [testResult, ...prev]);
 
-        Alert.alert(
+        crossPlatformAlert(
           "❌ Test Failed",
           `Error: ${error.message || "Unknown error"}\n\n` +
             `Processing time: ${(processingTime / 1000).toFixed(2)}s`,
@@ -122,7 +119,7 @@ export const FoodRecognitionTest: React.FC = () => {
         );
       }
     } catch (error: any) {
-      Alert.alert("Error", `Failed to select image: ${error.message}`);
+      crossPlatformAlert("Error", `Failed to select image: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -189,7 +186,7 @@ export const FoodRecognitionTest: React.FC = () => {
         >
           {isLoading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="white" />
+              <ActivityIndicator size="small" color={ResponsiveTheme.colors.white} />
               <Text style={styles.testButtonText}>Testing...</Text>
             </View>
           ) : (
@@ -271,80 +268,77 @@ export const FoodRecognitionTest: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
-    padding: 16,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    padding: rp(16),
   },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 24,
-    marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    backgroundColor: ResponsiveTheme.colors.white,
+    borderRadius: rbr(12),
+    padding: rp(24),
+    marginBottom: rp(24),
+    boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
     elevation: 2,
   },
   title: {
-    fontSize: 24,
+    fontSize: rf(24),
     fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 8,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rp(8),
   },
   subtitle: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginBottom: 16,
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: rp(16),
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: "600",
-    color: "#111827",
-    marginBottom: 12,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rp(12),
   },
   mealTypeContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 24,
+    gap: rp(8),
+    marginBottom: rp(24),
   },
   mealTypeButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: rp(16),
+    paddingVertical: rp(8),
+    borderRadius: rbr(20),
     borderWidth: 2,
   },
   mealTypeButtonSelected: {
-    backgroundColor: "#3B82F6",
-    borderColor: "#3B82F6",
+    backgroundColor: ResponsiveTheme.colors.info,
+    borderColor: ResponsiveTheme.colors.info,
   },
   mealTypeButtonUnselected: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#D1D5DB",
+    backgroundColor: ResponsiveTheme.colors.white,
+    borderColor: ResponsiveTheme.colors.borderLight,
   },
   mealTypeText: {
     fontWeight: "500",
   },
   mealTypeTextSelected: {
-    color: "#FFFFFF",
+    color: ResponsiveTheme.colors.white,
   },
   mealTypeTextUnselected: {
-    color: "#374151",
+    color: ResponsiveTheme.colors.textMuted,
   },
   testButton: {
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    backgroundColor: "#3B82F6",
+    paddingVertical: rp(16),
+    paddingHorizontal: rp(24),
+    borderRadius: rbr(12),
+    backgroundColor: ResponsiveTheme.colors.info,
   },
   testButtonDisabled: {
-    backgroundColor: "#9CA3AF",
+    backgroundColor: ResponsiveTheme.colors.neutral,
   },
   testButtonText: {
-    color: "#FFFFFF",
+    color: ResponsiveTheme.colors.white,
     fontWeight: "600",
     textAlign: "center",
-    fontSize: 16,
+    fontSize: rf(16),
   },
   loadingContainer: {
     flexDirection: "row",
@@ -352,51 +346,48 @@ const styles = StyleSheet.create({
     justifyContent: "center" as const,
   },
   resultsCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    backgroundColor: ResponsiveTheme.colors.white,
+    borderRadius: rbr(12),
+    padding: rp(24),
+    boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
     elevation: 2,
   },
   resultsHeader: {
     flexDirection: "row",
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
-    marginBottom: 16,
+    marginBottom: rp(16),
   },
   resultsTitle: {
-    fontSize: 20,
+    fontSize: rf(20),
     fontWeight: "bold",
-    color: "#111827",
+    color: ResponsiveTheme.colors.text,
   },
   clearButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    backgroundColor: "#FEE2E2",
-    borderRadius: 8,
+    paddingHorizontal: rp(12),
+    paddingVertical: rp(4),
+    backgroundColor: ResponsiveTheme.colors.errorTint,
+    borderRadius: rbr(8),
   },
   clearButtonText: {
-    color: "#DC2626",
+    color: ResponsiveTheme.colors.error,
     fontWeight: "500",
   },
   resultItem: {
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-    paddingBottom: 16,
-    marginBottom: 16,
+    borderBottomColor: ResponsiveTheme.colors.border,
+    paddingBottom: rp(16),
+    marginBottom: rp(16),
   },
   resultContent: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 12,
+    gap: rp(12),
   },
   resultImage: {
     width: 64,
     height: 64,
-    borderRadius: 8,
+    borderRadius: rbr(8),
   },
   resultDetails: {
     flex: 1,
@@ -404,50 +395,50 @@ const styles = StyleSheet.create({
   resultHeader: {
     flexDirection: "row",
     alignItems: "center" as const,
-    gap: 8,
-    marginBottom: 4,
+    gap: rp(8),
+    marginBottom: rp(4),
   },
   resultMealType: {
     fontWeight: "600",
-    color: "#111827",
+    color: ResponsiveTheme.colors.text,
     textTransform: "capitalize",
   },
   resultTime: {
-    color: "#6B7280",
-    fontSize: 12,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: rf(12),
   },
   resultProcessingTime: {
-    color: "#3B82F6",
-    fontSize: 12,
+    color: ResponsiveTheme.colors.info,
+    fontSize: rf(12),
     fontWeight: "500",
   },
   resultError: {
-    color: "#DC2626",
-    fontSize: 12,
+    color: ResponsiveTheme.colors.error,
+    fontSize: rf(12),
   },
   resultSuccess: {
-    color: "#10B981",
-    fontSize: 12,
+    color: ResponsiveTheme.colors.successAlt,
+    fontSize: rf(12),
   },
   resultFoods: {
-    color: "#6B7280",
-    fontSize: 12,
-    marginTop: 4,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: rf(12),
+    marginTop: rp(4),
   },
   statusCard: {
-    backgroundColor: "#DBEAFE",
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 24,
+    backgroundColor: ResponsiveTheme.colors.primaryTint,
+    borderRadius: rbr(12),
+    padding: rp(16),
+    marginTop: rp(24),
   },
   statusTitle: {
-    color: "#1E3A8A",
+    color: ResponsiveTheme.colors.info,
     fontWeight: "600",
-    marginBottom: 8,
+    marginBottom: rp(8),
   },
   statusText: {
-    color: "#1E40AF",
-    fontSize: 12,
+    color: ResponsiveTheme.colors.info,
+    fontSize: rf(12),
   },
 });
 

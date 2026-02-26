@@ -1,5 +1,7 @@
+import { logger } from '../utils/logger';
 import { useState, useEffect, useCallback } from "react";
-import { Alert, Platform } from "react-native";
+import { Platform } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import Constants from "expo-constants";
 import { useHealthDataStore } from "../stores/healthDataStore";
 import { healthConnectService } from "../services/healthConnect";
@@ -67,7 +69,7 @@ export const useWearableConnection = () => {
     }
 
     if (nativeModuleAvailable === false || isExpoGo) {
-      Alert.alert(
+      crossPlatformAlert(
         "Development Build Required",
         `${platformName} integration requires a development or production build. It's not available in Expo Go.\n\nTo use this feature, build the app using:\n• EAS Build (eas build)\n• Local development build`,
         [{ text: "OK" }],
@@ -80,13 +82,13 @@ export const useWearableConnection = () => {
         const success = await requestHealthConnectPermissions();
         if (success) {
           updateSettings({ healthConnectEnabled: true });
-          Alert.alert(
+          crossPlatformAlert(
             "Connected!",
             "Health Connect is now syncing your wearable data.",
           );
           await syncFromHealthConnect(7);
         } else {
-          Alert.alert(
+          crossPlatformAlert(
             "Permission Required",
             "Health Connect permissions are needed to sync your health data.\n\nThe permission dialog may not have appeared. Please grant permissions manually in Health Connect settings.",
             [
@@ -97,8 +99,8 @@ export const useWearableConnection = () => {
                   try {
                     await healthConnectService.openSettings();
                   } catch (e) {
-                    console.error("Failed to open Health Connect settings:", e);
-                    Alert.alert(
+                    logger.error('Failed to open Health Connect settings', { error: String(e) });
+                    crossPlatformAlert(
                       "Open Health Connect",
                       "Please open the Health Connect app manually and grant FitAI permission to read your health data.",
                       [{ text: "OK" }],
@@ -113,13 +115,13 @@ export const useWearableConnection = () => {
         const success = await requestHealthKitPermissions();
         if (success) {
           updateSettings({ healthKitEnabled: true });
-          Alert.alert(
+          crossPlatformAlert(
             "Connected!",
             "HealthKit is now syncing your wearable data.",
           );
           await syncHealthData(true);
         } else {
-          Alert.alert(
+          crossPlatformAlert(
             "Permission Required",
             "Please grant HealthKit permissions in the Health app to sync your wearable data.",
             [{ text: "OK" }],
@@ -127,8 +129,8 @@ export const useWearableConnection = () => {
         }
       }
     } catch (error) {
-      console.error("Connection error:", error);
-      Alert.alert("Connection Failed", "Unable to connect. Please try again.");
+      logger.error('Connection error', { error: String(error) });
+      crossPlatformAlert("Connection Failed", "Unable to connect. Please try again.");
     }
   };
 
@@ -141,23 +143,23 @@ export const useWearableConnection = () => {
       } else if (isIOS) {
         await syncHealthData(true);
       }
-      Alert.alert("Sync Complete", "Your health data has been updated.");
+      crossPlatformAlert("Sync Complete", "Your health data has been updated.");
     } catch (error) {
-      Alert.alert("Sync Failed", "Unable to sync data. Please try again.");
+      crossPlatformAlert("Sync Failed", "Unable to sync data. Please try again.");
     }
   };
 
   // Handle re-authorization
   const handleReauthorize = async () => {
     if (!isAndroid) {
-      Alert.alert(
+      crossPlatformAlert(
         "Info",
         "Re-authorization is only needed for Android Health Connect.",
       );
       return;
     }
 
-    Alert.alert(
+    crossPlatformAlert(
       "Re-authorize Health Connect",
       "This will reset your Health Connect permissions and request fresh authorization.\n\nUse this if:\n• Calories are showing as 0\n• Some data types are missing\n• You recently updated the app\n\nYou will need to grant all permissions again.",
       [
@@ -171,13 +173,13 @@ export const useWearableConnection = () => {
             try {
               const success = await reauthorizeHealthConnect();
               if (success) {
-                Alert.alert(
+                crossPlatformAlert(
                   "Success!",
                   "Health Connect has been re-authorized with all permissions. Your data will now sync correctly.",
                   [{ text: "OK" }],
                 );
               } else {
-                Alert.alert(
+                crossPlatformAlert(
                   "Re-authorization Incomplete",
                   "Some permissions may not have been granted. Please check Health Connect settings and grant all permissions to FitAI.",
                   [
@@ -190,8 +192,8 @@ export const useWearableConnection = () => {
                 );
               }
             } catch (error) {
-              console.error("Re-authorization error:", error);
-              Alert.alert(
+              logger.error('Re-authorization error', { error: String(error) });
+              crossPlatformAlert(
                 "Error",
                 "Re-authorization failed. Please try again.",
               );
@@ -216,7 +218,7 @@ export const useWearableConnection = () => {
         }
       }
     } catch (error) {
-      console.error("Refresh error:", error);
+      logger.error('Refresh error', { error: String(error) });
     } finally {
       setRefreshing(false);
     }

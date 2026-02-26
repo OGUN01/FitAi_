@@ -9,12 +9,8 @@ export class AIGenerator {
     exerciseName: string,
   ): Promise<GeneratedExerciseData | null> {
     try {
-      console.warn(
-        "[advancedExerciseMatching] AI semantic mapping disabled - returning null",
-      );
       return null;
     } catch (error) {
-      console.warn(`Semantic mapping generation failed:`, error);
       return null;
     }
   }
@@ -22,9 +18,6 @@ export class AIGenerator {
   async generateComprehensiveExerciseData(
     exerciseName: string,
   ): Promise<GeneratedExerciseData> {
-    console.warn(
-      "[advancedExerciseMatching] AI exercise data generation disabled",
-    );
 
     return {
       name: exerciseName,

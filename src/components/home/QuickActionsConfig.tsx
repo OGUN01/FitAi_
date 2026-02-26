@@ -1,6 +1,8 @@
-import { Platform, Alert } from "react-native";
+import { Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { haptics } from "../../utils/haptics";
+import { ResponsiveTheme } from "../../utils/constants";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 interface QuickAction {
   id: string;
@@ -35,7 +37,7 @@ export const createQuickActions = ({
     id: "log-weight",
     label: "Log Weight",
     icon: "scale-outline" as keyof typeof Ionicons.glyphMap,
-    color: "#FF6B35",
+    color: ResponsiveTheme.colors.primary,
     onPress: onLogWeight,
   },
   ...(onScanFood
@@ -44,7 +46,7 @@ export const createQuickActions = ({
           id: "scan-food",
           label: "Scan Food",
           icon: "camera-outline" as keyof typeof Ionicons.glyphMap,
-          color: "#FF6B6B",
+          color: ResponsiveTheme.colors.errorLight,
           onPress: onScanFood,
         },
       ]
@@ -55,7 +57,7 @@ export const createQuickActions = ({
           id: "log-meal",
           label: "Log Meal",
           icon: "restaurant-outline" as keyof typeof Ionicons.glyphMap,
-          color: "#4CAF50",
+          color: ResponsiveTheme.colors.success,
           onPress: onLogMeal,
         },
       ]
@@ -66,7 +68,7 @@ export const createQuickActions = ({
           id: "log-water",
           label: "Water",
           icon: "water-outline" as keyof typeof Ionicons.glyphMap,
-          color: "#2196F3",
+          color: ResponsiveTheme.colors.info,
           onPress: onLogWater,
         },
       ]
@@ -75,17 +77,17 @@ export const createQuickActions = ({
     id: "health-sync",
     label: "Sync",
     icon: "sync-outline" as keyof typeof Ionicons.glyphMap,
-    color: "#10b981",
+    color: ResponsiveTheme.colors.successAlt,
     onPress: async () => {
       haptics.medium();
       if (Platform.OS === "ios" && isHealthKitAuthorized) {
         await syncHealthData(true);
-        Alert.alert("Synced", "Health data synced successfully");
+        crossPlatformAlert("Synced", "Health data synced successfully");
       } else if (Platform.OS === "android" && isHealthConnectAuthorized) {
         await syncFromHealthConnect(7);
-        Alert.alert("Synced", "Health data synced successfully");
+        crossPlatformAlert("Synced", "Health data synced successfully");
       } else {
-        Alert.alert("Health Sync", "Connect to Health app in settings");
+        crossPlatformAlert("Health Sync", "Connect to Health app in settings");
       }
     },
   },

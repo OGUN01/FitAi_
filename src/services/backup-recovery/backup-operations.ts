@@ -195,7 +195,6 @@ export async function cleanupOldBackups(
     for (const backup of deleteList) {
       try {
         await deleteBackupFn(backup.id);
-        console.log(`Cleaned up old backup: ${backup.id}`);
       } catch (error) {
         console.error(`Failed to cleanup backup ${backup.id}:`, error);
       }

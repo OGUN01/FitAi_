@@ -7,7 +7,6 @@ import {
   ViewStyle,
 } from "react-native";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
-import { THEME } from "../../utils/constants";
 import { ResponsiveTheme } from "../../utils/constants";
 
 interface LoadingSpinnerProps {
@@ -20,7 +19,7 @@ interface LoadingSpinnerProps {
 
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   size = "large",
-  color = THEME.colors.primary,
+  color = ResponsiveTheme.colors.primary,
   text,
   style,
   overlay = false,
@@ -76,7 +75,7 @@ const styles = StyleSheet.create({
     padding: ResponsiveTheme.spacing.xl,
     alignItems: "center",
     minWidth: rw(120),
-    ...THEME.shadows.lg,
+    ...ResponsiveTheme.shadows.lg,
   },
 
   overlayText: {

@@ -112,17 +112,22 @@ export const useWorkoutSession = (workout: DayWorkout, sessionId?: string) => {
         const newProgress = [...exerciseProgress];
         if (!newProgress[currentExerciseIndex]) return;
 
-        newProgress[currentExerciseIndex].completedSets[setIndex] =
-          !newProgress[currentExerciseIndex].completedSets[setIndex];
+        const updated = {
+          ...newProgress[currentExerciseIndex],
+          completedSets: [...newProgress[currentExerciseIndex].completedSets],
+        };
+        updated.completedSets[setIndex] =
+          !updated.completedSets[setIndex];
 
         const allSetsCompleted =
-          newProgress[currentExerciseIndex].completedSets.every(Boolean);
-        newProgress[currentExerciseIndex].isCompleted = allSetsCompleted;
+          updated.completedSets.every(Boolean);
+        updated.isCompleted = allSetsCompleted;
 
-        if (allSetsCompleted && !newProgress[currentExerciseIndex].endTime) {
-          newProgress[currentExerciseIndex].endTime = new Date();
+        if (allSetsCompleted && !updated.endTime) {
+          updated.endTime = new Date();
         }
 
+        newProgress[currentExerciseIndex] = updated;
         setExerciseProgress(newProgress);
 
         const completedExercises = newProgress.filter(
@@ -149,7 +154,7 @@ export const useWorkoutSession = (workout: DayWorkout, sessionId?: string) => {
 
         const currentSets = safeNumber(currentExercise.sets, 3);
         if (
-          newProgress[currentExerciseIndex].completedSets[setIndex] &&
+          updated.completedSets[setIndex] &&
           setIndex < currentSets - 1
         ) {
           const restTime = safeNumber(currentExercise.restTime, 60);
@@ -177,6 +182,7 @@ export const useWorkoutSession = (workout: DayWorkout, sessionId?: string) => {
         }
       } catch (error) {
         console.error("Failed to update workout progress:", error);
+        // Silently handle - user sees stale progress but workout continues
       }
     },
     [

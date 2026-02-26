@@ -6,7 +6,6 @@ if (Platform.OS === "ios") {
   try {
     HealthKitModule = require("expo-health-kit");
   } catch (error) {
-    console.log("HealthKit not available on this platform");
   }
 }
 

@@ -4,7 +4,7 @@ import {
   Text,
   Modal,
   TouchableOpacity,
-  TouchableWithoutFeedback,
+  Pressable,
   ScrollView,
   StyleSheet,
   Dimensions,
@@ -12,13 +12,13 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rw } from "../../utils/responsive";
+import { rf, rw, rp, rbr } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { ValidationResult } from "../../services/validationEngine";
 import {
   useAdjustmentWizard,
-  Alternative,
-} from "../../hooks/useAdjustmentWizard";
+  } from "../../hooks/adjustment-wizard";
+import type { Alternative } from "../../hooks/adjustment-wizard/types";
 import { AlternativeCard } from "./wizard/AlternativeCard";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -64,15 +64,15 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
       statusBarTranslucent
     >
       {/* OB-UX-011: Touchable backdrop to dismiss modal */}
-      <TouchableWithoutFeedback onPress={onClose}>
+      <Pressable onPress={onClose}>
         <View style={styles.modalOverlay}>
-          <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+          <Pressable onPress={(e) => e.stopPropagation()}>
             <View style={styles.modalTouchableContainer}>
               <BlurView intensity={40} tint="dark" style={styles.blurOverlay}>
                 <View style={styles.modalContainer}>
                   {/* Header */}
                   <LinearGradient
-                    colors={["#1a1a2e", "#16213e"]}
+                    colors={[ResponsiveTheme.colors.background, ResponsiveTheme.colors.backgroundSecondary]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.header}
@@ -98,7 +98,7 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
                         ]}
                         style={styles.headerIconGradient}
                       >
-                        <Ionicons name="analytics" size={rf(24)} color="#fff" />
+                        <Ionicons name="analytics" size={rf(24)} color={ResponsiveTheme.colors.white} />
                       </LinearGradient>
                     </View>
 
@@ -114,7 +114,7 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
                         <Ionicons
                           name="warning"
                           size={rf(16)}
-                          color="#EF4444"
+                          color={ResponsiveTheme.colors.errorAlt}
                         />
                       </View>
                       <Text style={styles.errorMessage} numberOfLines={2}>
@@ -173,7 +173,7 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
                                 ResponsiveTheme.colors.primary,
                                 ResponsiveTheme.colors.secondary,
                               ]
-                            : ["#374151", "#4B5563"]
+                            : [ResponsiveTheme.colors.surfaceLight, ResponsiveTheme.colors.surfaceLight]
                         }
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
@@ -186,7 +186,7 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
                           <Ionicons
                             name="checkmark-circle"
                             size={rf(18)}
-                            color="#fff"
+                            color={ResponsiveTheme.colors.white}
                           />
                         )}
                       </LinearGradient>
@@ -195,9 +195,9 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
                 </View>
               </BlurView>
             </View>
-          </TouchableWithoutFeedback>
+          </Pressable>
         </View>
-      </TouchableWithoutFeedback>
+      </Pressable>
     </Modal>
   );
 };
@@ -205,7 +205,7 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    backgroundColor: ResponsiveTheme.colors.overlayDark,
   },
 
   modalTouchableContainer: {
@@ -222,8 +222,8 @@ const styles = StyleSheet.create({
     flex: 1,
     maxHeight: "92%",
     backgroundColor: ResponsiveTheme.colors.background,
-    borderTopLeftRadius: rw(24),
-    borderTopRightRadius: rw(24),
+    borderTopLeftRadius: rbr(24),
+    borderTopRightRadius: rbr(24),
     overflow: "hidden",
   },
 
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     width: rw(32),
     height: rw(32),
     borderRadius: rw(16),
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -279,12 +279,12 @@ const styles = StyleSheet.create({
   errorAlert: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(239, 68, 68, 0.15)",
+    backgroundColor: ResponsiveTheme.colors.errorTint,
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.md,
     borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.3)",
+    borderColor: `${ResponsiveTheme.colors.errorAlt}4D`,
     width: "100%",
   },
 
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     width: rw(28),
     height: rw(28),
     borderRadius: rw(14),
-    backgroundColor: "rgba(239, 68, 68, 0.2)",
+    backgroundColor: `${ResponsiveTheme.colors.errorAlt}33`,
     alignItems: "center",
     justifyContent: "center",
     marginRight: ResponsiveTheme.spacing.sm,
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
   errorMessage: {
     flex: 1,
     fontSize: rf(12),
-    color: "#FCA5A5",
+    color: ResponsiveTheme.colors.errorLight,
     fontWeight: "500",
     lineHeight: rf(16),
   },
@@ -334,9 +334,9 @@ const styles = StyleSheet.create({
   footer: {
     padding: ResponsiveTheme.spacing.lg,
     paddingTop: ResponsiveTheme.spacing.md,
-    backgroundColor: "rgba(22, 33, 62, 0.95)",
+    backgroundColor: `${ResponsiveTheme.colors.backgroundSecondary}F2`,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.05)",
+    borderTopColor: ResponsiveTheme.colors.glassSurface,
     flexDirection: "row",
     alignItems: "center",
     gap: ResponsiveTheme.spacing.md,
@@ -349,9 +349,9 @@ const styles = StyleSheet.create({
     borderRadius: ResponsiveTheme.borderRadius.md,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: ResponsiveTheme.colors.glassHighlight,
   },
 
   cancelButtonText: {
@@ -382,11 +382,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: rp(8),
   },
 
   applyButtonText: {
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     fontSize: rf(14),
     fontWeight: "700",
   },

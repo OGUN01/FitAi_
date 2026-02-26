@@ -206,7 +206,6 @@ export const useMigration = (): UseMigrationReturn => {
 
       if (migrationResult.success) {
         setProfileMigrationNeeded(false);
-        console.log("✅ Profile migration completed successfully");
       } else {
         console.error("❌ Profile migration failed:", migrationResult.errors);
         setError(migrationResult.errors.join(", "));

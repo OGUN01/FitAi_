@@ -15,7 +15,8 @@ import {
   SafeAreaView,
   TouchableOpacity,
 } from "react-native";
-import { THEME } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rbr, rp, rh, rw } from "../../utils/responsive";
 import { migrationManager } from "../../services/migrationManager";
 import { MigrationStatus } from "../../types/profileData";
 
@@ -250,10 +251,10 @@ export const MigrationProgressModal: React.FC<MigrationStatusModalProps> = ({
                               outputRange: ["0%", "100%"],
                             }),
                             backgroundColor: hasErrors
-                              ? THEME.colors.error
+                              ? ResponsiveTheme.colors.error
                               : isComplete
-                                ? THEME.colors.success
-                                : THEME.colors.primary,
+                                ? ResponsiveTheme.colors.success
+                                : ResponsiveTheme.colors.primary,
                           },
                         ]}
                       />
@@ -328,16 +329,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
 
   modal: {
-    backgroundColor: THEME.colors.surface,
-    borderRadius: THEME.borderRadius.xl,
-    padding: THEME.spacing.xl,
-    width: SCREEN_WIDTH - THEME.spacing.lg * 2,
-    maxWidth: 400,
-    shadowColor: "#000",
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: ResponsiveTheme.borderRadius.xl,
+    padding: ResponsiveTheme.spacing.xl,
+    width: SCREEN_WIDTH - ResponsiveTheme.spacing.lg * 2,
+    maxWidth: rw(400),
+    shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: {
       width: 0,
       height: 8,
@@ -349,124 +350,124 @@ const styles = StyleSheet.create({
 
   header: {
     alignItems: "center",
-    marginBottom: THEME.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
 
   title: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
     textAlign: "center",
   },
 
   subtitle: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: rf(20),
   },
 
   progressSection: {
-    marginBottom: THEME.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
 
   stepInfo: {
     alignItems: "center",
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   stepIcon: {
-    fontSize: 32,
-    marginBottom: THEME.spacing.sm,
+    fontSize: rf(32),
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   stepTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
     textAlign: "center",
   },
 
   progressBarContainer: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   progressBarBackground: {
-    height: 8,
-    backgroundColor: THEME.colors.border,
-    borderRadius: 4,
+    height: rh(8),
+    backgroundColor: ResponsiveTheme.colors.border,
+    borderRadius: rbr(4),
     overflow: "hidden",
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   progressBarFill: {
     height: "100%",
-    borderRadius: 4,
+    borderRadius: rbr(4),
   },
 
   progressText: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
   },
 
   statusMessage: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: rf(20),
   },
 
   errorMessage: {
-    color: THEME.colors.error,
+    color: ResponsiveTheme.colors.error,
   },
 
   successMessage: {
-    color: THEME.colors.success,
+    color: ResponsiveTheme.colors.success,
   },
 
   actions: {
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   actionButton: {
-    paddingVertical: THEME.spacing.md,
-    paddingHorizontal: THEME.spacing.lg,
-    borderRadius: THEME.borderRadius.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
     alignItems: "center",
   },
 
   continueButton: {
-    backgroundColor: THEME.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary,
   },
 
   retryButton: {
-    backgroundColor: THEME.colors.error,
+    backgroundColor: ResponsiveTheme.colors.error,
   },
 
   actionButtonText: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
 
   continueButtonText: {
-    color: THEME.colors.white,
+    color: ResponsiveTheme.colors.white,
   },
 
   retryButtonText: {
-    color: THEME.colors.white,
+    color: ResponsiveTheme.colors.white,
   },
 
   cancelButton: {
-    paddingVertical: THEME.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.sm,
     alignItems: "center",
   },
 
   cancelButtonText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 });
 

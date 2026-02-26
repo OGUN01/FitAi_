@@ -141,7 +141,6 @@ export function calculateTDEEWithClimate(
  *
  * @example
  * const result = calculateTDEEDetailed(1680, 'moderate', 'tropical');
- * console.log(result.breakdown);
  * // {
  * //   bmr: 1680,
  * //   activityMultiplier: 1.55,

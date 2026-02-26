@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,10 +8,11 @@ import {
   Alert,
 } from "react-native";
 import geminiTest, {
+import { ResponsiveTheme } from '../../utils/constants';
   TestSummary,
   TestResult,
 } from "../../test/geminiStructuredOutputTest";
-import { THEME } from "../ui";
+
 
 interface GeminiTestComponentProps {
   onClose?: () => void;
@@ -119,14 +120,14 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
   };
 
   const getStatusColor = (passed: boolean) =>
-    passed ? THEME.colors.success : THEME.colors.error;
+    passed ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.error;
 
   return (
     <ScrollView
       style={{
         flex: 1,
-        backgroundColor: THEME.colors.background,
-        padding: THEME.spacing.lg,
+        backgroundColor: ResponsiveTheme.colors.background,
+        padding: ResponsiveTheme.spacing.lg,
       }}
     >
       {/* Header */}
@@ -135,14 +136,14 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
           flexDirection: "row",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: THEME.spacing.lg,
+          marginBottom: ResponsiveTheme.spacing.lg,
         }}
       >
         <Text
           style={{
-            fontSize: THEME.fontSize.xl,
+            fontSize: ResponsiveTheme.fontSize.xl,
             fontWeight: "bold",
-            color: THEME.colors.text,
+            color: ResponsiveTheme.colors.text,
           }}
         >
           🧪 Gemini Test Suite
@@ -151,12 +152,12 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
           <TouchableOpacity
             onPress={onClose}
             style={{
-              padding: THEME.spacing.sm,
-              backgroundColor: THEME.colors.backgroundSecondary,
-              borderRadius: THEME.borderRadius.md,
+              padding: ResponsiveTheme.spacing.sm,
+              backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+              borderRadius: ResponsiveTheme.borderRadius.md,
             }}
           >
-            <Text style={{ color: THEME.colors.text, fontSize: 18 }}>✕</Text>
+            <Text style={{ color: ResponsiveTheme.colors.text, fontSize: 18 }}>✕</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -164,15 +165,15 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
       {/* Description */}
       <View
         style={{
-          backgroundColor: THEME.colors.backgroundSecondary,
-          padding: THEME.spacing.md,
-          borderRadius: THEME.borderRadius.md,
-          marginBottom: THEME.spacing.lg,
+          backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+          padding: ResponsiveTheme.spacing.md,
+          borderRadius: ResponsiveTheme.borderRadius.md,
+          marginBottom: ResponsiveTheme.spacing.lg,
         }}
       >
         <Text
           style={{
-            color: THEME.colors.textSecondary,
+            color: ResponsiveTheme.colors.textSecondary,
             lineHeight: 20,
             textAlign: "center",
           }}
@@ -187,21 +188,21 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
       {isRunning && currentTest && (
         <View
           style={{
-            backgroundColor: THEME.colors.primary,
-            padding: THEME.spacing.md,
-            borderRadius: THEME.borderRadius.md,
-            marginBottom: THEME.spacing.lg,
+            backgroundColor: ResponsiveTheme.colors.primary,
+            padding: ResponsiveTheme.spacing.md,
+            borderRadius: ResponsiveTheme.borderRadius.md,
+            marginBottom: ResponsiveTheme.spacing.lg,
             alignItems: "center",
           }}
         >
           <ActivityIndicator
             size="small"
-            color={THEME.colors.text}
-            style={{ marginBottom: THEME.spacing.sm }}
+            color={ResponsiveTheme.colors.text}
+            style={{ marginBottom: ResponsiveTheme.spacing.sm }}
           />
           <Text
             style={{
-              color: THEME.colors.text,
+              color: ResponsiveTheme.colors.text,
               textAlign: "center",
               fontWeight: "bold",
             }}
@@ -212,22 +213,22 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
       )}
 
       {/* Test Buttons */}
-      <View style={{ marginBottom: THEME.spacing.lg }}>
+      <View style={{ marginBottom: ResponsiveTheme.spacing.lg }}>
         {/* Quick Test Button */}
         <TouchableOpacity
           onPress={runQuickTest}
           disabled={isRunning}
           style={{
             backgroundColor: isRunning
-              ? THEME.colors.backgroundSecondary
+              ? ResponsiveTheme.colors.backgroundSecondary
               : "#3B82F6",
-            padding: THEME.spacing.md,
-            borderRadius: THEME.borderRadius.md,
+            padding: ResponsiveTheme.spacing.md,
+            borderRadius: ResponsiveTheme.borderRadius.md,
             alignItems: "center",
-            marginBottom: THEME.spacing.md,
+            marginBottom: ResponsiveTheme.spacing.md,
           }}
         >
-          <Text style={{ color: THEME.colors.text, fontWeight: "bold" }}>
+          <Text style={{ color: ResponsiveTheme.colors.text, fontWeight: "bold" }}>
             {isRunning ? "⏳ Testing..." : "⚡ Quick Test"}
           </Text>
         </TouchableOpacity>
@@ -238,15 +239,15 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
           disabled={isRunning}
           style={{
             backgroundColor: isRunning
-              ? THEME.colors.backgroundSecondary
-              : THEME.colors.success,
-            padding: THEME.spacing.md,
-            borderRadius: THEME.borderRadius.md,
+              ? ResponsiveTheme.colors.backgroundSecondary
+              : ResponsiveTheme.colors.success,
+            padding: ResponsiveTheme.spacing.md,
+            borderRadius: ResponsiveTheme.borderRadius.md,
             alignItems: "center",
-            marginBottom: THEME.spacing.md,
+            marginBottom: ResponsiveTheme.spacing.md,
           }}
         >
-          <Text style={{ color: THEME.colors.text, fontWeight: "bold" }}>
+          <Text style={{ color: ResponsiveTheme.colors.text, fontWeight: "bold" }}>
             {isRunning ? "⏳ Testing..." : "💪 Test Weekly Workout Generation"}
           </Text>
         </TouchableOpacity>
@@ -257,14 +258,14 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
           disabled={isRunning}
           style={{
             backgroundColor: isRunning
-              ? THEME.colors.backgroundSecondary
+              ? ResponsiveTheme.colors.backgroundSecondary
               : "#FF8A5C",
-            padding: THEME.spacing.md,
-            borderRadius: THEME.borderRadius.md,
+            padding: ResponsiveTheme.spacing.md,
+            borderRadius: ResponsiveTheme.borderRadius.md,
             alignItems: "center",
           }}
         >
-          <Text style={{ color: THEME.colors.text, fontWeight: "bold" }}>
+          <Text style={{ color: ResponsiveTheme.colors.text, fontWeight: "bold" }}>
             {isRunning
               ? "⏳ Running Full Test Suite..."
               : "🎯 Run Complete Test Suite"}
@@ -276,18 +277,18 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
       {testResults && testResults.results.length > 0 && (
         <View
           style={{
-            backgroundColor: THEME.colors.backgroundSecondary,
-            padding: THEME.spacing.md,
-            borderRadius: THEME.borderRadius.md,
-            marginBottom: THEME.spacing.lg,
+            backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+            padding: ResponsiveTheme.spacing.md,
+            borderRadius: ResponsiveTheme.borderRadius.md,
+            marginBottom: ResponsiveTheme.spacing.lg,
           }}
         >
           <Text
             style={{
-              fontSize: THEME.fontSize.lg,
+              fontSize: ResponsiveTheme.fontSize.lg,
               fontWeight: "bold",
-              color: THEME.colors.text,
-              marginBottom: THEME.spacing.md,
+              color: ResponsiveTheme.colors.text,
+              marginBottom: ResponsiveTheme.spacing.md,
             }}
           >
             📊 Test Results
@@ -299,9 +300,9 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
               style={{
                 borderBottomWidth:
                   index < testResults.results.length - 1 ? 1 : 0,
-                borderBottomColor: THEME.colors.backgroundTertiary,
-                paddingBottom: THEME.spacing.sm,
-                marginBottom: THEME.spacing.sm,
+                borderBottomColor: ResponsiveTheme.colors.backgroundTertiary,
+                paddingBottom: ResponsiveTheme.spacing.sm,
+                marginBottom: ResponsiveTheme.spacing.sm,
               }}
             >
               <View
@@ -309,13 +310,13 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
                   flexDirection: "row",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  marginBottom: THEME.spacing.xs,
+                  marginBottom: ResponsiveTheme.spacing.xs,
                 }}
               >
                 <Text
                   style={{
                     fontWeight: "bold",
-                    color: THEME.colors.text,
+                    color: ResponsiveTheme.colors.text,
                     flex: 1,
                   }}
                 >
@@ -340,8 +341,8 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
                 {result.duration && (
                   <Text
                     style={{
-                      fontSize: THEME.fontSize.xs,
-                      color: THEME.colors.textMuted,
+                      fontSize: ResponsiveTheme.fontSize.xs,
+                      color: ResponsiveTheme.colors.textMuted,
                     }}
                   >
                     ⏱️ {result.duration}ms
@@ -350,8 +351,8 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
                 {result.tokensUsed && (
                   <Text
                     style={{
-                      fontSize: THEME.fontSize.xs,
-                      color: THEME.colors.textMuted,
+                      fontSize: ResponsiveTheme.fontSize.xs,
+                      color: ResponsiveTheme.colors.textMuted,
                     }}
                   >
                     🔢 {result.tokensUsed} tokens
@@ -362,9 +363,9 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
               {result.error && (
                 <Text
                   style={{
-                    color: THEME.colors.error,
-                    fontSize: THEME.fontSize.xs,
-                    marginTop: THEME.spacing.xs,
+                    color: ResponsiveTheme.colors.error,
+                    fontSize: ResponsiveTheme.fontSize.xs,
+                    marginTop: ResponsiveTheme.spacing.xs,
                   }}
                 >
                   Error: {result.error}
@@ -382,21 +383,21 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
             backgroundColor: testResults.overallSuccess
               ? "rgba(16, 185, 129, 0.1)"
               : "rgba(239, 68, 68, 0.1)",
-            padding: THEME.spacing.md,
-            borderRadius: THEME.borderRadius.md,
-            marginBottom: THEME.spacing.lg,
+            padding: ResponsiveTheme.spacing.md,
+            borderRadius: ResponsiveTheme.borderRadius.md,
+            marginBottom: ResponsiveTheme.spacing.lg,
             borderWidth: 1,
             borderColor: testResults.overallSuccess
-              ? THEME.colors.success
-              : THEME.colors.error,
+              ? ResponsiveTheme.colors.success
+              : ResponsiveTheme.colors.error,
           }}
         >
           <Text
             style={{
-              fontSize: THEME.fontSize.lg,
+              fontSize: ResponsiveTheme.fontSize.lg,
               fontWeight: "bold",
-              color: THEME.colors.text,
-              marginBottom: THEME.spacing.sm,
+              color: ResponsiveTheme.colors.text,
+              marginBottom: ResponsiveTheme.spacing.sm,
             }}
           >
             📋 Final Result
@@ -404,10 +405,10 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
           <Text
             style={{
               color: testResults.overallSuccess
-                ? THEME.colors.success
-                : THEME.colors.error,
+                ? ResponsiveTheme.colors.success
+                : ResponsiveTheme.colors.error,
               fontWeight: "bold",
-              fontSize: THEME.fontSize.md,
+              fontSize: ResponsiveTheme.fontSize.md,
               textAlign: "center",
             }}
           >
@@ -417,9 +418,9 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
           </Text>
           <Text
             style={{
-              color: THEME.colors.textSecondary,
+              color: ResponsiveTheme.colors.textSecondary,
               textAlign: "center",
-              marginTop: THEME.spacing.sm,
+              marginTop: ResponsiveTheme.spacing.sm,
             }}
           >
             {testResults.passedTests}/{testResults.totalTests} tests successful
@@ -431,8 +432,8 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
       <View
         style={{
           backgroundColor: "rgba(59, 130, 246, 0.1)",
-          padding: THEME.spacing.md,
-          borderRadius: THEME.borderRadius.md,
+          padding: ResponsiveTheme.spacing.md,
+          borderRadius: ResponsiveTheme.borderRadius.md,
           borderWidth: 1,
           borderColor: "#3B82F6",
         }}
@@ -441,7 +442,7 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
           style={{
             color: "#1E40AF",
             fontWeight: "bold",
-            marginBottom: THEME.spacing.sm,
+            marginBottom: ResponsiveTheme.spacing.sm,
           }}
         >
           ℹ️ Test Information
@@ -449,7 +450,7 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
         <Text
           style={{
             color: "#1E40AF",
-            fontSize: THEME.fontSize.sm,
+            fontSize: ResponsiveTheme.fontSize.sm,
             lineHeight: 18,
           }}
         >

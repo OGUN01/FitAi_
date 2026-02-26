@@ -4,7 +4,7 @@ import Animated, { FadeInRight } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw } from "../../utils/responsive";
+import { rf, rw, rp } from "../../utils/responsive";
 
 interface MetricItemProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -35,9 +35,9 @@ export const MetricItem: React.FC<MetricItemProps> = ({
       stable: "remove" as const,
     };
     const colors = {
-      up: "#F44336", // HR going up is usually bad
-      down: "#4CAF50", // HR going down is usually good
-      stable: "#9E9E9E",
+      up: ResponsiveTheme.colors.error, // HR going up is usually bad
+      down: ResponsiveTheme.colors.success, // HR going down is usually good
+      stable: ResponsiveTheme.colors.neutral,
     };
     return (
       <Ionicons
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   metricValueRow: {
     flexDirection: "row",
     alignItems: "baseline",
-    gap: 2,
+    gap: rp(2),
   },
   metricValue: {
     fontSize: rf(14),

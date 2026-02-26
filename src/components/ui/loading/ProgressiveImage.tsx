@@ -4,6 +4,7 @@
  * Loads tiny blurred thumbnail first, then fades in full-resolution image
  */
 
+import { ResponsiveTheme } from "../../../utils/constants";
 import React, { useState, useRef, useEffect } from "react";
 import {
   View,
@@ -18,6 +19,7 @@ import {
   Easing,
 } from "react-native";
 import { AuroraSpinner } from "./AuroraSpinner";
+import { rf, rp } from "../../../utils/responsive";
 
 // ============================================================================
 // TYPES
@@ -323,7 +325,7 @@ export const ProgressiveAvatar: React.FC<ProgressiveAvatarProps> = ({
   size = 48,
   borderRadius,
   borderWidth = 0,
-  borderColor = "#FFFFFF",
+  borderColor = ResponsiveTheme.colors.white,
   style,
   accessibilityLabel,
 }) => {
@@ -419,11 +421,11 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
   },
   errorIcon: {
-    fontSize: 32,
-    marginBottom: 8,
+    fontSize: rf(32),
+    marginBottom: rp(8),
   },
   errorText: {
-    fontSize: 12,
+    fontSize: rf(12),
     color: "rgba(255, 255, 255, 0.5)",
     textAlign: "center",
   },

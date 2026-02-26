@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 import { useEffect, useCallback } from "react";
 import { useAuth } from "../useAuth";
 import { OnboardingStateWithActions } from "./types";
@@ -72,18 +73,13 @@ export const useOnboardingState = (): OnboardingStateWithActions => {
 
   useEffect(() => {
     if (state.hasUnsavedChanges) {
-      console.log("⏱️ [ONBOARDING] Auto-save timer started (1s debounce)");
       const timer = setTimeout(() => {
-        console.log(
-          "⏱️ [ONBOARDING] Auto-save timer fired - triggering saveToLocal",
-        );
         saveToLocalMemo().catch((error) => {
-          console.error("[useOnboardingState] Auto-save failed:", error);
+          logger.error('[useOnboardingState] Auto-save failed', { error: String(error) });
         });
       }, 1000);
 
       return () => {
-        console.log("⏱️ [ONBOARDING] Auto-save timer cleared");
         clearTimeout(timer);
       };
     }
@@ -96,12 +92,9 @@ export const useOnboardingState = (): OnboardingStateWithActions => {
   useEffect(() => {
     let mounted = true;
 
-    console.log(
-      "🚀 [ONBOARDING] Hook mounted - loading data from local storage",
-    );
     loadFromLocalMemo().catch((error) => {
       if (!mounted) return;
-      console.error("[useOnboardingState] Load from local failed:", error);
+      logger.error('[useOnboardingState] Load from local failed', { error: String(error) });
     });
 
     return () => {

@@ -12,7 +12,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, Text, StyleSheet, Alert } from "react-native";
+import { View, Text, StyleSheet, Alert, LayoutChangeEvent } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -23,7 +23,7 @@ import { useProfileStore } from "../../../../stores/profileStore";
 import { useUser } from "../../../../hooks/useUser";
 import { useAuth } from "../../../../hooks/useAuth";
 import { ResponsiveTheme } from "../../../../utils/constants";
-import { rf, rw } from "../../../../utils/responsive";
+import { rf, rp, rbr, rw } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
 import { supabase } from "../../../../services/supabase";
 
@@ -46,16 +46,19 @@ export const BodyMeasurementsEditModal: React.FC<
   const [bodyFat, setBodyFat] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [scaleBarWidth, setScaleBarWidth] = useState(0);
 
   // Load current values when modal opens
   useEffect(() => {
     if (visible && profile) {
       // ✅ Get measurements from bodyMetrics (database: body_analysis table)
       const bodyMetrics = profile.bodyMetrics;
-      setHeight(bodyMetrics?.height_cm?.toString() || "");
-      setWeight(bodyMetrics?.current_weight_kg?.toString() ?? "");
-      setTargetWeight(bodyMetrics?.target_weight_kg?.toString() ?? "");
-      setBodyFat(bodyMetrics?.body_fat_percentage?.toString() || "");
+      const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
+      // Note: bodyMetrics may have 0 values (never populated by onboarding), so check > 0
+      setHeight((bodyMetrics?.height_cm && bodyMetrics.height_cm > 0) ? bodyMetrics.height_cm.toString() : (bodyAnalysisData?.height_cm?.toString() || ""));
+      setWeight((bodyMetrics?.current_weight_kg && bodyMetrics.current_weight_kg > 0) ? bodyMetrics.current_weight_kg.toString() : (bodyAnalysisData?.current_weight_kg?.toString() || ""));
+      setTargetWeight((bodyMetrics?.target_weight_kg && bodyMetrics.target_weight_kg > 0) ? bodyMetrics.target_weight_kg.toString() : (bodyAnalysisData?.target_weight_kg?.toString() || ""));
+      setBodyFat((bodyMetrics?.body_fat_percentage && bodyMetrics.body_fat_percentage > 0) ? bodyMetrics.body_fat_percentage.toString() : (bodyAnalysisData?.body_fat_percentage?.toString() || ""));
       setErrors({});
     }
   }, [visible, profile]);
@@ -74,10 +77,10 @@ export const BodyMeasurementsEditModal: React.FC<
   const bmiCategory = useMemo(() => {
     if (!bmi) return null;
     const bmiValue = parseFloat(bmi);
-    if (bmiValue < 18.5) return { label: "Underweight", color: "#2196F3" };
-    if (bmiValue < 25) return { label: "Normal", color: "#4CAF50" };
-    if (bmiValue < 30) return { label: "Overweight", color: "#FF9800" };
-    return { label: "Obese", color: "#F44336" };
+    if (bmiValue < 18.5) return { label: "Underweight", color: ResponsiveTheme.colors.info };
+    if (bmiValue < 25) return { label: "Normal", color: ResponsiveTheme.colors.success };
+    if (bmiValue < 30) return { label: "Overweight", color: ResponsiveTheme.colors.warning };
+    return { label: "Obese", color: ResponsiveTheme.colors.error };
   }, [bmi]);
 
   // Validation
@@ -137,19 +140,21 @@ export const BodyMeasurementsEditModal: React.FC<
         throw new Error("Profile not found");
       }
 
+      const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
+
       // ✅ Update bodyAnalysis in profileStore
       updateBodyAnalysis({
         height_cm: parseFloat(height),
         current_weight_kg: parseFloat(weight),
-        target_weight_kg: targetWeight ? parseFloat(targetWeight) : undefined as any,
+        ...(targetWeight ? { target_weight_kg: parseFloat(targetWeight) } : {}),
         body_fat_percentage: bodyFat ? parseFloat(bodyFat) : undefined,
         // Preserve other fields from existing profile data
-        medical_conditions: profile.bodyMetrics?.medical_conditions || [],
-        medications: profile.bodyMetrics?.medications || [],
-        physical_limitations: profile.bodyMetrics?.physical_limitations || [],
-        pregnancy_status: profile.bodyMetrics?.pregnancy_status || false,
+        medical_conditions: profile.bodyMetrics?.medical_conditions || bodyAnalysisData?.medical_conditions || [],
+        medications: profile.bodyMetrics?.medications || bodyAnalysisData?.medications || [],
+        physical_limitations: profile.bodyMetrics?.physical_limitations || bodyAnalysisData?.physical_limitations || [],
+        pregnancy_status: profile.bodyMetrics?.pregnancy_status || bodyAnalysisData?.pregnancy_status || false,
         breastfeeding_status:
-          profile.bodyMetrics?.breastfeeding_status || false,
+          profile.bodyMetrics?.breastfeeding_status || bodyAnalysisData?.breastfeeding_status || false,
       });
       console.log(
         "✅ BodyMeasurementsEditModal: Saved body metrics locally",
@@ -211,13 +216,23 @@ export const BodyMeasurementsEditModal: React.FC<
   ]);
 
   const hasChanges = useCallback(() => {
-    if (!profile?.bodyMetrics) return true;
+    if (!profile?.bodyMetrics) {
+      const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
+      if (!bodyAnalysisData) return true;
+      return (
+        height !== (bodyAnalysisData.height_cm?.toString() || "") ||
+        weight !== (bodyAnalysisData.current_weight_kg?.toString() || "") ||
+        targetWeight !== (bodyAnalysisData.target_weight_kg?.toString() || "") ||
+        bodyFat !== (bodyAnalysisData.body_fat_percentage?.toString() || "")
+      );
+    }
     const bodyMetrics = profile.bodyMetrics;
+    const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
     return (
-      height !== (bodyMetrics.height_cm?.toString() || "") ||
-      weight !== (bodyMetrics.current_weight_kg?.toString() ?? "") ||
-      targetWeight !== (bodyMetrics.target_weight_kg?.toString() ?? "") ||
-      bodyFat !== (bodyMetrics.body_fat_percentage?.toString() || "")
+      height !== ((bodyMetrics.height_cm && bodyMetrics.height_cm > 0) ? bodyMetrics.height_cm.toString() : (bodyAnalysisData?.height_cm?.toString() || "")) ||
+      weight !== ((bodyMetrics.current_weight_kg && bodyMetrics.current_weight_kg > 0) ? bodyMetrics.current_weight_kg.toString() : (bodyAnalysisData?.current_weight_kg?.toString() || "")) ||
+      targetWeight !== ((bodyMetrics.target_weight_kg && bodyMetrics.target_weight_kg > 0) ? bodyMetrics.target_weight_kg.toString() : (bodyAnalysisData?.target_weight_kg?.toString() || "")) ||
+      bodyFat !== ((bodyMetrics.body_fat_percentage && bodyMetrics.body_fat_percentage > 0) ? bodyMetrics.body_fat_percentage.toString() : (bodyAnalysisData?.body_fat_percentage?.toString() || ""))
     );
   }, [height, weight, targetWeight, bodyFat, profile]);
 
@@ -276,31 +291,49 @@ export const BodyMeasurementsEditModal: React.FC<
 
             {/* BMI Scale */}
             <View style={styles.bmiScale}>
-              <View style={styles.bmiScaleBar}>
-                <View
-                  style={[
-                    styles.bmiScaleSegment,
-                    { backgroundColor: "#2196F3", flex: 18.5 },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.bmiScaleSegment,
-                    { backgroundColor: "#4CAF50", flex: 6.5 },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.bmiScaleSegment,
-                    { backgroundColor: "#FF9800", flex: 5 },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.bmiScaleSegment,
-                    { backgroundColor: "#F44336", flex: 10 },
-                  ]}
-                />
+              <View
+                style={styles.bmiScaleBarContainer}
+                onLayout={(e: LayoutChangeEvent) => setScaleBarWidth(e.nativeEvent.layout.width)}
+              >
+                <View style={styles.bmiScaleBar}>
+                  <View
+                    style={[
+                      styles.bmiScaleSegment,
+                      { backgroundColor: "#2196F3", flex: 18.5 },
+                    ]}
+                  />
+                  <View
+                    style={[
+                      styles.bmiScaleSegment,
+                      { backgroundColor: "#4CAF50", flex: 6.5 },
+                    ]}
+                  />
+                  <View
+                    style={[
+                      styles.bmiScaleSegment,
+                      { backgroundColor: "#FF9800", flex: 5 },
+                    ]}
+                  />
+                  <View
+                    style={[
+                      styles.bmiScaleSegment,
+                      { backgroundColor: "#F44336", flex: 10 },
+                    ]}
+                  />
+                </View>
+                {/* BMI Position Indicator */}
+                {bmi && (() => {
+                  const bmiVal = parseFloat(bmi);
+                  const pct = Math.min(100, Math.max(0, ((bmiVal - 15) / (40 - 15)) * 100));
+                  return (
+                    <View
+                      style={[
+                        styles.bmiIndicator,
+                        { left: scaleBarWidth > 0 ? (scaleBarWidth * pct) / 100 : 0 },
+                      ]}
+                    />
+                  );
+                })()}
               </View>
               <View style={styles.bmiScaleLabels}>
                 <Text style={styles.bmiScaleLabel}>18.5</Text>
@@ -426,7 +459,7 @@ const styles = StyleSheet.create({
   bmiCategory: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
   bmiRight: {
     alignItems: "flex-end",
@@ -442,11 +475,31 @@ const styles = StyleSheet.create({
   bmiScale: {
     marginTop: ResponsiveTheme.spacing.sm,
   },
+  bmiScaleBarContainer: {
+    position: "relative",
+    marginBottom: rp(8),
+  },
   bmiScaleBar: {
     flexDirection: "row",
-    height: 6,
-    borderRadius: 3,
+    height: rp(6),
+    borderRadius: rbr(3),
     overflow: "hidden",
+  },
+  bmiIndicator: {
+    position: "absolute",
+    top: rp(-4),
+    width: rp(10),
+    height: rp(10),
+    borderRadius: rbr(5),
+    backgroundColor: ResponsiveTheme.colors.white,
+    borderWidth: 2,
+    borderColor: ResponsiveTheme.colors.primary,
+    marginLeft: rp(-5),
+    shadowColor: ResponsiveTheme.colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 3,
   },
   bmiScaleSegment: {
     height: "100%",
@@ -454,8 +507,8 @@ const styles = StyleSheet.create({
   bmiScaleLabels: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 4,
-    paddingHorizontal: 2,
+    marginTop: rp(4),
+    paddingHorizontal: rp(2),
   },
   bmiScaleLabel: {
     fontSize: rf(9),

@@ -3,12 +3,15 @@ import {
   View,
   Text,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   Animated,
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { Card, Button, THEME } from "../ui";
+import { Card, Button } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr } from "../../utils/responsive";
 import { Workout } from "../../types/workout";
 
 interface WorkoutCardProps {
@@ -35,13 +38,13 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = memo(
     const getDifficultyColor = (difficulty: string) => {
       switch (difficulty) {
         case "beginner":
-          return THEME.colors.success;
+          return ResponsiveTheme.colors.success;
         case "intermediate":
-          return THEME.colors.warning;
+          return ResponsiveTheme.colors.warning;
         case "advanced":
-          return THEME.colors.error;
+          return ResponsiveTheme.colors.error;
         default:
-          return THEME.colors.textSecondary;
+          return ResponsiveTheme.colors.textSecondary;
       }
     };
 
@@ -85,12 +88,10 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = memo(
           </View>
         )}
 
-        <TouchableOpacity
+        <View
           style={styles.cardContent}
-          onPress={onViewDetails}
-          activeOpacity={0.8}
         >
-          {/* Header */}
+          <Pressable onPress={onViewDetails}>
           <View style={styles.header}>
             <View style={styles.titleSection}>
               <View style={styles.titleRow}>
@@ -158,7 +159,7 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = memo(
               <Text style={styles.detailIcon}>🔥</Text>
               <Text style={styles.detailLabel}>Calories</Text>
               <Text style={styles.detailValue}>
-                {workout.estimatedCalories}
+                {workout.estimatedCalories || 0}
               </Text>
             </View>
 
@@ -186,6 +187,7 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = memo(
               </Text>
             </View>
           </View>
+          </Pressable>
 
           {/* Action Button */}
           <View style={styles.actionSection}>
@@ -213,7 +215,7 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = memo(
               )}
             </View>
           )}
-        </TouchableOpacity>
+        </View>
       </Card>
     );
 
@@ -244,11 +246,11 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = memo(
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
     overflow: "hidden",
-    borderRadius: 16,
-    backgroundColor: THEME.colors.surface,
-    shadowColor: "#000",
+    borderRadius: rbr(16),
+    backgroundColor: ResponsiveTheme.colors.surface,
+    shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -256,8 +258,8 @@ const styles = StyleSheet.create({
   },
 
   progressContainer: {
-    height: 4,
-    backgroundColor: THEME.colors.border,
+    height: rp(4),
+    backgroundColor: ResponsiveTheme.colors.border,
     position: "absolute",
     top: 0,
     left: 0,
@@ -267,44 +269,44 @@ const styles = StyleSheet.create({
 
   progressBar: {
     height: "100%",
-    backgroundColor: THEME.colors.primary,
-    borderRadius: 2,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderRadius: rbr(2),
   },
 
   cardContent: {
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
 
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   titleSection: {
     flex: 1,
-    marginRight: THEME.spacing.md,
+    marginRight: ResponsiveTheme.spacing.md,
   },
 
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: THEME.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: THEME.colors.primary + "15",
+    width: rp(48),
+    height: rp(48),
+    borderRadius: rbr(12),
+    backgroundColor: ResponsiveTheme.colors.primary + "15",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: THEME.spacing.md,
+    marginRight: ResponsiveTheme.spacing.md,
   },
 
   categoryIcon: {
-    fontSize: 24,
+    fontSize: rf(24),
   },
 
   titleContainer: {
@@ -314,79 +316,79 @@ const styles = StyleSheet.create({
   badgeRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: THEME.spacing.sm,
-    marginTop: THEME.spacing.xs,
+    gap: ResponsiveTheme.spacing.sm,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
 
   title: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
     flex: 1,
   },
 
   aiPillBadge: {
-    backgroundColor: THEME.colors.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    marginLeft: THEME.spacing.sm,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    paddingHorizontal: rp(8),
+    paddingVertical: rp(2),
+    borderRadius: rbr(10),
+    marginLeft: ResponsiveTheme.spacing.sm,
   },
 
   aiPillText: {
-    color: THEME.colors.white,
-    fontSize: 10,
+    color: ResponsiveTheme.colors.white,
+    fontSize: rf(10),
     fontWeight: "600",
   },
 
   description: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    lineHeight: 20,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(20),
   },
 
   difficultyBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: rp(12),
+    paddingVertical: rp(6),
+    borderRadius: rbr(16),
   },
 
   difficultyText: {
-    color: THEME.colors.white,
-    fontSize: THEME.fontSize.xs,
-    fontWeight: THEME.fontWeight.bold,
+    color: ResponsiveTheme.colors.white,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
   },
 
   progressSection: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   workoutProgressBar: {
-    height: 6,
-    backgroundColor: THEME.colors.backgroundSecondary,
-    borderRadius: 3,
-    marginBottom: THEME.spacing.xs,
+    height: rp(6),
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: rbr(3),
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   progressFill: {
     height: "100%",
-    backgroundColor: THEME.colors.primary,
-    borderRadius: 3,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderRadius: rbr(3),
   },
 
   progressText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
   },
 
   detailsGrid: {
     flexDirection: "row",
     justifyContent: "space-around",
-    backgroundColor: THEME.colors.backgroundSecondary,
-    borderRadius: THEME.borderRadius.md,
-    paddingVertical: THEME.spacing.md,
-    marginBottom: THEME.spacing.md,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   detailItem: {
@@ -395,46 +397,46 @@ const styles = StyleSheet.create({
   },
 
   detailIcon: {
-    fontSize: 20,
-    marginBottom: 4,
+    fontSize: rf(20),
+    marginBottom: rp(4),
   },
 
   detailLabel: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
-    marginBottom: 2,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: rp(2),
   },
 
   detailValue: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
   },
 
   infoSection: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: THEME.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   infoIcon: {
-    fontSize: 16,
-    marginRight: THEME.spacing.sm,
-    width: 20,
+    fontSize: rf(16),
+    marginRight: ResponsiveTheme.spacing.sm,
+    width: rp(20),
   },
 
   infoText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
     flex: 1,
   },
 
   actionSection: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   startButton: {
@@ -445,27 +447,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flexWrap: "wrap",
-    marginTop: THEME.spacing.sm,
+    marginTop: ResponsiveTheme.spacing.sm,
   },
 
   tag: {
-    backgroundColor: THEME.colors.backgroundTertiary,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginRight: THEME.spacing.xs,
-    marginBottom: THEME.spacing.xs,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    paddingHorizontal: rp(8),
+    paddingVertical: rp(4),
+    borderRadius: rbr(12),
+    marginRight: ResponsiveTheme.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   tagText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   moreTagsText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textMuted,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
     fontStyle: "italic",
   },
 });

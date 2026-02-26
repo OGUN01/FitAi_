@@ -58,7 +58,7 @@ export const MeasurementsSection: React.FC<MeasurementsSectionProps> = ({
           <View style={styles.measurementItem}>
             <Input
               label="Height (cm) *"
-              placeholder="170"
+              placeholder="e.g. 170"
               value={formData.height_cm ? formData.height_cm.toString() : ""}
               onChangeText={(text) => handleNumberInput("height_cm", text)}
               keyboardType="numeric"
@@ -71,7 +71,7 @@ export const MeasurementsSection: React.FC<MeasurementsSectionProps> = ({
           <View style={styles.measurementItem}>
             <Input
               label="Current Weight (kg) *"
-              placeholder="70"
+              placeholder="e.g. 70"
               value={
                 formData.current_weight_kg
                   ? formData.current_weight_kg.toString()
@@ -92,7 +92,7 @@ export const MeasurementsSection: React.FC<MeasurementsSectionProps> = ({
           <View style={styles.measurementItem}>
             <Input
               label="Target Weight (kg) - Optional"
-              placeholder="65"
+              placeholder="e.g. 65"
               value={
                 formData.target_weight_kg
                   ? formData.target_weight_kg.toString()
@@ -253,7 +253,7 @@ export const MeasurementsSection: React.FC<MeasurementsSectionProps> = ({
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
     marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.md,
     marginHorizontal: -ResponsiveTheme.spacing.lg,
   },
   sectionTitlePadded: {
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
   },
   timelineOptionSelected: {
     borderColor: ResponsiveTheme.colors.primary,
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    backgroundColor: `${ResponsiveTheme.colors.primary}25`,
   },
   timelineText: {
     fontSize: ResponsiveTheme.fontSize.xs,

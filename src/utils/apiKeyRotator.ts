@@ -18,9 +18,13 @@ interface KeyUsage {
 }
 
 export class APIKeyRotator {
+  private static instance: APIKeyRotator | null = null;
   private keys: string[] = [];
   private usageTracker = new Map<string, KeyUsage>();
   private currentKeyIndex = 0;
+  private minuteIntervalId: ReturnType<typeof setInterval> | null = null;
+  private midnightTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private dailyIntervalId: ReturnType<typeof setInterval> | null = null;
 
   // Rate limits for Gemini 2.5 Flash free tier
   private readonly DAILY_LIMIT = 1500;
@@ -33,6 +37,35 @@ export class APIKeyRotator {
   }
 
   /**
+   * Get singleton instance to prevent multiple timer instances on hot reload
+   */
+  static getInstance(): APIKeyRotator {
+    if (!APIKeyRotator.instance) {
+      APIKeyRotator.instance = new APIKeyRotator();
+    }
+    return APIKeyRotator.instance;
+  }
+
+  /**
+   * Destroy timers and clean up. Call on hot reload or unmount.
+   */
+  destroy(): void {
+    if (this.minuteIntervalId !== null) {
+      clearInterval(this.minuteIntervalId);
+      this.minuteIntervalId = null;
+    }
+    if (this.midnightTimeoutId !== null) {
+      clearTimeout(this.midnightTimeoutId);
+      this.midnightTimeoutId = null;
+    }
+    if (this.dailyIntervalId !== null) {
+      clearInterval(this.dailyIntervalId);
+      this.dailyIntervalId = null;
+    }
+    APIKeyRotator.instance = null;
+  }
+
+  /**
    * Initialize API keys from environment variables
    */
   private initializeKeys(): void {
@@ -42,7 +75,6 @@ export class APIKeyRotator {
     if (mainApiKey && mainApiKey.trim()) {
       this.keys.push(mainApiKey.trim());
       this.initializeKeyUsage(mainApiKey.trim());
-      console.log("✅ Using main Gemini API key for food recognition");
     }
 
     // Also load rotation keys if available (matching gemini.ts naming)
@@ -73,12 +105,10 @@ export class APIKeyRotator {
     }
 
     if (this.keys.length === 0) {
-      console.warn("⚠️ No Gemini API keys found in environment variables");
-      // Don't throw error - allow app to run without food recognition service
-      // throw new Error('No Gemini API keys configured');
+      // Log as error for monitoring - app can still run without food recognition
+      console.error("API_KEY_CONFIG_ERROR: No Gemini API keys configured. Food recognition service will be unavailable.");
     }
 
-    console.log(`✅ Initialized ${this.keys.length} Gemini API keys`);
   }
 
   /**
@@ -103,7 +133,6 @@ export class APIKeyRotator {
 
     // Return null if no keys are available
     if (this.keys.length === 0) {
-      console.warn("⚠️ No API keys configured");
       return null;
     }
 
@@ -135,7 +164,6 @@ export class APIKeyRotator {
       }
     }
 
-    console.warn("⚠️ All API keys have reached their limits");
     return null;
   }
 
@@ -171,11 +199,7 @@ export class APIKeyRotator {
     usage.requestsToday++;
     usage.requestsThisMinute++;
 
-    console.log(
-      `📊 Key usage: ${usage.requestsToday}/${this.DAILY_LIMIT} daily, ${usage.requestsThisMinute}/${this.MINUTE_LIMIT} per minute`,
-    );
   }
-
   /**
    * Mark a key as blocked due to rate limiting
    */
@@ -186,11 +210,7 @@ export class APIKeyRotator {
     usage.isBlocked = true;
     usage.blockUntil = Date.now() + duration;
 
-    console.warn(
-      `🚫 API key blocked for ${duration / 1000} seconds due to rate limiting`,
-    );
   }
-
   /**
    * Reset counters based on time
    */
@@ -207,7 +227,6 @@ export class APIKeyRotator {
       if (now >= pacificMidnight && usage.lastResetTime < pacificMidnight) {
         usage.requestsToday = 0;
         usage.lastResetTime = now;
-        console.log(`🔄 Daily quota reset for API key`);
       }
     }
   }
@@ -217,17 +236,20 @@ export class APIKeyRotator {
    */
   private getPacificMidnight(): number {
     const now = new Date();
-    const pacific = new Date(
-      now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }),
-    );
-    const midnight = new Date(pacific);
-    midnight.setHours(24, 0, 0, 0); // Next midnight
+    // Get the current Pacific time using locale string parsing
+    const pacificStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+    const pacific = new Date(pacificStr);
 
-    // Convert back to local time
-    const utcMidnight = new Date(
-      midnight.getTime() + midnight.getTimezoneOffset() * 60000,
-    );
-    return utcMidnight.getTime();
+    // Calculate the offset between UTC and Pacific time (handles PST/PDT automatically)
+    // pacificOffset = UTC time - Pacific time (in ms)
+    const pacificOffset = now.getTime() - pacific.getTime();
+
+    // Next midnight in Pacific: set Pacific time to next midnight
+    const midnightPacific = new Date(pacific);
+    midnightPacific.setHours(24, 0, 0, 0);
+
+    // Convert Pacific midnight back to UTC by adding the offset
+    return midnightPacific.getTime() + pacificOffset;
   }
 
   /**
@@ -235,14 +257,14 @@ export class APIKeyRotator {
    */
   private setupResetTimers(): void {
     // Reset minute counters every minute
-    setInterval(() => {
+    this.minuteIntervalId = setInterval(() => {
       const now = Date.now();
       this.resetCountersIfNeeded(now);
     }, 60 * 1000);
 
     // Reset daily counters at midnight Pacific
     const msUntilMidnight = this.getPacificMidnight() - Date.now();
-    setTimeout(() => {
+    this.midnightTimeoutId = setTimeout(() => {
       // Reset all daily counters
       for (const usage of this.usageTracker.values()) {
         usage.requestsToday = 0;
@@ -250,13 +272,12 @@ export class APIKeyRotator {
       }
 
       // Set up daily reset interval
-      setInterval(
+      this.dailyIntervalId = setInterval(
         () => {
           for (const usage of this.usageTracker.values()) {
             usage.requestsToday = 0;
             usage.lastResetTime = Date.now();
           }
-          console.log("🔄 Daily quota reset for all API keys");
         },
         24 * 60 * 60 * 1000,
       );
@@ -326,7 +347,6 @@ export class APIKeyRotator {
     usage.lastResetTime = Date.now();
     usage.lastMinuteReset = Date.now();
 
-    console.log(`🔄 Force reset key ${keyIndex + 1}`);
   }
 
   /**

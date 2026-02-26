@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
 // Stores
@@ -50,25 +50,19 @@ export const useFitnessLogic = (navigation: any) => {
   );
   const [showWorkoutStartDialog, setShowWorkoutStartDialog] = useState(false);
   const [showRecoveryTipsModal, setShowRecoveryTipsModal] = useState(false);
+  const [showGuestSignUp, setShowGuestSignUp] = useState(false);
 
   // Load data on mount and subscribe to completion events
   useEffect(() => {
     loadFitnessData();
 
-    console.log(
-      "[EVENT] useFitnessLogic: Setting up completion event listener",
-    );
     const unsubscribe = completionTrackingService.subscribe((event) => {
-      console.log("[EVENT] useFitnessLogic: Received completion event:", event);
       if (event.type === "workout") {
         loadFitnessData();
       }
     });
 
     return () => {
-      console.log(
-        "[EVENT] useFitnessLogic: Unsubscribing from completion events",
-      );
       unsubscribe();
     };
   }, [loadFitnessData]);
@@ -187,19 +181,7 @@ export const useFitnessLogic = (navigation: any) => {
   const generateWeeklyWorkoutPlan = useCallback(async () => {
     if (!user?.id || user.id.startsWith("guest")) {
       console.log("[AUTH] User not authenticated for AI generation:", user?.id);
-      Alert.alert(
-        "Sign Up Required",
-        "Create an account to generate personalized AI workout plans. Your fitness data will be securely stored and used for customized recommendations.",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Sign Up",
-            onPress: () => {
-              // Navigate to auth screen - in a real app this would navigate
-            },
-          },
-        ],
-      );
+      setShowGuestSignUp(true);
       return;
     }
 
@@ -423,21 +405,30 @@ export const useFitnessLogic = (navigation: any) => {
   }, [weeklyWorkoutPlan]);
 
   const handleRegeneratePlan = useCallback(() => {
-    Alert.alert(
-      "Regenerate Workout Plan",
-      "This will create a new AI-generated workout plan and replace your current one. Your workout history will be preserved.\n\nContinue?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Regenerate",
-          style: "default",
-          onPress: generateWeeklyWorkoutPlan,
-        },
-      ],
-    );
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm(
+        "This will create a new AI-generated workout plan and replace your current one. Your workout history will be preserved.\n\nContinue?",
+      );
+      if (confirmed) {
+        generateWeeklyWorkoutPlan();
+      }
+    } else {
+      Alert.alert(
+        "Regenerate Workout Plan",
+        "This will create a new AI-generated workout plan and replace your current one. Your workout history will be preserved.\n\nContinue?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Regenerate",
+            style: "default",
+            onPress: generateWeeklyWorkoutPlan,
+          },
+        ],
+      );
+    }
   }, [generateWeeklyWorkoutPlan]);
 
   const userName = profile?.personalInfo?.name;
@@ -461,6 +452,7 @@ export const useFitnessLogic = (navigation: any) => {
       showRecoveryTipsModal,
       userName,
       profile,
+      showGuestSignUp,
     },
     actions: {
       setRefreshing,
@@ -482,5 +474,6 @@ export const useFitnessLogic = (navigation: any) => {
       handleViewFullPlan,
       handleRegeneratePlan,
     },
+    setShowGuestSignUp,
   };
 };

@@ -1,6 +1,8 @@
-import React from "react";
+﻿import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { THEME } from "../../ui";
+import { ResponsiveTheme } from '../../../utils/constants';
+import { rf, rp } from "../../../utils/responsive";
+
 
 interface TimeRange {
   id: "week" | "month" | "year";
@@ -52,32 +54,32 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 const styles = StyleSheet.create({
   timeRangeSelector: {
     flexDirection: "row",
-    backgroundColor: THEME.colors.backgroundSecondary,
-    borderRadius: THEME.borderRadius.md,
-    padding: 4,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    padding: rp(4),
   },
   timeRangeButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.sm,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
   },
   timeRangeButtonActive: {
-    backgroundColor: THEME.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary,
   },
   timeRangeIcon: {
-    fontSize: 16,
-    marginRight: THEME.spacing.xs,
+    fontSize: rf(16),
+    marginRight: ResponsiveTheme.spacing.xs,
   },
   timeRangeLabel: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
   timeRangeLabelActive: {
-    color: THEME.colors.white,
+    color: ResponsiveTheme.colors.white,
   },
 });

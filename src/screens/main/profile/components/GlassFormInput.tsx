@@ -23,7 +23,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { ResponsiveTheme } from "../../../../utils/constants";
-import { rf, rw } from "../../../../utils/responsive";
+import { rf, rp, rbr, rw } from "../../../../utils/responsive";
 
 interface GlassFormInputProps extends Omit<TextInputProps, "style"> {
   label: string;
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: rw(48),
     fontSize: rf(15),
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     paddingHorizontal: ResponsiveTheme.spacing.md,
   },
   inputNoIcon: {

@@ -19,7 +19,6 @@ export const createDataActions = (
         await get().saveWeeklyWorkoutPlan(state.weeklyWorkoutPlan);
       }
 
-      console.log("💾 Fitness data persisted");
     } catch (error) {
       console.error("❌ Failed to persist fitness data:", error);
     }
@@ -56,14 +55,8 @@ export const createDataActions = (
           }
         }
       } catch (error) {
-        console.warn(
-          "[fitnessStore] Failed to hydrate workoutProgress:",
-          error,
-        );
-        // Silent fallback - AsyncStorage via persist middleware
       }
 
-      console.log("📂 Fitness data loaded");
     } catch (error) {
       console.error("❌ Failed to load fitness data:", error);
     }
@@ -80,9 +73,6 @@ export const createDataActions = (
 
   clearOldWorkoutData: async () => {
     try {
-      console.log(
-        "🧹 Clearing old workout data with descriptive exercise names...",
-      );
 
       get().clearData();
 
@@ -93,7 +83,6 @@ export const createDataActions = (
       ).default;
       await AsyncStorage.removeItem("fitness-storage");
 
-      console.log("✅ Old workout data cleared successfully");
 
       get().forceWorkoutRegeneration();
     } catch (error) {
@@ -103,14 +92,10 @@ export const createDataActions = (
   },
 
   forceWorkoutRegeneration: () => {
-    console.log(
-      "🔄 Forcing workout regeneration with new constraint system...",
-    );
     set({
       weeklyWorkoutPlan: null,
       planError: null,
       isGeneratingPlan: false,
     });
-    console.log("✅ Ready for fresh workout generation with database IDs");
   },
 });

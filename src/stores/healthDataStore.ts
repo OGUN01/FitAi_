@@ -4,6 +4,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { safeAsyncStorage } from "../utils/safeAsyncStorage";
 import {
   healthKitService,
   HealthKitData,
@@ -262,7 +263,6 @@ export const useHealthDataStore = create<HealthDataState>()(
       // Actions
       initializeHealthKit: async (): Promise<boolean> => {
         try {
-          console.log("🍎 Initializing HealthKit in store...");
 
           const isAvailable = await healthKitService.initialize();
           const hasPermissions = await healthKitService.hasPermissions();
@@ -286,7 +286,6 @@ export const useHealthDataStore = create<HealthDataState>()(
 
       requestHealthKitPermissions: async (): Promise<boolean> => {
         try {
-          console.log("🔐 Requesting HealthKit permissions...");
           set({ syncStatus: "syncing" });
 
           const granted = await healthKitService.initialize();
@@ -319,7 +318,6 @@ export const useHealthDataStore = create<HealthDataState>()(
       // Health Connect Actions
       initializeHealthConnect: async (): Promise<boolean> => {
         try {
-          console.log("🔗 Initializing Health Connect in store...");
 
           // Check if Health Connect is available and initialize
           const isAvailable =
@@ -328,9 +326,6 @@ export const useHealthDataStore = create<HealthDataState>()(
           if (isAvailable) {
             // Check if permissions are already granted
             const hasPermissions = await healthConnectService.hasPermissions();
-            console.log(
-              `Health Connect - Available: ${isAvailable}, Permissions: ${hasPermissions}`,
-            );
 
             // Update store state
             set((state) => ({
@@ -352,7 +347,6 @@ export const useHealthDataStore = create<HealthDataState>()(
 
       requestHealthConnectPermissions: async (): Promise<boolean> => {
         try {
-          console.log("🔐 Requesting Health Connect permissions from store...");
 
           const permissionGranted =
             await healthConnectService.requestPermissions();
@@ -376,7 +370,6 @@ export const useHealthDataStore = create<HealthDataState>()(
 
       reauthorizeHealthConnect: async (): Promise<boolean> => {
         try {
-          console.log("🔄 Re-authorizing Health Connect from store...");
 
           // Reset authorization state before re-auth
           set({ isHealthConnectAuthorized: false, syncStatus: "syncing" });
@@ -390,7 +383,6 @@ export const useHealthDataStore = create<HealthDataState>()(
           }));
 
           if (success) {
-            console.log("✅ Re-authorization successful, syncing data...");
             // Automatically sync after successful re-authorization
             await get().syncFromHealthConnect(7);
           }
@@ -407,14 +399,12 @@ export const useHealthDataStore = create<HealthDataState>()(
         daysBack: number = 7,
       ): Promise<HealthConnectSyncResult> => {
         try {
-          console.log("🔄 Syncing health data from Health Connect...");
 
           // IMPORTANT: Ensure Health Connect is initialized before syncing
           // This fixes the race condition where sync is called before native client is ready
           const isInitialized =
             await healthConnectService.initializeHealthConnect();
           if (!isInitialized) {
-            console.warn("⚠️ Health Connect not available, skipping sync");
             return { success: false, error: "Health Connect not initialized" };
           }
 
@@ -463,20 +453,7 @@ export const useHealthDataStore = create<HealthDataState>()(
             }
 
             // Log sources for debugging
-            if (healthData.data?.sources) {
-              console.log("📱 Data sources:");
-              Object.entries(healthData.data.sources).forEach(
-                ([metric, source]) => {
-                  if (source) {
-                    console.log(
-                      `  ${metric}: ${source.name} (Tier ${source.tier}, ${source.accuracy}% accuracy)`,
-                    );
-                  }
-                },
-              );
-            }
 
-            console.log("✅ Health Connect sync completed successfully");
           } else {
             set({
               syncStatus: "error",
@@ -505,17 +482,14 @@ export const useHealthDataStore = create<HealthDataState>()(
           const { settings, isHealthKitAuthorized } = get();
 
           if (!settings.healthKitEnabled || !isHealthKitAuthorized) {
-            console.log("⏸️ HealthKit sync disabled or not authorized");
             return;
           }
 
           // Check if sync is needed (skip for now - always sync when called)
           // if (!force && !await healthKitService.shouldSync()) {
-          //   console.log('⏰ HealthKit sync not needed yet');
           //   return;
           // }
 
-          console.log("🔄 Starting HealthKit sync...");
           set({ syncStatus: "syncing", syncError: undefined });
 
           // Sync health data from HealthKit (using available method)
@@ -558,7 +532,6 @@ export const useHealthDataStore = create<HealthDataState>()(
               weightTrackingService.setWeight(syncResult.data.bodyWeight);
             }
 
-            console.log("✅ HealthKit sync completed successfully");
 
             // Generate health tip based on new data
             const insights = get().getHealthInsights();
@@ -608,11 +581,9 @@ export const useHealthDataStore = create<HealthDataState>()(
           const { settings, isHealthKitAuthorized } = get();
 
           if (!settings.exportToHealthKit || !isHealthKitAuthorized) {
-            console.log("⏸️ HealthKit export disabled or not authorized");
             return false;
           }
 
-          console.log(`📤 Exporting workout to HealthKit: ${workout.type}`);
 
           const success = await healthKitService.saveWorkoutToHealthKit({
             type: workout.type,
@@ -661,22 +632,13 @@ export const useHealthDataStore = create<HealthDataState>()(
             !settings.dataTypesToSync.nutrition ||
             !isHealthKitAuthorized
           ) {
-            console.log(
-              "⏸️ HealthKit nutrition export disabled or not authorized",
-            );
             return false;
           }
 
-          console.log(
-            `📤 Exporting nutrition to HealthKit for ${nutrition.date.toDateString()}`,
-          );
 
           // LIBRARY LIMITATION: expo-health-kit (v1.0.8) only supports reading health data,
           // not writing nutrition data to HealthKit. Nutrition is tracked locally in FitAI.
           // See healthKit.ts:exportNutritionToHealthKit for full explanation.
-          console.log(
-            "ℹ️ Nutrition export to HealthKit not available - library limitation",
-          );
           return false;
         } catch (error) {
           console.error("❌ Failed to export nutrition to HealthKit:", error);
@@ -773,7 +735,6 @@ export const useHealthDataStore = create<HealthDataState>()(
       // 3. Karvonen formula for zone calculation when resting HR is available
       getHeartRateZones: async (age: number) => {
         try {
-          console.log("❤️ Calculating heart rate zones...");
           const { metrics, isHealthKitAuthorized, isHealthConnectAuthorized } =
             get();
 
@@ -800,12 +761,6 @@ export const useHealthDataStore = create<HealthDataState>()(
               ? "Age-based Tanaka formula (no resting HR data yet)"
               : "Age-based Tanaka formula (connect health app for personalized zones)";
 
-          console.log(
-            `📊 Heart rate zone calculation method: ${calculationMethod}`,
-          );
-          console.log(
-            `   Max HR: ${maxHR} bpm, Resting HR: ${restingHR || "not available"}`,
-          );
 
           // Calculate zones using Karvonen method if resting HR available
           // Otherwise use percentage of max HR
@@ -907,7 +862,6 @@ export const useHealthDataStore = create<HealthDataState>()(
 
       getSleepRecommendations: async () => {
         try {
-          console.log("😴 Getting sleep-based workout recommendations...");
 
           // Try to get recommendations from HealthKit service (iOS)
           const { isHealthKitAuthorized, settings } = get();
@@ -921,9 +875,6 @@ export const useHealthDataStore = create<HealthDataState>()(
               recommendations.sleepQuality !== null &&
               recommendations.sleepDuration !== null
             ) {
-              console.log(
-                `✅ Got sleep recommendations from HealthKit: ${recommendations.sleepQuality} quality, ${recommendations.sleepDuration}h`,
-              );
               return {
                 sleepQuality: recommendations.sleepQuality,
                 sleepDuration: recommendations.sleepDuration,
@@ -966,9 +917,6 @@ export const useHealthDataStore = create<HealthDataState>()(
                     ? "normal"
                     : "longer";
 
-              console.log(
-                `✅ Got sleep recommendations from Health Connect: ${sleepQuality} quality, ${metrics.sleepHours}h`,
-              );
               return {
                 sleepQuality,
                 sleepDuration: metrics.sleepHours,
@@ -986,7 +934,6 @@ export const useHealthDataStore = create<HealthDataState>()(
           }
 
           // No sleep data available - return null recommendations (not defaults)
-          console.log("ℹ️ No sleep data available from health sources");
           return {
             sleepQuality: null,
             sleepDuration: null,
@@ -1004,7 +951,6 @@ export const useHealthDataStore = create<HealthDataState>()(
 
       getActivityAdjustedCalories: async (baseCalories: number) => {
         try {
-          console.log("🔥 Getting activity-adjusted calories...");
 
           const {
             isHealthKitAuthorized,
@@ -1023,9 +969,6 @@ export const useHealthDataStore = create<HealthDataState>()(
               result.activityMultiplier !== 1.0 ||
               result.breakdown.activeEnergy > 0
             ) {
-              console.log(
-                `✅ Got activity-adjusted calories from HealthKit: ${result.adjustedCalories} (${result.activityMultiplier}x)`,
-              );
               return result;
             }
           }
@@ -1053,9 +996,6 @@ export const useHealthDataStore = create<HealthDataState>()(
               baseCalories * activityMultiplier,
             );
 
-            console.log(
-              `✅ Got activity-adjusted calories from Health Connect: ${adjustedCalories} (${activityMultiplier}x)`,
-            );
 
             // Generate activity recommendations inline (can't use `this` in Zustand)
             const recommendations: string[] = [];
@@ -1102,7 +1042,6 @@ export const useHealthDataStore = create<HealthDataState>()(
           }
 
           // No activity data available - use base calories with 1.0 multiplier
-          console.log("ℹ️ No activity data available - using base calories");
           return {
             adjustedCalories: baseCalories,
             activityMultiplier: 1.0,
@@ -1137,14 +1076,10 @@ export const useHealthDataStore = create<HealthDataState>()(
       // Google Fit Integration (Android) - Week 2 Roadmap Implementation
       initializeGoogleFit: async (): Promise<boolean> => {
         try {
-          console.log("🤖 Initializing Google Fit in store...");
           const isAvailable = await googleFitService.initialize();
 
           if (isAvailable) {
             const hasPermissions = await googleFitService.hasPermissions();
-            console.log(
-              `🤖 Google Fit available: ${isAvailable}, permissions: ${hasPermissions}`,
-            );
             return hasPermissions;
           }
 
@@ -1159,7 +1094,6 @@ export const useHealthDataStore = create<HealthDataState>()(
         daysBack: number = 7,
       ): Promise<GoogleFitSyncResult> => {
         try {
-          console.log("🤖 Syncing data from Google Fit...");
           set({ syncStatus: "syncing" });
 
           const result =
@@ -1209,7 +1143,6 @@ export const useHealthDataStore = create<HealthDataState>()(
               weightTrackingService.setWeight(result.data.weight);
             }
 
-            console.log("✅ Google Fit sync completed successfully");
           } else {
             set({
               syncStatus: "error",
@@ -1237,7 +1170,6 @@ export const useHealthDataStore = create<HealthDataState>()(
       // Advanced Google Fit Features (Week 2 Roadmap)
       getGoogleFitHeartRateZones: async (age: number) => {
         try {
-          console.log("❤️ Getting heart rate zones from Google Fit...");
           return await googleFitService.getHeartRateZones(age);
         } catch (error) {
           console.error(
@@ -1281,9 +1213,6 @@ export const useHealthDataStore = create<HealthDataState>()(
 
       getGoogleFitSleepRecommendations: async () => {
         try {
-          console.log(
-            "😴 Getting sleep-based workout recommendations from Google Fit...",
-          );
           const recommendations =
             await googleFitService.getSleepBasedWorkoutRecommendations();
           return {
@@ -1313,9 +1242,6 @@ export const useHealthDataStore = create<HealthDataState>()(
 
       getGoogleFitActivityAdjustedCalories: async (baseCalories: number) => {
         try {
-          console.log(
-            "🔥 Getting activity-adjusted calories from Google Fit...",
-          );
           return await googleFitService.getActivityAdjustedCalories(
             baseCalories,
           );
@@ -1342,7 +1268,6 @@ export const useHealthDataStore = create<HealthDataState>()(
 
       detectAndLogGoogleFitActivities: async () => {
         try {
-          console.log("🤖 Detecting and logging activities from Google Fit...");
           return await googleFitService.detectAndLogActivities();
         } catch (error) {
           console.error(
@@ -1378,7 +1303,7 @@ export const useHealthDataStore = create<HealthDataState>()(
     }),
     {
       name: "fitai-health-data-store",
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => safeAsyncStorage),
       partialize: (state) => ({
         metrics: state.metrics,
         settings: state.settings,

@@ -10,7 +10,7 @@
  */
 
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
@@ -50,12 +50,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
     });
 
   return (
-    <AnimatedPressable
-      onPress={onPress}
-      scaleValue={0.98}
-      hapticFeedback={true}
-      hapticType="light"
-    >
+    <View>
       <GlassCard
         elevation={2}
         blurIntensity="light"
@@ -63,9 +58,13 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
         borderRadius="lg"
       >
         {/* Header */}
-        <View style={styles.header}>
+        <Pressable
+          onPress={onPress}
+          accessibilityRole="none"
+          style={styles.headerPressable}
+        >
           <View style={styles.headerLeft}>
-            <Ionicons name="body" size={rf(16)} color="#FF6B35" />
+            <Ionicons name="body" size={rf(16)} color={ResponsiveTheme.colors.primary} />
             <Text style={styles.headerTitle}>Body Progress</Text>
           </View>
           {hasData && (
@@ -85,7 +84,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
               </Text>
             </View>
           )}
-        </View>
+        </Pressable>
 
         {hasData ? (
           <>
@@ -111,13 +110,13 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
                   }
                   width={rw(120)}
                   height={rh(50)}
-                  color="#FF6B35"
+                  color={ResponsiveTheme.colors.primary}
                 />
               </View>
 
               <View style={styles.goalWeight}>
                 <Text style={styles.goalValue}>
-                  {goalWeight?.toFixed(1)}
+                  {goalWeight ? goalWeight.toFixed(1) : "—"}
                   <Text style={styles.goalUnit}> {unit}</Text>
                 </Text>
                 <Text style={styles.goalLabel}>Goal</Text>
@@ -127,22 +126,25 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
             {/* Progress Section */}
             <View style={styles.progressSection}>
               <View style={styles.progressHeader}>
-                <Text style={styles.progressLabel}>Goal Progress</Text>
+                <Text style={styles.progressLabel}>
+                  {goalWeight ? "Goal Progress" : "Body Progress"}
+                </Text>
                 <Text
                   style={[styles.progressPercent, { color: progressColor }]}
                 >
-                  {progress.toFixed(0)}%
+                  {goalWeight ? `${progress.toFixed(0)}%` : ""}
                 </Text>
               </View>
               <GoalProgressBar progress={progress} color={progressColor} />
               <Text style={styles.remainingText}>
-                {remaining > 0
+                {!goalWeight
+                  ? "Set a goal weight"
+                  : remaining > 0
                   ? `${remaining.toFixed(1)} ${unit} to go`
                   : "🎉 Goal reached!"}
               </Text>
             </View>
 
-            {/* Action Buttons */}
             <View style={styles.actionButtons}>
               <AnimatedPressable
                 onPress={onLogWeight}
@@ -150,11 +152,13 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
                 hapticFeedback={true}
                 hapticType="light"
                 style={styles.actionButton}
+                accessibilityRole="button"
+                accessibilityLabel="Log weight"
               >
                 <Ionicons
                   name="add-circle-outline"
                   size={rf(16)}
-                  color="#FF6B35"
+                  color={ResponsiveTheme.colors.primary}
                 />
                 <Text style={styles.actionButtonText}>Log Weight</Text>
               </AnimatedPressable>
@@ -167,8 +171,10 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
                 hapticFeedback={true}
                 hapticType="light"
                 style={styles.actionButton}
+                accessibilityRole="button"
+                accessibilityLabel="Progress photo"
               >
-                <Ionicons name="camera-outline" size={rf(16)} color="#FF6B35" />
+                <Ionicons name="camera-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} />
                 <Text style={styles.actionButtonText}>Progress Photo</Text>
               </AnimatedPressable>
             </View>
@@ -177,7 +183,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
           /* Empty State */
           <View style={styles.emptyState}>
             <View style={styles.emptyIconContainer}>
-              <Ionicons name="scale-outline" size={rf(32)} color="#FF6B35" />
+              <Ionicons name="scale-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} />
             </View>
             <Text style={styles.emptyTitle}>Track Your Progress</Text>
             <Text style={styles.emptyDescription}>
@@ -189,19 +195,21 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
               hapticFeedback={true}
               hapticType="medium"
               style={styles.startButton}
+              accessibilityRole="button"
+              accessibilityLabel="Log first weight"
             >
-              <Ionicons name="add" size={rf(16)} color="#FFFFFF" />
+              <Ionicons name="add" size={rf(16)} color={ResponsiveTheme.colors.white} />
               <Text style={styles.startButtonText}>Log First Weight</Text>
             </AnimatedPressable>
           </View>
         )}
       </GlassCard>
-    </AnimatedPressable>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  header: {
+  headerPressable: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -304,7 +312,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: ResponsiveTheme.spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.08)",
+    borderTopColor: ResponsiveTheme.colors.glassBorder,
   },
   actionButton: {
     flex: 1,
@@ -317,12 +325,12 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: rf(12),
     fontWeight: "600",
-    color: "#FF6B35",
+    color: ResponsiveTheme.colors.primary,
   },
   actionDivider: {
     width: 1,
     height: rh(20),
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: ResponsiveTheme.colors.glassHighlight,
   },
   emptyState: {
     alignItems: "center",
@@ -355,7 +363,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
-    backgroundColor: "#FF6B35",
+    backgroundColor: ResponsiveTheme.colors.primary,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingVertical: ResponsiveTheme.spacing.sm,
     borderRadius: ResponsiveTheme.borderRadius.full,
@@ -363,7 +371,7 @@ const styles = StyleSheet.create({
   startButtonText: {
     fontSize: rf(13),
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: ResponsiveTheme.colors.white,
   },
 });
 

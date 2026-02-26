@@ -5,14 +5,15 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
-  SafeAreaView,
   Dimensions,
-} from "react-native";
+  Alert,
+  } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "./Card";
 import { Button } from "./Button";
-import { THEME } from "../../utils/constants";
-import { rf } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rs, rbr } from "../../utils/responsive";
 
 interface DialogAction {
   text: string;
@@ -59,13 +60,13 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
   const getTypeColor = () => {
     switch (type) {
       case "success":
-        return THEME.colors.success;
+        return ResponsiveTheme.colors.success;
       case "warning":
-        return THEME.colors.warning;
+        return ResponsiveTheme.colors.warning;
       case "error":
-        return THEME.colors.error;
+        return ResponsiveTheme.colors.error;
       default:
-        return THEME.colors.primary;
+        return ResponsiveTheme.colors.primary;
     }
   };
 
@@ -152,22 +153,24 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
 
 // Convenience functions to replace Alert.alert()
 export const showDialog = {
-  info: (title: string, message?: string, actions?: DialogAction[]) => {
-    // This would be implemented with a global state management solution
-    // For now, it's a placeholder
-    console.log("Info Dialog:", { title, message, actions });
+  info: (title: string, message?: string, _actions?: DialogAction[]) => {
+    const buttons = _actions?.map((a) => ({ text: a.text, onPress: a.onPress, style: a.style })) ?? [{ text: "OK" }];
+    Alert.alert(title, message ?? "", buttons);
   },
 
-  success: (title: string, message?: string, actions?: DialogAction[]) => {
-    console.log("Success Dialog:", { title, message, actions });
+  success: (title: string, message?: string, _actions?: DialogAction[]) => {
+    const buttons = _actions?.map((a) => ({ text: a.text, onPress: a.onPress, style: a.style })) ?? [{ text: "OK" }];
+    Alert.alert(`\u2705 ${title}`, message ?? "", buttons);
   },
 
-  warning: (title: string, message?: string, actions?: DialogAction[]) => {
-    console.log("Warning Dialog:", { title, message, actions });
+  warning: (title: string, message?: string, _actions?: DialogAction[]) => {
+    const buttons = _actions?.map((a) => ({ text: a.text, onPress: a.onPress, style: a.style })) ?? [{ text: "OK" }];
+    Alert.alert(`\u26A0\uFE0F ${title}`, message ?? "", buttons);
   },
 
-  error: (title: string, message?: string, actions?: DialogAction[]) => {
-    console.log("Error Dialog:", { title, message, actions });
+  error: (title: string, message?: string, _actions?: DialogAction[]) => {
+    const buttons = _actions?.map((a) => ({ text: a.text, onPress: a.onPress, style: a.style })) ?? [{ text: "OK" }];
+    Alert.alert(`\u274C ${title}`, message ?? "", buttons);
   },
 };
 
@@ -185,37 +188,37 @@ const styles = StyleSheet.create({
   },
 
   dialogCard: {
-    padding: THEME.spacing.xl,
+    padding: ResponsiveTheme.spacing.xl,
     alignItems: "center" as const,
   },
 
   iconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: rs(60),
+    height: rs(60),
+    borderRadius: rbr(30),
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   icon: {
-    fontSize: 28,
+    fontSize: rf(28),
   },
 
   title: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: "700",
+    color: ResponsiveTheme.colors.text,
     textAlign: "center",
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   message: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
-    lineHeight: 22,
-    marginBottom: THEME.spacing.xl,
+    lineHeight: rf(22),
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
 
   actionsContainer: {
@@ -228,7 +231,7 @@ const styles = StyleSheet.create({
 
   multipleActions: {
     flexDirection: "column",
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   actionButton: {
@@ -242,23 +245,23 @@ const styles = StyleSheet.create({
   // Workout complete styles
   statsContainer: {
     width: "100%",
-    marginBottom: THEME.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
 
   statsTitle: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
     textAlign: "center",
-    marginBottom: THEME.spacing.lg,
-    lineHeight: 22,
+    marginBottom: ResponsiveTheme.spacing.lg,
+    lineHeight: rf(22),
   },
 
   statsGrid: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingVertical: THEME.spacing.lg,
-    backgroundColor: THEME.colors.backgroundSecondary,
-    borderRadius: THEME.borderRadius.lg,
+    paddingVertical: ResponsiveTheme.spacing.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
   },
 
   statItem: {
@@ -266,15 +269,15 @@ const styles = StyleSheet.create({
   },
 
   statValue: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.primary,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: "700",
+    color: ResponsiveTheme.colors.primary,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   statLabel: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 });
 
@@ -344,13 +347,13 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
             <View
               style={[
                 styles.iconContainer,
-                { backgroundColor: THEME.colors.success + "20" },
+                { backgroundColor: ResponsiveTheme.colors.success + "20" },
               ]}
             >
               <Ionicons
                 name="trophy"
                 size={rf(32)}
-                color={THEME.colors.success}
+                color={ResponsiveTheme.colors.success}
               />
             </View>
 

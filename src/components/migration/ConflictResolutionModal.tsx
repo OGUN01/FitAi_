@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Conflict Resolution Modal
  * Handles data conflicts during migration with user-friendly interface
  * Allows users to choose between local and remote data or merge them
@@ -12,10 +12,11 @@ import {
   Modal,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   Alert,
-} from "react-native";
-import { Card, Button, THEME } from "../ui";
+  } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Card, Button } from "../ui";
+import { ResponsiveTheme } from '../../utils/constants';
 import { SyncConflict, ConflictResolution } from "../../types/profileData";
 
 interface ConflictResolutionModalProps {
@@ -298,138 +299,138 @@ export const ConflictResolutionModal: React.FC<
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
 
   header: {
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: THEME.colors.border,
+    borderBottomColor: ResponsiveTheme.colors.border,
   },
 
   title: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   subtitle: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
     lineHeight: 20,
   },
 
   scrollView: {
     flex: 1,
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
 
   conflictCard: {
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   conflictHeader: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   conflictTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   conflictType: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.warning,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.warning,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   valueSection: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   valueLabel: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   valueContainer: {
-    backgroundColor: THEME.colors.backgroundSecondary,
-    padding: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.md,
-    marginBottom: THEME.spacing.sm,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    padding: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   valueText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   timestampText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   choiceButton: {
-    paddingVertical: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
     borderWidth: 1,
-    borderColor: THEME.colors.border,
-    backgroundColor: THEME.colors.surface,
+    borderColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.surface,
     alignItems: "center",
   },
 
   choiceButtonSelected: {
-    borderColor: THEME.colors.primary,
-    backgroundColor: THEME.colors.primary + "20",
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary + "20",
   },
 
   choiceButtonText: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   choiceButtonTextSelected: {
-    color: THEME.colors.primary,
+    color: ResponsiveTheme.colors.primary,
   },
 
   actions: {
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: ResponsiveTheme.colors.border,
   },
 
   quickActions: {
     flexDirection: "row",
-    gap: THEME.spacing.sm,
-    marginBottom: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   quickActionButton: {
     flex: 1,
-    paddingVertical: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.md,
-    backgroundColor: THEME.colors.backgroundSecondary,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     alignItems: "center",
   },
 
   quickActionText: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   mainActions: {
     flexDirection: "row",
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   cancelButton: {

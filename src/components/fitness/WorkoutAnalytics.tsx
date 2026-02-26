@@ -7,7 +7,9 @@ import {
   TouchableOpacity,
   Dimensions,
 } from "react-native";
-import { Card, THEME } from "../ui";
+import { Card } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp } from "../../utils/responsive";
 import { useFitnessData } from "../../hooks/useFitnessData";
 
 const { width } = Dimensions.get("window");
@@ -213,26 +215,26 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    padding: THEME.spacing.lg,
-    margin: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.lg,
+    margin: ResponsiveTheme.spacing.md,
   },
 
   header: {
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   title: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   timeRangeSelector: {
     flexDirection: "row",
-    backgroundColor: THEME.colors.backgroundSecondary,
-    borderRadius: THEME.borderRadius.md,
-    padding: 4,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    padding: rp(4),
   },
 
   timeRangeButton: {
@@ -240,77 +242,77 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.sm,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
   },
 
   timeRangeButtonActive: {
-    backgroundColor: THEME.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary,
   },
 
   timeRangeIcon: {
-    fontSize: 16,
-    marginRight: THEME.spacing.xs,
+    fontSize: rf(16),
+    marginRight: ResponsiveTheme.spacing.xs,
   },
 
   timeRangeLabel: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   timeRangeLabelActive: {
-    color: THEME.colors.white,
+    color: ResponsiveTheme.colors.white,
   },
 
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   statItem: {
     width: "50%",
     alignItems: "center",
-    paddingVertical: THEME.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.md,
   },
 
   statValue: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.primary,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   statLabel: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   section: {
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   sectionTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   workoutTypesContainer: {
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   workoutTypeItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: THEME.colors.backgroundSecondary,
-    padding: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.md,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    padding: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
   workoutTypeHeader: {
@@ -319,47 +321,47 @@ const styles = StyleSheet.create({
   },
 
   workoutTypeIcon: {
-    fontSize: 20,
-    marginRight: THEME.spacing.sm,
+    fontSize: rf(20),
+    marginRight: ResponsiveTheme.spacing.sm,
   },
 
   workoutTypeName: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.text,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
     textTransform: "capitalize",
   },
 
   workoutTypeCount: {
-    fontSize: THEME.fontSize.lg,
-    color: THEME.colors.primary,
-    fontWeight: THEME.fontWeight.bold,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
   },
 
   insightsContainer: {
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   insightText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    lineHeight: 20,
-    backgroundColor: THEME.colors.backgroundSecondary,
-    padding: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.md,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(20),
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    padding: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
   loadingText: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
-    paddingVertical: THEME.spacing.xl,
+    paddingVertical: ResponsiveTheme.spacing.xl,
   },
 
   errorText: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.error,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.error,
     textAlign: "center",
-    paddingVertical: THEME.spacing.xl,
+    paddingVertical: ResponsiveTheme.spacing.xl,
   },
 });

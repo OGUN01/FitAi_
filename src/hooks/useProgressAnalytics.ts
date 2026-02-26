@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useProgressData } from "./useProgressData";
-import { THEME } from "../components/ui";
+import { ResponsiveTheme } from "../utils/constants";
 
 export const useProgressAnalytics = (
   initialTimeRange: "week" | "month" | "year" = "month",
@@ -30,9 +30,9 @@ export const useProgressAnalytics = (
   };
 
   const getProgressColor = (change: number) => {
-    if (change > 0) return THEME.colors.success;
-    if (change < 0) return THEME.colors.warning;
-    return THEME.colors.textSecondary;
+    if (change > 0) return ResponsiveTheme.colors.success;
+    if (change < 0) return ResponsiveTheme.colors.warning;
+    return ResponsiveTheme.colors.textSecondary;
   };
 
   const getProgressIcon = (change: number) => {

@@ -97,7 +97,7 @@ Track your fitness journey with FitAI!`;
   };
 
   const handleLoadMoreActivities = () => {
-    loadMoreActivities(
+    return loadMoreActivities(
       activitiesPage,
       loadingMoreActivities,
       hasMoreActivities,

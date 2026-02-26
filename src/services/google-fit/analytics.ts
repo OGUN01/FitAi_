@@ -17,7 +17,6 @@ export class GoogleFitAnalytics {
 
   async getHeartRateZones(age: number): Promise<HeartRateZones> {
     try {
-      console.log("❤️ Calculating heart rate zones from Google Fit data...");
 
       let restingHR: number | undefined;
       try {
@@ -45,9 +44,6 @@ export class GoogleFitAnalytics {
           }
         }
       } catch (error) {
-        console.warn(
-          "⚠️ Could not fetch resting heart rate from Google Fit, using estimated values",
-        );
       }
 
       const maxHR = 220 - age;
@@ -82,9 +78,6 @@ export class GoogleFitAnalytics {
         },
       };
 
-      console.log(
-        `❤️ Heart rate zones calculated - Max HR: ${maxHR}, Resting: ${restingHR || "estimated"}`,
-      );
       return { restingHR, maxHR, zones };
     } catch (error) {
       console.error("❌ Failed to calculate heart rate zones:", error);
@@ -120,9 +113,6 @@ export class GoogleFitAnalytics {
 
   async getSleepBasedWorkoutRecommendations(): Promise<SleepRecommendations> {
     try {
-      console.log(
-        "😴 Analyzing Google Fit sleep data for workout recommendations...",
-      );
 
       const today = new Date();
       const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
@@ -152,7 +142,6 @@ export class GoogleFitAnalytics {
           sleepQuality = "excellent";
         }
       } else {
-        console.warn("⚠️ No sleep data available from Google Fit");
         return {
           sleepQuality: "fair" as "poor" | "fair" | "good" | "excellent",
           sleepDuration: 0,
@@ -210,9 +199,6 @@ export class GoogleFitAnalytics {
           break;
       }
 
-      console.log(
-        `😴 Sleep analysis: ${sleepDuration}h (${sleepQuality}) -> ${workoutType} workout`,
-      );
 
       return {
         sleepQuality,
@@ -244,9 +230,6 @@ export class GoogleFitAnalytics {
     hasPermissions: () => Promise<boolean>,
   ): Promise<ActivityAdjustedCalories> {
     try {
-      console.log(
-        "🔥 Calculating activity-adjusted calorie targets from Google Fit...",
-      );
 
       const healthData = await this.dataReader.syncHealthData(
         1,
@@ -254,9 +237,6 @@ export class GoogleFitAnalytics {
       );
 
       if (!healthData.success || !healthData.data) {
-        console.warn(
-          "⚠️ No activity data available from Google Fit, using base calories",
-        );
         return {
           adjustedCalories: baseCalories,
           activityMultiplier: 1.0,
@@ -321,9 +301,6 @@ export class GoogleFitAnalytics {
         recommendations.push("Excellent step count! Step bonus applied");
       }
 
-      console.log(
-        `🔥 Calorie adjustment: ${baseCalories} -> ${adjustedCalories} (${activityMultiplier}x multiplier)`,
-      );
 
       return {
         adjustedCalories,
@@ -361,7 +338,6 @@ export class GoogleFitAnalytics {
     hasPermissions: () => Promise<boolean>,
   ): Promise<ActivityDetectionResult> {
     try {
-      console.log("🤖 Detecting activities from Google Fit data...");
 
       const today = new Date();
       const startOfDay = new Date(
@@ -399,7 +375,6 @@ export class GoogleFitAnalytics {
           }
         }
       } catch (error) {
-        console.warn("⚠️ Failed to detect walking activity:", error);
       }
 
       try {
@@ -456,19 +431,11 @@ export class GoogleFitAnalytics {
               hasPermissions,
             );
             autoLoggedCount++;
-            console.log(`✅ Auto-logged ${activity.type} activity`);
           } catch (error) {
-            console.warn(
-              `⚠️ Failed to auto-log ${activity.type} activity:`,
-              error,
-            );
           }
         }
       }
 
-      console.log(
-        `🤖 Activity detection complete: ${activities.length} detected, ${autoLoggedCount} auto-logged`,
-      );
 
       return {
         detectedActivities: activities,

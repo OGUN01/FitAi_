@@ -1,6 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { rf, rp, rbr } from "../../../utils/responsive";
+import { ResponsiveTheme } from "../../../utils/constants";
 
 interface ConflictStats {
   total: number;
@@ -48,7 +50,11 @@ export const ConflictHeader: React.FC<ConflictHeaderProps> = ({
           style={styles.autoResolveButton}
           onPress={onAutoResolve}
         >
-          <Ionicons name="flash" size={16} color="#FFFFFF" />
+          <Ionicons
+            name="flash"
+            size={rf(16)}
+            color={ResponsiveTheme.colors.white}
+          />
           <Text style={styles.autoResolveText}>
             Auto-Resolve {stats.autoResolvable} Conflicts
           </Text>
@@ -60,53 +66,53 @@ export const ConflictHeader: React.FC<ConflictHeaderProps> = ({
 
 const styles = StyleSheet.create({
   header: {
-    padding: 20,
-    paddingTop: 60,
+    padding: rp(20),
+    paddingTop: rp(60),
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(75, 85, 99, 0.3)",
+    borderBottomColor: ResponsiveTheme.colors.glassBorder,
   },
   title: {
-    fontSize: 28,
+    fontSize: rf(28),
     fontWeight: "bold",
-    color: "#FFFFFF",
-    marginBottom: 8,
+    color: ResponsiveTheme.colors.white,
+    marginBottom: rp(8),
   },
   subtitle: {
-    fontSize: 16,
-    color: "#9CA3AF",
-    marginBottom: 20,
+    fontSize: rf(16),
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: rp(20),
   },
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    marginBottom: 20,
+    marginBottom: rp(20),
   },
   statItem: {
     alignItems: "center",
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: rf(24),
     fontWeight: "bold",
-    color: "#E55A2B",
+    color: ResponsiveTheme.colors.primaryDark,
   },
   statLabel: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    marginTop: 4,
+    fontSize: rf(12),
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: rp(4),
   },
   autoResolveButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#E55A2B",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    gap: 8,
+    backgroundColor: ResponsiveTheme.colors.primaryDark,
+    paddingVertical: rp(12),
+    paddingHorizontal: rp(20),
+    borderRadius: rbr(10),
+    gap: rp(8),
   },
   autoResolveText: {
-    color: "#FFFFFF",
-    fontSize: 14,
+    color: ResponsiveTheme.colors.white,
+    fontSize: rf(14),
     fontWeight: "600",
   },
 });

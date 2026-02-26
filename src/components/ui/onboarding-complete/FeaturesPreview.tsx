@@ -9,17 +9,17 @@ const FEATURES = [
   {
     icon: "sparkles",
     text: "AI-powered workout plans",
-    color: "#FF6B35",
+    color: ResponsiveTheme.colors.primary,
   },
   {
     icon: "nutrition",
     text: "Smart meal recommendations",
-    color: "#10b981",
+    color: ResponsiveTheme.colors.successAlt,
   },
   {
     icon: "trending-up",
     text: "Progress tracking & insights",
-    color: "#FF6B6B",
+    color: ResponsiveTheme.colors.errorLight,
   },
 ];
 

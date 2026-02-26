@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf } from "../../../utils/responsive";
+import { rf, rp } from "../../../utils/responsive";
 
 interface DescriptionCardProps {
   scheduledCount: number;
@@ -24,7 +24,7 @@ export const DescriptionCard: React.FC<DescriptionCardProps> = ({
       >
         <View style={styles.descriptionContent}>
           <View style={styles.scheduledBadge}>
-            <Ionicons name="calendar-outline" size={rf(14)} color="#fff" />
+            <Ionicons name="calendar-outline" size={rf(14)} color={ResponsiveTheme.colors.text} />
             <Text style={styles.scheduledText}>{scheduledCount}</Text>
           </View>
           <Text style={styles.descriptionText}>
@@ -39,7 +39,7 @@ export const DescriptionCard: React.FC<DescriptionCardProps> = ({
 const styles = StyleSheet.create({
   descriptionCard: {
     marginBottom: ResponsiveTheme.spacing.lg,
-    backgroundColor: "rgba(255, 107, 53, 0.1)",
+    backgroundColor: ResponsiveTheme.colors.primaryTint,
   },
   descriptionContent: {
     flexDirection: "row",
@@ -49,16 +49,16 @@ const styles = StyleSheet.create({
   scheduledBadge: {
     flexDirection: "row",
     alignItems: "center" as const,
-    gap: 4,
+    gap: rp(4),
     backgroundColor: ResponsiveTheme.colors.primary,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: rp(4),
     borderRadius: ResponsiveTheme.borderRadius.full,
   },
   scheduledText: {
     fontSize: rf(12),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
   },
   descriptionText: {
     fontSize: rf(13),

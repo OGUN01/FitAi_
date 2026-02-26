@@ -1,4 +1,4 @@
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import {
   foodRecognitionService,
   MealType,
@@ -31,7 +31,7 @@ export const createCameraHandlers = (
     setShowGuestSignUp: (show: boolean) => void,
   ) => {
     if (isGuestMode || !userId) {
-      Alert.alert(
+      crossPlatformAlert(
         "Sign Up for AI Features",
         "AI food recognition uses advanced machine learning to analyze your meals with 90%+ accuracy.\n\nCreate a free account to:\n• Scan food photos instantly\n• Get personalized nutrition insights\n• Track your meals automatically",
         [
@@ -47,7 +47,7 @@ export const createCameraHandlers = (
     }
 
     if (!foodRecognitionService) {
-      Alert.alert("Error", "Food recognition service not available.");
+      crossPlatformAlert("Error", "Food recognition service not available.");
       return;
     }
 
@@ -68,7 +68,7 @@ export const createCameraHandlers = (
           0,
         );
 
-        Alert.alert(
+        crossPlatformAlert(
           "Food Recognition Complete!",
           `Recognized ${recognizedFoods.length} food item(s):\n\n` +
             `${recognizedFoods.map((food: any) => `• ${food.name} (${Math.round(food.nutrition.calories)} cal)`).join("\n")}\n\n` +
@@ -99,7 +99,7 @@ export const createCameraHandlers = (
               onPress: async () => {
                 try {
                   if (!userId) {
-                    Alert.alert(
+                    crossPlatformAlert(
                       "Sign In Required",
                       "Please sign in to log meals.",
                     );
@@ -113,7 +113,7 @@ export const createCameraHandlers = (
                     );
 
                   if (logResult.success) {
-                    Alert.alert(
+                    crossPlatformAlert(
                       "Meal Logged Successfully!",
                       `${recognizedFoods.length} food item(s) logged`,
                     );
@@ -128,7 +128,7 @@ export const createCameraHandlers = (
                     throw new Error(logResult.error || "Failed to log meal");
                   }
                 } catch (logError) {
-                  Alert.alert("Meal Logging Failed", String(logError));
+                  crossPlatformAlert("Meal Logging Failed", String(logError));
                 }
               },
             },
@@ -141,7 +141,7 @@ export const createCameraHandlers = (
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       setAiError(errorMessage);
-      Alert.alert("Recognition Failed", errorMessage);
+      crossPlatformAlert("Recognition Failed", errorMessage);
     } finally {
       setIsGeneratingMeal(false);
     }
@@ -154,7 +154,7 @@ export const createCameraHandlers = (
     if (!currentFeedbackData) return;
     try {
       if (!userId) {
-        Alert.alert("Sign In Required", "Please sign in to submit feedback.");
+        crossPlatformAlert("Sign In Required", "Please sign in to submit feedback.");
         return;
       }
       const result = await foodRecognitionFeedbackService.submitFeedback(
@@ -166,10 +166,10 @@ export const createCameraHandlers = (
       );
 
       if (!result.success) {
-        Alert.alert("Error", "Failed to submit feedback. Please try again.");
+        crossPlatformAlert("Error", "Failed to submit feedback. Please try again.");
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to submit feedback. Please try again.");
+      crossPlatformAlert("Error", "Failed to submit feedback. Please try again.");
     }
   };
 
@@ -190,7 +190,7 @@ export const createCameraHandlers = (
           ?.portionSize.estimatedGrams,
     ).length;
 
-    Alert.alert(
+    crossPlatformAlert(
       "Portions Updated!",
       `${adjustedCount > 0 ? `Updated ${adjustedCount} portion size${adjustedCount !== 1 ? "s" : ""}!\n\n` : ""}` +
         `${adjustedFoods.map((food: any) => `- ${food.name} (${food.portionSize.estimatedGrams}g - ${Math.round(food.nutrition.calories)} cal)`).join("\n")}\n\n` +
@@ -213,7 +213,7 @@ export const createCameraHandlers = (
           onPress: async () => {
             try {
               if (!userId) {
-                Alert.alert("Sign In Required", "Please sign in to log meals.");
+                crossPlatformAlert("Sign In Required", "Please sign in to log meals.");
                 return;
               }
               const logResult = await recognizedFoodLogger.logRecognizedFoods(
@@ -223,7 +223,7 @@ export const createCameraHandlers = (
               );
 
               if (logResult.success) {
-                Alert.alert(
+                crossPlatformAlert(
                   "Meal Logged Successfully!",
                   `${adjustedFoods.length} food item${adjustedFoods.length !== 1 ? "s" : ""} logged\n` +
                     `Total: ${logResult.totalCalories} calories\n` +
@@ -239,7 +239,7 @@ export const createCameraHandlers = (
                 throw new Error(logResult.error || "Failed to log meal");
               }
             } catch (error) {
-              Alert.alert("Error", "Failed to log meal. Please try again.");
+              crossPlatformAlert("Error", "Failed to log meal. Please try again.");
             }
           },
         },

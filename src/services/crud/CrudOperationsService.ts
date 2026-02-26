@@ -31,7 +31,6 @@ export class CrudOperationsService {
   async initialize(): Promise<void> {
     try {
       await dataBridge.initialize();
-      console.log("CRUD Operations Service initialized successfully");
     } catch (error) {
       console.error("Failed to initialize CRUD Operations Service:", error);
       throw error;

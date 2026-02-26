@@ -12,7 +12,6 @@ export async function savePreferencesToSupabase(
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      console.log("📱 No authenticated user - skipping Supabase sync");
       return;
     }
 
@@ -26,17 +25,12 @@ export async function savePreferencesToSupabase(
 
     if (error) {
       if (error.code === "42703") {
-        console.log(
-          "📱 notification_preferences column not in schema - storing locally only",
-        );
         return;
       }
       throw error;
     }
 
-    console.log("✅ Notification preferences synced to Supabase");
   } catch (error) {
-    console.warn("Could not sync notification preferences to Supabase:", error);
   }
 }
 
@@ -48,7 +42,6 @@ export async function loadPreferencesFromSupabase(): Promise<NotificationPrefere
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      console.log("📱 No authenticated user - loading from local storage");
       return null;
     }
 
@@ -60,25 +53,17 @@ export async function loadPreferencesFromSupabase(): Promise<NotificationPrefere
 
     if (error) {
       if (error.code === "42703" || error.code === "PGRST116") {
-        console.log(
-          "📱 notification_preferences not in schema - using local storage",
-        );
         return null;
       }
       throw error;
     }
 
     if (data?.notification_preferences) {
-      console.log("✅ Loaded notification preferences from Supabase");
       return data.notification_preferences as NotificationPreferences;
     }
 
     return null;
   } catch (error) {
-    console.warn(
-      "Could not load notification preferences from Supabase:",
-      error,
-    );
     return null;
   }
 }
@@ -94,7 +79,6 @@ export async function savePreferences(
 
     await savePreferencesToSupabase(preferences);
 
-    console.log("Notification preferences saved");
   } catch (error) {
     console.error("Failed to save notification preferences:", error);
   }

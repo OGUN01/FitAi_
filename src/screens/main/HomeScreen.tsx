@@ -27,7 +27,6 @@ import {
   Text,
   StyleSheet,
   Animated,
-  Alert,
   RefreshControl,
 } from "react-native";
 import {
@@ -61,6 +60,7 @@ import { WeightEntryModal } from "../../components/progress/WeightEntryModal";
 import { useHomeLogic } from "../../hooks/useHomeLogic";
 import { useAchievementStore } from "../../stores/achievementStore";
 
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 interface HomeScreenProps {
   onNavigateToTab?: (tab: string) => void;
 }
@@ -169,8 +169,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 userInitial={profile?.personalInfo?.name?.charAt(0) ?? ""} // NO FALLBACK
                 streak={realStreak}
                 onProfilePress={() => onNavigateToTab?.("profile")}
+                onNotificationPress={() => crossPlatformAlert("Notifications", "No new notifications")}
                 onStreakPress={() =>
-                  Alert.alert("Streak", `${realStreak} day streak! Keep going!`)
+                  crossPlatformAlert("Streak", `${realStreak} day streak! Keep going!`)
                 }
               />
 
@@ -210,9 +211,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   onPress={() => onNavigateToTab?.("progress")}
                   onDetailPress={(metric) => {
                     if (metric === "heart")
-                      Alert.alert("Heart Rate", "Detailed heart rate data");
+                      crossPlatformAlert("Heart Rate", "Detailed heart rate data");
                     else if (metric === "sleep")
-                      Alert.alert("Sleep", "Detailed sleep analysis");
+                      crossPlatformAlert("Sleep", "Detailed sleep analysis");
                   }}
                 />
               </View>
@@ -235,7 +236,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   stepsSource={healthMetrics?.sources?.steps} // Data source attribution
                   onPress={() => onNavigateToTab?.("progress")}
                 />
-                <EmptyMealsMessage mealsLogged={caloriesConsumed} />
+                <EmptyMealsMessage mealsLogged={caloriesConsumed} onLogMeal={() => onNavigateToTab?.("diet")} />
                 {/* Wearable Sync Status */}
                 {wearableConnected && (
                   <View style={{ marginTop: ResponsiveTheme.spacing.sm }}>
@@ -247,12 +248,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
               {/* 5. Today's Workout */}
               <View style={styles.section}>
                 <TodaysFocus
-                  workoutInfo={todaysWorkoutInfo as any}
+                  workoutInfo={{
+                    hasWeeklyPlan: todaysWorkoutInfo.hasWeeklyPlan,
+                    isRestDay: todaysWorkoutInfo.isRestDay,
+                    isCompleted: todaysWorkoutInfo.isCompleted,
+                    hasWorkout: todaysWorkoutInfo.hasWorkout,
+                    dayStatus: todaysWorkoutInfo.dayStatus,
+                    workoutType: (() => {
+                      const t = todaysWorkoutInfo.workoutType;
+                      if (t === "strength" || t === "cardio" || t === "flexibility" || t === "hiit" || t === "mixed") return t;
+                      return undefined;
+                    })(),
+                    workout: todaysWorkoutInfo.workout ? {
+                      title: todaysWorkoutInfo.workout.title ?? "",
+                      duration: todaysWorkoutInfo.workout.duration ?? 0,
+                      estimatedCalories: todaysWorkoutInfo.workout.estimatedCalories ?? 0,
+                      exercises: todaysWorkoutInfo.workout.exercises?.length,
+                    } : undefined,
+                  }}
                   workoutProgress={todaysData?.progress?.workoutProgress} // NO FALLBACK
                   onWorkoutPress={() => onNavigateToTab?.("fitness")}
                 />
-              </View>
 
+              </View>
               {/* 6. Quick Actions - Unique utilities */}
               <View style={styles.quickActionsSection}>
                 <QuickActions actions={quickActions} />
@@ -265,7 +283,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   dailyGoal={waterGoal ?? 0}
                   onAddWater={handleAddWater}
                   onPress={() =>
-                    Alert.alert("Hydration", "Detailed hydration tracking")
+                    crossPlatformAlert("Hydration", "Detailed hydration tracking")
                   }
                 />
               </View>
@@ -280,7 +298,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   unit="kg"
                   onPress={() => onNavigateToTab?.("progress")}
                   onPhotoPress={() =>
-                    Alert.alert(
+                    crossPlatformAlert(
                       "Progress Photo",
                       "Take or view progress photos",
                     )
@@ -297,13 +315,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   totalBadges={totalBadges}
                   onViewAll={() => onNavigateToTab?.("achievements")}
                   onAchievementPress={(achievement) => {
-                    Alert.alert("Achievement", achievement.title);
+                    crossPlatformAlert("Achievement", achievement.title);
                   }}
                 />
               </View>
 
               <View style={styles.section}>
-                <EmptyCalendarMessage weekCalendarData={weekCalendarData} />
+                <EmptyCalendarMessage weekCalendarData={weekCalendarData} onPlanWorkout={() => onNavigateToTab?.("fitness")} />
                 {weekCalendarData &&
                   !weekCalendarData.every((d) => !d.hasWorkout) && (
                     <WeeklyMiniCalendar
@@ -327,8 +345,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         currentWeight={weightData.currentWeight}
         unit="kg"
         onSuccess={() => {
-          // Optionally refresh data after successful weight entry
-          console.log("Weight entry successful, refreshing data...");
+          setShowWeightModal(false);
+          handleRefresh();
         }}
       />
     </>
@@ -347,7 +365,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: ResponsiveTheme.spacing.md,
+    paddingBottom: 120,
   },
   section: {
     paddingHorizontal: ResponsiveTheme.spacing.md,

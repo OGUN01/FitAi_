@@ -1,5 +1,6 @@
 import { useAuth } from "../hooks/useAuth";
 import { useUser } from "../hooks/useUser";
+import { useProfileStore } from "../stores/profileStore";
 import { useOffline } from "../hooks/useOffline";
 import {
   PersonalInfo as UserPersonalInfo,
@@ -12,6 +13,7 @@ import {
 } from "../types/profileData";
 import { api, supabase } from "../services/api";
 import { dataBridge } from "../services/DataBridge";
+import { logger } from "../utils/logger";
 
 /**
  * Integration utilities for connecting existing UI components with the new backend
@@ -511,6 +513,7 @@ export const useDashboardIntegration = () => {
   const { user: authUser } = useAuth();
   const { profile } = useUser();
   const { isOnline } = useOffline();
+  const { bodyAnalysis, personalInfo: profilePersonalInfo } = useProfileStore();
 
   /**
    * Get user stats for dashboard
@@ -536,8 +539,8 @@ export const useDashboardIntegration = () => {
    */
   const getHealthMetrics = () => {
     // Single source: profile.bodyMetrics - NO FALLBACKS
-    const heightCm = profile?.bodyMetrics?.height_cm;
-    const weightKg = profile?.bodyMetrics?.current_weight_kg;
+    const heightCm = profile?.bodyMetrics?.height_cm || bodyAnalysis?.height_cm;
+    const weightKg = profile?.bodyMetrics?.current_weight_kg || bodyAnalysis?.current_weight_kg;
 
     if (!heightCm || !weightKg) {
       return null; // Explicit null when data missing
@@ -563,10 +566,10 @@ export const useDashboardIntegration = () => {
     }
 
     // Get height/weight from bodyMetrics, age/gender from personalInfo
-    const heightCm = profile?.bodyMetrics?.height_cm;
-    const weightKg = profile?.bodyMetrics?.current_weight_kg;
-    const age = profile.personalInfo?.age;
-    const gender = profile.personalInfo?.gender;
+    const heightCm = profile?.bodyMetrics?.height_cm || bodyAnalysis?.height_cm;
+    const weightKg = profile?.bodyMetrics?.current_weight_kg || bodyAnalysis?.current_weight_kg;
+    const age = profile.personalInfo?.age || profilePersonalInfo?.age;
+    const gender = profile.personalInfo?.gender || profilePersonalInfo?.gender;
     const activityLevelValue = (profile.personalInfo as any)?.activityLevel;
 
     if (!heightCm || !weightKg || !age || !gender || !activityLevelValue) {
@@ -704,7 +707,7 @@ export const initializeBackend = async () => {
       console.warn("CRUD Operations initialization warning:", crudErr);
     }
 
-    console.log("Backend initialized successfully");
+    logger.info("Backend initialized successfully");
   } catch (error) {
     console.warn("Failed to initialize backend:", error);
   }

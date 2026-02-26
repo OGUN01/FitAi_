@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rp, rw } from "../../../utils/responsive";
+import { rf, rp, rw, rh } from "../../../utils/responsive";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { GlassCard } from "../../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../ui/aurora/AnimatedPressable";
@@ -12,6 +12,7 @@ import {
   WorkoutPreferencesData,
   AdvancedReviewData,
 } from "../../../types/onboarding";
+import { DIET_TYPE_OPTIONS } from "../../../screens/onboarding/tabs/DietPreferencesConstants";
 
 interface DataSummarySectionProps {
   personalInfo: PersonalInfoData | null;
@@ -135,7 +136,7 @@ export const DataSummarySection: React.FC<DataSummarySectionProps> = ({
               </View>
               <Text style={styles.summaryScrollTitle}>Diet</Text>
               <Text style={styles.summaryScrollValue} numberOfLines={1}>
-                {dietPreferences?.diet_type}
+                {DIET_TYPE_OPTIONS.find((o) => o.id === dietPreferences?.diet_type)?.title ?? dietPreferences?.diet_type ?? "—"}
               </Text>
               <View style={styles.summaryScrollMeals}>
                 <Text style={styles.summaryScrollSub}>Preferences Set</Text>
@@ -177,11 +178,14 @@ export const DataSummarySection: React.FC<DataSummarySectionProps> = ({
               </View>
               <Text style={styles.summaryScrollTitle}>Body Analysis</Text>
               <Text style={styles.summaryScrollValue} numberOfLines={1}>
-                {bodyAnalysis?.current_weight_kg}kg →{" "}
-                {bodyAnalysis?.target_weight_kg}kg
+                {bodyAnalysis?.current_weight_kg && bodyAnalysis?.target_weight_kg
+                  ? `${bodyAnalysis.current_weight_kg}kg \u2192 ${bodyAnalysis.target_weight_kg}kg`
+                  : "\u2014"}
               </Text>
               <Text style={styles.summaryScrollSub} numberOfLines={1}>
-                BMI: {calculatedData?.calculated_bmi?.toFixed(1)}
+                {calculatedData?.calculated_bmi
+                  ? `BMI: ${calculatedData.calculated_bmi.toFixed(1)}`
+                  : "BMI: \u2014"}
               </Text>
             </GlassCard>
           </AnimatedPressable>
@@ -262,7 +266,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   summaryScrollContainer: {
-    height: 140,
+    height: rh(190),
   },
   summaryScrollContent: {
     paddingHorizontal: rp(20),
@@ -270,7 +274,7 @@ const styles = StyleSheet.create({
   },
   summaryScrollCard: {
     width: rw(130),
-    height: 120,
+    height: rh(170),
     marginRight: rp(12),
   },
   summaryScrollCardInner: {

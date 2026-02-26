@@ -33,7 +33,7 @@ export const MetricInput: React.FC<MetricInputProps> = ({
   unit,
   step = 1,
   showScale = true,
-  gradient = ["#4CAF50", "#45A049"],
+  gradient = [ResponsiveTheme.colors.success, ResponsiveTheme.colors.success],
   style,
 }) => {
   const progress = useSharedValue(0);
@@ -126,7 +126,7 @@ export const MetricInput: React.FC<MetricInputProps> = ({
           {/* Scale Track */}
           <View style={styles.scaleTrack}>
             <LinearGradient
-              colors={["#E0E0E0", "#BDBDBD"]}
+              colors={[ResponsiveTheme.colors.neutral, ResponsiveTheme.colors.neutral]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.scaleTrackGradient}
@@ -262,10 +262,7 @@ const styles = StyleSheet.create({
     width: rw(20),
     height: rp(20),
     borderRadius: rp(10),
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0,0,0,0.3)',
     elevation: 5,
   },
 
@@ -279,7 +276,7 @@ const styles = StyleSheet.create({
     borderTopWidth: rp(8),
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
-    borderTopColor: "#4CAF50",
+    borderTopColor: ResponsiveTheme.colors.success,
     marginTop: -rp(2),
   },
 

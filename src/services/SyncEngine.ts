@@ -94,11 +94,9 @@ class SyncEngine {
    */
   async initialize(): Promise<void> {
     if (this.isInitialized) {
-      console.log("[SyncEngine] Already initialized, skipping...");
       return;
     }
 
-    console.log("[SyncEngine] Initializing...");
 
     try {
       // Load persisted queue from AsyncStorage
@@ -117,13 +115,9 @@ class SyncEngine {
       await this.setupNetworkListener();
 
       this.isInitialized = true;
-      console.log("[SyncEngine] Initialization complete");
 
       // Process any pending operations if online
       if (this.isOnline && this.queue.length > 0) {
-        console.log(
-          `[SyncEngine] Found ${this.queue.length} pending operations, processing...`,
-        );
         this.processQueue();
       }
     } catch (error) {
@@ -136,26 +130,21 @@ class SyncEngine {
    * Set up auth state listener to auto-sync on login
    */
   private setupAuthListener(): void {
-    console.log("[SyncEngine] Setting up auth state listener...");
 
     // Subscribe to Supabase auth state changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log(`[SyncEngine] Auth state changed: ${event}`);
 
       if (event === "SIGNED_IN" && session?.user) {
         const userId = session.user.id;
-        console.log(`[SyncEngine] User signed in: ${userId}`);
         this.setUserId(userId);
 
         // Auto-sync all data on login
         if (this.isOnline) {
-          console.log("[SyncEngine] Triggering auto-sync after login...");
           await this.syncAll(userId);
         }
       } else if (event === "SIGNED_OUT") {
-        console.log("[SyncEngine] User signed out, clearing user ID");
         this.setUserId(null);
       }
     });
@@ -167,14 +156,10 @@ class SyncEngine {
    * Set up network state listener to process queue when online
    */
   private async setupNetworkListener(): Promise<void> {
-    console.log("[SyncEngine] Setting up network state listener...");
 
     // Get initial network state
     const state = await NetInfo.fetch();
     this.isOnline = state.isConnected ?? true;
-    console.log(
-      `[SyncEngine] Initial network state: ${this.isOnline ? "online" : "offline"}`,
-    );
 
     // Subscribe to network changes
     this.netInfoUnsubscribe = NetInfo.addEventListener(
@@ -182,13 +167,9 @@ class SyncEngine {
         const wasOffline = !this.isOnline;
         this.isOnline = state.isConnected ?? true;
 
-        console.log(
-          `[SyncEngine] Network state changed: ${this.isOnline ? "online" : "offline"}`,
-        );
 
         // Process queue when coming back online
         if (wasOffline && this.isOnline && this.queue.length > 0) {
-          console.log("[SyncEngine] Back online, processing queue...");
           this.processQueue();
         }
       },
@@ -203,7 +184,6 @@ class SyncEngine {
    * Set the current user ID
    */
   setUserId(userId: string | null): void {
-    console.log(`[SyncEngine] Setting user ID: ${userId || "null"}`);
     this.userId = userId;
   }
 
@@ -240,7 +220,6 @@ class SyncEngine {
       status: "pending",
     };
 
-    console.log(`[SyncEngine] Queueing operation: ${type}`);
 
     // Add to queue
     this.queue.push(operation);
@@ -263,7 +242,6 @@ class SyncEngine {
 
   private async processQueueInternal(): Promise<SyncResult> {
     if (this.isSyncing) {
-      console.log("[SyncEngine] Already syncing, skipping...");
       return {
         success: false,
         syncedItems: 0,
@@ -273,7 +251,6 @@ class SyncEngine {
     }
 
     if (!this.isOnline) {
-      console.log("[SyncEngine] Offline, cannot process queue");
       return {
         success: false,
         syncedItems: 0,
@@ -283,14 +260,10 @@ class SyncEngine {
     }
 
     if (this.queue.length === 0) {
-      console.log("[SyncEngine] Queue is empty");
       return { success: true, syncedItems: 0, failedItems: 0, errors: [] };
     }
 
     this.isSyncing = true;
-    console.log(
-      `[SyncEngine] Processing queue (${this.queue.length} operations)...`,
-    );
 
     const result: SyncResult = {
       success: true,
@@ -312,7 +285,6 @@ class SyncEngine {
         await this.executeOperation(operation);
         completedIds.push(operation.id);
         result.syncedItems++;
-        console.log(`[SyncEngine] Operation completed: ${operation.type}`);
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
@@ -351,9 +323,6 @@ class SyncEngine {
       this.lastError = null;
     }
 
-    console.log(
-      `[SyncEngine] Queue processing complete. Synced: ${result.syncedItems}, Failed: ${result.failedItems}`,
-    );
     return result;
   }
 
@@ -400,7 +369,6 @@ class SyncEngine {
     // Exponential backoff delay if retrying
     if (retryCount > 0) {
       const delay = BASE_DELAY_MS * Math.pow(2, retryCount - 1);
-      console.log(`[SyncEngine] Waiting ${delay}ms before retry...`);
       await this.sleep(delay);
     }
 
@@ -433,9 +401,6 @@ class SyncEngine {
         );
 
         if (conflicts.length > 0) {
-          console.log(
-            `[SyncEngine] Detected ${conflicts.length} conflicts for ${type}, resolving with last-write-wins...`,
-          );
 
           // Register last-write-wins as default strategy for this operation
           conflictResolutionService.registerResolutionRule(
@@ -459,9 +424,6 @@ class SyncEngine {
             updated_at: new Date().toISOString(),
           };
 
-          console.log(
-            `[SyncEngine] Resolved ${resolution.summary.autoResolved} conflicts automatically`,
-          );
         }
       }
     } catch (conflictError) {
@@ -503,9 +465,6 @@ class SyncEngine {
       const queueJson = await AsyncStorage.getItem(QUEUE_STORAGE_KEY);
       if (queueJson) {
         this.queue = JSON.parse(queueJson);
-        console.log(
-          `[SyncEngine] Loaded ${this.queue.length} operations from storage`,
-        );
       }
     } catch (error) {
       console.error("[SyncEngine] Failed to load queue:", error);
@@ -536,7 +495,6 @@ class SyncEngine {
   }
 
   private async syncAllInternal(userId: string): Promise<SyncResult> {
-    console.log(`[SyncEngine] Syncing all data for user: ${userId}`);
 
     if (!this.isOnline) {
       console.warn("[SyncEngine] Cannot sync: offline");
@@ -568,9 +526,6 @@ class SyncEngine {
     await AsyncStorage.setItem(LAST_SYNC_KEY, this.lastSyncAt);
 
     result.success = result.failedItems === 0;
-    console.log(
-      `[SyncEngine] Sync all complete. Synced: ${result.syncedItems}, Failed: ${result.failedItems}`,
-    );
 
     return result;
   }
@@ -583,7 +538,6 @@ class SyncEngine {
    * Sync personal info to profiles table
    */
   async syncPersonalInfo(userId: string, data: any): Promise<void> {
-    console.log("[SyncEngine] Syncing personal info to profiles table...");
 
     // CRITICAL: Get email from auth session - it's NOT in guest onboarding data
     const {
@@ -657,14 +611,12 @@ class SyncEngine {
       throw new Error(`Failed to sync personal info: ${error.message}`);
     }
 
-    console.log("[SyncEngine] Personal info synced successfully");
   }
 
   /**
    * Sync diet preferences to diet_preferences table
    */
   async syncDietPreferences(userId: string, data: any): Promise<void> {
-    console.log("[SyncEngine] Syncing diet preferences...");
 
     const dietPreferencesData = {
       user_id: userId,
@@ -728,14 +680,12 @@ class SyncEngine {
       throw new Error(`Failed to sync diet preferences: ${error.message}`);
     }
 
-    console.log("[SyncEngine] Diet preferences synced successfully");
   }
 
   /**
    * Sync body analysis to body_analysis table
    */
   async syncBodyAnalysis(userId: string, data: any): Promise<void> {
-    console.log("[SyncEngine] Syncing body analysis...");
 
     // NO HARDCODED FALLBACKS - if data is missing, onboarding is incomplete
     const bodyAnalysisData = {
@@ -803,14 +753,12 @@ class SyncEngine {
       throw new Error(`Failed to sync body analysis: ${error.message}`);
     }
 
-    console.log("[SyncEngine] Body analysis synced successfully");
   }
 
   /**
    * Sync workout preferences to workout_preferences table
    */
   async syncWorkoutPreferences(userId: string, data: any): Promise<void> {
-    console.log("[SyncEngine] Syncing workout preferences...");
 
     // WARN if required fields are missing - indicates incomplete onboarding
     if (!data.location || !data.intensity || !data.activity_level) {
@@ -868,14 +816,12 @@ class SyncEngine {
       throw new Error(`Failed to sync workout preferences: ${error.message}`);
     }
 
-    console.log("[SyncEngine] Workout preferences synced successfully");
   }
 
   /**
    * Sync advanced review to advanced_review table
    */
   async syncAdvancedReview(userId: string, data: any): Promise<void> {
-    console.log("[SyncEngine] Syncing advanced review...");
 
     const advancedReviewData = {
       user_id: userId,
@@ -1017,7 +963,6 @@ class SyncEngine {
       throw new Error(`Failed to sync advanced review: ${error.message}`);
     }
 
-    console.log("[SyncEngine] Advanced review synced successfully");
   }
 
   // ============================================================================
@@ -1034,9 +979,6 @@ class SyncEngine {
     workoutPreferences: any | null;
     advancedReview: any | null;
   }> {
-    console.log(
-      `[SyncEngine] Loading all data from database for user: ${userId}`,
-    );
 
     const result: {
       personalInfo: any | null;
@@ -1062,7 +1004,6 @@ class SyncEngine {
 
       if (profileData && !profileError) {
         result.personalInfo = profileData;
-        console.log("[SyncEngine] Loaded personal info");
       }
 
       // Load diet preferences
@@ -1074,7 +1015,6 @@ class SyncEngine {
 
       if (dietData && !dietError) {
         result.dietPreferences = dietData;
-        console.log("[SyncEngine] Loaded diet preferences");
       }
 
       // Load body analysis
@@ -1086,7 +1026,6 @@ class SyncEngine {
 
       if (bodyData && !bodyError) {
         result.bodyAnalysis = bodyData;
-        console.log("[SyncEngine] Loaded body analysis");
       }
 
       // Load workout preferences
@@ -1098,7 +1037,6 @@ class SyncEngine {
 
       if (workoutData && !workoutError) {
         result.workoutPreferences = workoutData;
-        console.log("[SyncEngine] Loaded workout preferences");
       }
 
       // Load advanced review
@@ -1110,10 +1048,8 @@ class SyncEngine {
 
       if (advancedData && !advancedError) {
         result.advancedReview = advancedData;
-        console.log("[SyncEngine] Loaded advanced review");
       }
 
-      console.log("[SyncEngine] Database load complete");
       return result;
     } catch (error) {
       console.error("[SyncEngine] Failed to load from database:", error);
@@ -1147,7 +1083,6 @@ class SyncEngine {
    * Cleanup listeners and resources
    */
   destroy(): void {
-    console.log("[SyncEngine] Destroying...");
 
     if (this.authUnsubscribe) {
       this.authUnsubscribe();
@@ -1160,7 +1095,6 @@ class SyncEngine {
     }
 
     this.isInitialized = false;
-    console.log("[SyncEngine] Destroyed");
   }
 
   // ============================================================================

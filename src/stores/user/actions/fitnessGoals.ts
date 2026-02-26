@@ -171,10 +171,8 @@ export const createFitnessGoalsActions: StateCreator<
     }
   },
 
+  /** @deprecated Use profileStore.updateWorkoutPreferences() instead */
   updateFitnessGoalsLocal: (fitnessGoals: FitnessGoals) => {
-    console.warn(
-      "[userStore] DEPRECATED: updateFitnessGoalsLocal called. Use profileStore.updateWorkoutPreferences() instead.",
-    );
     const currentProfile = get().profile;
     if (currentProfile) {
       const updatedProfile = {

@@ -39,9 +39,8 @@ export const HealthIntelligencePlaceholder: React.FC<
           <View
             style={[
               styles.statusBadge,
-              { backgroundColor: `${ResponsiveTheme.colors.textMuted}20` },
-            ]}
-          >
+              { backgroundColor: `${ResponsiveTheme.colors.textMuted}40` },
+            ]}>
             <View
               style={[
                 styles.statusDot,
@@ -51,7 +50,7 @@ export const HealthIntelligencePlaceholder: React.FC<
             <Text
               style={[
                 styles.statusText,
-                { color: ResponsiveTheme.colors.textMuted },
+                { color: ResponsiveTheme.colors.textSecondary },
               ]}
             >
               No Data
@@ -68,8 +67,7 @@ export const HealthIntelligencePlaceholder: React.FC<
           />
           <Text style={styles.placeholderTitle}>Connect Health Data</Text>
           <Text style={styles.placeholderSubtitle}>
-            Build a development version to sync health data from Health Connect
-            and see your recovery metrics.
+            Connect to Health Connect or Apple Health to see your recovery metrics and health insights.
           </Text>
         </View>
       </GlassCard>
@@ -96,8 +94,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.full,
@@ -126,10 +125,11 @@ const styles = StyleSheet.create({
   },
   placeholderSubtitle: {
     fontSize: rf(12),
-    fontWeight: "400",
-    color: ResponsiveTheme.colors.textSecondary,
-    textAlign: "center",
+    fontWeight: '400',
+    color: ResponsiveTheme.colors.text,
+    textAlign: 'center',
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     lineHeight: rf(18),
+    opacity: 0.65,
   },
 });

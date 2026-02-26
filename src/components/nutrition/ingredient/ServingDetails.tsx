@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { THEME } from "../../ui";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rbr } from "../../../utils/responsive";
 import { MealItem } from "../../../types/ai";
 
 interface ServingDetailsProps {
@@ -31,28 +32,28 @@ export const ServingDetails: React.FC<ServingDetailsProps> = ({
 
 const styles = StyleSheet.create({
   quantityCard: {
-    backgroundColor: THEME.colors.surface,
-    borderRadius: 16,
-    padding: THEME.spacing.lg,
-    marginBottom: THEME.spacing.lg,
-    shadowColor: "#000",
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: rbr(16),
+    padding: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
+    shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
   sectionTitle: {
-    fontSize: THEME.fontSize.lg,
+    fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: "700",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   quantityInfo: {
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
   quantityText: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
     lineHeight: 22,
   },
 });

@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   StyleSheet,
   FlatList,
   Text,
   TouchableOpacity,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeIn } from "react-native-reanimated";
@@ -31,13 +32,19 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
   navigation,
   onNavigateToTab,
 }) => {
-  const { user } = useAuth();
+  const { user, guestId } = useAuth();
   const {
     achievements,
     userAchievements,
     getAchievementsByCategory,
     isLoading,
   } = useAchievementStore();
+
+  // Initialize achievement store on mount
+  useEffect(() => {
+    const userId = user?.id || guestId || 'guest';
+    useAchievementStore.getState().initialize(userId);
+  }, [user?.id, guestId]);
   const [selectedCategory, setSelectedCategory] = useState<
     AchievementCategory | "all"
   >("all");
@@ -67,10 +74,9 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
 
       // If both completed, sort by date (newest first)
       if (isCompletedA && isCompletedB) {
-        return (
-          new Date(uaB!.unlockedAt).getTime() -
-          new Date(uaA!.unlockedAt).getTime()
-        );
+        const dateA = uaA?.unlockedAt ? new Date(uaA.unlockedAt).getTime() : 0;
+        const dateB = uaB?.unlockedAt ? new Date(uaB.unlockedAt).getTime() : 0;
+        return dateB - dateA;
       }
 
       // If both incomplete, sort by progress (highest first)
@@ -128,7 +134,7 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          entering={FadeIn.duration(300)}
+          entering={Platform.OS !== 'web' ? FadeIn.duration(300) : undefined}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No achievements found</Text>

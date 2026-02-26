@@ -8,6 +8,8 @@ import {
   createJSONStorage,
 } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { logger } from "../utils/logger";
+import { safeAsyncStorage } from "../utils/safeAsyncStorage";
 import {
   analyticsEngine,
   ComprehensiveAnalytics,
@@ -196,7 +198,7 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
           await get().generateAnalytics(get().selectedPeriod);
           get().generateChartData();
 
-          console.log("✅ Metrics added and analytics updated");
+          logger.info("Metrics added and analytics updated", { status: "success" });
         } catch (error) {
           console.error("❌ Error adding daily metrics:", error);
         }
@@ -207,7 +209,7 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
         set({ isLoading: true });
 
         try {
-          console.log(`🔄 Generating ${period} analytics...`);
+          logger.debug(`🔄 Generating ${period} analytics...`);
 
           const analytics = await analyticsEngine.generateAnalytics(period);
 
@@ -217,15 +219,16 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
             isLoading: false,
           });
 
-          console.log(
-            `✅ ${period} analytics generated - Score: ${analytics.overallScore}/100`,
-          );
+          logger.info("Analytics generated", {
+            period,
+            score: analytics.overallScore,
+          });
         } catch (error) {
           // Handle "Insufficient data" gracefully - this is expected for new users
           const errorMessage =
             error instanceof Error ? error.message : String(error);
           if (errorMessage.includes("Insufficient data")) {
-            console.log(
+            logger.debug(
               "📊 No analytics data yet - user needs to log workouts/meals first",
             );
           } else {
@@ -500,7 +503,7 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
     })),
     {
       name: "analytics-storage",
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => safeAsyncStorage),
       partialize: (state) => ({
         // Persist critical analytics state
         metricsHistory: state.metricsHistory,

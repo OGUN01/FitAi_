@@ -16,11 +16,6 @@ export async function signInWithGoogleNative(): Promise<GoogleSignInResult> {
     await GoogleSignin.hasPlayServices();
 
     const userInfo: any = await GoogleSignin.signIn();
-    console.log("✅ Google Sign-In successful");
-    console.log(
-      "🔍 Google userInfo structure:",
-      JSON.stringify(userInfo, null, 2),
-    );
 
     const tokens = await GoogleSignin.getTokens();
 
@@ -64,12 +59,6 @@ export async function signInWithGoogleNative(): Promise<GoogleSignInResult> {
     const isNewUser = !profile;
 
     if (isNewUser) {
-      console.log("🔍 Creating profile for new Google user...");
-      console.log("🔍 Available user data:", {
-        userId: data.user.id,
-        email: data.user.email,
-        userInfo: userInfo,
-      });
 
       const userName =
         userInfo?.data?.user?.name ||
@@ -79,7 +68,6 @@ export async function signInWithGoogleNative(): Promise<GoogleSignInResult> {
         userInfo?.name ||
         "Google User";
 
-      console.log("🔍 Extracted user name:", userName);
 
       const { error: profileError } = await supabase.from("profiles").insert({
         id: data.user.id,
@@ -90,22 +78,11 @@ export async function signInWithGoogleNative(): Promise<GoogleSignInResult> {
       });
 
       if (profileError) {
-        console.warn(
-          "⚠️ Failed to create profile for Google user:",
-          profileError,
-        );
-        console.warn(
-          "⚠️ Profile error details:",
-          JSON.stringify(profileError, null, 2),
-        );
       } else {
-        console.log("✅ Successfully created profile for Google user");
       }
     } else {
-      console.log("✅ Returning Google user - profile exists");
     }
 
-    console.log("✅ Google Sign-In completed successfully");
     return {
       success: true,
       user: authUser,
@@ -143,7 +120,6 @@ export async function signOutGoogleNative(): Promise<void> {
     if (GoogleSignin) {
       await GoogleSignin.signOut();
     }
-    console.log("✅ Google Sign-Out successful");
   } catch (error) {
     console.error("❌ Google Sign-Out failed:", error);
   }

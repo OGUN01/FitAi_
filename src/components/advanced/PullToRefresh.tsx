@@ -10,7 +10,8 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp } from '../../utils/responsive';
 
 interface PullToRefreshProps {
   children: React.ReactNode;
@@ -179,8 +180,8 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
                   { scale: scaleValue },
                 ],
                 color: canRefresh
-                  ? THEME.colors.primary
-                  : THEME.colors.textSecondary,
+                  ? ResponsiveTheme.colors.primary
+                  : ResponsiveTheme.colors.textSecondary,
               },
             ]}
           >
@@ -191,8 +192,8 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
               styles.refreshText,
               {
                 color: canRefresh
-                  ? THEME.colors.primary
-                  : THEME.colors.textSecondary,
+                  ? ResponsiveTheme.colors.primary
+                  : ResponsiveTheme.colors.textSecondary,
               },
             ]}
           >
@@ -231,7 +232,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
 
   refreshContainer: {
@@ -240,10 +241,10 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
     justifyContent: "flex-end",
     alignItems: "center",
-    paddingBottom: 10,
+    paddingBottom: rp(10),
   },
 
   refreshContent: {
@@ -252,13 +253,13 @@ const styles = StyleSheet.create({
   },
 
   refreshIcon: {
-    fontSize: 24,
-    marginBottom: 4,
+    fontSize: rf(24),
+    marginBottom: rp(4),
   },
 
   refreshText: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium as "500",
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
   },
 
   scrollView: {

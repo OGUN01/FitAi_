@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rh, rw, rp } from "../../../utils/responsive";
+import { rf, rh, rw, rp, rbr } from "../../../utils/responsive";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
 
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: rh(12),
     paddingHorizontal: rw(16),
-    borderRadius: rf(12),
+    borderRadius: rbr(12),
     backgroundColor: ResponsiveTheme.colors.surface,
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
@@ -76,6 +76,6 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.text,
   },
   typeButtonTextActive: {
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
 });

@@ -16,9 +16,6 @@ export async function saveDietPreferences(
   data: DietPreferencesData | DietPreferences,
   currentUserId: string | null,
 ): Promise<SaveResult> {
-  console.log(
-    `[DataBridge] saveDietPreferences, userId: ${currentUserId || "guest"}`,
-  );
 
   const result: SaveResult = {
     success: true,
@@ -40,9 +37,6 @@ export async function saveDietPreferences(
         );
         result.newSystemSuccess = dbSuccess;
         if (!dbSuccess) {
-          console.warn(
-            "[DataBridge] dietPreferences DB save failed - queueing for retry",
-          );
           syncEngine.queueOperation("dietPreferences", data);
         }
       } catch (dbError) {

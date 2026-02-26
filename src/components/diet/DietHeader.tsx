@@ -10,7 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 
 interface DietHeaderProps {
   userName?: string;
@@ -41,10 +41,10 @@ export const DietHeader: React.FC<DietHeaderProps> = ({
       caloriesGoal > 0
         ? ((caloriesGoal - caloriesRemaining) / caloriesGoal) * 100
         : 0;
-    if (percentage >= 100) return { text: "Goal reached!", color: "#4CAF50" };
-    if (percentage >= 75) return { text: "Almost there", color: "#FF9800" };
-    if (percentage >= 50) return { text: "On track", color: "#2196F3" };
-    return { text: "Keep going", color: "#FF6B35" };
+    if (percentage >= 100) return { text: "Goal reached!", color: ResponsiveTheme.colors.success };
+    if (percentage >= 75) return { text: "Almost there", color: ResponsiveTheme.colors.warning };
+    if (percentage >= 50) return { text: "On track", color: ResponsiveTheme.colors.info };
+    return { text: "Keep going", color: ResponsiveTheme.colors.primary };
   }, [caloriesRemaining, caloriesGoal]);
 
   return (
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     fontSize: rf(14),
     fontWeight: "500",
     color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: 2,
+    marginBottom: rp(2),
   },
   title: {
     fontSize: rf(28),
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.full,
-    gap: 4,
+    gap: rp(4),
   },
   calorieText: {
     fontSize: rf(11),
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     width: rw(36),
     height: rw(36),
     borderRadius: rw(18),
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
     justifyContent: "center",
     alignItems: "center",
   },

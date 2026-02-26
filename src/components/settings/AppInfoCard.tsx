@@ -14,7 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 
 interface AppInfoCardProps {
   version?: string;
@@ -39,7 +39,7 @@ export const AppInfoCard: React.FC<AppInfoCardProps> = ({
       >
         <View style={styles.content}>
           <LinearGradient
-            colors={["#FF6B6B", "#FF8E53"]}
+            colors={[ResponsiveTheme.colors.errorLight, ResponsiveTheme.colors.primaryLight]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.logo}
@@ -66,7 +66,7 @@ export const AppInfoCard: React.FC<AppInfoCardProps> = ({
             <Ionicons
               name="heart"
               size={rf(14)}
-              color="#FF6B6B"
+              color={ResponsiveTheme.colors.errorLight}
               style={styles.heartIcon}
             />
             <Text style={styles.footerText}>for fitness enthusiasts</Text>
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.lg,
   },
   card: {
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
   },
   content: {
     flexDirection: "row",
@@ -92,20 +92,17 @@ const styles = StyleSheet.create({
   logo: {
     width: rw(48),
     height: rw(48),
-    borderRadius: rw(12),
+    borderRadius: rbr(12),
     justifyContent: "center",
     alignItems: "center",
     marginRight: ResponsiveTheme.spacing.md,
-    shadowColor: "#FF6B6B",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(255,107,107,0.3)',
     elevation: 4,
   },
   logoText: {
     fontSize: rf(24),
     fontWeight: "800",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
   info: {
     flex: 1,
@@ -113,19 +110,19 @@ const styles = StyleSheet.create({
   nameRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 4,
+    marginBottom: rp(4),
   },
   appName: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
   },
   versionBadge: {
     marginLeft: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.xs,
-    paddingVertical: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: rf(4),
+    paddingVertical: rp(2),
+    backgroundColor: ResponsiveTheme.colors.glassHighlight,
+    borderRadius: rbr(4),
   },
   versionText: {
     fontSize: rf(11),
@@ -140,7 +137,7 @@ const styles = StyleSheet.create({
     marginTop: ResponsiveTheme.spacing.md,
     paddingTop: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.08)",
+    borderTopColor: ResponsiveTheme.colors.glassBorder,
     alignItems: "center",
   },
   footerContent: {
@@ -152,7 +149,7 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textMuted,
   },
   heartIcon: {
-    marginHorizontal: rf(4),
+    marginHorizontal: rp(4),
   },
 });
 

@@ -22,7 +22,6 @@ export async function getCachedVideo(
 
     return video;
   } catch (error) {
-    console.warn("⚠️ Error reading video cache:", error);
     return null;
   }
 }
@@ -39,9 +38,7 @@ export async function cacheVideo(
     };
 
     await AsyncStorage.setItem(cacheKey, JSON.stringify(cacheData));
-    console.log(`✅ Cached video for: ${mealName}`);
   } catch (error) {
-    console.warn("⚠️ Error caching video:", error);
   }
 }
 
@@ -50,7 +47,6 @@ export async function clearCache(): Promise<void> {
     const keys = await AsyncStorage.getAllKeys();
     const videoKeys = keys.filter((key) => key.startsWith(CACHE_PREFIX));
     await AsyncStorage.multiRemove(videoKeys);
-    console.log(`✅ Cleared ${videoKeys.length} cached videos`);
   } catch (error) {
     console.error("❌ Error clearing video cache:", error);
   }

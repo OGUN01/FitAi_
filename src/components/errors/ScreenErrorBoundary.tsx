@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Screen Error Boundary
  * Catches errors in screen components and displays a friendly fallback UI
  */
@@ -12,7 +12,8 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { THEME } from "../ui";
+import { ResponsiveTheme } from '../../utils/constants';
+
 
 interface Props {
   children: ReactNode;
@@ -57,9 +58,6 @@ export class ScreenErrorBoundary extends Component<Props, State> {
     });
 
     // Log to error tracking service (if configured)
-    if (__DEV__) {
-      console.log("[ScreenErrorBoundary] Stack:", errorInfo.componentStack);
-    }
   }
 
   handleReset = () => {
@@ -82,7 +80,7 @@ export class ScreenErrorBoundary extends Component<Props, State> {
             <Ionicons
               name="alert-circle"
               size={64}
-              color={THEME.colors.error}
+              color={ResponsiveTheme.colors.error}
             />
 
             <Text style={styles.title}>Oops! Something went wrong</Text>
@@ -93,7 +91,7 @@ export class ScreenErrorBoundary extends Component<Props, State> {
                 : "We encountered an unexpected error."}
             </Text>
 
-            <TouchableOpacity style={styles.button} onPress={this.handleReset}>
+            <TouchableOpacity style={styles.button} onPress={this.handleReset} accessibilityRole="button" accessibilityLabel="Try again">
               <Text style={styles.buttonText}>Try Again</Text>
             </TouchableOpacity>
 
@@ -122,10 +120,10 @@ export class ScreenErrorBoundary extends Component<Props, State> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
 
   content: {
@@ -134,60 +132,60 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginTop: THEME.spacing.lg,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginTop: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.sm,
     textAlign: "center",
   },
 
   message: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
-    marginBottom: THEME.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.xl,
     lineHeight: 22,
   },
 
   button: {
-    backgroundColor: THEME.colors.primary,
-    paddingVertical: THEME.spacing.md,
-    paddingHorizontal: THEME.spacing.xl,
-    borderRadius: THEME.borderRadius.md,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.xl,
+    borderRadius: ResponsiveTheme.borderRadius.md,
     minWidth: 150,
   },
 
   buttonText: {
-    color: THEME.colors.white,
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
+    color: ResponsiveTheme.colors.white,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
     textAlign: "center",
   },
 
   errorDetails: {
-    marginTop: THEME.spacing.xl,
+    marginTop: ResponsiveTheme.spacing.xl,
     maxHeight: 200,
     width: "100%",
   },
 
   errorTitle: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.error,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.error,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   errorText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
     fontFamily: "monospace",
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   errorStack: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
     fontFamily: "monospace",
   },
 });

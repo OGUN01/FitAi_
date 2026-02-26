@@ -89,9 +89,6 @@ export class FitAIWorkersClient {
       if (!response.ok) {
         if (this.shouldRetry(response.status) && retryCount < this.maxRetries) {
           const delay = this.retryDelay * Math.pow(2, retryCount);
-          console.log(
-            `[WorkersClient] Retrying request (${retryCount + 1}/${this.maxRetries}) after ${delay}ms`,
-          );
           await this.sleep(delay);
           return this.makeRequest(endpoint, options, retryCount + 1);
         }
@@ -121,9 +118,6 @@ export class FitAIWorkersClient {
       if (error instanceof TypeError || (error as any).name === "AbortError") {
         if (retryCount < this.maxRetries) {
           const delay = this.retryDelay * Math.pow(2, retryCount);
-          console.log(
-            `[WorkersClient] Network error, retrying (${retryCount + 1}/${this.maxRetries}) after ${delay}ms`,
-          );
           await this.sleep(delay);
           return this.makeRequest(endpoint, options, retryCount + 1);
         }

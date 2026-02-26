@@ -20,14 +20,12 @@ export class IndianFoodEnhancer {
     const foods = geminiData.foods || [];
     const enhancedFoods: RecognizedFood[] = [];
 
-    console.log(`🇮🇳 Enhancing ${foods.length} Indian food items...`);
 
     for (const food of foods) {
       try {
         const enhancedFood = await this.enhanceIndividualFood(food, foodType);
         enhancedFoods.push(enhancedFood);
       } catch (error) {
-        console.warn(`Failed to enhance Indian food ${food.name}:`, error);
 
         // Fallback to basic enhancement
         const basicEnhanced = this.createBasicIndianFood(food);
@@ -35,9 +33,6 @@ export class IndianFoodEnhancer {
       }
     }
 
-    console.log(
-      `✅ Enhanced ${enhancedFoods.length} Indian foods with specialized database`,
-    );
     return enhancedFoods;
   }
 

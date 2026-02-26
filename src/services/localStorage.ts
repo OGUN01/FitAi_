@@ -18,6 +18,7 @@
 // Provides encrypted, compressed, and versioned local storage with quota management
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { logger } from "../utils/logger";
 import * as Crypto from "expo-crypto";
 import {
   LocalStorageSchema,
@@ -222,7 +223,7 @@ export class EnhancedLocalStorageService {
       // Initialize storage info (can now safely call methods that check initialization)
       await this.updateStorageInfo();
 
-      console.log("Enhanced Local Storage Service initialized successfully");
+      logger.info("Enhanced Local Storage Service initialized successfully");
     } catch (error) {
       console.error(
         "Failed to initialize Enhanced Local Storage Service:",

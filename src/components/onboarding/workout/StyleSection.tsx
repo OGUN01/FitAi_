@@ -107,7 +107,7 @@ export const StyleSection: React.FC<StyleSectionProps> = ({
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
     marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.md,
     marginHorizontal: -ResponsiveTheme.spacing.lg,
   },
   sectionTitlePadded: {

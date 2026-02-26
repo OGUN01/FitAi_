@@ -58,23 +58,15 @@ class YouTubeVideoService {
 
   async searchCookingVideo(mealName: string): Promise<VideoSearchResult> {
     try {
-      console.log(`🔍 Searching for cooking video: ${mealName}`);
 
       // Debug API key loading
       const apiKey = this.getApiKey();
-      console.log(
-        `🔑 YouTube API Key status: ${apiKey ? `Present (${apiKey.substring(0, 10)}...)` : 'MISSING'}`
-      );
       
       // Debug all access strategies
-      console.log(`🔑 process.env: ${process.env.EXPO_PUBLIC_YOUTUBE_API_KEY ? 'Present' : 'Missing'}`);
-      console.log(`🔑 Constants.expoConfig: ${(Constants.expoConfig as any)?.EXPO_PUBLIC_YOUTUBE_API_KEY ? 'Present' : 'Missing'}`);
-      console.log(`🔑 Constants.expoConfig.extra: ${(Constants.expoConfig as any)?.extra?.EXPO_PUBLIC_YOUTUBE_API_KEY ? 'Present' : 'Missing'}`);
 
       // Check cache first
       const cachedVideo = await this.getCachedVideo(mealName);
       if (cachedVideo) {
-        console.log('✅ Found cached cooking video');
         return { success: true, video: cachedVideo };
       }
 
@@ -82,7 +74,6 @@ class YouTubeVideoService {
       const searchQueries = this.generateSearchQueries(mealName);
 
       // Try YouTube Data API v3 first (most reliable)
-      console.log('🎯 Trying YouTube Data API v3...');
       for (const query of searchQueries) {
         const result = await this.searchWithYouTubeAPI(query);
         if (result.success && result.video) {
@@ -92,7 +83,6 @@ class YouTubeVideoService {
       }
 
       // Fallback to Invidious instances
-      console.log('🔄 Falling back to Invidious instances...');
       for (const query of searchQueries) {
         const result = await this.searchWithInvidious(query);
         if (result.success && result.video) {
@@ -102,12 +92,10 @@ class YouTubeVideoService {
       }
 
       // If all else fails, return a demo video with cooking tips
-      console.log('🎬 Using fallback demo video');
       return this.getFallbackDemoVideo(mealName);
     } catch (error) {
       console.error('❌ Error searching for cooking video:', error);
       // Return fallback demo video when all methods fail
-      console.log('🎬 Using fallback demo video');
       return this.getFallbackDemoVideo(mealName);
     }
   }
@@ -129,14 +117,12 @@ class YouTubeVideoService {
     try {
       const apiKey = this.getApiKey();
       if (!apiKey) {
-        console.log('🔑 YouTube API key not configured, skipping...');
         return { success: false, error: 'API key not configured' };
       }
 
       const encodedQuery = encodeURIComponent(query);
       const searchUrl = `${this.YOUTUBE_API_BASE_URL}/search?part=snippet&type=video&q=${encodedQuery}&regionCode=US&relevanceLanguage=en&videoDefinition=any&videoEmbeddable=true&maxResults=10&key=${apiKey}`;
 
-      console.log(`🎯 YouTube API search: ${query}`);
 
       const response = await fetch(searchUrl, {
         method: 'GET',
@@ -158,11 +144,9 @@ class YouTubeVideoService {
       const data = await response.json();
 
       if (!data.items || data.items.length === 0) {
-        console.log(`⚠️ No videos found for query: ${query}`);
         return { success: false, error: 'No videos found' };
       }
 
-      console.log(`📺 Found ${data.items.length} videos for: ${query}`);
 
       // Get detailed video info for the best matches
       const videoIds = data.items
@@ -182,18 +166,15 @@ class YouTubeVideoService {
       const detailsData = await detailsResponse.json();
 
       if (!detailsData.items || detailsData.items.length === 0) {
-        console.log(`⚠️ No video details found`);
         return { success: false, error: 'No video details found' };
       }
 
       const bestVideo = this.selectBestYouTubeVideo(detailsData.items, query);
 
       if (!bestVideo) {
-        console.log(`⚠️ No suitable cooking videos found after filtering`);
         return { success: false, error: 'No suitable cooking videos found' };
       }
 
-      console.log(`✅ Found YouTube video: "${bestVideo.title}" by ${bestVideo.author}`);
       return { success: true, video: bestVideo };
     } catch (error) {
       console.warn('⚠️ YouTube API search failed:', error);
@@ -232,7 +213,6 @@ class YouTubeVideoService {
     const encodedQuery = encodeURIComponent(query);
     const searchUrl = `${instance}/api/v1/search?q=${encodedQuery}&type=video&sort_by=relevance&region=US`;
 
-    console.log(`🔍 Searching on ${instance}: ${query}`);
 
     // Create a promise that rejects after 10 seconds
     const timeoutPromise = new Promise((_, reject) => {
@@ -274,7 +254,6 @@ class YouTubeVideoService {
         };
       }
 
-      console.log(`✅ Found video: ${bestVideo.title}`);
       return {
         success: true,
         video: bestVideo,
@@ -546,7 +525,6 @@ class YouTubeVideoService {
       };
 
       await AsyncStorage.setItem(cacheKey, JSON.stringify(cacheData));
-      console.log(`✅ Cached video for: ${mealName}`);
     } catch (error) {
       console.warn('⚠️ Error caching video:', error);
     }
@@ -598,7 +576,6 @@ class YouTubeVideoService {
     // Randomly select one of the fallback videos
     const randomVideo = fallbackVideos[Math.floor(Math.random() * fallbackVideos.length)];
 
-    console.log(`🎬 Using fallback demo video: ${randomVideo.title}`);
     return {
       success: true,
       video: randomVideo,
@@ -611,7 +588,6 @@ class YouTubeVideoService {
       const keys = await AsyncStorage.getAllKeys();
       const videoKeys = keys.filter((key) => key.startsWith(this.CACHE_PREFIX));
       await AsyncStorage.multiRemove(videoKeys);
-      console.log(`✅ Cleared ${videoKeys.length} cached videos`);
     } catch (error) {
       console.error('❌ Error clearing video cache:', error);
     }

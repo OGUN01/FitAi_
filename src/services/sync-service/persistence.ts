@@ -52,7 +52,6 @@ export async function saveSyncStatus(status: SyncStatus): Promise<void> {
       nextSyncTime: status.nextSyncTime?.toISOString() || null,
     };
     await AsyncStorage.setItem(SYNC_STATUS_KEY, JSON.stringify(toStore));
-    console.log("✅ Saved sync status to storage");
   } catch (error) {
     console.error("Failed to save sync status:", error);
   }
@@ -67,7 +66,6 @@ export async function loadSyncQueue(): Promise<SyncOperation[]> {
         ...op,
         timestamp: new Date(op.timestamp),
       }));
-      console.log(`✅ Loaded ${queue.length} queued operations`);
       return queue;
     }
   } catch (error) {
@@ -120,7 +118,6 @@ export async function saveDeltaSyncInfo(
       checksums: deltaInfo.checksums,
     };
     await AsyncStorage.setItem(DELTA_SYNC_KEY, JSON.stringify(toStore));
-    console.log("✅ Updated delta sync info");
   } catch (error) {
     console.error("Failed to update delta sync info:", error);
   }

@@ -17,18 +17,18 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw } from "../../../utils/responsive";
+import { rf, rw, rp } from "../../../utils/responsive";
 
 // Tip types and their visual styling
 const TIP_STYLES = {
   workout: {
     icon: "fitness" as const,
-    gradient: ["#FF6B6B", "#FF8E53"] as [string, string],
+    gradient: [ResponsiveTheme.colors.errorLight, "#FF8E53"] as [string, string],
     bgColor: "rgba(255, 107, 107, 0.1)",
   },
   recovery: {
     icon: "bed" as const,
-    gradient: ["#FF6B35", "#E55A2B"] as [string, string],
+    gradient: [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark] as [string, string],
     bgColor: "rgba(255, 107, 53, 0.1)",
   },
   nutrition: {
@@ -38,12 +38,12 @@ const TIP_STYLES = {
   },
   hydration: {
     icon: "water" as const,
-    gradient: ["#2196F3", "#03A9F4"] as [string, string],
+    gradient: [ResponsiveTheme.colors.info, "#03A9F4"] as [string, string],
     bgColor: "rgba(33, 150, 243, 0.1)",
   },
   motivation: {
     icon: "flash" as const,
-    gradient: ["#FFD700", "#FFA500"] as [string, string],
+    gradient: [ResponsiveTheme.colors.gold, "#FFA500"] as [string, string],
     bgColor: "rgba(255, 215, 0, 0.1)",
   },
 };
@@ -247,7 +247,7 @@ const RecommendationCard: React.FC<{
             end={{ x: 1, y: 1 }}
             style={styles.iconGradient}
           >
-            <Ionicons name={style.icon} size={rf(16)} color="#FFFFFF" />
+            <Ionicons name={style.icon} size={rf(16)} color={ResponsiveTheme.colors.white} />
           </LinearGradient>
 
           <View style={styles.textContent}>
@@ -308,7 +308,7 @@ export const SmartCoaching: React.FC<SmartCoachingProps> = (props) => {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.aiIconContainer}>
-            <Ionicons name="sparkles" size={rf(14)} color="#FFD700" />
+            <Ionicons name="sparkles" size={rf(14)} color={ResponsiveTheme.colors.gold} />
           </View>
           <Text style={styles.headerTitle}>Smart Coach</Text>
         </View>
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
     fontSize: rf(13),
     fontWeight: "700",
     color: ResponsiveTheme.colors.text,
-    marginBottom: 2,
+    marginBottom: rp(2),
   },
   cardDescription: {
     fontSize: rf(11),
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
   actionContainer: {
     flexDirection: "row",
     alignItems: "center" as const,
-    gap: 2,
+    gap: rp(2),
   },
   actionText: {
     fontSize: rf(11),

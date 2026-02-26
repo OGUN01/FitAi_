@@ -10,7 +10,6 @@ export async function registerBackgroundHealthSync(minIntervalSeconds: number = 
     // Guard: skip if Health Connect native module is not available
     const healthConnectAvailable = await canUseHealthConnect();
     if (!healthConnectAvailable) {
-      console.warn('Background sync unavailable: Health Connect native module not available');
       return false;
     }
 
@@ -18,7 +17,6 @@ export async function registerBackgroundHealthSync(minIntervalSeconds: number = 
     const hasTaskManager = !!(NativeModulesProxy as any)?.ExpoTaskManager;
     const hasBackgroundFetch = !!(NativeModulesProxy as any)?.ExpoBackgroundFetch;
     if (!hasTaskManager || !hasBackgroundFetch) {
-      console.warn('Background sync unavailable: ExpoTaskManager/BackgroundFetch native modules missing');
       return false;
     }
     // Requires expo-task-manager and expo-background-fetch to be installed
@@ -51,7 +49,6 @@ export async function registerBackgroundHealthSync(minIntervalSeconds: number = 
     });
     return !!status;
   } catch (e) {
-    console.warn('Background health sync registration failed or modules missing:', e);
     return false;
   }
 }
@@ -62,7 +59,6 @@ export async function unregisterBackgroundHealthSync(): Promise<void> {
     const BackgroundFetch = await import('expo-background-fetch');
     await (BackgroundFetch as any).unregisterTaskAsync(TASK_NAME);
   } catch (e) {
-    console.warn('Background health sync unregister failed:', e);
   }
 }
 

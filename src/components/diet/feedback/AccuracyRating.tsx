@@ -43,7 +43,7 @@ export const AccuracyRating: React.FC<AccuracyRatingProps> = ({
             <Text
               style={[
                 styles.star,
-                { color: star <= rating ? "#fbbf24" : "#d1d5db" },
+                { color: star <= rating ? ResponsiveTheme.colors.amberBright : "#d1d5db" },
               ]}
             >
               ⭐

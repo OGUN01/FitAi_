@@ -170,7 +170,6 @@ const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
  * invalidateMetricsCache();
  */
 export function invalidateMetricsCache(): void {
-  console.log("📊 [useCalculatedMetrics] Global cache invalidation");
   metricsCache = {
     metrics: null,
     timestamp: 0,
@@ -196,10 +195,6 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
    */
   const loadFromDatabase = useCallback(
     async (userId: string): Promise<CalculatedMetrics | null> => {
-      console.log(
-        "📊 [useCalculatedMetrics] Loading from database for user:",
-        userId,
-      );
 
       try {
         // Load all data in parallel
@@ -217,19 +212,8 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
           DietPreferencesService.load(userId),
         ]);
 
-        console.log("📊 [useCalculatedMetrics] Data loaded:", {
-          hasAdvancedReview: !!advancedReview,
-          hasBodyAnalysis: !!bodyAnalysis,
-          hasPersonalInfo: !!personalInfo,
-          hasWorkoutPreferences: !!workoutPreferences,
-          hasDietPreferences: !!dietPreferences,
-        });
-
         // If no advanced_review data, user hasn't completed onboarding calculations
         if (!advancedReview) {
-          console.log(
-            "⚠️ [useCalculatedMetrics] No advanced_review data found - onboarding incomplete",
-          );
           return null;
         }
 
@@ -259,28 +243,15 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
    */
   const loadFromAsyncStorage =
     useCallback(async (): Promise<CalculatedMetrics | null> => {
-      console.log(
-        "📊 [useCalculatedMetrics] Loading from AsyncStorage (guest mode)",
-      );
 
       try {
         const onboardingDataStr = await AsyncStorage.getItem("onboarding_data");
 
         if (!onboardingDataStr) {
-          console.log(
-            "⚠️ [useCalculatedMetrics] No onboarding_data in AsyncStorage",
-          );
           return null;
         }
 
         const onboardingData = JSON.parse(onboardingDataStr);
-        console.log(
-          "📊 [useCalculatedMetrics] Parsed onboarding data from AsyncStorage",
-        );
-        console.log(
-          "📊 [useCalculatedMetrics] Keys in stored data:",
-          Object.keys(onboardingData),
-        );
 
         // Guest data structure may have advancedReview directly
         const advancedReview =
@@ -296,20 +267,8 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
           onboardingData.dietPreferences || onboardingData.diet_preferences;
 
         if (!advancedReview) {
-          console.log(
-            "⚠️ [useCalculatedMetrics] No advancedReview in stored data",
-          );
-          console.log(
-            "⚠️ [useCalculatedMetrics] Available keys:",
-            Object.keys(onboardingData),
-          );
           return null;
         }
-
-        console.log(
-          "✅ [useCalculatedMetrics] Found advancedReview with daily_water_ml:",
-          advancedReview.daily_water_ml,
-        );
 
         const guestBodyWeight =
           bodyAnalysis?.current_weight_kg ?? bodyAnalysis?.currentWeightKg;
@@ -348,7 +307,6 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
       metricsCache.metrics &&
       now - metricsCache.timestamp < CACHE_DURATION_MS
     ) {
-      console.log("📊 [useCalculatedMetrics] Returning cached metrics");
       setMetrics(metricsCache.metrics);
       setHasCalculatedMetrics(true);
       setHasCompletedOnboarding(true);
@@ -406,7 +364,6 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
    * Clear cache
    */
   const clearCache = useCallback(() => {
-    console.log("📊 [useCalculatedMetrics] Clearing cache");
     metricsCache = {
       metrics: null,
       timestamp: 0,

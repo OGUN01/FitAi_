@@ -5,6 +5,8 @@ import { DayMeal } from "../../types/ai";
 import { CookingFlow } from "../../utils/cookingFlowGenerator";
 import { mealMotivationService } from "../../features/nutrition/MealMotivation";
 import { colors } from "../../theme/aurora-tokens";
+import { ResponsiveTheme } from '../../utils/constants';
+import { rf, rp, rbr } from '../../utils/responsive';
 
 interface CurrentStepDisplayProps {
   cookingFlow: CookingFlow;
@@ -80,7 +82,7 @@ export default function CurrentStepDisplay({
         <View style={styles.activeTimer}>
           <Text style={styles.timerDisplay}>{formatTimer(cookingTimer)}</Text>
           <TouchableOpacity onPress={onStopTimer}>
-            <Ionicons name="stop-circle" size={32} color="#EF4444" />
+            <Ionicons name="stop-circle" size={32} color={ResponsiveTheme.colors.errorAlt} />
           </TouchableOpacity>
         </View>
       )}
@@ -91,90 +93,90 @@ export default function CurrentStepDisplay({
 const styles = StyleSheet.create({
   currentStepSection: {
     backgroundColor: "rgba(26, 31, 46, 0.8)",
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 20,
-    borderRadius: 12,
+    marginHorizontal: rp(16),
+    marginBottom: rp(16),
+    padding: rp(20),
+    borderRadius: rbr(12),
     borderWidth: 2,
     borderColor: colors.primary.DEFAULT,
   },
   progressHeader: {
-    marginBottom: 16,
+    marginBottom: rp(16),
   },
   encouragementText: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "600",
     color: colors.primary.DEFAULT,
     textAlign: "center",
-    marginBottom: 12,
+    marginBottom: rp(12),
   },
   progressBarContainer: {
     height: 8,
     backgroundColor: colors.background.tertiary,
-    borderRadius: 4,
+    borderRadius: rbr(4),
     overflow: "hidden",
   },
   progressBar: {
     height: "100%",
     backgroundColor: colors.primary.DEFAULT,
-    borderRadius: 4,
+    borderRadius: rbr(4),
   },
   stepHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: rp(12),
   },
   stepInfo: {
     flex: 1,
   },
   stepCounter: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "600",
     color: colors.primary.DEFAULT,
   },
   stepTitle: {
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: "600",
     color: colors.text.primary,
-    lineHeight: 24,
-    marginTop: 4,
+    lineHeight: rf(24),
+    marginTop: rp(4),
   },
   timerButton: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(255, 107, 53, 0.12)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: rp(12),
+    paddingVertical: rp(6),
+    borderRadius: rbr(16),
   },
   timerButtonText: {
-    fontSize: 14,
+    fontSize: rf(14),
     color: colors.primary.DEFAULT,
-    marginLeft: 4,
+    marginLeft: rp(4),
   },
   tipsContainer: {
     backgroundColor: "rgba(255, 152, 0, 0.12)",
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 12,
+    padding: rp(12),
+    borderRadius: rbr(8),
+    marginTop: rp(12),
   },
   tipText: {
-    fontSize: 14,
+    fontSize: rf(14),
     color: colors.warning.DEFAULT,
-    lineHeight: 20,
+    lineHeight: rf(20),
   },
   activeTimer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 16,
-    padding: 12,
+    marginTop: rp(16),
+    padding: rp(12),
     backgroundColor: "rgba(255, 152, 0, 0.12)",
-    borderRadius: 8,
+    borderRadius: rbr(8),
   },
   timerDisplay: {
-    fontSize: 24,
+    fontSize: rf(24),
     fontWeight: "700",
     color: colors.warning.DEFAULT,
   },

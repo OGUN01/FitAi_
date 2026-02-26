@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { useState, useEffect } from "react";
 import {
   youtubeVideoService,
@@ -22,7 +23,7 @@ export function useCookingVideo(mealName: string) {
         setVideoError(result.error || "No cooking video found");
       }
     } catch (error) {
-      console.error("Error searching cooking video:", error);
+      logger.error('Error searching cooking video', { error: String(error) });
       setVideoError("Failed to load cooking video");
     } finally {
       setIsLoadingVideo(false);

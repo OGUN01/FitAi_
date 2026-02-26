@@ -109,16 +109,16 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
   const scanDaily = usage.barcode_scan.daily;
 
   const aiProgress =
-    features.unlimited_ai || aiMonthly.limit === null
+    features.unlimited_ai
       ? 100
-      : aiMonthly.limit > 0
+      : aiMonthly.limit != null && aiMonthly.limit > 0
         ? Math.min((aiMonthly.current / aiMonthly.limit) * 100, 100)
         : 0;
 
   const scanProgress =
-    features.unlimited_scans || scanDaily.limit === null
+    features.unlimited_scans
       ? 100
-      : scanDaily.limit > 0
+      : scanDaily.limit != null && scanDaily.limit > 0
         ? Math.min((scanDaily.current / scanDaily.limit) * 100, 100)
         : 0;
 
@@ -241,8 +241,10 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
         <Text style={styles.usageCount}>
           {isUnlimited ? (
             <Text style={[styles.unlimitedBadge, { color }]}>Unlimited</Text>
+          ) : limit != null ? (
+            `${current} / ${limit}`
           ) : (
-            `${current} / ${limit ?? 0}`
+            `${current}`
           )}
         </Text>
       </View>
@@ -251,9 +253,11 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
           colors={
             isUnlimited
               ? ([color, color + "CC"] as const)
-              : progress > 80
+              : progress > 80 && limit != null && limit > 0
                 ? (["#EF4444", "#F87171"] as const)
-                : ([color, color + "CC"] as const)
+                : limit == null
+                  ? (["#6B7280", "#9CA3AF"] as const)
+                  : ([color, color + "CC"] as const)
           }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
@@ -336,6 +340,12 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
               </View>
 
               <Text style={styles.planName}>{planName}</Text>
+
+              {tier === "free" && (
+                <Text style={styles.planDescription}>
+                  Basic fitness tracking with limited AI features
+                </Text>
+              )}
 
               {currentPlan?.billing_cycle && (
                 <Text style={styles.billingCycle}>
@@ -420,7 +430,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
           </Animated.View>
 
           {/* ---- Actions Section ---- */}
-          {subscriptionStatus && tier !== "free" && (
+          {(subscriptionStatus && tier !== "free") || subscriptionStatus === "cancelled" ? (
             <Animated.View entering={FadeInDown.delay(300).duration(400)}>
               <GlassCard style={styles.card}>
                 <View style={styles.sectionHeader}>
@@ -506,11 +516,10 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
                 )}
               </GlassCard>
             </Animated.View>
-          )}
+          ) : null}
 
           {/* ---- Upgrade CTA ---- */}
-          {(tier === "free" || tier === "basic") &&
-            subscriptionStatus !== "cancelled" && (
+          {(tier === "free" || tier === "basic") && (
               <Animated.View entering={FadeInDown.delay(400).duration(400)}>
                 <AnimatedPressable onPress={handleUpgrade}>
                   <LinearGradient
@@ -687,6 +696,12 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.text,
     marginBottom: rh(4),
   },
+  planDescription: {
+    fontSize: rf(13),
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: rh(4),
+    lineHeight: rf(18),
+  },
   billingCycle: {
     fontSize: rf(13),
     color: ResponsiveTheme.colors.textSecondary,
@@ -849,7 +864,7 @@ const styles = StyleSheet.create({
 
   // Bottom
   bottomSpacing: {
-    height: ResponsiveTheme.spacing.xxl,
+    height: 100,
   },
 });
 

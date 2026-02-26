@@ -1,11 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, ViewStyle } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw } from "../../utils/responsive";
+import { rf, rw, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
 interface ActionItemProps {
@@ -43,9 +43,11 @@ export const ActionItem: React.FC<ActionItemProps> = ({
           blurIntensity="light"
           borderRadius="lg"
           style={
-            (isDanger
-              ? [styles.actionCard, styles.dangerCard]
-              : styles.actionCard) as any
+            StyleSheet.flatten(
+              isDanger
+                ? [styles.actionCard, styles.dangerCard]
+                : styles.actionCard
+            ) as ViewStyle
           }
         >
           <View style={styles.actionContent}>
@@ -54,7 +56,7 @@ export const ActionItem: React.FC<ActionItemProps> = ({
                 styles.iconContainer,
                 {
                   backgroundColor: isDanger
-                    ? "rgba(244, 67, 54, 0.15)"
+                    ? ResponsiveTheme.colors.errorTint
                     : `${iconColor}15`,
                 },
               ]}
@@ -62,7 +64,7 @@ export const ActionItem: React.FC<ActionItemProps> = ({
               <Ionicons
                 name={icon}
                 size={rf(18)}
-                color={isDanger ? "#F44336" : iconColor}
+                color={isDanger ? ResponsiveTheme.colors.error : iconColor}
               />
             </View>
             <View style={styles.textContainer}>
@@ -88,12 +90,12 @@ export const ActionItem: React.FC<ActionItemProps> = ({
 const styles = StyleSheet.create({
   actionCard: {
     marginBottom: ResponsiveTheme.spacing.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
   },
   dangerCard: {
-    backgroundColor: "rgba(244, 67, 54, 0.06)",
+    backgroundColor: `${ResponsiveTheme.colors.error}0F`,
     borderWidth: 1,
-    borderColor: "rgba(244, 67, 54, 0.2)",
+    borderColor: `${ResponsiveTheme.colors.error}33`,
   },
   actionContent: {
     flexDirection: "row",
@@ -102,7 +104,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: rw(40),
     height: rw(40),
-    borderRadius: rw(12),
+    borderRadius: rbr(12),
     justifyContent: "center" as const,
     alignItems: "center" as const,
     marginRight: ResponsiveTheme.spacing.md,
@@ -114,11 +116,11 @@ const styles = StyleSheet.create({
   actionTitle: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: "#fff",
-    marginBottom: 2,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rp(2),
   },
   dangerTitle: {
-    color: "#F44336",
+    color: ResponsiveTheme.colors.error,
   },
   actionDescription: {
     fontSize: rf(12),

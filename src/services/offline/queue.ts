@@ -93,9 +93,6 @@ export class QueueManager {
     if (clearedCount > 0) {
       this.storage.setSyncQueue(filtered);
       await this.storage.saveData();
-      console.log(
-        `🧹 Cleared ${clearedCount} failed actions for table ${table}`,
-      );
     }
   }
 

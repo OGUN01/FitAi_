@@ -77,11 +77,11 @@ export const loadMoreActivities = (
   setActivitiesPage: (updater: (prev: number) => number) => void,
   setHasMoreActivities: (value: boolean) => void,
 ) => {
-  if (loadingMoreActivities || !hasMoreActivities) return;
+  if (loadingMoreActivities || !hasMoreActivities) return undefined;
 
   setLoadingMoreActivities(true);
 
-  setTimeout(() => {
+  return setTimeout(() => {
     const startIndex = activitiesPage * ACTIVITIES_PER_PAGE;
     const moreActivities = DataRetrievalService.getRecentActivities(200).slice(
       startIndex,

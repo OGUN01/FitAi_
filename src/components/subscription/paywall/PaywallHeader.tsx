@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import { colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rf, rp, rbr } from "../../../utils/responsive";
 
 interface PaywallHeaderProps {
   title: string;
@@ -42,9 +43,9 @@ const PaywallHeader: React.FC<PaywallHeaderProps> = ({
 
 const styles = StyleSheet.create({
   header: {
-    padding: spacing.md,
+    padding: rp(16),
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.08)",
+    borderBottomColor: ResponsiveTheme.colors.glassBorder,
   },
   headerContent: {
     flexDirection: "row",
@@ -53,48 +54,48 @@ const styles = StyleSheet.create({
   },
   headerText: {
     flex: 1,
-    marginRight: spacing.md,
+    marginRight: rp(16),
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: rf(24),
     fontWeight: "bold",
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rp(8),
   },
   headerDescription: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    lineHeight: 20,
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(20),
   },
   closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.background.tertiary,
+    width: rp(32),
+    height: rp(32),
+    borderRadius: rbr(16),
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     justifyContent: "center",
     alignItems: "center",
   },
   closeButtonText: {
-    fontSize: 24,
-    color: colors.text.secondary,
+    fontSize: rf(24),
+    color: ResponsiveTheme.colors.textSecondary,
   },
   trialBanner: {
-    marginTop: spacing.md,
-    padding: 12,
-    backgroundColor: "rgba(255, 107, 53, 0.12)",
-    borderRadius: borderRadius.md,
+    marginTop: rp(16),
+    padding: rp(12),
+    backgroundColor: ResponsiveTheme.colors.primaryTint,
+    borderRadius: rbr(8),
     borderWidth: 1,
-    borderColor: "rgba(255, 107, 53, 0.3)",
+    borderColor: ResponsiveTheme.colors.primaryFaded,
   },
   trialTitle: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "600",
-    color: colors.primary.light,
-    marginBottom: 4,
+    color: ResponsiveTheme.colors.primaryLight,
+    marginBottom: rp(4),
   },
   trialDescription: {
-    fontSize: 14,
-    color: colors.primary.DEFAULT,
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.primary,
   },
 });
 

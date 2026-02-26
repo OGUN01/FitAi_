@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -38,9 +38,11 @@ export const FAQList: React.FC<FAQListProps> = ({
               blurIntensity="light"
               borderRadius="lg"
               style={
-                (expandedFaq === faq.id
-                  ? [styles.faqCard, styles.faqCardExpanded]
-                  : styles.faqCard) as any
+                StyleSheet.flatten(
+                  expandedFaq === faq.id
+                    ? [styles.faqCard, styles.faqCardExpanded]
+                    : styles.faqCard
+                ) as ViewStyle
               }
             >
               <View style={styles.faqHeader}>
@@ -50,7 +52,7 @@ export const FAQList: React.FC<FAQListProps> = ({
                     { backgroundColor: "rgba(255, 107, 53, 0.15)" },
                   ]}
                 >
-                  <Ionicons name={faq.icon} size={rf(16)} color="#FF6B35" />
+                  <Ionicons name={faq.icon} size={rf(16)} color={ResponsiveTheme.colors.primary} />
                 </View>
                 <Text style={styles.faqQuestion}>{faq.question}</Text>
                 <View
@@ -85,7 +87,7 @@ export const FAQList: React.FC<FAQListProps> = ({
 const styles = StyleSheet.create({
   faqCard: {
     marginBottom: ResponsiveTheme.spacing.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
   },
   faqCardExpanded: {
     backgroundColor: "rgba(255, 107, 53, 0.08)",
@@ -106,7 +108,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: rf(14),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     marginRight: ResponsiveTheme.spacing.sm,
   },
   expandIcon: {

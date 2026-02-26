@@ -18,11 +18,6 @@ export class AdvancedReviewService {
     dietPreferences: DietPreferencesData,
   ): Promise<AdvancedReviewData | null> {
     try {
-      console.log(
-        "[DB-SERVICE] AdvancedReviewService.calculateAndSave - Starting for user:",
-        userId,
-      );
-
       const { HealthCalculatorFacade } = await import(
         "../../utils/healthCalculations/HealthCalculatorFacade"
       );
@@ -51,9 +46,6 @@ export class AdvancedReviewService {
         restingHR: bodyAnalysis.body_fat_percentage ? undefined : undefined,
       };
 
-      console.log(
-        "[DB-SERVICE] Calculating metrics with HealthCalculatorFacade...",
-      );
       const metrics = HealthCalculatorFacade.calculateAllMetrics(
         userProfile as any,
       );
@@ -86,9 +78,6 @@ export class AdvancedReviewService {
         return null;
       }
 
-      console.log(
-        "[DB-SERVICE] AdvancedReviewService: Metrics calculated and saved successfully",
-      );
       return advancedReviewData;
     } catch (error) {
       console.error(
@@ -104,22 +93,11 @@ export class AdvancedReviewService {
     data: AdvancedReviewData,
   ): Promise<boolean> {
     try {
-      console.log(
-        "[DB-SERVICE] AdvancedReviewService.save - Starting save for user:",
-        userId,
-      );
-      console.log("[DB-SERVICE] Input data:", data);
-
       const reviewData: Partial<AdvancedReviewRow> = {
         user_id: userId,
         ...data,
         updated_at: new Date().toISOString(),
       };
-
-      console.log(
-        "[DB-SERVICE] Transformed reviewData for upsert:",
-        reviewData,
-      );
 
       const { error } = await supabase
         .from("advanced_review")
@@ -136,9 +114,6 @@ export class AdvancedReviewService {
         return false;
       }
 
-      console.log(
-        "[DB-SERVICE] AdvancedReviewService: Advanced review saved successfully to database",
-      );
       return true;
     } catch (error) {
       console.error(
@@ -151,11 +126,6 @@ export class AdvancedReviewService {
 
   static async load(userId: string): Promise<AdvancedReviewData | null> {
     try {
-      console.log(
-        "[DB-SERVICE] AdvancedReviewService.load - Loading for user:",
-        userId,
-      );
-
       const { data, error } = await supabase
         .from("advanced_review")
         .select("*")
@@ -171,16 +141,9 @@ export class AdvancedReviewService {
       }
 
       if (!data) {
-        console.log(
-          "[DB-SERVICE] AdvancedReviewService: No advanced review found in database",
-        );
         return null;
       }
 
-      console.log("[DB-SERVICE] Raw data from database:", data);
-      console.log(
-        "[DB-SERVICE] AdvancedReviewService: Advanced review loaded successfully",
-      );
       return data as AdvancedReviewData;
     } catch (error) {
       console.error("AdvancedReviewService: Unexpected error:", error);

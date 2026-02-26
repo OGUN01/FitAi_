@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   PersonalInfoData,
   DietPreferencesData,
@@ -28,7 +28,8 @@ export const useAdvancedReviewForm = ({
   onUpdateBodyAnalysis,
   onUpdateWorkoutPreferences,
 }: UseAdvancedReviewFormProps) => {
-  const [showAdjustmentWizard, setShowAdjustmentWizard] = useState(false);
+  const [showErrorWizard, setShowErrorWizard] = useState(false);
+  const [showWarningWizard, setShowWarningWizard] = useState(false);
   const [currentError, setCurrentError] = useState<any | null>(null);
   const [warningsAcknowledged, setWarningsAcknowledged] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -36,6 +37,8 @@ export const useAdvancedReviewForm = ({
     string | null
   >(null);
 
+  const timeoutRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => () => { timeoutRefs.current.forEach(clearTimeout); }, []);
   const {
     validationResults,
     calculatedData,
@@ -54,8 +57,9 @@ export const useAdvancedReviewForm = ({
   });
 
   // Calculate all metrics when component mounts or data changes
+  // Body analysis is optional — proceed even if it’s missing or has no data entered
   useEffect(() => {
-    if (personalInfo && dietPreferences && bodyAnalysis && workoutPreferences) {
+    if (personalInfo && dietPreferences && workoutPreferences) {
       performCalculations();
     }
   }, [
@@ -89,15 +93,10 @@ export const useAdvancedReviewForm = ({
 
   const handleRateSelection = useCallback(
     async (alternative: SmartAlternative) => {
-      console.log(
-        "[RATE SELECTION] User selected alternative:",
-        alternative.id,
-      );
       setSelectedAlternativeId(alternative.id);
 
       // If it's the user's original selection, no changes needed
       if (alternative.isUserOriginal) {
-        console.log("[RATE SELECTION] User kept their original rate");
         return;
       }
 
@@ -110,9 +109,6 @@ export const useAdvancedReviewForm = ({
       const weeklyRate = alternative.weeklyRate || 0.5;
       const newTimelineWeeks = Math.ceil(weightToLose / weeklyRate);
 
-      console.log(
-        `[RATE SELECTION] Updating timeline: ${bodyAnalysis?.target_timeline_weeks} -> ${newTimelineWeeks} weeks`,
-      );
 
       // Update body analysis with new timeline
       if (onUpdateBodyAnalysis) {
@@ -130,9 +126,6 @@ export const useAdvancedReviewForm = ({
           onUpdateWorkoutPreferences({
             workout_frequency_per_week: Math.max(3, currentFrequency),
           });
-          console.log(
-            `[RATE SELECTION] Increased workout frequency to 3+ for exercise option`,
-          );
         }
       }
 
@@ -141,18 +134,15 @@ export const useAdvancedReviewForm = ({
         `Rate updated to ${alternative.weeklyRate} kg/week. Recalculating...`,
       );
 
-      // Recalculate after a short delay to allow state updates
-      setTimeout(() => {
-        performCalculations();
-        setTimeout(() => setSuccessMessage(null), 3000);
-      }, 300);
+      // useEffect watching bodyAnalysis will trigger recalculation automatically.
+      const t1 = setTimeout(() => setSuccessMessage(null), 3000);
+      timeoutRefs.current.push(t1);
     },
     [
       bodyAnalysis,
       workoutPreferences,
       onUpdateBodyAnalysis,
       onUpdateWorkoutPreferences,
-      performCalculations,
     ],
   );
 
@@ -165,8 +155,10 @@ export const useAdvancedReviewForm = ({
     smartAlternatives,
 
     // Form State
-    showAdjustmentWizard,
-    setShowAdjustmentWizard,
+    showErrorWizard,
+    setShowErrorWizard,
+    showWarningWizard,
+    setShowWarningWizard,
     currentError,
     setCurrentError,
     warningsAcknowledged,

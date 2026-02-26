@@ -23,17 +23,11 @@ import type { ComprehensiveHealthMetrics } from "./facadeTypes";
 
 export class MetricsCalculator {
   static calculateAllMetrics(user: UserProfile): ComprehensiveHealthMetrics {
-    console.log("[FACADE] Starting comprehensive health calculations for user");
 
     const climateResult = detectClimate(user.country, user.state);
     const ethnicityResult = detectEthnicity(user.country);
     const formulaSelection = detectBestBMRFormula(user);
 
-    console.log("[FACADE] Context detected:", {
-      climate: climateResult.climate,
-      ethnicity: ethnicityResult.ethnicity,
-      bmrFormula: formulaSelection.formula,
-    });
 
     const bmrResult = BMRCalculatorService.calculate(
       user,
@@ -57,12 +51,6 @@ export class MetricsCalculator {
       climateResult.climate,
     );
 
-    console.log("[FACADE] Core metrics calculated:", {
-      bmr: bmrResult.value,
-      bmi: bmiResult.value,
-      tdee: tdeeResult.tdee,
-      water: waterResult.totalML,
-    });
 
     const dietType: DietType = user.dietType || "omnivore";
     const goalType = (user.goal || "maintenance") as any;
@@ -73,10 +61,6 @@ export class MetricsCalculator {
       dietType,
     );
 
-    console.log("[FACADE] Macros calculated:", {
-      protein: macroResult.protein,
-      macros: macroResult,
-    });
 
     let hrZones = null;
     const restingHR = user.restingHR;
@@ -87,9 +71,7 @@ export class MetricsCalculator {
           user.gender as "male" | "female",
           restingHR,
         );
-        console.log("[FACADE] Heart rate zones calculated");
       } catch (error) {
-        console.warn("[FACADE] Failed to calculate heart rate zones:", error);
       }
     }
 
@@ -97,9 +79,7 @@ export class MetricsCalculator {
     if (restingHR) {
       try {
         vo2max = VO2MaxCalculatorService.estimate(user, restingHR);
-        console.log("[FACADE] VO2 max estimated:", vo2max?.vo2max);
       } catch (error) {
-        console.warn("[FACADE] Failed to estimate VO2 max:", error);
       }
     }
 
@@ -114,9 +94,7 @@ export class MetricsCalculator {
         proteinTarget: macroResult.protein,
         vo2max: vo2max?.vo2max,
       });
-      console.log("[FACADE] Health score calculated:", healthScore.totalScore);
     } catch (error) {
-      console.warn("[FACADE] Failed to calculate health score:", error);
     }
 
     let muscleGainLimits = null;
@@ -124,9 +102,7 @@ export class MetricsCalculator {
     if (userGoal === "muscle_gain") {
       try {
         muscleGainLimits = MuscleGainCalculatorService.calculateLimits(user);
-        console.log("[FACADE] Muscle gain limits calculated");
       } catch (error) {
-        console.warn("[FACADE] Failed to calculate muscle gain limits:", error);
       }
     }
 
@@ -182,7 +158,6 @@ export class MetricsCalculator {
       },
     };
 
-    console.log("[FACADE] ✅ All metrics calculated successfully");
     return result;
   }
 }

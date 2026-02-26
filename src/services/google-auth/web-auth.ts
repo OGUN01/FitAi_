@@ -1,16 +1,20 @@
 import { Platform } from "react-native";
 import * as Crypto from "expo-crypto";
 import { supabase } from "../supabase";
+import { makeRedirectUri } from "expo-auth-session";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthUser } from "../../types/user";
 import { GoogleSignInResult } from "./types";
 
+const OAUTH_STATE_KEY = "google_oauth_state";
+
 export async function signInWithGoogleWeb(): Promise<GoogleSignInResult> {
   try {
-    const state = await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      Math.random().toString(),
-      { encoding: Crypto.CryptoEncoding.HEX },
-    );
+    // BUG 5 FIX: Use cryptographically secure random UUID instead of Math.random()
+    const state = Crypto.randomUUID();
+
+    // BUG 4 FIX: Store the state in AsyncStorage for CSRF verification in the callback
+    await AsyncStorage.setItem(OAUTH_STATE_KEY, state);
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -20,7 +24,7 @@ export async function signInWithGoogleWeb(): Promise<GoogleSignInResult> {
           typeof window !== "undefined" &&
           window.location
             ? `${window.location.origin}/auth/callback`
-            : "exp://localhost:8081/--/auth/callback",
+            : makeRedirectUri({ path: "auth/callback" }),
         queryParams: {
           access_type: "offline",
           prompt: "consent",
@@ -37,7 +41,6 @@ export async function signInWithGoogleWeb(): Promise<GoogleSignInResult> {
       };
     }
 
-    console.log("✅ Google OAuth flow initiated for web");
     return {
       success: true,
     };
@@ -54,9 +57,23 @@ export async function handleGoogleCallback(
   url: string,
 ): Promise<GoogleSignInResult> {
   try {
-    console.log("🔄 Handling Google OAuth callback...");
 
-    const code = new URL(url).searchParams.get("code") || "";
+    const parsedUrl = new URL(url);
+    const code = parsedUrl.searchParams.get("code") || "";
+    const callbackState = parsedUrl.searchParams.get("state");
+
+    // BUG 4 FIX: Verify the state parameter matches what we stored before redirect
+    const storedState = await AsyncStorage.getItem(OAUTH_STATE_KEY);
+    await AsyncStorage.removeItem(OAUTH_STATE_KEY); // Clean up regardless
+
+    if (!callbackState || callbackState !== storedState) {
+      console.error("\u274c OAuth state mismatch - possible CSRF attack");
+      return {
+        success: false,
+        error: "OAuth state verification failed. Please try signing in again.",
+      };
+    }
+
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
@@ -100,14 +117,9 @@ export async function handleGoogleCallback(
       });
 
       if (profileError) {
-        console.warn(
-          "⚠️ Failed to create profile for Google user:",
-          profileError,
-        );
       }
     }
 
-    console.log("✅ Google Sign-In successful");
     return {
       success: true,
       user: authUser,

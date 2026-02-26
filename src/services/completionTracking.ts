@@ -1,6 +1,7 @@
 import { useFitnessStore } from "../stores/fitnessStore";
 import { useNutritionStore } from "../stores/nutritionStore";
 import { useUserStore } from "../stores/userStore";
+import { useProfileStore } from "../stores/profileStore";
 import { DayWorkout, DayMeal } from "../ai";
 import crudOperations from "./crudOperations";
 import { MealLog, SyncStatus } from "../types/localData";
@@ -55,24 +56,18 @@ class CompletionTrackingService {
       sessionData?.stats?.caloriesBurned &&
       sessionData.stats.caloriesBurned > 0
     ) {
-      console.log(
-        `[completionTracking] Using session stats calories: ${sessionData.stats.caloriesBurned} kcal`,
-      );
+
       return sessionData.stats.caloriesBurned;
     }
 
     // Get user's weight from profile (single source of truth)
     const userStore = useUserStore.getState();
-    const userWeight = userStore.profile?.bodyMetrics?.current_weight_kg;
+    const userWeight = userStore.profile?.bodyMetrics?.current_weight_kg
+      || useProfileStore.getState().bodyAnalysis?.current_weight_kg;
 
     // NO FALLBACK - if weight not available, return 0 and log warning
     if (!userWeight || userWeight <= 0) {
-      console.warn(
-        "[completionTracking] Cannot calculate calories: user weight not set in profile",
-      );
-      console.warn(
-        "[completionTracking] User should complete onboarding with body metrics",
-      );
+
       return 0;
     }
 
@@ -92,17 +87,13 @@ class CompletionTrackingService {
       const result = calculateWorkoutCalories(exerciseInputs, userWeight);
 
       if (result.totalCalories > 0) {
-        console.log(
-          `[completionTracking] MET-based calories (weight: ${userWeight}kg): ${result.totalCalories} kcal`,
-        );
+
         return result.totalCalories;
       }
     }
 
     // No exercises to calculate from
-    console.warn(
-      "[completionTracking] No exercises available for MET calculation",
-    );
+
     return 0;
   }
 
@@ -160,9 +151,6 @@ class CompletionTrackingService {
                 supabaseResult.error,
               );
             } else {
-              console.log(
-                `✅ Supabase workout_sessions synced for: ${workout.title} (${actualCaloriesBurned} cal MET-based, ${workout.duration} min)`,
-              );
 
               // Save to analytics_metrics for Monthly Summary tracking
               try {
@@ -170,14 +158,7 @@ class CompletionTrackingService {
                   workoutsCompleted: 1,
                   caloriesBurned: actualCaloriesBurned,
                 });
-                console.log(
-                  "📊 Analytics metrics updated for workout completion",
-                );
               } catch (analyticsError) {
-                console.warn(
-                  "⚠️ Failed to update analytics metrics:",
-                  analyticsError,
-                );
               }
 
               // CRITICAL: Trigger refresh so fitness hooks refetch data
@@ -189,14 +170,7 @@ class CompletionTrackingService {
                   duration: workout.duration,
                   caloriesBurned: actualCaloriesBurned,
                 });
-                console.log(
-                  "🔄 Fitness refresh triggered after workout completion",
-                );
               } catch (refreshError) {
-                console.warn(
-                  "⚠️ Failed to trigger fitness refresh:",
-                  refreshError,
-                );
               }
             }
           } catch (supabaseError) {
@@ -207,9 +181,6 @@ class CompletionTrackingService {
             // Continue - local storage succeeded
           }
         } else {
-          console.log(
-            "⚠️ No userId provided, skipping Supabase sync for workout",
-          );
         }
 
         const event: CompletionEvent = {
@@ -227,7 +198,6 @@ class CompletionTrackingService {
         };
 
         this.emit(event);
-        console.log(`✅ Workout completed: ${workout.title}`);
         return true;
       }
 
@@ -247,8 +217,6 @@ class CompletionTrackingService {
     try {
       const nutritionStore = useNutritionStore.getState();
 
-      console.log(`🍽️ Completing meal: ${mealId}`);
-
       // Update meal progress to 100%
       await nutritionStore.completeMeal(mealId, logData?.logId);
 
@@ -257,18 +225,9 @@ class CompletionTrackingService {
         (m) => m.id === mealId,
       );
 
-      console.log(`🍽️ Found meal for completion:`, {
-        found: !!meal,
-        mealName: meal?.name,
-        mealCalories: meal?.totalCalories,
-        mealType: meal?.type,
-        dayOfWeek: meal?.dayOfWeek,
-      });
-
       if (meal) {
         // Create actual meal log in database for calorie tracking
         try {
-          console.log(`🍽️ Creating meal log for completed meal: ${meal.name}`);
 
           // Use provided userId - NO FALLBACK to fake user IDs
           const currentUserId = userId;
@@ -300,9 +259,6 @@ class CompletionTrackingService {
 
             // Store the meal log locally
             await crudOperations.createMealLog(mealLog);
-            console.log(
-              `✅ Local meal log created for: ${meal.name} (${meal.totalCalories} calories)`,
-            );
 
             // CRITICAL: Also insert into Supabase meal_logs table for stats sync
             // This ensures loadDailyNutrition can read the data from Supabase
@@ -325,9 +281,6 @@ class CompletionTrackingService {
                   supabaseResult.error,
                 );
               } else {
-                console.log(
-                  `✅ Supabase meal_logs synced for: ${meal.name} (${meal.totalCalories} cal, P:${meal.totalMacros?.protein}g, C:${meal.totalMacros?.carbohydrates}g, F:${meal.totalMacros?.fat}g)`,
-                );
 
                 // Save to analytics_metrics for Monthly Summary tracking
                 try {
@@ -338,28 +291,14 @@ class CompletionTrackingService {
                       caloriesConsumed: meal.totalCalories || 0,
                     },
                   );
-                  console.log(
-                    "📊 Analytics metrics updated for meal completion",
-                  );
                 } catch (analyticsError) {
-                  console.warn(
-                    "⚠️ Failed to update analytics metrics:",
-                    analyticsError,
-                  );
                 }
 
                 // CRITICAL: Trigger refresh so useNutritionData hook refetches dailyNutrition
                 // This ensures the calorie ring updates immediately after meal completion
                 try {
                   await nutritionRefreshService.triggerRefresh();
-                  console.log(
-                    "🔄 Nutrition refresh triggered after meal completion",
-                  );
                 } catch (refreshError) {
-                  console.warn(
-                    "⚠️ Failed to trigger nutrition refresh:",
-                    refreshError,
-                  );
                 }
               }
             } catch (supabaseError) {
@@ -370,7 +309,6 @@ class CompletionTrackingService {
               // Continue - local storage succeeded
             }
           } else {
-            console.warn(`⚠️ No user ID available, skipping meal log creation`);
             // Continue with completion even if no user
           }
         } catch (mealLogError) {
@@ -393,13 +331,9 @@ class CompletionTrackingService {
         };
 
         this.emit(event);
-        console.log(
-          `✅ Meal completed: ${meal.name} (${meal.totalCalories} calories)`,
-        );
 
         // Verify the meal progress was saved
         const savedProgress = nutritionStore.getMealProgress(mealId);
-        console.log(`🍽️ Saved meal progress:`, savedProgress);
 
         return true;
       }

@@ -7,7 +7,7 @@ import {
   spacing,
   borderRadius,
 } from "../../../theme/aurora-tokens";
-import { rf, rw } from "../../../utils/responsive";
+import { rf, rw, rp } from "../../../utils/responsive";
 import { DayMeal } from "../../../types/ai";
 
 interface MealHeaderProps {
@@ -43,7 +43,7 @@ export const MealHeader: React.FC<MealHeaderProps> = ({
           {meal.name}
         </Text>
         <View style={styles.typeRow}>
-          <Text style={[styles.mealType, { color: mealConfig.colors[0] }]}>
+          <Text style={[styles.mealType, { color: mealConfig.colors[1] }]}>
             {meal.type.charAt(0).toUpperCase() + meal.type.slice(1)}
           </Text>
           {meal.isPersonalized && (
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   aiBadge: {
     backgroundColor: `${colors.primary[500]}20`,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
+    paddingVertical: rp(2),
     borderRadius: borderRadius.full,
   },
   aiBadgeText: {
@@ -141,6 +141,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
     borderWidth: 1,
     borderColor: colors.glass.border,
+    marginLeft: spacing.xs,
   },
   timeText: {
     fontSize: typography.fontSize.caption,

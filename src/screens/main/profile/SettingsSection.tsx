@@ -18,7 +18,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh } from "../../../utils/responsive";
+import { rf, rp, rbr, rw, rh } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 
 export interface SettingItem {
@@ -108,7 +108,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
                       colors={["#FFD700", "#FFA500"]}
                       style={styles.premiumIconGradient}
                     >
-                      <Ionicons name={item.icon} size={rf(18)} color="#fff" />
+                      <Ionicons name={item.icon} size={rf(18)} color={ResponsiveTheme.colors.white} />
                     </LinearGradient>
                   ) : (
                     <Ionicons
@@ -173,7 +173,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
                       size={rf(18)}
                       color={
                         item.isPremium
-                          ? "#FFD700"
+                          ? ResponsiveTheme.colors.gold
                           : item.isDestructive
                             ? ResponsiveTheme.colors.error
                             : ResponsiveTheme.colors.textMuted
@@ -198,7 +198,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
     marginBottom: ResponsiveTheme.spacing.lg,
   },
   sectionHeader: {
@@ -265,19 +265,19 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(15),
     fontWeight: "500",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
   destructiveText: {
     color: ResponsiveTheme.colors.error,
   },
   premiumText: {
-    color: "#FFD700",
+    color: ResponsiveTheme.colors.gold,
     fontWeight: "600",
   },
   subtitle: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: 2,
+    color: "rgba(255, 255, 255, 0.65)",
+    marginTop: rp(2),
   },
   premiumSubtitle: {
     color: "rgba(255, 215, 0, 0.7)",
@@ -285,16 +285,16 @@ const styles = StyleSheet.create({
   badge: {
     marginLeft: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.xs + 2,
-    paddingVertical: 3,
+    paddingVertical: rp(3),
     borderRadius: rf(4),
   },
   premiumBadge: {
-    backgroundColor: "#FFD700",
+    backgroundColor: ResponsiveTheme.colors.gold,
   },
   badgeText: {
     fontSize: rf(9),
     fontWeight: "800",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     width: rw(8),
     height: rw(8),
     borderRadius: rw(4),
-    backgroundColor: "#FF9800",
+    backgroundColor: ResponsiveTheme.colors.warning,
     marginLeft: ResponsiveTheme.spacing.sm,
   },
   chevronContainer: {
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
     paddingLeft: rw(36) + ResponsiveTheme.spacing.md * 2,
   },
   divider: {
-    height: 1,
+    height: rp(1),
     backgroundColor: "rgba(255, 255, 255, 0.06)",
   },
 });

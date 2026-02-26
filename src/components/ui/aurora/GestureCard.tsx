@@ -17,6 +17,7 @@ import { GlassCard } from "./GlassCard";
 import { colors, typography, spacing } from "../../../theme/aurora-tokens";
 import { springConfig } from "../../../theme/animations";
 import { haptics } from "../../../utils/haptics";
+import { rf, rbr } from "../../../utils/responsive";
 
 export interface SwipeAction {
   /**
@@ -294,7 +295,7 @@ const styles = StyleSheet.create({
   simpleCard: {
     padding: spacing.md,
     backgroundColor: colors.glass.background,
-    borderRadius: 12,
+    borderRadius: rbr(12),
   },
   actionBackground: {
     position: "absolute",
@@ -309,7 +310,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   actionIcon: {
-    fontSize: 32,
+    fontSize: rf(32),
   },
   actionLabel: {
     fontSize: typography.fontSize.body,

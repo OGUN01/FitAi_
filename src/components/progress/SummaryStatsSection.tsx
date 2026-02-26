@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { ResponsiveTheme } from "../../utils/constants";
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
@@ -15,6 +15,11 @@ export const SummaryStatsSection: React.FC<SummaryStatsSectionProps> = ({
   realWeeklyData,
   progressStats,
 }) => {
+  const totalCaloriesBurned = useMemo(
+    () => DataRetrievalService.getTotalCaloriesBurned(),
+    [],
+  );
+
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Overall Summary</Text>
@@ -52,9 +57,9 @@ export const SummaryStatsSection: React.FC<SummaryStatsSectionProps> = ({
 
           <View style={styles.summaryItem}>
             <Text style={styles.summaryValue}>
-              {DataRetrievalService.getTotalCaloriesBurned()?.toLocaleString() ||
-                progressStats?.totalCalories?.toLocaleString() ||
-                "0"}
+              {totalCaloriesBurned
+                ? totalCaloriesBurned.toLocaleString()
+                : progressStats?.totalCalories?.toLocaleString() || "0"}
             </Text>
             <Text style={styles.summaryLabel}>Calories Burned</Text>
           </View>

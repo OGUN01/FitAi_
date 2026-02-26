@@ -9,7 +9,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw } from "../../../utils/responsive";
+import { rf, rp, rw } from "../../../utils/responsive";
 import { useProfileStore } from "../../../stores/profileStore";
 
 type GoalCategory = "weight_loss" | "muscle_gain" | "general";
@@ -69,9 +69,9 @@ const QUOTES = {
 };
 
 const GRADIENTS = {
-  morning: ["#FF6B6B", "#FF8E53"] as [string, string],
-  afternoon: ["#FF6B35", "#FF8A5C"] as [string, string],
-  evening: ["#11998e", "#38ef7d"] as [string, string],
+  morning: ["#C94E2A", "#B5622E"] as [string, string],
+  afternoon: ["#C45020", "#B86240"] as [string, string],
+  evening: ["#0d7a72", "#29c265"] as [string, string],
 };
 
 interface MotivationBannerProps {
@@ -135,6 +135,8 @@ export const MotivationBanner: React.FC<MotivationBannerProps> = ({
       hapticFeedback={true}
       hapticType="light"
       style={styles.container}
+      accessibilityRole="button"
+      accessibilityLabel="Motivation"
     >
       <LinearGradient
         colors={gradient}
@@ -143,7 +145,7 @@ export const MotivationBanner: React.FC<MotivationBannerProps> = ({
         style={styles.gradient}
       >
         <View style={styles.iconContainer}>
-          <Ionicons name={icon} size={rf(16)} color="rgba(255,255,255,0.95)" />
+          <Ionicons name={icon} size={rf(16)} color={ResponsiveTheme.colors.white} />
         </View>
         <View style={styles.textContainer}>
           <Text style={styles.quoteText}>{quote.text}</Text>
@@ -170,7 +172,7 @@ const styles = StyleSheet.create({
     width: rw(32),
     height: rw(32),
     borderRadius: rw(16),
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: ResponsiveTheme.colors.glassHighlight,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -180,14 +182,20 @@ const styles = StyleSheet.create({
   quoteText: {
     fontSize: rf(14),
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: ResponsiveTheme.colors.white,
     letterSpacing: 0.3,
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   subtextText: {
-    fontSize: rf(11),
-    fontWeight: "500",
-    color: "rgba(255,255,255,0.85)",
-    marginTop: 1,
+    fontSize: rf(12),
+    fontWeight: '600',
+    color: ResponsiveTheme.colors.white,
+    marginTop: rp(1),
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 });
 

@@ -149,7 +149,6 @@ export async function estimateNutritionWithAI(
 ): Promise<BarcodeSearchResult | null> {
   const keys = getGeminiKeys();
   if (keys.length === 0) {
-    console.warn("[estimateNutritionWithAI] No Gemini API keys configured");
     return null;
   }
 
@@ -213,9 +212,6 @@ export async function estimateNutritionWithAI(
     }
   }
 
-  console.warn(
-    "[estimateNutritionWithAI] failed: all keys exhausted or errors",
-  );
   return null;
 }
 
@@ -250,13 +246,11 @@ export class FreeNutritionAPIs {
    */
   async enhanceNutritionData(foodName: string): Promise<NutritionData | null> {
     try {
-      console.log(`🔍 Enhancing nutrition data for: ${foodName}`);
 
       // Check cache first
       const cacheKey = foodName.toLowerCase().trim();
       const cached = this.cache.get(cacheKey);
       if (cached) {
-        console.log("✅ Found cached nutrition data");
         return cached;
       }
 
@@ -276,15 +270,10 @@ export class FreeNutritionAPIs {
           nutritionData.push(result.value);
         } else {
           const apiNames = ["USDA", "OpenFoodFacts", "FatSecret"];
-          console.warn(
-            `⚠️ ${apiNames[index]} API failed:`,
-            result.status === "rejected" ? result.reason : "No data",
-          );
         }
       });
 
       if (nutritionData.length === 0) {
-        console.log("❌ No nutrition data found from free APIs");
         return null;
       }
 
@@ -294,9 +283,6 @@ export class FreeNutritionAPIs {
       // Cache the result
       this.cache.set(cacheKey, enhancedData);
 
-      console.log(
-        `✅ Enhanced nutrition data with ${nutritionData.length} sources, confidence: ${enhancedData.confidence}%`,
-      );
       return enhancedData;
     } catch (error) {
       console.error("❌ Error enhancing nutrition data:", error);
@@ -384,7 +370,6 @@ export class FreeNutritionAPIs {
         confidence: this.calculateMatchConfidence(foodName, food.description),
       };
     } catch (error) {
-      console.warn("USDA API error:", error);
       return null;
     }
   }
@@ -441,7 +426,6 @@ export class FreeNutritionAPIs {
         ),
       };
     } catch (error) {
-      console.warn("OpenFoodFacts API error:", error);
       return null;
     }
   }
@@ -454,7 +438,6 @@ export class FreeNutritionAPIs {
     foodName: string,
   ): Promise<NutritionData | null> {
     if (this.fatSecretKeys.length === 0) {
-      console.warn("No FatSecret API keys configured");
       return null;
     }
 
@@ -469,10 +452,8 @@ export class FreeNutritionAPIs {
 
       // For now, return null as FatSecret requires complex OAuth implementation
       // This can be implemented later with proper OAuth 1.0 signing
-      console.log("FatSecret API integration pending OAuth implementation");
       return null;
     } catch (error) {
-      console.warn("FatSecret API error:", error);
       // Rotate to next key
       this.currentFatSecretKeyIndex =
         (this.currentFatSecretKeyIndex + 1) % this.fatSecretKeys.length;
@@ -647,7 +628,6 @@ export class FreeNutritionAPIs {
         }
       }
     } catch (error) {
-      console.warn("[searchByBarcode] OFF v2 failed:", error);
     }
 
     if (offResult) {
@@ -734,7 +714,6 @@ export class FreeNutritionAPIs {
       barcodeCache.set(barcode, upcResult);
       return upcResult;
     } catch (error) {
-      console.warn("[searchByBarcode] UPCitemdb failed:", error);
       return null;
     }
   }
@@ -759,7 +738,6 @@ export class FreeNutritionAPIs {
    */
   clearCache(): void {
     this.cache.clear();
-    console.log("🗑️ Nutrition data cache cleared");
   }
 
   /**

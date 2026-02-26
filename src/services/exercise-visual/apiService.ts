@@ -9,7 +9,6 @@ export async function fetchExercisePage(
   const errors: string[] = [];
 
   try {
-    console.log(`🌐 Fetching exercises from Vercel API (page ${page})...`);
     const offset = (page - 1) * limit;
     const response = await fetch(
       `${BASE_URL}/exercises?offset=${offset}&limit=${limit}`,
@@ -20,17 +19,12 @@ export async function fetchExercisePage(
     }
 
     const data = await response.json();
-    console.log(
-      `✅ Successfully fetched ${data.data?.length || 0} exercises from Vercel API`,
-    );
     return data;
   } catch (error) {
     errors.push(`Vercel API failed: ${error}`);
-    console.warn("❌ Vercel API failed, trying fallbacks:", error);
   }
 
   try {
-    console.log("🌐 Trying API Ninjas fallback...");
     const response = await fetch(
       `https://api.api-ninjas.com/v1/exercises?offset=${(page - 1) * limit}`,
       {
@@ -53,9 +47,6 @@ export async function fetchExercisePage(
         instructions: [ex.instructions || "Follow proper form and technique"],
       }));
 
-      console.log(
-        `✅ Successfully fetched ${transformedData.length} exercises from API Ninjas`,
-      );
       return {
         success: true,
         metadata: {
@@ -70,11 +61,9 @@ export async function fetchExercisePage(
     }
   } catch (error) {
     errors.push(`API Ninjas failed: ${error}`);
-    console.warn("❌ API Ninjas fallback failed:", error);
   }
 
   try {
-    console.log("🌐 Trying Free Exercise Database...");
     const response = await fetch(
       "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json",
     );
@@ -99,9 +88,6 @@ export async function fetchExercisePage(
         instructions: ex.instructions || ["Follow proper form and technique"],
       }));
 
-      console.log(
-        `✅ Successfully fetched ${transformedData.length} exercises from Free Exercise DB`,
-      );
       return {
         success: true,
         metadata: {
@@ -116,7 +102,6 @@ export async function fetchExercisePage(
     }
   } catch (error) {
     errors.push(`Free Exercise DB failed: ${error}`);
-    console.warn("❌ Free Exercise Database fallback failed:", error);
   }
 
   console.error("❌ All exercise APIs failed:", errors);

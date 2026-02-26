@@ -15,7 +15,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw } from "../../../utils/responsive";
+import { rf, rp, rbr, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 
 interface GuestPromptCardProps {
@@ -70,12 +70,12 @@ export const GuestPromptCard: React.FC<GuestPromptCardProps> = ({
             ]}
           >
             <LinearGradient
-              colors={["#FF6B35", "#E55A2B"]}
+              colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.iconGradient}
             >
-              <Ionicons name="lock-open-outline" size={rf(22)} color="#fff" />
+              <Ionicons name="lock-open-outline" size={rf(22)} color={ResponsiveTheme.colors.white} />
             </LinearGradient>
           </RNAnimated.View>
 
@@ -98,12 +98,12 @@ export const GuestPromptCard: React.FC<GuestPromptCardProps> = ({
             style={styles.buttonWrapper}
           >
             <LinearGradient
-              colors={["#FF6B6B", "#FF8E53"]}
+              colors={[ResponsiveTheme.colors.errorLight, "#FF8E53"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.button}
             >
-              <Ionicons name="person-add-outline" size={rf(16)} color="#fff" />
+              <Ionicons name="person-add-outline" size={rf(16)} color={ResponsiveTheme.colors.white} />
               <Text style={styles.buttonText}>Sign Up Free</Text>
             </LinearGradient>
           </AnimatedPressable>
@@ -138,10 +138,7 @@ const styles = StyleSheet.create({
     borderRadius: rw(22),
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#FF6B35",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    boxShadow: '0px 4px 8px rgba(255,107,53,0.3)',
     elevation: 6,
   },
   textContainer: {
@@ -152,15 +149,16 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(16),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     textAlign: "center",
-    marginBottom: 4,
+    marginBottom: rp(4),
   },
   subtitle: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
-    textAlign: "center",
+    color: ResponsiveTheme.colors.text,
+    textAlign: 'center',
     lineHeight: rf(18),
+    opacity: 0.75,
   },
   buttonWrapper: {
     width: "100%",
@@ -180,7 +178,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
 });
 

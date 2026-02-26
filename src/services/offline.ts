@@ -117,7 +117,6 @@ class OfflineService {
         }
       });
     } catch (error) {
-      console.warn("Failed to initialize network listener:", error);
     }
   }
 
@@ -140,7 +139,6 @@ class OfflineService {
         this.offlineData = new Map(Object.entries(data));
       }
     } catch (error) {
-      console.warn("Failed to load offline data:", error);
     }
   }
 
@@ -160,7 +158,6 @@ class OfflineService {
         ),
       ]);
     } catch (error) {
-      console.warn("Failed to save offline data:", error);
     }
   }
 
@@ -329,7 +326,6 @@ class OfflineService {
     }
 
     this.rollbackStates.delete(actionId);
-    console.warn(`⚠️ Sync failed for ${key}, changes have been rolled back`);
   }
 
   /**
@@ -342,9 +338,6 @@ class OfflineService {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(
-          `🔄 Attempting ${type} on ${table} (attempt ${attempt}/${maxRetries})`,
-        );
 
         switch (type) {
           case "CREATE":
@@ -357,7 +350,6 @@ class OfflineService {
             if (!createValidation.valid) {
               throw new Error(createValidation.error);
             }
-            console.log(`✅ Successfully created record in ${table}`);
             break;
 
           case "UPDATE":
@@ -379,7 +371,6 @@ class OfflineService {
             if (!updateValidation.valid) {
               throw new Error(updateValidation.error);
             }
-            console.log(`✅ Successfully updated record ${id} in ${table}`);
             break;
 
           case "DELETE":
@@ -400,9 +391,6 @@ class OfflineService {
             if (!deleteValidation.valid) {
               throw new Error(deleteValidation.error);
             }
-            console.log(
-              `✅ Successfully deleted record ${data.id} from ${table}`,
-            );
             break;
 
           default:
@@ -421,7 +409,6 @@ class OfflineService {
         if (attempt < maxRetries) {
           // Wait before retry with exponential backoff
           const backoffDelay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
-          console.log(`⏳ Retrying in ${backoffDelay}ms...`);
           await new Promise((resolve) => setTimeout(resolve, backoffDelay));
         }
       }
@@ -455,9 +442,6 @@ class OfflineService {
 
     if (clearedCount > 0) {
       await this.saveOfflineData();
-      console.log(
-        `🧹 Cleared ${clearedCount} failed actions for table ${table}`,
-      );
     }
   }
 

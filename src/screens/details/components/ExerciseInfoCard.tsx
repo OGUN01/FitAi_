@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Card, THEME } from "../../../components/ui";
+import { Card } from "../../../components/ui";
+import { ResponsiveTheme } from "../../../utils/constants";
 
 interface ExerciseInfoCardProps {
   name: string;
@@ -26,13 +27,13 @@ export const ExerciseInfoCard: React.FC<ExerciseInfoCardProps> = ({
   const getDifficultyColor = (diff: string) => {
     switch (diff.toLowerCase()) {
       case "beginner":
-        return THEME.colors.success;
+        return ResponsiveTheme.colors.success;
       case "intermediate":
-        return THEME.colors.warning;
+        return ResponsiveTheme.colors.warning;
       case "advanced":
-        return THEME.colors.error;
+        return ResponsiveTheme.colors.error;
       default:
-        return THEME.colors.textSecondary;
+        return ResponsiveTheme.colors.textSecondary;
     }
   };
 
@@ -98,86 +99,86 @@ export const ExerciseInfoCard: React.FC<ExerciseInfoCardProps> = ({
 
 const styles = StyleSheet.create({
   exerciseCard: {
-    marginVertical: THEME.spacing.md,
+    marginVertical: ResponsiveTheme.spacing.md,
   },
   exerciseHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   exerciseInfo: {
     flex: 1,
   },
   exerciseName: {
-    fontSize: THEME.fontSize.xxl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   exerciseDescription: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
     lineHeight: 22,
   },
   difficultyBadge: {
-    backgroundColor: THEME.colors.surface,
-    paddingHorizontal: THEME.spacing.sm,
-    paddingVertical: THEME.spacing.xs,
-    borderRadius: THEME.borderRadius.md,
-    marginLeft: THEME.spacing.md,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    marginLeft: ResponsiveTheme.spacing.md,
   },
   difficultyText: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.semibold,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: THEME.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: THEME.colors.border,
-    marginVertical: THEME.spacing.md,
+    borderColor: ResponsiveTheme.colors.border,
+    marginVertical: ResponsiveTheme.spacing.md,
   },
   statItem: {
     alignItems: "center",
   },
   statValue: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.primary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
   },
   statLabel: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.xs / 2,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs / 2,
   },
   musclesContainer: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   musclesTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   musclesList: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: THEME.spacing.xs,
+    gap: ResponsiveTheme.spacing.xs,
   },
   muscleTag: {
-    backgroundColor: THEME.colors.primary + "20",
-    paddingHorizontal: THEME.spacing.sm,
-    paddingVertical: THEME.spacing.xs / 2,
-    borderRadius: THEME.borderRadius.md,
+    backgroundColor: ResponsiveTheme.colors.primary + "20",
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs / 2,
+    borderRadius: ResponsiveTheme.borderRadius.md,
     borderWidth: 1,
-    borderColor: THEME.colors.primary + "40",
+    borderColor: ResponsiveTheme.colors.primary + "40",
   },
   muscleText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.primary,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 });

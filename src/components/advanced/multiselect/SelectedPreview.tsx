@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
-import { THEME } from "../../ui";
+import { ResponsiveTheme } from "../../../utils/constants";
 
 interface SelectedPreviewProps {
   selectedLabels: string[];
@@ -32,22 +32,22 @@ export const SelectedPreview: React.FC<SelectedPreviewProps> = ({
 
 const styles = StyleSheet.create({
   selectedPreview: {
-    marginTop: THEME.spacing.xs,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
 
   selectedTag: {
-    backgroundColor: THEME.colors.primary + "20",
-    paddingHorizontal: THEME.spacing.sm,
-    paddingVertical: THEME.spacing.xs / 2,
-    borderRadius: THEME.borderRadius.sm,
-    marginRight: THEME.spacing.xs,
+    backgroundColor: ResponsiveTheme.colors.primary + "20",
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs / 2,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
+    marginRight: ResponsiveTheme.spacing.xs,
     borderWidth: 1,
-    borderColor: THEME.colors.primary + "40",
+    borderColor: ResponsiveTheme.colors.primary + "40",
   },
 
   selectedTagText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.primary,
-    fontWeight: THEME.fontWeight.medium as "500",
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
   },
 });

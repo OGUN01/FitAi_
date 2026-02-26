@@ -31,7 +31,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
 interface SettingsModalWrapperProps {
@@ -98,6 +98,8 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                 scaleValue={0.9}
                 hapticFeedback={false}
                 style={styles.closeButton}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
               >
                 <Ionicons
                   name="close"
@@ -158,10 +160,12 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                   hapticFeedback={false}
                   disabled={saveDisabled || isSaving}
                   style={styles.saveButtonContainer}
+                  accessibilityRole="button"
+                  accessibilityLabel={saveLabel}
                 >
                   <LinearGradient
                     colors={
-                      saveDisabled ? ["#666", "#555"] : ["#FF6B6B", "#FF8E53"]
+                      saveDisabled ? ["#666", "#555"] : [ResponsiveTheme.colors.errorLight, ResponsiveTheme.colors.primaryLight]
                     }
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
@@ -171,13 +175,13 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                     ]}
                   >
                     {isSaving ? (
-                      <ActivityIndicator color="#fff" size="small" />
+                      <ActivityIndicator color={ResponsiveTheme.colors.white} size="small" />
                     ) : (
                       <>
                         <Ionicons
                           name="checkmark-circle"
                           size={rf(18)}
-                          color="#fff"
+                          color={ResponsiveTheme.colors.white}
                         />
                         <Text style={styles.saveButtonText}>{saveLabel}</Text>
                       </>
@@ -215,8 +219,8 @@ const styles = StyleSheet.create({
   closeButton: {
     width: rw(40),
     height: rw(40),
-    borderRadius: rw(20),
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: rbr(20),
+    backgroundColor: ResponsiveTheme.colors.glassBorder,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
@@ -228,26 +232,26 @@ const styles = StyleSheet.create({
   headerIcon: {
     width: rw(36),
     height: rw(36),
-    borderRadius: rw(18),
+    borderRadius: rbr(18),
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
   headerTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
   },
   headerSubtitle: {
     fontSize: rf(12),
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: rp(2),
   },
   headerSpacer: {
     width: rw(40),
   },
   divider: {
-    height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    height: rp(1),
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
     marginHorizontal: ResponsiveTheme.spacing.md,
   },
   scrollView: {
@@ -256,9 +260,10 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingTop: ResponsiveTheme.spacing.lg,
+    paddingBottom: ResponsiveTheme.spacing.md,
   },
   bottomSpacing: {
-    height: rh(100),
+    height: rh(80),
   },
   footer: {
     position: "absolute",
@@ -269,7 +274,7 @@ const styles = StyleSheet.create({
     paddingVertical: ResponsiveTheme.spacing.md,
     backgroundColor: ResponsiveTheme.colors.background,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.06)",
+    borderTopColor: ResponsiveTheme.colors.glassSurface,
   },
   saveButtonContainer: {
     borderRadius: ResponsiveTheme.borderRadius.lg,
@@ -289,7 +294,7 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
   },
 });
 

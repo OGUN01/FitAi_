@@ -43,6 +43,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   dangerTitle: {
-    color: "#F44336",
+    color: ResponsiveTheme.colors.error,
   },
 });

@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { THEME } from "../../ui";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rs, rbr } from '../../../utils/responsive';
 
 interface CameraOverlayProps {
   mode: "food" | "progress" | "barcode";
@@ -60,18 +61,18 @@ const styles = StyleSheet.create({
   },
 
   foodFrame: {
-    width: 250,
-    height: 250,
+    width: rs(250),
+    height: rs(250),
     position: "relative",
   },
 
   frameCorner: {
     position: "absolute",
-    width: 30,
-    height: 30,
+    width: rs(30),
+    height: rs(30),
     borderTopWidth: 3,
     borderLeftWidth: 3,
-    borderColor: THEME.colors.primary,
+    borderColor: ResponsiveTheme.colors.primary,
     top: 0,
     left: 0,
   },
@@ -106,24 +107,24 @@ const styles = StyleSheet.create({
   },
 
   progressFrame: {
-    width: 200,
-    height: 400,
+    width: rs(200),
+    height: rs(400),
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
 
   bodyOutline: {
-    width: 150,
-    height: 350,
+    width: rs(150),
+    height: rs(350),
     borderWidth: 2,
-    borderColor: THEME.colors.primary,
-    borderRadius: 75,
+    borderColor: ResponsiveTheme.colors.primary,
+    borderRadius: rbr(75),
     borderStyle: "dashed",
   },
 
   barcodeFrame: {
-    width: 280,
-    height: 160,
+    width: rs(280),
+    height: rs(160),
     position: "relative",
     justifyContent: "center" as const,
     alignItems: "center" as const,
@@ -135,40 +136,40 @@ const styles = StyleSheet.create({
     justifyContent: "center" as const,
     alignItems: "center" as const,
     borderWidth: 2,
-    borderColor: THEME.colors.primary,
-    borderRadius: THEME.borderRadius.md,
+    borderColor: ResponsiveTheme.colors.primary,
+    borderRadius: ResponsiveTheme.borderRadius.md,
     backgroundColor: "rgba(0,0,0,0.1)",
   },
 
   scanningLine: {
     width: "90%",
     height: 2,
-    backgroundColor: THEME.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary,
     opacity: 0.7,
   },
 
   scanningIndicator: {
     position: "absolute",
     top: -30,
-    backgroundColor: THEME.colors.primary,
-    paddingHorizontal: THEME.spacing.sm,
-    paddingVertical: THEME.spacing.xs,
-    borderRadius: THEME.borderRadius.sm,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
   },
 
   scanningText: {
-    color: THEME.colors.white,
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium as "500",
+    color: ResponsiveTheme.colors.white,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
   },
 
   barcodeCorner: {
     position: "absolute",
-    width: 20,
-    height: 20,
+    width: rs(20),
+    height: rs(20),
     borderTopWidth: 3,
     borderLeftWidth: 3,
-    borderColor: THEME.colors.primary,
+    borderColor: ResponsiveTheme.colors.primary,
     top: -2,
     left: -2,
   },

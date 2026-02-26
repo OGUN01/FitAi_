@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect } from "react";
-import { View, StyleSheet, ViewStyle } from "react-native";
+import { View, StyleSheet, ViewStyle, DimensionValue } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -17,6 +17,7 @@ import Animated, {
 import { LinearGradient } from "expo-linear-gradient";
 import { animations } from "../../../theme/animations";
 import { colors } from "../../../theme/aurora-tokens";
+import { rp, rs, rh, rbr } from "../../../utils/responsive";
 
 // ============================================================================
 // TYPES
@@ -73,12 +74,12 @@ const VARIANT_DIMENSIONS: Record<
   SkeletonVariant,
   { width: number | string; height: number; borderRadius: number }
 > = {
-  text: { width: "100%", height: 16, borderRadius: 4 },
-  title: { width: "80%", height: 24, borderRadius: 6 },
-  avatar: { width: 48, height: 48, borderRadius: 24 },
-  thumbnail: { width: 100, height: 100, borderRadius: 8 },
-  card: { width: "100%", height: 120, borderRadius: 12 },
-  button: { width: "100%", height: 44, borderRadius: 22 },
+  text: { width: "100%", height: rh(16), borderRadius: rbr(4) },
+  title: { width: "80%", height: rh(24), borderRadius: rbr(6) },
+  avatar: { width: rs(48), height: rs(48), borderRadius: rbr(24) },
+  thumbnail: { width: rs(100), height: rs(100), borderRadius: rbr(8) },
+  card: { width: "100%", height: rh(120), borderRadius: rbr(12) },
+  button: { width: "100%", height: rh(44), borderRadius: rbr(22) },
 };
 
 // ============================================================================
@@ -133,10 +134,10 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
       style={[
         styles.container,
         {
-          width: finalWidth,
-          height: finalHeight,
+          width: finalWidth as DimensionValue,
+          height: finalHeight as DimensionValue,
           borderRadius: finalBorderRadius,
-        } as any,
+        },
         style,
       ]}
       accessibilityLabel="Loading content"
@@ -281,52 +282,52 @@ const styles = StyleSheet.create({
   },
   shimmer: {
     flex: 1,
-    width: 300,
+    width: rp(300),
   },
 
   // Card layout
   cardContainer: {
     flexDirection: "row",
-    padding: 12,
-    gap: 12,
+    padding: rp(12),
+    gap: rp(12),
   },
   cardThumbnail: {
     flexShrink: 0,
   },
   cardContent: {
     flex: 1,
-    gap: 8,
+    gap: rp(8),
   },
   cardText: {
-    marginTop: 4,
+    marginTop: rp(4),
   },
 
   // List item layout
   listItem: {
     flexDirection: "row",
-    padding: 12,
-    gap: 12,
+    padding: rp(12),
+    gap: rp(12),
     alignItems: "center",
   },
   listItemContent: {
     flex: 1,
-    gap: 6,
+    gap: rp(6),
   },
   listItemSubtext: {
-    marginTop: 4,
+    marginTop: rp(4),
   },
 
   // Profile layout
   profileContainer: {
     alignItems: "center",
-    padding: 24,
-    gap: 12,
+    padding: rp(24),
+    gap: rp(12),
   },
   profileName: {
-    marginTop: 12,
+    marginTop: rp(12),
   },
   profileSubtext: {
-    marginTop: 4,
+    marginTop: rp(4),
   },
 });
 

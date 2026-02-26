@@ -86,6 +86,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
       >
         <ScrollView
           style={styles.scrollView}
+          contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -99,7 +100,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             minHeight={160}
             maxHeight={240}
           >
-            <Text style={styles.title} numberOfLines={1}>
+            <Text style={styles.title} numberOfLines={2}>
               What are your diet preferences?
             </Text>
             <Text
@@ -287,6 +288,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     minWidth: 100,
+    minHeight: 52,
   },
   backButtonText: {
     fontSize: ResponsiveTheme.fontSize.md,
@@ -303,6 +305,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     borderRadius: ResponsiveTheme.borderRadius.xl,
     backgroundColor: ResponsiveTheme.colors.primary,
+    minHeight: 52,
   },
   nextButtonText: {
     fontSize: ResponsiveTheme.fontSize.md,

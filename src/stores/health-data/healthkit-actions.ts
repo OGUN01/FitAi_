@@ -19,7 +19,6 @@ export const createHealthKitActions = (
 ) => ({
   initializeHealthKit: async (): Promise<boolean> => {
     try {
-      console.log("🍎 Initializing HealthKit in store...");
 
       const isAvailable = await healthKitService.initialize();
       const hasPermissions = await healthKitService.hasPermissions();
@@ -42,7 +41,6 @@ export const createHealthKitActions = (
 
   requestHealthKitPermissions: async (): Promise<boolean> => {
     try {
-      console.log("🔐 Requesting HealthKit permissions...");
       set({ syncStatus: "syncing" });
 
       const granted = await healthKitService.initialize();
@@ -74,11 +72,9 @@ export const createHealthKitActions = (
       const { settings, isHealthKitAuthorized } = get();
 
       if (!settings.healthKitEnabled || !isHealthKitAuthorized) {
-        console.log("⏸️ HealthKit sync disabled or not authorized");
         return;
       }
 
-      console.log("🔄 Starting HealthKit sync...");
       set({ syncStatus: "syncing", syncError: undefined });
 
       const syncResult: HealthSyncResult = {
@@ -119,8 +115,6 @@ export const createHealthKitActions = (
           weightTrackingService.setWeight(syncResult.data.bodyWeight);
         }
 
-        console.log("✅ HealthKit sync completed successfully");
-
         const insights = get().getHealthInsights();
         if (insights.length > 0) {
           set({ healthTipOfDay: insights[0] });
@@ -144,11 +138,8 @@ export const createHealthKitActions = (
       const { settings, isHealthKitAuthorized } = get();
 
       if (!settings.exportToHealthKit || !isHealthKitAuthorized) {
-        console.log("⏸️ HealthKit export disabled or not authorized");
         return false;
       }
-
-      console.log(`📤 Exporting workout to HealthKit: ${workout.type}`);
 
       const success = await healthKitService.saveWorkoutToHealthKit({
         type: workout.type,
@@ -196,17 +187,9 @@ export const createHealthKitActions = (
         !settings.dataTypesToSync.nutrition ||
         !isHealthKitAuthorized
       ) {
-        console.log("⏸️ HealthKit nutrition export disabled or not authorized");
         return false;
       }
 
-      console.log(
-        `📤 Exporting nutrition to HealthKit for ${nutrition.date.toDateString()}`,
-      );
-
-      console.log(
-        "ℹ️ Nutrition export to HealthKit not available - library limitation",
-      );
       return false;
     } catch (error) {
       console.error("❌ Failed to export nutrition to HealthKit:", error);

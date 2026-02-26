@@ -10,7 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw } from "../../utils/responsive";
+import { rf, rp, rbr, rw } from "../../utils/responsive";
 
 interface ConnectionCardProps {
   platformName: string;
@@ -52,13 +52,13 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
           <View
             style={[
               styles.platformIcon,
-              { backgroundColor: isConnected ? "#4CAF50" : "#666" },
+              { backgroundColor: isConnected ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.textTertiary },
             ]}
           >
             <Ionicons
               name={isIOS ? "fitness" : "heart"}
               size={rf(24)}
-              color="#fff"
+              color={ResponsiveTheme.colors.text}
             />
           </View>
           <View style={styles.text}>
@@ -73,8 +73,8 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
             isConnected && (isIOS ? healthKitEnabled : healthConnectEnabled)
           }
           onValueChange={onConnectionToggle}
-          trackColor={{ false: "#444", true: "#4CAF50" }}
-          thumbColor="#fff"
+          trackColor={{ false: ResponsiveTheme.colors.border, true: ResponsiveTheme.colors.success }}
+          thumbColor={ResponsiveTheme.colors.white}
         />
       </View>
 
@@ -97,9 +97,9 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
             scaleValue={0.95}
           >
             {syncStatus === "syncing" ? (
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color={ResponsiveTheme.colors.text} />
             ) : (
-              <Ionicons name="refresh" size={rf(18)} color="#fff" />
+              <Ionicons name="refresh" size={rf(18)} color={ResponsiveTheme.colors.text} />
             )}
             <Text style={styles.syncButtonText}>
               {syncStatus === "syncing" ? "Syncing..." : "Sync Now"}
@@ -116,9 +116,9 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
           scaleValue={0.98}
         >
           {isReauthorizing ? (
-            <ActivityIndicator size="small" color="#FF9800" />
+            <ActivityIndicator size="small" color={ResponsiveTheme.colors.warning} />
           ) : (
-            <Ionicons name="key" size={rf(16)} color="#FF9800" />
+            <Ionicons name="key" size={rf(16)} color={ResponsiveTheme.colors.warning} />
           )}
           <Text style={styles.reauthorizeText}>
             {isReauthorizing ? "Re-authorizing..." : "Re-authorize Permissions"}
@@ -131,7 +131,7 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
 
       {syncError && (
         <View style={styles.errorBanner}>
-          <Ionicons name="alert-circle" size={rf(16)} color="#F44336" />
+          <Ionicons name="alert-circle" size={rf(16)} color={ResponsiveTheme.colors.error} />
           <Text style={styles.errorText}>{syncError}</Text>
         </View>
       )}
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
   platformIcon: {
     width: rw(48),
     height: rw(48),
-    borderRadius: rw(24),
+    borderRadius: rbr(24),
     justifyContent: "center",
     alignItems: "center",
     marginRight: ResponsiveTheme.spacing.md,
@@ -168,12 +168,12 @@ const styles = StyleSheet.create({
   platformName: {
     fontSize: rf(18),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
   },
   status: {
     fontSize: rf(14),
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: rp(2),
   },
   syncSection: {
     flexDirection: "row",
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     marginTop: ResponsiveTheme.spacing.md,
     paddingTop: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.1)",
+    borderTopColor: ResponsiveTheme.colors.glassHighlight,
   },
   syncInfo: {
     flexDirection: "row",
@@ -204,16 +204,16 @@ const styles = StyleSheet.create({
   syncButtonText: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
     marginLeft: ResponsiveTheme.spacing.xs,
   },
   reauthorizeButton: {
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255, 152, 0, 0.1)",
+    backgroundColor: ResponsiveTheme.colors.warningTint,
     borderWidth: 1,
-    borderColor: "rgba(255, 152, 0, 0.3)",
+    borderColor: ResponsiveTheme.colors.warningTint,
     borderRadius: ResponsiveTheme.borderRadius.md,
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
@@ -222,25 +222,25 @@ const styles = StyleSheet.create({
   reauthorizeText: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: "#FF9800",
+    color: ResponsiveTheme.colors.warning,
     marginTop: ResponsiveTheme.spacing.xs,
   },
   reauthorizeHint: {
     fontSize: rf(11),
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: rp(2),
   },
   errorBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(244, 67, 54, 0.1)",
+    backgroundColor: ResponsiveTheme.colors.errorTint,
     padding: ResponsiveTheme.spacing.sm,
     borderRadius: ResponsiveTheme.borderRadius.sm,
     marginTop: ResponsiveTheme.spacing.md,
   },
   errorText: {
     fontSize: rf(13),
-    color: "#F44336",
+    color: ResponsiveTheme.colors.error,
     marginLeft: ResponsiveTheme.spacing.xs,
     flex: 1,
   },

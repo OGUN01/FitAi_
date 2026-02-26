@@ -232,7 +232,6 @@ class AdvancedExerciseMatchingService {
 
       return null;
     } catch (error) {
-      console.warn(`Fuzzy matching failed for ${exerciseName}:`, error);
       return null;
     }
   }
@@ -289,7 +288,6 @@ class AdvancedExerciseMatchingService {
 
       return null;
     } catch (error) {
-      console.warn(`Semantic matching failed for ${exerciseName}:`, error);
       return null;
     }
   }
@@ -331,10 +329,6 @@ class AdvancedExerciseMatchingService {
 
       return null;
     } catch (error) {
-      console.warn(
-        `Classification matching failed for ${exerciseName}:`,
-        error,
-      );
       return null;
     }
   }
@@ -446,12 +440,8 @@ class AdvancedExerciseMatchingService {
 
       // AI-powered exercise matching disabled - UnifiedAIService doesn't support generateResponse yet
       // For now, return null without AI assistance
-      console.warn(
-        "[advancedExerciseMatching] AI semantic mapping disabled - returning null",
-      );
       return null;
     } catch (error) {
-      console.warn(`Semantic mapping generation failed:`, error);
       return null;
     }
 
@@ -468,9 +458,6 @@ class AdvancedExerciseMatchingService {
     exerciseName: string,
   ): Promise<GeneratedExerciseData> {
     // AI exercise data generation disabled - UnifiedAIService doesn't support generateResponse yet
-    console.warn(
-      "[advancedExerciseMatching] AI exercise data generation disabled",
-    );
 
     // Return basic generated data as fallback
     return {
@@ -588,12 +575,8 @@ class AdvancedExerciseMatchingService {
       if (cached) {
         const data = JSON.parse(cached);
         this.semanticCache = new Map(Object.entries(data));
-        console.log(
-          `📚 Loaded ${this.semanticCache.size} semantic mappings from cache`,
-        );
       }
     } catch (error) {
-      console.warn("Failed to load semantic cache:", error);
     }
   }
 
@@ -605,7 +588,6 @@ class AdvancedExerciseMatchingService {
         JSON.stringify(data),
       );
     } catch (error) {
-      console.warn("Failed to save semantic cache:", error);
     }
   }
 
@@ -631,7 +613,6 @@ class AdvancedExerciseMatchingService {
   async clearCaches(): Promise<void> {
     this.semanticCache.clear();
     await AsyncStorage.removeItem("semantic_exercise_cache");
-    console.log("🧹 Advanced matching caches cleared");
   }
 }
 

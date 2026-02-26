@@ -36,7 +36,6 @@ export async function logWaterIntake(
   try {
     const userId = getCurrentUserId();
     if (!userId) {
-      console.warn("[HydrationData] No user ID available for water logging");
       return { success: false, error: "Not authenticated" };
     }
 
@@ -58,7 +57,6 @@ export async function logWaterIntake(
       return { success: false, error: error.message };
     }
 
-    console.log(`✅ Water logged: ${amountMl}ml`);
     return { success: true, data };
   } catch (err) {
     console.error("[HydrationData] Error logging water:", err);
@@ -230,9 +228,6 @@ export async function syncHydrationWithSupabase(): Promise<{
   const result = await getTodayWaterIntake();
 
   if (result.success) {
-    console.log(
-      `[HydrationData] Synced today's water: ${result.total_ml}ml from ${result.log_count} logs`,
-    );
   }
 
   return {

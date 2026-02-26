@@ -159,12 +159,7 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
   const dropSize = rw(90);
 
   return (
-    <AnimatedPressable
-      onPress={onPress}
-      scaleValue={0.98}
-      hapticFeedback={true}
-      hapticType="light"
-    >
+    <View>
       <GlassCard
         elevation={2}
         blurIntensity="light"
@@ -204,7 +199,7 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>
-                {(currentIntake / 1000).toFixed(1)}
+                {(currentIntake / 1000).toFixed(2)}
                 <Text style={styles.statUnit}>L</Text>
               </Text>
               <Text style={styles.statLabel}>Consumed</Text>
@@ -214,7 +209,7 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
 
             <View style={styles.statItem}>
               <Text style={styles.statValue}>
-                {(dailyGoal / 1000).toFixed(1)}
+                {(dailyGoal / 1000).toFixed(2)}
                 <Text style={styles.statUnit}>L</Text>
               </Text>
               <Text style={styles.statLabel}>Goal</Text>
@@ -265,7 +260,7 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
           <Text style={styles.reminderText}>{hydrationStatus.message}</Text>
         </View>
       </GlassCard>
-    </AnimatedPressable>
+    </View>
   );
 };
 

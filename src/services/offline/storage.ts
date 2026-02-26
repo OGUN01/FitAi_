@@ -24,7 +24,6 @@ export class StorageManager {
         this.offlineData = new Map(Object.entries(data));
       }
     } catch (error) {
-      console.warn("Failed to load offline data:", error);
     }
   }
 
@@ -38,7 +37,6 @@ export class StorageManager {
         ),
       ]);
     } catch (error) {
-      console.warn("Failed to save offline data:", error);
     }
   }
 

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh } from "../../../utils/responsive";
+import { rf, rw, rh, rbr } from "../../../utils/responsive";
 import { CalculatedMetrics } from "../../../hooks/useCalculatedMetrics";
 import { UserProfile } from "../../../types/user";
 
@@ -23,17 +23,16 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     >
       <View style={styles.trendHeader}>
         <View
-          style={[styles.trendIconContainer, { backgroundColor: "#FF6B3520" }]}
+          style={[styles.trendIconContainer, { backgroundColor: ResponsiveTheme.colors.primaryTint }]}
         >
-          <Ionicons name="flag-outline" size={20} color="#FF6B35" />
+          <Ionicons name="flag-outline" size={rf(20)} color={ResponsiveTheme.colors.primary} />
         </View>
         <Text style={styles.trendTitle}>Goal Progress</Text>
       </View>
 
       <View style={styles.goalContainer}>
-        {calculatedMetrics?.targetWeightKg &&
-          profile?.bodyMetrics?.current_weight_kg &&
-          calculatedMetrics?.currentWeightKg && (
+        {calculatedMetrics?.targetWeightKg != null &&
+          calculatedMetrics?.currentWeightKg != null && (
             <View style={styles.goalItem}>
               <Text style={styles.goalLabel}>Weight Goal</Text>
               <View style={styles.goalProgressBar}>
@@ -41,34 +40,42 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
                   style={[
                     styles.goalProgressFill,
                     {
-                      width: `${Math.min(
-                        100,
-                        Math.max(
-                          0,
-                          ((calculatedMetrics.currentWeightKg -
-                            profile.bodyMetrics.current_weight_kg) /
-                            (calculatedMetrics.currentWeightKg -
-                              calculatedMetrics.targetWeightKg)) *
-                            100,
-                        ),
-                      )}%`,
-                      backgroundColor: "#FF6B35",
+                      width: "0%",
+                      backgroundColor: ResponsiveTheme.colors.primary,
                     },
                   ]}
                 />
               </View>
               <Text style={styles.goalText}>
-                {profile.bodyMetrics.current_weight_kg.toFixed(1)} kg →{" "}
-                {calculatedMetrics.targetWeightKg.toFixed(1)} kg
+                {calculatedMetrics.currentWeightKg > 0
+                  ? `${calculatedMetrics.currentWeightKg.toFixed(1)} kg → ${calculatedMetrics.targetWeightKg.toFixed(1)} kg`
+                  : "— kg → — kg"}
               </Text>
             </View>
           )}
 
-        {calculatedMetrics?.dailyCalories && (
+        {calculatedMetrics?.dailyCalories != null && calculatedMetrics.dailyCalories > 0 && (
           <View style={styles.goalItem}>
             <Text style={styles.goalLabel}>Daily Calorie Target</Text>
             <Text style={styles.goalValue}>
               {calculatedMetrics.dailyCalories.toLocaleString()} kcal/day
+            </Text>
+          </View>
+        )}
+
+        {(calculatedMetrics?.targetWeightKg == null ||
+          calculatedMetrics?.targetWeightKg === 0) &&
+          (calculatedMetrics?.dailyCalories == null ||
+            calculatedMetrics?.dailyCalories === 0) && (
+          <View style={styles.emptyState}>
+            <Ionicons
+              name="compass-outline"
+              size={rf(28)}
+              color={ResponsiveTheme.colors.textSecondary}
+            />
+            <Text style={styles.emptyStateValue}>—</Text>
+            <Text style={styles.emptyStateText}>
+              Set goals in Profile to track progress
             </Text>
           </View>
         )}
@@ -80,7 +87,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
 const styles = StyleSheet.create({
   trendCard: {
     backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: 16,
+    borderRadius: rbr(16),
     padding: rw(16),
   },
   trendHeader: {
@@ -89,9 +96,9 @@ const styles = StyleSheet.create({
     marginBottom: rh(12),
   },
   trendIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: rw(36),
+    height: rw(36),
+    borderRadius: rbr(10),
     alignItems: "center",
     justifyContent: "center",
     marginRight: rw(12),
@@ -112,14 +119,14 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textSecondary,
   },
   goalProgressBar: {
-    height: 8,
+    height: rh(8),
     backgroundColor: ResponsiveTheme.colors.background,
-    borderRadius: 4,
+    borderRadius: rbr(4),
     overflow: "hidden",
   },
   goalProgressFill: {
     height: "100%",
-    borderRadius: 4,
+    borderRadius: rbr(4),
   },
   goalText: {
     fontSize: rf(14),
@@ -130,5 +137,21 @@ const styles = StyleSheet.create({
     fontSize: rf(18),
     fontWeight: "600",
     color: ResponsiveTheme.colors.primary,
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: rh(16),
+    gap: rh(8),
+  },
+  emptyStateValue: {
+    fontSize: rf(28),
+    fontWeight: "700",
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+  emptyStateText: {
+    fontSize: rf(13),
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: "center",
   },
 });

@@ -10,7 +10,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf } from "../../utils/responsive";
+import { rf, rp, rbr } from "../../utils/responsive";
 import type { APIMetadata } from "../../services/fitaiWorkersClient";
 
 // ============================================================================
@@ -45,7 +45,7 @@ export const CacheIndicator: React.FC<CacheIndicatorProps> = ({
         <Ionicons
           name={cached ? "flash" : "sparkles"}
           size={rf(12)}
-          color={cached ? "#10B981" : "#FF6B35"}
+          color={cached ? ResponsiveTheme.colors.successAlt : ResponsiveTheme.colors.primary}
         />
         <Text
           style={[
@@ -100,27 +100,27 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: rp(4),
     paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: rp(4),
     borderRadius: ResponsiveTheme.borderRadius.full,
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
   },
   cachedBadge: {
-    backgroundColor: "rgba(16, 185, 129, 0.15)",
+    backgroundColor: `${ResponsiveTheme.colors.successAlt}26`,
   },
   freshBadge: {
-    backgroundColor: "rgba(255, 107, 53, 0.15)",
+    backgroundColor: `${ResponsiveTheme.colors.primary}26`,
   },
   badgeText: {
     fontSize: rf(11),
     fontWeight: "600",
   },
   cachedText: {
-    color: "#10B981",
+    color: ResponsiveTheme.colors.successAlt,
   },
   freshText: {
-    color: "#FF6B35",
+    color: ResponsiveTheme.colors.primary,
   },
   metaBadgeText: {
     fontSize: rf(11),

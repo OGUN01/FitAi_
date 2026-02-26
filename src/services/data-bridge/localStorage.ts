@@ -24,7 +24,6 @@ export async function saveToLocal(field: string, data: any): Promise<void> {
       ONBOARDING_DATA_KEY,
       JSON.stringify(updatedData),
     );
-    console.log(`[DataBridge] Saved ${field} to local storage`);
   } catch (error) {
     console.error(`[DataBridge] Failed to save ${field} to local:`, error);
     throw error;
@@ -56,7 +55,6 @@ export async function storeOnboardingData(data: any): Promise<boolean> {
         lastUpdatedAt: new Date().toISOString(),
       }),
     );
-    console.log("[DataBridge] Onboarding data stored");
     return true;
   } catch (error) {
     console.error("[DataBridge] storeOnboardingData error:", error);

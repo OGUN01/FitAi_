@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw } from "../../../utils/responsive";
+import { rf, rw, rp } from "../../../utils/responsive";
 import { useHealthIntelligenceLogic } from "../../../hooks/useHealthIntelligenceLogic";
 import { RecoveryRing } from "../../../components/home/RecoveryRing";
 import { MetricItem } from "../../../components/home/MetricItem";
@@ -79,6 +79,8 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
       scaleValue={0.98}
       hapticFeedback={true}
       hapticType="light"
+      accessibilityRole="button"
+      accessibilityLabel="Health Intelligence"
     >
       <GlassCard
         elevation={2}
@@ -123,7 +125,7 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
               label="Resting HR"
               value={restingHeartRate ? `${restingHeartRate}` : "--"}
               subvalue="bpm"
-              color="#FF6B6B"
+              color={ResponsiveTheme.colors.errorLight}
               trend={hrTrend}
               onPress={() => onDetailPress?.("heart")}
               delay={100}
@@ -135,7 +137,7 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
                 sleepHours && sleepHours > 0 ? `${sleepHours.toFixed(1)}` : "--"
               }
               subvalue="hrs"
-              color="#FF6B35"
+              color={ResponsiveTheme.colors.primary}
               onPress={() => onDetailPress?.("sleep")}
               delay={200}
             />
@@ -215,7 +217,7 @@ const styles = StyleSheet.create({
     marginTop: ResponsiveTheme.spacing.md,
     paddingTop: ResponsiveTheme.spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.08)",
+    borderTopColor: ResponsiveTheme.colors.glassBorder,
   },
   insightText: {
     flex: 1,

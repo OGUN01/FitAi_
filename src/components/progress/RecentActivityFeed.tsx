@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import {
   View,
   Text,
@@ -6,7 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rs, rbr, rp, rh } from "../../utils/responsive";
 
 /**
  * RecentActivityFeed Component
@@ -33,6 +34,7 @@ interface ActivityItem {
 interface RecentActivityFeedProps {
   activities?: ActivityItem[];
   onActivityPress?: (activity: ActivityItem) => void;
+  onViewAll?: () => void;
   maxItems?: number;
 }
 
@@ -56,13 +58,13 @@ const ActivityCard: React.FC<{
   const getActivityColor = (type: string) => {
     switch (type) {
       case "workout":
-        return THEME.colors.success;
+        return ResponsiveTheme.colors.success;
       case "meal":
-        return THEME.colors.primary;
+        return ResponsiveTheme.colors.primary;
       case "achievement":
-        return THEME.colors.warning;
+        return ResponsiveTheme.colors.warning;
       default:
-        return THEME.colors.textMuted;
+        return ResponsiveTheme.colors.textMuted;
     }
   };
 
@@ -161,6 +163,7 @@ const EmptyState: React.FC = () => (
 export const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
   activities = [],
   onActivityPress,
+  onViewAll,
   maxItems = 5,
 }) => {
   // Real activity tracking from workout sessions and meal logs pending implementation
@@ -175,8 +178,8 @@ export const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.sectionTitle}>Recent Activity</Text>
-        {displayActivities.length > maxItems && (
-          <TouchableOpacity>
+        {onViewAll && displayActivities.length > maxItems && (
+          <TouchableOpacity onPress={onViewAll}>
             <Text style={styles.viewAllButton}>View All</Text>
           </TouchableOpacity>
         )}
@@ -200,102 +203,102 @@ export const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingBottom: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingBottom: ResponsiveTheme.spacing.lg,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   sectionTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
   },
   viewAllButton: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.primary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.primary,
   },
   activityList: {
-    maxHeight: 300,
+    maxHeight: rh(300),
   },
   activityCard: {
-    backgroundColor: THEME.colors.surface,
-    borderRadius: THEME.borderRadius.lg,
-    padding: THEME.spacing.md,
-    marginBottom: THEME.spacing.sm,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    padding: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.sm,
     borderWidth: 1,
-    borderColor: THEME.colors.border,
+    borderColor: ResponsiveTheme.colors.border,
   },
   activityHeader: {
     flexDirection: "row",
     alignItems: "flex-start",
   },
   activityIconContainer: {
-    marginRight: THEME.spacing.sm,
+    marginRight: ResponsiveTheme.spacing.sm,
   },
   activityIcon: {
-    fontSize: 20,
+    fontSize: rf(20),
   },
   activityContent: {
     flex: 1,
-    marginRight: THEME.spacing.sm,
+    marginRight: ResponsiveTheme.spacing.sm,
   },
   activityTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   activityDescription: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.normal,
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.normal,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   activityDetails: {
-    fontSize: THEME.fontSize.xs,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.textMuted,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.textMuted,
   },
   activityMeta: {
     alignItems: "flex-end",
   },
   activityTime: {
-    fontSize: THEME.fontSize.xs,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.textMuted,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.textMuted,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   activityIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: rs(8),
+    height: rs(8),
+    borderRadius: rbr(4),
   },
   emptyContainer: {
     alignItems: "center",
-    paddingVertical: THEME.spacing.xxl,
-    paddingHorizontal: THEME.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.xxl,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
   emptyIcon: {
-    fontSize: 48,
-    marginBottom: THEME.spacing.md,
+    fontSize: rf(48),
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   emptyTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
     textAlign: "center",
   },
   emptyDescription: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.normal,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.normal,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: rf(20),
   },
 });

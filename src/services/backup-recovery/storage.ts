@@ -134,7 +134,6 @@ async function storeCloudBackup(backupData: BackupData): Promise<void> {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      console.warn("Cannot store cloud backup: User not authenticated");
       return;
     }
 
@@ -152,7 +151,6 @@ async function storeCloudBackup(backupData: BackupData): Promise<void> {
     if (error) {
       console.error("Failed to upload backup to cloud:", error);
     } else {
-      console.log("Backup uploaded to cloud:", backupData.metadata.id);
     }
   } catch (error) {
     console.error("Cloud backup storage error:", error);
@@ -227,7 +225,6 @@ async function processLoadedBackup(backup: BackupData): Promise<BackupData> {
       backup.metadata.checksum &&
       calculatedChecksum !== backup.metadata.checksum
     ) {
-      console.warn("Backup checksum mismatch - data may be corrupted");
     }
 
     return {

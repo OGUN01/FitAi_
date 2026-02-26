@@ -49,16 +49,16 @@ export const HydrationPanel: React.FC<HydrationPanelProps> = ({
         <Text style={styles.sectionTitle}>Hydration</Text>
         <View style={styles.waterTrackerContainer}>
           <Text style={styles.waterAmountConsumed}>
-            {waterConsumedLiters.toFixed(1)}L
+            {waterConsumedLiters.toFixed(2)}L
           </Text>
           <Text style={styles.waterTargetAmount}>
-            of {waterGoalLiters?.toFixed(1)}L goal
+            of {waterGoalLiters?.toFixed(2)}L goal
           </Text>
           <View style={styles.waterQuickAddButtons}>
             <AnimatedPressable
               onPress={() => {
                 triggerRipple(waterButton1Ripple);
-                handleAddWater();
+                hydrationAddWater(250);
               }}
               style={styles.waterQuickAddButton}
             >
@@ -67,11 +67,11 @@ export const HydrationPanel: React.FC<HydrationPanelProps> = ({
             <AnimatedPressable
               onPress={() => {
                 triggerRipple(waterButton2Ripple);
-                handleAddWater();
+                hydrationAddWater(500);
               }}
               style={styles.waterQuickAddButton}
             >
-              <Text style={styles.waterQuickAddButtonText}>+250ml</Text>
+              <Text style={styles.waterQuickAddButtonText}>+500ml</Text>
             </AnimatedPressable>
           </View>
         </View>

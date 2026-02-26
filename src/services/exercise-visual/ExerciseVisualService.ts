@@ -53,20 +53,17 @@ class ExerciseVisualService {
     try {
       const cacheMatch = this.cacheService.get(query.toLowerCase());
       if (cacheMatch) {
-        console.log(`✅ Found cached exercise for "${query}"`);
         return [cacheMatch];
       }
 
       const localMatch = findLocalExerciseMapping(query);
       if (localMatch) {
-        console.log(`✅ Found local mapping for "${query}"`);
         this.cacheService.set(query.toLowerCase(), localMatch);
         return [localMatch];
       }
 
       const netInfo = await NetInfo.fetch();
       if (netInfo.isConnected) {
-        console.log(`🌐 Searching Vercel API for "${query}"`);
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000);
 
@@ -89,9 +86,6 @@ class ExerciseVisualService {
           const result: ExerciseAPIResponse = await response.json();
 
           if (result.success && result.data?.length > 0) {
-            console.log(
-              `✅ Vercel API found ${result.data.length} exercises for "${query}"`,
-            );
 
             result.data.forEach((exercise) => {
               if (exercise.gifUrl) {
@@ -187,12 +181,9 @@ class ExerciseVisualService {
     preventCircularCalls: boolean = false,
   ): Promise<ExerciseMatchResult | null> {
     const cleanName = exerciseName.toLowerCase().trim();
-    console.log(`🎯 BULLETPROOF SEARCH: "${exerciseName}" -> "${cleanName}"`);
 
-    console.log(`🎯 Tier 1: Local mappings with working GIFs...`);
     const localExercise = findLocalExerciseMapping(cleanName);
     if (localExercise && localExercise.gifUrl) {
-      console.log(`✅ TIER 1 SUCCESS: "${localExercise.name}" (Local mapping)`);
       return {
         exercise: localExercise,
         confidence: 1.0,
@@ -200,11 +191,9 @@ class ExerciseVisualService {
       };
     }
 
-    console.log(`📋 Tier 2: Cache exact match...`);
     const exactMatch = this.cacheService.get(cleanName);
     if (exactMatch && exactMatch.gifUrl) {
       exactMatch.gifUrl = fixBrokenCdnUrl(exactMatch.gifUrl);
-      console.log(`✅ TIER 2 SUCCESS: "${exactMatch.name}"`);
       return {
         exercise: exactMatch,
         confidence: 1.0,
@@ -214,7 +203,6 @@ class ExerciseVisualService {
 
     if (useAdvancedMatching && !preventCircularCalls) {
       try {
-        console.log(`🧠 Tier 3: Advanced matching...`);
         const advancedResult =
           await advancedExerciseMatching.findExerciseWithFullCoverage(
             exerciseName,
@@ -224,7 +212,6 @@ class ExerciseVisualService {
           advancedResult.exercise &&
           advancedResult.exercise.gifUrl
         ) {
-          console.log(`✅ TIER 3 SUCCESS: "${advancedResult.exercise.name}"`);
           return {
             exercise: advancedResult.exercise,
             confidence: advancedResult.confidence,
@@ -236,7 +223,6 @@ class ExerciseVisualService {
       }
     }
 
-    console.log(`🌐 Tier 4: API search...`);
     const searchResults = await this.searchExercises(exerciseName);
     if (searchResults.length > 0) {
       let bestMatch = searchResults[0];
@@ -253,9 +239,6 @@ class ExerciseVisualService {
           cleanName,
           bestMatch.name.toLowerCase(),
         );
-        console.log(
-          `✅ TIER 4 SUCCESS: "${bestMatch.name}" (${Math.round(confidence * 100)}%)`,
-        );
         return {
           exercise: bestMatch,
           confidence,
@@ -264,13 +247,11 @@ class ExerciseVisualService {
       }
     }
 
-    console.log(`🔍 Tier 5: Cache partial matching...`);
     const partialMatch = findPartialMatchInCache(
       cleanName,
       this.cacheService.values(),
     );
     if (partialMatch && partialMatch.exercise.gifUrl) {
-      console.log(`✅ TIER 5 SUCCESS: "${partialMatch.exercise.name}"`);
       return partialMatch;
     }
 

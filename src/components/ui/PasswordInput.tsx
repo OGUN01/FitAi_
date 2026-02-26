@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Text, TouchableOpacity, ViewStyle, TextStyle } from "react-native";
+import { ViewStyle, TextStyle } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Input } from "./Input";
-import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
 
 interface PasswordInputProps {
   label?: string;
@@ -31,14 +32,11 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
   };
 
   const EyeIcon = () => (
-    <Text
-      style={{
-        fontSize: 18,
-        color: THEME.colors.textSecondary,
-      }}
-    >
-      {isVisible ? "👁️" : "🙈"}
-    </Text>
+    <Ionicons
+      name={isVisible ? "eye-off-outline" : "eye-outline"}
+      size={20}
+      color={ResponsiveTheme.colors.textSecondary}
+    />
   );
 
   return (

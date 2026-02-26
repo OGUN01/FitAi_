@@ -8,14 +8,12 @@ export class BackupManager {
     try {
       const localData = await dataBridge.exportAllData();
       if (!localData) {
-        console.warn("No local data to backup");
         return false;
       }
       await AsyncStorage.setItem(
         MIGRATION_BACKUP_KEY,
         JSON.stringify(localData),
       );
-      console.log("💾 Migration backup created successfully");
       return true;
     } catch (error) {
       console.error("Failed to create migration backup:", error);
@@ -27,13 +25,11 @@ export class BackupManager {
     try {
       const backupJson = await AsyncStorage.getItem(MIGRATION_BACKUP_KEY);
       if (!backupJson) {
-        console.warn("No migration backup found");
         return false;
       }
 
       const backupData = JSON.parse(backupJson);
       await dataBridge.importAllData(backupData);
-      console.log("✅ Local data restored from backup");
       return true;
     } catch (error) {
       console.error("Failed to restore from backup:", error);
@@ -44,7 +40,6 @@ export class BackupManager {
   async clearBackup(): Promise<void> {
     try {
       await AsyncStorage.removeItem(MIGRATION_BACKUP_KEY);
-      console.log("🧹 Migration backup cleared");
     } catch (error) {
       console.error("Failed to clear migration backup:", error);
     }
@@ -79,7 +74,6 @@ export class BackupManager {
         break;
 
       default:
-        console.log(`  ⏭️ No rollback needed for step: ${step}`);
     }
   }
 }

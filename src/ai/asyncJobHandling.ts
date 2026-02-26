@@ -32,8 +32,6 @@ export async function generateWeeklyMealPlanAsync(
     | { type: "job_started"; jobId: string; estimatedTimeMinutes: number }
   >
 > {
-  console.log("generateWeeklyMealPlanAsync called for week:", weekNumber);
-  console.log("calorieTarget:", options.calorieTarget);
 
   try {
     const request = transformForDietRequest(
@@ -44,7 +42,6 @@ export async function generateWeeklyMealPlanAsync(
       options.calorieTarget,
     );
 
-    console.log("Calling backend /diet/generate (async mode)");
     const response = await fitaiWorkersClient.generateDietPlanAsync(request);
 
     if (!response.success || !response.data) {
@@ -56,7 +53,6 @@ export async function generateWeeklyMealPlanAsync(
     }
 
     if (isDietPlanResponse(response.data)) {
-      console.log("Cache hit - immediate result");
 
       if (response.metadata) {
         updateMetadata(response.metadata as AIServiceMetadata);
@@ -81,7 +77,6 @@ export async function generateWeeklyMealPlanAsync(
     }
 
     if (isAsyncJobResponse(response.data)) {
-      console.log("Async job created:", response.data.jobId);
       return {
         success: true,
         data: {

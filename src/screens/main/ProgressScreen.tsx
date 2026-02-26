@@ -147,7 +147,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({
                   onAddEntry={handleAddProgressEntry}
                 />
 
-                {(isAuthenticated || calculatedMetrics?.calculatedBMI) &&
+                {(isAuthenticated || hasCalculatedMetrics) &&
                   !progressError && (
                     <>
                       {!showAnalytics && todaysData && (

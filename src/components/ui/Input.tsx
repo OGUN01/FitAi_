@@ -14,8 +14,7 @@ import Animated, {
   withTiming,
   interpolate,
 } from "react-native-reanimated";
-import { rf, rp, rh, rw, rs } from "../../utils/responsive";
-import { THEME } from "../../utils/constants";
+import { rf, rp, rh, rw, rs, rbr } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 
 interface InputProps {
@@ -95,7 +94,7 @@ export const Input: React.FC<InputProps> = ({
             inputStyle,
           ]}
           placeholder={placeholder}
-          placeholderTextColor="rgba(255, 255, 255, 0.35)"
+          placeholderTextColor={ResponsiveTheme.colors.textMuted}
           value={value}
           onChangeText={onChangeText}
           onFocus={() => setIsFocused(true)}
@@ -106,7 +105,7 @@ export const Input: React.FC<InputProps> = ({
           autoCapitalize={autoCapitalize}
           multiline={multiline}
           numberOfLines={numberOfLines}
-          selectionColor={THEME.colors.primary}
+          selectionColor={ResponsiveTheme.colors.primary}
         />
 
         {rightIcon && (
@@ -131,29 +130,29 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    fontSize: 12,
+    fontSize: rf(12),
     fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.7)",
-    marginBottom: 6,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: rp(6),
     letterSpacing: 0.3,
   },
 
   inputContainer: {
     flexDirection: "row",
     alignItems: "center" as const,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    borderRadius: 12,
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    borderRadius: rbr(12),
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    minHeight: 48,
+    borderColor: ResponsiveTheme.colors.glassBorder,
+    minHeight: rh(48),
     overflow: "hidden",
   },
 
   inputContainerFocused: {
-    borderColor: "#FF6B35",
+    borderColor: ResponsiveTheme.colors.primary,
     borderWidth: 1.5,
-    backgroundColor: "rgba(255, 107, 53, 0.08)",
-    shadowColor: "#FF6B35",
+    backgroundColor: ResponsiveTheme.colors.primaryTint,
+    shadowColor: ResponsiveTheme.colors.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -171,10 +170,10 @@ const styles = StyleSheet.create({
 
   input: {
     flex: 1,
-    fontSize: 14,
-    color: "#FFFFFF",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.text,
+    paddingHorizontal: rp(14),
+    paddingVertical: rp(12),
   },
 
   inputWithLeftIcon: {
@@ -187,7 +186,7 @@ const styles = StyleSheet.create({
 
   inputMultiline: {
     textAlignVertical: "top",
-    minHeight: 80,
+    minHeight: rh(80),
   },
 
   leftIconContainer: {
@@ -198,8 +197,8 @@ const styles = StyleSheet.create({
   rightIconContainer: {
     paddingRight: ResponsiveTheme.spacing.md,
     paddingLeft: ResponsiveTheme.spacing.sm,
-    minHeight: 44,
-    minWidth: 44,
+    minHeight: rh(44),
+    minWidth: rw(44),
     justifyContent: "center",
     alignItems: "center",
   },

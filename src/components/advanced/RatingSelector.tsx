@@ -8,7 +8,8 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rbr } from '../../utils/responsive';
 
 interface RatingSelectorProps {
   value: number;
@@ -60,31 +61,31 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
     const rating = hoveredRating || value;
     const isHighlighted = index < rating;
 
-    if (!isHighlighted) return THEME.colors.textMuted;
+    if (!isHighlighted) return ResponsiveTheme.colors.textMuted;
 
     switch (type) {
       case "stars":
-        return THEME.colors.warning;
+        return ResponsiveTheme.colors.warning;
       case "difficulty":
         return rating <= 2
-          ? THEME.colors.success
+          ? ResponsiveTheme.colors.success
           : rating <= 4
-            ? THEME.colors.warning
-            : THEME.colors.error;
+            ? ResponsiveTheme.colors.warning
+            : ResponsiveTheme.colors.error;
       case "satisfaction":
         return rating <= 2
-          ? THEME.colors.error
+          ? ResponsiveTheme.colors.error
           : rating <= 4
-            ? THEME.colors.warning
-            : THEME.colors.success;
+            ? ResponsiveTheme.colors.warning
+            : ResponsiveTheme.colors.success;
       case "intensity":
         return rating <= 2
-          ? THEME.colors.info
+          ? ResponsiveTheme.colors.info
           : rating <= 4
-            ? THEME.colors.warning
-            : THEME.colors.error;
+            ? ResponsiveTheme.colors.warning
+            : ResponsiveTheme.colors.error;
       default:
-        return THEME.colors.primary;
+        return ResponsiveTheme.colors.primary;
     }
   };
 
@@ -237,14 +238,14 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: THEME.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.sm,
   },
 
   label: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium as "500",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   ratingContainer: {
@@ -254,14 +255,14 @@ const styles = StyleSheet.create({
   iconsContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: THEME.spacing.xs,
-    marginBottom: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   iconButton: {
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 20,
+    borderRadius: rbr(20),
   },
 
   iconButtonDisabled: {
@@ -274,40 +275,40 @@ const styles = StyleSheet.create({
 
   valueContainer: {
     alignItems: "center",
-    gap: THEME.spacing.xs / 2,
+    gap: ResponsiveTheme.spacing.xs / 2,
   },
 
   valueText: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold as "600",
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
+    color: ResponsiveTheme.colors.text,
   },
 
   numericValue: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   descriptionContainer: {
-    marginTop: THEME.spacing.sm,
+    marginTop: ResponsiveTheme.spacing.sm,
     alignItems: "center",
   },
 
   descriptionText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
   },
 
   scaleContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.sm,
+    marginTop: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
   },
 
   scaleText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textMuted,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
   },
 });

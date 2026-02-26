@@ -4,10 +4,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
 import { usePaywall } from "../../hooks/usePaywall";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { UsageCounter } from "./UsageCounter";
-import { colors } from "../../theme/aurora-tokens";
+import { ResponsiveTheme } from "../../utils/constants";
 
 type FeatureKey = "ai_generation" | "barcode_scan";
 
@@ -85,7 +85,7 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
             style={styles.upgradeButton}
           >
             <LinearGradient
-              colors={[colors.primary.DEFAULT, colors.primary.dark]}
+              colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.upgradeGradient}
@@ -113,15 +113,15 @@ const styles = StyleSheet.create({
     padding: rw(24),
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: ResponsiveTheme.colors.glassBorder,
   },
   iconContainer: {
     backgroundColor: "rgba(255, 107, 53, 0.15)",
-    borderRadius: 9999,
+    borderRadius: rbr(9999),
     padding: rw(12),
     marginBottom: rh(16),
     borderWidth: 1,
-    borderColor: "rgba(255, 107, 53, 0.3)",
+    borderColor: ResponsiveTheme.colors.primaryFaded,
   },
   iconText: {
     fontSize: rf(32),
@@ -129,13 +129,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: colors.text.primary,
+    color: ResponsiveTheme.colors.text,
     marginBottom: rh(8),
     textAlign: "center",
   },
   description: {
     fontSize: rf(14),
-    color: colors.text.secondary,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
     marginBottom: rh(16),
     lineHeight: rf(20),
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     borderRadius: rw(16),
   },
   upgradeButtonText: {
-    color: colors.text.primary,
+    color: ResponsiveTheme.colors.text,
     fontWeight: "700",
     fontSize: rf(16),
   },

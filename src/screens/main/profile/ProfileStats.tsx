@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw } from "../../../utils/responsive";
+import { rf, rw, rp } from '../../../utils/responsive';
 import { haptics } from "../../../utils/haptics";
 
 interface StatItem {
@@ -77,7 +77,7 @@ const StatCard: React.FC<{
               { backgroundColor: `${stat.color}20` },
             ]}
           >
-            <Ionicons name={stat.icon} size={rf(16)} color={stat.color} />
+            <Ionicons name={stat.icon} size={rf(20)} color={stat.color} />
           </View>
 
           {/* Value */}
@@ -89,7 +89,7 @@ const StatCard: React.FC<{
           </Text>
 
           {/* Label */}
-          <Text style={styles.statLabel} numberOfLines={1}>
+          <Text style={styles.statLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
             {stat.label}
           </Text>
         </LinearGradient>
@@ -108,44 +108,44 @@ export const ProfileStats: React.FC<ProfileStatsProps> = ({
 }) => {
   const stats: StatItem[] = [
     {
-      id: "current-streak",
-      label: "Day Streak",
+      id: 'current-streak',
+      label: 'Day Streak',
       value: currentStreak,
-      icon: "flame",
-      color: "#FF6B6B",
-      gradientColors: ["#FF6B6B", "#FF8E53"],
+      icon: 'flame',
+      color: ResponsiveTheme.colors.errorLight,
+      gradientColors: [ResponsiveTheme.colors.errorLight, ResponsiveTheme.colors.errorAlt],
     },
     {
-      id: "workouts",
-      label: "Workouts",
+      id: 'workouts',
+      label: 'Workouts',
       value: totalWorkouts,
-      icon: "barbell",
-      color: "#4CAF50",
-      gradientColors: ["#4CAF50", "#8BC34A"],
+      icon: 'barbell',
+      color: ResponsiveTheme.colors.successAlt,
+      gradientColors: [ResponsiveTheme.colors.successAlt, ResponsiveTheme.colors.successAltDark],
     },
     {
-      id: "calories",
-      label: "Calories",
+      id: 'calories',
+      label: 'Calories',
       value: totalCaloriesBurned,
-      icon: "flash",
-      color: "#FFB347",
-      gradientColors: ["#FFB347", "#FFCC33"],
+      icon: 'flash',
+      color: ResponsiveTheme.colors.amber,
+      gradientColors: [ResponsiveTheme.colors.amber, ResponsiveTheme.colors.warningAlt],
     },
     {
-      id: "best-streak",
-      label: "Best Streak",
+      id: 'best-streak',
+      label: 'Best Streak',
       value: longestStreak,
-      icon: "trophy",
-      color: "#FF6B35",
-      gradientColors: ["#FF6B35", "#E55A2B"],
+      icon: 'trophy',
+      color: ResponsiveTheme.colors.primary,
+      gradientColors: [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark],
     },
     {
-      id: "achievements",
-      label: "Achievements",
+      id: 'achievements',
+      label: 'Achievements',
       value: achievements,
-      icon: "ribbon",
-      color: "#FF6B35",
-      gradientColors: ["#FF6B35", "#E55A2B"],
+      icon: 'ribbon',
+      color: ResponsiveTheme.colors.gold,
+      gradientColors: [ResponsiveTheme.colors.gold, ResponsiveTheme.colors.amberBright],
     },
   ];
 
@@ -156,7 +156,7 @@ export const ProfileStats: React.FC<ProfileStatsProps> = ({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         decelerationRate="fast"
-        snapToInterval={rw(90)}
+        snapToInterval={rw(90) + 8}
         snapToAlignment="start"
       >
         {stats.map((stat, index) => (
@@ -168,6 +168,14 @@ export const ProfileStats: React.FC<ProfileStatsProps> = ({
           />
         ))}
       </ScrollView>
+      {/* Right-edge fade to hint at horizontal scrollability */}
+      <LinearGradient
+        colors={["transparent", "rgba(10, 10, 15, 0.85)"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.scrollFadeRight}
+        pointerEvents="none"
+      />
     </View>
   );
 };
@@ -178,11 +186,11 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.lg,
   },
   scrollContent: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    gap: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: rp(ResponsiveTheme.spacing.lg),
+    gap: rp(ResponsiveTheme.spacing.sm),
   },
   statCardWrapper: {
-    // No fixed width - let content determine size
+    width: rw(90),
   },
   statCard: {
     alignItems: "center",
@@ -190,7 +198,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 1,
-    minWidth: rw(82),
+    width: "100%",
     backgroundColor: "rgba(255, 255, 255, 0.03)",
   },
   iconContainer: {
@@ -205,7 +213,7 @@ const styles = StyleSheet.create({
     fontSize: rf(20),
     fontWeight: "800",
     letterSpacing: -0.5,
-    marginBottom: 2,
+    marginBottom: rp(2),
   },
   statSuffix: {
     fontSize: rf(12),
@@ -216,7 +224,16 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
+    flexShrink: 1,
   },
-});
+  scrollFadeRight: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: rw(48),
+    pointerEvents: "none",
+  },
+  });
 
 export default ProfileStats;

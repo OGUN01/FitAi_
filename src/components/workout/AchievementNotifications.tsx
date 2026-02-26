@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
-import { THEME } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr } from "../../utils/responsive";
 import AchievementCelebration from "../achievements/AchievementCelebration";
 
 interface AchievementNotificationsProps {
@@ -38,6 +39,8 @@ export const AchievementNotifications: React.FC<
 
       {showAchievementToast && toastAchievement && (
         <Animated.View
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
           style={[
             styles.achievementToast,
             {
@@ -69,8 +72,10 @@ export const AchievementNotifications: React.FC<
         </Animated.View>
       )}
 
-      {showMiniToast && (
+      {showMiniToast && !showAchievementToast && (
         <Animated.View
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
           style={[
             styles.miniToast,
             {
@@ -96,20 +101,20 @@ export const AchievementNotifications: React.FC<
 const styles = StyleSheet.create({
   achievementToast: {
     position: "absolute",
-    top: 60,
-    left: THEME.spacing.lg,
-    right: THEME.spacing.lg,
+    top: rp(60),
+    left: ResponsiveTheme.spacing.lg,
+    right: ResponsiveTheme.spacing.lg,
     zIndex: 1000,
   },
 
   achievementToastContent: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: THEME.colors.success,
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.sm,
-    borderRadius: 12,
-    shadowColor: "#000",
+    backgroundColor: ResponsiveTheme.colors.success,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    borderRadius: rbr(12),
+    shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -117,8 +122,8 @@ const styles = StyleSheet.create({
   },
 
   achievementToastIcon: {
-    fontSize: 28,
-    marginRight: THEME.spacing.sm,
+    fontSize: rf(28),
+    marginRight: ResponsiveTheme.spacing.sm,
   },
 
   achievementToastText: {
@@ -126,27 +131,27 @@ const styles = StyleSheet.create({
   },
 
   achievementToastTitle: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.white,
-    marginBottom: 2,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.white,
+    marginBottom: rp(2),
   },
 
   achievementToastDescription: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.white + "CC",
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.white + "CC",
   },
 
   miniToast: {
     position: "absolute",
     top: "50%",
     alignSelf: "center",
-    backgroundColor: THEME.colors.primary + "E6",
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.md,
-    borderRadius: 20,
+    backgroundColor: ResponsiveTheme.colors.primary + "E6",
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    borderRadius: rbr(20),
     zIndex: 999,
-    shadowColor: "#000",
+    shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -154,9 +159,9 @@ const styles = StyleSheet.create({
   },
 
   miniToastText: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.white,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.white,
     textAlign: "center",
   },
 });

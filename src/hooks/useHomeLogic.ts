@@ -20,12 +20,14 @@ import {
   useUserStore,
   useHydrationStore,
 } from "../stores";
+import { useProfileStore } from "../stores/profileStore";
 import { completionTrackingService } from "../services/completionTracking";
 
 export const useHomeLogic = () => {
   const { getUserStats, profile } = useDashboardIntegration();
   const { isGuestMode } = useAuth();
   const userProfile = useUserStore((state) => state.profile);
+  const { bodyAnalysis } = useProfileStore();
 
   // Stores
   const { loadData: loadFitnessData, weeklyWorkoutPlan } = useFitnessStore();
@@ -82,7 +84,6 @@ export const useHomeLogic = () => {
 
   // Refresh data on mount
   useEffect(() => {
-    console.log("[HomeScreen] Screen mounted - refreshing metrics and data");
 
     refreshMetrics().catch((err) => {
       console.warn("[HomeScreen] Failed to refresh metrics on mount:", err);
@@ -163,15 +164,12 @@ export const useHomeLogic = () => {
       useNativeDriver: true,
     }).start();
 
-    console.log("[EVENT] HomeScreen: Setting up completion event listener");
     const unsubscribe = completionTrackingService.subscribe((event) => {
-      console.log("[EVENT] HomeScreen: Received completion event:", event);
       setTodaysData(DataRetrievalService.getTodaysData());
       setWeeklyProgress(DataRetrievalService.getWeeklyProgress());
     });
 
     return () => {
-      console.log("[EVENT] HomeScreen: Unsubscribing from completion events");
       unsubscribe();
     };
   }, []);
@@ -208,16 +206,16 @@ export const useHomeLogic = () => {
       return healthMetrics.caloriesGoal;
     }
     if (
-      calculatedMetrics?.calculatedTDEE &&
-      calculatedMetrics.calculatedTDEE > 0
-    ) {
-      return calculatedMetrics.calculatedTDEE;
-    }
-    if (
       calculatedMetrics?.dailyCalories &&
       calculatedMetrics.dailyCalories > 0
     ) {
       return calculatedMetrics.dailyCalories;
+    }
+    if (
+      calculatedMetrics?.calculatedTDEE &&
+      calculatedMetrics.calculatedTDEE > 0
+    ) {
+      return calculatedMetrics.calculatedTDEE;
     }
     return 0;
   }, [
@@ -238,16 +236,16 @@ export const useHomeLogic = () => {
   }, [profile]);
 
   const weightData = useMemo(() => {
-    const currentWeight = profile?.bodyMetrics?.current_weight_kg;
-    const goalWeight = profile?.bodyMetrics?.target_weight_kg;
+    const currentWeight = profile?.bodyMetrics?.current_weight_kg || bodyAnalysis?.current_weight_kg;
+    const goalWeight = profile?.bodyMetrics?.target_weight_kg || bodyAnalysis?.target_weight_kg;
     const startingWeight =
-      profile?.bodyMetrics?.current_weight_kg ?? currentWeight;
+      currentWeight && currentWeight > 0 ? currentWeight : undefined;
 
     return {
-      currentWeight,
-      goalWeight,
+      currentWeight: currentWeight && currentWeight > 0 ? currentWeight : undefined,
+      goalWeight: goalWeight && goalWeight > 0 ? goalWeight : undefined,
       startingWeight,
-      weightHistory: currentWeight
+      weightHistory: currentWeight && currentWeight > 0
         ? [
             {
               date: new Date().toISOString().split("T")[0],
@@ -256,7 +254,7 @@ export const useHomeLogic = () => {
           ]
         : [],
     };
-  }, [healthMetrics, userProfile, calculatedMetrics]);
+  }, [healthMetrics, userProfile, calculatedMetrics, bodyAnalysis]);
 
   const caloriesConsumed = useMemo(() => {
     const consumedNutrition = useNutritionStore

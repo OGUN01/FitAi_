@@ -24,6 +24,8 @@ export const GuestPromptBanner: React.FC<GuestPromptBannerProps> = ({
       scaleValue={0.98}
       hapticFeedback={true}
       hapticType="light"
+      accessibilityRole="button"
+      accessibilityLabel="Sign up"
     >
       <GlassCard
         elevation={1}
@@ -59,6 +61,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: ResponsiveTheme.spacing.sm,
   },
   iconCircle: {
@@ -70,21 +73,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   text: {
-    flex: 1,
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.text,
     fontWeight: ResponsiveTheme.fontWeight.medium,
+    flexShrink: 1,
   },
   button: {
     backgroundColor: ResponsiveTheme.colors.primary,
     paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.xs,
+    paddingVertical: ResponsiveTheme.spacing.sm,
     borderRadius: ResponsiveTheme.borderRadius.md,
   },
   buttonText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
 });
 

@@ -11,7 +11,7 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -232,29 +232,29 @@ const styles = StyleSheet.create({
 
   menu: {
     position: "absolute",
-    backgroundColor: THEME.colors.backgroundTertiary,
-    borderRadius: THEME.borderRadius.lg,
-    paddingVertical: THEME.spacing.xs,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    paddingVertical: ResponsiveTheme.spacing.xs,
     minWidth: 200,
-    ...THEME.shadows.lg,
+    ...ResponsiveTheme.shadows.lg,
   },
 
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
     minHeight: 50,
   },
 
   menuItemFirst: {
-    borderTopLeftRadius: THEME.borderRadius.lg,
-    borderTopRightRadius: THEME.borderRadius.lg,
+    borderTopLeftRadius: ResponsiveTheme.borderRadius.lg,
+    borderTopRightRadius: ResponsiveTheme.borderRadius.lg,
   },
 
   menuItemLast: {
-    borderBottomLeftRadius: THEME.borderRadius.lg,
-    borderBottomRightRadius: THEME.borderRadius.lg,
+    borderBottomLeftRadius: ResponsiveTheme.borderRadius.lg,
+    borderBottomRightRadius: ResponsiveTheme.borderRadius.lg,
   },
 
   menuItemDisabled: {
@@ -262,24 +262,24 @@ const styles = StyleSheet.create({
   },
 
   menuIcon: {
-    fontSize: THEME.fontSize.lg,
-    marginRight: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    marginRight: ResponsiveTheme.spacing.sm,
     width: 24,
     textAlign: "center",
   },
 
   menuLabel: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium as "500",
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
+    color: ResponsiveTheme.colors.text,
     flex: 1,
   },
 
   menuLabelDestructive: {
-    color: THEME.colors.error,
+    color: ResponsiveTheme.colors.error,
   },
 
   menuLabelDisabled: {
-    color: THEME.colors.textMuted,
+    color: ResponsiveTheme.colors.textMuted,
   },
 });

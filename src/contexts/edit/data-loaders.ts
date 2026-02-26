@@ -19,15 +19,11 @@ export async function loadSectionData(params: LoadDataParams): Promise<any> {
   let profileData = null;
 
   if (user?.id && !isGuestMode) {
-    console.log(
-      `🔄 EditContext: Loading ${section} data for authenticated user`,
-    );
     const profileResponse = await getCompleteProfile(user.id);
     if (profileResponse.success && profileResponse.data) {
       profileData = profileResponse.data;
     }
   } else if (isGuestMode && profile) {
-    console.log(`🔄 EditContext: Loading ${section} data for guest user`);
     profileData = profile;
   }
 
@@ -51,10 +47,6 @@ export async function loadSectionData(params: LoadDataParams): Promise<any> {
     }
 
     if (sectionData) {
-      console.log(
-        `✅ EditContext: Found existing ${section} data (using database schema):`,
-        sectionData,
-      );
       return sectionData;
     }
   }
@@ -67,9 +59,6 @@ export function createDefaultSectionData(
   user: any,
   profile: any,
 ): any {
-  console.log(
-    `📝 EditContext: No existing ${section} data found, creating default structure`,
-  );
 
   switch (section) {
     case "personalInfo":

@@ -19,15 +19,11 @@ export const createHealthConnectActions = (
 ) => ({
   initializeHealthConnect: async (): Promise<boolean> => {
     try {
-      console.log("🔗 Initializing Health Connect in store...");
 
       const isAvailable = await healthConnectService.initializeHealthConnect();
 
       if (isAvailable) {
         const hasPermissions = await healthConnectService.hasPermissions();
-        console.log(
-          `Health Connect - Available: ${isAvailable}, Permissions: ${hasPermissions}`,
-        );
 
         set((state) => ({
           isHealthConnectAvailable: isAvailable,
@@ -48,7 +44,6 @@ export const createHealthConnectActions = (
 
   requestHealthConnectPermissions: async (): Promise<boolean> => {
     try {
-      console.log("🔐 Requesting Health Connect permissions from store...");
 
       const permissionGranted = await healthConnectService.requestPermissions();
 
@@ -67,7 +62,6 @@ export const createHealthConnectActions = (
 
   reauthorizeHealthConnect: async (): Promise<boolean> => {
     try {
-      console.log("🔄 Re-authorizing Health Connect from store...");
 
       set({ isHealthConnectAuthorized: false, syncStatus: "syncing" });
 
@@ -79,7 +73,6 @@ export const createHealthConnectActions = (
       }));
 
       if (success) {
-        console.log("✅ Re-authorization successful, syncing data...");
         await get().syncFromHealthConnect(7);
       }
 
@@ -95,12 +88,10 @@ export const createHealthConnectActions = (
     daysBack: number = 7,
   ): Promise<HealthConnectSyncResult> => {
     try {
-      console.log("🔄 Syncing health data from Health Connect...");
 
       const isInitialized =
         await healthConnectService.initializeHealthConnect();
       if (!isInitialized) {
-        console.warn("⚠️ Health Connect not available, skipping sync");
         return { success: false, error: "Health Connect not initialized" };
       }
 
@@ -143,19 +134,14 @@ export const createHealthConnectActions = (
         }
 
         if (healthData.data?.sources) {
-          console.log("📱 Data sources:");
           Object.entries(healthData.data.sources).forEach(
             ([metric, source]) => {
               if (source) {
-                console.log(
-                  `  ${metric}: ${source.name} (Tier ${source.tier}, ${source.accuracy}% accuracy)`,
-                );
               }
             },
           );
         }
 
-        console.log("✅ Health Connect sync completed successfully");
       } else {
         set({
           syncStatus: "error",
@@ -185,7 +171,6 @@ export const createHealthConnectActions = (
     notes?: string;
   }): Promise<WriteWorkoutResult> => {
     try {
-      console.log("📝 Writing workout to Health Connect from store...");
 
       const state = get();
       if (!state.isHealthConnectAvailable) {
@@ -208,7 +193,6 @@ export const createHealthConnectActions = (
       });
 
       if (result.success) {
-        console.log("✅ Workout synced to Health Connect:", result.recordId);
       }
 
       return result;

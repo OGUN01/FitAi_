@@ -14,26 +14,13 @@ export async function login(
 ): Promise<AuthResponse> {
   try {
     const { email, password } = credentials;
-    console.log("🔐 Auth Service: Attempting login for:", email);
-    console.log("🔐 Auth Service: Password length:", password.length);
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    console.log("🔐 Auth Service: Supabase response:", {
-      user: data.user ? `${data.user.email} (${data.user.id})` : "null",
-      session: data.session ? "exists" : "null",
-      error: error?.message,
-    });
-
     if (error) {
-      console.log("🔐 Auth Service: Login error details:", {
-        message: error.message,
-        code: error.status,
-        name: error.name,
-      });
 
       // Check if error is related to email verification
       if (
@@ -69,10 +56,6 @@ export async function login(
 
     // Check if user's email is confirmed
     if (data.user && !data.user.email_confirmed_at) {
-      console.log(
-        "🔐 Auth Service: Email not confirmed for user:",
-        data.user.email,
-      );
       return {
         success: false,
         error:
@@ -81,7 +64,6 @@ export async function login(
     }
 
     if (data.user && data.session) {
-      console.log("🔐 Auth Service: Login successful, creating auth user");
       const authUser: AuthUser = {
         id: data.user.id,
         email: data.user.email!,
@@ -166,47 +148,27 @@ export async function logout(
  */
 async function checkAndTriggerMigration(userId: string): Promise<void> {
   try {
-    console.log(
-      "🔄 [AUTO-MIGRATION] Checking if migration is needed for user:",
-      userId,
-    );
 
     // Check if there's guest data to migrate
     const hasGuestData = await dataBridge.hasGuestDataForMigration();
 
     if (!hasGuestData) {
-      console.log(
-        "✅ [AUTO-MIGRATION] No guest data found - skipping migration",
-      );
       return;
     }
-
-    console.log(
-      "📊 [AUTO-MIGRATION] Guest data found - auto-starting migration in background",
-    );
 
     // AUTO-START migration (don't await to avoid blocking login)
     migrationManager
       .startProfileMigration(userId)
       .then((result) => {
         if (result.success) {
-          console.log(
-            "✅ [AUTO-MIGRATION] Complete! Migrated keys:",
-            result.migratedKeys,
-          );
           if (result.localSyncKeys && result.remoteSyncKeys) {
             const pending = result.localSyncKeys.filter(
               (k: string) => !result.remoteSyncKeys!.includes(k),
             );
             if (pending.length > 0) {
-              console.log("⏳ [AUTO-MIGRATION] Pending remote sync:", pending);
             }
           }
         } else {
-          console.warn("⚠️ [AUTO-MIGRATION] Partial success:", {
-            migratedKeys: result.migratedKeys,
-            errors: result.errors,
-          });
           // Errors are queued for retry - no user action needed
         }
       })

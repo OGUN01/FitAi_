@@ -1,6 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Card, THEME } from "../ui";
+import { Card } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf } from '../../utils/responsive';
 import { DayMeal } from "../../types/ai";
 
 interface IngredientsListProps {
@@ -31,44 +33,44 @@ export const IngredientsList: React.FC<IngredientsListProps> = ({ meal }) => {
 
 const styles = StyleSheet.create({
   ingredientsSection: {
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: "600",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   ingredientCard: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
   },
   ingredientHeader: {
     flexDirection: "row",
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
-    marginBottom: THEME.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   ingredientName: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "500",
-    color: THEME.colors.text,
+    color: ResponsiveTheme.colors.text,
   },
   ingredientQuantity: {
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: "600",
-    color: THEME.colors.primary,
+    color: ResponsiveTheme.colors.primary,
   },
   ingredientDetails: {
     flexDirection: "row",
-    gap: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
   },
   ingredientCalories: {
-    fontSize: 12,
-    color: THEME.colors.textSecondary,
+    fontSize: rf(12),
+    color: ResponsiveTheme.colors.textSecondary,
   },
   ingredientCategory: {
-    fontSize: 12,
-    color: THEME.colors.textSecondary,
+    fontSize: rf(12),
+    color: ResponsiveTheme.colors.textSecondary,
     textTransform: "capitalize",
   },
 });

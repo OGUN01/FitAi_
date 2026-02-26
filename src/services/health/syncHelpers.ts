@@ -78,7 +78,6 @@ export async function syncSteps(ctx: SyncContext): Promise<void> {
       ctx.healthData.steps = 0;
     }
   } catch (error) {
-    console.warn("⚠️ Failed to aggregate steps:", error);
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("steps");
   }
@@ -101,7 +100,6 @@ export async function syncHeartRate(ctx: SyncContext): Promise<void> {
       addOriginSource(ctx, "heartRate", heartRateAggregate.dataOrigins || []);
     }
   } catch (error) {
-    console.warn("⚠️ Failed to aggregate heart rate:", error);
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("heartRate");
   }
@@ -129,7 +127,6 @@ export async function syncActiveCalories(ctx: SyncContext): Promise<void> {
       );
     }
   } catch (error) {
-    console.warn("⚠️ Failed to aggregate active calories:", error);
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("activeCalories");
   }
@@ -162,7 +159,6 @@ export async function syncTotalCaloriesWithBMRFallback(
       );
     }
   } catch (error) {
-    console.warn("⚠️ Failed to aggregate total calories:", error);
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("totalCalories");
   }
@@ -200,7 +196,6 @@ export async function syncTotalCaloriesWithBMRFallback(
         }
       }
     } catch (bmrError) {
-      console.warn("⚠️ BMR fallback also failed:", bmrError);
     }
   }
 }
@@ -254,7 +249,6 @@ export async function syncDistance(ctx: SyncContext): Promise<void> {
       }
     }
   } catch (error) {
-    console.warn("⚠️ Failed to aggregate distance:", error);
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("distance");
   }
@@ -286,7 +280,6 @@ export async function syncWeight(ctx: SyncContext): Promise<void> {
       }
     }
   } catch (error) {
-    console.warn("⚠️ Failed to read weight:", error);
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("weight");
   }
@@ -324,7 +317,6 @@ export async function syncSleep(ctx: SyncContext): Promise<void> {
       }
     }
   } catch (error) {
-    console.warn("⚠️ Failed to read sleep data:", error);
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("sleep");
   }
@@ -369,7 +361,6 @@ export async function syncExerciseSessions(ctx: SyncContext): Promise<void> {
       }
     }
   } catch (error) {
-    console.warn("⚠️ Failed to read exercise sessions:", error);
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("exerciseSessions");
   }
@@ -402,7 +393,6 @@ export async function syncHRV(ctx: SyncContext): Promise<void> {
       }
     }
   } catch (error) {
-    console.warn("⚠️ Failed to read HRV data:", error);
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("heartRateVariability");
   }
@@ -434,7 +424,6 @@ export async function syncSpO2(ctx: SyncContext): Promise<void> {
       }
     }
   } catch (error) {
-    console.warn("⚠️ Failed to read SpO2 data:", error);
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("oxygenSaturation");
   }
@@ -466,7 +455,6 @@ export async function syncBodyFat(ctx: SyncContext): Promise<void> {
       }
     }
   } catch (error) {
-    console.warn("⚠️ Failed to read body fat data:", error);
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("bodyFat");
   }

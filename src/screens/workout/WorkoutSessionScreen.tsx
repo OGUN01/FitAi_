@@ -7,7 +7,7 @@ import {
   ScrollView,
   Animated,
 } from "react-native";
-import { THEME } from "../../components/ui";
+import { ResponsiveTheme } from "../../utils/constants";
 import { DayWorkout } from "../../types/ai";
 import { WorkoutTimer } from "../../components/fitness/WorkoutTimer";
 import { ExerciseGifPlayer } from "../../components/fitness/ExerciseGifPlayer";
@@ -105,6 +105,10 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   const { workout, sessionId } = route.params;
   const insets = useSafeAreaInsets();
 
+  const session = useWorkoutSession((workout ?? { exercises: [] }) as DayWorkout, sessionId);
+  const achievements = useWorkoutAchievements();
+  const animations = useWorkoutAnimations();
+
   if (!workout) {
     return (
       <WorkoutErrorState
@@ -122,10 +126,6 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       />
     );
   }
-
-  const session = useWorkoutSession(workout, sessionId);
-  const achievements = useWorkoutAchievements();
-  const animations = useWorkoutAnimations();
 
   const derivedExerciseDuration = useMemo(() => {
     const repsDuration = parseDurationFromReps(session.currentExercise.reps);
@@ -358,7 +358,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           width={220}
           showTitle={false}
           showInstructions={false}
-          style={{ marginBottom: THEME.spacing.md }}
+          style={{ marginBottom: ResponsiveTheme.spacing.md }}
         />
       </WorkoutTimer>
 
@@ -479,18 +479,18 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
   content: {
     flex: 1,
-    paddingHorizontal: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
   exerciseContainer: {
-    marginTop: THEME.spacing.lg,
+    marginTop: ResponsiveTheme.spacing.lg,
     alignItems: "center",
   },
   exerciseGifPlayer: {
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
     alignSelf: "center",
     elevation: 4,
   },

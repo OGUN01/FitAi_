@@ -51,8 +51,6 @@ class AuthService {
   async register(credentials: RegisterCredentials): Promise<AuthResponse> {
     try {
       const { email, password, confirmPassword } = credentials;
-      console.log('🔐 Auth Service: Attempting register for:', email);
-      console.log('🔐 Auth Service: Password length:', password.length);
 
       // Validate passwords match
       if (password !== confirmPassword) {
@@ -113,9 +111,6 @@ class AuthService {
           await AsyncStorage.setItem('auth_session', JSON.stringify(session));
         } else {
           // Don't save session for unverified users - they need to verify email first
-          console.log(
-            '🔐 Auth Service: User registered but email not verified, not saving session'
-          );
         }
 
         return {
@@ -142,26 +137,13 @@ class AuthService {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
       const { email, password } = credentials;
-      console.log('🔐 Auth Service: Attempting login for:', email);
-      console.log('🔐 Auth Service: Password length:', password.length);
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      console.log('🔐 Auth Service: Supabase response:', {
-        user: data.user ? `${data.user.email} (${data.user.id})` : 'null',
-        session: data.session ? 'exists' : 'null',
-        error: error?.message,
-      });
-
       if (error) {
-        console.log('🔐 Auth Service: Login error details:', {
-          message: error.message,
-          code: error.status,
-          name: error.name,
-        });
 
         // Check if error is related to email verification
         if (
@@ -196,7 +178,6 @@ class AuthService {
 
       // Check if user's email is confirmed
       if (data.user && !data.user.email_confirmed_at) {
-        console.log('🔐 Auth Service: Email not confirmed for user:', data.user.email);
         return {
           success: false,
           error:
@@ -205,7 +186,6 @@ class AuthService {
       }
 
       if (data.user && data.session) {
-        console.log('🔐 Auth Service: Login successful, creating auth user');
         const authUser: AuthUser = {
           id: data.user.id,
           email: data.user.email!,
@@ -517,6 +497,24 @@ class AuthService {
 
         await AsyncStorage.setItem('auth_session', JSON.stringify(this.currentSession));
         callback(authUser);
+      } else if (event === 'TOKEN_REFRESHED' && session) {
+        // Update stored session with refreshed token data
+        const authUser: AuthUser = {
+          id: session.user.id,
+          email: session.user.email!,
+          isEmailVerified: session.user.email_confirmed_at !== null,
+          lastLoginAt: this.currentSession?.user.lastLoginAt || new Date().toISOString(),
+        };
+
+        this.currentSession = {
+          user: authUser,
+          accessToken: session.access_token,
+          refreshToken: session.refresh_token,
+          expiresAt: session.expires_at || 0,
+        };
+
+        await AsyncStorage.setItem('auth_session', JSON.stringify(this.currentSession));
+        // Don't call callback — user state hasn't changed, only the token refreshed
       } else if (event === 'SIGNED_OUT') {
         this.currentSession = null;
         await AsyncStorage.removeItem('auth_session');
@@ -574,37 +572,27 @@ class AuthService {
    */
   private async checkAndTriggerMigration(userId: string): Promise<void> {
     try {
-      console.log('🔄 [AUTO-MIGRATION] Checking if migration is needed for user:', userId);
 
       // Check if there's guest data to migrate
       const hasGuestData = await dataBridge.hasGuestDataForMigration();
 
       if (!hasGuestData) {
-        console.log('✅ [AUTO-MIGRATION] No guest data found - skipping migration');
         return;
       }
-
-      console.log('📊 [AUTO-MIGRATION] Guest data found - auto-starting migration in background');
 
       // AUTO-START migration (don't await to avoid blocking login)
       migrationManager
         .startProfileMigration(userId)
         .then((result) => {
           if (result.success) {
-            console.log('✅ [AUTO-MIGRATION] Complete! Migrated keys:', result.migratedKeys);
             if (result.localSyncKeys && result.remoteSyncKeys) {
               const pending = result.localSyncKeys.filter(
                 (k: string) => !result.remoteSyncKeys!.includes(k)
               );
               if (pending.length > 0) {
-                console.log('⏳ [AUTO-MIGRATION] Pending remote sync:', pending);
               }
             }
           } else {
-            console.warn('⚠️ [AUTO-MIGRATION] Partial success:', {
-              migratedKeys: result.migratedKeys,
-              errors: result.errors,
-            });
             // Errors are queued for retry - no user action needed
           }
         })

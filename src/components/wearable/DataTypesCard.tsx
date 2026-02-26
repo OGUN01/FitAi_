@@ -3,7 +3,7 @@ import { View, Text, Switch, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw } from "../../utils/responsive";
+import { rf, rp, rbr, rw } from "../../utils/responsive";
 
 export interface HealthDataType {
   key:
@@ -28,63 +28,63 @@ export const HEALTH_DATA_TYPES: HealthDataType[] = [
     title: "Steps & Activity",
     description: "Daily steps, distance walked",
     icon: "walk-outline",
-    color: "#4CAF50",
+    color: ResponsiveTheme.colors.success,
   },
   {
     key: "heartRate",
     title: "Heart Rate",
     description: "Heart rate and resting HR",
     icon: "heart-outline",
-    color: "#F44336",
+    color: ResponsiveTheme.colors.error,
   },
   {
     key: "workouts",
     title: "Workouts",
     description: "Exercise sessions from watch",
     icon: "fitness-outline",
-    color: "#FF9800",
+    color: ResponsiveTheme.colors.warning,
   },
   {
     key: "sleep",
     title: "Sleep Data",
     description: "Sleep duration and quality",
     icon: "bed-outline",
-    color: "#FF6B35",
+    color: ResponsiveTheme.colors.primary,
   },
   {
     key: "weight",
     title: "Body Weight",
     description: "Weight measurements",
     icon: "body-outline",
-    color: "#2196F3",
+    color: ResponsiveTheme.colors.info,
   },
   {
     key: "nutrition",
     title: "Nutrition",
     description: "Calorie tracking from apps",
     icon: "nutrition-outline",
-    color: "#00BCD4",
+    color: ResponsiveTheme.colors.cyan,
   },
   {
     key: "hrv",
     title: "Heart Rate Variability",
     description: "HRV for recovery analysis",
     icon: "pulse-outline",
-    color: "#673AB7",
+    color: ResponsiveTheme.colors.secondary,
   },
   {
     key: "spo2",
     title: "Blood Oxygen (SpO2)",
     description: "Oxygen saturation levels",
     icon: "water-outline",
-    color: "#009688",
+    color: ResponsiveTheme.colors.teal,
   },
   {
     key: "bodyFat",
     title: "Body Fat",
     description: "Body composition from scales",
     icon: "analytics-outline",
-    color: "#E55A2B",
+    color: ResponsiveTheme.colors.primaryDark,
   },
 ];
 
@@ -121,8 +121,8 @@ export const DataTypesCard: React.FC<DataTypesCardProps> = ({
           <Switch
             value={dataTypesToSync[dataType.key]}
             onValueChange={(value) => onDataTypeToggle(dataType.key, value)}
-            trackColor={{ false: "#444", true: dataType.color }}
-            thumbColor="#fff"
+            trackColor={{ false: ResponsiveTheme.colors.border, true: dataType.color }}
+            thumbColor={ResponsiveTheme.colors.white}
           />
         </View>
       ))}
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.md,
   },
   row: {
@@ -148,12 +148,12 @@ const styles = StyleSheet.create({
   },
   rowBorder: {
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.1)",
+    borderTopColor: ResponsiveTheme.colors.glassHighlight,
   },
   icon: {
     width: rw(40),
     height: rw(40),
-    borderRadius: rw(10),
+    borderRadius: rbr(10),
     justifyContent: "center",
     alignItems: "center",
     marginRight: ResponsiveTheme.spacing.md,
@@ -164,11 +164,11 @@ const styles = StyleSheet.create({
   dataTitle: {
     fontSize: rf(15),
     fontWeight: "500",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
   },
   desc: {
     fontSize: rf(13),
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: rp(2),
   },
 });

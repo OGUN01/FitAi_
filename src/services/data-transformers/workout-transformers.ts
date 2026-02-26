@@ -117,15 +117,9 @@ function estimateCaloriesBurned(
     const caloriesPerMinute =
       (metadata.calculatedMetricsSummary.tdee / 1440) * 3;
     const calories = Math.round(duration * caloriesPerMinute);
-    console.log(
-      `[dataTransformers] TDEE-based calorie estimate: ${calories} kcal`,
-    );
     return calories;
   }
 
-  console.log(
-    "[dataTransformers] Cannot estimate calories: no TDEE available, will calculate at completion",
-  );
   return 0;
 }
 

@@ -25,11 +25,9 @@ export class LifecycleManager {
 
   async initialize(loadQueue: () => Promise<void>): Promise<void> {
     if (this.isInitialized) {
-      console.log("[SyncEngine] Already initialized, skipping...");
       return;
     }
 
-    console.log("[SyncEngine] Initializing...");
 
     try {
       await loadQueue();
@@ -43,7 +41,6 @@ export class LifecycleManager {
       await this.setupNetworkListener();
 
       this.isInitialized = true;
-      console.log("[SyncEngine] Initialization complete");
     } catch (error) {
       console.error("[SyncEngine] Initialization failed:", error);
       throw error;
@@ -51,20 +48,16 @@ export class LifecycleManager {
   }
 
   private setupAuthListener(): void {
-    console.log("[SyncEngine] Setting up auth state listener...");
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log(`[SyncEngine] Auth state changed: ${event}`);
 
       if (event === "SIGNED_IN" && session?.user) {
         const userId = session.user.id;
-        console.log(`[SyncEngine] User signed in: ${userId}`);
         this.userId = userId;
         this.onAuthChange?.(userId);
       } else if (event === "SIGNED_OUT") {
-        console.log("[SyncEngine] User signed out, clearing user ID");
         this.userId = null;
         this.onAuthChange?.(null);
       }
@@ -74,25 +67,17 @@ export class LifecycleManager {
   }
 
   private async setupNetworkListener(): Promise<void> {
-    console.log("[SyncEngine] Setting up network state listener...");
 
     const state = await NetInfo.fetch();
     this.isOnline = state.isConnected ?? true;
-    console.log(
-      `[SyncEngine] Initial network state: ${this.isOnline ? "online" : "offline"}`,
-    );
 
     this.netInfoUnsubscribe = NetInfo.addEventListener(
       (state: NetInfoState) => {
         const wasOffline = !this.isOnline;
         this.isOnline = state.isConnected ?? true;
 
-        console.log(
-          `[SyncEngine] Network state changed: ${this.isOnline ? "online" : "offline"}`,
-        );
 
         if (wasOffline && this.isOnline) {
-          console.log("[SyncEngine] Back online, processing queue...");
           this.onNetworkChange?.(this.isOnline);
         }
       },
@@ -100,7 +85,6 @@ export class LifecycleManager {
   }
 
   setUserId(userId: string | null): void {
-    console.log(`[SyncEngine] Setting user ID: ${userId || "null"}`);
     this.userId = userId;
   }
 
@@ -129,7 +113,6 @@ export class LifecycleManager {
   }
 
   destroy(): void {
-    console.log("[SyncEngine] Destroying lifecycle manager...");
 
     if (this.authUnsubscribe) {
       this.authUnsubscribe();
@@ -142,6 +125,5 @@ export class LifecycleManager {
     }
 
     this.isInitialized = false;
-    console.log("[SyncEngine] Lifecycle manager destroyed");
   }
 }

@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, typography, spacing } from "../../../theme/aurora-tokens";
-import { rf, rw } from "../../../utils/responsive";
+import { rf, rw, rp } from "../../../utils/responsive";
 import { MiniProgressRing } from "../../ui/aurora/ProgressRing";
 import { macroColors } from "../../../hooks/useMealCard";
 import { DayMeal } from "../../../types/ai";
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   macroLabel: {
     fontSize: typography.fontSize.micro,
     fontWeight: typography.fontWeight.medium,
-    marginTop: 2,
+    marginTop: rp(2),
   },
   fiberCircle: {
     width: rw(32),

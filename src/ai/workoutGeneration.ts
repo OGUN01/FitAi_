@@ -25,7 +25,6 @@ export async function generateWorkout(
   } = {},
   updateMetadata: (metadata: AIServiceMetadata) => void,
 ): Promise<AIResponse<Workout>> {
-  console.log("🏋️ [aiService] generateWorkout called");
 
   try {
     const request = transformForWorkoutRequest(
@@ -40,7 +39,6 @@ export async function generateWorkout(
       },
     );
 
-    console.log("🏋️ [aiService] Calling backend /workout/generate");
     const response = await fitaiWorkersClient.generateWorkoutPlan(request);
 
     if (response.metadata) {
@@ -68,7 +66,6 @@ export async function generateWorkout(
       };
     }
 
-    console.log("✅ [aiService] Workout generated successfully");
     return {
       success: true,
       data: workout,
@@ -88,10 +85,6 @@ export async function generateWeeklyWorkoutPlan(
   } = {},
   updateMetadata: (metadata: AIServiceMetadata) => void,
 ): Promise<AIResponse<WeeklyWorkoutPlan>> {
-  console.log(
-    "🏋️ [aiService] generateWeeklyWorkoutPlan called for week:",
-    weekNumber,
-  );
 
   try {
     const request = transformForWorkoutRequest(
@@ -105,21 +98,11 @@ export async function generateWeeklyWorkoutPlan(
       },
     );
 
-    console.log(
-      "🏋️ [aiService] Calling backend /workout/generate with weekly plan request",
-    );
     const response = await fitaiWorkersClient.generateWorkoutPlan(request);
 
     if (response.metadata) {
       updateMetadata(response.metadata as AIServiceMetadata);
-      console.log("📊 [aiService] Generation metadata:", {
-        cached: response.metadata.cached,
-        cacheSource: response.metadata.cacheSource,
-        generationTime: response.metadata.generationTime,
-        model: response.metadata.model,
-      });
     }
-
     if (!response.success || !response.data) {
       console.error("❌ [aiService] Backend returned error:", response.error);
       return {
@@ -129,10 +112,6 @@ export async function generateWeeklyWorkoutPlan(
     }
 
     const weeklyPlanData = response.data as any;
-    console.log(
-      "✅ [aiService] Received weekly plan with workouts:",
-      weeklyPlanData.workouts?.length,
-    );
 
     const workouts = weeklyPlanData.workouts.map((w: any) =>
       transformWorkoutData(w.workout, w.dayOfWeek),
@@ -148,13 +127,6 @@ export async function generateWeeklyWorkoutPlan(
       totalEstimatedCalories: weeklyPlanData.totalEstimatedCalories || 0,
     };
 
-    console.log(
-      "✅ [aiService] Weekly workout plan transformed successfully:",
-      {
-        workouts: weeklyPlan.workouts.length,
-        title: weeklyPlan.planTitle,
-      },
-    );
 
     return {
       success: true,

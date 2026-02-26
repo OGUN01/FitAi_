@@ -12,7 +12,8 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { THEME } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr } from "../../utils/responsive";
 import { DayMeal } from "../../types/ai";
 import { completionTrackingService } from "../../services/completionTracking";
 import { mealMotivationService } from "../../features/nutrition/MealMotivation";
@@ -48,17 +49,11 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
 
   const handleMarkComplete = async () => {
     if (isCompleted || isCompleting) {
-      console.log("🍽️ Meal already completed or completing in progress");
       return;
     }
 
     try {
       setIsCompleting(true);
-      console.log(
-        "🍽️ IngredientDetailModal: Marking meal as completed:",
-        meal.name,
-        meal.id,
-      );
 
       // Use the completion tracking service to mark meal as complete
       const success = await completionTrackingService.completeMeal(meal.id, {
@@ -78,9 +73,6 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
           {
             text: "Awesome! 🍽️",
             onPress: () => {
-              console.log(
-                "🍽️ IngredientDetailModal: Meal completion confirmed",
-              );
 
               // Call the completion callback
               if (onMealComplete) {
@@ -93,7 +85,6 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
           },
         ]);
 
-        console.log("✅ Meal completed successfully from ingredient modal");
       } else {
         throw new Error("Failed to complete meal");
       }
@@ -115,7 +106,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
         <View style={styles.modalOverlay}>
           <View style={styles.modal}>
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Ionicons name="close" size={24} color={THEME.colors.text} />
+              <Ionicons name="close" size={24} color={ResponsiveTheme.colors.text} />
             </TouchableOpacity>
             <Text style={styles.errorText}>
               Ingredient information not available for "{ingredientName}"
@@ -136,7 +127,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Ionicons name="close" size={28} color={THEME.colors.text} />
+            <Ionicons name="close" size={28} color={ResponsiveTheme.colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Ingredient Details</Text>
           <View style={{ width: 28 }} />
@@ -148,7 +139,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
             <Ionicons
               name="checkmark-circle"
               size={20}
-              color={THEME.colors.success}
+              color={ResponsiveTheme.colors.success}
             />
             <Text style={styles.completionBannerText}>
               🎉 This meal has been completed!
@@ -297,7 +288,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
             >
               {isCompleting ? (
                 <>
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={ResponsiveTheme.colors.white} />
                   <Text
                     style={[styles.navButtonText, styles.completeButtonText]}
                   >
@@ -313,7 +304,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
                         : "checkmark-circle-outline"
                     }
                     size={24}
-                    color="#FFFFFF"
+                    color={ResponsiveTheme.colors.white}
                   />
                   <Text
                     style={[styles.navButtonText, styles.completeButtonText]}
@@ -334,7 +325,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
               <Text style={[styles.navButtonText, styles.nextButtonText]}>
                 Next Step
               </Text>
-              <Ionicons name="chevron-forward" size={24} color="#FFFFFF" />
+              <Ionicons name="chevron-forward" size={24} color={ResponsiveTheme.colors.white} />
             </TouchableOpacity>
           </View>
         </View>
@@ -383,128 +374,128 @@ const NutritionRow: React.FC<{
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: ResponsiveTheme.colors.overlay,
     justifyContent: "center",
     alignItems: "center",
   },
   modal: {
-    backgroundColor: THEME.colors.surface,
-    borderRadius: 16,
-    padding: THEME.spacing.lg,
-    width: screenWidth - 40,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: rbr(16),
+    padding: ResponsiveTheme.spacing.lg,
+    width: screenWidth - rp(40),
     maxHeight: "80%",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: THEME.colors.border,
+    borderBottomColor: ResponsiveTheme.colors.border,
   },
   closeButton: {
-    padding: THEME.spacing.sm,
+    padding: ResponsiveTheme.spacing.sm,
   },
   headerTitle: {
-    fontSize: THEME.fontSize.lg,
+    fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: "700",
-    color: THEME.colors.text,
+    color: ResponsiveTheme.colors.text,
   },
   content: {
     flex: 1,
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
   ingredientHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: THEME.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
   ingredientIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    backgroundColor: THEME.colors.backgroundSecondary,
+    width: rp(80),
+    height: rp(80),
+    borderRadius: rbr(20),
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: THEME.spacing.lg,
+    marginRight: ResponsiveTheme.spacing.lg,
   },
   iconText: {
-    fontSize: 40,
+    fontSize: rf(40),
   },
   ingredientInfo: {
     flex: 1,
   },
   ingredientName: {
-    fontSize: THEME.fontSize.xxl,
+    fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: "700",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   ingredientCategory: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.primary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.primary,
     fontWeight: "600",
-    marginBottom: THEME.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   quantityText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
   nutritionCard: {
-    backgroundColor: THEME.colors.surface,
-    borderRadius: 16,
-    padding: THEME.spacing.lg,
-    marginBottom: THEME.spacing.lg,
-    shadowColor: "#000",
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: rbr(16),
+    padding: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
+    shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
   sectionTitle: {
-    fontSize: THEME.fontSize.lg,
+    fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: "700",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   calorieSection: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   calorieLabel: {
-    fontSize: THEME.fontSize.lg,
+    fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: "600",
-    color: THEME.colors.text,
+    color: ResponsiveTheme.colors.text,
   },
   calorieValue: {
-    fontSize: THEME.fontSize.xxl,
+    fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: "700",
-    color: "#FF6B6B",
+    color: ResponsiveTheme.colors.errorLight,
   },
   divider: {
     height: 1,
-    backgroundColor: THEME.colors.border,
-    marginVertical: THEME.spacing.md,
+    backgroundColor: ResponsiveTheme.colors.border,
+    marginVertical: ResponsiveTheme.spacing.md,
   },
   macroSection: {
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
   nutritionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: THEME.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.sm,
   },
   nutritionLabel: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
     fontWeight: "500",
     flex: 1,
   },
@@ -515,9 +506,9 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   nutritionValue: {
-    fontSize: THEME.fontSize.md,
+    fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: "700",
-    marginRight: THEME.spacing.md,
+    marginRight: ResponsiveTheme.spacing.md,
   },
   percentageContainer: {
     flexDirection: "row",
@@ -527,69 +518,69 @@ const styles = StyleSheet.create({
   percentageBar: {
     height: 6,
     flex: 1,
-    borderRadius: 3,
-    marginRight: THEME.spacing.sm,
+    borderRadius: rbr(3),
+    marginRight: ResponsiveTheme.spacing.sm,
   },
   percentageFill: {
     height: "100%",
-    borderRadius: 3,
+    borderRadius: rbr(3),
   },
   percentageText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
-    width: 30,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    width: rp(30),
   },
   contextCard: {
-    backgroundColor: THEME.colors.surface,
-    borderRadius: 16,
-    padding: THEME.spacing.lg,
-    marginBottom: THEME.spacing.lg,
-    shadowColor: "#000",
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: rbr(16),
+    padding: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
+    shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
   contextInfo: {
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
   contextText: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
     lineHeight: 22,
   },
   quantityCard: {
-    backgroundColor: THEME.colors.surface,
-    borderRadius: 16,
-    padding: THEME.spacing.lg,
-    marginBottom: THEME.spacing.lg,
-    shadowColor: "#000",
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: rbr(16),
+    padding: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
+    shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
   quantityInfo: {
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
   errorText: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.error,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.error,
     textAlign: "center",
   },
 
   // Action Section Styles
   actionSection: {
-    backgroundColor: THEME.colors.surface,
+    backgroundColor: ResponsiveTheme.colors.surface,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.md,
+    borderTopColor: ResponsiveTheme.colors.border,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
   },
 
   navigationButtons: {
     flexDirection: "row",
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   navButton: {
@@ -597,28 +588,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: THEME.spacing.md,
-    paddingHorizontal: THEME.spacing.sm,
-    borderRadius: 12,
-    minHeight: 48,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    borderRadius: rbr(12),
+    minHeight: rp(48),
   },
 
   previousButton: {
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
     borderWidth: 1,
-    borderColor: THEME.colors.border,
+    borderColor: ResponsiveTheme.colors.border,
   },
 
   completeButton: {
-    backgroundColor: THEME.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary,
   },
 
   completedButton: {
-    backgroundColor: THEME.colors.success,
+    backgroundColor: ResponsiveTheme.colors.success,
   },
 
   loadingButton: {
-    backgroundColor: THEME.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary,
     opacity: 0.7,
   },
 
@@ -627,21 +618,21 @@ const styles = StyleSheet.create({
   },
 
   navButtonText: {
-    fontSize: THEME.fontSize.md,
+    fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: "600",
-    marginHorizontal: THEME.spacing.xs,
+    marginHorizontal: ResponsiveTheme.spacing.xs,
   },
 
   previousButtonText: {
-    color: THEME.colors.textSecondary,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   completeButtonText: {
-    color: THEME.colors.surface,
+    color: ResponsiveTheme.colors.surface,
   },
 
   nextButtonText: {
-    color: THEME.colors.surface,
+    color: ResponsiveTheme.colors.surface,
   },
 
   // Completion Banner Styles
@@ -649,21 +640,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: THEME.colors.success + "15",
-    paddingVertical: THEME.spacing.md,
-    paddingHorizontal: THEME.spacing.lg,
-    marginHorizontal: THEME.spacing.lg,
-    marginTop: THEME.spacing.sm,
-    borderRadius: 12,
+    backgroundColor: ResponsiveTheme.colors.success + "15",
+    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    marginHorizontal: ResponsiveTheme.spacing.lg,
+    marginTop: ResponsiveTheme.spacing.sm,
+    borderRadius: rbr(12),
     borderWidth: 1,
-    borderColor: THEME.colors.success + "30",
+    borderColor: ResponsiveTheme.colors.success + "30",
   },
 
   completionBannerText: {
-    fontSize: THEME.fontSize.md,
+    fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: "600",
-    color: THEME.colors.success,
-    marginLeft: THEME.spacing.sm,
+    color: ResponsiveTheme.colors.success,
+    marginLeft: ResponsiveTheme.spacing.sm,
   },
 });
 

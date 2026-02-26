@@ -7,7 +7,9 @@ import {
   Modal,
   Animated,
 } from "react-native";
-import { Card, Button, THEME } from "../ui";
+import { Card, Button } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr, rw, rh, rs } from "../../utils/responsive";
 import { ExerciseGifPlayer } from "./ExerciseGifPlayer";
 
 interface ExerciseSessionModalProps {
@@ -171,7 +173,7 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
                   key={i}
                   style={[
                     styles.progressDot,
-                    i < currentSet ? styles.progressDotCompleted : {},
+                    i < currentSet - 1 ? styles.progressDotCompleted : {},
                   ]}
                 />
               ))}
@@ -194,7 +196,7 @@ const styles = StyleSheet.create({
   sessionCard: {
     width: "90%",
     maxWidth: 400,
-    padding: THEME.spacing.xl,
+    padding: ResponsiveTheme.spacing.xl,
     alignItems: "center",
   },
 
@@ -205,86 +207,86 @@ const styles = StyleSheet.create({
 
   header: {
     alignItems: "center",
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   setIndicator: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.primary,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   repsText: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   animationContainer: {
-    width: 250,
-    height: 250,
+    width: rw(250),
+    height: rh(250),
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
     position: "relative",
   },
 
   breathingCircleOuter: {
     position: "absolute",
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    backgroundColor: THEME.colors.primary + "20",
+    width: rw(250),
+    height: rh(250),
+    borderRadius: rbr(125),
+    backgroundColor: ResponsiveTheme.colors.primary + "20",
     borderWidth: 2,
-    borderColor: THEME.colors.primary + "40",
+    borderColor: ResponsiveTheme.colors.primary + "40",
   },
 
   breathingCircleMiddle: {
     position: "absolute",
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: THEME.colors.primary + "10",
+    width: rw(220),
+    height: rh(220),
+    borderRadius: rbr(110),
+    backgroundColor: ResponsiveTheme.colors.primary + "10",
     borderWidth: 1,
-    borderColor: THEME.colors.primary + "30",
+    borderColor: ResponsiveTheme.colors.primary + "30",
   },
 
   exerciseGifContainer: {
     position: "relative",
     zIndex: 10,
-    borderRadius: 90,
+    borderRadius: rbr(90),
     overflow: "hidden",
     elevation: 4,
   },
 
   exerciseName: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
     textAlign: "center",
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   motivationText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
     fontStyle: "italic",
-    marginBottom: THEME.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
 
   controls: {
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
-    marginBottom: THEME.spacing.lg,
-    gap: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.lg,
+    gap: ResponsiveTheme.spacing.md,
   },
 
   controlButton: {
     flex: 1,
-    height: 50,
-    borderRadius: THEME.borderRadius.lg,
+    height: rh(50),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
@@ -292,41 +294,41 @@ const styles = StyleSheet.create({
 
   cancelButton: {
     backgroundColor: "transparent",
-    borderColor: THEME.colors.border,
+    borderColor: ResponsiveTheme.colors.border,
   },
 
   completeButton: {
-    backgroundColor: THEME.colors.primary,
-    borderColor: THEME.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderColor: ResponsiveTheme.colors.primary,
   },
 
   controlText: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
 
   cancelText: {
-    color: THEME.colors.text,
+    color: ResponsiveTheme.colors.text,
   },
 
   completeText: {
-    color: THEME.colors.white,
+    color: ResponsiveTheme.colors.white,
   },
 
   progressDots: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   progressDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: THEME.colors.border,
+    width: rs(10),
+    height: rs(10),
+    borderRadius: rbr(5),
+    backgroundColor: ResponsiveTheme.colors.border,
   },
 
   progressDotCompleted: {
-    backgroundColor: THEME.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary,
   },
 });

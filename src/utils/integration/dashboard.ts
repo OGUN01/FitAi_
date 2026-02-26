@@ -1,5 +1,6 @@
 import { useAuth } from "../../hooks/useAuth";
 import { useUser } from "../../hooks/useUser";
+import { useProfileStore } from "../../stores/profileStore";
 import { useOffline } from "../../hooks/useOffline";
 import { api } from "../../services/api";
 import { HealthMetrics } from "./types";
@@ -8,6 +9,7 @@ export const useDashboardIntegration = () => {
   const { user: authUser } = useAuth();
   const { profile } = useUser();
   const { isOnline } = useOffline();
+  const { bodyAnalysis, personalInfo: profilePersonalInfo } = useProfileStore();
 
   const getUserStats = () => {
     return profile?.stats;
@@ -18,8 +20,8 @@ export const useDashboardIntegration = () => {
   };
 
   const getHealthMetrics = (): HealthMetrics | null => {
-    const heightCm = profile?.bodyMetrics?.height_cm;
-    const weightKg = profile?.bodyMetrics?.current_weight_kg;
+    const heightCm = profile?.bodyMetrics?.height_cm || bodyAnalysis?.height_cm;
+    const weightKg = profile?.bodyMetrics?.current_weight_kg || bodyAnalysis?.current_weight_kg;
 
     if (!heightCm || !weightKg) {
       return null;
@@ -41,10 +43,10 @@ export const useDashboardIntegration = () => {
       return null;
     }
 
-    const heightCm = profile?.bodyMetrics?.height_cm;
-    const weightKg = profile?.bodyMetrics?.current_weight_kg;
-    const age = profile.personalInfo?.age;
-    const gender = profile.personalInfo?.gender;
+    const heightCm = profile?.bodyMetrics?.height_cm || bodyAnalysis?.height_cm;
+    const weightKg = profile?.bodyMetrics?.current_weight_kg || bodyAnalysis?.current_weight_kg;
+    const age = profile.personalInfo?.age || profilePersonalInfo?.age;
+    const gender = profile.personalInfo?.gender || profilePersonalInfo?.gender;
     const activityLevelValue = (profile.personalInfo as any)?.activityLevel;
 
     if (!heightCm || !weightKg || !age || !gender || !activityLevelValue) {

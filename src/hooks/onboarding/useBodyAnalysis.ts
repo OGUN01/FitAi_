@@ -262,23 +262,19 @@ export const useBodyAnalysis = ({
 
   const handleNumberInput = (field: keyof BodyAnalysisData, text: string) => {
     const value = parseFloat(text) || 0;
-    updateField(field, value as any);
+    updateField(field, value as BodyAnalysisData[typeof field]);
   };
 
   const handlePhotoCapture = (imageUri: string) => {
-    updateField(
-      `${currentPhotoType}_photo_url` as keyof BodyAnalysisData,
-      imageUri as any,
-    );
+    const photoField = `${currentPhotoType}_photo_url` as keyof BodyAnalysisData;
+    updateField(photoField, imageUri as BodyAnalysisData[typeof photoField]);
     setShowCamera(false);
   };
 
   const handleImagePickerSelect = (imageUris: string[]) => {
     if (imageUris.length > 0) {
-      updateField(
-        `${currentPhotoType}_photo_url` as keyof BodyAnalysisData,
-        imageUris[0] as any,
-      );
+      const photoField = `${currentPhotoType}_photo_url` as keyof BodyAnalysisData;
+      updateField(photoField, imageUris[0] as BodyAnalysisData[typeof photoField]);
     }
     setShowImagePicker(false);
   };
@@ -293,10 +289,9 @@ export const useBodyAnalysis = ({
   };
 
   const removePhoto = (photoType: "front" | "side" | "back") => {
-    updateField(
-      `${photoType}_photo_url` as keyof BodyAnalysisData,
-      undefined as any,
-    );
+    const photoField = `${photoType}_photo_url` as keyof BodyAnalysisData;
+    updateField(photoField, undefined as BodyAnalysisData[typeof photoField]);
+
     if (formData.ai_estimated_body_fat) {
       setFormData((prev: BodyAnalysisData) => ({
         ...prev,
@@ -322,7 +317,7 @@ export const useBodyAnalysis = ({
     setIsAnalyzingPhotos(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      // Mock analysis - no artificial delay
 
       const mockAnalysis = {
         estimatedBodyFat: Math.random() * 10 + 15,

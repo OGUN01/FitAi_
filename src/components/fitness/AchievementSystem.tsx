@@ -7,7 +7,9 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-import { Card, THEME } from "../ui";
+import { Card } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr, rs } from "../../utils/responsive";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../services/supabase";
 
@@ -317,84 +319,84 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    padding: THEME.spacing.lg,
-    margin: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.lg,
+    margin: ResponsiveTheme.spacing.md,
   },
 
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   title: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
   },
 
   pointsBadge: {
-    backgroundColor: THEME.colors.primary,
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.sm,
-    borderRadius: THEME.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
   },
 
   pointsText: {
-    color: THEME.colors.white,
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.bold,
+    color: ResponsiveTheme.colors.white,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
   },
 
   emptyState: {
     alignItems: "center",
-    paddingVertical: THEME.spacing.xl,
+    paddingVertical: ResponsiveTheme.spacing.xl,
   },
 
   emptyIcon: {
-    fontSize: 48,
-    marginBottom: THEME.spacing.md,
+    fontSize: rf(48),
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   emptyTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   emptyDescription: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: rf(20),
   },
 
   achievementsList: {
-    gap: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
   },
 
   achievementItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: THEME.colors.backgroundSecondary,
-    padding: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.md,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    padding: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
   achievementIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: THEME.colors.primary + "20",
+    width: rs(48),
+    height: rs(48),
+    borderRadius: rbr(24),
+    backgroundColor: ResponsiveTheme.colors.primary + "20",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: THEME.spacing.md,
+    marginRight: ResponsiveTheme.spacing.md,
   },
 
   achievementEmoji: {
-    fontSize: 24,
+    fontSize: rf(24),
   },
 
   achievementContent: {
@@ -402,21 +404,21 @@ const styles = StyleSheet.create({
   },
 
   achievementTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   achievementDescription: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   achievementDate: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textMuted,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
   },
 
   achievementValue: {
@@ -424,22 +426,22 @@ const styles = StyleSheet.create({
   },
 
   achievementPoints: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.primary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
   },
 
   loadingText: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
-    paddingVertical: THEME.spacing.xl,
+    paddingVertical: ResponsiveTheme.spacing.xl,
   },
 
   errorText: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.error,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.error,
     textAlign: "center",
-    paddingVertical: THEME.spacing.xl,
+    paddingVertical: ResponsiveTheme.spacing.xl,
   },
 });

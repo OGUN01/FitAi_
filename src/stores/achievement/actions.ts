@@ -1,3 +1,4 @@
+import { storeLogger } from '../../utils/logger';
 import {
   achievementEngine,
   Achievement,
@@ -16,7 +17,6 @@ export const createActions = (set: any, get: any) => ({
     set({ isLoading: true });
 
     try {
-      console.log("🎯 Initializing achievement store...");
 
       await achievementEngine.initialize();
 
@@ -46,7 +46,6 @@ export const createActions = (set: any, get: any) => ({
             });
           }
 
-          console.log(`🏆 Achievement unlocked: ${achievement.title}`);
 
           achievementDataService.saveUserAchievement(userId, userAchievement);
         },
@@ -63,14 +62,11 @@ export const createActions = (set: any, get: any) => ({
         isLoading: false,
       });
 
-      console.log(
-        `✅ Achievement store initialized with ${achievements.length} achievements`,
-      );
 
       get().updateCurrentStreak();
       get().loadFromSupabase(userId);
     } catch (error) {
-      console.error("❌ Error initializing achievement store:", error);
+      storeLogger.error('Error initializing achievement store', { error: String(error) });
       set({ isLoading: false });
     }
   },
@@ -96,10 +92,9 @@ export const createActions = (set: any, get: any) => ({
           unlockedToday: [...state.unlockedToday, ...newlyUnlocked],
         });
 
-        console.log(`🎉 ${newlyUnlocked.length} new achievements unlocked!`);
       }
     } catch (error) {
-      console.error("❌ Error checking achievement progress:", error);
+      storeLogger.error('Error checking achievement progress', { error: String(error) });
     }
   },
 

@@ -5,6 +5,7 @@
 
 export { AnalyticsHeader } from './AnalyticsHeader';
 export { MetricSummaryGrid } from './MetricSummaryGrid';
+export type { MetricData } from './MetricSummaryGrid';
 export { AchievementShowcase } from './AchievementShowcase';
 export { InsightCard } from './InsightCard';
 export { TrendCharts } from './TrendCharts';

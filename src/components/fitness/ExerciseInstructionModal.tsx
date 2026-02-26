@@ -6,11 +6,14 @@ import {
   Modal,
   ScrollView,
   TouchableOpacity,
-  Image,
+  // Image imported from expo-image below
   Dimensions,
   SafeAreaView,
 } from "react-native";
-import { Card, Button, THEME } from "../ui";
+import { Image } from "expo-image";
+import { Card, Button } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr, rh, rs } from "../../utils/responsive";
 import { exerciseFilterService } from "../../services/exerciseFilterService";
 
 interface ExerciseInstructionModalProps {
@@ -60,7 +63,7 @@ export const ExerciseInstructionModal: React.FC<
         <Image
           source={{ uri: exercise.gifUrl }}
           style={styles.modalGif}
-          resizeMode="contain"
+          contentFit="contain"
         />
       </View>
     );
@@ -275,58 +278,58 @@ export const ExerciseInstructionModal: React.FC<
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
 
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: THEME.colors.border,
-    backgroundColor: THEME.colors.surface,
+    borderBottomColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.surface,
   },
 
   headerContent: {
     flex: 1,
-    marginRight: THEME.spacing.md,
+    marginRight: ResponsiveTheme.spacing.md,
   },
 
   modalTitle: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   qualityBadge: {
-    backgroundColor: THEME.colors.success + "20",
-    paddingHorizontal: THEME.spacing.sm,
-    paddingVertical: THEME.spacing.xs,
-    borderRadius: THEME.borderRadius.sm,
+    backgroundColor: ResponsiveTheme.colors.success + "20",
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
     alignSelf: "flex-start",
   },
 
   qualityBadgeText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.success,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.success,
     fontWeight: "600",
   },
 
   closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: THEME.colors.backgroundSecondary,
+    width: rs(40),
+    height: rs(40),
+    borderRadius: rbr(20),
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
   },
 
   closeButtonText: {
-    fontSize: 18,
-    color: THEME.colors.textSecondary,
+    fontSize: rf(18),
+    color: ResponsiveTheme.colors.textSecondary,
     fontWeight: "bold",
   },
 
@@ -335,206 +338,206 @@ const styles = StyleSheet.create({
   },
 
   gifSection: {
-    backgroundColor: THEME.colors.backgroundSecondary,
-    paddingVertical: THEME.spacing.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    paddingVertical: ResponsiveTheme.spacing.lg,
     alignItems: "center",
   },
 
   modalGif: {
     width: "80%", // Use percentage instead of screenWidth
-    height: 200,
-    borderRadius: THEME.borderRadius.lg,
+    height: rh(200),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
   },
 
   tabContainer: {
     flexDirection: "row",
-    backgroundColor: THEME.colors.surface,
-    marginHorizontal: THEME.spacing.lg,
-    marginTop: THEME.spacing.lg,
-    borderRadius: THEME.borderRadius.lg,
-    padding: THEME.spacing.xs,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    marginHorizontal: ResponsiveTheme.spacing.lg,
+    marginTop: ResponsiveTheme.spacing.lg,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    padding: ResponsiveTheme.spacing.xs,
   },
 
   tab: {
     flex: 1,
-    paddingVertical: THEME.spacing.sm,
-    borderRadius: THEME.borderRadius.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.md,
     alignItems: "center",
   },
 
   activeTab: {
-    backgroundColor: THEME.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary,
   },
 
   tabText: {
-    fontSize: THEME.fontSize.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: "600",
-    color: THEME.colors.textSecondary,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   activeTabText: {
-    color: THEME.colors.surface,
+    color: ResponsiveTheme.colors.surface,
   },
 
   tabContent: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingTop: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.lg,
   },
 
   instructionsContainer: {
-    paddingBottom: THEME.spacing.xl,
+    paddingBottom: ResponsiveTheme.spacing.xl,
   },
 
   sectionTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.lg,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   instructionItem: {
     flexDirection: "row",
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
     alignItems: "flex-start",
   },
 
   stepNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: THEME.colors.primary,
+    width: rs(28),
+    height: rs(28),
+    borderRadius: rbr(14),
+    backgroundColor: ResponsiveTheme.colors.primary,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: THEME.spacing.md,
-    marginTop: 2,
+    marginRight: ResponsiveTheme.spacing.md,
+    marginTop: rp(2),
   },
 
   stepNumberText: {
-    fontSize: THEME.fontSize.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: "bold",
-    color: THEME.colors.surface,
+    color: ResponsiveTheme.colors.surface,
   },
 
   instructionText: {
     flex: 1,
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.text,
-    lineHeight: 22,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
+    lineHeight: rf(22),
   },
 
   detailsContainer: {
-    paddingBottom: THEME.spacing.xl,
+    paddingBottom: ResponsiveTheme.spacing.xl,
   },
 
   detailSection: {
-    marginBottom: THEME.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
 
   detailSectionTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   chipContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   chip: {
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.sm,
-    borderRadius: THEME.borderRadius.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
   },
 
   primaryChip: {
-    backgroundColor: THEME.colors.primary + "20",
+    backgroundColor: ResponsiveTheme.colors.primary + "20",
   },
 
   primaryChipText: {
-    color: THEME.colors.primary,
-    fontSize: THEME.fontSize.sm,
+    color: ResponsiveTheme.colors.primary,
+    fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: "600",
     textTransform: "capitalize",
   },
 
   secondaryChip: {
-    backgroundColor: THEME.colors.warning + "20",
+    backgroundColor: ResponsiveTheme.colors.warning + "20",
   },
 
   secondaryChipText: {
-    color: THEME.colors.warning,
-    fontSize: THEME.fontSize.sm,
+    color: ResponsiveTheme.colors.warning,
+    fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: "600",
     textTransform: "capitalize",
   },
 
   equipmentChip: {
-    backgroundColor: THEME.colors.info + "20",
+    backgroundColor: ResponsiveTheme.colors.info + "20",
   },
 
   equipmentChipText: {
-    color: THEME.colors.info,
-    fontSize: THEME.fontSize.sm,
+    color: ResponsiveTheme.colors.info,
+    fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: "600",
     textTransform: "capitalize",
   },
 
   bodyPartChip: {
-    backgroundColor: THEME.colors.success + "20",
+    backgroundColor: ResponsiveTheme.colors.success + "20",
   },
 
   bodyPartChipText: {
-    color: THEME.colors.success,
-    fontSize: THEME.fontSize.sm,
+    color: ResponsiveTheme.colors.success,
+    fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: "600",
     textTransform: "capitalize",
   },
 
   tipContainer: {
-    backgroundColor: THEME.colors.backgroundSecondary,
-    padding: THEME.spacing.lg,
-    borderRadius: THEME.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    padding: ResponsiveTheme.spacing.lg,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
   },
 
   tipText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.text,
-    lineHeight: 20,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
+    lineHeight: rf(20),
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   noDataContainer: {
     alignItems: "center",
-    paddingVertical: THEME.spacing.xl,
+    paddingVertical: ResponsiveTheme.spacing.xl,
   },
 
   noDataEmoji: {
-    fontSize: 48,
-    marginBottom: THEME.spacing.md,
+    fontSize: rf(48),
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   noDataText: {
-    fontSize: THEME.fontSize.md,
+    fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: "600",
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   noDataSubtext: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
   },
 
   footer: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
-    backgroundColor: THEME.colors.surface,
+    borderTopColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.surface,
   },
 
   footerButton: {

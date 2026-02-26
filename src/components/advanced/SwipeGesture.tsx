@@ -10,7 +10,8 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp } from '../../utils/responsive';
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -241,7 +242,7 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
     zIndex: 1,
   },
 
@@ -275,15 +276,15 @@ const styles = StyleSheet.create({
   },
 
   actionIcon: {
-    fontSize: 20,
-    color: THEME.colors.white,
-    marginBottom: 4,
+    fontSize: rf(20),
+    color: ResponsiveTheme.colors.white,
+    marginBottom: rp(4),
   },
 
   actionLabel: {
-    fontSize: 12,
-    color: THEME.colors.white,
-    fontWeight: THEME.fontWeight.medium as "500",
+    fontSize: rf(12),
+    color: ResponsiveTheme.colors.white,
+    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
     textAlign: "center",
   },
 });

@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
-import { THEME } from "../ui";
-
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr, rh } from "../../utils/responsive";
 interface WorkoutProgressBarProps {
   progress: number;
   fadeAnim: Animated.Value;
@@ -23,45 +23,53 @@ export const WorkoutProgressBar: React.FC<WorkoutProgressBarProps> = ({
   fadeAnim,
 }) => {
   return (
-    <View style={styles.progressBarContainer}>
-      <Animated.View
-        style={[
-          styles.progressBar,
-          {
-            width: `${Math.min(100, progress * 100)}%`,
-            opacity: fadeAnim,
-          },
-        ]}
-      />
+    <View
+      style={styles.outerWrapper}
+      accessibilityRole="progressbar"
+      accessibilityLabel={`Workout progress: ${Math.round(progress * 100)}%`}
+    >
       <Text style={styles.progressPercentage}>
         {safeString(Math.round(progress * 100))}%
       </Text>
+      <View style={styles.progressBarContainer}>
+        <Animated.View
+          style={[
+            styles.progressBar,
+            {
+              width: `${Math.min(100, progress * 100)}%`,
+              opacity: fadeAnim,
+            },
+          ]}
+        />
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  outerWrapper: {
+    flexDirection: "column",
+  },
   progressBarContainer: {
-    height: 6,
-    backgroundColor: THEME.colors.border,
-    marginHorizontal: THEME.spacing.lg,
-    borderRadius: 3,
+    height: rh(6),
+    backgroundColor: ResponsiveTheme.colors.border,
+    marginHorizontal: ResponsiveTheme.spacing.lg,
+    borderRadius: rbr(3),
     overflow: "hidden",
-    position: "relative",
   },
 
   progressBar: {
     height: "100%",
-    backgroundColor: THEME.colors.primary,
-    borderRadius: 3,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderRadius: rbr(3),
   },
 
   progressPercentage: {
-    position: "absolute",
-    right: THEME.spacing.sm,
-    top: -20,
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
-    fontWeight: THEME.fontWeight.medium,
+    textAlign: "right",
+    marginRight: ResponsiveTheme.spacing.lg,
+    marginBottom: rp(4),
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 });

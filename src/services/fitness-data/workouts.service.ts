@@ -225,10 +225,6 @@ export class WorkoutsService {
         return workoutResponse;
       }
 
-      console.log(
-        "Workout created successfully. Exercise linking skipped for now.",
-      );
-
       return {
         success: true,
         data: {

@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { THEME } from "../../ui";
+import { ResponsiveTheme } from "../../../utils/constants";
 
 interface Exercise {
   name: string;
@@ -72,70 +72,70 @@ export const ExerciseInfo: React.FC<ExerciseInfoProps> = ({
 
 const styles = StyleSheet.create({
   exerciseInfo: {
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
 
   titleRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   exerciseTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
     flex: 1,
-    marginRight: THEME.spacing.sm,
+    marginRight: ResponsiveTheme.spacing.sm,
   },
 
   qualityIndicator: {
-    backgroundColor: THEME.colors.success + "20",
-    paddingHorizontal: THEME.spacing.sm,
-    paddingVertical: THEME.spacing.xs,
-    borderRadius: THEME.borderRadius.sm,
+    backgroundColor: ResponsiveTheme.colors.success + "20",
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
   },
 
   qualityText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.success,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.success,
     fontWeight: "600",
   },
 
   infoRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: THEME.spacing.sm,
-    marginBottom: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   infoChip: {
-    backgroundColor: THEME.colors.backgroundSecondary,
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.xs,
-    borderRadius: THEME.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
   },
 
   infoChipText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
     fontWeight: "500",
   },
 
   instructionsButton: {
-    backgroundColor: THEME.colors.primary + "10",
+    backgroundColor: ResponsiveTheme.colors.primary + "10",
     borderWidth: 1,
-    borderColor: THEME.colors.primary + "30",
-    paddingVertical: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.md,
+    borderColor: ResponsiveTheme.colors.primary + "30",
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
     alignSelf: "flex-start",
   },
 
   instructionsButtonText: {
-    color: THEME.colors.primary,
-    fontSize: THEME.fontSize.sm,
+    color: ResponsiveTheme.colors.primary,
+    fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: "600",
   },
 });

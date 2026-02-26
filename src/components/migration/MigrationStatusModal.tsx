@@ -1,6 +1,8 @@
-import React from "react";
+﻿import React from "react";
 import { View, Text, Modal, ActivityIndicator, StyleSheet } from "react-native";
-import { THEME } from "../ui";
+import { ResponsiveTheme } from '../../utils/constants';
+import { rf, rp, rh, rw } from '../../utils/responsive';
+
 
 interface MigrationStatusModalProps {
   visible: boolean;
@@ -28,7 +30,7 @@ export const MigrationStatusModal: React.FC<MigrationStatusModalProps> = ({
           <View style={styles.header}>
             <ActivityIndicator
               size="large"
-              color={THEME.colors.primary}
+              color={ResponsiveTheme.colors.primary}
               style={styles.spinner}
             />
             <Text style={styles.title}>Syncing Your Data</Text>
@@ -69,19 +71,19 @@ export const MigrationStatusModal: React.FC<MigrationStatusModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    backgroundColor: ResponsiveTheme.colors.overlayDark,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
   container: {
-    backgroundColor: THEME.colors.background,
-    borderRadius: THEME.borderRadius.lg,
-    paddingHorizontal: THEME.spacing.xl,
-    paddingVertical: THEME.spacing.xxl,
+    backgroundColor: ResponsiveTheme.colors.background,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.xl,
+    paddingVertical: ResponsiveTheme.spacing.xxl,
     width: "100%",
-    maxWidth: 400,
-    shadowColor: "#000",
+    maxWidth: rw(400),
+    shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: {
       width: 0,
       height: 4,
@@ -92,59 +94,59 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    marginBottom: THEME.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
   spinner: {
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
   title: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
     textAlign: "center",
   },
   subtitle: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
-    lineHeight: 22,
+    lineHeight: rf(22),
   },
   progressContainer: {
-    marginBottom: THEME.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
   progressBar: {
-    height: 8,
-    backgroundColor: THEME.colors.backgroundTertiary,
-    borderRadius: THEME.borderRadius.full,
+    height: rh(8),
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: ResponsiveTheme.borderRadius.full,
     overflow: "hidden",
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   progressFill: {
     height: "100%",
-    backgroundColor: THEME.colors.primary,
-    borderRadius: THEME.borderRadius.full,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderRadius: ResponsiveTheme.borderRadius.full,
   },
   progressText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
-    fontWeight: THEME.fontWeight.medium,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
   footer: {
     alignItems: "center",
   },
   footerText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.success || THEME.colors.primary,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.success || ResponsiveTheme.colors.primary,
+    marginBottom: ResponsiveTheme.spacing.xs,
     textAlign: "center",
-    fontWeight: THEME.fontWeight.medium,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
   footerSubtext: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
-    lineHeight: 16,
+    lineHeight: rf(16),
   },
 });

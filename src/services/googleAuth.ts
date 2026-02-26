@@ -67,28 +67,24 @@ class GoogleAuthService {
             // Strategy 1: Direct process.env access (works in development)
             const processEnvValue = process.env[key];
             if (processEnvValue) {
-              console.log(`✅ ${key} found via process.env`);
               return processEnvValue;
             }
             
             // Strategy 2: Constants.expoConfig access (production builds)
             const expoConfigValue = (Constants.expoConfig as any)?.[key];
             if (expoConfigValue) {
-              console.log(`✅ ${key} found via Constants.expoConfig`);
               return expoConfigValue;
             }
             
             // Strategy 3: Constants.expoConfig.extra access (CRITICAL for production)
             const extraValue = (Constants.expoConfig as any)?.extra?.[key];
             if (extraValue) {
-              console.log(`✅ ${key} found via Constants.expoConfig.extra`);
               return extraValue;
             }
             
             // Strategy 4: Try manifest fallback (legacy support)
             const manifestValue = (Constants.manifest as any)?.extra?.[key];
             if (manifestValue) {
-              console.log(`✅ ${key} found via Constants.manifest.extra`);
               return manifestValue;
             }
             
@@ -100,7 +96,6 @@ class GoogleAuthService {
           }
         };
 
-        console.log('🔍 Google Auth Configuration Starting...');
         
         const webClientId = getEnvVar('EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID') || '';
         const iosClientId = getEnvVar('EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID') || '';
@@ -109,9 +104,6 @@ class GoogleAuthService {
           console.warn('⚠️ CRITICAL: Web Client ID not found! Google Sign-In will fail.');
         }
 
-        console.log('🔍 Client IDs loaded:');
-        console.log('  - Web Client ID:', webClientId ? webClientId.substring(0, 20) + '...' : 'NOT SET');
-        console.log('  - iOS Client ID:', iosClientId ? iosClientId.substring(0, 20) + '...' : 'NOT SET');
 
         await GoogleSignin.configure({
           webClientId,
@@ -122,7 +114,6 @@ class GoogleAuthService {
         });
       }
       this.isConfigured = true;
-      console.log('✅ Google Sign-In configured successfully');
     } catch (error) {
       console.warn('⚠️ Google Sign-In configuration failed:', error);
     }
@@ -133,7 +124,6 @@ class GoogleAuthService {
    */
   async signInWithGoogle(): Promise<GoogleSignInResult> {
     try {
-      console.log('🔐 Starting Google Sign-In process...');
 
       // Ensure configuration is done
       await this.configure();
@@ -170,8 +160,6 @@ class GoogleAuthService {
 
       // Get user info from Google
       const userInfo: any = await GoogleSignin.signIn();
-      console.log('✅ Google Sign-In successful');
-      console.log('🔍 Google userInfo structure:', JSON.stringify(userInfo, null, 2));
 
       // Get ID token for Supabase
       const tokens = await GoogleSignin.getTokens();
@@ -219,12 +207,6 @@ class GoogleAuthService {
 
       if (isNewUser) {
         // Create basic profile for new Google user
-        console.log('🔍 Creating profile for new Google user...');
-        console.log('🔍 Available user data:', {
-          userId: data.user.id,
-          email: data.user.email,
-          userInfo: userInfo
-        });
         
         // Extract name from Google userInfo - try different possible structures
         const userName = userInfo?.data?.user?.name || 
@@ -234,7 +216,6 @@ class GoogleAuthService {
                         userInfo?.name ||
                         'Google User';
         
-        console.log('🔍 Extracted user name:', userName);
         
         const { error: profileError } = await supabase.from('profiles').insert({
           id: data.user.id,
@@ -248,13 +229,10 @@ class GoogleAuthService {
           console.warn('⚠️ Failed to create profile for Google user:', profileError);
           console.warn('⚠️ Profile error details:', JSON.stringify(profileError, null, 2));
         } else {
-          console.log('✅ Successfully created profile for Google user');
         }
       } else {
-        console.log('✅ Returning Google user - profile exists');
       }
 
-      console.log('✅ Google Sign-In completed successfully');
       return {
         success: true,
         user: authUser,
@@ -324,7 +302,6 @@ class GoogleAuthService {
       }
 
       // For web, the OAuth flow will handle the redirect
-      console.log('✅ Google OAuth flow initiated for web');
       return {
         success: true,
       };
@@ -343,7 +320,6 @@ class GoogleAuthService {
    */
   async handleGoogleCallback(url: string): Promise<GoogleSignInResult> {
     try {
-      console.log('🔄 Handling Google OAuth callback...');
 
       // Extract the session from the callback URL
       const code = new URL(url).searchParams.get('code') || '';
@@ -396,7 +372,6 @@ class GoogleAuthService {
         }
       }
 
-      console.log('✅ Google Sign-In successful');
       return {
         success: true,
         user: authUser,
@@ -420,7 +395,6 @@ class GoogleAuthService {
         // Sign out from Google on mobile
         await GoogleSignin.signOut();
       }
-      console.log('✅ Google Sign-Out successful');
     } catch (error) {
       console.error('❌ Google Sign-Out failed:', error);
     }
@@ -431,7 +405,6 @@ class GoogleAuthService {
    */
   async linkGoogleAccount(): Promise<GoogleSignInResult> {
     try {
-      console.log('🔗 Linking Google account to existing user...');
 
       const { data, error } = await supabase.auth.linkIdentity({
         provider: 'google',
@@ -445,7 +418,6 @@ class GoogleAuthService {
         };
       }
 
-      console.log('✅ Google account linked successfully');
       return {
         success: true,
       };
@@ -463,7 +435,6 @@ class GoogleAuthService {
    */
   async unlinkGoogleAccount(): Promise<GoogleSignInResult> {
     try {
-      console.log('🔓 Unlinking Google account...');
 
       const {
         data: { user },
@@ -486,7 +457,6 @@ class GoogleAuthService {
         };
       }
 
-      console.log('✅ Google account unlinked successfully');
       return {
         success: true,
       };

@@ -21,6 +21,7 @@ import Svg, {
 } from "react-native-svg";
 import { animations } from "../../../theme/animations";
 import { colors } from "../../../theme/aurora-tokens";
+import { rf } from "../../../utils/responsive";
 
 // ============================================================================
 // TYPES
@@ -280,7 +281,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   text: {
-    fontSize: 24,
+    fontSize: rf(24),
     fontWeight: "700",
   },
 });

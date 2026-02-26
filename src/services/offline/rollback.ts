@@ -43,6 +43,5 @@ export class RollbackManager {
 
     await storage.saveData();
     this.rollbackStates.delete(actionId);
-    console.warn(`⚠️ Sync failed for ${key}, changes have been rolled back`);
   }
 }

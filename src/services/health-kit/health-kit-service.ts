@@ -34,23 +34,19 @@ class HealthKitService {
   async initialize(): Promise<boolean> {
     try {
       if (!Platform.OS || Platform.OS !== "ios") {
-        console.log("🍎 HealthKit is only available on iOS");
         return false;
       }
 
       if (!HealthKitModule) {
-        console.log("🍎 HealthKit module not available");
         return false;
       }
 
       const supported = await isHealthKitSupported();
       if (!supported) {
-        console.log("🍎 HealthKit is not supported on this device");
         return false;
       }
 
       this.isInitialized = true;
-      console.log("🍎 HealthKit initialized successfully");
       return true;
     } catch (error) {
       console.error("Failed to initialize HealthKit:", error);
@@ -163,12 +159,6 @@ class HealthKitService {
   async exportNutritionToHealthKit(
     nutrition: NutritionExportInput,
   ): Promise<boolean> {
-    console.log(
-      "ℹ️ Nutrition export to HealthKit not available - expo-health-kit library limitation",
-    );
-    console.log(
-      `   Nutrition data for ${nutrition.date.toDateString()}: ${nutrition.calories} cal, ${nutrition.protein}g protein`,
-    );
     return false;
   }
 
@@ -238,7 +228,6 @@ class HealthKitService {
     const sleepDuration = data.sleepHours;
 
     if (!sleepDuration) {
-      console.warn("[HealthKit] No sleep data available for recommendations");
       return { sleepQuality: null, sleepDuration: null, recommendations: null };
     }
 

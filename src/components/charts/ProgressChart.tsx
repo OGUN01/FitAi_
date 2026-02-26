@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   ViewStyle,
 } from "react-native";
 import { LineChart } from "react-native-chart-kit";
-import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
 import { ChartTooltip } from "../ui/ChartTooltip";
 import { hapticSelection } from "../../utils/haptics";
 
@@ -56,6 +56,9 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
     label: "",
   });
 
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
+
   // Filter data based on selected period
   const getFilteredData = () => {
     const now = new Date();
@@ -96,31 +99,31 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
     datasets: [
       {
         data: filteredData.map((point) => point[metric] || 0),
-        color: (opacity = 1) => THEME.colors.primary,
+        color: (opacity = 1) => ResponsiveTheme.colors.primary,
         strokeWidth: 3,
       },
     ],
   };
 
   const chartConfig = {
-    backgroundColor: THEME.colors.backgroundTertiary,
-    backgroundGradientFrom: THEME.colors.backgroundTertiary,
-    backgroundGradientTo: THEME.colors.backgroundTertiary,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundGradientFrom: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundGradientTo: ResponsiveTheme.colors.backgroundTertiary,
     decimalPlaces: 1,
     color: (opacity = 1) => `rgba(255, 107, 53, ${opacity})`,
     labelColor: (opacity = 1) => `rgba(176, 176, 176, ${opacity})`,
     style: {
-      borderRadius: THEME.borderRadius.lg,
+      borderRadius: ResponsiveTheme.borderRadius.lg,
     },
     propsForDots: {
       r: "4",
       strokeWidth: "2",
-      stroke: THEME.colors.primary,
-      fill: THEME.colors.backgroundTertiary,
+      stroke: ResponsiveTheme.colors.primary,
+      fill: ResponsiveTheme.colors.backgroundTertiary,
     },
     propsForBackgroundLines: {
       strokeDasharray: "",
-      stroke: THEME.colors.border,
+      stroke: ResponsiveTheme.colors.border,
       strokeWidth: 1,
     },
   };
@@ -163,7 +166,9 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
 
     // Hide tooltip after 2 seconds
     setTimeout(() => {
-      setTooltipData((prev) => ({ ...prev, visible: false }));
+      if (mountedRef.current) {
+        setTooltipData((prev) => ({ ...prev, visible: false }));
+      }
     }, 2000);
   };
 
@@ -195,8 +200,8 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
                 styles.trendLabel,
                 {
                   color: trend.isPositive
-                    ? THEME.colors.success
-                    : THEME.colors.error,
+                    ? ResponsiveTheme.colors.success
+                    : ResponsiveTheme.colors.error,
                 },
               ]}
             >
@@ -263,90 +268,90 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: THEME.colors.backgroundTertiary,
-    borderRadius: THEME.borderRadius.lg,
-    padding: THEME.spacing.md,
-    marginVertical: THEME.spacing.sm,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    padding: ResponsiveTheme.spacing.md,
+    marginVertical: ResponsiveTheme.spacing.sm,
   },
 
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   title: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   trendContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: THEME.spacing.xs,
+    gap: ResponsiveTheme.spacing.xs,
   },
 
   trendValue: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   trendLabel: {
-    fontSize: THEME.fontSize.xs,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   periodSelector: {
     flexDirection: "row",
-    backgroundColor: THEME.colors.surface,
-    borderRadius: THEME.borderRadius.md,
-    padding: THEME.spacing.xs / 2,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    padding: ResponsiveTheme.spacing.xs / 2,
   },
 
   periodButton: {
-    paddingHorizontal: THEME.spacing.sm,
-    paddingVertical: THEME.spacing.xs,
-    borderRadius: THEME.borderRadius.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
   },
 
   periodButtonActive: {
-    backgroundColor: THEME.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary,
   },
 
   periodButtonText: {
-    fontSize: THEME.fontSize.xs,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   periodButtonTextActive: {
-    color: THEME.colors.white,
+    color: ResponsiveTheme.colors.white,
   },
 
   chart: {
-    marginVertical: THEME.spacing.sm,
-    borderRadius: THEME.borderRadius.lg,
+    marginVertical: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
   },
 
   noDataContainer: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: THEME.spacing.xxl,
+    paddingVertical: ResponsiveTheme.spacing.xxl,
   },
 
   noDataText: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   noDataSubtext: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textMuted,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textMuted,
   },
 });

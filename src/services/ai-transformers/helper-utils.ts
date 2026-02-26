@@ -94,9 +94,6 @@ export function mapDifficulty(
 }
 
 export function calculateEstimatedCalories(_workout: WorkoutPlan): number {
-  console.log(
-    "[aiRequestTransformers] Calories set to 0 at generation, will be calculated at completion",
-  );
   return 0;
 }
 

@@ -25,7 +25,7 @@ interface PulseButtonProps {
 export const PulseButton: React.FC<PulseButtonProps> = ({
   title,
   onPress,
-  gradient = ["#4CAF50", "#45A049"],
+  gradient = [ResponsiveTheme.colors.success, ResponsiveTheme.colors.success],
   disabled = false,
   loading = false,
   pulseEnabled = true,
@@ -96,7 +96,7 @@ export const PulseButton: React.FC<PulseButtonProps> = ({
       {/* Button */}
       <Animated.View style={[styles.button, animatedButtonStyle]}>
         <LinearGradient
-          colors={(disabled ? ["#BDBDBD", "#9E9E9E"] : gradient) as any}
+          colors={(disabled ? [ResponsiveTheme.colors.neutral, ResponsiveTheme.colors.neutral] : gradient) as any}
           style={styles.buttonGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -135,10 +135,7 @@ const styles = StyleSheet.create({
     width: "100%",
     borderRadius: ResponsiveTheme.borderRadius.full,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    boxShadow: '0px 4px 8px rgba(0,0,0,0.3)',
     elevation: 8,
     minHeight: 44,
   },

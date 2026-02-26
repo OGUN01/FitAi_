@@ -1,9 +1,8 @@
 import { useMemo } from "react";
-import {
-  useHealthDataStore,
-  useAchievementStore,
-  useFitnessStore,
-} from "../stores";
+import { useFitnessStore } from "../stores/fitnessStore";
+import { useNutritionStore } from "../stores/nutritionStore";
+import { useAchievementStore } from "../stores/achievementStore";
+import DataRetrievalService from "../services/dataRetrieval";
 
 export interface UnifiedStats {
   totalWorkouts: number;
@@ -15,45 +14,57 @@ export interface UnifiedStats {
 }
 
 export const useUnifiedStats = (): UnifiedStats => {
-  const healthMetrics = useHealthDataStore((state) => state.metrics);
-  const currentStreak = useAchievementStore((state) => state.currentStreak);
+  // Subscribe to reactive store state so the hook re-computes when data changes
+  const workoutProgress = useFitnessStore((state) => state.workoutProgress);
+  const weeklyWorkoutPlan = useFitnessStore((state) => state.weeklyWorkoutPlan);
+  const mealProgress = useNutritionStore((state) => state.mealProgress);
+  const weeklyMealPlan = useNutritionStore((state) => state.weeklyMealPlan);
   const userAchievements = useAchievementStore(
     (state) => state.userAchievements,
   );
-  const getCompletedWorkoutStats = useFitnessStore(
-    (state) => state.getCompletedWorkoutStats,
-  );
 
   return useMemo(() => {
+    // Use DataRetrievalService — same source as Analytics screen
+    const weeklyProgress = DataRetrievalService.getWeeklyProgress();
+    const todaysData = DataRetrievalService.getTodaysData();
+
+    // Streak from DataRetrievalService (consecutive days with activity)
+    const streak = weeklyProgress.streak;
+
+    // Completed workouts count
+    const totalWorkouts = weeklyProgress.workoutsCompleted;
+
+    // Calories: prefer consumed calories (what user ate today),
+    // fall back to burned calories from completed workouts
+    const caloriesConsumed = todaysData.progress.caloriesConsumed;
     const totalCaloriesBurned =
-      (healthMetrics?.totalCalories && healthMetrics.totalCalories > 0
-        ? healthMetrics.totalCalories
-        : healthMetrics?.activeCalories) || 0;
+      weeklyWorkoutPlan?.workouts?.reduce((total, workout) => {
+        const progress = workoutProgress[workout.id];
+        if (progress && progress.progress === 100) {
+          return total + (workout.estimatedCalories || 0);
+        }
+        return total;
+      }, 0) || 0;
+    const displayCalories =
+      caloriesConsumed > 0 ? caloriesConsumed : totalCaloriesBurned;
 
-    const steps = healthMetrics?.steps || 0;
-
-    const workoutStats = getCompletedWorkoutStats?.() || { count: 0 };
-    const totalWorkouts = workoutStats.count || 0;
-
-    const streak = currentStreak || 0;
-    const longestStreak = streak;
+    const longestStreak = streak; // best available approximation
     const achievementCount = userAchievements?.size || 0;
 
     return {
       totalWorkouts,
-      totalCaloriesBurned,
+      totalCaloriesBurned: displayCalories,
       currentStreak: streak,
       longestStreak,
       achievements: achievementCount,
-      steps,
+      steps: 0,
     };
   }, [
-    healthMetrics?.totalCalories,
-    healthMetrics?.activeCalories,
-    healthMetrics?.steps,
-    currentStreak,
+    workoutProgress,
+    weeklyWorkoutPlan,
+    mealProgress,
+    weeklyMealPlan,
     userAchievements,
-    getCompletedWorkoutStats,
   ]);
 };
 

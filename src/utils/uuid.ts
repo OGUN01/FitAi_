@@ -13,7 +13,6 @@ try {
     cryptoUUID = crypto.randomUUID.bind(crypto);
   }
 } catch (error) {
-  console.log("crypto.randomUUID not available, will use fallback");
 }
 
 // Expo UUID fallback
@@ -24,7 +23,6 @@ try {
     expoUUID = uuid.v4;
   }
 } catch (error) {
-  console.log("Expo UUID not available, will use manual fallback");
 }
 
 /**
@@ -37,7 +35,6 @@ export const generateUUID = (): string => {
     try {
       return cryptoUUID();
     } catch (error) {
-      console.warn("crypto.randomUUID() failed, trying fallback");
     }
   }
 
@@ -46,7 +43,6 @@ export const generateUUID = (): string => {
     try {
       return expoUUID();
     } catch (error) {
-      console.warn("Expo UUID failed, using manual fallback");
     }
   }
 
@@ -95,7 +91,6 @@ export const migrateGuestId = (oldId: string): string => {
 
   // If it's an old format guest ID, convert to UUID
   if (oldId.startsWith("guest_")) {
-    console.log(`🔄 Migrating old guest ID: ${oldId}`);
     return generateGuestId();
   }
 
@@ -105,6 +100,5 @@ export const migrateGuestId = (oldId: string): string => {
   }
 
   // For any other format, generate new guest ID
-  console.log(`🔄 Invalid ID format, generating new guest ID: ${oldId}`);
   return generateGuestId();
 };

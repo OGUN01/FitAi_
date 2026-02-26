@@ -98,6 +98,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: 100 }}
         >
           {/* Hero Section */}
           <HeroSection
@@ -106,10 +107,10 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
             }}
             overlayGradient={gradients.overlay.dark}
             contentPosition="center"
-            height={200}
+            height={180}
           >
-            <Text style={styles.title}>Let's create your fitness profile</Text>
-            <Text style={styles.subtitle}>
+            <Text style={styles.title} numberOfLines={2}>Let's create your fitness profile</Text>
+            <Text style={styles.subtitle} numberOfLines={3}>
               Tell us about your goals, current fitness level, and workout
               preferences
             </Text>
@@ -264,9 +265,10 @@ const styles = StyleSheet.create({
   footer: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingVertical: ResponsiveTheme.spacing.md,
+    backgroundColor: "transparent",
+    elevation: 4,
     borderTopWidth: 1,
-    borderTopColor: `${ResponsiveTheme.colors.border}50`,
-    backgroundColor: ResponsiveTheme.colors.background,
+    borderTopColor: 'rgba(255,255,255,0.06)',
   },
   buttonRow: {
     flexDirection: "row",
@@ -279,26 +281,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.full,
-    backgroundColor: `${ResponsiveTheme.colors.primary}12`,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: ResponsiveTheme.colors.border,
     gap: 4,
+    minHeight: 52,
   },
   backButtonText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: ResponsiveTheme.fontWeight.medium,
     color: ResponsiveTheme.colors.primary,
+    lineHeight: rf(18),
   },
   nextButtonCompact: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.md,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     borderRadius: ResponsiveTheme.borderRadius.full,
     backgroundColor: ResponsiveTheme.colors.primary,
     gap: 4,
+    minHeight: 52,
   },
   nextButtonText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: "#FFFFFF",
   },

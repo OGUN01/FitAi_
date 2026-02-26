@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, Image } from "react-native";
-import { THEME } from "../../ui";
+import { ResponsiveTheme } from "../../../utils/constants";
 import type { ScannedProduct } from "../../../services/barcodeService";
 
 interface ProductHeaderProps {
@@ -32,39 +32,39 @@ export const ProductHeader: React.FC<ProductHeaderProps> = ({ product }) => (
 const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: "row",
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: THEME.colors.border,
+    borderBottomColor: ResponsiveTheme.colors.border,
   },
   productImage: {
     width: 80,
     height: 80,
-    borderRadius: THEME.borderRadius.md,
-    marginRight: THEME.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    marginRight: ResponsiveTheme.spacing.md,
   },
   productInfo: {
     flex: 1,
     justifyContent: "center",
   },
   productName: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold as "700",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   productBrand: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.primary,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.primary,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   productCategory: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   barcodeText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
     fontFamily: "monospace",
   },
 });

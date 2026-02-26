@@ -14,7 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh } from "../../../utils/responsive";
+import { rf, rp, rbr, rw, rh } from "../../../utils/responsive";
 
 interface AppInfoCardProps {
   version?: string;
@@ -66,7 +66,7 @@ export const AppInfoCard: React.FC<AppInfoCardProps> = ({
             <Ionicons
               name="heart"
               size={rf(14)}
-              color="#FF6B6B"
+              color={ResponsiveTheme.colors.errorLight}
               style={styles.heartIcon}
             />
             <Text style={styles.footerText}>for fitness enthusiasts</Text>
@@ -79,7 +79,7 @@ export const AppInfoCard: React.FC<AppInfoCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
     marginBottom: ResponsiveTheme.spacing.lg,
   },
   card: {
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: ResponsiveTheme.spacing.md,
-    shadowColor: "#FF6B6B",
+    shadowColor: ResponsiveTheme.colors.errorLight,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: rf(24),
     fontWeight: "800",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
   info: {
     flex: 1,
@@ -113,17 +113,17 @@ const styles = StyleSheet.create({
   nameRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 4,
+    marginBottom: rp(4),
   },
   appName: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
   versionBadge: {
     marginLeft: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.xs,
-    paddingVertical: 2,
+    paddingVertical: rp(2),
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: rf(4),
   },

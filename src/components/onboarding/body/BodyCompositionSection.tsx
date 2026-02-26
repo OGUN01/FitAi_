@@ -55,7 +55,7 @@ export const BodyCompositionSection: React.FC<BodyCompositionSectionProps> = ({
         >
           <View style={styles.measurementGuideContent}>
             <Ionicons
-              name="resize-outline"
+              name="information-circle-outline"
               size={rf(18)}
               color={ResponsiveTheme.colors.primary}
             />
@@ -93,7 +93,7 @@ export const BodyCompositionSection: React.FC<BodyCompositionSectionProps> = ({
           <View style={styles.compositionItem}>
             <Input
               label="Body Fat % (Optional)"
-              placeholder="20"
+              placeholder="e.g. 20"
               value={
                 formData.body_fat_percentage
                   ? formData.body_fat_percentage.toString()
@@ -109,7 +109,7 @@ export const BodyCompositionSection: React.FC<BodyCompositionSectionProps> = ({
           <View style={styles.compositionItem}>
             <Input
               label="Waist (cm)"
-              placeholder="80"
+              placeholder="e.g. 80"
               value={formData.waist_cm ? formData.waist_cm.toString() : ""}
               onChangeText={(text) => handleNumberInput("waist_cm", text)}
               keyboardType="numeric"
@@ -119,7 +119,7 @@ export const BodyCompositionSection: React.FC<BodyCompositionSectionProps> = ({
           <View style={styles.compositionItem}>
             <Input
               label="Hip (cm)"
-              placeholder="95"
+              placeholder="e.g. 95"
               value={formData.hip_cm ? formData.hip_cm.toString() : ""}
               onChangeText={(text) => handleNumberInput("hip_cm", text)}
               keyboardType="numeric"
@@ -129,7 +129,7 @@ export const BodyCompositionSection: React.FC<BodyCompositionSectionProps> = ({
           <View style={styles.compositionItem}>
             <Input
               label="Chest (cm)"
-              placeholder="100"
+              placeholder="e.g. 100"
               value={formData.chest_cm ? formData.chest_cm.toString() : ""}
               onChangeText={(text) => handleNumberInput("chest_cm", text)}
               keyboardType="numeric"
@@ -191,7 +191,7 @@ export const BodyCompositionSection: React.FC<BodyCompositionSectionProps> = ({
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
     marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.md,
     marginHorizontal: -ResponsiveTheme.spacing.lg,
   },
   sectionTitlePadded: {

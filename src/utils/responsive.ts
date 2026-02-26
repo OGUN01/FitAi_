@@ -24,7 +24,7 @@ const getDimensions = () => {
     };
   } catch (error) {
     // Fallback for when Dimensions is not available (during module loading)
-    console.warn("Dimensions not available, using fallback values:", error);
+    // Fallback when Dimensions is not available
     return {
       screenWidth: 393,
       screenHeight: 852,

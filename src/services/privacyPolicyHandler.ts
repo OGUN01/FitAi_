@@ -11,7 +11,7 @@ export interface PrivacyPolicyHandlerService {
 }
 
 class PrivacyPolicyHandler implements PrivacyPolicyHandlerService {
-  private readonly PRIVACY_POLICY_URL = "https://fitai-app.com/privacy";
+  private readonly PRIVACY_POLICY_URL = "https://fitai.app/privacy";
 
   /**
    * Handle privacy policy intent from Health Connect
@@ -19,7 +19,6 @@ class PrivacyPolicyHandler implements PrivacyPolicyHandlerService {
    */
   async handlePrivacyPolicyRequest(): Promise<boolean> {
     try {
-      console.log("🔐 PRIVACY: Health Connect privacy policy request received");
 
       // Validate privacy policy URL is accessible
       const isAccessible = await this.validatePrivacyPolicyAccess();
@@ -36,7 +35,6 @@ class PrivacyPolicyHandler implements PrivacyPolicyHandlerService {
 
       // Open privacy policy
       await this.openPrivacyPolicy();
-      console.log("✅ PRIVACY: Privacy policy opened successfully");
       return true;
     } catch (error) {
       console.error(
@@ -45,7 +43,7 @@ class PrivacyPolicyHandler implements PrivacyPolicyHandlerService {
       );
       Alert.alert(
         "Privacy Policy Error",
-        "Unable to open privacy policy. Please visit fitai-app.com/privacy directly.",
+        "Unable to open privacy policy. Please visit fitai.app/privacy directly.",
         [{ text: "OK" }],
       );
       return false;
@@ -57,11 +55,6 @@ class PrivacyPolicyHandler implements PrivacyPolicyHandlerService {
    */
   async openPrivacyPolicy(): Promise<void> {
     try {
-      console.log(
-        "🔐 PRIVACY: Opening privacy policy URL:",
-        this.PRIVACY_POLICY_URL,
-      );
-
       // Try to open with Expo WebBrowser first (better UX)
       try {
         await WebBrowser.openBrowserAsync(this.PRIVACY_POLICY_URL, {
@@ -71,18 +64,11 @@ class PrivacyPolicyHandler implements PrivacyPolicyHandlerService {
           showTitle: true,
           enableBarCollapsing: false,
         } as any);
-        console.log("✅ PRIVACY: Opened privacy policy with WebBrowser");
       } catch (webBrowserError) {
-        console.warn(
-          "⚠️ PRIVACY: WebBrowser failed, falling back to Linking:",
-          webBrowserError,
-        );
-
         // Fallback to system browser
         const canOpen = await Linking.canOpenURL(this.PRIVACY_POLICY_URL);
         if (canOpen) {
           await Linking.openURL(this.PRIVACY_POLICY_URL);
-          console.log("✅ PRIVACY: Opened privacy policy with system browser");
         } else {
           throw new Error("Cannot open privacy policy URL");
         }
@@ -99,13 +85,11 @@ class PrivacyPolicyHandler implements PrivacyPolicyHandlerService {
    */
   async validatePrivacyPolicyAccess(): Promise<boolean> {
     try {
-      console.log("🔍 PRIVACY: Validating privacy policy URL accessibility...");
 
       // Test if URL can be opened
       const canOpen = await Linking.canOpenURL(this.PRIVACY_POLICY_URL);
 
       if (!canOpen) {
-        console.error("❌ PRIVACY: Privacy policy URL cannot be opened");
         return false;
       }
 
@@ -122,19 +106,11 @@ class PrivacyPolicyHandler implements PrivacyPolicyHandlerService {
         clearTimeout(timeoutId);
 
         if (response.status >= 200 && response.status < 400) {
-          console.log("✅ PRIVACY: Privacy policy URL is accessible");
           return true;
         } else {
-          console.warn(
-            `⚠️ PRIVACY: Privacy policy URL returned status ${response.status}`,
-          );
           return false;
         }
       } catch (fetchError) {
-        console.warn(
-          "⚠️ PRIVACY: Could not validate URL via HTTP, but Linking.canOpenURL passed",
-        );
-        // If fetch fails but Linking.canOpenURL passes, still consider it accessible
         return true;
       }
     } catch (error) {
@@ -163,16 +139,12 @@ class PrivacyPolicyHandler implements PrivacyPolicyHandlerService {
     const recommendations: string[] = [];
 
     try {
-      console.log(
-        "🔍 PRIVACY: Checking Health Connect privacy policy compliance...",
-      );
-
       // Check 1: Privacy policy URL accessibility
       const isAccessible = await this.validatePrivacyPolicyAccess();
       if (!isAccessible) {
         issues.push("Privacy policy URL is not accessible");
         recommendations.push(
-          "Ensure https://fitai-app.com/privacy is accessible and returns valid content",
+          "Ensure https://fitai.app/privacy is accessible and returns valid content",
         );
       }
 
@@ -189,26 +161,13 @@ class PrivacyPolicyHandler implements PrivacyPolicyHandlerService {
       try {
         // Test WebBrowser availability
         await WebBrowser.warmUpAsync();
-        console.log(
-          "✅ PRIVACY: WebBrowser is available for enhanced privacy policy viewing",
-        );
-      } catch (error) {
-        console.warn(
-          "⚠️ PRIVACY: WebBrowser not available, will use system browser",
-        );
-        // Not a compliance issue, just a UX consideration
+      } catch {
+        // WebBrowser not available, will use system browser
       }
 
       const isCompliant = issues.length === 0;
 
-      if (isCompliant) {
-        console.log(
-          "✅ PRIVACY: Health Connect privacy policy compliance validated",
-        );
-        recommendations.push(
-          "Privacy policy handling is properly configured for Health Connect",
-        );
-      } else {
+      if (!isCompliant) {
         console.error(
           "❌ PRIVACY: Health Connect compliance issues detected:",
           issues,

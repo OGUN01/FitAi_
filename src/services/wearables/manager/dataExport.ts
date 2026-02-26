@@ -8,7 +8,6 @@ export class DataExportService {
   async exportWorkout(workout: WearableExportData): Promise<boolean> {
     try {
       const platform = this.getPlatform();
-      console.log(`📤 Exporting workout to ${platform} wearables...`);
 
       switch (platform) {
         case "ios":
@@ -18,7 +17,6 @@ export class DataExportService {
           return await googleFitService.exportWorkoutToGoogleFit(workout);
 
         default:
-          console.warn("⚠️ Workout export not supported on this platform");
           return false;
       }
     } catch (error) {
@@ -30,7 +28,6 @@ export class DataExportService {
   async exportNutrition(nutrition: NutritionExportData): Promise<boolean> {
     try {
       const platform = this.getPlatform();
-      console.log(`📤 Exporting nutrition to ${platform} wearables...`);
 
       switch (platform) {
         case "ios":
@@ -40,7 +37,6 @@ export class DataExportService {
           return await googleFitService.exportNutritionToGoogleFit(nutrition);
 
         default:
-          console.warn("⚠️ Nutrition export not supported on this platform");
           return false;
       }
     } catch (error) {
@@ -55,7 +51,6 @@ export class DataExportService {
   ): Promise<boolean> {
     try {
       const platform = this.getPlatform();
-      console.log(`📤 Exporting body weight to ${platform} wearables...`);
 
       switch (platform) {
         case "ios":
@@ -71,7 +66,6 @@ export class DataExportService {
           );
 
         default:
-          console.warn("⚠️ Body weight export not supported on this platform");
           return false;
       }
     } catch (error) {

@@ -21,7 +21,7 @@ import { GlassFormPicker } from "../components/GlassFormPicker";
 import { useProfileStore } from "../../../../stores/profileStore";
 import { useUser } from "../../../../hooks/useUser";
 import { ResponsiveTheme } from "../../../../utils/constants";
-import { rf } from "../../../../utils/responsive";
+import { rf, rp, rbr } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
 
 interface PersonalInfoEditModalProps {
@@ -91,14 +91,16 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
     if (visible && profile) {
       const info = profile.personalInfo;
       const bodyMetrics = profile.bodyMetrics;
+      const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
       const workoutPrefs = profile.workoutPreferences;
       setName(info?.name || "");
       // ✅ Convert number to string for input field
       setAge(info?.age?.toString() || "");
       setGender(info?.gender || "");
-      // ✅ Get height/weight from bodyMetrics (database: body_analysis table)
-      setHeight(bodyMetrics?.height_cm?.toString() || "");
-      setWeight(bodyMetrics?.current_weight_kg?.toString() ?? ""); // Empty string if no data
+      // ✅ Get height/weight from bodyMetrics, fallback to profileStore bodyAnalysis
+      // Note: bodyMetrics may have 0 values (never populated by onboarding), so check > 0
+      setHeight((bodyMetrics?.height_cm && bodyMetrics.height_cm > 0) ? bodyMetrics.height_cm.toString() : (bodyAnalysisData?.height_cm?.toString() || ""));
+      setWeight((bodyMetrics?.current_weight_kg && bodyMetrics.current_weight_kg > 0) ? bodyMetrics.current_weight_kg.toString() : (bodyAnalysisData?.current_weight_kg?.toString() || ""));
       // ✅ FIX: Get activity level from workoutPreferences, not personalInfo
       setActivityLevel(workoutPrefs?.activity_level || "");
       setErrors({});
@@ -313,13 +315,14 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
     if (!profile?.personalInfo) return true;
     const info = profile.personalInfo;
     const bodyMetrics = profile.bodyMetrics;
+    const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
     const workoutPrefs = profile.workoutPreferences;
     return (
       name !== (info?.name || "") ||
       age !== (info?.age?.toString() || "") ||
       gender !== (info?.gender || "") ||
-      height !== (bodyMetrics?.height_cm?.toString() || "") ||
-      weight !== (bodyMetrics?.current_weight_kg?.toString() ?? "") ||
+      height !== ((bodyMetrics?.height_cm && bodyMetrics.height_cm > 0) ? bodyMetrics.height_cm.toString() : (bodyAnalysisData?.height_cm?.toString() || "")) ||
+      weight !== ((bodyMetrics?.current_weight_kg && bodyMetrics.current_weight_kg > 0) ? bodyMetrics.current_weight_kg.toString() : (bodyAnalysisData?.current_weight_kg?.toString() || "")) ||
       activityLevel !== (workoutPrefs?.activity_level || "")
     );
   }, [name, age, gender, height, weight, activityLevel, profile]);
@@ -330,7 +333,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       title="Personal Information"
       subtitle="Update your profile details"
       icon="person-outline"
-      iconColor="#FF6B6B"
+      iconColor={ResponsiveTheme.colors.errorLight}
       onClose={onClose}
       onSave={handleSave}
       isSaving={isSaving}
@@ -340,7 +343,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       <GlassFormInput
         label="Full Name"
         icon="person-outline"
-        iconColor="#FF6B6B"
+      iconColor={ResponsiveTheme.colors.errorLight}
         value={name}
         onChangeText={handleNameChange}
         placeholder="Enter your name"
@@ -353,7 +356,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       <GlassFormInput
         label="Age"
         icon="calendar-outline"
-        iconColor="#4CAF50"
+        iconColor={ResponsiveTheme.colors.success}
         value={age}
         onChangeText={handleAgeChange}
         placeholder="Enter your age"
@@ -377,7 +380,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       <GlassFormInput
         label="Height"
         icon="resize-outline"
-        iconColor="#2196F3"
+        iconColor={ResponsiveTheme.colors.info}
         value={height}
         onChangeText={handleHeightChange}
         placeholder="Enter your height"
@@ -392,7 +395,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       <GlassFormInput
         label="Weight"
         icon="scale-outline"
-        iconColor="#FF6B35"
+        iconColor={ResponsiveTheme.colors.primary}
         value={weight}
         onChangeText={handleWeightChange}
         placeholder="Enter your weight"

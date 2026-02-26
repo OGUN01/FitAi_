@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw } from "../../utils/responsive";
+import { rf, rw, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
 interface PrivacyToggleProps {
@@ -57,15 +57,15 @@ export const PrivacyToggle: React.FC<PrivacyToggleProps> = ({
               onToggle();
             }}
             trackColor={{
-              false: "rgba(255, 255, 255, 0.1)",
+              false: ResponsiveTheme.colors.glassHighlight,
               true: `${ResponsiveTheme.colors.primary}50`,
             }}
             thumbColor={
               value
                 ? ResponsiveTheme.colors.primary
-                : "rgba(255, 255, 255, 0.4)"
+                : ResponsiveTheme.colors.glassHighlight
             }
-            ios_backgroundColor="rgba(255, 255, 255, 0.1)"
+            ios_backgroundColor={ResponsiveTheme.colors.glassHighlight}
           />
         </View>
       </GlassCard>
@@ -76,7 +76,7 @@ export const PrivacyToggle: React.FC<PrivacyToggleProps> = ({
 const styles = StyleSheet.create({
   toggleCard: {
     marginBottom: ResponsiveTheme.spacing.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
   },
   toggleContent: {
     flexDirection: "row",
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: rw(40),
     height: rw(40),
-    borderRadius: rw(12),
+    borderRadius: rbr(12),
     justifyContent: "center" as const,
     alignItems: "center" as const,
     marginRight: ResponsiveTheme.spacing.md,
@@ -97,8 +97,8 @@ const styles = StyleSheet.create({
   toggleTitle: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: "#fff",
-    marginBottom: 2,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rp(2),
   },
   toggleDescription: {
     fontSize: rf(12),

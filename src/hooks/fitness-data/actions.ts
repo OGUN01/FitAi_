@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 import { useCallback } from "react";
 import { fitnessDataService } from "../../services/fitnessData";
 import {
@@ -87,9 +88,6 @@ export const useActions = (
   const startWorkoutSession = useCallback(
     async (workoutData: WorkoutSessionData): Promise<boolean> => {
       if (!userId) {
-        console.log(
-          "🏃 Guest user - skipping database workout session, using local store only",
-        );
         return true;
       }
 
@@ -123,7 +121,6 @@ export const useActions = (
   const getRecommendedExercises = useCallback(
     async (workoutType?: string, limit: number = 5): Promise<Exercise[]> => {
       if (!userId) {
-        console.log("No user ID available for recommended exercises");
         return [];
       }
 
@@ -139,7 +136,7 @@ export const useActions = (
         } else {
           const errorMsg =
             response.error || "Failed to get recommended exercises";
-          console.error("Failed to get recommended exercises:", errorMsg);
+          logger.error('Failed to get recommended exercises', { error: errorMsg });
           state.setExercisesError(errorMsg);
           return [];
         }
@@ -148,7 +145,7 @@ export const useActions = (
           error instanceof Error
             ? error.message
             : "Error getting recommended exercises";
-        console.error("Error getting recommended exercises:", errorMsg);
+        logger.error('Error getting recommended exercises', { error: errorMsg });
         state.setExercisesError(errorMsg);
         return [];
       }

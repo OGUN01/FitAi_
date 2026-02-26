@@ -27,15 +27,11 @@ class NormalizedNameMappingService {
     this.muscleIndex = {};
     this.equipmentIndex = {};
 
-    console.log(
-      `🎯 Normalized Name Mapping initialized in fallback mode (bundle size optimization)`,
-    );
   }
 
   async findBestMatch(aiGeneratedName: string): Promise<NameMappingResult> {
     const cleanName = cleanExerciseName(aiGeneratedName);
 
-    console.log(`🔍 Finding match for: "${aiGeneratedName}" -> "${cleanName}"`);
 
     const exactMatch = findExactMatch(
       cleanName,
@@ -43,7 +39,6 @@ class NormalizedNameMappingService {
       this.nameIndex,
     );
     if (exactMatch) {
-      console.log(`✅ Exact match found: "${exactMatch.exercise.name}"`);
       return exactMatch;
     }
 
@@ -53,7 +48,6 @@ class NormalizedNameMappingService {
       this.nameIndex,
     );
     if (mappingMatch) {
-      console.log(`✅ Mapping match found: "${mappingMatch.exercise.name}"`);
       return mappingMatch;
     }
 
@@ -63,9 +57,6 @@ class NormalizedNameMappingService {
       this.nameIndex,
     );
     if (normalizedMatch) {
-      console.log(
-        `✅ Normalized match found: "${normalizedMatch.exercise.name}"`,
-      );
       return normalizedMatch;
     }
 
@@ -75,7 +66,6 @@ class NormalizedNameMappingService {
       this.nameIndex,
     );
     if (semanticMatch) {
-      console.log(`✅ Semantic match found: "${semanticMatch.exercise.name}"`);
       return semanticMatch;
     }
 
@@ -85,11 +75,9 @@ class NormalizedNameMappingService {
       this.wordIndex,
     );
     if (fuzzyMatch) {
-      console.log(`✅ Fuzzy match found: "${fuzzyMatch.exercise.name}"`);
       return fuzzyMatch;
     }
 
-    console.log(`🔄 Creating intelligent fallback for "${aiGeneratedName}"`);
     return generateIntelligentFallback(aiGeneratedName);
   }
 

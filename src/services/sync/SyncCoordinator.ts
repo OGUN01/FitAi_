@@ -135,7 +135,6 @@ class SyncCoordinator {
             userId: entity.userId || "guest",
             maxRetries: 3,
           });
-          console.log(`📥 Queued ${table} update for offline sync`);
         }
 
         return { success: false, error: error.message };
@@ -148,7 +147,6 @@ class SyncCoordinator {
       // Invalidate cache timestamp
       this.invalidateCache(syncKey);
 
-      console.log(`✅ Synced ${table} to database successfully`);
       return { success: true };
     } catch (error) {
       console.error(`❌ Sync failed for ${table}:`, error);
@@ -193,7 +191,6 @@ class SyncCoordinator {
     ) {
       const localEntity = getLocalEntity();
       if (localEntity) {
-        console.log(`📦 Using cached ${table} data`);
         return { success: true, data: localEntity };
       }
     }
@@ -213,7 +210,6 @@ class SyncCoordinator {
         if (this.isNetworkError(error)) {
           const localEntity = getLocalEntity();
           if (localEntity) {
-            console.log(`📦 Using local cache due to network error`);
             return { success: true, data: localEntity };
           }
         }
@@ -247,7 +243,6 @@ class SyncCoordinator {
       updateCache(camelCasedData);
       this.updateCacheTimestamp(cacheKey);
 
-      console.log(`✅ Synced ${table} from database successfully`);
       return { success: true, data: camelCasedData };
     } catch (error) {
       console.error(`❌ Sync from database failed for ${table}:`, error);
@@ -271,7 +266,6 @@ class SyncCoordinator {
 
     if (!localTimestamp || !remoteTimestamp) {
       // If no timestamps, prefer remote (database is source of truth)
-      console.log("⚠️ Missing timestamps, using remote entity");
       return remoteEntity;
     }
 
@@ -279,14 +273,11 @@ class SyncCoordinator {
     const remoteDate = new Date(remoteTimestamp);
 
     if (localDate > remoteDate) {
-      console.log("🔄 Local entity is newer, keeping local");
       return localEntity;
     } else if (remoteDate > localDate) {
-      console.log("🔄 Remote entity is newer, using remote");
       return remoteEntity;
     } else {
       // Timestamps are equal - prefer remote for consistency
-      console.log("🔄 Timestamps equal, using remote entity");
       return remoteEntity;
     }
   }
@@ -352,7 +343,6 @@ class SyncCoordinator {
    */
   clearAllCaches(): void {
     this.cacheTimestamps.clear();
-    console.log("🧹 All caches cleared");
   }
 
   /**

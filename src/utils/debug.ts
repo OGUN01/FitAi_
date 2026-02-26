@@ -20,7 +20,6 @@ export const logger = {
    */
   log: (...args: any[]) => {
     if (DEBUG) {
-      console.log(...args);
     }
   },
 
@@ -29,7 +28,6 @@ export const logger = {
    */
   warn: (...args: any[]) => {
     if (DEBUG) {
-      console.warn(...args);
     }
   },
 

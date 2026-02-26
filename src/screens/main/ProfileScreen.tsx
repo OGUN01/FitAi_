@@ -32,6 +32,8 @@ import {
   PersonalInfoEditModal,
   GoalsPreferencesEditModal,
   BodyMeasurementsEditModal,
+  SettingsSelectionModal,
+  ClearCacheConfirmModal,
 } from "./profile/modals";
 
 import { GuestSignUpScreen } from "./GuestSignUpScreen";
@@ -59,12 +61,28 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
     confirmLogout,
     cancelLogout,
     handleSettingItemPress,
+    handleStatPress,
     accountItems,
     preferencesItems,
     appItems,
     dataItems,
     userName,
     memberSince,
+    // Settings modals
+    showThemeModal,
+    setShowThemeModal,
+    showUnitsModal,
+    setShowUnitsModal,
+    showLanguageModal,
+    setShowLanguageModal,
+    showClearCacheModal,
+    setShowClearCacheModal,
+    themePreference,
+    unitsPreference,
+    handleThemeSelect,
+    handleUnitsSelect,
+    handleLanguageSelect,
+    handleClearCache,
   } = useProfileLogic();
 
   if (currentSettingsScreen) {
@@ -112,6 +130,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
             totalCaloriesBurned={userStats?.totalCaloriesBurned || 0}
             longestStreak={userStats?.longestStreak || 0}
             achievements={userStats?.achievements || 0}
+            onStatPress={handleStatPress}
           />
 
           <SettingsSection
@@ -172,6 +191,62 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
         <BodyMeasurementsEditModal
           visible={showEditModal === "measurements"}
           onClose={() => setShowEditModal(null)}
+        />
+
+        {/* Theme Selection Modal */}
+        <SettingsSelectionModal
+          visible={showThemeModal}
+          title="Theme Preference"
+          subtitle="Choose your display theme"
+          icon="color-palette-outline"
+          iconColor={ResponsiveTheme.colors.primary}
+          selectedValue={themePreference}
+          onSelect={handleThemeSelect}
+          onClose={() => setShowThemeModal(false)}
+          options={[
+            { value: "dark", label: "Dark", icon: "moon-outline", description: "Easier on the eyes" },
+            { value: "light", label: "Light", icon: "sunny-outline", description: "Classic bright look" },
+            { value: "system", label: "System", icon: "phone-portrait-outline", description: "Match device setting" },
+          ]}
+        />
+
+        {/* Units Selection Modal */}
+        <SettingsSelectionModal
+          visible={showUnitsModal}
+          title="Units"
+          subtitle="Choose your measurement system"
+          icon="speedometer-outline"
+          iconColor={ResponsiveTheme.colors.info}
+          selectedValue={unitsPreference}
+          onSelect={handleUnitsSelect}
+          onClose={() => setShowUnitsModal(false)}
+          options={[
+            { value: "metric", label: "Metric", icon: "globe-outline", description: "Kilograms, centimeters" },
+            { value: "imperial", label: "Imperial", icon: "flag-outline", description: "Pounds, inches" },
+          ]}
+        />
+
+        {/* Language Selection Modal */}
+        <SettingsSelectionModal
+          visible={showLanguageModal}
+          title="Language"
+          subtitle="App display language"
+          icon="globe-outline"
+          iconColor={ResponsiveTheme.colors.success}
+          selectedValue="en"
+          onSelect={handleLanguageSelect}
+          onClose={() => setShowLanguageModal(false)}
+          options={[
+            { value: "en", label: "English", icon: "chatbubble-outline", description: "Currently active" },
+          ]}
+          footerNote="More languages coming soon"
+        />
+
+        {/* Clear Cache Confirmation Modal */}
+        <ClearCacheConfirmModal
+          visible={showClearCacheModal}
+          onConfirm={handleClearCache}
+          onCancel={() => setShowClearCacheModal(false)}
         />
       </SafeAreaView>
     </AuroraBackground>

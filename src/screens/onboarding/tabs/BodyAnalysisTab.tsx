@@ -109,6 +109,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: 100 }}
         >
           {/* Hero Section */}
           <HeroSection
@@ -117,10 +118,10 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
             }}
             overlayGradient={gradients.overlay.dark}
             contentPosition="center"
-            height={200}
+            height={180}
           >
-            <Text style={styles.title}>Body Analysis</Text>
-            <Text style={styles.subtitle}>
+            <Text style={styles.title} numberOfLines={2}>Body Analysis</Text>
+            <Text style={styles.subtitle} numberOfLines={2}>
               Track your measurements and visualize your progress
             </Text>
 
@@ -297,12 +298,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     minWidth: 100,
+    minHeight: 52,
   },
   backButtonText: {
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.primary,
     marginLeft: ResponsiveTheme.spacing.xs,
+    lineHeight: rf(18),
   },
   nextButtonCompact: {
     flex: 1,
@@ -313,6 +316,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     borderRadius: ResponsiveTheme.borderRadius.xl,
     backgroundColor: ResponsiveTheme.colors.primary,
+    minHeight: 52,
   },
   nextButtonText: {
     fontSize: ResponsiveTheme.fontSize.md,

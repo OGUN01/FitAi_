@@ -228,7 +228,7 @@ export const SelectedPointTooltip: React.FC<SelectedPointTooltipProps> = ({
     <SvgText
       x={getX(selectedPoint)}
       y={getY(data[selectedPoint].value) - rh(18)}
-      fill="#fff"
+      fill={ResponsiveTheme.colors.white}
       fontSize={rf(11)}
       textAnchor="middle"
       fontWeight="700"

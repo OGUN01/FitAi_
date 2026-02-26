@@ -28,7 +28,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh } from "../../../utils/responsive";
+import { rf, rw, rh, rp } from "../../../utils/responsive";
 
 // Water amount presets (in ml)
 const QUICK_ADD_OPTIONS = [
@@ -117,9 +117,11 @@ const QuickAddButton: React.FC<{
       hapticFeedback={true}
       hapticType="medium"
       style={styles.quickAddButton}
+      accessibilityRole="button"
+      accessibilityLabel={`Add ${amount} milliliters ${label}`}
     >
       <View style={styles.quickAddIconContainer}>
-        <Ionicons name={icon} size={rf(18)} color="#2196F3" />
+        <Ionicons name={icon} size={rf(18)} color={ResponsiveTheme.colors.info} />
       </View>
       <Text style={styles.quickAddAmount}>{amount}ml</Text>
       <Text style={styles.quickAddLabel}>{label}</Text>
@@ -147,13 +149,13 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
     const expectedProgress = ((hour - 6) / 16) * 100; // Assuming 6am-10pm active period
 
     if (progress >= expectedProgress + 10) {
-      return { status: "Ahead", color: "#4CAF50", message: "Great hydration!" };
+      return { status: "Ahead", color: ResponsiveTheme.colors.success, message: "Great hydration!" };
     } else if (progress >= expectedProgress - 10) {
-      return { status: "On Track", color: "#2196F3", message: "Keep it up!" };
+      return { status: "On Track", color: ResponsiveTheme.colors.info, message: "Keep it up!" };
     } else {
       return {
         status: "Behind",
-        color: "#FF9800",
+        color: ResponsiveTheme.colors.warning,
         message: "Drink more water",
       };
     }
@@ -163,12 +165,7 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
   const dropSize = rw(90);
 
   return (
-    <AnimatedPressable
-      onPress={onPress}
-      scaleValue={0.98}
-      hapticFeedback={true}
-      hapticType="light"
-    >
+    <View>
       <GlassCard
         elevation={2}
         blurIntensity="light"
@@ -178,7 +175,7 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Ionicons name="water" size={rf(16)} color="#2196F3" />
+            <Ionicons name="water" size={rf(16)} color={ResponsiveTheme.colors.info} />
             <Text style={styles.headerTitle}>Hydration</Text>
           </View>
           <View
@@ -208,7 +205,7 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>
-                {(currentIntake / 1000).toFixed(1)}
+                {(currentIntake / 1000).toFixed(2)}
                 <Text style={styles.statUnit}>L</Text>
               </Text>
               <Text style={styles.statLabel}>Consumed</Text>
@@ -218,7 +215,7 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
 
             <View style={styles.statItem}>
               <Text style={styles.statValue}>
-                {(dailyGoal / 1000).toFixed(1)}
+                {(dailyGoal / 1000).toFixed(2)}
                 <Text style={styles.statUnit}>L</Text>
               </Text>
               <Text style={styles.statLabel}>Goal</Text>
@@ -230,7 +227,7 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
               <Text
                 style={[
                   styles.statValue,
-                  remainingGlasses > 0 ? {} : { color: "#4CAF50" },
+                  remainingGlasses > 0 ? {} : { color: ResponsiveTheme.colors.success },
                 ]}
               >
                 {remainingGlasses > 0 ? remainingGlasses : "✓"}
@@ -269,7 +266,7 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
           <Text style={styles.reminderText}>{hydrationStatus.message}</Text>
         </View>
       </GlassCard>
-    </AnimatedPressable>
+    </View>
   );
 };
 
@@ -327,7 +324,7 @@ const styles = StyleSheet.create({
   dropPercentage: {
     fontSize: rf(18),
     fontWeight: "800",
-    color: "#2196F3",
+    color: ResponsiveTheme.colors.info,
   },
   statsContainer: {
     flex: 1,
@@ -352,18 +349,18 @@ const styles = StyleSheet.create({
     fontSize: rf(10),
     fontWeight: "500",
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: rp(2),
   },
   divider: {
     width: 1,
     height: rh(30),
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: ResponsiveTheme.colors.glassHighlight,
   },
   quickAddSection: {
     marginTop: ResponsiveTheme.spacing.md,
     paddingTop: ResponsiveTheme.spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.08)",
+    borderTopColor: ResponsiveTheme.colors.glassBorder,
   },
   quickAddTitle: {
     fontSize: rf(11),
@@ -393,18 +390,18 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(33, 150, 243, 0.15)",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 4,
+    marginBottom: rp(4),
   },
   quickAddAmount: {
     fontSize: rf(13),
     fontWeight: "700",
-    color: "#2196F3",
+    color: ResponsiveTheme.colors.info,
   },
   quickAddLabel: {
     fontSize: rf(10),
     fontWeight: "500",
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: 1,
+    marginTop: rp(1),
   },
   reminderContainer: {
     flexDirection: "row",

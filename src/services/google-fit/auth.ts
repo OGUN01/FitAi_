@@ -20,15 +20,12 @@ export class GoogleFitAuth {
 
   async initialize(): Promise<boolean> {
     try {
-      console.log("🤖 Initializing Google Fit integration...");
 
       if (Platform.OS !== "android") {
-        console.log("📱 Google Fit only available on Android devices");
         return false;
       }
 
       const isAvailable = await GoogleFit.checkIsAuthorized();
-      console.log(`📊 Google Fit availability check: ${isAvailable}`);
 
       this.isInitialized = true;
       return true;
@@ -45,7 +42,6 @@ export class GoogleFitAuth {
         if (!initSuccess) return false;
       }
 
-      console.log("🔐 Requesting Google Fit permissions...");
 
       const authResult = await GoogleFit.authorize({
         scopes: this.scopes,
@@ -54,11 +50,9 @@ export class GoogleFitAuth {
       this.permissionsGranted = authResult.success;
 
       if (authResult.success) {
-        console.log("✅ Google Fit permissions granted");
         await AsyncStorage.setItem("fitai_googlefit_permissions", "granted");
         await this.startObservers();
       } else {
-        console.warn("❌ Google Fit permissions denied:", authResult.message);
         await AsyncStorage.setItem("fitai_googlefit_permissions", "denied");
       }
 
@@ -88,16 +82,12 @@ export class GoogleFitAuth {
 
   private async startObservers(): Promise<void> {
     try {
-      console.log("👀 Starting Google Fit data observers...");
 
       await GoogleFit.startRecording(
-        (callback: any) => {
-          console.log("📊 Google Fit data update received:", callback);
-        },
+        (callback: any) => {},
         ["step", "distance", "activity"],
       );
 
-      console.log("✅ Google Fit observers started");
     } catch (error) {
       console.error("❌ Failed to start Google Fit observers:", error);
     }
@@ -105,14 +95,12 @@ export class GoogleFitAuth {
 
   async disconnect(): Promise<boolean> {
     try {
-      console.log("🔌 Disconnecting from Google Fit...");
 
       await GoogleFit.disconnect();
       await AsyncStorage.setItem("fitai_googlefit_permissions", "denied");
 
       this.permissionsGranted = false;
 
-      console.log("✅ Successfully disconnected from Google Fit");
       return true;
     } catch (error) {
       console.error("❌ Failed to disconnect from Google Fit:", error);

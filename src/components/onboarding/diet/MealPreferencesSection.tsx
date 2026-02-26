@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rw, rh } from "../../../utils/responsive";
+import { rf, rw, rh, rs, rbr, rp } from "../../../utils/responsive";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
 import { DietPreferencesData } from "../../../types/onboarding";
@@ -293,23 +293,23 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.xs,
   },
   miniToggle: {
-    width: 24,
-    height: 14,
-    borderRadius: 7,
+    width: rs(24),
+    height: rs(14),
+    borderRadius: rbr(7),
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
     justifyContent: "center",
-    paddingHorizontal: 1,
+    paddingHorizontal: rp(1),
   },
   miniToggleActive: {
     backgroundColor: ResponsiveTheme.colors.primary,
     borderColor: ResponsiveTheme.colors.primary,
   },
   miniToggleThumb: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: rs(10),
+    height: rs(10),
+    borderRadius: rbr(5),
     backgroundColor: ResponsiveTheme.colors.textSecondary,
   },
   miniToggleThumbActive: {

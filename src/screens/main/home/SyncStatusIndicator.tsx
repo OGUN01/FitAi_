@@ -93,9 +93,9 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
 
   // Get status color
   const getStatusColor = () => {
-    if (isSyncing) return "#FF9800";
-    if (syncStatus === "error") return "#F44336";
-    if (syncStatus === "success") return "#4CAF50";
+    if (isSyncing) return ResponsiveTheme.colors.warning;
+    if (syncStatus === "error") return ResponsiveTheme.colors.error;
+    if (syncStatus === "success") return ResponsiveTheme.colors.success;
     return ResponsiveTheme.colors.textSecondary;
   };
 

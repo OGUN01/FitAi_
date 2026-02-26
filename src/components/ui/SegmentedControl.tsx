@@ -15,7 +15,7 @@ import Animated, {
   Extrapolate,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { rf, rp, rw } from "../../utils/responsive";
+import { rf, rp, rbr, rw } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 
 export interface SegmentOption {
@@ -36,7 +36,7 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
   options,
   selectedId,
   onSelect,
-  gradient = ["#4CAF50", "#45A049"],
+  gradient = [ResponsiveTheme.colors.success, ResponsiveTheme.colors.success],
   style,
 }) => {
   const [segmentWidths, setSegmentWidths] = useState<number[]>([]);
@@ -111,7 +111,7 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
                 styles.segmentText,
                 selectedId === option.id && styles.segmentTextSelected,
               ]}
-              numberOfLines={1}
+              numberOfLines={2}
               ellipsizeMode="tail"
             >
               {option.label}
@@ -129,19 +129,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderRadius: ResponsiveTheme.borderRadius.full,
-    padding: 4,
+    padding: rp(4),
     overflow: "hidden",
   },
 
   indicator: {
     position: "absolute",
-    top: 4,
-    bottom: 4,
-    left: 4,
+    top: rp(4),
+    bottom: rp(4),
+    left: rp(4),
     borderRadius: ResponsiveTheme.borderRadius.full,
     overflow: "hidden",
     zIndex: 1,
-    shadowColor: "#000",
+    shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
     justifyContent: "center" as const,
     minWidth: 0,
-    minHeight: 44,
+    minHeight: rp(48),
   },
 
   segmentText: {

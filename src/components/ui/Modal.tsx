@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
-import { THEME } from "../../utils/constants";
 import { ResponsiveTheme } from "../../utils/constants";
 
 // REMOVED: Module-level Dimensions.get() causes crash - use rw/rh functions instead
@@ -60,12 +59,15 @@ export const Modal: React.FC<ModalProps> = ({
           style={styles.overlayTouchable}
           activeOpacity={1}
           onPress={handleOverlayPress}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss modal"
         >
           <View style={[styles.container, style]}>
             <TouchableOpacity
               activeOpacity={1}
               style={[styles.content, contentStyle]}
               onPress={(e) => e.stopPropagation()}
+              accessibilityRole="none"
             >
               {children}
             </TouchableOpacity>
@@ -111,6 +113,8 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
           style={styles.overlayTouchable}
           activeOpacity={1}
           onPress={handleOverlayPress}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss modal"
         >
           <View style={styles.bottomSheetContainer}>
             <TouchableOpacity
@@ -123,6 +127,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                 },
               ]}
               onPress={(e) => e.stopPropagation()}
+              accessibilityRole="none"
             >
               <View style={styles.bottomSheetHandle} />
               {children}
@@ -137,7 +142,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    backgroundColor: ResponsiveTheme.colors.overlayDark,
   },
 
   overlayTouchable: {
@@ -157,7 +162,7 @@ const styles = StyleSheet.create({
     padding: ResponsiveTheme.spacing.lg,
     width: "90%", // Use percentage instead of screenWidth calculation
     maxHeight: "80%", // Use percentage instead of screenHeight calculation
-    ...THEME.shadows.lg,
+    ...ResponsiveTheme.shadows.lg,
   },
 
   // Bottom Sheet styles
@@ -168,12 +173,12 @@ const styles = StyleSheet.create({
 
   bottomSheetContent: {
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderTopLeftRadius: THEME.borderRadius.xxl,
-    borderTopRightRadius: THEME.borderRadius.xxl,
+    borderTopLeftRadius: ResponsiveTheme.borderRadius.xxl,
+    borderTopRightRadius: ResponsiveTheme.borderRadius.xxl,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingBottom: ResponsiveTheme.spacing.lg,
     paddingTop: ResponsiveTheme.spacing.md,
-    ...THEME.shadows.lg,
+    ...ResponsiveTheme.shadows.lg,
   },
 
   bottomSheetHandle: {

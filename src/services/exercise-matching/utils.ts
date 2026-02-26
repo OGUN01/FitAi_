@@ -63,11 +63,9 @@ export async function loadSemanticCache(): Promise<
       const cache = new Map<string, GeneratedExerciseData>(
         Object.entries(data),
       );
-      console.log(`📚 Loaded ${cache.size} semantic mappings from cache`);
       return cache;
     }
   } catch (error) {
-    console.warn("Failed to load semantic cache:", error);
   }
   return new Map<string, GeneratedExerciseData>();
 }
@@ -79,6 +77,5 @@ export async function saveSemanticCache(
     const data = Object.fromEntries(cache);
     await AsyncStorage.setItem("semantic_exercise_cache", JSON.stringify(data));
   } catch (error) {
-    console.warn("Failed to save semantic cache:", error);
   }
 }

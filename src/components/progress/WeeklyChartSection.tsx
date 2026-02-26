@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
@@ -8,9 +8,23 @@ interface WeeklyChartSectionProps {
   weeklyData: any[];
 }
 
+const MAX_BAR_HEIGHT = 70;
+
 export const WeeklyChartSection: React.FC<WeeklyChartSectionProps> = ({
   weeklyData,
 }) => {
+  const maxWorkouts = useMemo(
+    () => Math.max(1, ...weeklyData.map((d) => d.workouts ?? 0)),
+    [weeklyData],
+  );
+  const maxMeals = useMemo(
+    () => Math.max(1, ...weeklyData.map((d) => d.meals ?? 0)),
+    [weeklyData],
+  );
+  const maxCalories = useMemo(
+    () => Math.max(1, ...weeklyData.map((d) => d.calories ?? 0)),
+    [weeklyData],
+  );
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>This Week's Activity</Text>
@@ -34,21 +48,21 @@ export const WeeklyChartSection: React.FC<WeeklyChartSectionProps> = ({
                   style={[
                     styles.chartBar,
                     styles.workoutBar,
-                    { height: day.workouts * 40 + 10 },
+                    { height: Math.min((((day.workouts ?? 0) / maxWorkouts) * MAX_BAR_HEIGHT) + 4, MAX_BAR_HEIGHT) },
                   ]}
                 />
                 <View
                   style={[
                     styles.chartBar,
                     styles.mealBar,
-                    { height: day.meals * 20 + 10 },
+                    { height: Math.min((((day.meals ?? 0) / maxMeals) * MAX_BAR_HEIGHT) + 4, MAX_BAR_HEIGHT) },
                   ]}
                 />
                 <View
                   style={[
                     styles.chartBar,
                     styles.calorieBar,
-                    { height: day.calories / 10 + 5 },
+                    { height: Math.min((((day.calories ?? 0) / maxCalories) * MAX_BAR_HEIGHT) + 4, MAX_BAR_HEIGHT) },
                   ]}
                 />
               </View>
@@ -68,7 +82,7 @@ export const WeeklyChartSection: React.FC<WeeklyChartSectionProps> = ({
             <Text style={styles.legendText}>Workouts</Text>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: "#4CAF50" }]} />
+            <View style={[styles.legendDot, { backgroundColor: ResponsiveTheme.colors.success }]} />
             <Text style={styles.legendText}>Meals</Text>
           </View>
           <View style={styles.legendItem}>
@@ -141,7 +155,7 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.primary,
   },
   mealBar: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: ResponsiveTheme.colors.success,
   },
   calorieBar: {
     backgroundColor: ResponsiveTheme.colors.secondary,

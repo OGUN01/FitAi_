@@ -7,7 +7,9 @@ import {
   ScrollView,
   ActivityIndicator,
 } from "react-native";
-import { Button, THEME } from "../../components/ui";
+import { Button } from "../../components/ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf } from '../../utils/responsive';
 import { useExerciseData } from "./hooks/useExerciseData";
 import { useExerciseVisual } from "./hooks/useExerciseVisual";
 import { useStepAnimation } from "./hooks/useStepAnimation";
@@ -62,7 +64,7 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={THEME.colors.primary} />
+          <ActivityIndicator size="large" color={ResponsiveTheme.colors.primary} />
           <Text style={styles.loadingText}>Loading exercise...</Text>
         </View>
       </SafeAreaView>
@@ -88,7 +90,7 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
             onPress={onBack ?? (() => {})}
             disabled={!onBack}
             variant="primary"
-            style={{ marginTop: THEME.spacing.lg }}
+            style={{ marginTop: ResponsiveTheme.spacing.lg }}
           />
         </View>
       </SafeAreaView>
@@ -158,7 +160,7 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
   loadingContainer: {
     flex: 1,
@@ -166,39 +168,39 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loadingText: {
-    marginTop: THEME.spacing.md,
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: THEME.spacing.xl,
+    padding: ResponsiveTheme.spacing.xl,
   },
   emptyIcon: {
-    fontSize: 64,
-    marginBottom: THEME.spacing.md,
+    fontSize: rf(64),
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   emptyTitle: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   emptySubtitle: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
   },
   scrollView: {
     flex: 1,
-    paddingHorizontal: THEME.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
   },
   bottomContainer: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
-    backgroundColor: THEME.colors.background,
+    borderTopColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
 });

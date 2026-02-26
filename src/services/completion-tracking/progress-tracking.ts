@@ -38,10 +38,15 @@ export async function updateWorkoutProgress(
       emitter.emit(event);
 
       if (progress >= 100) {
-        return completeWorkout(emitter, workoutId, exerciseData, userId);
+        const fitnessStoreLatest = useFitnessStore.getState();
+        const isAlreadyCompleted = fitnessStoreLatest.weeklyWorkoutPlan?.workouts.find(
+          (w) => w.id === workoutId,
+        )?.completed;
+        if (!isAlreadyCompleted) {
+          return completeWorkout(emitter, workoutId, exerciseData, userId);
+        }
       }
     }
-
     return true;
   } catch (error) {
     console.error("❌ Failed to update workout progress:", error);

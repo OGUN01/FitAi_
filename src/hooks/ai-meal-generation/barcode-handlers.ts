@@ -114,9 +114,6 @@ export const createBarcodeHandlers = (
           }
         } catch {
           // estimateNutritionWithAI not available yet — continue with existing data
-          console.warn(
-            "[barcode-handlers] AI nutrition estimation unavailable",
-          );
         }
       }
 
@@ -128,7 +125,6 @@ export const createBarcodeHandlers = (
     } catch (error) {
       setScannedProduct(null);
       setProductHealthAssessment(null);
-      console.warn("[barcode-handlers] Scanning error:", String(error));
     } finally {
       setIsProcessingBarcode(false);
     }
@@ -159,16 +155,8 @@ export const createBarcodeHandlers = (
           await loadDailyNutrition();
           await refreshAll();
         } else {
-          console.warn(
-            "[barcode-handlers] Failed to log meal:",
-            logResult.error,
-          );
         }
       } catch (error) {
-        console.warn(
-          "[barcode-handlers] Error adding product to meal:",
-          String(error),
-        );
       }
     };
 

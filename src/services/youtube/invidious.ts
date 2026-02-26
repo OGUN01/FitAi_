@@ -12,7 +12,6 @@ export async function searchWithInvidious(
         return result;
       }
     } catch (error) {
-      console.warn(`⚠️ Instance ${instance} failed, trying next...`);
       continue;
     }
   }
@@ -30,7 +29,6 @@ async function searchOnInvidiousInstance(
   const encodedQuery = encodeURIComponent(query);
   const searchUrl = `${instance}/api/v1/search?q=${encodedQuery}&type=video&sort_by=relevance&region=US`;
 
-  console.log(`🔍 Searching on ${instance}: ${query}`);
 
   const timeoutPromise = new Promise((_, reject) => {
     setTimeout(() => reject(new Error("Request timeout")), 10000);
@@ -73,13 +71,11 @@ async function searchOnInvidiousInstance(
       };
     }
 
-    console.log(`✅ Found video: ${bestVideo.title}`);
     return {
       success: true,
       video: bestVideo,
     };
   } catch (error) {
-    console.warn(`⚠️ Error on ${instance}:`, error);
     throw error;
   }
 }

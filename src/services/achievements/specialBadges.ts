@@ -363,17 +363,6 @@ export function createWellnessAchievements(): Achievement[] {
       },
     },
     {
-      id: "hydration_hero",
-      category: "wellness",
-      tier: "bronze",
-      title: "Daily Hydrator",
-      description: "Meet water goals for 21 days",
-      icon: "💧",
-      color: "#CD7F32",
-      requirements: [{ type: "water_intake", target: 21 }],
-      reward: { type: "fitcoins", value: 150, description: "150 FitCoins" },
-    },
-    {
       id: "step_counter",
       category: "wellness",
       tier: "silver",
@@ -537,24 +526,6 @@ export function createWellnessAchievements(): Achievement[] {
 export function createSpecialAchievements(): Achievement[] {
   return [
     {
-      id: "early_bird",
-      category: "special",
-      tier: "gold",
-      title: "Early Bird",
-      description: "Complete 20 workouts before 6 AM",
-      icon: "🌅",
-      color: "#FFD700",
-      isSecret: true,
-      requirements: [
-        { type: "custom", target: 20, metadata: { time: "before_6am" } },
-      ],
-      reward: {
-        type: "fitcoins",
-        value: 400,
-        description: "400 FitCoins + Early Bird Title",
-      },
-    },
-    {
       id: "night_owl_fitness",
       category: "special",
       tier: "silver",
@@ -700,28 +671,6 @@ export function createSpecialAchievements(): Achievement[] {
         type: "title",
         value: "Time Traveler",
         description: "Exclusive Traveler Title + 750 FitCoins",
-      },
-    },
-    {
-      id: "perfectionist",
-      category: "special",
-      tier: "legendary",
-      title: "The Perfectionist",
-      description: "Achieve 100% completion rate on all goals for 30 days",
-      icon: "🏆✨",
-      color: "#FF6B6B",
-      isSecret: true,
-      requirements: [
-        {
-          type: "custom",
-          target: 30,
-          metadata: { achievement: "perfect_completion" },
-        },
-      ],
-      reward: {
-        type: "title",
-        value: "The Perfectionist",
-        description: "Ultimate Perfectionist Title + 1500 FitCoins",
       },
     },
   ];

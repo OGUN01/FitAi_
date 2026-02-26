@@ -69,12 +69,6 @@ export const useValidation = (
 ) => {
   const validateTab = useCallback(
     (tabNumber: number, currentData?: any): TabValidationResult => {
-      console.log(`🔍 validateTab called for tab ${tabNumber}`);
-      console.log(
-        `🔍 currentData provided:`,
-        currentData !== undefined ? "YES" : "NO",
-      );
-
       const currentState = stateRef.current;
       let result: TabValidationResult;
 
@@ -83,21 +77,13 @@ export const useValidation = (
           const personalInfoToValidate =
             currentData !== undefined ? currentData : currentState.personalInfo;
           result = validatePersonalInfo(personalInfoToValidate);
-          console.log("🔍 Tab 1 validation result:", result);
-          console.log("🔍 Tab 1 data being validated:", personalInfoToValidate);
           return result;
         case 2:
           const dietPrefsToValidate =
             currentData !== undefined
               ? currentData
               : currentState.dietPreferences;
-          console.log(
-            "🔍 Tab 2 validating with data source:",
-            currentData !== undefined ? "CURRENT_DATA" : "STORED_STATE",
-          );
-          console.log("🔍 Tab 2 data:", dietPrefsToValidate);
           result = validateDietPreferences(dietPrefsToValidate);
-          console.log("🔍 Tab 2 validation result:", result);
           return result;
         case 3:
           const bodyAnalysisToValidate =
@@ -108,13 +94,7 @@ export const useValidation = (
             currentData !== undefined
               ? currentData
               : currentState.workoutPreferences;
-          console.log(
-            "🔍 Tab 4 validating with data source:",
-            currentData !== undefined ? "CURRENT_DATA" : "STORED_STATE",
-          );
-          console.log("🔍 Tab 4 data:", workoutPrefsToValidate);
           result = validateWorkoutPreferences(workoutPrefsToValidate);
-          console.log("🔍 Tab 4 validation result:", result);
           return result;
         case 5:
           const advancedReviewToValidate =
@@ -138,7 +118,6 @@ export const useValidation = (
     number,
     TabValidationResult
   > => {
-    console.log("🔍 [ONBOARDING] validateAllTabs called");
     const currentState = stateRef.current;
 
     const results = {
@@ -149,16 +128,11 @@ export const useValidation = (
       5: validateAdvancedReview(currentState.advancedReview),
     };
 
-    console.log("🔍 [ONBOARDING] All tabs validation results:", results);
     return results;
   }, [stateRef]);
 
   const updateValidationStatus = useCallback(() => {
     const validationResults = validateAllTabs();
-    console.log(
-      "🔍 useOnboardingState: Validation results updated:",
-      validationResults,
-    );
     setState((prev) => ({ ...prev, tabValidationStatus: validationResults }));
     return validationResults;
   }, [validateAllTabs, setState]);

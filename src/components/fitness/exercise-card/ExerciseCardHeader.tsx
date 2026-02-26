@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { THEME } from "../../ui";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rf, rp, rbr, rs } from "../../../utils/responsive";
 import { Exercise, WorkoutSet } from "../../../types/workout";
 
 interface ExerciseCardHeaderProps {
@@ -72,23 +73,23 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center" as const,
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   exerciseNumber: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: THEME.colors.primary,
+    width: rs(32),
+    height: rs(32),
+    borderRadius: rbr(16),
+    backgroundColor: ResponsiveTheme.colors.primary,
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    marginRight: THEME.spacing.md,
+    marginRight: ResponsiveTheme.spacing.md,
   },
 
   exerciseNumberText: {
-    color: THEME.colors.white,
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.bold,
+    color: ResponsiveTheme.colors.white,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
   },
 
   titleSection: {
@@ -96,14 +97,14 @@ const styles = StyleSheet.create({
   },
 
   exerciseName: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: 4,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rp(4),
   },
 
   exerciseNameCompleted: {
-    color: THEME.colors.success,
+    color: ResponsiveTheme.colors.success,
   },
 
   metaRow: {
@@ -112,8 +113,8 @@ const styles = StyleSheet.create({
   },
 
   metaText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   statusSection: {
@@ -121,30 +122,30 @@ const styles = StyleSheet.create({
   },
 
   completedBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: THEME.colors.success,
+    width: rs(32),
+    height: rs(32),
+    borderRadius: rbr(16),
+    backgroundColor: ResponsiveTheme.colors.success,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
 
   completedIcon: {
-    color: THEME.colors.white,
-    fontSize: 16,
+    color: ResponsiveTheme.colors.white,
+    fontSize: rf(16),
     fontWeight: "bold",
   },
 
   playButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: THEME.colors.backgroundSecondary,
+    borderRadius: rbr(22),
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
 
   playIcon: {
-    fontSize: 14,
+    fontSize: rf(14),
   },
 });

@@ -9,7 +9,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
-  Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,7 +17,10 @@ import {
   ResolutionStrategy,
   ConflictResolutionResult,
 } from "../../services/conflictResolution";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr } from "../../utils/responsive";
 
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 // ============================================================================
 // TYPES AND INTERFACES
 // ============================================================================
@@ -49,15 +51,15 @@ const ConflictItem: React.FC<ConflictItemProps> = ({
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case "critical":
-        return "#EF4444";
+        return ResponsiveTheme.colors.errorAlt;
       case "high":
-        return "#F59E0B";
+        return ResponsiveTheme.colors.warningAlt;
       case "medium":
-        return "#3B82F6";
+        return ResponsiveTheme.colors.info;
       case "low":
-        return "#10B981";
+        return ResponsiveTheme.colors.successAlt;
       default:
-        return "#6B7280";
+        return ResponsiveTheme.colors.textTertiary;
     }
   };
 
@@ -191,7 +193,11 @@ const ConflictItem: React.FC<ConflictItemProps> = ({
               </Text>
             </View>
             {selectedStrategy === option.strategy && (
-              <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+              <Ionicons
+                name="checkmark-circle"
+                size={20}
+                color={ResponsiveTheme.colors.successAlt}
+              />
             )}
           </TouchableOpacity>
         ))}
@@ -248,7 +254,7 @@ export const ConflictResolutionComponent: React.FC<ConflictResolutionProps> = ({
     );
 
     if (unresolvedConflicts.length > 0) {
-      Alert.alert(
+      crossPlatformAlert(
         "Unresolved Conflicts",
         `You have ${unresolvedConflicts.length} unresolved conflicts. Please make a choice for each conflict.`,
         [{ text: "OK" }],
@@ -278,7 +284,13 @@ export const ConflictResolutionComponent: React.FC<ConflictResolutionProps> = ({
       presentationStyle="pageSheet"
     >
       <View style={styles.container}>
-        <LinearGradient colors={["#1F2937", "#111827"]} style={styles.gradient}>
+        <LinearGradient
+          colors={[
+            ResponsiveTheme.colors.backgroundSecondary,
+            ResponsiveTheme.colors.background,
+          ]}
+          style={styles.gradient}
+        >
           <View style={styles.header}>
             <Text style={styles.title}>Resolve Data Conflicts</Text>
             <Text style={styles.subtitle}>
@@ -305,7 +317,11 @@ export const ConflictResolutionComponent: React.FC<ConflictResolutionProps> = ({
                 style={styles.autoResolveButton}
                 onPress={handleAutoResolve}
               >
-                <Ionicons name="flash" size={16} color="#FFFFFF" />
+                <Ionicons
+                  name="flash"
+                  size={16}
+                  color={ResponsiveTheme.colors.white}
+                />
                 <Text style={styles.autoResolveText}>
                   Auto-Resolve {stats.autoResolvable} Conflicts
                 </Text>
@@ -364,191 +380,191 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 20,
-    paddingTop: 60,
+    padding: rp(20),
+    paddingTop: rp(60),
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(75, 85, 99, 0.3)",
+    borderBottomColor: ResponsiveTheme.colors.glassBorder,
   },
   title: {
-    fontSize: 28,
+    fontSize: rf(28),
     fontWeight: "bold",
-    color: "#FFFFFF",
-    marginBottom: 8,
+    color: ResponsiveTheme.colors.white,
+    marginBottom: rp(8),
   },
   subtitle: {
-    fontSize: 16,
-    color: "#9CA3AF",
-    marginBottom: 20,
+    fontSize: rf(16),
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: rp(20),
   },
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    marginBottom: 20,
+    marginBottom: rp(20),
   },
   statItem: {
     alignItems: "center",
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: rf(24),
     fontWeight: "bold",
-    color: "#E55A2B",
+    color: ResponsiveTheme.colors.primaryDark,
   },
   statLabel: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    marginTop: 4,
+    fontSize: rf(12),
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: rp(4),
   },
   autoResolveButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#E55A2B",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    gap: 8,
+    backgroundColor: ResponsiveTheme.colors.primaryDark,
+    paddingVertical: rp(12),
+    paddingHorizontal: rp(20),
+    borderRadius: rbr(10),
+    gap: rp(8),
   },
   autoResolveText: {
-    color: "#FFFFFF",
-    fontSize: 14,
+    color: ResponsiveTheme.colors.white,
+    fontSize: rf(14),
     fontWeight: "600",
   },
   conflictsList: {
     flex: 1,
-    padding: 20,
+    padding: rp(20),
   },
   conflictItem: {
     backgroundColor: "rgba(31, 41, 55, 0.8)",
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: rbr(15),
+    padding: rp(20),
+    marginBottom: rp(20),
     borderWidth: 1,
-    borderColor: "rgba(75, 85, 99, 0.3)",
+    borderColor: ResponsiveTheme.colors.glassBorder,
   },
   conflictHeader: {
-    marginBottom: 15,
+    marginBottom: rp(15),
   },
   conflictInfo: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: rp(10),
   },
   conflictField: {
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: ResponsiveTheme.colors.white,
     flex: 1,
   },
   severityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingHorizontal: rp(8),
+    paddingVertical: rp(4),
+    borderRadius: rbr(6),
   },
   severityText: {
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: "bold",
-    color: "#FFFFFF",
+    color: ResponsiveTheme.colors.white,
   },
   conflictValues: {
-    marginBottom: 20,
+    marginBottom: rp(20),
   },
   valueContainer: {
-    marginBottom: 12,
+    marginBottom: rp(12),
   },
   valueLabel: {
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: "600",
-    color: "#9CA3AF",
-    marginBottom: 6,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: rp(6),
   },
   valueBox: {
     backgroundColor: "rgba(17, 24, 39, 0.8)",
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: rbr(8),
+    padding: rp(12),
     borderWidth: 1,
-    borderColor: "rgba(75, 85, 99, 0.3)",
+    borderColor: ResponsiveTheme.colors.glassBorder,
   },
   valueText: {
-    fontSize: 14,
-    color: "#E5E7EB",
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.text,
     fontFamily: "monospace",
   },
   resolutionOptions: {
-    gap: 8,
+    gap: rp(8),
   },
   resolutionLabel: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "600",
-    color: "#FFFFFF",
-    marginBottom: 12,
+    color: ResponsiveTheme.colors.white,
+    marginBottom: rp(12),
   },
   resolutionOption: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(17, 24, 39, 0.6)",
-    borderRadius: 10,
-    padding: 15,
+    borderRadius: rbr(10),
+    padding: rp(15),
     borderWidth: 1,
-    borderColor: "rgba(75, 85, 99, 0.3)",
+    borderColor: ResponsiveTheme.colors.glassBorder,
   },
   resolutionOptionSelected: {
-    backgroundColor: "rgba(16, 185, 129, 0.1)",
-    borderColor: "#10B981",
+    backgroundColor: ResponsiveTheme.colors.successTint,
+    borderColor: ResponsiveTheme.colors.successAlt,
   },
   resolutionOptionContent: {
     flex: 1,
   },
   resolutionOptionLabel: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "600",
-    color: "#E5E7EB",
-    marginBottom: 2,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rp(2),
   },
   resolutionOptionLabelSelected: {
-    color: "#10B981",
+    color: ResponsiveTheme.colors.successAlt,
   },
   resolutionOptionDescription: {
-    fontSize: 14,
-    color: "#9CA3AF",
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.textSecondary,
   },
   resolutionOptionDescriptionSelected: {
-    color: "#A7F3D0",
+    color: ResponsiveTheme.colors.successAlt,
   },
   footer: {
     flexDirection: "row",
-    padding: 20,
-    paddingBottom: 40,
-    gap: 15,
+    padding: rp(20),
+    paddingBottom: rp(40),
+    gap: rp(15),
     borderTopWidth: 1,
-    borderTopColor: "rgba(75, 85, 99, 0.3)",
+    borderTopColor: ResponsiveTheme.colors.glassBorder,
   },
   cancelButton: {
     flex: 1,
     backgroundColor: "rgba(239, 68, 68, 0.2)",
-    paddingVertical: 15,
-    borderRadius: 12,
+    paddingVertical: rp(15),
+    borderRadius: rbr(12),
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#EF4444",
+    borderColor: ResponsiveTheme.colors.errorAlt,
   },
   cancelButtonText: {
-    color: "#EF4444",
-    fontSize: 16,
+    color: ResponsiveTheme.colors.errorAlt,
+    fontSize: rf(16),
     fontWeight: "600",
   },
   resolveButton: {
     flex: 2,
-    backgroundColor: "#10B981",
-    paddingVertical: 15,
-    borderRadius: 12,
+    backgroundColor: ResponsiveTheme.colors.successAlt,
+    paddingVertical: rp(15),
+    borderRadius: rbr(12),
     alignItems: "center",
   },
   resolveButtonDisabled: {
     backgroundColor: "rgba(107, 114, 128, 0.3)",
   },
   resolveButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    color: ResponsiveTheme.colors.white,
+    fontSize: rf(16),
     fontWeight: "600",
   },
 });

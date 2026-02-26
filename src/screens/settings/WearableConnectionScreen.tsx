@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { useWearableConnection } from "../../hooks/useWearableConnection";
 import { WarningBanner } from "../../components/wearable/WarningBanner";
@@ -62,17 +62,12 @@ export const WearableConnectionScreen: React.FC<
             style={styles.backButton}
             scaleValue={0.9}
             hapticFeedback={false}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="arrow-back" size={rf(24)} color="#fff" />
+            <Ionicons name="arrow-back" size={rf(24)} color={ResponsiveTheme.colors.text} />
           </AnimatedPressable>
           <Text style={styles.headerTitle}>Connect Wearables</Text>
-          <View style={styles.headerRight}>
-            <Ionicons
-              name={isIOS ? "logo-apple" : "logo-google"}
-              size={rf(24)}
-              color={ResponsiveTheme.colors.primary}
-            />
-          </View>
+          <View style={styles.headerRight} />
         </View>
 
         <ScrollView
@@ -82,7 +77,7 @@ export const WearableConnectionScreen: React.FC<
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor="#fff"
+              tintColor={ResponsiveTheme.colors.text}
             />
           }
         >
@@ -120,7 +115,6 @@ export const WearableConnectionScreen: React.FC<
 
           <HowItWorksCard platformName={platformName} />
 
-          <View style={styles.bottomSpacing} />
         </ScrollView>
       </SafeAreaView>
     </AuroraBackground>
@@ -140,8 +134,8 @@ const styles = StyleSheet.create({
   backButton: {
     width: rw(40),
     height: rw(40),
-    borderRadius: rw(20),
-    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: rbr(20),
+    backgroundColor: ResponsiveTheme.colors.glassHighlight,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -149,7 +143,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: rf(20),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
     textAlign: "center",
   },
   headerRight: {
@@ -162,9 +156,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingTop: ResponsiveTheme.spacing.md,
-  },
-  bottomSpacing: {
-    height: rh(40),
+    paddingBottom: rp(100),
   },
 });
 

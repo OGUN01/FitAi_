@@ -110,7 +110,7 @@ export const useBodyProgressLogic = ({
 
   const trendInfo = getTrendInfo();
   const chartData = weightHistory.slice(-7).map((e) => e.weight);
-  const hasData = currentWeight !== undefined;
+  const hasData = !!(currentWeight && currentWeight > 0);
 
   // Progress color based on percentage
   const progressColor =

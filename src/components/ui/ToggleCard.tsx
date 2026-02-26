@@ -36,7 +36,7 @@ export const ToggleCard: React.FC<ToggleCardProps> = ({
   isActive,
   onToggle,
   icon,
-  gradient = ["#4CAF50", "#45A049"],
+  gradient = [ResponsiveTheme.colors.success, ResponsiveTheme.colors.success],
   disabled = false,
   style,
 }) => {
@@ -148,7 +148,7 @@ export const ToggleCard: React.FC<ToggleCardProps> = ({
           <Animated.View style={[styles.toggleSwitch, animatedSwitchStyle]}>
             <Animated.View style={[styles.toggleThumb, animatedThumbStyle]}>
               <LinearGradient
-                colors={["#FFFFFF", "#F5F5F5"]}
+                colors={[ResponsiveTheme.colors.white, ResponsiveTheme.colors.white]}
                 style={styles.thumbGradient}
               />
             </Animated.View>
@@ -176,10 +176,7 @@ const styles = StyleSheet.create({
     borderRadius: ResponsiveTheme.borderRadius.xl,
     borderWidth: 2,
     padding: ResponsiveTheme.spacing.md,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
     elevation: 3,
     overflow: "hidden",
     minHeight: 44,
@@ -242,10 +239,7 @@ const styles = StyleSheet.create({
     height: rp(16),
     borderRadius: rp(8),
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
+    boxShadow: "0px 1px 2px 0px rgba(0,0,0,0.3)",
     elevation: 3,
   },
 

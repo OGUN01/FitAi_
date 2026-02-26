@@ -1,3 +1,4 @@
+import { storeLogger } from '../../utils/logger';
 import { DayWorkout } from "../../ai";
 import { generateUUID } from "../../utils/uuid";
 import { FitnessState, CurrentWorkoutSession } from "./types";
@@ -81,10 +82,9 @@ export const createSessionActions = (
 
       get().updateWorkoutProgress(workout.id, 0);
 
-      console.log(`🏋️ Started workout session: ${sessionId}`);
       return sessionId;
     } catch (error) {
-      console.error("❌ Failed to start workout session:", error);
+      storeLogger.error('Failed to start workout session', { error: String(error) });
       throw error;
     }
   },
@@ -104,9 +104,8 @@ export const createSessionActions = (
 
       set({ currentWorkoutSession: null });
 
-      console.log(`✅ Completed workout session: ${sessionId}`);
     } catch (error) {
-      console.error("❌ Failed to end workout session:", error);
+      storeLogger.error('Failed to end workout session', { error: String(error) });
       throw error;
     }
   },

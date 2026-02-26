@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw } from "../../utils/responsive";
+import { rf } from "../../utils/responsive";
 
 const COMPATIBLE_DEVICES = {
   android: [
@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.md,
   },
   subtitle: {
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
   item: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.sm,
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: rf(13),
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
     marginLeft: ResponsiveTheme.spacing.xs,
   },
 });

@@ -14,6 +14,8 @@ import {
   Easing,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { rf, rp } from "../../../utils/responsive";
+import { ResponsiveTheme } from "../../../utils/constants";
 
 // ============================================================================
 // TYPES
@@ -289,8 +291,8 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
           opacity: fadeValue,
         },
         style,
+        { pointerEvents: visible ? "auto" : "none" },
       ]}
-      pointerEvents={visible ? "auto" : "none"}
     >
       <View style={styles.overlayContent}>
         <AuroraSpinner size={spinnerSize} />
@@ -388,7 +390,7 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
   },
   innerCircle: {
-    backgroundColor: "#0A0A0A", // Match dark background
+    backgroundColor: ResponsiveTheme.colors.background, // Match dark background
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
@@ -401,24 +403,24 @@ const styles = StyleSheet.create({
     justifyContent: "center" as const,
   },
   overlayMessage: {
-    marginTop: 16,
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#FFFFFF",
+    marginTop: rp(16),
+    fontSize: rf(16),
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.white,
     textAlign: "center",
   },
   inlineContainer: {
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    padding: 20,
+    padding: rp(20),
   },
   messageContainer: {
-    marginTop: 12,
+    marginTop: rp(12),
   },
   inlineMessage: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: rf(14),
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.glassHighlight,
     textAlign: "center",
   },
 });

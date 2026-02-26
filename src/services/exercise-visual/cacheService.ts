@@ -15,15 +15,11 @@ export class ExerciseCacheService {
   }
 
   private preloadLocalMappingsToCache(): void {
-    console.log("📋 Preloading local exercise mappings to cache...");
     for (const [key, exercise] of LOCAL_EXERCISE_MAPPING.entries()) {
       this.cache.set(key, exercise);
       this.cache.set(exercise.exerciseId, exercise);
       this.cache.set(exercise.name.toLowerCase(), exercise);
     }
-    console.log(
-      `✅ Preloaded ${LOCAL_EXERCISE_MAPPING.size} local exercise mappings`,
-    );
   }
 
   async initialize(): Promise<void> {
@@ -44,13 +40,10 @@ export class ExerciseCacheService {
             this.cache.set(exercise.name.toLowerCase(), exercise);
             this.cache.set(exercise.exerciseId, exercise);
           });
-          console.log(`🏋️ Loaded ${exercises.length} exercises from cache`);
           return;
         } else {
-          console.log("🏋️ Cache expired, will refresh exercises");
         }
       } else {
-        console.log("🏋️ No cache found, preloading exercises");
       }
     } catch (error) {
       console.error("Failed to initialize exercise cache:", error);
@@ -91,7 +84,6 @@ export class ExerciseCacheService {
     this.cache.clear();
     await AsyncStorage.removeItem(CACHE_KEY);
     await AsyncStorage.removeItem(LAST_CACHE_UPDATE_KEY);
-    console.log("🏋️ Exercise cache cleared");
     this.preloadLocalMappingsToCache();
   }
 

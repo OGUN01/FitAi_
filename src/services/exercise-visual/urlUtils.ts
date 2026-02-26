@@ -33,7 +33,6 @@ export function fixBrokenCdnUrl(originalUrl: string): string {
       "v1.cdn.exercisedb.dev",
       "static.exercisedb.dev",
     );
-    console.log(`🔧 Fixed broken CDN URL: ${originalUrl} -> ${fixedUrl}`);
     return fixedUrl;
   }
 
@@ -93,12 +92,8 @@ export function getWorkingGifUrl(
   const normalized = exerciseName.toLowerCase();
   const query = originalQuery.toLowerCase();
 
-  console.log(
-    `🔧 Finding working GIF for "${exerciseName}" (originally "${originalQuery}")`,
-  );
 
   if (WORKING_GIF_MAP[normalized]) {
-    console.log(`✅ Direct match found for "${normalized}"`);
     return WORKING_GIF_MAP[normalized];
   }
 
@@ -164,7 +159,6 @@ export function getWorkingGifUrl(
     return "https://media.giphy.com/media/3oEjI5TqjzqZWQzKus/giphy.gif";
   }
 
-  console.log(`🔄 Using default workout GIF for "${exerciseName}"`);
   return DEFAULT_GIF;
 }
 

@@ -12,12 +12,6 @@ import {
 export class PersonalInfoService {
   static async save(userId: string, data: PersonalInfoData): Promise<boolean> {
     try {
-      console.log(
-        "[DB-SERVICE] PersonalInfoService.save - Starting save for user:",
-        userId,
-      );
-      console.log("[DB-SERVICE] Input data:", data);
-
       // CRITICAL: Get user email from auth session - required NOT NULL field in profiles table
       const {
         data: { session },
@@ -52,11 +46,6 @@ export class PersonalInfoService {
         updated_at: new Date().toISOString(),
       };
 
-      console.log(
-        "[DB-SERVICE] Transformed profileData for upsert:",
-        profileData,
-      );
-
       const { error } = await supabase.from("profiles").upsert(profileData, {
         onConflict: "id",
         ignoreDuplicates: false,
@@ -70,9 +59,6 @@ export class PersonalInfoService {
         return false;
       }
 
-      console.log(
-        "[DB-SERVICE] PersonalInfoService: Personal info saved successfully to database",
-      );
       return true;
     } catch (error) {
       console.error(
@@ -85,11 +71,6 @@ export class PersonalInfoService {
 
   static async load(userId: string): Promise<PersonalInfoData | null> {
     try {
-      console.log(
-        "[DB-SERVICE] PersonalInfoService.load - Loading for user:",
-        userId,
-      );
-
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -105,13 +86,8 @@ export class PersonalInfoService {
       }
 
       if (!data) {
-        console.log(
-          "[DB-SERVICE] PersonalInfoService: No personal info found in database",
-        );
         return null;
       }
-
-      console.log("[DB-SERVICE] Raw data from database:", data);
 
       // VALIDATION: CRITICAL FIELDS - no fallbacks allowed
       if (!data.age || data.age === 0) {
@@ -137,10 +113,6 @@ export class PersonalInfoService {
         occupation_type: data.occupation_type || "desk_job",
       };
 
-      console.log(
-        "[DB-SERVICE] PersonalInfoService: Transformed PersonalInfoData:",
-        personalInfo,
-      );
       return personalInfo;
     } catch (error) {
       console.error(
@@ -153,11 +125,6 @@ export class PersonalInfoService {
 
   static async delete(userId: string): Promise<boolean> {
     try {
-      console.log(
-        "PersonalInfoService: Deleting personal info for user:",
-        userId,
-      );
-
       const { error } = await supabase
         .from("profiles")
         .delete()
@@ -168,7 +135,6 @@ export class PersonalInfoService {
         return false;
       }
 
-      console.log("PersonalInfoService: Personal info deleted successfully");
       return true;
     } catch (error) {
       console.error("PersonalInfoService: Unexpected error:", error);
@@ -196,15 +162,10 @@ export class PersonalInfoService {
    * Validate personal info data
    */
   static validate(data: PersonalInfoData | null): TabValidationResult {
-    console.log(
-      "[VALIDATION] validatePersonalInfo called with data:",
-      data ? "Data provided" : "NULL data",
-    );
     const errors: string[] = [];
     const warnings: string[] = [];
 
     if (!data) {
-      console.log("[VALIDATION] PersonalInfo validation failed: data is null");
       return {
         is_valid: false,
         errors: [
@@ -213,25 +174,12 @@ export class PersonalInfoService {
           "Valid age (13-120) is required",
           "Gender selection is required",
           "Country is required",
-          "State is required",
           "Occupation type is required",
         ],
         warnings: [],
         completion_percentage: 0,
       };
     }
-
-    console.log("[VALIDATION] PersonalInfo key fields:", {
-      first_name: data.first_name,
-      last_name: data.last_name,
-      age: data.age,
-      gender: data.gender,
-      country: data.country,
-      state: data.state,
-      occupation_type: data.occupation_type,
-      wake_time: data.wake_time,
-      sleep_time: data.sleep_time,
-    });
 
     // Required field validation
     if (!data.first_name?.trim()) errors.push("First name is required");
@@ -240,7 +188,6 @@ export class PersonalInfoService {
       errors.push("Valid age (13-120) is required");
     if (!data.gender) errors.push("Gender selection is required");
     if (!data.country?.trim()) errors.push("Country is required");
-    if (!data.state?.trim()) errors.push("State is required");
     if (!data.occupation_type) errors.push("Occupation type is required");
     if (!data.wake_time) errors.push("Wake time is required");
     if (!data.sleep_time) errors.push("Sleep time is required");
@@ -251,7 +198,6 @@ export class PersonalInfoService {
         data.wake_time,
         data.sleep_time,
       );
-      console.log("[VALIDATION] Sleep duration:", sleepHours, "hours");
       if (sleepHours < 6)
         warnings.push("Consider getting more sleep (7-9 hours recommended)");
       if (sleepHours > 10) warnings.push("Very long sleep duration detected");
@@ -264,7 +210,6 @@ export class PersonalInfoService {
       "age",
       "gender",
       "country",
-      "state",
       "occupation_type",
       "wake_time",
       "sleep_time",
@@ -279,15 +224,6 @@ export class PersonalInfoService {
     const completionPercentage = Math.round(
       (completedFields / requiredFields.length) * 100,
     );
-    console.log(
-      "[VALIDATION] PersonalInfo completion:",
-      completionPercentage,
-      "% (",
-      completedFields,
-      "/",
-      requiredFields.length,
-      "fields)",
-    );
 
     const result = {
       is_valid: errors.length === 0,
@@ -295,15 +231,6 @@ export class PersonalInfoService {
       warnings,
       completion_percentage: completionPercentage,
     };
-
-    console.log(
-      "[VALIDATION] PersonalInfo result:",
-      result.is_valid ? "VALID" : "INVALID",
-      "- Errors:",
-      errors.length,
-      "Warnings:",
-      warnings.length,
-    );
 
     return result;
   }

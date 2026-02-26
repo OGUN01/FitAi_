@@ -14,7 +14,7 @@ import { SafeAreaView } from "react-native";
 import { ResponsiveTheme } from "../../utils/constants";
 import { Button, Card } from "../ui";
 import { RecognizedFood } from "../../services/foodRecognitionService";
-import { rf, rh, rw } from "../../utils/responsive";
+import { rf, rh, rw, rbr } from "../../utils/responsive";
 
 interface FoodRecognitionFeedbackProps {
   visible: boolean;
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
   closeButton: {
     width: rw(32),
     height: rh(32),
-    borderRadius: 16,
+    borderRadius: rbr(16),
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
@@ -390,13 +390,13 @@ const styles = StyleSheet.create({
   progressBar: {
     height: rh(4),
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: 2,
+    borderRadius: rbr(2),
   },
 
   progressFill: {
     height: "100%",
     backgroundColor: ResponsiveTheme.colors.primary,
-    borderRadius: 2,
+    borderRadius: rbr(2),
   },
 
   content: {
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.primary,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: 12,
+    borderRadius: rbr(12),
   },
 
   confidenceText: {

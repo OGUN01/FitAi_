@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rw } from "../../../utils/responsive";
+import { rf, rw, rp, rbr } from "../../../utils/responsive";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
 import { PHOTO_TYPES } from "../../../screens/onboarding/tabs/BodyAnalysisConstants";
@@ -52,7 +52,7 @@ export const PhotoAnalysisSection: React.FC<PhotoAnalysisSectionProps> = ({
               onPress={analyzePhotos}
               scaleValue={0.95}
             >
-              <Ionicons name="sparkles" size={rf(14)} color="#FFFFFF" />
+              <Ionicons name="sparkles" size={rf(14)} color={ResponsiveTheme.colors.white} />
               <Text style={styles.analyzeButtonText}>
                 {isAnalyzingPhotos ? "Analyzing..." : "Analyze"}
               </Text>
@@ -98,7 +98,7 @@ export const PhotoAnalysisSection: React.FC<PhotoAnalysisSectionProps> = ({
                         <Ionicons
                           name="checkmark"
                           size={rf(14)}
-                          color="#FFFFFF"
+                          color={ResponsiveTheme.colors.white}
                         />
                       </View>
                       <AnimatedPressable
@@ -106,7 +106,7 @@ export const PhotoAnalysisSection: React.FC<PhotoAnalysisSectionProps> = ({
                         onPress={() => removePhoto(photoType.type)}
                         scaleValue={0.9}
                       >
-                        <Ionicons name="close" size={rf(14)} color="#FFFFFF" />
+                        <Ionicons name="close" size={rf(14)} color={ResponsiveTheme.colors.white} />
                       </AnimatedPressable>
                     </>
                   ) : (
@@ -195,7 +195,7 @@ export const PhotoAnalysisSection: React.FC<PhotoAnalysisSectionProps> = ({
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
     marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.md,
     marginHorizontal: -ResponsiveTheme.spacing.lg,
   },
   sectionTitlePadded: {
@@ -233,11 +233,11 @@ const styles = StyleSheet.create({
     paddingVertical: ResponsiveTheme.spacing.xs,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     borderRadius: ResponsiveTheme.borderRadius.full,
-    gap: 4,
+    gap: rp(4),
   },
   analyzeButtonText: {
     fontSize: ResponsiveTheme.fontSize.xs,
-    color: "#FFFFFF",
+    color: ResponsiveTheme.colors.white,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
   scrollClipContainer: {
@@ -275,44 +275,46 @@ const styles = StyleSheet.create({
   },
   photoOverlay: {
     position: "absolute",
-    top: 4,
-    right: 4,
+    top: rp(4),
+    right: rp(4),
     backgroundColor: ResponsiveTheme.colors.success,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: rp(20),
+    height: rp(20),
+    borderRadius: rbr(10),
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#FFFFFF",
+    borderColor: ResponsiveTheme.colors.white,
   },
   removePhotoSmall: {
     position: "absolute",
-    top: 4,
-    left: 4,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    top: rp(4),
+    left: rp(4),
+    backgroundColor: ResponsiveTheme.colors.overlay,
+    width: rp(20),
+    height: rp(20),
+    borderRadius: rbr(10),
     justifyContent: "center",
     alignItems: "center",
   },
   photoPlaceholderCompact: {
+    flex: 1,
+    width: '100%',
     alignItems: "center",
     justifyContent: "center",
   },
   addPhotoIcon: {
     position: "absolute",
-    bottom: -4,
-    right: -4,
+    bottom: rp(-4),
+    right: rp(-4),
     backgroundColor: ResponsiveTheme.colors.background,
-    borderRadius: 10,
+    borderRadius: rbr(10),
   },
   photoLabelCompact: {
     fontSize: ResponsiveTheme.fontSize.xs,
     fontWeight: ResponsiveTheme.fontWeight.medium,
     color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: 2,
+    marginBottom: rp(2),
   },
   photoLabelCompactActive: {
     color: ResponsiveTheme.colors.primary,
@@ -336,7 +338,7 @@ const styles = StyleSheet.create({
   aiResultLabel: {
     fontSize: rf(9),
     color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: 2,
+    marginBottom: rp(2),
   },
   aiResultValue: {
     fontSize: ResponsiveTheme.fontSize.xs,
@@ -344,12 +346,12 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.primary,
   },
   aiResultDivider: {
-    width: 1,
+    width: rp(1),
     height: "80%",
     backgroundColor: `${ResponsiveTheme.colors.primary}30`,
   },
   reanalyzeSmall: {
-    padding: 4,
+    padding: rp(4),
   },
   sectionBottomPad: {
     height: ResponsiveTheme.spacing.lg,

@@ -53,13 +53,6 @@ export class EnvironmentDetector {
     this.cachedInfo = environmentInfo;
 
     // Log environment info for debugging
-    console.log("🔍 Environment Detection:", {
-      type: environmentInfo.type,
-      buildType: environmentInfo.buildType,
-      isEmulator: environmentInfo.isEmulator,
-      appVersion: environmentInfo.appVersion,
-      bundleId: environmentInfo.bundleIdentifier,
-    });
 
     return environmentInfo;
   }

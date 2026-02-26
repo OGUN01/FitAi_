@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rp } from "../../../utils/responsive";
+import { rf, rp, rbr } from "../../../utils/responsive";
 
 interface QuickAddOptionsProps {
   onQuickAdd: (amountML: number) => void;
@@ -32,7 +32,7 @@ export const QuickAddOptions: React.FC<QuickAddOptionsProps> = ({
             activeOpacity={0.7}
           >
             <LinearGradient
-              colors={["rgba(255, 107, 53, 0.2)", "rgba(255, 138, 92, 0.2)"]}
+              colors={[`${ResponsiveTheme.colors.primary}33`, `${ResponsiveTheme.colors.primaryLight}33`]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.quickOptionGradient}
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: "rgba(255,255,255,0.7)",
+    color: `${ResponsiveTheme.colors.white}B3`,
     marginBottom: rp(12),
   },
   quickOptionsContainer: {
@@ -85,12 +85,12 @@ const styles = StyleSheet.create({
     paddingVertical: rp(20),
     borderRadius: ResponsiveTheme.borderRadius.xl,
     borderWidth: 1,
-    borderColor: "rgba(255, 107, 53, 0.3)",
+    borderColor: `${ResponsiveTheme.colors.primary}4D`,
   },
   quickOptionLabel: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     marginTop: rp(8),
   },
   customButton: {
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     paddingVertical: rp(14),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: "rgba(255, 107, 53, 0.3)",
+    borderColor: `${ResponsiveTheme.colors.primary}4D`,
     borderStyle: "dashed",
   },
   customButtonText: {

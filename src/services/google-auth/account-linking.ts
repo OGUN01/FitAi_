@@ -3,7 +3,6 @@ import { GoogleSignInResult } from "./types";
 
 export async function linkGoogleAccount(): Promise<GoogleSignInResult> {
   try {
-    console.log("🔗 Linking Google account to existing user...");
 
     const { data, error } = await supabase.auth.linkIdentity({
       provider: "google",
@@ -17,7 +16,6 @@ export async function linkGoogleAccount(): Promise<GoogleSignInResult> {
       };
     }
 
-    console.log("✅ Google account linked successfully");
     return {
       success: true,
     };
@@ -32,7 +30,6 @@ export async function linkGoogleAccount(): Promise<GoogleSignInResult> {
 
 export async function unlinkGoogleAccount(): Promise<GoogleSignInResult> {
   try {
-    console.log("🔓 Unlinking Google account...");
 
     const {
       data: { user },
@@ -60,7 +57,6 @@ export async function unlinkGoogleAccount(): Promise<GoogleSignInResult> {
       };
     }
 
-    console.log("✅ Google account unlinked successfully");
     return {
       success: true,
     };

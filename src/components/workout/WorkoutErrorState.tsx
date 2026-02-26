@@ -1,7 +1,9 @@
 import React from "react";
-import { View, Text, StyleSheet, SafeAreaView } from "react-native";
-import { Button, THEME } from "../../components/ui";
-
+import { View, Text, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Button } from "../../components/ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rw } from "../../utils/responsive";
 interface WorkoutErrorStateProps {
   errorType: "no-data" | "no-exercises";
   onGoBack: () => void;
@@ -44,32 +46,32 @@ export const WorkoutErrorState: React.FC<WorkoutErrorStateProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
   errorContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: THEME.spacing.xl,
+    padding: ResponsiveTheme.spacing.xl,
   },
   errorEmoji: {
-    fontSize: 64,
-    marginBottom: THEME.spacing.lg,
+    fontSize: rf(64),
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
   errorText: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.error,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.error,
     textAlign: "center",
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   errorSubtext: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
-    marginBottom: THEME.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
   errorButton: {
-    minWidth: 120,
+    minWidth: rw(120),
   },
 });

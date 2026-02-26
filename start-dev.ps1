@@ -21,7 +21,7 @@ if ($devices -match "device$") {
     & $ADB reverse tcp:8081 tcp:8081
     & $ADB reverse tcp:8082 tcp:8082
     Write-Host "[OK] Port forwarding set up (8081 & 8082)" -ForegroundColor Green
-    
+    q
     # Verify port forwarding
     Write-Host ""
     Write-Host "Active port forwards:" -ForegroundColor Gray

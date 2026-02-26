@@ -5,7 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { PanGestureHandler } from "react-native-gesture-handler";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf } from "../../../utils/responsive";
+import { rf, rp } from "../../../utils/responsive";
 import { SwipeableCard } from "./types";
 import { SwipeIndicators } from "./SwipeIndicators";
 
@@ -50,7 +50,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
         <Ionicons
           name={card.iconName as any}
           size={rf(36)}
-          color="#FFFFFF"
+          color={ResponsiveTheme.colors.white}
           style={styles.cardIcon}
         />
         <Text style={styles.cardTitle}>{card.title}</Text>
@@ -108,14 +108,11 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     width: "80%",
-    height: 200,
+    height: rp(200),
     borderRadius: ResponsiveTheme.borderRadius.xl,
     position: "absolute",
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    boxShadow: '0px 4px 8px rgba(0,0,0,0.3)',
     elevation: 10,
   },
 
@@ -151,7 +148,7 @@ const styles = StyleSheet.create({
 
   cardDescription: {
     fontSize: ResponsiveTheme.fontSize.sm,
-    color: "rgba(255, 255, 255, 0.9)",
+    color: ResponsiveTheme.colors.glassHighlight,
     textAlign: "center",
     lineHeight: rf(18),
     paddingHorizontal: ResponsiveTheme.spacing.md,
@@ -165,7 +162,7 @@ const styles = StyleSheet.create({
 
   detailText: {
     fontSize: ResponsiveTheme.fontSize.sm,
-    color: "rgba(255, 255, 255, 0.85)",
+    color: ResponsiveTheme.colors.glassHighlight,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -173,7 +170,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: ResponsiveTheme.spacing.md,
     alignSelf: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    backgroundColor: ResponsiveTheme.colors.overlay,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.full,

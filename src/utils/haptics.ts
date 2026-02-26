@@ -76,7 +76,7 @@ export const hapticSelection = async (): Promise<void> => {
   try {
     await Haptics.selectionAsync();
   } catch (error) {
-    console.warn("Haptic selection failed:", error);
+    // Silently fail - haptics are non-critical
   }
 };
 
@@ -90,7 +90,7 @@ export const hapticSuccess = async (): Promise<void> => {
   try {
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   } catch (error) {
-    console.warn("Haptic success failed:", error);
+    // Silently fail - haptics are non-critical
   }
 };
 
@@ -104,7 +104,7 @@ export const hapticWarning = async (): Promise<void> => {
   try {
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
   } catch (error) {
-    console.warn("Haptic warning failed:", error);
+    // Silently fail - haptics are non-critical
   }
 };
 
@@ -118,7 +118,7 @@ export const hapticError = async (): Promise<void> => {
   try {
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
   } catch (error) {
-    console.warn("Haptic error failed:", error);
+    // Silently fail - haptics are non-critical
   }
 };
 
@@ -132,7 +132,7 @@ export const hapticLight = async (): Promise<void> => {
   try {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   } catch (error) {
-    console.warn("Haptic light impact failed:", error);
+    // Silently fail - haptics are non-critical
   }
 };
 
@@ -146,7 +146,7 @@ export const hapticMedium = async (): Promise<void> => {
   try {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   } catch (error) {
-    console.warn("Haptic medium impact failed:", error);
+    // Silently fail - haptics are non-critical
   }
 };
 
@@ -160,7 +160,7 @@ export const hapticHeavy = async (): Promise<void> => {
   try {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
   } catch (error) {
-    console.warn("Haptic heavy impact failed:", error);
+    // Silently fail - haptics are non-critical
   }
 };
 
@@ -234,7 +234,7 @@ export const hapticLongPressActivated = async (): Promise<void> => {
     await hapticMedium();
     setTimeout(() => hapticMedium(), 100);
   } catch (error) {
-    console.warn("Haptic long press failed:", error);
+    // Silently fail - haptics are non-critical
   }
 };
 
@@ -274,7 +274,7 @@ export const hapticCelebration = async (): Promise<void> => {
     setTimeout(() => hapticMedium(), 150);
     setTimeout(() => hapticLight(), 300);
   } catch (error) {
-    console.warn("Haptic celebration failed:", error);
+    // Silently fail - haptics are non-critical
   }
 };
 

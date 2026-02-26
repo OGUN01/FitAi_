@@ -10,7 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { WeeklyWorkoutPlan } from "../../types/ai";
 
 interface WorkoutProgressItem {
@@ -154,9 +154,9 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
                   ]}
                 >
                   {status.isCompleted ? (
-                    <Ionicons name="checkmark" size={rf(14)} color="#10b981" />
+                    <Ionicons name="checkmark" size={rf(14)} color={ResponsiveTheme.colors.successAlt} />
                   ) : status.isRestDay ? (
-                    <Ionicons name="moon" size={rf(12)} color="#FF6B35" />
+                    <Ionicons name="moon" size={rf(12)} color={ResponsiveTheme.colors.primary} />
                   ) : status.hasWorkout ? (
                     <View
                       style={[
@@ -224,12 +224,12 @@ const styles = StyleSheet.create({
   planSubtitle: {
     fontSize: rf(12),
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: rp(2),
   },
   seeAllButton: {
     flexDirection: "row",
     alignItems: "center" as const,
-    gap: 2,
+    gap: rp(2),
   },
   seeAllText: {
     fontSize: rf(12),
@@ -263,11 +263,11 @@ const styles = StyleSheet.create({
     width: rw(36),
     height: rw(36),
     borderRadius: rw(18),
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
     justifyContent: "center" as const,
     alignItems: "center" as const,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: ResponsiveTheme.colors.glassBorder,
   },
   dayCircleSelected: {
     backgroundColor: `${ResponsiveTheme.colors.primary}20`,
@@ -278,18 +278,18 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   workoutDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#FF6B6B",
+    width: rp(8),
+    height: rp(8),
+    borderRadius: rbr(4),
+    backgroundColor: ResponsiveTheme.colors.errorLight,
   },
   workoutDotInProgress: {
-    backgroundColor: "#FF8E53",
+    backgroundColor: ResponsiveTheme.colors.accent,
   },
   emptyDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    width: rp(4),
+    height: rp(4),
+    borderRadius: rbr(2),
     backgroundColor: "rgba(255,255,255,0.2)",
   },
   statsRow: {
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     paddingTop: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.08)",
+    borderTopColor: ResponsiveTheme.colors.glassBorder,
   },
   statItem: {
     alignItems: "center" as const,
@@ -312,12 +312,12 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: rf(10),
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: rp(2),
   },
   statDivider: {
-    width: 1,
+    width: rp(1),
     height: rh(24),
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: ResponsiveTheme.colors.glassBorder,
   },
 });
 

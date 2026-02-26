@@ -90,10 +90,6 @@ export function resolveConflict(
       break;
   }
 
-  console.log(
-    `🔄 Resolved conflict for ${conflict.table}:${conflict.recordId} using ${appliedStrategy}`,
-  );
-
   return {
     resolvedValue,
     strategy: appliedStrategy,

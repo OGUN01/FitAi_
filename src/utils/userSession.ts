@@ -16,10 +16,6 @@ class UserSessionManager {
 
   setUserId(userId: string | null): void {
     this.currentUserId = userId;
-    console.log(
-      "👤 User session updated:",
-      userId ? "logged in" : "logged out",
-    );
   }
 
   getUserId(): string {

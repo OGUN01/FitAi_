@@ -17,7 +17,6 @@ import Animated, {
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
-import { THEME } from "../../utils/constants";
 import { ResponsiveTheme } from "../../utils/constants";
 
 interface ButtonProps {
@@ -113,8 +112,8 @@ export const Button: React.FC<ButtonProps> = ({
     <ActivityIndicator
       color={
         variant === "outline" || variant === "ghost"
-          ? THEME.colors.primary
-          : THEME.colors.white
+          ? ResponsiveTheme.colors.primary
+          : ResponsiveTheme.colors.white
       }
       size="small"
     />
@@ -139,9 +138,11 @@ export const Button: React.FC<ButtonProps> = ({
         onPress={onPress}
         disabled={disabled || loading}
         activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel={title}
       >
         <LinearGradient
-          colors={["#FF6B35", "#FF8A5C"]}
+          colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={[styles.gradientContainer, styles[size]]}
@@ -163,6 +164,8 @@ export const Button: React.FC<ButtonProps> = ({
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={title}
     >
       {buttonContent}
     </AnimatedTouchable>
@@ -205,11 +208,11 @@ const styles = StyleSheet.create({
   // Variants
   primary: {
     backgroundColor: ResponsiveTheme.colors.primary,
-    ...THEME.shadows.md,
+    ...ResponsiveTheme.shadows.md,
   },
   secondary: {
     backgroundColor: ResponsiveTheme.colors.secondary,
-    ...THEME.shadows.md,
+    ...ResponsiveTheme.shadows.md,
   },
   outline: {
     backgroundColor: `${ResponsiveTheme.colors.primary}15`,

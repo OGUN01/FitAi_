@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rp } from "../../../utils/responsive";
+import { rf, rp, rbr } from "../../../utils/responsive";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { GlassCard } from "../../ui/aurora/GlassCard";
 import { ProgressRing } from "../../ui/aurora";
@@ -21,10 +21,10 @@ export const MetabolicProfileSection: React.FC<
 
   const getBMIColor = () => {
     const bmi = calculatedData.calculated_bmi || 0;
-    if (bmi < 18.5) return ["#FFC107", "#FF9800"];
-    if (bmi < 25) return ["#4CAF50", "#45A049"];
-    if (bmi < 30) return ["#FF9800", "#FF5722"];
-    return ["#F44336", "#D32F2F"];
+    if (bmi < 18.5) return [ResponsiveTheme.colors.amber, ResponsiveTheme.colors.warning];
+    if (bmi < 25) return [ResponsiveTheme.colors.success, ResponsiveTheme.colors.successAltDark];
+    if (bmi < 30) return [ResponsiveTheme.colors.warning, ResponsiveTheme.colors.error];
+    return [ResponsiveTheme.colors.error, ResponsiveTheme.colors.error];
   };
 
   const getBMICategory = () => {
@@ -37,9 +37,9 @@ export const MetabolicProfileSection: React.FC<
 
   const getMetabolicAgeColor = () => {
     const age = calculatedData.metabolic_age || 25;
-    if (age < 30) return ["#4CAF50", "#45A049"];
-    if (age < 50) return ["#FFC107", "#FF9800"];
-    return ["#FF5722", "#D32F2F"];
+    if (age < 30) return [ResponsiveTheme.colors.success, ResponsiveTheme.colors.successAltDark];
+    if (age < 50) return [ResponsiveTheme.colors.amber, ResponsiveTheme.colors.warning];
+    return [ResponsiveTheme.colors.warning, ResponsiveTheme.colors.error];
   };
 
   return (
@@ -125,7 +125,7 @@ export const MetabolicProfileSection: React.FC<
               size={72}
               strokeWidth={6}
               gradient={true}
-              gradientColors={["#2196F3", "#1976D2"]}
+              gradientColors={[ResponsiveTheme.colors.info, ResponsiveTheme.colors.info]}
               duration={800}
               showText={true}
               text={
@@ -167,7 +167,7 @@ export const MetabolicProfileSection: React.FC<
               size={72}
               strokeWidth={6}
               gradient={true}
-              gradientColors={["#FF6B35", "#E55A2B"]}
+              gradientColors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark]}
               duration={800}
               showText={true}
               text={
@@ -185,7 +185,7 @@ export const MetabolicProfileSection: React.FC<
 
           <View style={styles.metabolicGridCard}>
             <View style={styles.metabolicCardHeader}>
-              <Text style={styles.metabolicCardLabel}>Age</Text>
+              <Text style={styles.metabolicCardLabel}>Metabolic Age</Text>
               <InfoTooltip
                 title={METRIC_DESCRIPTIONS.METABOLIC_AGE.title}
                 description={METRIC_DESCRIPTIONS.METABOLIC_AGE.description}
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 0,
     borderLeftWidth: 0,
     borderRightWidth: 0,
-    borderRadius: 0,
+    borderRadius: rbr(0),
   },
   sectionTitlePadded: {
     paddingHorizontal: rp(20),

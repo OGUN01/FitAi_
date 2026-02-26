@@ -249,13 +249,13 @@ export const AIMealsPanel: React.FC<AIMealsPanelProps> = ({
               {
                 backgroundColor:
                   profileStatus.status === "complete"
-                    ? `rgba(76, 175, 80, 0.15)`
-                    : `rgba(255, 152, 0, 0.15)`,
+                    ? ResponsiveTheme.colors.successTint
+                    : ResponsiveTheme.colors.warningTint,
                 borderWidth: 1,
                 borderColor:
                   profileStatus.status === "complete"
-                    ? `rgba(76, 175, 80, 0.3)`
-                    : `rgba(255, 152, 0, 0.3)`,
+                    ? `${ResponsiveTheme.colors.success}4D`
+                    : `${ResponsiveTheme.colors.warning}4D`,
               },
             ]}
           >

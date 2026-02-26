@@ -8,7 +8,9 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { Card, THEME } from "../ui";
+import { Card } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr } from "../../utils/responsive";
 import { DayMeal } from "../../types/ai";
 
 interface MealCardProps {
@@ -40,28 +42,28 @@ export const MealCard: React.FC<MealCardProps> = memo(
     const getDifficultyColor = (difficulty: string) => {
       switch (difficulty) {
         case "easy":
-          return THEME.colors.success;
+          return ResponsiveTheme.colors.success;
         case "medium":
-          return THEME.colors.warning;
+          return ResponsiveTheme.colors.warning;
         case "hard":
-          return THEME.colors.error;
+          return ResponsiveTheme.colors.error;
         default:
-          return THEME.colors.textSecondary;
+          return ResponsiveTheme.colors.textSecondary;
       }
     };
 
     const getMealTypeColor = (type: string) => {
       switch (type) {
         case "breakfast":
-          return "#FF9500";
+          return ResponsiveTheme.colors.warning;
         case "lunch":
-          return "#34C759";
+          return ResponsiveTheme.colors.success;
         case "dinner":
-          return "#5856D6";
+          return ResponsiveTheme.colors.info;
         case "snack":
-          return "#FF3B30";
+          return ResponsiveTheme.colors.error;
         default:
-          return THEME.colors.primary;
+          return ResponsiveTheme.colors.primary;
       }
     };
 
@@ -200,17 +202,8 @@ export const MealCard: React.FC<MealCardProps> = memo(
                 ]}
                 onPress={() => {
                   if (isCompleted) {
-                    console.log("✅ Meal already completed:", meal.name);
                     return;
                   }
-                  console.log(
-                    "🔴 MealCard: Start Meal button pressed for:",
-                    meal.name,
-                  );
-                  console.log(
-                    "🔴 MealCard: onStartMeal function available:",
-                    !!onStartMeal,
-                  );
                   if (onStartMeal) {
                     onStartMeal(meal);
                   } else {
@@ -256,11 +249,11 @@ export const MealCard: React.FC<MealCardProps> = memo(
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
     overflow: "hidden",
-    borderRadius: 16,
-    backgroundColor: THEME.colors.surface,
-    shadowColor: "#000",
+    borderRadius: rbr(16),
+    backgroundColor: ResponsiveTheme.colors.surface,
+    shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -268,8 +261,8 @@ const styles = StyleSheet.create({
   },
 
   progressContainer: {
-    height: 4,
-    backgroundColor: THEME.colors.border,
+    height: rp(4),
+    backgroundColor: ResponsiveTheme.colors.border,
     position: "absolute",
     top: 0,
     left: 0,
@@ -279,16 +272,16 @@ const styles = StyleSheet.create({
 
   progressBar: {
     height: "100%",
-    backgroundColor: THEME.colors.primary,
-    borderRadius: 2,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderRadius: rbr(2),
   },
 
   cardContent: {
-    padding: THEME.spacing.xl,
+    padding: ResponsiveTheme.spacing.xl,
   },
 
   header: {
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   titleSection: {
@@ -298,20 +291,20 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: rp(48),
+    height: rp(48),
+    borderRadius: rbr(12),
     justifyContent: "center",
     alignItems: "center",
-    marginRight: THEME.spacing.md,
+    marginRight: ResponsiveTheme.spacing.md,
   },
 
   mealTypeIcon: {
-    fontSize: 24,
+    fontSize: rf(24),
   },
 
   titleContainer: {
@@ -319,73 +312,73 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: THEME.fontSize.xl,
+    fontSize: ResponsiveTheme.fontSize.xl,
     fontWeight: "700",
-    color: THEME.colors.text,
-    lineHeight: 28,
-    marginBottom: THEME.spacing.xs,
+    color: ResponsiveTheme.colors.text,
+    lineHeight: rf(28),
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   badgeRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: THEME.spacing.sm,
-    marginTop: THEME.spacing.xs,
+    gap: ResponsiveTheme.spacing.sm,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
 
   mealTypeBadge: {
-    paddingHorizontal: THEME.spacing.sm,
-    paddingVertical: THEME.spacing.xs,
-    backgroundColor: THEME.colors.background,
-    borderRadius: 6,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    backgroundColor: ResponsiveTheme.colors.background,
+    borderRadius: rbr(6),
   },
 
   mealTypeText: {
-    fontSize: THEME.fontSize.xs,
+    fontSize: ResponsiveTheme.fontSize.xs,
     fontWeight: "600",
   },
 
   difficultyBadge: {
-    paddingHorizontal: THEME.spacing.sm,
-    paddingVertical: THEME.spacing.xs,
-    borderRadius: 6,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: rbr(6),
   },
 
   difficultyText: {
-    fontSize: THEME.fontSize.xs,
+    fontSize: ResponsiveTheme.fontSize.xs,
     fontWeight: "600",
-    color: THEME.colors.surface,
+    color: ResponsiveTheme.colors.surface,
   },
 
   aiPillBadge: {
-    paddingHorizontal: THEME.spacing.sm,
-    paddingVertical: THEME.spacing.xs,
-    backgroundColor: THEME.colors.primary + "20",
-    borderRadius: 12,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    backgroundColor: ResponsiveTheme.colors.primary + "20",
+    borderRadius: rbr(12),
   },
 
   aiPillText: {
-    fontSize: THEME.fontSize.xs,
+    fontSize: ResponsiveTheme.fontSize.xs,
     fontWeight: "600",
-    color: THEME.colors.primary,
+    color: ResponsiveTheme.colors.primary,
   },
 
   description: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    lineHeight: 20,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(20),
   },
 
   nutritionSection: {
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   nutritionGrid: {
     flexDirection: "row",
     justifyContent: "space-between",
-    backgroundColor: THEME.colors.background,
-    borderRadius: 12,
-    padding: THEME.spacing.md,
+    backgroundColor: ResponsiveTheme.colors.background,
+    borderRadius: rbr(12),
+    padding: ResponsiveTheme.spacing.md,
   },
 
   nutritionItem: {
@@ -393,21 +386,21 @@ const styles = StyleSheet.create({
   },
 
   nutritionValue: {
-    fontSize: THEME.fontSize.lg,
+    fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: "700",
-    color: THEME.colors.text,
+    color: ResponsiveTheme.colors.text,
   },
 
   nutritionLabel: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
 
   detailsSection: {
     flexDirection: "row",
     justifyContent: "space-around",
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   detailItem: {
@@ -416,83 +409,83 @@ const styles = StyleSheet.create({
   },
 
   detailIcon: {
-    fontSize: 16,
-    marginRight: THEME.spacing.sm,
+    fontSize: rf(16),
+    marginRight: ResponsiveTheme.spacing.sm,
   },
 
   detailText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
     fontWeight: "500",
   },
 
   progressSection: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   mealProgressBar: {
-    height: 6,
-    backgroundColor: THEME.colors.backgroundSecondary,
-    borderRadius: 3,
-    marginBottom: THEME.spacing.xs,
+    height: rp(6),
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: rbr(3),
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   progressFill: {
     height: "100%",
-    backgroundColor: THEME.colors.success,
-    borderRadius: 3,
+    backgroundColor: ResponsiveTheme.colors.success,
+    borderRadius: rbr(3),
   },
 
   progressText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
   },
 
   actionSection: {
-    marginTop: THEME.spacing.md,
+    marginTop: ResponsiveTheme.spacing.md,
   },
 
   actionButton: {
-    paddingVertical: THEME.spacing.md,
-    paddingHorizontal: THEME.spacing.lg,
-    borderRadius: 12,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    borderRadius: rbr(12),
     alignItems: "center",
     justifyContent: "center",
   },
 
   primaryButton: {
-    backgroundColor: THEME.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary,
   },
 
   completedButton: {
-    backgroundColor: THEME.colors.success,
+    backgroundColor: ResponsiveTheme.colors.success,
   },
 
   actionButtonText: {
-    fontSize: THEME.fontSize.md,
+    fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: "600",
   },
 
   primaryButtonText: {
-    color: THEME.colors.surface,
+    color: ResponsiveTheme.colors.surface,
   },
 
   completedButtonText: {
-    color: THEME.colors.surface,
+    color: ResponsiveTheme.colors.surface,
   },
 
   completedBanner: {
-    backgroundColor: THEME.colors.success + "15",
-    borderRadius: 8,
-    padding: THEME.spacing.sm,
-    marginTop: THEME.spacing.md,
+    backgroundColor: ResponsiveTheme.colors.success + "15",
+    borderRadius: rbr(8),
+    padding: ResponsiveTheme.spacing.sm,
+    marginTop: ResponsiveTheme.spacing.md,
     alignItems: "center",
   },
 
   completedBannerText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.success,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.success,
     fontWeight: "600",
   },
 });

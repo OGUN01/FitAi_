@@ -38,7 +38,6 @@ export class CrudOperationsService {
   async initialize(): Promise<void> {
     try {
       await dataBridge.initialize();
-      console.log("CRUD Operations Service initialized successfully");
     } catch (error) {
       console.error("Failed to initialize CRUD Operations Service:", error);
       throw error;
@@ -52,7 +51,6 @@ export class CrudOperationsService {
   async createOnboardingData(data: OnboardingData): Promise<void> {
     try {
       await dataBridge.storeOnboardingData(data);
-      console.log("Onboarding data created successfully");
     } catch (error) {
       console.error("Failed to create onboarding data:", error);
       throw error;
@@ -81,7 +79,6 @@ export class CrudOperationsService {
       };
 
       await dataBridge.storeOnboardingData(updated);
-      console.log("Onboarding data updated successfully");
     } catch (error) {
       console.error("Failed to update onboarding data:", error);
       throw error;
@@ -93,7 +90,6 @@ export class CrudOperationsService {
   ): Promise<void> {
     try {
       await dataBridge.updateUserPreferences(preferences);
-      console.log("User preferences updated successfully");
     } catch (error) {
       console.error("Failed to update user preferences:", error);
       throw error;
@@ -115,27 +111,15 @@ export class CrudOperationsService {
 
   async createWorkoutSession(session: LocalWorkoutSession): Promise<void> {
     try {
-      console.log("📝 Creating workout session:", {
-        id: session.id,
-        workoutId: session.workoutId,
-        duration: session.duration,
-        calories: session.caloriesBurned,
-        exerciseCount: session.exercises?.length || 0,
-      });
 
       // Ensure data layer is initialized before writing
       await this.initialize();
       await dataBridge.storeWorkoutSession(session);
-      console.log(
-        `✅ Workout session ${session.id} created successfully in local storage`,
-      );
 
       // Verify it was stored locally
       const stored = await this.readWorkoutSession(session.id);
       if (!stored) {
         console.warn("⚠️ Workout session was not found after creation");
-      } else {
-        console.log("✅ Workout session verified in local storage");
       }
 
       // Sync to Supabase for cloud persistence
@@ -159,7 +143,6 @@ export class CrudOperationsService {
 
       // Skip sync for guest users or missing userId
       if (!userId || userId.startsWith("guest") || userId === "local-user") {
-        console.log("⏭️ Skipping Supabase sync for guest/local user");
         return;
       }
 
@@ -192,8 +175,6 @@ export class CrudOperationsService {
           userId: userId,
           maxRetries: 3,
         });
-      } else {
-        console.log("✅ Workout session synced to Supabase:", session.id);
       }
     } catch (syncError) {
       console.warn("⚠️ Supabase sync error (will retry later):", syncError);
@@ -241,9 +222,6 @@ export class CrudOperationsService {
       // Ensure data layer is initialized before writing
       await this.initialize();
       await dataBridge.updateWorkoutSession(sessionId, updates);
-      console.log(
-        `Workout session ${sessionId} updated successfully in local storage`,
-      );
 
       // Get the full updated session for Supabase sync
       const updatedSession = await this.readWorkoutSession(sessionId);
@@ -264,7 +242,6 @@ export class CrudOperationsService {
           (await this.readWorkoutSession(sessionId))?.notes + " [DELETED]" ||
           "[DELETED]",
       });
-      console.log(`Workout session ${sessionId} marked as deleted`);
     } catch (error) {
       console.error("Failed to delete workout session:", error);
       throw error;
@@ -277,25 +254,15 @@ export class CrudOperationsService {
 
   async createMealLog(mealLog: MealLog): Promise<void> {
     try {
-      console.log("🍽️ Creating meal log:", {
-        id: mealLog.id,
-        userId: mealLog.userId || "local-user",
-        mealType: mealLog.mealType,
-        foodCount: mealLog.foods?.length || 0,
-        calories: mealLog.totalCalories,
-      });
 
       // Ensure data layer is initialized before writing
       await this.initialize();
       await dataBridge.storeMealLog(mealLog);
-      console.log(`✅ Meal log ${mealLog.id} created successfully`);
 
       // Verify it was stored
       const stored = await this.readMealLog(mealLog.id);
       if (!stored) {
         console.warn("⚠️ Meal log was not found after creation");
-      } else {
-        console.log("✅ Meal log verified in storage");
       }
     } catch (error) {
       console.error("❌ Failed to create meal log:", error);
@@ -343,7 +310,6 @@ export class CrudOperationsService {
       };
 
       await dataBridge.storeMealLog(updated);
-      console.log(`Meal log ${logId} updated successfully`);
     } catch (error) {
       console.error("Failed to update meal log:", error);
       throw error;
@@ -357,7 +323,6 @@ export class CrudOperationsService {
         notes:
           (await this.readMealLog(logId))?.notes + " [DELETED]" || "[DELETED]",
       });
-      console.log(`Meal log ${logId} marked as deleted`);
     } catch (error) {
       console.error("Failed to delete meal log:", error);
       throw error;
@@ -373,7 +338,6 @@ export class CrudOperationsService {
       // Ensure data layer is initialized before writing
       await this.initialize();
       await dataBridge.storeBodyMeasurement(measurement);
-      console.log(`Body measurement ${measurement.id} created successfully`);
     } catch (error) {
       console.error("Failed to create body measurement:", error);
       throw error;
@@ -425,7 +389,6 @@ export class CrudOperationsService {
       };
 
       await dataBridge.storeBodyMeasurement(updated);
-      console.log(`Body measurement ${measurementId} updated successfully`);
     } catch (error) {
       console.error("Failed to update body measurement:", error);
       throw error;
@@ -440,7 +403,6 @@ export class CrudOperationsService {
           (await this.readBodyMeasurement(measurementId))?.notes +
             " [DELETED]" || "[DELETED]",
       });
-      console.log(`Body measurement ${measurementId} marked as deleted`);
     } catch (error) {
       console.error("Failed to delete body measurement:", error);
       throw error;
@@ -571,7 +533,6 @@ export class CrudOperationsService {
   async importData(data: LocalStorageSchema): Promise<void> {
     try {
       await dataBridge.importData(data);
-      console.log("Data imported successfully");
     } catch (error) {
       console.error("Failed to import data:", error);
       throw error;
@@ -585,7 +546,6 @@ export class CrudOperationsService {
   async clearAllData(): Promise<void> {
     try {
       await dataBridge.clearAllData();
-      console.log("All data cleared successfully");
     } catch (error) {
       console.error("Failed to clear all data:", error);
       throw error;

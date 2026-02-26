@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import Animated, {
   useSharedValue,
@@ -68,6 +68,9 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
     value: 0,
     label: "",
   });
+
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
 
   useEffect(() => {
     progress.value = withSpring(1, {
@@ -201,7 +204,9 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
     .onEnd(() => {
       // Hide tooltip after a delay
       setTimeout(() => {
-        setTooltipData((prev) => ({ ...prev, visible: false }));
+        if (mountedRef.current) {
+          setTooltipData((prev) => ({ ...prev, visible: false }));
+        }
       }, 2000);
     });
 

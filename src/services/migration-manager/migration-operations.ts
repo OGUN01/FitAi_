@@ -23,7 +23,6 @@ export class MigrationOperations {
     saveMigrationAttempt: (result: MigrationResult) => Promise<void>,
     checkMigrationStatus: () => Promise<any>,
   ): Promise<MigrationResult> {
-    console.log("🔄 Attempting to resume interrupted migration...");
 
     const checkpoint = await checkpointManager.loadCheckpoint();
     if (!checkpoint) {
@@ -81,12 +80,6 @@ export class MigrationOperations {
       );
     }
 
-    console.log(
-      `📍 Resuming from step ${checkpoint.currentStepIndex}: ${checkpoint.currentStepName}`,
-    );
-    console.log(
-      `✅ Previously completed steps: ${checkpoint.completedSteps.join(", ")}`,
-    );
 
     checkpoint.status = "in_progress";
     checkpoint.lastCheckpointTime = new Date().toISOString();
@@ -157,25 +150,19 @@ export class MigrationOperations {
     userId: string,
     checkMigrationStatus: () => Promise<any>,
   ): Promise<{ success: boolean; message: string }> {
-    console.log("⏪ Rolling back migration...");
 
     const checkpoint = await checkpointManager.loadCheckpoint();
 
     try {
       const restored = await backupManager.restoreFromBackup();
       if (!restored) {
-        console.warn("⚠️ No backup to restore, but continuing rollback");
       }
 
       if (checkpoint && checkpoint.completedSteps.length > 0) {
-        console.log(
-          `🗑️ Cleaning up ${checkpoint.completedSteps.length} completed steps from remote...`,
-        );
 
         for (const step of checkpoint.completedSteps.reverse()) {
           try {
             await backupManager.rollbackStep(step, userId);
-            console.log(`  ✅ Rolled back step: ${step}`);
           } catch (stepError) {
             console.error(`  ❌ Failed to rollback step ${step}:`, stepError);
           }
@@ -196,7 +183,6 @@ export class MigrationOperations {
 
       await checkMigrationStatus();
 
-      console.log("✅ Migration rollback completed");
       return {
         success: true,
         message:

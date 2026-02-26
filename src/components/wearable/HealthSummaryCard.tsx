@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf } from "../../utils/responsive";
+import { rf, rp } from "../../utils/responsive";
 
 interface HealthMetrics {
   steps: number;
@@ -25,24 +25,24 @@ export const HealthSummaryCard: React.FC<HealthSummaryCardProps> = ({
       <Text style={styles.title}>Today's Health Data</Text>
       <View style={styles.grid}>
         <View style={styles.item}>
-          <Ionicons name="walk" size={rf(24)} color="#4CAF50" />
+          <Ionicons name="walk" size={rf(24)} color={ResponsiveTheme.colors.success} />
           <Text style={styles.value}>{metrics.steps.toLocaleString()}</Text>
           <Text style={styles.label}>Steps</Text>
         </View>
         <View style={styles.item}>
-          <Ionicons name="flame" size={rf(24)} color="#FF9800" />
+          <Ionicons name="flame" size={rf(24)} color={ResponsiveTheme.colors.warning} />
           <Text style={styles.value}>
             {metrics.totalCalories || metrics.activeCalories || 0}
           </Text>
           <Text style={styles.label}>Calories</Text>
         </View>
         <View style={styles.item}>
-          <Ionicons name="heart" size={rf(24)} color="#F44336" />
+          <Ionicons name="heart" size={rf(24)} color={ResponsiveTheme.colors.error} />
           <Text style={styles.value}>{metrics.heartRate || "--"}</Text>
           <Text style={styles.label}>BPM</Text>
         </View>
         <View style={styles.item}>
-          <Ionicons name="bed" size={rf(24)} color="#FF6B35" />
+          <Ionicons name="bed" size={rf(24)} color={ResponsiveTheme.colors.primary} />
           <Text style={styles.value}>
             {metrics.sleepHours ? `${metrics.sleepHours.toFixed(1)}h` : "--"}
           </Text>
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.md,
   },
   grid: {
@@ -75,12 +75,12 @@ const styles = StyleSheet.create({
   value: {
     fontSize: rf(20),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
     marginTop: ResponsiveTheme.spacing.xs,
   },
   label: {
     fontSize: rf(12),
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: rp(2),
   },
 });

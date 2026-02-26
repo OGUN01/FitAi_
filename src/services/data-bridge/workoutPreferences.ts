@@ -19,7 +19,6 @@ import { saveToLocal } from "./localStorage";
 export function transformWorkoutPreferencesForDB(
   data: any,
 ): WorkoutPreferencesData {
-  console.log("[DataBridge] Transforming workoutPreferences data:", data);
 
   // Map old field names to new ones
   const transformed: any = {
@@ -48,7 +47,6 @@ export function transformWorkoutPreferencesForDB(
       data.preferredWorkoutTimes || data.preferred_workout_times || [],
   };
 
-  console.log("[DataBridge] Transformed workoutPreferences:", transformed);
   return transformed as WorkoutPreferencesData;
 }
 
@@ -59,9 +57,6 @@ export async function saveWorkoutPreferences(
   data: WorkoutPreferencesData | WorkoutPreferences,
   currentUserId: string | null,
 ): Promise<SaveResult> {
-  console.log(
-    `[DataBridge] saveWorkoutPreferences, userId: ${currentUserId || "guest"}`,
-  );
 
   const result: SaveResult = {
     success: true,
@@ -83,9 +78,6 @@ export async function saveWorkoutPreferences(
         );
         result.newSystemSuccess = dbSuccess;
         if (!dbSuccess) {
-          console.warn(
-            "[DataBridge] workoutPreferences DB save failed - queueing for retry",
-          );
           syncEngine.queueOperation("workoutPreferences", data);
         }
       } catch (dbError) {

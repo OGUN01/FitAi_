@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../../../utils/crossPlatformAlert";
 import { haptics } from "../../../utils/haptics";
 
 interface EditModalState {
@@ -61,7 +61,7 @@ export const useNotificationsScreen = ({
       setScheduledCount(count);
     } catch (error) {
       console.error("Failed to toggle notification:", error);
-      Alert.alert("Error", "Failed to update notification setting");
+      crossPlatformAlert("Error", "Failed to update notification setting");
     }
   };
 
@@ -79,7 +79,7 @@ export const useNotificationsScreen = ({
   const handleResetDefaults = async () => {
     if (isExpoGo) return;
 
-    Alert.alert(
+    crossPlatformAlert(
       "Reset to Defaults",
       "Are you sure you want to reset all notification settings to default?",
       [
@@ -95,9 +95,9 @@ export const useNotificationsScreen = ({
                 .getState()
                 .getScheduledCount();
               setScheduledCount(count);
-              Alert.alert("Success", "Settings reset to defaults!");
+              crossPlatformAlert("Success", "Settings reset to defaults!");
             } catch (error) {
-              Alert.alert("Error", "Failed to reset settings");
+              crossPlatformAlert("Error", "Failed to reset settings");
             }
           },
         },

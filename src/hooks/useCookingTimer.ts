@@ -3,47 +3,37 @@ import { Alert } from "react-native";
 
 export function useCookingTimer() {
   const [cookingTimer, setCookingTimer] = useState<number | null>(null);
-  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(
-    null,
-  );
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const endTimeRef = useRef<number>(0);
 
   const startTimer = (minutes: number) => {
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
     }
-    if (timerInterval) {
-      clearInterval(timerInterval);
-    }
 
     const totalSeconds = minutes * 60;
     setCookingTimer(totalSeconds);
+    endTimeRef.current = Date.now() + totalSeconds * 1000;
 
     const interval = setInterval(() => {
-      setCookingTimer((prev) => {
-        if (prev === null || prev <= 1) {
-          clearInterval(interval);
-          timerIntervalRef.current = null;
-          setTimerInterval(null);
-          Alert.alert("Timer Complete!", "Your cooking step is ready.");
-          return null;
-        }
-        return prev - 1;
-      });
+      const remaining = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
+      if (remaining <= 0) {
+        clearInterval(interval);
+        timerIntervalRef.current = null;
+        setCookingTimer(null);
+        Alert.alert("Timer Complete!", "Your cooking step is ready.");
+      } else {
+        setCookingTimer(remaining);
+      }
     }, 1000);
 
     timerIntervalRef.current = interval;
-    setTimerInterval(interval);
   };
 
   const stopTimer = () => {
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
       timerIntervalRef.current = null;
-    }
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      setTimerInterval(null);
     }
     setCookingTimer(null);
   };

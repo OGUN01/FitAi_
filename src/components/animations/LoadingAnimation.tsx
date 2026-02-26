@@ -8,7 +8,8 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rbr, rp } from "../../utils/responsive";
 
 interface LoadingAnimationProps {
   type?: "spinner" | "dots" | "pulse" | "wave";
@@ -21,7 +22,7 @@ interface LoadingAnimationProps {
 export const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
   type = "spinner",
   size = "md",
-  color = THEME.colors.primary,
+  color = ResponsiveTheme.colors.primary,
   text,
   style,
 }) => {
@@ -254,38 +255,38 @@ const styles = StyleSheet.create({
 
   spinner: {
     borderWidth: 3,
-    borderRadius: 50,
+    borderRadius: rbr(50),
     borderStyle: "solid",
   },
 
   dotsContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: rp(8),
   },
 
   dot: {
-    borderRadius: 50,
+    borderRadius: rbr(50),
   },
 
   pulse: {
-    borderRadius: 50,
+    borderRadius: rbr(50),
   },
 
   waveContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 2,
+    gap: rp(2),
   },
 
   waveBar: {
-    borderRadius: 2,
+    borderRadius: rbr(2),
   },
 
   text: {
-    marginTop: THEME.spacing.sm,
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium,
+    marginTop: ResponsiveTheme.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
     textAlign: "center",
   },
 });

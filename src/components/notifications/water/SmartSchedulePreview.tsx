@@ -1,6 +1,7 @@
-import React from "react";
+﻿import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Card, THEME } from "../../ui";
+import { Card } from "../../ui";
+import { ResponsiveTheme } from '../../../utils/constants';
 
 interface SmartSchedulePreviewProps {
   awakeHours: number;
@@ -40,39 +41,39 @@ export const SmartSchedulePreview: React.FC<SmartSchedulePreviewProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: THEME.spacing.lg,
-    marginBottom: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
   sectionTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   previewCard: {
-    padding: THEME.spacing.lg,
-    backgroundColor: THEME.colors.backgroundTertiary,
+    padding: ResponsiveTheme.spacing.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
   },
   previewRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   previewLabel: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
   previewValue: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.text,
-    fontWeight: THEME.fontWeight.semibold,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
   previewNote: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textMuted,
-    marginTop: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
+    marginTop: ResponsiveTheme.spacing.sm,
     fontStyle: "italic",
     lineHeight: 16,
   },

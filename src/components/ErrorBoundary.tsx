@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ErrorBoundary Component
  *
  * Screen-level error boundary for catching and displaying React errors gracefully.
@@ -15,7 +15,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-import { THEME } from "../utils/constants";
+import { ResponsiveTheme } from "../utils/constants";
 import { logger } from "../utils/logger";
 
 interface Props {
@@ -92,6 +92,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
             <TouchableOpacity
               style={styles.button}
               onPress={this.handleRestart}
+              accessibilityRole="button"
+              accessibilityLabel="Try again"
             >
               <Text style={styles.buttonText}>Try Again</Text>
             </TouchableOpacity>
@@ -113,59 +115,59 @@ export class ErrorBoundary extends React.Component<Props, State> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
     justifyContent: "center",
     alignItems: "center",
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
   errorContainer: {
-    backgroundColor: THEME.colors.surface,
-    padding: THEME.spacing.xl,
-    borderRadius: THEME.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    padding: ResponsiveTheme.spacing.xl,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
     alignItems: "center",
     maxWidth: "90%",
   },
   title: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.error,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.error,
+    marginBottom: ResponsiveTheme.spacing.md,
     textAlign: "center",
   },
   message: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.lg,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.lg,
     textAlign: "center",
     lineHeight: 24,
   },
   button: {
-    backgroundColor: THEME.colors.primary,
-    paddingHorizontal: THEME.spacing.xl,
-    paddingVertical: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.md,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    paddingHorizontal: ResponsiveTheme.spacing.xl,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
   buttonText: {
-    color: THEME.colors.white,
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
+    color: ResponsiveTheme.colors.white,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
   debugContainer: {
-    marginTop: THEME.spacing.lg,
-    padding: THEME.spacing.md,
-    backgroundColor: THEME.colors.background,
-    borderRadius: THEME.borderRadius.sm,
+    marginTop: ResponsiveTheme.spacing.lg,
+    padding: ResponsiveTheme.spacing.md,
+    backgroundColor: ResponsiveTheme.colors.background,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
     maxHeight: 200,
   },
   debugTitle: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   debugText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textMuted,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
     fontFamily: "monospace",
   },
 });

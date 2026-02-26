@@ -7,7 +7,7 @@ import {
   spacing,
   borderRadius,
 } from "../../../theme/aurora-tokens";
-import { rf, rw } from "../../../utils/responsive";
+import { rf, rw, rp } from "../../../utils/responsive";
 import { MealItem } from "../../../types/ai";
 import { macroColors } from "../../../hooks/useMealCard";
 
@@ -52,7 +52,7 @@ export const IngredientsList: React.FC<IngredientsListProps> = ({
               <Text style={styles.foodItemsPreview} numberOfLines={1}>
                 {foodItems
                   .slice(0, 3)
-                  .map((item) => (item as any).name)
+                  .map((item) => item.name)
                   .join(", ")}
                 {foodItems.length > 3 && "..."}
               </Text>
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   foodItemsPreview: {
     fontSize: typography.fontSize.micro,
     color: colors.text.muted,
-    marginTop: 2,
+    marginTop: rp(2),
     maxWidth: rw(200),
   },
   expandButton: {
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.body,
     fontWeight: typography.fontWeight.medium,
     color: colors.text.primary,
-    marginBottom: 2,
+    marginBottom: rp(2),
   },
   foodItemQuantity: {
     fontSize: typography.fontSize.micro,
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.caption,
     fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
-    marginBottom: 2,
+    marginBottom: rp(2),
   },
   foodItemMacros: {
     flexDirection: "row",

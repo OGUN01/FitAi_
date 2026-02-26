@@ -16,12 +16,6 @@ export function useCookingFlow(meal: DayMeal) {
     const flow = cookingFlowGenerator.generateCookingFlow(meal);
     setCookingFlow(flow);
 
-    console.log("🍽️ Generated cooking flow:", {
-      totalSteps: flow.steps.length,
-      totalTime: flow.totalTime,
-      difficulty: flow.difficulty,
-      equipment: flow.equipmentNeeded,
-    });
   }, [meal]);
 
   useEffect(() => {
@@ -33,14 +27,10 @@ export function useCookingFlow(meal: DayMeal) {
     }
   }, [currentStepIndex]);
 
-  const toggleStepCompletion = (stepIndex: number) => {
+  const markStepComplete = (stepIndex: number) => {
     setCompletedSteps((prev) => {
       const newSet = new Set(prev);
-      if (newSet.has(stepIndex)) {
-        newSet.delete(stepIndex);
-      } else {
-        newSet.add(stepIndex);
-      }
+      newSet.add(stepIndex);
       return newSet;
     });
   };
@@ -49,7 +39,7 @@ export function useCookingFlow(meal: DayMeal) {
     if (!cookingFlow) return;
 
     if (currentStepIndex < cookingFlow.steps.length - 1) {
-      toggleStepCompletion(currentStepIndex);
+      markStepComplete(currentStepIndex);
       setCurrentStepIndex((prev) => prev + 1);
     }
   };
@@ -65,7 +55,7 @@ export function useCookingFlow(meal: DayMeal) {
     currentStepIndex,
     setCurrentStepIndex,
     completedSteps,
-    toggleStepCompletion,
+    markStepComplete,
     goToNextStep,
     goToPreviousStep,
     scrollViewRef,

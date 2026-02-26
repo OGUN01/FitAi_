@@ -3,11 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
-} from "react-native";
-import { Button, THEME } from "../../components/ui";
+  } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Button } from "../../components/ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr, rh } from '../../utils/responsive';
 import { useMealSessionLogic } from "../../hooks/useMealSessionLogic";
 import { MealOverviewCard } from "../../components/session/MealOverviewCard";
 import { IngredientsList } from "../../components/session/IngredientsList";
@@ -62,7 +64,7 @@ export const MealSession: React.FC<MealSessionProps> = ({
         </View>
         <Text style={styles.progressText}>
           {Math.round(state.progress)}% Complete (
-          {state.completedSteps.filter(Boolean).length}/{meal.items.length}{" "}
+          {state.completedSteps.filter(Boolean).length}/{meal.items?.length ?? 0}{" "}
           ingredients)
         </Text>
       </View>
@@ -106,77 +108,77 @@ export const MealSession: React.FC<MealSessionProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
   header: {
     flexDirection: "row",
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.sm,
-    backgroundColor: THEME.colors.surface,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    backgroundColor: ResponsiveTheme.colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: THEME.colors.border,
+    borderBottomColor: ResponsiveTheme.colors.border,
   },
   backButton: {
-    padding: THEME.spacing.sm,
+    padding: ResponsiveTheme.spacing.sm,
   },
   backIcon: {
-    fontSize: 24,
-    color: THEME.colors.primary,
+    fontSize: rf(24),
+    color: ResponsiveTheme.colors.primary,
   },
   headerCenter: {
     flex: 1,
     alignItems: "center" as const,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: "600",
-    color: THEME.colors.text,
+    color: ResponsiveTheme.colors.text,
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: THEME.colors.textSecondary,
-    marginTop: 2,
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: rp(2),
   },
   pauseButton: {
-    padding: THEME.spacing.sm,
+    padding: ResponsiveTheme.spacing.sm,
   },
   pauseIcon: {
-    fontSize: 20,
+    fontSize: rf(20),
   },
   progressContainer: {
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.sm,
-    backgroundColor: THEME.colors.surface,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    backgroundColor: ResponsiveTheme.colors.surface,
   },
   progressBar: {
-    height: 8,
-    backgroundColor: THEME.colors.border,
-    borderRadius: 4,
+    height: rh(8),
+    backgroundColor: ResponsiveTheme.colors.border,
+    borderRadius: rbr(4),
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: THEME.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary,
   },
   progressText: {
-    fontSize: 12,
-    color: THEME.colors.textSecondary,
+    fontSize: rf(12),
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
-    marginTop: THEME.spacing.xs,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
   content: {
     flex: 1,
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
   },
   overviewContainer: {
-    gap: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
   },
   startButton: {
-    marginTop: THEME.spacing.lg,
+    marginTop: ResponsiveTheme.spacing.lg,
   },
   sessionContainer: {
-    gap: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
   },
 });

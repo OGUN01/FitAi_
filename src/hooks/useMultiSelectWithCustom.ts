@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 
 export interface Option {
   id: string;
@@ -87,7 +87,7 @@ export const useMultiSelectWithCustom = ({
       newSelection = tempSelectedValues.filter((val) => val !== option.value);
     } else {
       if (maxSelections && tempSelectedValues.length >= maxSelections) {
-        Alert.alert(
+        crossPlatformAlert(
           "Maximum Selections",
           `You can only select up to ${maxSelections} items.`,
           [{ text: "OK" }],
@@ -104,7 +104,7 @@ export const useMultiSelectWithCustom = ({
     const trimmedValue = customValue.trim();
 
     if (!trimmedValue) {
-      Alert.alert("Invalid Input", "Please enter a valid value.", [
+      crossPlatformAlert("Invalid Input", "Please enter a valid value.", [
         { text: "OK" },
       ]);
       return;
@@ -116,7 +116,7 @@ export const useMultiSelectWithCustom = ({
     );
 
     if (existingOption) {
-      Alert.alert("Duplicate Entry", "This option already exists.", [
+      crossPlatformAlert("Duplicate Entry", "This option already exists.", [
         { text: "OK" },
       ]);
       return;
@@ -135,7 +135,7 @@ export const useMultiSelectWithCustom = ({
 
     // Add to selected values
     if (maxSelections && tempSelectedValues.length >= maxSelections) {
-      Alert.alert(
+      crossPlatformAlert(
         "Maximum Selections",
         `You can only select up to ${maxSelections} items.`,
         [{ text: "OK" }],

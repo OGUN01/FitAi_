@@ -36,7 +36,7 @@ export function validateBodyMetrics(bodyMetrics: any): ValidationResult {
   }
 
   if (warnings.length > 0 && result.isValid) {
-    console.warn("Body Metrics Warnings:", warnings);
+    // Warnings present but validation passed
   }
 
   return result;

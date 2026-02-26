@@ -90,14 +90,12 @@ export const EditProvider: React.FC<EditProviderProps> = ({
 
             if (user?.id && !isGuestMode) {
               // For authenticated users, load from backend
-              console.log(`🔄 EditContext: Loading ${section} data for authenticated user`);
               const profileResponse = await getCompleteProfile(user.id);
               if (profileResponse.success && profileResponse.data) {
                 profileData = profileResponse.data;
               }
             } else if (isGuestMode && profile) {
               // For guest users, use data from userStore
-              console.log(`🔄 EditContext: Loading ${section} data for guest user`);
               profileData = profile;
             }
 
@@ -121,7 +119,6 @@ export const EditProvider: React.FC<EditProviderProps> = ({
               }
               
               if (sectionData) {
-                console.log(`✅ EditContext: Found existing ${section} data (using database schema):`, sectionData);
                 // No conversion needed - PersonalInfo matches database schema
                 // height/weight are in body_analysis table (BodyMetrics), NOT in profiles table (PersonalInfo)
               }
@@ -133,7 +130,6 @@ export const EditProvider: React.FC<EditProviderProps> = ({
 
         // If no data found, create default structure for editing
         if (!sectionData || Object.keys(sectionData).length === 0) {
-          console.log(`📝 EditContext: No existing ${section} data found, creating default structure`);
           
           switch (section) {
             case 'personalInfo':
@@ -235,11 +231,6 @@ export const EditProvider: React.FC<EditProviderProps> = ({
         }
 
         // Set up edit state
-        console.log(`📝 EditContext: Setting up edit mode for ${section} with data:`, {
-          hasData: !!sectionData,
-          dataKeys: sectionData ? Object.keys(sectionData) : [],
-          sectionData: sectionData
-        });
 
         setEditSection(section as EditContextData['editSection']);
         setOriginalData(sectionData);
@@ -249,7 +240,6 @@ export const EditProvider: React.FC<EditProviderProps> = ({
         setValidationErrors([]);
         setShowOverlay(true);
 
-        console.log('✅ EditContext: Edit mode setup complete');
       } catch (error) {
         console.error('Failed to start edit:', error);
         Alert.alert('Error', 'Failed to load data for editing');
@@ -355,7 +345,6 @@ export const EditProvider: React.FC<EditProviderProps> = ({
         case 'personalInfo':
           // No conversion needed - PersonalInfo already matches database schema
           // height/weight are in body_analysis table, NOT profiles table
-          console.log('✅ EditContext: Saving PersonalInfo (matches database schema):', currentData);
           saveResult = await savePersonalInfo(currentData);
           break;
         case 'fitnessGoals':
@@ -400,7 +389,6 @@ export const EditProvider: React.FC<EditProviderProps> = ({
           }
           updatedProfile.updatedAt = new Date().toISOString();
           setProfile(updatedProfile);
-          console.log(`✅ EditContext: Updated ${editSection} in profile for guest user`);
         }
 
         // Reset edit state

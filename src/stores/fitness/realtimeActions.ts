@@ -29,7 +29,6 @@ export const createRealtimeActions = (
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          console.log("📡 Workout session change detected:", payload.eventType);
           get().loadData();
         },
       )

@@ -24,7 +24,7 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({
   maxValue = 100,
   description,
   icon,
-  gradient = ["#4CAF50", "#45A049"],
+  gradient = [ResponsiveTheme.colors.success, "#45A049"],
   size = 120,
   strokeWidth = 12,
   showGlow = true,
@@ -83,10 +83,7 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: ResponsiveTheme.borderRadius.xl,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    boxShadow: '0px 4px 8px rgba(0,0,0,0.1)',
     elevation: 5,
   },
 

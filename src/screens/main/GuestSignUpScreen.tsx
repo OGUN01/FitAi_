@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Alert, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
-import { Button, Input, PasswordInput, THEME } from "../../components/ui";
+import { Button, Input, PasswordInput } from "../../components/ui";
 import { useAuth } from "../../hooks/useAuth";
 import { RegisterCredentials } from "../../types/user";
 import { GoogleIcon } from "../../components/icons/GoogleIcon";
@@ -32,7 +32,7 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
   const [errors, setErrors] = useState<Partial<RegisterCredentials>>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const { register, login, signInWithGoogle } = useAuth();
+  const { register, login, signInWithGoogle, resetPassword } = useAuth();
 
   const updateField = (field: keyof RegisterCredentials, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -41,6 +41,50 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
+
+  const handleForgotPassword = async () => {
+    let email: string | null = null;
+    if (Platform.OS === 'web') {
+      email = window.prompt('Enter your email address to reset your password:');
+    } else {
+      // On native, pre-fill with current email if available
+      email = formData.email.trim() || null;
+      if (!email) {
+        Alert.alert(
+          'Forgot Password',
+          'Please enter your email address in the Email field first, then tap Forgot Password.',
+        );
+        return;
+      }
+    }
+
+    if (!email || !email.trim()) return;
+
+    try {
+      const result = await resetPassword(email.trim().toLowerCase());
+      if (Platform.OS === 'web') {
+        window.alert(
+          result.success
+            ? 'Password Reset Email Sent\n\nCheck your inbox for a link to reset your password.'
+            : 'Reset Failed\n\n' + (result.error || 'Unable to send reset email. Please try again.')
+        );
+      } else {
+        Alert.alert(
+          result.success ? 'Password Reset Email Sent' : 'Reset Failed',
+          result.success
+            ? 'Check your inbox for a link to reset your password.'
+            : result.error || 'Unable to send reset email. Please try again.',
+        );
+      }
+    } catch (err) {
+      if (Platform.OS === 'web') {
+        window.alert('Error\n\nFailed to send reset email. Please try again.');
+      } else {
+        Alert.alert('Error', 'Failed to send reset email. Please try again.');
+      }
+    }
+  };
+
 
   const validateForm = (): boolean => {
     const newErrors: Partial<RegisterCredentials> = {};
@@ -75,23 +119,31 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
     setIsLoading(true);
 
     try {
-      console.log("[ROCKET] GuestSignUp: Starting Google sign up...");
 
       const response = await signInWithGoogle();
 
       if (response.success && response.user) {
-        console.log("[CHECK] GuestSignUp: Google authentication successful");
         // Migration is now handled automatically by auth.ts in the background
         // No need for blocking alerts - just proceed immediately
-        console.log(
-          "[PARTY] GuestSignUp: Proceeding to app - migration runs automatically in background",
-        );
         onSignUpSuccess();
+      } else if (Platform.OS === 'web' && response.success && !response.user) {
+        // Web OAuth flow is redirect-based: signInWithGoogleWeb() returns success
+        // after initiating the redirect, but the user hasn't completed sign-in yet.
+        // The actual sign-in completes when the browser redirects back to the callback URL.
+        // Don't show a failure alert — the redirect is in progress.
       } else {
-        Alert.alert("Sign Up Failed", response.error || "Please try again.");
+        if (Platform.OS === 'web') {
+          window.alert('Sign Up Failed\n\n' + (response.error || 'Please try again.'));
+        } else {
+          Alert.alert('Sign Up Failed', response.error || 'Please try again.');
+        }
       }
     } catch (error) {
-      Alert.alert("Error", "Google Sign Up failed. Please try again.");
+      if (Platform.OS === 'web') {
+        window.alert('Error\n\nGoogle Sign Up failed. Please try again.');
+      } else {
+        Alert.alert('Error', 'Google Sign Up failed. Please try again.');
+      }
       console.error("Google Sign Up error:", error);
     } finally {
       setIsLoading(false);
@@ -103,7 +155,6 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
 
     setIsLoading(true);
     try {
-      console.log("[ROCKET] GuestSignUp: Starting email sign up...");
 
       // Ensure we trim and normalize the credentials before sending
       const trimmedCredentials = {
@@ -112,37 +163,46 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
         confirmPassword: formData.confirmPassword.trim(),
       };
 
-      console.log("[LOCK] GuestSignUp: Creating account for:", {
-        email: trimmedCredentials.email,
-      });
       const result = await register(trimmedCredentials);
 
       if (result.success) {
         // Email verification required before login
         // Migration will happen automatically when user logs in after verification
-        Alert.alert(
-          "Account Created Successfully!",
-          "Please check your email and click the verification link to activate your account. After verification, you can log in and your profile data will be automatically synced.",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                console.log(
-                  "[EMAIL] GuestSignUp: Email signup successful, user needs to verify email",
-                );
-                onBack();
+        if (Platform.OS === 'web') {
+          window.alert(
+            'Account Created Successfully!\n\nPlease check your email and click the verification link to activate your account. After verification, you can log in and your profile data will be automatically synced.'
+          );
+          onBack();
+        } else {
+          Alert.alert(
+            'Account Created Successfully!',
+            'Please check your email and click the verification link to activate your account. After verification, you can log in and your profile data will be automatically synced.',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  onBack();
+                },
               },
-            },
-          ],
-        );
+            ],
+          );
+        }
       } else {
-        Alert.alert(
-          "Sign Up Failed",
-          result.error || "Unable to create account. Please try again.",
-        );
+        if (Platform.OS === 'web') {
+          window.alert('Sign Up Failed\n\n' + (result.error || 'Unable to create account. Please try again.'));
+        } else {
+          Alert.alert(
+            'Sign Up Failed',
+            result.error || 'Unable to create account. Please try again.',
+          );
+        }
       }
     } catch (error) {
-      Alert.alert("Error", "An unexpected error occurred during sign up.");
+      if (Platform.OS === 'web') {
+        window.alert('Error\n\nAn unexpected error occurred during sign up.');
+      } else {
+        Alert.alert('Error', 'An unexpected error occurred during sign up.');
+      }
       console.error("Email sign up error:", error);
     } finally {
       setIsLoading(false);
@@ -172,7 +232,6 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
 
     setIsLoading(true);
     try {
-      console.log("[LOCK] GuestSignUp: Signing in with email...");
 
       const trimmedCredentials = {
         email: formData.email.trim().toLowerCase(),
@@ -182,21 +241,25 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
       const result = await login(trimmedCredentials);
 
       if (result.success && result.user) {
-        console.log("[CHECK] GuestSignUp: Email sign in successful");
         // Migration is now handled automatically by auth.ts in the background
         // No need for blocking alerts - just proceed immediately
-        console.log(
-          "[PARTY] GuestSignUp: Proceeding to app - migration runs automatically in background",
-        );
         onSignUpSuccess();
       } else {
-        Alert.alert(
-          "Sign In Failed",
-          result.error || "Invalid email or password. Please try again.",
-        );
+        if (Platform.OS === 'web') {
+          window.alert('Sign In Failed\n\n' + (result.error || 'Invalid email or password. Please try again.'));
+        } else {
+          Alert.alert(
+            'Sign In Failed',
+            result.error || 'Invalid email or password. Please try again.',
+          );
+        }
       }
     } catch (error) {
-      Alert.alert("Error", "An unexpected error occurred during sign in.");
+      if (Platform.OS === 'web') {
+        window.alert('Error\n\nAn unexpected error occurred during sign in.');
+      } else {
+        Alert.alert('Error', 'An unexpected error occurred during sign in.');
+      }
       console.error("Email sign in error:", error);
     } finally {
       setIsLoading(false);
@@ -233,8 +296,8 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
             <AnimatedPressable
               style={
                 isLoading
-                  ? [styles.googlePrimaryButton, styles.buttonDisabled]
-                  : styles.googlePrimaryButton
+                  ? [styles.googlePrimaryButton, ...(Platform.OS !== 'web' ? [styles.googlePrimaryButtonShadow] : []), styles.buttonDisabled]
+                  : [styles.googlePrimaryButton, ...(Platform.OS !== 'web' ? [styles.googlePrimaryButtonShadow] : [])]
               }
               onPress={handleGoogleSignUp}
               disabled={isLoading}
@@ -297,12 +360,23 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
                 />
               )}
 
+              {mode === 'signin' && (
+                <AnimatedPressable
+                  onPress={handleForgotPassword}
+                  scaleValue={0.97}
+                  style={styles.forgotPasswordContainer}
+                >
+                  <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                </AnimatedPressable>
+              )}
+
+
               <Button
                 title={mode === "signup" ? "Create Account" : "Sign In"}
                 onPress={
                   mode === "signup" ? handleEmailSignUp : handleEmailSignIn
                 }
-                variant="outline"
+                variant="primary"
                 size="lg"
                 fullWidth
                 loading={isLoading}
@@ -399,11 +473,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     marginBottom: ResponsiveTheme.spacing.lg,
     elevation: 3,
+  },
+  googlePrimaryButtonShadow: {
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
+
 
   buttonDisabled: {
     opacity: 0.6,
@@ -441,8 +518,21 @@ const styles = StyleSheet.create({
   emailSignUpButton: {
     marginTop: ResponsiveTheme.spacing.lg,
     marginBottom: ResponsiveTheme.spacing.md,
-    borderColor: ResponsiveTheme.colors.border,
   },
+
+  forgotPasswordContainer: {
+    alignSelf: 'flex-end' as const,
+    marginTop: ResponsiveTheme.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.sm,
+    padding: ResponsiveTheme.spacing.xs,
+  },
+
+  forgotPasswordText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+  },
+
 
   dividerContainer: {
     flexDirection: "row",

@@ -35,6 +35,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { safeAsyncStorage } from "../utils/safeAsyncStorage";
 import {
   UserProfile,
   PersonalInfo,
@@ -565,7 +566,7 @@ export const useUserStore = create<UserState>()(
     }),
     {
       name: "user-storage",
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => safeAsyncStorage),
       partialize: (state) => ({
         profile: state.profile,
         isProfileComplete: state.isProfileComplete,

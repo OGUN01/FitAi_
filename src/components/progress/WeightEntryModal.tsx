@@ -22,16 +22,19 @@ import {
   Platform,
   ActivityIndicator,
   ScrollView,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { haptics } from "../../utils/haptics";
 import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr, rs, rh } from "../../utils/responsive";
 import { progressDataService } from "../../services/progressData";
 import { useProfileStore } from "../../stores/profileStore";
 import { useHealthDataStore } from "../../stores/healthDataStore";
 import { useAuth } from "../../hooks/useAuth";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface WeightEntryModalProps {
   visible: boolean;
@@ -83,9 +86,16 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
       return false;
     }
 
-    if (weightNum < 20 || weightNum > 300) {
-      setError("Weight must be between 20 and 300 kg");
-      return false;
+    if (unit === "lbs") {
+      if (weightNum < 44 || weightNum > 660) {
+        setError("Weight must be between 44 and 660 lbs");
+        return false;
+      }
+    } else {
+      if (weightNum < 20 || weightNum > 300) {
+        setError("Weight must be between 20 and 300 kg");
+        return false;
+      }
     }
 
     if (bodyFat) {
@@ -107,49 +117,57 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
       return;
     }
 
-    if (!user?.id) {
-      setError("You must be logged in to log weight");
-      return;
-    }
-
     setIsSubmitting(true);
     setError(null);
 
     try {
-      const weightKg = parseFloat(weight);
+      const weightKg = unit === "lbs" ? parseFloat(weight) * 0.453592 : parseFloat(weight);
       const bodyFatPercent = bodyFat ? parseFloat(bodyFat) : undefined;
 
-      // Create progress entry via progressDataService (syncs to Supabase)
-      const result = await progressDataService.createProgressEntry(user.id, {
-        weight_kg: weightKg,
-        body_fat_percentage: bodyFatPercent,
-        notes: notes || undefined,
+      if (user?.id) {
+        // Authenticated user: sync to Supabase
+        const result = await progressDataService.createProgressEntry(user.id, {
+          weight_kg: weightKg,
+          body_fat_percentage: bodyFatPercent,
+          notes: notes || undefined,
+        });
+
+        if (!result.success) {
+          setError(result.error || "Failed to save weight entry");
+          haptics.error();
+          return;
+        }
+      } else {
+        // Guest user: save locally via AsyncStorage
+        const existingData = await AsyncStorage.getItem("guest_weight_entries");
+        const entries = existingData ? JSON.parse(existingData) : [];
+        entries.push({
+          id: `guest_${Date.now()}`,
+          weight_kg: weightKg,
+          body_fat_percentage: bodyFatPercent,
+          notes: notes || undefined,
+          created_at: new Date().toISOString(),
+        });
+        await AsyncStorage.setItem("guest_weight_entries", JSON.stringify(entries));
+      }
+
+      haptics.success();
+
+      // Update local stores for immediate UI feedback
+      useProfileStore.getState().updateBodyAnalysis({
+        current_weight_kg: weightKg,
       });
 
-      if (result.success) {
-        haptics.success();
+      useHealthDataStore.getState().updateHealthMetrics({
+        weight: weightKg,
+      });
 
-        // Update local stores for immediate UI feedback
-        // Update profileStore bodyAnalysis
-        useProfileStore.getState().updateBodyAnalysis({
-          current_weight_kg: weightKg,
-        });
+      console.log("Weight entry saved successfully:", weightKg, "kg");
 
-        // Update healthDataStore metrics
-        useHealthDataStore.getState().updateHealthMetrics({
-          weight: weightKg,
-        });
-
-        console.log("Weight entry saved successfully:", weightKg, "kg");
-
-        onSuccess?.();
-        handleClose();
-      } else {
-        setError(result.error || "Failed to save weight entry");
-        haptics.error();
-      }
+      onSuccess?.();
+      handleClose();
     } catch (err) {
-      console.error("❌ Failed to save weight entry:", err);
+      console.error("Failed to save weight entry:", err);
       setError("An unexpected error occurred");
       haptics.error();
     } finally {
@@ -196,7 +214,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                     style={styles.closeButton}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
-                    <Ionicons name="close" size={24} color="#fff" />
+                    <Ionicons name="close" size={rf(24)} color={ResponsiveTheme.colors.white} />
                   </TouchableOpacity>
                 </View>
 
@@ -213,8 +231,8 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                     <View style={styles.inputContainer}>
                       <Ionicons
                         name="scale-outline"
-                        size={20}
-                        color="#FF6B35"
+                        size={rs(20)}
+                        color={ResponsiveTheme.colors.primary}
                         style={styles.inputIcon}
                       />
                       <TextInput
@@ -222,7 +240,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                         value={weight}
                         onChangeText={setWeight}
                         placeholder={placeholder}
-                        placeholderTextColor="rgba(255,255,255,0.4)"
+                        placeholderTextColor={ResponsiveTheme.colors.textMuted}
                         keyboardType="decimal-pad"
                         returnKeyType="next"
                         editable={!isSubmitting}
@@ -237,8 +255,8 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                     <View style={styles.inputContainer}>
                       <Ionicons
                         name="fitness-outline"
-                        size={20}
-                        color="#FF6B6B"
+                        size={rs(20)}
+                        color={ResponsiveTheme.colors.errorLight}
                         style={styles.inputIcon}
                       />
                       <TextInput
@@ -246,7 +264,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                         value={bodyFat}
                         onChangeText={setBodyFat}
                         placeholder="e.g., 18.5"
-                        placeholderTextColor="rgba(255,255,255,0.4)"
+                        placeholderTextColor={ResponsiveTheme.colors.textMuted}
                         keyboardType="decimal-pad"
                         returnKeyType="next"
                         editable={!isSubmitting}
@@ -266,7 +284,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                         value={notes}
                         onChangeText={setNotes}
                         placeholder="How are you feeling?"
-                        placeholderTextColor="rgba(255,255,255,0.4)"
+                        placeholderTextColor={ResponsiveTheme.colors.textMuted}
                         multiline
                         numberOfLines={3}
                         textAlignVertical="top"
@@ -278,7 +296,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                   {/* Error Message */}
                   {error && (
                     <View style={styles.errorContainer}>
-                      <Ionicons name="alert-circle" size={16} color="#FF6B6B" />
+                      <Ionicons name="alert-circle" size={rf(16)} color={ResponsiveTheme.colors.errorLight} />
                       <Text style={styles.errorText}>{error}</Text>
                     </View>
                   )}
@@ -295,13 +313,13 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                   activeOpacity={0.8}
                 >
                   {isSubmitting ? (
-                    <ActivityIndicator color="#fff" size="small" />
+                    <ActivityIndicator color={ResponsiveTheme.colors.white} size="small" />
                   ) : (
                     <>
                       <Ionicons
                         name="checkmark-circle"
-                        size={20}
-                        color="#fff"
+                        size={rs(20)}
+                        color={ResponsiveTheme.colors.white}
                       />
                       <Text style={styles.submitButtonText}>Save Entry</Text>
                     </>
@@ -324,78 +342,78 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: ResponsiveTheme.colors.overlay,
     justifyContent: "flex-end",
   },
   keyboardView: {
     width: "100%",
   },
   blurContainer: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: rbr(24),
+    borderTopRightRadius: rbr(24),
     overflow: "hidden",
   },
   modalContent: {
-    padding: 20,
+    padding: rp(20),
     backgroundColor: "rgba(20, 20, 35, 0.95)",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: rp(20),
   },
   title: {
-    fontSize: 22,
+    fontSize: rf(22),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
   closeButton: {
-    padding: 4,
+    padding: rp(4),
   },
   scrollContent: {
-    maxHeight: 350,
+    maxHeight: rh(350),
   },
   inputGroup: {
-    marginBottom: 16,
+    marginBottom: rp(16),
   },
   label: {
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: "600",
-    color: "rgba(255,255,255,0.8)",
-    marginBottom: 8,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: rp(8),
   },
   required: {
-    color: "#FF6B6B",
+    color: ResponsiveTheme.colors.errorLight,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderRadius: 12,
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    borderRadius: rbr(12),
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    paddingHorizontal: 12,
-    height: 50,
+    borderColor: ResponsiveTheme.colors.glassBorder,
+    paddingHorizontal: rp(12),
+    height: rh(50),
   },
   inputIcon: {
-    marginRight: 10,
+    marginRight: rp(10),
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    color: "#fff",
+    fontSize: rf(16),
+    color: ResponsiveTheme.colors.white,
     height: "100%",
   },
   unitLabel: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.5)",
-    marginLeft: 8,
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.textMuted,
+    marginLeft: rp(8),
   },
   notesContainer: {
-    height: 80,
+    height: rh(80),
     alignItems: "flex-start",
-    paddingVertical: 12,
+    paddingVertical: rp(12),
   },
   notesInput: {
     height: "100%",
@@ -403,40 +421,40 @@ const styles = StyleSheet.create({
   errorContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,107,107,0.15)",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
+    backgroundColor: ResponsiveTheme.colors.errorTint,
+    padding: rp(12),
+    borderRadius: rbr(8),
+    marginBottom: rp(16),
   },
   errorText: {
-    color: "#FF6B6B",
-    fontSize: 14,
-    marginLeft: 8,
+    color: ResponsiveTheme.colors.errorLight,
+    fontSize: rf(14),
+    marginLeft: rp(8),
     flex: 1,
   },
   submitButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FF6B35",
-    borderRadius: 12,
-    paddingVertical: 14,
-    marginTop: 8,
-    gap: 8,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderRadius: rbr(12),
+    paddingVertical: rp(14),
+    marginTop: rp(8),
+    gap: rp(8),
   },
   submitButtonDisabled: {
     opacity: 0.6,
   },
   submitButtonText: {
-    color: "#fff",
-    fontSize: 16,
+    color: ResponsiveTheme.colors.white,
+    fontSize: rf(16),
     fontWeight: "600",
   },
   infoText: {
     textAlign: "center",
-    color: "rgba(255,255,255,0.4)",
-    fontSize: 12,
-    marginTop: 12,
+    color: ResponsiveTheme.colors.textMuted,
+    fontSize: rf(12),
+    marginTop: rp(12),
   },
 });
 

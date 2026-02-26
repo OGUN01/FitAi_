@@ -155,10 +155,20 @@ export const useAuthStore = create<AuthState>()(
             set({
               user: null,
               isAuthenticated: false,
+              isGuestMode: false,
+              guestId: null,
               isLoading: false,
               error: null,
             });
             authEvents.emit("SIGNED_OUT");
+
+            // Clear all user data (fitness, nutrition, hydration, etc.) to prevent data leaks
+            // Use dynamic import to avoid circular dependency issues
+            try {
+              const { clearAllUserData } = await import('../utils/clearUserData');
+              await clearAllUserData();
+            } catch (clearError) {
+            }
           } else {
             set({
               isLoading: false,
@@ -264,35 +274,30 @@ export const useAuthStore = create<AuthState>()(
         set({
           user,
           isAuthenticated: user !== null && user.isEmailVerified,
+          // Clear guest mode when a real user signs in
+          ...(user !== null && user.isEmailVerified ? { isGuestMode: false, guestId: null } : {}),
         });
       },
 
       initialize: async () => {
         if (get().isInitialized) {
-          console.log("🔄 AuthStore: Already initialized, skipping...");
           return;
         }
 
-        console.log("🚀 AuthStore: Initializing auth store...");
         set({ isLoading: true });
 
         try {
-          // Add timeout wrapper to prevent hanging (3 seconds max)
+          // Add timeout wrapper to prevent hanging (10 seconds max for web cold starts)
           const restorePromise = authService.restoreSession();
           const timeoutPromise = new Promise<AuthResponse>((resolve) =>
             setTimeout(() => {
-              console.warn("⚠️ AuthStore: Session restore timed out");
               resolve({ success: false, error: "Session restore timeout" });
-            }, 3000),
+            }, 10000),
           );
 
           const response = await Promise.race([restorePromise, timeoutPromise]);
 
           if (response.success && response.user) {
-            console.log(
-              "✅ AuthStore: Session restored successfully for user:",
-              response.user.email,
-            );
             set({
               user: response.user,
               isAuthenticated: response.user.isEmailVerified,
@@ -301,10 +306,6 @@ export const useAuthStore = create<AuthState>()(
               error: null,
             });
           } else {
-            console.log(
-              "❌ AuthStore: No valid session found:",
-              response.error,
-            );
             set({
               user: null,
               isAuthenticated: false,
@@ -315,16 +316,10 @@ export const useAuthStore = create<AuthState>()(
           }
 
           // Set up auth state change listener
-          console.log("👂 AuthStore: Setting up auth state change listener");
           authService.onAuthStateChange((user) => {
-            console.log(
-              "🔄 AuthStore: Auth state changed, user:",
-              user?.email || "null",
-            );
             get().setUser(user);
           });
         } catch (error) {
-          console.log("❌ AuthStore: Initialization failed:", error);
           set({
             user: null,
             isAuthenticated: false,
@@ -445,16 +440,12 @@ export const useAuthStore = create<AuthState>()(
           if (currentState.guestId) {
             guestId = migrateGuestId(currentState.guestId);
             if (guestId !== currentState.guestId) {
-              console.log(
-                `🔄 Migrated guest ID from ${currentState.guestId} to ${guestId}`,
-              );
             } else {
               guestId = currentState.guestId;
             }
           } else {
             // Generate new proper UUID-based guest ID
             guestId = generateGuestId();
-            console.log(`🆕 Generated new guest ID: ${guestId}`);
           }
         }
 
@@ -464,10 +455,6 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false, // Guest mode means not authenticated
         });
 
-        console.log(
-          enabled ? "👤 Guest mode enabled with ID:" : "👤 Guest mode disabled",
-          guestId,
-        );
       },
 
       exitGuestMode: () => {
@@ -475,12 +462,33 @@ export const useAuthStore = create<AuthState>()(
           isGuestMode: false,
           guestId: null,
         });
-        console.log("👤 Exited guest mode");
       },
     }),
     {
       name: "auth-storage",
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => ({
+        getItem: async (name: string) => {
+          try {
+            const value = await AsyncStorage.getItem(name);
+            return value;
+          } catch (e) {
+            await AsyncStorage.removeItem(name);
+            return null;
+          }
+        },
+        setItem: async (name: string, value: string) => {
+          try {
+            await AsyncStorage.setItem(name, value);
+          } catch (e) {
+          }
+        },
+        removeItem: async (name: string) => {
+          try {
+            await AsyncStorage.removeItem(name);
+          } catch (e) {
+          }
+        },
+      })),
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,

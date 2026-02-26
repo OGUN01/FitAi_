@@ -21,6 +21,18 @@ export interface FitnessMetrics {
   mood?: number; // 1-10
   waterIntake: number; // liters
   nutritionScore?: number; // 1-100
+
+  // Extended fields provided by some data sources
+  recentWorkouts?: Array<{ type: string; [key: string]: unknown }>;
+  nutrition?: {
+    protein?: number;
+    carbohydrates?: number;
+    carbs?: number;
+    fat?: number;
+    fiber?: number;
+    calories?: number;
+  };
+  height?: number; // cm
 }
 
 export interface WorkoutAnalytics {

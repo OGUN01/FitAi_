@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, StyleSheet, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, RefreshControl, ActivityIndicator } from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -26,11 +26,12 @@ import { haptics } from "../../utils/haptics";
 import { useAnalyticsStore } from "../../stores/analyticsStore";
 import { useHealthDataStore } from "../../stores/healthDataStore";
 import { useFitnessStore } from "../../stores/fitnessStore";
-import { useAchievementStore } from "../../stores/achievementStore";
 import { useUserStore } from "../../stores/userStore";
 import { useAuthStore } from "../../stores/authStore";
+import { useProfileStore } from "../../stores/profileStore";
 import { useCalculatedMetrics } from "../../hooks/useCalculatedMetrics";
 import { analyticsDataService } from "../../services/analyticsData";
+import DataRetrievalService from "../../services/dataRetrieval";
 
 // Modular Components
 import {
@@ -40,6 +41,7 @@ import {
   TrendCharts,
   Period,
 } from "./analytics";
+import type { MetricData } from "./analytics";
 
 interface AnalyticsScreenProps {
   navigation?: {
@@ -56,6 +58,8 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
   // State
   const [selectedPeriod, setSelectedPeriod] = useState<Period>("month");
   const [refreshing, setRefreshing] = useState(false);
+  const [isDataLoading, setIsDataLoading] = useState(true);
+  const [dataError, setDataError] = useState<string | null>(null);
   const [weightHistory, setWeightHistory] = useState<
     Array<{ date: string; weight: number }>
   >([]);
@@ -68,12 +72,13 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
   const { user } = useAuthStore();
   const { metrics: healthMetrics } = useHealthDataStore();
   const { weeklyWorkoutPlan, workoutProgress } = useFitnessStore();
-  const { currentStreak } = useAchievementStore();
+  const { bodyAnalysis, personalInfo } = useProfileStore();
   const { metrics: calculatedMetrics } = useCalculatedMetrics();
   const {
     initialize: initializeAnalytics,
     refreshAnalytics,
     isInitialized,
+    isLoading: isAnalyticsLoading,
   } = useAnalyticsStore();
 
   // Initialize analytics on mount
@@ -86,7 +91,10 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
   // Load weight and calorie history from Supabase
   useEffect(() => {
     const loadHistoryData = async () => {
-      if (!user?.id) return;
+      if (!user?.id) {
+        setIsDataLoading(false);
+        return;
+      }
 
       const periodDays =
         selectedPeriod === "week"
@@ -98,6 +106,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
               : 365;
 
       try {
+        setDataError(null);
         const [weightData, calorieData] = await Promise.all([
           analyticsDataService.getWeightHistory(user.id, periodDays),
           analyticsDataService.getCalorieHistory(user.id, periodDays),
@@ -107,6 +116,9 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
         setCalorieHistory(calorieData);
       } catch (error) {
         console.error("Failed to load analytics history:", error);
+        setDataError("Failed to load analytics data. Pull to refresh.");
+      } finally {
+        setIsDataLoading(false);
       }
     };
 
@@ -114,15 +126,26 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
   }, [user?.id, selectedPeriod]);
 
   // Calculate metrics data - prioritize calculatedMetrics from onboarding
-  const metricsData = useMemo(() => {
+  const metricsData = useMemo((): MetricData => {
     // Weight data - prefer calculated metrics from onboarding, fallback to health metrics or profile
-    const currentWeight = profile?.bodyMetrics?.current_weight_kg; // SINGLE SOURCE
-    const targetWeight = calculatedMetrics?.targetWeightKg;
+    // Weight: prefer calculatedMetrics, then profileStore.bodyAnalysis (source of truth from onboarding)
+    const currentWeight = (calculatedMetrics?.currentWeightKg && calculatedMetrics.currentWeightKg > 0)
+      ? calculatedMetrics.currentWeightKg
+      : (bodyAnalysis?.current_weight_kg && bodyAnalysis.current_weight_kg > 0)
+        ? bodyAnalysis.current_weight_kg
+        : undefined;
+    const targetWeight = calculatedMetrics?.targetWeightKg
+      || (bodyAnalysis?.target_weight_kg && bodyAnalysis.target_weight_kg > 0 ? bodyAnalysis.target_weight_kg : undefined);
 
     // Calculate completed workouts this period
     const completedWorkouts = Object.values(workoutProgress).filter(
       (p) => p.progress === 100,
     ).length;
+
+    // Calculate calories burned from workouts
+    // Calculate calories consumed from DataRetrievalService (same source as Progress screen)
+    const todaysData = DataRetrievalService.getTodaysData();
+    const caloriesConsumed = todaysData.progress.caloriesConsumed;
 
     // Calculate calories burned from workouts
     const totalCaloriesBurned =
@@ -133,6 +156,14 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
         }
         return total;
       }, 0) || 0;
+
+    // Use consumed calories as the primary display (what user ate today)
+    // Fall back to burned if no consumed data
+    const displayCalories = caloriesConsumed > 0 ? caloriesConsumed : totalCaloriesBurned;
+
+    // Get streak from DataRetrievalService (same source as Progress screen)
+    const weeklyProgress = DataRetrievalService.getWeeklyProgress();
+    const streak = weeklyProgress.streak;
 
     // Calculate weight change toward goal
     const weightChange =
@@ -155,10 +186,10 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
           }
         : undefined,
       calories: {
-        burned: totalCaloriesBurned,
+        burned: displayCalories,
         target: calculatedMetrics?.dailyCalories || undefined,
-        change: totalCaloriesBurned > 0 ? 15 : 0,
-        trend: totalCaloriesBurned > 0 ? ("up" as const) : ("stable" as const),
+        change: displayCalories > 0 ? 15 : 0,
+        trend: displayCalories > 0 ? ("up" as const) : ("stable" as const),
       },
       workouts: {
         count: completedWorkouts,
@@ -166,21 +197,39 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
         trend: completedWorkouts > 0 ? ("up" as const) : ("stable" as const),
       },
       streak: {
-        days: currentStreak, // NO FALLBACK
-        isActive: currentStreak !== undefined && currentStreak > 0,
+        days: streak,
+        isActive: streak > 0,
       },
       // Add onboarding calculated metrics for display
-      bmi: calculatedMetrics?.calculatedBMI,
-      bmr: calculatedMetrics?.calculatedBMR,
-      tdee: calculatedMetrics?.calculatedTDEE,
+      // BMI/BMR/TDEE: prefer calculatedMetrics, fallback to local calculation from profileStore
+      bmi: (calculatedMetrics?.calculatedBMI && calculatedMetrics.calculatedBMI > 0)
+        ? calculatedMetrics.calculatedBMI
+        : (currentWeight && bodyAnalysis?.height_cm && bodyAnalysis.height_cm > 0)
+          ? Number((currentWeight / ((bodyAnalysis.height_cm / 100) ** 2)).toFixed(1))
+          : undefined,
+      bmr: (calculatedMetrics?.calculatedBMR && calculatedMetrics.calculatedBMR > 0)
+        ? calculatedMetrics.calculatedBMR
+        : (currentWeight && bodyAnalysis?.height_cm && bodyAnalysis.height_cm > 0 && personalInfo?.age && personalInfo?.gender)
+          ? Math.round(personalInfo.gender === 'male'
+            ? (10 * currentWeight + 6.25 * bodyAnalysis.height_cm - 5 * personalInfo.age + 5)
+            : (10 * currentWeight + 6.25 * bodyAnalysis.height_cm - 5 * personalInfo.age - 161))
+          : undefined,
+      tdee: (calculatedMetrics?.calculatedTDEE && calculatedMetrics.calculatedTDEE > 0)
+        ? calculatedMetrics.calculatedTDEE
+        : (currentWeight && bodyAnalysis?.height_cm && bodyAnalysis.height_cm > 0 && personalInfo?.age && personalInfo?.gender)
+          ? Math.round((personalInfo.gender === 'male'
+            ? (10 * currentWeight + 6.25 * bodyAnalysis.height_cm - 5 * personalInfo.age + 5)
+            : (10 * currentWeight + 6.25 * bodyAnalysis.height_cm - 5 * personalInfo.age - 161)) * 1.55) // Moderate activity multiplier
+          : undefined,
       dailyWater: calculatedMetrics?.dailyWaterML,
     };
   }, [
     healthMetrics,
     profile,
+    bodyAnalysis,
+    personalInfo,
     weeklyWorkoutPlan,
     workoutProgress,
-    currentStreak,
     calculatedMetrics,
   ]);
 
@@ -234,7 +283,17 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
             }),
             value: w.weight,
           }))
-        : undefined;
+        : (() => {
+            const fallbackWeight = (calculatedMetrics?.currentWeightKg && calculatedMetrics.currentWeightKg > 0)
+              ? calculatedMetrics.currentWeightKg
+              : (bodyAnalysis?.current_weight_kg && bodyAnalysis.current_weight_kg > 0)
+                ? bodyAnalysis.current_weight_kg
+                : undefined;
+            return fallbackWeight ? [{
+              label: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+              value: fallbackWeight,
+            }] : undefined;
+          })();
 
     // Transform calorie history to chart format
     const calorieChartData =
@@ -266,8 +325,10 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     workoutProgress,
     metricsData,
     calculatedMetrics,
+    bodyAnalysis,
     weightHistory,
     calorieHistory,
+    profile,
   ]);
 
   // Handlers
@@ -278,24 +339,41 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
+    setDataError(null);
     haptics.light();
     try {
       await refreshAnalytics();
+      // Re-load history data
+      if (user?.id) {
+        const periodDays =
+          selectedPeriod === "week"
+            ? 7
+            : selectedPeriod === "month"
+              ? 30
+              : selectedPeriod === "quarter"
+                ? 90
+                : 365;
+        const [weightData, calorieData] = await Promise.all([
+          analyticsDataService.getWeightHistory(user.id, periodDays),
+          analyticsDataService.getCalorieHistory(user.id, periodDays),
+        ]);
+        setWeightHistory(weightData);
+        setCalorieHistory(calorieData);
+      }
     } catch (error) {
       console.error("Refresh error:", error);
+      setDataError("Failed to refresh data. Please try again.");
     } finally {
       setRefreshing(false);
     }
-  }, [refreshAnalytics]);
+  }, [refreshAnalytics, user?.id, selectedPeriod]);
 
   const handleMetricPress = useCallback((metric: string) => {
     haptics.light();
-    console.log("Metric pressed:", metric);
   }, []);
 
   const handleChartPress = useCallback((chartType: string) => {
     haptics.light();
-    console.log("Chart pressed:", chartType);
   }, []);
 
   // Navigation handlers
@@ -308,6 +386,9 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     haptics.light();
     navigation?.navigate("ProgressTrends");
   }, [navigation]);
+
+  // Show loading state for initial load
+  const showLoading = (isDataLoading || isAnalyticsLoading) && !refreshing;
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
@@ -337,30 +418,53 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
               onTrendsPress={navigation ? handleTrendsPress : undefined}
             />
 
-            {/* 2. Metric Summary Grid */}
-            <View style={styles.sectionContainer}>
-              <MetricSummaryGrid
-                data={metricsData as any}
-                period={selectedPeriod}
-                onMetricPress={handleMetricPress}
-              />
-            </View>
+            {/* Loading State */}
+            {showLoading && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator
+                  size="large"
+                  color={ResponsiveTheme.colors.primary}
+                />
+                <Text style={styles.loadingText}>Loading analytics...</Text>
+              </View>
+            )}
 
-            {/* 3. Achievement Showcase */}
-            <View style={styles.sectionContainer}>
-              <AchievementShowcase />
-            </View>
+            {/* Error State */}
+            {dataError && !showLoading && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{dataError}</Text>
+              </View>
+            )}
 
-            {/* 4. Trend Charts */}
-            <View style={styles.sectionContainer}>
-              <TrendCharts
-                weightData={chartData.weightData}
-                calorieData={chartData.calorieData}
-                workoutData={chartData.workoutData}
-                period={selectedPeriod}
-                onChartPress={handleChartPress}
-              />
-            </View>
+            {/* Content - only show when not in initial loading */}
+            {!showLoading && (
+              <>
+                {/* 2. Metric Summary Grid */}
+                <View style={styles.sectionContainer}>
+                  <MetricSummaryGrid
+                    data={metricsData}
+                    period={selectedPeriod}
+                    onMetricPress={handleMetricPress}
+                  />
+                </View>
+
+                {/* 3. Achievement Showcase */}
+                <View style={styles.sectionContainer}>
+                  <AchievementShowcase />
+                </View>
+
+                {/* 4. Trend Charts */}
+                <View style={styles.sectionContainer}>
+                  <TrendCharts
+                    weightData={chartData.weightData}
+                    calorieData={chartData.calorieData}
+                    workoutData={chartData.workoutData}
+                    period={selectedPeriod}
+                    onChartPress={handleChartPress}
+                  />
+                </View>
+              </>
+            )}
 
             {/* Bottom Spacing */}
             <View style={{ height: insets.bottom + rh(90) }} />
@@ -387,6 +491,29 @@ const styles = StyleSheet.create({
   },
   sectionContainer: {
     position: "relative" as const,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: ResponsiveTheme.spacing.xxl,
+    gap: ResponsiveTheme.spacing.md,
+  },
+  loadingText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+  errorContainer: {
+    padding: ResponsiveTheme.spacing.lg,
+    marginHorizontal: ResponsiveTheme.spacing.md,
+    backgroundColor: `${ResponsiveTheme.colors.error}15`,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    alignItems: "center",
+  },
+  errorText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.error,
+    textAlign: "center",
   },
 });
 

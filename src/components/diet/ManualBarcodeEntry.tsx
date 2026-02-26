@@ -13,6 +13,7 @@ import { ScannedProduct } from "@/services/barcodeService";
 import barcodeService from "@/services/barcodeService";
 import { getCountryFromBarcode } from "@/utils/countryMapping";
 import { ResponsiveTheme } from "@/utils/constants";
+import { rf, rp, rbr } from "@/utils/responsive";
 
 // ─── Country flag mapping ────────────────────────────────────────────────────
 
@@ -98,7 +99,6 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
         setError("Product not found. Try a different barcode.");
       }
     } catch (err) {
-      console.warn("[ManualBarcodeEntry] Lookup failed:", err);
       setError("Product not found. Try a different barcode.");
     } finally {
       setIsLooking(false);
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: "700",
     color: ResponsiveTheme.colors.text,
     letterSpacing: 0.3,
@@ -275,21 +275,21 @@ const styles = StyleSheet.create({
   closeButton: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: rbr(16),
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     alignItems: "center",
     justifyContent: "center",
   },
 
   closeButtonText: {
-    fontSize: 14,
+    fontSize: rf(14),
     color: ResponsiveTheme.colors.textSecondary,
     lineHeight: 16,
   },
 
   // Subtitle
   subtitle: {
-    fontSize: 13,
+    fontSize: rf(13),
     color: ResponsiveTheme.colors.textSecondary,
     marginBottom: ResponsiveTheme.spacing.md,
     lineHeight: 18,
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     height: 48,
-    fontSize: 17,
+    fontSize: rf(17),
     color: ResponsiveTheme.colors.text,
     letterSpacing: 1.5,
     fontVariant: ["tabular-nums"],
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
   clearButton: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: rbr(14),
     backgroundColor: ResponsiveTheme.colors.surfaceLight,
     alignItems: "center",
     justifyContent: "center",
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   },
 
   clearButtonText: {
-    fontSize: 18,
+    fontSize: rf(18),
     color: ResponsiveTheme.colors.textSecondary,
     lineHeight: 20,
     includeFontPadding: false,
@@ -343,26 +343,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: ResponsiveTheme.spacing.xs,
     marginBottom: ResponsiveTheme.spacing.xs,
-    paddingHorizontal: 2,
+    paddingHorizontal: rp(2),
   },
 
   countryHintLabel: {
-    fontSize: 12,
+    fontSize: rf(12),
     color: ResponsiveTheme.colors.textMuted,
   },
 
   countryHintValue: {
-    fontSize: 13,
+    fontSize: rf(13),
     color: ResponsiveTheme.colors.secondary,
     fontWeight: "600",
   },
 
   // Digit hint
   digitHint: {
-    fontSize: 11,
+    fontSize: rf(11),
     color: ResponsiveTheme.colors.textMuted,
     marginBottom: ResponsiveTheme.spacing.md,
-    paddingHorizontal: 2,
+    paddingHorizontal: rp(2),
   },
 
   // Error state
@@ -370,10 +370,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "rgba(244, 67, 54, 0.12)",
+    backgroundColor: ResponsiveTheme.colors.errorTint,
     borderRadius: ResponsiveTheme.borderRadius.sm,
     borderWidth: 1,
-    borderColor: "rgba(244, 67, 54, 0.3)",
+    borderColor: ResponsiveTheme.colors.error,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.sm,
     marginBottom: ResponsiveTheme.spacing.md,
@@ -381,13 +381,13 @@ const styles = StyleSheet.create({
 
   errorText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: rf(13),
     color: ResponsiveTheme.colors.error,
     lineHeight: 18,
   },
 
   retryLink: {
-    fontSize: 13,
+    fontSize: rf(13),
     fontWeight: "600",
     color: ResponsiveTheme.colors.primary,
     marginLeft: ResponsiveTheme.spacing.sm,
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
   },
 
   lookUpButtonText: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "700",
     color: ResponsiveTheme.colors.white,
     letterSpacing: 0.5,
@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
   loadingRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: rp(8),
   },
 
   // Cancel
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
   },
 
   cancelText: {
-    fontSize: 14,
+    fontSize: rf(14),
     color: ResponsiveTheme.colors.textSecondary,
   },
 });

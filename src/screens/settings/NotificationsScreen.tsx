@@ -13,7 +13,7 @@ import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
 import { NotificationsHeader } from "./components/NotificationsHeader";
@@ -155,15 +155,15 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
                 onToggle();
               }}
               trackColor={{
-                false: "rgba(255, 255, 255, 0.1)",
+                false: ResponsiveTheme.colors.glassHighlight,
                 true: `${ResponsiveTheme.colors.primary}50`,
               }}
               thumbColor={
                 enabled
                   ? ResponsiveTheme.colors.primary
-                  : "rgba(255, 255, 255, 0.4)"
+                  : ResponsiveTheme.colors.glassHighlight
               }
-              ios_backgroundColor="rgba(255, 255, 255, 0.1)"
+              ios_backgroundColor={ResponsiveTheme.colors.glassHighlight}
             />
           </View>
         </View>
@@ -219,7 +219,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
 
             <NotificationItem
               icon="water-outline"
-              iconColor="#2196F3"
+              iconColor={ResponsiveTheme.colors.info}
               title="Water Reminders"
               description="Smart hydration reminders based on your daily schedule"
               timeInfo={
@@ -233,7 +233,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
 
             <NotificationItem
               icon="barbell-outline"
-              iconColor="#FF6B6B"
+              iconColor={ResponsiveTheme.colors.errorLight}
               title="Workout Reminders"
               description="Get notified before your scheduled workouts"
               timeInfo={
@@ -249,7 +249,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
 
             <NotificationItem
               icon="restaurant-outline"
-              iconColor="#4CAF50"
+              iconColor={ResponsiveTheme.colors.success}
               title="Meal Reminders"
               description="Never miss breakfast, lunch, or dinner"
               timeInfo={
@@ -263,7 +263,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
 
             <NotificationItem
               icon="moon-outline"
-              iconColor="#FF6B35"
+              iconColor={ResponsiveTheme.colors.primary}
               title="Sleep Reminders"
               description="Smart bedtime notifications for better recovery"
               timeInfo={
@@ -277,7 +277,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
 
             <NotificationItem
               icon="analytics-outline"
-              iconColor="#FF9800"
+              iconColor={ResponsiveTheme.colors.warning}
               title="Progress Updates"
               description="Weekly summary of your fitness journey"
               timeInfo={
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
   },
   notificationCard: {
     marginBottom: ResponsiveTheme.spacing.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
   },
   notificationContent: {
     flexDirection: "row",
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: rw(44),
     height: rw(44),
-    borderRadius: rw(12),
+    borderRadius: rbr(12),
     justifyContent: "center" as const,
     alignItems: "center" as const,
     marginRight: ResponsiveTheme.spacing.md,
@@ -356,8 +356,8 @@ const styles = StyleSheet.create({
   notificationTitle: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: "#fff",
-    marginBottom: 2,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rp(2),
   },
   notificationDescription: {
     fontSize: rf(12),
@@ -367,10 +367,10 @@ const styles = StyleSheet.create({
   timeInfoBadge: {
     flexDirection: "row",
     alignItems: "center" as const,
-    gap: 4,
+    gap: rp(4),
     marginTop: ResponsiveTheme.spacing.xs,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: 3,
+    paddingVertical: rp(3),
     backgroundColor: `${ResponsiveTheme.colors.primary}15`,
     borderRadius: ResponsiveTheme.borderRadius.sm,
     alignSelf: "flex-start",
@@ -388,8 +388,8 @@ const styles = StyleSheet.create({
   editButton: {
     width: rw(30),
     height: rw(30),
-    borderRadius: rw(8),
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderRadius: rbr(8),
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },

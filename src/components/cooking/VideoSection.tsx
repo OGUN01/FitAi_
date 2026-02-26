@@ -11,6 +11,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { CookingVideo } from "../../services/youtubeVideoService";
 import { colors } from "../../theme/aurora-tokens";
+import { ResponsiveTheme } from '../../utils/constants';
+import { rf, rp, rbr } from '../../utils/responsive';
 
 interface VideoSectionProps {
   cookingVideo: CookingVideo | null;
@@ -65,7 +67,7 @@ export default function VideoSection({
               </View>
             )}
             <View style={styles.playButton}>
-              <Ionicons name="play" size={32} color="#FFFFFF" />
+              <Ionicons name="play" size={32} color={ResponsiveTheme.colors.white} />
             </View>
             <View style={styles.videoDuration}>
               <Text style={styles.videoDurationText}>
@@ -112,20 +114,20 @@ export default function VideoSection({
 const styles = StyleSheet.create({
   videoSection: {
     backgroundColor: colors.background.secondary,
-    marginBottom: 16,
+    marginBottom: rp(16),
   },
   videoContainer: {
-    padding: 16,
+    padding: rp(16),
   },
   videoPreview: {
     height: 200,
-    borderRadius: 12,
+    borderRadius: rbr(12),
     overflow: "hidden",
-    backgroundColor: "#000000",
+    backgroundColor: ResponsiveTheme.colors.black,
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
-    marginBottom: 12,
+    marginBottom: rp(12),
   },
   videoThumbnail: {
     width: "100%",
@@ -142,8 +144,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: 64,
     height: 64,
-    borderRadius: 32,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    borderRadius: rbr(32),
+    backgroundColor: ResponsiveTheme.colors.overlayDark,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -152,13 +154,13 @@ const styles = StyleSheet.create({
     bottom: 8,
     right: 8,
     backgroundColor: "rgba(0, 0, 0, 0.8)",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingHorizontal: rp(6),
+    paddingVertical: rp(2),
+    borderRadius: rbr(4),
   },
   videoDurationText: {
-    color: "#FFFFFF",
-    fontSize: 12,
+    color: ResponsiveTheme.colors.white,
+    fontSize: rf(12),
     fontWeight: "600",
   },
   watchVideoButton: {
@@ -166,16 +168,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(255, 107, 53, 0.12)",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-    marginTop: 8,
+    paddingHorizontal: rp(16),
+    paddingVertical: rp(10),
+    borderRadius: rbr(8),
+    marginTop: rp(8),
   },
   watchVideoText: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "600",
     color: colors.primary.DEFAULT,
-    marginLeft: 8,
+    marginLeft: rp(8),
   },
   videoPlaceholder: {
     height: 200,
@@ -184,8 +186,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.tertiary,
   },
   loadingText: {
-    marginTop: 12,
-    fontSize: 16,
+    marginTop: rp(12),
+    fontSize: rf(16),
     color: colors.text.secondary,
   },
   videoError: {
@@ -193,35 +195,35 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: colors.background.tertiary,
-    padding: 20,
+    padding: rp(20),
   },
   errorText: {
-    fontSize: 16,
+    fontSize: rf(16),
     color: colors.text.secondary,
     textAlign: "center",
-    marginTop: 8,
-    marginBottom: 16,
+    marginTop: rp(8),
+    marginBottom: rp(16),
   },
   retryButton: {
     backgroundColor: colors.primary.DEFAULT,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingHorizontal: rp(20),
+    paddingVertical: rp(10),
+    borderRadius: rbr(8),
   },
   retryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    color: ResponsiveTheme.colors.white,
+    fontSize: rf(16),
     fontWeight: "600",
   },
   videoTitle: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "600",
     color: colors.text.primary,
-    marginTop: 12,
+    marginTop: rp(12),
   },
   videoAuthor: {
-    fontSize: 14,
+    fontSize: rf(14),
     color: colors.text.secondary,
-    marginTop: 4,
+    marginTop: rp(4),
   },
 });

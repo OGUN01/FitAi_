@@ -84,7 +84,6 @@ export class GoogleFitCache {
         this.STORAGE_KEY,
         this.SYNC_INTERVAL_KEY,
       ]);
-      console.log("✅ Google Fit cache cleared");
     } catch (error) {
       console.error("❌ Error clearing Google Fit cache:", error);
     }

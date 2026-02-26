@@ -17,6 +17,8 @@ import { useProfileStore } from "../../stores/profileStore";
 import { getCuisineDataForCountry } from "../../data/regionalCuisineData";
 import type { CuisineFoodItem } from "../../data/regionalCuisineData";
 import { colors } from "../../theme/aurora-tokens";
+import { useNutritionStore } from "../../stores";
+import type { Meal } from "../../types/diet/meal";
 
 /** Max number of meal suggestions shown at a time */
 const MAX_SUGGESTIONS = 5;
@@ -84,6 +86,7 @@ function mapToSuggestions(items: CuisineFoodItem[]): MealSuggestion[] {
 export const MealSuggestions: React.FC = () => {
   const personalInfo = useProfileStore((s) => s.personalInfo);
   const dietPreferences = useProfileStore((s) => s.dietPreferences);
+  const addDailyMeal = useNutritionStore((s) => s.addDailyMeal);
 
   const suggestions = useMemo<MealSuggestion[]>(() => {
     const country = personalInfo?.country ?? "global";
@@ -131,7 +134,7 @@ export const MealSuggestions: React.FC = () => {
     return suggestionSwipeStates[suggestionId];
   };
 
-  const handleAddToPlan = (suggestionId: number, suggestionName: string) => {
+  const handleAddToPlan = (suggestionId: number, suggestion: MealSuggestion) => {
     const flipValue = getCardFlipState(suggestionId);
     Animated.sequence([
       Animated.timing(flipValue, {
@@ -148,11 +151,34 @@ export const MealSuggestions: React.FC = () => {
     ]).start();
 
     setAddedToPlan((prev) => new Set(prev).add(suggestionId));
+
+    // Actually add the meal to nutrition store so totals update
+    const now = new Date().toISOString();
+    const meal: Meal = {
+      id: `suggestion_${suggestionId}_${Date.now()}`,
+      type: 'snack',
+      name: suggestion.name,
+      items: [],
+      totalCalories: suggestion.calories,
+      totalMacros: {
+        protein: suggestion.protein,
+        carbohydrates: suggestion.carbs,
+        fat: suggestion.fat,
+        fiber: 0,
+      },
+      tags: ['suggestion'],
+      isPersonalized: false,
+      aiGenerated: false,
+      createdAt: now,
+      updatedAt: now,
+    };
+    addDailyMeal(meal);
+
     haptics.medium();
     setTimeout(() => {
       Alert.alert(
         "Added to Plan",
-        `${suggestionName} has been added to your meal plan`,
+        `${suggestion.name} has been added to your meal plan`,
       );
     }, 300);
   };
@@ -256,10 +282,13 @@ export const MealSuggestions: React.FC = () => {
                 >
                   <View style={styles.suggestionContent}>
                     <Text style={styles.suggestionName}>{suggestion.name}</Text>
+                    <Text style={styles.suggestionMacros}>
+                      {suggestion.calories} cal | {suggestion.protein}g P | {suggestion.carbs}g C | {suggestion.fat}g F
+                    </Text>
                     <AnimatedPressable
                       style={styles.addToPlanButton}
                       onPress={() =>
-                        handleAddToPlan(suggestion.id, suggestion.name)
+                        handleAddToPlan(suggestion.id, suggestion)
                       }
                       disabled={isAdded}
                     >
@@ -296,6 +325,11 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: "600",
     color: colors.text.primary,
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+  suggestionMacros: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: colors.text.secondary,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
   addToPlanButton: {

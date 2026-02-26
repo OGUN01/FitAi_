@@ -23,7 +23,7 @@ import { FAQList } from "../../components/help/FAQList";
 import { ContactCard } from "../../components/help/ContactCard";
 
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw } from "../../utils/responsive";
+import { rf, rw, rp, rbr, rh } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { useHelpSupport } from "../../hooks/useHelpSupport";
 
@@ -60,9 +60,10 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
             }}
             scaleValue={0.9}
             hapticFeedback={false}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <View style={styles.backButton}>
-              <Ionicons name="chevron-back" size={rf(20)} color="#fff" />
+              <Ionicons name="chevron-back" size={rf(20)} color={ResponsiveTheme.colors.text} />
             </View>
           </AnimatedPressable>
           <View style={styles.headerCenter}>
@@ -94,32 +95,32 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
             <View style={styles.quickActionsGrid}>
               <QuickAction
                 icon="chatbubbles-outline"
-                iconColor="#fff"
-                gradientColors={["#FF6B35", "#E55A2B"]}
+                iconColor={ResponsiveTheme.colors.text}
+                gradientColors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark]}
                 title="Contact Support"
                 onPress={handleContactSupport}
                 animationDelay={100}
               />
               <QuickAction
                 icon="bug-outline"
-                iconColor="#fff"
-                gradientColors={["#FF6B6B", "#FF8E53"]}
+                iconColor={ResponsiveTheme.colors.text}
+                gradientColors={[ResponsiveTheme.colors.errorLight, ResponsiveTheme.colors.primaryLight]}
                 title="Report Bug"
                 onPress={handleReportBug}
                 animationDelay={150}
               />
               <QuickAction
                 icon="bulb-outline"
-                iconColor="#fff"
-                gradientColors={["#4CAF50", "#8BC34A"]}
+                iconColor={ResponsiveTheme.colors.text}
+                gradientColors={[ResponsiveTheme.colors.success, ResponsiveTheme.colors.successLight]}
                 title="Feature Request"
                 onPress={handleFeatureRequest}
                 animationDelay={200}
               />
               <QuickAction
                 icon="school-outline"
-                iconColor="#fff"
-                gradientColors={["#2196F3", "#00BCD4"]}
+                iconColor={ResponsiveTheme.colors.text}
+                gradientColors={[ResponsiveTheme.colors.info, ResponsiveTheme.colors.cyan]}
                 title="Tutorials"
                 onPress={handleTutorials}
                 animationDelay={250}
@@ -158,7 +159,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
 
             <ResourceItem
               icon="document-text-outline"
-              iconColor="#4CAF50"
+              iconColor={ResponsiveTheme.colors.success}
               title="User Guide"
               description="Complete guide to using all FitAI features"
               onPress={handleUserGuide}
@@ -167,7 +168,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
 
             <ResourceItem
               icon="videocam-outline"
-              iconColor="#FF6B6B"
+              iconColor={ResponsiveTheme.colors.errorLight}
               title="Video Tutorials"
               description="Step-by-step video guides for beginners"
               onPress={handleVideoTutorials}
@@ -176,7 +177,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
 
             <ResourceItem
               icon="people-outline"
-              iconColor="#FF6B35"
+              iconColor={ResponsiveTheme.colors.primary}
               title="Community Forum"
               description="Connect with other FitAI users"
               onPress={handleCommunityForum}
@@ -185,7 +186,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
 
             <ResourceItem
               icon="pulse-outline"
-              iconColor="#FF9800"
+              iconColor={ResponsiveTheme.colors.warning}
               title="System Status"
               description="Check if all FitAI services are running smoothly"
               onPress={handleSystemStatus}
@@ -216,8 +217,8 @@ const styles = StyleSheet.create({
   backButton: {
     width: rw(40),
     height: rw(40),
-    borderRadius: rw(20),
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: rbr(20),
+    backgroundColor: ResponsiveTheme.colors.glassBorder,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
@@ -229,7 +230,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
   },
   headerSpacer: {
     width: rw(40),
@@ -240,6 +241,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingTop: ResponsiveTheme.spacing.sm,
+    paddingBottom: rp(100),
   },
   section: {
     marginBottom: ResponsiveTheme.spacing.lg,
@@ -264,7 +266,7 @@ const styles = StyleSheet.create({
     gap: ResponsiveTheme.spacing.sm,
   },
   bottomSpacing: {
-    height: 80,
+    height: rh(80),
   },
 });
 

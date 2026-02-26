@@ -4,6 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { DayMeal } from "../../types/ai";
 import MacroDashboard from "../nutrition/MacroDashboard";
 import { colors } from "../../theme/aurora-tokens";
+import { ResponsiveTheme } from '../../utils/constants';
+import { rf, rp, rbr } from '../../utils/responsive';
 
 interface IngredientsSectionProps {
   meal: DayMeal;
@@ -57,51 +59,51 @@ export default function IngredientsSection({
 const styles = StyleSheet.create({
   ingredientsSection: {
     backgroundColor: colors.background.secondary,
-    marginBottom: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 20,
+    marginBottom: rp(16),
+    paddingHorizontal: rp(16),
+    paddingVertical: rp(20),
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: "600",
     color: colors.text.primary,
-    paddingBottom: 8,
+    paddingBottom: rp(8),
   },
   macroDashboard: {
-    marginBottom: 16,
+    marginBottom: rp(16),
   },
   ingredientsList: {
-    marginTop: 8,
+    marginTop: rp(8),
   },
   ingredientsTitle: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "600",
     color: colors.text.primary,
-    marginBottom: 12,
+    marginBottom: rp(12),
   },
   ingredientsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: rp(8),
   },
   ingredientChip: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.background.tertiary,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: rp(12),
+    paddingVertical: rp(8),
+    borderRadius: rbr(20),
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: ResponsiveTheme.colors.glassBorder,
   },
   ingredientText: {
-    fontSize: 14,
+    fontSize: rf(14),
     color: colors.text.secondary,
-    marginRight: 6,
+    marginRight: rp(6),
   },
   ingredientCalories: {
-    fontSize: 12,
+    fontSize: rf(12),
     color: colors.text.muted,
-    marginRight: 8,
+    marginRight: rp(8),
   },
 });

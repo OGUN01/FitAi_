@@ -310,25 +310,25 @@ export function warnBodyRecomp(
   };
 }
 
-export function warnSubstanceImpact(
+export function warnAlcoholImpact(
   alcohol: boolean,
-  tobacco: boolean,
   aggressive: boolean,
-): ValidationResult[] {
-  const warnings: ValidationResult[] = [];
-
+): ValidationResult {
   if (alcohol && aggressive) {
-    warnings.push({
+    return {
       status: "WARNING",
       code: "ALCOHOL_IMPACT",
       message: "Alcohol will slow progress 10-15%",
       recommendations: ["Limit to 1-2 drinks/week maximum"],
       canProceed: true,
-    });
+    };
   }
+  return { status: "OK" };
+}
 
+export function warnTobaccoImpact(tobacco: boolean): ValidationResult {
   if (tobacco) {
-    warnings.push({
+    return {
       status: "WARNING",
       code: "TOBACCO_IMPACT",
       message: "Smoking reduces cardio capacity ~20-30%",
@@ -337,17 +337,17 @@ export function warnSubstanceImpact(
         "Start with lower-intensity cardio",
       ],
       canProceed: true,
-    });
+    };
   }
-
-  return warnings;
+  return { status: "OK" };
 }
 
 export function warnHeartDisease(
   medicalConditions: string[],
   intensity: string,
+  isAggressive: boolean,
 ): ValidationResult {
-  if (medicalConditions.includes("heart-disease")) {
+  if (medicalConditions.includes("heart-disease") && isAggressive) {
     return {
       status: "WARNING",
       code: "HEART_DISEASE_CLEARANCE",

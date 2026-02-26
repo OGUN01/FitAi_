@@ -5,9 +5,26 @@ import { rf } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
 
+interface TodaysProgress {
+  workoutProgress: number;
+  totalMeals: number;
+  mealsCompleted: number;
+  caloriesConsumed: number;
+  targetCalories: number;
+}
+
+interface TodaysData {
+  workout?: boolean;
+  progress?: TodaysProgress;
+}
+
+interface CalculatedMetrics {
+  dailyCalories: number | null;
+}
+
 interface TodaysProgressCardProps {
-  todaysData: any;
-  calculatedMetrics: any;
+  todaysData: TodaysData | null;
+  calculatedMetrics: CalculatedMetrics | null;
 }
 
 export const TodaysProgressCard: React.FC<TodaysProgressCardProps> = ({
@@ -51,7 +68,7 @@ export const TodaysProgressCard: React.FC<TodaysProgressCardProps> = ({
               <Text style={styles.todaysStatLabel}>Workout</Text>
               <Text style={styles.todaysStatValue}>
                 {todaysData.workout
-                  ? `${todaysData.progress.workoutProgress}%`
+                  ? `${todaysData.progress?.workoutProgress ?? 0}%`
                   : "Rest Day"}
               </Text>
             </View>
@@ -70,10 +87,10 @@ export const TodaysProgressCard: React.FC<TodaysProgressCardProps> = ({
             <View style={styles.todaysStatContent}>
               <Text style={styles.todaysStatLabel}>Meals</Text>
               <Text style={styles.todaysStatValue}>
-                {todaysData.progress.totalMeals > 0
-                  ? `${todaysData.progress.mealsCompleted}/${todaysData.progress.totalMeals}`
-                  : todaysData.progress.mealsCompleted > 0
-                    ? `${todaysData.progress.mealsCompleted} logged`
+                {(todaysData.progress?.totalMeals ?? 0) > 0
+                  ? `${todaysData.progress?.mealsCompleted ?? 0}/${todaysData.progress?.totalMeals ?? 0}`
+                  : (todaysData.progress?.mealsCompleted ?? 0) > 0
+                    ? `${todaysData.progress?.mealsCompleted ?? 0} logged`
                     : "No meals"}
               </Text>
             </View>
@@ -93,13 +110,13 @@ export const TodaysProgressCard: React.FC<TodaysProgressCardProps> = ({
               <Text style={styles.todaysStatLabel}>Calories</Text>
               <Text style={styles.todaysStatValue}>
                 {(calculatedMetrics?.dailyCalories ??
-                  todaysData.progress.targetCalories) > 0
-                  ? `${todaysData.progress.caloriesConsumed}/${
+                  todaysData.progress?.targetCalories ?? 0) > 0
+                  ? `${todaysData.progress?.caloriesConsumed ?? 0}/${
                       calculatedMetrics?.dailyCalories ??
-                      todaysData.progress.targetCalories
+                      todaysData.progress?.targetCalories ?? 0
                     }`
-                  : todaysData.progress.caloriesConsumed > 0
-                    ? `${todaysData.progress.caloriesConsumed} cal`
+                  : (todaysData.progress?.caloriesConsumed ?? 0) > 0
+                    ? `${todaysData.progress?.caloriesConsumed ?? 0} cal`
                     : "No data"}
               </Text>
             </View>

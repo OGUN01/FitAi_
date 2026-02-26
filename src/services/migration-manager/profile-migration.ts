@@ -7,7 +7,6 @@ import { MigrationAttempt, MigrationResult, MigrationState } from "./types";
 export class ProfileMigration {
   async checkProfileMigrationNeeded(userId: string): Promise<boolean> {
     try {
-      console.log("🔍 Checking profile migration for user:", userId);
 
       dataBridge.setUserId(userId);
 
@@ -17,10 +16,9 @@ export class ProfileMigration {
       }
 
       const hasLocalData = await dataBridge.hasLocalData();
-      console.log("📊 Local data check result:", hasLocalData);
 
       if (!hasLocalData) {
-        console.log("📊 No local profile data found, migration not needed");
+
         return false;
       }
 
@@ -36,9 +34,6 @@ export class ProfileMigration {
       }
 
       const migrationNeeded = hasLocalData && !remoteProfile;
-      console.log(
-        `📊 Profile migration needed: ${migrationNeeded} (local: ${hasLocalData}, remote: ${!!remoteProfile})`,
-      );
 
       return migrationNeeded;
     } catch (error) {
@@ -48,13 +43,11 @@ export class ProfileMigration {
   }
 
   async startProfileMigration(userId: string): Promise<MigrationResult> {
-    console.log("🚀 Starting profile data migration for user:", userId);
 
     try {
       const result = await dataBridge.migrateGuestToUser(userId);
 
       if (result.success) {
-        console.log("✅ Profile migration completed successfully");
 
         const attempt: MigrationAttempt = {
           id: `profile_${Date.now()}`,
@@ -189,23 +182,15 @@ export class ProfileMigration {
 
   async testMigrationFlow(userId: string): Promise<void> {
     try {
-      console.log("🧪 Testing complete migration flow for user:", userId);
 
-      console.log("🧪 Step 0: Testing localStorage methods...");
       await dataBridge.testLocalStorageMethods();
 
-      console.log("🧪 Step 1: Testing DataManager methods...");
       await dataBridge.testMigrationDetection();
 
-      console.log("🧪 Step 2: Testing migration detection...");
       const migrationNeeded = await this.checkProfileMigrationNeeded(userId);
-      console.log("📊 Migration needed result:", migrationNeeded);
 
-      console.log("🧪 Step 3: Testing profile data validation...");
       const validationResult = await this.validateProfileData();
-      console.log("📊 Validation result:", validationResult);
 
-      console.log("✅ Migration flow test completed successfully");
     } catch (error) {
       console.error("❌ Migration flow test failed:", error);
     }
@@ -213,14 +198,13 @@ export class ProfileMigration {
 
   async setupTestEnvironment(userId: string): Promise<boolean> {
     try {
-      console.log("🧪 Setting up test environment for migration...");
 
       dataBridge.setUserId(userId);
 
       const sampleCreated = await dataBridge.createSampleProfileData();
 
       if (sampleCreated) {
-        console.log("✅ Test environment setup completed");
+
         return true;
       } else {
         console.error("❌ Failed to create sample data");

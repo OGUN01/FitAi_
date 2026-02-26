@@ -142,7 +142,6 @@ class AdvancedExerciseMatchingService {
   async clearCaches(): Promise<void> {
     this.semanticCache.clear();
     await AsyncStorage.removeItem("semantic_exercise_cache");
-    console.log("🧹 Advanced matching caches cleared");
   }
 }
 

@@ -45,7 +45,6 @@ class AchievementEngine extends EventEmitter {
   }
 
   private async initializeAchievements(): Promise<void> {
-    console.log("🏆 Initializing FitAI Achievement Engine with 100+ badges...");
 
     this.achievements = [
       ...createFitnessAchievements(),
@@ -66,9 +65,6 @@ class AchievementEngine extends EventEmitter {
 
     await this.loadUserAchievements();
     this.isInitialized = true;
-    console.log(
-      `✅ Achievement Engine initialized with ${this.achievements.length} achievements!`,
-    );
   }
 
   private async loadUserAchievements(): Promise<void> {
@@ -103,7 +99,6 @@ class AchievementEngine extends EventEmitter {
     activityData: Record<string, any>,
   ): Promise<UserAchievement[]> {
     if (!this.isInitialized) {
-      console.warn("⚠️ Achievement engine not initialized");
       return [];
     }
 
@@ -126,9 +121,6 @@ class AchievementEngine extends EventEmitter {
         );
         newlyUnlocked.push(userAchievement);
         this.emit("achievementUnlocked", achievement, userAchievement);
-        console.log(
-          `🏆 Achievement unlocked: ${achievement.title} for user ${userId}`,
-        );
       } else if (progress > userAchievement.progress) {
         userAchievement.progress = progress;
         this.userAchievements.set(
@@ -153,15 +145,15 @@ class AchievementEngine extends EventEmitter {
     const existing = this.userAchievements.get(key);
     if (existing) return existing;
 
+    const found = this.achievements.find((a) => a.id === achievementId);
+
     const newUserAchievement: UserAchievement = {
       id: key,
       achievementId,
       userId,
       unlockedAt: "",
       progress: 0,
-      maxProgress: this.getMaxProgress(
-        this.achievements.find((a) => a.id === achievementId)!,
-      ),
+      maxProgress: found ? this.getMaxProgress(found) : 1,
       isCompleted: false,
       celebrationShown: false,
     };
@@ -174,7 +166,8 @@ class AchievementEngine extends EventEmitter {
     achievement: Achievement,
     activityData: Record<string, any>,
   ): number {
-    const requirement = achievement.requirements[0];
+    const requirement = achievement.requirements?.[0];
+    if (!requirement) return 0;
     switch (requirement.type) {
       case "workout_count":
         return activityData.totalWorkouts || 0;

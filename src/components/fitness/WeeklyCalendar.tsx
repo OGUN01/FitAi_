@@ -6,7 +6,8 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
-import { THEME } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr, rw, rh, rs } from "../../utils/responsive";
 
 export interface DayInfo {
   dayName: string;
@@ -217,31 +218,31 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: THEME.colors.background,
-    paddingVertical: THEME.spacing.md,
+    backgroundColor: ResponsiveTheme.colors.background,
+    paddingVertical: ResponsiveTheme.spacing.md,
   },
 
   weekHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: THEME.spacing.lg,
-    marginBottom: THEME.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   weekNavButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: THEME.colors.backgroundSecondary,
+    width: rs(40),
+    height: rs(40),
+    borderRadius: rbr(20),
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
   },
 
   weekNavText: {
-    fontSize: 24,
+    fontSize: rf(24),
     fontWeight: "bold",
-    color: THEME.colors.text,
+    color: ResponsiveTheme.colors.text,
   },
 
   weekInfo: {
@@ -250,109 +251,109 @@ const styles = StyleSheet.create({
   },
 
   weekTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: 2,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rp(2),
   },
 
   weekRange: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   daysContainer: {
-    paddingHorizontal: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
 
   daysContent: {
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   dayButton: {
-    width: 80,
-    height: 90,
-    borderRadius: THEME.borderRadius.lg,
-    backgroundColor: THEME.colors.backgroundSecondary,
+    width: rw(80),
+    height: rh(90),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: THEME.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.sm,
     borderWidth: 2,
     borderColor: "transparent",
   },
 
   dayButtonSelected: {
-    backgroundColor: THEME.colors.primary,
-    borderColor: THEME.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderColor: ResponsiveTheme.colors.primary,
   },
 
   dayButtonToday: {
-    borderColor: THEME.colors.accent,
+    borderColor: ResponsiveTheme.colors.accent,
     borderWidth: 2,
   },
 
   dayButtonRest: {
-    backgroundColor: THEME.colors.backgroundTertiary,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     opacity: 0.7,
   },
 
   dayLabel: {
-    fontSize: THEME.fontSize.xs,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.textSecondary,
-    marginBottom: 4,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: rp(4),
   },
 
   dayLabelSelected: {
-    color: THEME.colors.white,
+    color: ResponsiveTheme.colors.white,
   },
 
   dayLabelToday: {
-    color: THEME.colors.accent,
-    fontWeight: THEME.fontWeight.bold,
+    color: ResponsiveTheme.colors.accent,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
   },
 
   dayNumber: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: 4,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rp(4),
   },
 
   dayNumberSelected: {
-    color: THEME.colors.white,
+    color: ResponsiveTheme.colors.white,
   },
 
   dayNumberToday: {
-    color: THEME.colors.accent,
+    color: ResponsiveTheme.colors.accent,
   },
 
   statusContainer: {
-    height: 16,
+    height: rh(16),
     justifyContent: "center",
     alignItems: "center",
   },
 
   workoutIndicator: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: rs(16),
+    height: rs(16),
+    borderRadius: rbr(8),
     justifyContent: "center",
     alignItems: "center",
   },
 
   workoutCompleted: {
-    backgroundColor: THEME.colors.success,
+    backgroundColor: ResponsiveTheme.colors.success,
   },
 
   workoutPending: {
-    backgroundColor: THEME.colors.warning,
+    backgroundColor: ResponsiveTheme.colors.warning,
   },
 
   workoutIndicatorText: {
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: "bold",
-    color: THEME.colors.white,
+    color: ResponsiveTheme.colors.white,
   },
 
   restIndicator: {
@@ -361,6 +362,6 @@ const styles = StyleSheet.create({
   },
 
   restIndicatorText: {
-    fontSize: 12,
+    fontSize: rf(12),
   },
 });

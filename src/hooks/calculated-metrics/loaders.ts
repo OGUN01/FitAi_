@@ -13,10 +13,6 @@ import { mapToCalculatedMetrics } from "./mappers";
 export async function loadFromDatabase(
   userId: string,
 ): Promise<CalculatedMetrics | null> {
-  console.log(
-    "📊 [useCalculatedMetrics] Loading from database for user:",
-    userId,
-  );
 
   try {
     const [
@@ -33,18 +29,8 @@ export async function loadFromDatabase(
       DietPreferencesService.load(userId),
     ]);
 
-    console.log("📊 [useCalculatedMetrics] Data loaded:", {
-      hasAdvancedReview: !!advancedReview,
-      hasBodyAnalysis: !!bodyAnalysis,
-      hasPersonalInfo: !!personalInfo,
-      hasWorkoutPreferences: !!workoutPreferences,
-      hasDietPreferences: !!dietPreferences,
-    });
 
     if (!advancedReview) {
-      console.log(
-        "⚠️ [useCalculatedMetrics] No advanced_review data found - onboarding incomplete",
-      );
       return null;
     }
 
@@ -68,28 +54,15 @@ export async function loadFromDatabase(
 }
 
 export async function loadFromAsyncStorage(): Promise<CalculatedMetrics | null> {
-  console.log(
-    "📊 [useCalculatedMetrics] Loading from AsyncStorage (guest mode)",
-  );
 
   try {
     const onboardingDataStr = await AsyncStorage.getItem("onboarding_data");
 
     if (!onboardingDataStr) {
-      console.log(
-        "⚠️ [useCalculatedMetrics] No onboarding_data in AsyncStorage",
-      );
       return null;
     }
 
     const onboardingData = JSON.parse(onboardingDataStr);
-    console.log(
-      "📊 [useCalculatedMetrics] Parsed onboarding data from AsyncStorage",
-    );
-    console.log(
-      "📊 [useCalculatedMetrics] Keys in stored data:",
-      Object.keys(onboardingData),
-    );
 
     const advancedReview =
       onboardingData.advancedReview || onboardingData.advanced_review;
@@ -103,18 +76,9 @@ export async function loadFromAsyncStorage(): Promise<CalculatedMetrics | null> 
       onboardingData.dietPreferences || onboardingData.diet_preferences;
 
     if (!advancedReview) {
-      console.log("⚠️ [useCalculatedMetrics] No advancedReview in stored data");
-      console.log(
-        "⚠️ [useCalculatedMetrics] Available keys:",
-        Object.keys(onboardingData),
-      );
       return null;
     }
 
-    console.log(
-      "✅ [useCalculatedMetrics] Found advancedReview with daily_water_ml:",
-      advancedReview.daily_water_ml,
-    );
 
     const guestBodyWeight =
       bodyAnalysis?.current_weight_kg ?? bodyAnalysis?.currentWeightKg;

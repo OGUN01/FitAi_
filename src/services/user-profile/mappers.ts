@@ -5,74 +5,74 @@ import type { DatabaseProfile, DatabaseFitnessGoals } from "./types";
  * Map database profile to UserProfile type
  */
 export function mapDatabaseProfileToUserProfile(dbProfile: DatabaseProfile) {
-  // Cast to any to access new fields that might not be in generated types yet
+  // Cast to any to access fields in either camelCase (after fromDb) or snake_case
   const profile = dbProfile as any;
 
-  // Log the raw database profile
-  console.log("🔍 userProfile.ts: Raw database profile:", {
-    id: profile.id,
-    first_name: profile.first_name,
-    last_name: profile.last_name,
-    age: profile.age,
-    gender: profile.gender,
-    country: profile.country,
-    state: profile.state,
-  });
+  // Helper to access a field in either snake_case or camelCase
+  const get = (snake: string, camel: string, fallback: any = undefined) =>
+    profile[snake] !== undefined ? profile[snake] : (profile[camel] !== undefined ? profile[camel] : fallback);
 
-  // Compute full name from first_name + last_name
-  const fullName =
-    `${profile.first_name || ""} ${profile.last_name || ""}`.trim();
+  const firstName = get('first_name', 'firstName', '');
+  const lastName = get('last_name', 'lastName', '');
+  const fullName = `${firstName} ${lastName}`.trim();
+
+  // Log the raw database profile
 
   // Map to PersonalInfo interface (matches profiles table - NO activityLevel)
   const personalInfo: PersonalInfo = {
-    first_name: profile.first_name || "",
-    last_name: profile.last_name || "",
+    first_name: firstName,
+    last_name: lastName,
     name: fullName,
     email: profile.email || undefined,
     age: profile.age || 0,
     gender:
-      (profile.gender as "male" | "female" | "other" | "prefer_not_to_say") ||
-      "prefer_not_to_say",
-    country: profile.country || "",
-    state: profile.state || "",
+      (profile.gender as 'male' | 'female' | 'other' | 'prefer_not_to_say') ||
+      'prefer_not_to_say',
+    country: profile.country || '',
+    state: profile.state || '',
     region: profile.region || undefined,
-    wake_time: profile.wake_time || "",
-    sleep_time: profile.sleep_time || "",
+    wake_time: get('wake_time', 'wakeTime', ''),
+    sleep_time: get('sleep_time', 'sleepTime', ''),
     occupation_type:
-      (profile.occupation_type as
-        | "desk_job"
-        | "light_active"
-        | "moderate_active"
-        | "heavy_labor"
-        | "very_active") || "desk_job",
-    profile_picture: profile.profile_picture || undefined,
-    dark_mode: profile.dark_mode || false,
-    units: (profile.units as "metric" | "imperial") || "metric",
-    notifications_enabled: profile.notifications_enabled !== false,
+      (get('occupation_type', 'occupationType', 'desk_job') as
+        | 'desk_job'
+        | 'light_active'
+        | 'moderate_active'
+        | 'heavy_labor'
+        | 'very_active'),
+    profile_picture: get('profile_picture', 'profilePicture', undefined),
+    dark_mode: get('dark_mode', 'darkMode', false),
+    units: (profile.units as 'metric' | 'imperial') || 'metric',
+    notifications_enabled: get('notifications_enabled', 'notificationsEnabled', true) !== false,
   };
 
-  console.log(
-    "✅ userProfile.ts: Mapped PersonalInfo (NO activityLevel):",
-    personalInfo,
-  );
+
+  const id = profile.id || '';
+  const email = profile.email || '';
+  const createdAt = get('created_at', 'createdAt', '');
+  const updatedAt = get('updated_at', 'updatedAt', '');
+  const profilePicture = get('profile_picture', 'profilePicture', undefined);
+  const units = (profile.units as 'metric' | 'imperial') || 'metric';
+  const notificationsEnabled = get('notifications_enabled', 'notificationsEnabled', true) !== false;
+  const darkMode = get('dark_mode', 'darkMode', false);
 
   return {
-    id: dbProfile.id,
-    email: dbProfile.email || "",
+    id,
+    email,
     personalInfo,
     fitnessGoals: {
       primary_goals: [],
-      time_commitment: "",
-      experience: "",
-      experience_level: "",
+      time_commitment: '',
+      experience: '',
+      experience_level: '',
     },
-    createdAt: dbProfile.created_at || "",
-    updatedAt: dbProfile.updated_at || "",
-    profilePicture: dbProfile.profile_picture || undefined,
+    createdAt,
+    updatedAt,
+    profilePicture,
     preferences: {
-      units: (dbProfile.units as "metric" | "imperial") || "metric",
-      notifications: dbProfile.notifications_enabled !== false,
-      darkMode: dbProfile.dark_mode || false,
+      units,
+      notifications: notificationsEnabled,
+      darkMode,
     },
     stats: {
       totalWorkouts: 0,
@@ -85,17 +85,31 @@ export function mapDatabaseProfileToUserProfile(dbProfile: DatabaseProfile) {
 
 /**
  * Map database fitness goals to FitnessGoals type
+ * Note: dbGoals may have camelCase keys (after fromDb transform) or snake_case keys
  */
 export function mapDatabaseGoalsToFitnessGoals(
   dbGoals: DatabaseFitnessGoals,
 ): FitnessGoals {
+  const goals = dbGoals as any;
   return {
-    primary_goals: dbGoals.primary_goals,
+    primary_goals: goals.primary_goals || goals.primaryGoals || [],
     time_commitment:
-      (dbGoals as any).time_commitment ||
-      dbGoals.preferred_workout_duration?.toString() ||
+      goals.time_commitment ||
+      goals.timeCommitment ||
+      goals.preferred_workout_duration?.toString() ||
+      goals.preferredWorkoutDuration?.toString() ||
       "",
-    experience: dbGoals.fitness_level || "",
-    experience_level: dbGoals.fitness_level || "",
+    experience:
+      goals.fitness_level ||
+      goals.fitnessLevel ||
+      goals.experience_level ||
+      goals.experienceLevel ||
+      "",
+    experience_level:
+      goals.fitness_level ||
+      goals.fitnessLevel ||
+      goals.experience_level ||
+      goals.experienceLevel ||
+      "",
   };
 }

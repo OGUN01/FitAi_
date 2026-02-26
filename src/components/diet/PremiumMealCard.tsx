@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Animated from "react-native-reanimated";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { colors, spacing, borderRadius } from "../../theme/aurora-tokens";
-import { rf } from "../../utils/responsive";
+import { rf, rbr, rh } from "../../utils/responsive";
 import { useMealCard, MacroTargets } from "../../hooks/useMealCard";
 import { MealHeader } from "./meal/MealHeader";
 import { NutritionBreakdown } from "./meal/NutritionBreakdown";
@@ -38,11 +38,7 @@ export const PremiumMealCard: React.FC<PremiumMealCardProps> = memo((props) => {
 
   return (
     <Animated.View style={[data.animatedStyle, props.style]}>
-      <Pressable
-        onPressIn={actions.handlePressIn}
-        onPressOut={actions.handlePressOut}
-        onPress={actions.handlePress}
-      >
+      <View>
         <GlassCard
           elevation={3}
           blurIntensity="light"
@@ -58,12 +54,16 @@ export const PremiumMealCard: React.FC<PremiumMealCardProps> = memo((props) => {
           />
 
           <View style={styles.cardContent}>
+            <Pressable
+              onPressIn={actions.handlePressIn}
+              onPressOut={actions.handlePressOut}
+              onPress={actions.handlePress}
+            >
             <MealHeader
               meal={meal}
               mealTime={mealTime}
               mealConfig={data.mealConfig}
             />
-
             <NutritionBreakdown
               meal={meal}
               macroPercentages={data.macroPercentages}
@@ -85,6 +85,7 @@ export const PremiumMealCard: React.FC<PremiumMealCardProps> = memo((props) => {
               toggleExpanded={actions.toggleExpanded}
               mealConfig={data.mealConfig}
             />
+            </Pressable>
 
             <MealActions
               onStartMeal={props.onStartMeal}
@@ -121,14 +122,14 @@ export const PremiumMealCard: React.FC<PremiumMealCardProps> = memo((props) => {
             </View>
           )}
         </GlassCard>
-      </Pressable>
+      </View>
     </Animated.View>
   );
 });
 
 const styles = StyleSheet.create({
   accentStrip: {
-    height: 4,
+    height: rh(4),
     borderTopLeftRadius: borderRadius.xl,
     borderTopRightRadius: borderRadius.xl,
   },
@@ -136,20 +137,20 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   progressBarContainer: {
-    height: 4,
+    height: rh(4),
     backgroundColor: colors.glass.background,
-    borderRadius: 2,
+    borderRadius: rbr(2),
     marginTop: spacing.md,
     overflow: "hidden",
   },
   progressBar: {
     height: "100%",
     backgroundColor: colors.success.DEFAULT,
-    borderRadius: 2,
+    borderRadius: rbr(2),
   },
   completedOverlay: {
     position: "absolute",
-    top: spacing.md,
+    bottom: spacing.md,
     right: spacing.md,
   },
 });

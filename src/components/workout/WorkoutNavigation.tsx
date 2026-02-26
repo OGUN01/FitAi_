@@ -1,7 +1,8 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { Button, THEME } from "../ui";
-import { rp, rw } from "../../utils/responsive";
+import { Button } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rp, rw, rh } from "../../utils/responsive";
 
 interface WorkoutNavigationProps {
   currentExercise: number;
@@ -46,15 +47,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(16),
     paddingVertical: rp(8),
     gap: rw(12),
-    backgroundColor: THEME.colors.surface,
+    backgroundColor: ResponsiveTheme.colors.surface,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: ResponsiveTheme.colors.border,
   },
 
   navButton: {
     flex: 1,
-    minHeight: 44,
-    maxHeight: 48,
+    minHeight: rh(44),
+    maxHeight: rh(48),
   },
 
   primaryNavButton: {

@@ -38,7 +38,6 @@ export const createProgressActions = (
             deviceId: "dev-device",
           },
         });
-        console.log(`✅ Workout ${workoutId} marked complete in database`);
       }
 
       set((state) => ({
@@ -52,7 +51,6 @@ export const createProgressActions = (
           },
         },
       }));
-      console.log(`✅ Workout ${workoutId} cache updated`);
     } catch (error) {
       console.error(`❌ Failed to complete workout ${workoutId}:`, error);
 
@@ -79,7 +77,6 @@ export const createProgressActions = (
           },
         },
       }));
-      console.log(`📥 Workout ${workoutId} queued for offline sync`);
     }
   },
 

@@ -2,6 +2,8 @@ import React from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { MigrationStepInfo } from "../../../hooks/useMigrationProgress";
+import { rf, rp, rbr } from "../../../utils/responsive";
+import { ResponsiveTheme } from "../../../utils/constants";
 
 interface MigrationStepsProps {
   steps: MigrationStepInfo[];
@@ -50,9 +52,13 @@ export const MigrationSteps: React.FC<MigrationStepsProps> = ({
             >
               <Ionicons
                 name={isCompleted ? "checkmark" : (step.icon as any)}
-                size={20}
+                size={rf(20)}
                 color={
-                  isCompleted ? "#10B981" : isCurrent ? "#E55A2B" : "#6B7280"
+                  isCompleted
+                    ? ResponsiveTheme.colors.successAlt
+                    : isCurrent
+                      ? ResponsiveTheme.colors.primaryDark
+                      : ResponsiveTheme.colors.textTertiary
                 }
               />
             </View>
@@ -84,56 +90,56 @@ export const MigrationSteps: React.FC<MigrationStepsProps> = ({
 
 const styles = StyleSheet.create({
   stepsContainer: {
-    marginBottom: 30,
+    marginBottom: rp(30),
   },
   stepItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 15,
-    paddingHorizontal: 10,
+    marginBottom: rp(15),
+    paddingHorizontal: rp(10),
   },
   stepIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: rp(40),
+    height: rp(40),
+    borderRadius: rbr(20),
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 15,
+    marginRight: rp(15),
     borderWidth: 2,
   },
   stepIconCompleted: {
-    backgroundColor: "rgba(16, 185, 129, 0.2)",
-    borderColor: "#10B981",
+    backgroundColor: ResponsiveTheme.colors.successTint,
+    borderColor: ResponsiveTheme.colors.successAlt,
   },
   stepIconCurrent: {
-    backgroundColor: "rgba(79, 70, 229, 0.2)",
-    borderColor: "#E55A2B",
+    backgroundColor: ResponsiveTheme.colors.primaryTint,
+    borderColor: ResponsiveTheme.colors.primaryDark,
   },
   stepIconUpcoming: {
-    backgroundColor: "rgba(107, 114, 128, 0.1)",
-    borderColor: "#6B7280",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    borderColor: ResponsiveTheme.colors.textTertiary,
   },
   stepContent: {
     flex: 1,
   },
   stepTitle: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "600",
-    color: "#9CA3AF",
-    marginBottom: 2,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: rp(2),
   },
   stepTitleCompleted: {
-    color: "#10B981",
+    color: ResponsiveTheme.colors.successAlt,
   },
   stepTitleCurrent: {
-    color: "#FFFFFF",
+    color: ResponsiveTheme.colors.white,
   },
   stepDescription: {
-    fontSize: 14,
-    color: "#6B7280",
-    lineHeight: 18,
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.textTertiary,
+    lineHeight: rf(18),
   },
   stepDescriptionCurrent: {
-    color: "#9CA3AF",
+    color: ResponsiveTheme.colors.textSecondary,
   },
 });

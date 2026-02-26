@@ -17,9 +17,6 @@ export class PlatformService {
 
   async initialize(): Promise<boolean> {
     try {
-      console.log(
-        `🚀 Initializing wearable manager for ${this.currentPlatform}...`,
-      );
 
       switch (this.currentPlatform) {
         case "ios":
@@ -29,11 +26,9 @@ export class PlatformService {
           return await googleFitService.initialize();
 
         case "web":
-          console.log("💻 Web platform detected - wearables not supported");
           return false;
 
         default:
-          console.warn("⚠️ Unknown platform - wearables not supported");
           return false;
       }
     } catch (error) {
@@ -44,9 +39,6 @@ export class PlatformService {
 
   async requestPermissions(): Promise<boolean> {
     try {
-      console.log(
-        `🔐 Requesting wearable permissions for ${this.currentPlatform}...`,
-      );
 
       switch (this.currentPlatform) {
         case "ios":
@@ -56,7 +48,6 @@ export class PlatformService {
           return await googleFitService.requestPermissions();
 
         default:
-          console.warn("⚠️ Platform does not support wearable permissions");
           return false;
       }
     } catch (error) {
@@ -181,7 +172,6 @@ export class PlatformService {
 
   async clearCache(): Promise<void> {
     try {
-      console.log(`🧹 Clearing ${this.currentPlatform} wearable cache...`);
 
       switch (this.currentPlatform) {
         case "ios":
@@ -193,11 +183,9 @@ export class PlatformService {
           break;
 
         default:
-          console.log("💻 No cache to clear on this platform");
           break;
       }
 
-      console.log("✅ Wearable cache cleared successfully");
     } catch (error) {
       console.error("❌ Error clearing wearable cache:", error);
     }

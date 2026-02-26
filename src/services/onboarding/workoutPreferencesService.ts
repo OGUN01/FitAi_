@@ -11,12 +11,6 @@ export class WorkoutPreferencesService {
     data: WorkoutPreferencesData,
   ): Promise<boolean> {
     try {
-      console.log(
-        "[DB-SERVICE] WorkoutPreferencesService.save - Starting save for user:",
-        userId,
-      );
-      console.log("[DB-SERVICE] Input data:", data);
-
       const workoutData: Partial<WorkoutPreferencesRow> = {
         user_id: userId,
         location: data.location || "home",
@@ -42,11 +36,6 @@ export class WorkoutPreferencesService {
         updated_at: new Date().toISOString(),
       };
 
-      console.log(
-        "[DB-SERVICE] Transformed workoutData for upsert:",
-        workoutData,
-      );
-
       const { error } = await supabase
         .from("workout_preferences")
         .upsert(workoutData, {
@@ -62,9 +51,6 @@ export class WorkoutPreferencesService {
         return false;
       }
 
-      console.log(
-        "[DB-SERVICE] WorkoutPreferencesService: Workout preferences saved successfully to database",
-      );
       return true;
     } catch (error) {
       console.error(
@@ -77,11 +63,6 @@ export class WorkoutPreferencesService {
 
   static async load(userId: string): Promise<WorkoutPreferencesData | null> {
     try {
-      console.log(
-        "[DB-SERVICE] WorkoutPreferencesService.load - Loading for user:",
-        userId,
-      );
-
       const { data, error } = await supabase
         .from("workout_preferences")
         .select("*")
@@ -97,13 +78,8 @@ export class WorkoutPreferencesService {
       }
 
       if (!data) {
-        console.log(
-          "[DB-SERVICE] WorkoutPreferencesService: No workout preferences found in database",
-        );
         return null;
       }
-
-      console.log("[DB-SERVICE] Raw data from database:", data);
 
       const workoutPreferences: WorkoutPreferencesData = {
         location: data.location || "both",
@@ -128,10 +104,6 @@ export class WorkoutPreferencesService {
         prefers_variety: data.prefers_variety ?? true,
       };
 
-      console.log(
-        "[DB-SERVICE] WorkoutPreferencesService: Transformed WorkoutPreferencesData:",
-        workoutPreferences,
-      );
       return workoutPreferences;
     } catch (error) {
       console.error("WorkoutPreferencesService: Unexpected error:", error);
@@ -143,13 +115,7 @@ export class WorkoutPreferencesService {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    console.log(
-      "validateWorkoutPreferences called with data:",
-      data ? "Data provided" : "NULL data",
-    );
-
     if (!data) {
-      console.log("Validation failed: data is null or undefined");
       return {
         is_valid: false,
         errors: ["Workout preferences data is missing"],
@@ -157,13 +123,6 @@ export class WorkoutPreferencesService {
         completion_percentage: 0,
       };
     }
-
-    console.log("Workout data fields:", {
-      location: data.location,
-      intensity: data.intensity,
-      activity_level: data.activity_level,
-      primary_goals: data.primary_goals,
-    });
 
     if (!data.location) errors.push("Workout location is required");
     if (!data.intensity) errors.push("Intensity level is required");

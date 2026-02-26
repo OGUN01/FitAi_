@@ -79,8 +79,8 @@ export function calculateWorkoutTypeDistribution(
   let totalWorkoutCount = 0;
 
   for (const metric of metrics) {
-    if ((metric as any).recentWorkouts) {
-      for (const workout of (metric as any).recentWorkouts) {
+    if (metric.recentWorkouts) {
+      for (const workout of metric.recentWorkouts) {
         const type = workout.type || "Unknown";
         typeCounts[type] = (typeCounts[type] || 0) + 1;
         totalWorkoutCount++;
@@ -128,8 +128,8 @@ export function determineStrongestMuscleGroup(
   const muscleGroupCounts: Record<string, number> = {};
 
   for (const metric of metrics) {
-    if ((metric as any).recentWorkouts) {
-      for (const workout of (metric as any).recentWorkouts) {
+    if (metric.recentWorkouts) {
+      for (const workout of metric.recentWorkouts) {
         const muscleGroup = workoutTypeToMuscleGroup(workout.type);
         if (muscleGroup) {
           muscleGroupCounts[muscleGroup] =

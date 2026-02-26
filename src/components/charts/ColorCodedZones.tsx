@@ -101,11 +101,11 @@ export const ColorCodedZones: React.FC<ColorCodedZonesProps> = ({
 
 // Default color palette for zones
 export const HEART_RATE_ZONE_COLORS = {
-  zone1: "#8B9DC3", // Light blue - Recovery
-  zone2: "#4CAF50", // Green - Fat burn
-  zone3: "#FFC107", // Yellow - Cardio
-  zone4: "#FF9800", // Orange - Hard
-  zone5: "#F44336", // Red - Max
+  zone1: ResponsiveTheme.colors.info, // Light blue - Recovery
+  zone2: ResponsiveTheme.colors.success, // Green - Fat burn
+  zone3: ResponsiveTheme.colors.warning, // Yellow - Cardio
+  zone4: ResponsiveTheme.colors.warning, // Orange - Hard
+  zone5: ResponsiveTheme.colors.error, // Red - Max
 };
 
 // Helper function to calculate zones based on max HR
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   },
 
   zoneInfo: {
-    width: 100,
+    width: rp(100),
   },
 
   zoneNumber: {
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
 
   zoneBarContainer: {
     flex: 1,
-    height: 32,
+    height: rp(32),
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderRadius: ResponsiveTheme.borderRadius.md,
     overflow: "hidden",
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.xs,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.textSecondary,
-    width: 40,
+    width: rp(40),
     textAlign: "right",
   },
 

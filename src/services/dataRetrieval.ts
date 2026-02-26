@@ -1,12 +1,14 @@
 import { useFitnessStore } from "../stores/fitnessStore";
 import { useNutritionStore } from "../stores/nutritionStore";
 import { useUserStore } from "../stores/userStore";
+import { useProfileStore } from "../stores/profileStore";
 import { crudOperations } from "./crudOperations";
 import { WeeklyWorkoutPlan, DayWorkout, WeeklyMealPlan, DayMeal } from "../ai";
 import {
   calculateWorkoutCalories,
   ExerciseCalorieInput,
 } from "./calorieCalculator";
+import { logger } from "../utils/logger";
 
 export interface TodaysData {
   workout: DayWorkout | null;
@@ -58,7 +60,7 @@ class DataRetrievalService {
     ];
     const todayName = dayNames[today.getDay()];
 
-    console.log("📊 getTodaysData - Today is:", todayName);
+    logger.debug("📊 getTodaysData - Today is:", { todayName });
 
     // Get today's workout
     const todaysWorkout =
@@ -72,7 +74,7 @@ class DataRetrievalService {
         (meal) => meal.dayOfWeek === todayName,
       ) || [];
 
-    console.log("📊 getTodaysData - Today's meals:", {
+    logger.debug("📊 getTodaysData - Today's meals:", {
       count: todaysMeals.length,
       meals: todaysMeals.map((m) => ({
         id: m.id,
@@ -90,14 +92,14 @@ class DataRetrievalService {
 
     const mealsCompleted = todaysMeals.filter((meal) => {
       const progress = nutritionStore.getMealProgress(meal.id);
-      console.log(`📊 Meal ${meal.name} progress:`, progress);
+      logger.debug(`📊 Meal ${meal.name} progress:`, { progress: progress ?? undefined });
       return progress?.progress === 100;
     }).length;
 
     const caloriesConsumed = todaysMeals.reduce((total, meal) => {
       const progress = nutritionStore.getMealProgress(meal.id);
       if (progress?.progress === 100) {
-        console.log(
+        logger.debug(
           `📊 Adding calories for completed meal ${meal.name}: ${meal.totalCalories}`,
         );
         return total + (meal.totalCalories || 0);
@@ -110,7 +112,7 @@ class DataRetrievalService {
       0,
     );
 
-    console.log("📊 getTodaysData - Final calculations:", {
+    logger.debug("📊 getTodaysData - Final calculations:", {
       mealsCompleted,
       totalMeals: todaysMeals.length,
       caloriesConsumed,
@@ -309,8 +311,9 @@ class DataRetrievalService {
     const fitnessStore = useFitnessStore.getState();
     const userStore = useUserStore.getState();
 
-    // Get user's weight for personalized calculation - NO FALLBACK
-    const userWeight = userStore.profile?.bodyMetrics?.current_weight_kg;
+    // Get user's weight for personalized calculation - fallback to profileStore
+    const userWeight = userStore.profile?.bodyMetrics?.current_weight_kg
+      || useProfileStore.getState().bodyAnalysis?.current_weight_kg;
 
     // If no weight, we cannot calculate calories accurately
     if (!userWeight || userWeight <= 0) {
@@ -438,18 +441,31 @@ class DataRetrievalService {
     };
   }
 
+  private static _loadPromise: Promise<void> | null = null;
+
   // Load all data from stores
   static async loadAllData(): Promise<void> {
-    try {
-      const fitnessStore = useFitnessStore.getState();
-      const nutritionStore = useNutritionStore.getState();
-
-      await Promise.all([fitnessStore.loadData(), nutritionStore.loadData()]);
-
-      console.log("📂 All data loaded from stores");
-    } catch (error) {
-      console.error("❌ Failed to load data:", error);
+    // Dedup: if already loading, return existing promise
+    if (DataRetrievalService._loadPromise) {
+      return DataRetrievalService._loadPromise;
     }
+
+    DataRetrievalService._loadPromise = (async () => {
+      try {
+        const fitnessStore = useFitnessStore.getState();
+        const nutritionStore = useNutritionStore.getState();
+
+        await Promise.all([fitnessStore.loadData(), nutritionStore.loadData()]);
+
+        logger.debug("💠 All data loaded from stores");
+      } catch (error) {
+        console.error("❌ Failed to load data:", error);
+      } finally {
+        DataRetrievalService._loadPromise = null;
+      }
+    })();
+
+    return DataRetrievalService._loadPromise;
   }
 
   // Clear all data

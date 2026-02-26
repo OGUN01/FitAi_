@@ -11,9 +11,6 @@ export class SyncManager {
     const startTime = Date.now();
 
     try {
-      console.log(
-        `📥 Syncing Health Connect data from last ${daysBack} days...`,
-      );
 
       const endDate = new Date();
       const startDate = new Date();
@@ -52,7 +49,6 @@ export class SyncManager {
       healthData.lastSyncDate = endDate.toISOString();
 
       const syncTime = Date.now() - startTime;
-      console.log(`✅ Health Connect sync completed in ${syncTime}ms`);
 
       return {
         success: true,

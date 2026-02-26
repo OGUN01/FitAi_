@@ -49,19 +49,17 @@ async function syncWorkoutSessionToSupabase(
     }
 
     const { error } = await supabase.from("workout_sessions").upsert({
+      id: session.id,
       user_id: userId,
-      workout_plan_id: null, // session.workoutId is not a UUID FK to user_workout_plans
-      workout_name: session.notes?.split(' - ')[1] || 'Workout',
-      workout_type: 'general',
+      workout_id: session.workoutId || null,
       started_at: session.startedAt,
       completed_at: session.completedAt,
-      total_duration_minutes: session.duration,
+      duration: session.duration,
       calories_burned: session.caloriesBurned,
-      exercises_completed: session.exercises,
+      exercises: session.exercises,
       notes: session.notes || "",
-      enjoyment_rating: session.rating || 0,
+      rating: session.rating || 0,
       is_completed: session.isCompleted,
-      completion_percentage: session.isCompleted ? 100 : 0,
     }, { onConflict: 'id', ignoreDuplicates: false });
 
     if (error) {
@@ -72,7 +70,19 @@ async function syncWorkoutSessionToSupabase(
       offlineService.queueAction({
         type: "CREATE",
         table: "workout_sessions",
-        data: session,
+        data: {
+          id: session.id,
+          userId: session.userId,
+          workoutId: session.workoutId,
+          startedAt: session.startedAt,
+          completedAt: session.completedAt,
+          duration: session.duration,
+          caloriesBurned: session.caloriesBurned,
+          exercises: session.exercises,
+          notes: session.notes || "",
+          rating: session.rating || 0,
+          isCompleted: session.isCompleted,
+        },
         userId: userId,
         maxRetries: 3,
       });
@@ -84,7 +94,19 @@ async function syncWorkoutSessionToSupabase(
     offlineService.queueAction({
       type: "CREATE",
       table: "workout_sessions",
-      data: session,
+      data: {
+        id: session.id,
+        userId: session.userId,
+        workoutId: session.workoutId,
+        startedAt: session.startedAt,
+        completedAt: session.completedAt,
+        duration: session.duration,
+        caloriesBurned: session.caloriesBurned,
+        exercises: session.exercises,
+        notes: session.notes || "",
+        rating: session.rating || 0,
+        isCompleted: session.isCompleted,
+      },
       userId: session.userId || "unknown",
       maxRetries: 3,
     });
@@ -145,16 +167,23 @@ export async function deleteWorkoutSession(
   initialize: () => Promise<void>,
 ): Promise<void> {
   try {
-    await updateWorkoutSession(
-      sessionId,
-      {
-        notes:
-          (await readWorkoutSession(sessionId, initialize))?.notes +
-            " [DELETED]" || "[DELETED]",
-      },
-      initialize,
-    );
-    console.log(`Workout session ${sessionId} marked as deleted`);
+    await initialize();
+    // Delete from Supabase directly
+
+    // Also delete from Supabase
+    try {
+      const { error } = await supabase
+        .from("workout_sessions")
+        .delete()
+        .eq("id", sessionId);
+      if (error) {
+        console.warn("\u26a0\ufe0f Failed to delete from Supabase:", error.message);
+      }
+    } catch (syncError) {
+      console.warn("\u26a0\ufe0f Supabase delete sync error:", syncError);
+    }
+
+    console.log(`Workout session ${sessionId} deleted`);
   } catch (error) {
     console.error("Failed to delete workout session:", error);
     throw error;

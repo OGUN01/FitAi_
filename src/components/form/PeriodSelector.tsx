@@ -76,7 +76,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
       {/* Sliding Indicator */}
       <Animated.View style={[styles.indicator, indicatorStyle]}>
         <LinearGradient
-          colors={["#FF6B35", "#FF8A5C"]}
+          colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.indicatorGradient}
@@ -114,7 +114,7 @@ const HORIZONTAL_PADDING = ResponsiveTheme.spacing.lg * 2; // Account for parent
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: ResponsiveTheme.colors.glassBorder,
     borderRadius: ResponsiveTheme.borderRadius.lg,
     padding: rp(4),
     position: "relative",
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   buttonTextActive: {
-    color: "#FFFFFF",
+    color: ResponsiveTheme.colors.white,
     fontWeight: "700",
   },
 });

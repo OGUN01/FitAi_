@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Platform,
+  Pressable,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import {
@@ -14,7 +15,7 @@ import {
   UserAchievement,
 } from "../../services/achievements/types";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rh, rw } from "../../utils/responsive";
+import { rf, rh, rw, rp, rbr } from "../../utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 
 interface AchievementDetailModalProps {
@@ -30,14 +31,6 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
   userAchievement,
   onClose,
 }) => {
-  if (!achievement) return null;
-
-  const isUnlocked = userAchievement?.isCompleted || false;
-  const progress = userAchievement?.progress || 0;
-  const maxProgress =
-    userAchievement?.maxProgress || achievement.requirements[0]?.target || 1;
-  const progressPercent = Math.min((progress / maxProgress) * 100, 100);
-
   const getTierColor = (tier: string) => {
     switch (tier) {
       case "bronze":
@@ -45,7 +38,7 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
       case "silver":
         return "#C0C0C0";
       case "gold":
-        return "#FFD700";
+        return ResponsiveTheme.colors.gold;
       case "platinum":
         return "#E5E4E2";
       case "diamond":
@@ -57,8 +50,12 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
     }
   };
 
-  const tierColor = getTierColor(achievement.tier);
-
+  const isUnlocked = userAchievement?.isCompleted || false;
+  const progress = userAchievement?.progress || 0;
+  const maxProgress =
+    userAchievement?.maxProgress || achievement?.requirements[0]?.target || 1;
+  const progressPercent = Math.min((progress / maxProgress) * 100, 100);
+  const tierColor = achievement ? getTierColor(achievement.tier) : "#CD7F32";
   return (
     <Modal
       visible={visible}
@@ -66,8 +63,15 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
       animationType="fade"
       onRequestClose={onClose}
     >
+      {!achievement ? (
+        <Pressable style={{ flex: 1 }} onPress={onClose} />
+      ) : (
       <View style={styles.overlay}>
-        <BlurView intensity={20} style={StyleSheet.absoluteFill} tint="dark" />
+        {Platform.OS === "ios" ? (
+          <BlurView intensity={20} style={StyleSheet.absoluteFill} tint="dark" />
+        ) : (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: ResponsiveTheme.colors.overlayDark }]} />
+        )}
 
         <TouchableOpacity
           style={styles.backdrop}
@@ -95,7 +99,7 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
 
           <View style={[styles.tierBadge, { borderColor: tierColor }]}>
             <Text style={[styles.tierText, { color: tierColor }]}>
-              {achievement.tier.toUpperCase()} TIER
+              {(achievement.tier ?? 'unknown').toUpperCase()} TIER
             </Text>
           </View>
 
@@ -166,7 +170,7 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
 
             {isUnlocked && userAchievement?.unlockedAt && (
               <View style={styles.unlockedContainer}>
-                <Ionicons name="trophy" size={20} color="#FFD700" />
+                <Ionicons name="trophy" size={20} color={ResponsiveTheme.colors.gold} />
                 <Text style={styles.unlockedText}>
                   Unlocked on{" "}
                   {new Date(userAchievement.unlockedAt).toLocaleDateString()}
@@ -176,6 +180,7 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
           </ScrollView>
         </View>
       </View>
+      )}
     </Modal>
   );
 };
@@ -194,11 +199,11 @@ const styles = StyleSheet.create({
     width: "100%",
     maxHeight: rh(70),
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: 24,
+    borderRadius: rbr(24),
     padding: rw(6),
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    shadowColor: "#000",
+    borderColor: ResponsiveTheme.colors.glassHighlight,
+    shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
@@ -215,21 +220,21 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     top: 0,
-    padding: 4,
+    padding: rp(4),
   },
   iconContainer: {
     width: rw(20),
     height: rw(20),
     borderRadius: rw(10),
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: ResponsiveTheme.colors.glassHighlight,
   },
   grayscale: {
     opacity: 0.5,
-    backgroundColor: "rgba(0,0,0,0.2)",
+    backgroundColor: ResponsiveTheme.colors.overlayDark,
   },
   icon: {
     fontSize: rf(5),
@@ -245,7 +250,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     paddingHorizontal: rw(3),
     paddingVertical: rh(0.5),
-    borderRadius: 12,
+    borderRadius: rbr(12),
     borderWidth: 1,
     marginBottom: rh(3),
   },
@@ -268,7 +273,7 @@ const styles = StyleSheet.create({
     marginBottom: rh(3),
     backgroundColor: "rgba(255,255,255,0.03)",
     padding: rw(4),
-    borderRadius: 16,
+    borderRadius: rbr(16),
   },
   sectionTitle: {
     fontSize: rf(1.2),
@@ -324,14 +329,14 @@ const styles = StyleSheet.create({
     fontSize: rf(1.4),
   },
   progressBarBg: {
-    height: 8,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderRadius: 4,
+    height: rp(8),
+    backgroundColor: ResponsiveTheme.colors.glassHighlight,
+    borderRadius: rbr(4),
     overflow: "hidden",
   },
   progressBarFill: {
     height: "100%",
-    borderRadius: 4,
+    borderRadius: rbr(4),
   },
   unlockedContainer: {
     flexDirection: "row",
@@ -339,11 +344,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "rgba(255,215,0,0.1)",
     padding: rw(3),
-    borderRadius: 12,
+    borderRadius: rbr(12),
     marginTop: rh(1),
   },
   unlockedText: {
-    color: "#FFD700",
+    color: ResponsiveTheme.colors.gold,
     fontWeight: "700",
     marginLeft: rw(2),
     fontSize: rf(1.4),

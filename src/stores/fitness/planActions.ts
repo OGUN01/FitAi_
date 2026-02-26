@@ -24,18 +24,15 @@ export const createPlanActions = (
     try {
       const planTitle =
         plan.planTitle || `Week ${plan.weekNumber} Workout Plan`;
-      console.log("💾 Saving weekly workout plan:", planTitle);
 
       set({ weeklyWorkoutPlan: plan });
 
-      console.log("✅ Plan saved to local storage");
 
       if (!plan.workouts || plan.workouts.length === 0) {
         console.warn("⚠️ No workouts in plan to save to database");
         return;
       }
 
-      console.log(`📋 Saving ${plan.workouts.length} workouts to database`);
 
       let savedCount = 0;
       let errorCount = 0;
@@ -103,9 +100,6 @@ export const createPlanActions = (
         }
       }
 
-      console.log(
-        `✅ Weekly workout plan saved: ${savedCount} successful, ${errorCount} errors`,
-      );
 
       if (errorCount > 0 && savedCount === 0) {
         throw new Error(`Failed to save any workouts (${errorCount} errors)`);
@@ -119,19 +113,15 @@ export const createPlanActions = (
       if (!get().weeklyWorkoutPlan) {
         throw error;
       }
-      console.log("⚠️ Plan saved locally but database save failed");
     }
 
     try {
       await offlineService.clearFailedActionsForTable("weekly_workout_plans");
 
-      console.log("📋 Saving complete weekly workout plan to database...");
 
       const userId = getCurrentUserId();
       const planId = generateUUID();
 
-      console.log("🔍 FitnessStore: User ID from coordinator:", userId);
-      console.log("🔍 FitnessStore: Plan ID generated:", planId);
 
       if (!userId) {
         console.error("❌ No authenticated user - cannot save to database");
@@ -147,7 +137,6 @@ export const createPlanActions = (
         throw new Error("Invalid plan UUID format");
       }
 
-      console.log("✅ UUID validation passed:", { userId, planId });
 
       const weeklyPlanData = {
         id: planId,
@@ -170,7 +159,6 @@ export const createPlanActions = (
         userId: getUserIdOrGuest(),
         maxRetries: 3,
       });
-      console.log("✅ Weekly workout plan queued for database sync");
     } catch (weeklyPlanError) {
       console.error(
         "❌ Failed to save weekly workout plan to database:",
@@ -188,14 +176,12 @@ export const createPlanActions = (
     try {
       const currentPlan = get().weeklyWorkoutPlan;
       if (currentPlan) {
-        console.log("📋 Found workout plan in local storage");
         return currentPlan;
       }
 
       try {
         const userId = getCurrentUserId();
         if (userId) {
-          console.log("🔄 Loading weekly workout plan from database...");
           const { data: weeklyPlans, error } = await supabase
             .from("weekly_workout_plans")
             .select("*")
@@ -206,20 +192,13 @@ export const createPlanActions = (
 
           if (!error && weeklyPlans && weeklyPlans.length > 0) {
             const latestPlan = weeklyPlans[0];
-            console.log(
-              `✅ Found weekly workout plan in database: ${latestPlan.plan_title}`,
-            );
 
             const planData = latestPlan.plan_data;
             if (planData && planData.workouts) {
               set({ weeklyWorkoutPlan: planData });
-              console.log(
-                "📋 Restored weekly workout plan from database to local storage",
-              );
               return planData;
             }
           } else {
-            console.log("📋 No weekly workout plan found in database");
           }
         }
       } catch (dbError) {
@@ -230,11 +209,6 @@ export const createPlanActions = (
       }
 
       const workoutSessions = await crudOperations.readWorkoutSessions();
-      if (workoutSessions.length > 0) {
-        console.log(
-          `📋 Found ${workoutSessions.length} individual workout sessions in database`,
-        );
-      }
 
       return null;
     } catch (error) {

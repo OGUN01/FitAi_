@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../../utils/constants";
-import { rf, rw } from "../../../../utils/responsive";
+import { rf, rp, rbr, rw } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
 
 interface PickerOption {
@@ -133,7 +133,7 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
                           size={rf(18)}
                           color={
                             selected
-                              ? "#FF6B35"
+                              ? ResponsiveTheme.colors.primary
                               : ResponsiveTheme.colors.textSecondary
                           }
                         />
@@ -164,7 +164,7 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
                         <Ionicons
                           name="checkmark"
                           size={rf(14)}
-                          color="#FF6B35"
+                          color={ResponsiveTheme.colors.primary}
                         />
                       </View>
                     )}
@@ -255,13 +255,13 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textSecondary,
   },
   optionLabelSelected: {
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     fontWeight: "600",
   },
   optionDescription: {
     fontSize: rf(11),
     color: ResponsiveTheme.colors.textMuted,
-    marginTop: 2,
+    marginTop: rp(2),
   },
   checkmark: {
     width: rw(22),

@@ -24,7 +24,7 @@ import { SectionHeader } from "../../components/settings/SectionHeader";
 
 import { usePrivacySecurityLogic } from "../../hooks/usePrivacySecurityLogic";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
 interface PrivacySecurityScreenProps {
@@ -54,9 +54,10 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
             }}
             scaleValue={0.9}
             hapticFeedback={false}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <View style={styles.backButton}>
-              <Ionicons name="chevron-back" size={rf(20)} color="#fff" />
+              <Ionicons name="chevron-back" size={rf(20)} color={ResponsiveTheme.colors.text} />
             </View>
           </AnimatedPressable>
           <View style={styles.headerCenter}>
@@ -84,7 +85,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             <PrivacyToggle
               icon="share-social-outline"
-              iconColor="#FF6B35"
+              iconColor={ResponsiveTheme.colors.primary}
               title="Data Sharing"
               description="Allow sharing anonymous usage data to improve the app"
               value={settings.dataSharing}
@@ -94,7 +95,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             <PrivacyToggle
               icon="analytics-outline"
-              iconColor="#4CAF50"
+              iconColor={ResponsiveTheme.colors.success}
               title="Analytics"
               description="Help us improve by sharing app usage analytics"
               value={settings.analytics}
@@ -104,7 +105,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             <PrivacyToggle
               icon="bug-outline"
-              iconColor="#FF9800"
+              iconColor={ResponsiveTheme.colors.warning}
               title="Crash Reports"
               description="Automatically send crash reports to help fix issues"
               value={settings.crashReports}
@@ -114,7 +115,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             <PrivacyToggle
               icon="location-outline"
-              iconColor="#2196F3"
+              iconColor={ResponsiveTheme.colors.info}
               title="Location Tracking"
               description="Allow location access for workout tracking"
               value={settings.locationTracking}
@@ -132,7 +133,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             <PrivacyToggle
               icon="finger-print-outline"
-              iconColor="#FF6B35"
+              iconColor={ResponsiveTheme.colors.primary}
               title="Biometric Authentication"
               description="Use fingerprint or face recognition to secure your app"
               value={settings.biometricAuth}
@@ -142,7 +143,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             <PrivacyToggle
               icon="lock-open-outline"
-              iconColor="#607D8B"
+              iconColor={ResponsiveTheme.colors.neutral}
               title="Auto-Lock"
               description="Automatically lock the app when it goes to background"
               value={settings.autoLock}
@@ -160,7 +161,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             <ActionItem
               icon="cloud-download-outline"
-              iconColor="#4CAF50"
+              iconColor={ResponsiveTheme.colors.success}
               title="Export My Data"
               description="Download a copy of all your personal data"
               onPress={handleDataExport}
@@ -169,7 +170,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             <ActionItem
               icon="document-text-outline"
-              iconColor="#2196F3"
+              iconColor={ResponsiveTheme.colors.info}
               title="Privacy Policy"
               description="Read our complete privacy policy"
               onPress={() =>
@@ -183,7 +184,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             <ActionItem
               icon="clipboard-outline"
-              iconColor="#FF9800"
+              iconColor={ResponsiveTheme.colors.warning}
               title="Terms of Service"
               description="Review our terms and conditions"
               onPress={() =>
@@ -199,14 +200,14 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
           <View style={styles.section}>
             <SectionHeader
               icon="warning-outline"
-              iconColor="#F44336"
+              iconColor={ResponsiveTheme.colors.error}
               title="Danger Zone"
               isDanger={true}
             />
 
             <ActionItem
               icon="trash-outline"
-              iconColor="#F44336"
+              iconColor={ResponsiveTheme.colors.error}
               title="Delete Account"
               description="Permanently delete your account and all data"
               onPress={handleDeleteAccount}
@@ -226,7 +227,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                 hapticFeedback={false}
               >
                 <LinearGradient
-                  colors={["#FF6B6B", "#FF8E53"]}
+                  colors={[ResponsiveTheme.colors.errorLight, ResponsiveTheme.colors.primaryLight]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.saveButton}
@@ -234,7 +235,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                   <Ionicons
                     name="checkmark-circle"
                     size={rf(18)}
-                    color="#fff"
+                    color={ResponsiveTheme.colors.text}
                   />
                   <Text style={styles.saveButtonText}>Save Changes</Text>
                 </LinearGradient>
@@ -263,8 +264,8 @@ const styles = StyleSheet.create({
   backButton: {
     width: rw(40),
     height: rw(40),
-    borderRadius: rw(20),
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: rbr(20),
+    backgroundColor: ResponsiveTheme.colors.glassBorder,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
@@ -276,7 +277,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
   },
   headerSpacer: {
     width: rw(40),
@@ -287,6 +288,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingTop: ResponsiveTheme.spacing.sm,
+    paddingBottom: rp(100),
   },
   section: {
     marginBottom: ResponsiveTheme.spacing.lg,
@@ -305,7 +307,7 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
   },
   bottomSpacing: {
     height: rh(80),

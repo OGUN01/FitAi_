@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { THEME } from "../../ui";
+import { ResponsiveTheme } from "../../../utils/constants";
 
 interface TabNavigationProps {
   activeTab: "instructions" | "details";
@@ -46,31 +46,31 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
 const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: "row",
-    backgroundColor: THEME.colors.surface,
-    marginHorizontal: THEME.spacing.lg,
-    marginTop: THEME.spacing.lg,
-    borderRadius: THEME.borderRadius.lg,
-    padding: THEME.spacing.xs,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    marginHorizontal: ResponsiveTheme.spacing.lg,
+    marginTop: ResponsiveTheme.spacing.lg,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    padding: ResponsiveTheme.spacing.xs,
   },
 
   tab: {
     flex: 1,
-    paddingVertical: THEME.spacing.sm,
-    borderRadius: THEME.borderRadius.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.md,
     alignItems: "center",
   },
 
   activeTab: {
-    backgroundColor: THEME.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary,
   },
 
   tabText: {
-    fontSize: THEME.fontSize.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: "600",
-    color: THEME.colors.textSecondary,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   activeTabText: {
-    color: THEME.colors.surface,
+    color: ResponsiveTheme.colors.surface,
   },
 });

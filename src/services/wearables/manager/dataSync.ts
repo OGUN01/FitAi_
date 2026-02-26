@@ -12,7 +12,6 @@ export class DataSyncService {
   }> {
     try {
       const platform = this.getPlatform();
-      console.log(`🔄 Syncing health data from ${platform} wearables...`);
 
       let platformData: HealthKitData | GoogleFitData | null = null;
 

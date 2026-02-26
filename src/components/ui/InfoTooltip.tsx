@@ -7,7 +7,7 @@ import {
   Modal,
   Pressable,
 } from "react-native";
-import { rf } from "../../utils/responsive";
+import { rf, rp } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 
 // ============================================================================
@@ -95,14 +95,14 @@ const styles = StyleSheet.create({
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: ResponsiveTheme.colors.overlay,
     justifyContent: "center",
     alignItems: "center",
     padding: ResponsiveTheme.spacing.lg,
   },
 
   tooltipContainer: {
-    maxWidth: 400,
+    maxWidth: rp(400),
     width: "100%",
   },
 
@@ -110,10 +110,7 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.background,
     borderRadius: ResponsiveTheme.borderRadius.xl,
     padding: ResponsiveTheme.spacing.lg,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    boxShadow: '0px 2px 8px rgba(0,0,0,0.25)',
     elevation: 5,
   },
 
@@ -142,6 +139,6 @@ const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: "#FFFFFF",
+    color: ResponsiveTheme.colors.white,
   },
 });

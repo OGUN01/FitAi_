@@ -48,16 +48,22 @@ export class NutritionRefreshService {
     try {
       console.log('🔄 Triggering nutrition data refresh...');
 
-      // Execute all refresh callbacks in parallel
+      const errors: Error[] = [];
       await Promise.all(
         this.refreshCallbacks.map(async (callback) => {
           try {
             await callback();
           } catch (error) {
-            console.warn('Warning: Failed to execute nutrition refresh callback:', error);
+            const err = error instanceof Error ? error : new Error(String(error));
+            console.error('❌ Failed to execute nutrition refresh callback:', err.message);
+            errors.push(err);
           }
         })
       );
+
+      if (errors.length > 0) {
+        console.error(`❌ ${errors.length}/${this.refreshCallbacks.length} nutrition refresh callbacks failed`);
+      }
 
       console.log('✅ Nutrition data refresh completed');
     } catch (error) {

@@ -161,7 +161,6 @@ export async function clearAllStorageData(): Promise<void> {
     await AsyncStorage.removeItem(WORKOUT_SESSIONS_KEY);
     await AsyncStorage.removeItem(MEAL_LOGS_KEY);
     await AsyncStorage.removeItem(BODY_MEASUREMENTS_KEY);
-    console.log("[DataBridge] All storage data cleared");
   } catch (error) {
     console.error("[DataBridge] clearAllStorageData error:", error);
   }

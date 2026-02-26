@@ -154,10 +154,6 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
           {validationResult && (
             <ValidationSummary
               validationResult={validationResult}
-              formData={formData}
-              onUpdate={onUpdate}
-              showCustomCountry={showCustomCountry}
-              customCountry={customCountry}
             />
           )}
         </ScrollView>
@@ -295,6 +291,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     minWidth: 100,
+    minHeight: 52,
   },
   backButtonText: {
     fontSize: ResponsiveTheme.fontSize.md,
@@ -311,6 +308,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     borderRadius: ResponsiveTheme.borderRadius.xl,
     backgroundColor: ResponsiveTheme.colors.primary,
+    minHeight: 52,
     shadowColor: ResponsiveTheme.colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,

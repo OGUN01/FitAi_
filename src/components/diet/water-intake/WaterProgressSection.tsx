@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rp } from "../../../utils/responsive";
+import { rf, rp, rbr } from "../../../utils/responsive";
 
 interface WaterProgressSectionProps {
   currentLiters: number;
@@ -23,15 +23,15 @@ export const WaterProgressSection: React.FC<WaterProgressSectionProps> = ({
       <View style={styles.progressInfo}>
         <Text style={styles.progressLabel}>Today's Progress</Text>
         <Text style={styles.progressValue}>
-          {currentLiters.toFixed(1)}L / {goalLiters.toFixed(1)}L
+          {currentLiters.toFixed(2)}L / {goalLiters.toFixed(2)}L
         </Text>
       </View>
       <View style={styles.progressBar}>
         <LinearGradient
           colors={
             isGoalReached
-              ? ["#10b981", "#059669"]
-              : [ResponsiveTheme.colors.primary, "#FF8A5C"]
+              ? [ResponsiveTheme.colors.successAlt, ResponsiveTheme.colors.successAltDark]
+              : [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]
           }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
@@ -40,7 +40,7 @@ export const WaterProgressSection: React.FC<WaterProgressSectionProps> = ({
       </View>
       {isGoalReached && (
         <View style={styles.goalReachedBadge}>
-          <Ionicons name="checkmark-circle" size={16} color="#10b981" />
+          <Ionicons name="checkmark-circle" size={16} color={ResponsiveTheme.colors.successAlt} />
           <Text style={styles.goalReachedText}>Daily goal achieved!</Text>
         </View>
       )}
@@ -65,17 +65,17 @@ const styles = StyleSheet.create({
   progressValue: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
   progressBar: {
     height: rp(8),
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderRadius: rp(4),
+    backgroundColor: ResponsiveTheme.colors.glassHighlight,
+    borderRadius: rbr(4),
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    borderRadius: rp(4),
+    borderRadius: rbr(4),
   },
   goalReachedBadge: {
     flexDirection: "row",
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   },
   goalReachedText: {
     fontSize: rf(13),
-    color: "#10b981",
+    color: ResponsiveTheme.colors.successAlt,
     fontWeight: "500",
   },
 });

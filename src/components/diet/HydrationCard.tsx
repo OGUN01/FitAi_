@@ -144,11 +144,11 @@ export const HydrationCard: React.FC<HydrationCardProps> = ({
             <View style={styles.statsContainer}>
               <View style={styles.mainStat}>
                 <Text style={styles.intakeValue}>
-                  {(currentIntake / 1000).toFixed(1)}
+                  {(currentIntake / 1000).toFixed(2)}
                   <Text style={styles.intakeUnit}>L</Text>
                 </Text>
                 <Text style={styles.goalText}>
-                  of {(dailyGoal / 1000).toFixed(1)}L goal
+                  of {(dailyGoal / 1000).toFixed(2)}L goal
                 </Text>
               </View>
 

@@ -72,7 +72,6 @@ export async function createSampleProfileData(
       state: "CA",
     };
     await savePersonalInfoFn(samplePersonalInfo);
-    console.log("[DataBridge] Sample profile data created");
     return true;
   } catch (error) {
     console.error("[DataBridge] createSampleProfileData error:", error);

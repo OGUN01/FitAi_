@@ -32,7 +32,6 @@ class GoogleAuthService {
 
   async signInWithGoogle(): Promise<GoogleSignInResult> {
     try {
-      console.log("🔐 Starting Google Sign-In process...");
 
       await this.configure();
 
@@ -59,7 +58,6 @@ class GoogleAuthService {
       if (Platform.OS !== "web") {
         await signOutGoogleNative();
       }
-      console.log("✅ Google Sign-Out successful");
     } catch (error) {
       console.error("❌ Google Sign-Out failed:", error);
     }

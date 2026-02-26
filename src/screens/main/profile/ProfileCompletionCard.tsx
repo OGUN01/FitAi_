@@ -17,7 +17,7 @@ import Svg, { Circle } from "react-native-svg";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh } from "../../../utils/responsive";
+import { rf, rp, rbr, rw, rh } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 
 interface ProfileSection {
@@ -99,11 +99,11 @@ export const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
   };
 
   const getColor = () => {
-    if (percentage === 100) return "#4CAF50";
-    if (percentage >= 75) return "#8BC34A";
-    if (percentage >= 50) return "#FFC107";
-    if (percentage >= 25) return "#FF9800";
-    return "#FF6B6B";
+    if (percentage === 100) return ResponsiveTheme.colors.success;
+    if (percentage >= 75) return ResponsiveTheme.colors.successLight;
+    if (percentage >= 50) return ResponsiveTheme.colors.amber;
+    if (percentage >= 25) return ResponsiveTheme.colors.warning;
+    return ResponsiveTheme.colors.errorLight;
   };
 
   const incompleteSections = sections.filter((s) => !s.isComplete);
@@ -251,8 +251,8 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: "#fff",
-    marginBottom: 4,
+    color: ResponsiveTheme.colors.white,
+    marginBottom: rp(4),
   },
   message: {
     fontSize: rf(12),
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: rh(2),
     overflow: "hidden",
-    marginBottom: 4,
+    marginBottom: rp(4),
   },
   completionProgress: {
     height: "100%",
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: rf(11),
     fontWeight: "500",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
 });
 

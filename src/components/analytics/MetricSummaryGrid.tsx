@@ -101,10 +101,10 @@ const StreakRing: React.FC<{ days: number; maxDays?: number }> = ({
 
   // Get color based on streak length
   const getStreakColor = () => {
-    if (days >= 30) return ["#FFD700", "#FFA500"]; // Gold for 30+
-    if (days >= 14) return ["#FF6B6B", "#FF8E53"]; // Red-orange for 14+
-    if (days >= 7) return ["#4CAF50", "#8BC34A"]; // Green for 7+
-    return ["#FF6B35", "#FF8A5C"]; // Aurora primary for starting
+    if (days >= 30) return [ResponsiveTheme.colors.gold, "#FFA500"]; // Gold for 30+
+    if (days >= 14) return [ResponsiveTheme.colors.errorLight, "#FF8E53"]; // Red-orange for 14+
+    if (days >= 7) return [ResponsiveTheme.colors.success, ResponsiveTheme.colors.successLight]; // Green for 7+
+    return [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.accent]; // Aurora primary for starting
   };
 
   const gradientColors = getStreakColor();
@@ -192,16 +192,16 @@ const MetricCard: React.FC<{
     // For weight, down is good. For others, up is good.
     if (title.toLowerCase().includes("weight")) {
       return trend === "down"
-        ? "#4CAF50"
+        ? ResponsiveTheme.colors.success
         : trend === "up"
-          ? "#F44336"
-          : "#9E9E9E";
+          ? ResponsiveTheme.colors.error
+          : ResponsiveTheme.colors.neutral;
     }
     return trend === "up"
-      ? "#4CAF50"
+      ? ResponsiveTheme.colors.success
       : trend === "down"
-        ? "#F44336"
-        : "#9E9E9E";
+        ? ResponsiveTheme.colors.error
+        : ResponsiveTheme.colors.neutral;
   };
 
   return (
@@ -307,7 +307,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
       <SectionHeader
         title="This Period"
         icon="stats-chart"
-        iconColor="#FF6B35"
+        iconColor={ResponsiveTheme.colors.primary}
       />
 
       {/* Row 1: Weight + Calories */}
@@ -316,7 +316,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           title="Weight"
           value={formatWeight(data.weight?.current)}
           icon="scale-outline"
-          color="#FF6B35"
+          color={ResponsiveTheme.colors.primary}
           trend={hasWeightHistory ? data.weight?.trend : undefined}
           trendValue={
             hasWeightHistory && data.weight?.change
@@ -331,7 +331,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           title="Calories"
           value={formatCalories(data.calories?.burned)}
           icon="flame-outline"
-          color="#FF9800"
+          color={ResponsiveTheme.colors.warning}
           trend={hasCaloriesData ? data.calories?.trend : undefined}
           trendValue={
             hasCaloriesData && data.calories?.change
@@ -350,7 +350,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           value={data.workouts?.count?.toString() ?? "--"}
           subtitle={`this ${period}`}
           icon="barbell-outline"
-          color="#2196F3"
+          color={ResponsiveTheme.colors.info}
           trend={hasWorkoutsData ? data.workouts?.trend : undefined}
           trendValue={
             hasWorkoutsData && data.workouts?.change
@@ -365,7 +365,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           title="Day Streak"
           value=""
           icon="flame"
-          color="#FF6B6B"
+          color={ResponsiveTheme.colors.errorLight}
           delay={300}
           onPress={() => onMetricPress?.("streak")}
         >

@@ -8,6 +8,7 @@ import {
   createJSONStorage,
 } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { safeAsyncStorage } from "../utils/safeAsyncStorage";
 import razorpayService from "../services/RazorpayService";
 
 // ============================================================================
@@ -85,15 +86,7 @@ const FREE_FEATURES: FeatureLimits = {
   coaching: false,
 };
 
-const EMPTY_USAGE: UsageSummary = {
-  ai_generation: {
-    daily: { current: 0, limit: null, remaining: null },
-    monthly: { current: 0, limit: null, remaining: null },
-  },
-  barcode_scan: {
-    daily: { current: 0, limit: null, remaining: null },
-  },
-};
+const EMPTY_USAGE: UsageSummary = deriveUsageFromFeatures(FREE_FEATURES);
 
 // ============================================================================
 // Store interface
@@ -250,7 +243,10 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           if (featureKey === "ai_generation") {
             if (features.unlimited_ai) return true;
             const dailyRemaining = usage.ai_generation.daily.remaining;
-            return dailyRemaining === null || dailyRemaining > 0;
+            const monthlyRemaining = usage.ai_generation.monthly.remaining;
+            const dailyOk = dailyRemaining === null || dailyRemaining > 0;
+            const monthlyOk = monthlyRemaining === null || monthlyRemaining > 0;
+            return dailyOk && monthlyOk;
           }
 
           if (featureKey === "barcode_scan") {
@@ -270,19 +266,20 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             usage: EMPTY_USAGE,
             currentPeriodEnd: null,
             isInitialized: false,
+            isLoading: false,
           });
         },
       }),
       {
         name: "subscription-storage",
-        storage: createJSONStorage(() => AsyncStorage),
+        storage: createJSONStorage(() => safeAsyncStorage),
         partialize: (state) => ({
           currentPlan: state.currentPlan,
           subscriptionStatus: state.subscriptionStatus,
           features: state.features,
           usage: state.usage,
           currentPeriodEnd: state.currentPeriodEnd,
-          isInitialized: state.isInitialized,
+          // isInitialized intentionally excluded — must always start false on app restart
         }),
       },
     ),

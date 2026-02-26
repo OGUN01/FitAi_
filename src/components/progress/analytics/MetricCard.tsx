@@ -1,6 +1,8 @@
-import React from "react";
+﻿import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { THEME } from "../../ui";
+import { ResponsiveTheme } from '../../../utils/constants';
+import { rh, rbr } from "../../../utils/responsive";
+
 
 interface MetricCardProps {
   icon: string;
@@ -74,52 +76,52 @@ export const MetricCard: React.FC<MetricCardProps> = ({
 
 const styles = StyleSheet.create({
   metricCard: {
-    backgroundColor: THEME.colors.backgroundSecondary,
-    padding: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.md,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    padding: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
   metricHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   metricIcon: {
-    fontSize: 24,
-    marginRight: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    marginRight: ResponsiveTheme.spacing.sm,
   },
   metricValue: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
   },
   metricLabel: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   changeContainer: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   changeText: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
   goalProgress: {
-    marginTop: THEME.spacing.sm,
+    marginTop: ResponsiveTheme.spacing.sm,
   },
   goalText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textMuted,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textMuted,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   progressBar: {
-    height: 4,
-    backgroundColor: THEME.colors.backgroundTertiary,
-    borderRadius: 2,
+    height: rh(4),
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: rbr(2),
   },
   progressFill: {
     height: "100%",
-    backgroundColor: THEME.colors.primary,
-    borderRadius: 2,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderRadius: rbr(2),
   },
 });

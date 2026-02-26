@@ -7,6 +7,7 @@ import {
   borderRadius,
 } from "../../../theme/aurora-tokens";
 import { DayMeal } from "../../../types/ai";
+import { rp } from "../../../utils/responsive";
 
 interface MealTagsProps {
   meal: DayMeal;
@@ -56,7 +57,7 @@ const styles = StyleSheet.create({
   tagChip: {
     backgroundColor: colors.glass.background,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: rp(4),
     borderRadius: borderRadius.full,
     borderWidth: 1,
     borderColor: colors.glass.border,

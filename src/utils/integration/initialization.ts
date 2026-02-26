@@ -8,19 +8,15 @@ export const initializeBackend = async () => {
       const { dataBridge } = await import("../../services/DataBridge");
       await dataBridge.initialize();
     } catch (dmErr) {
-      console.warn("Data Manager initialization warning:", dmErr);
     }
 
     try {
       const { crudOperations } = await import("../../services/crudOperations");
       await crudOperations.initialize();
     } catch (crudErr) {
-      console.warn("CRUD Operations initialization warning:", crudErr);
     }
 
-    console.log("Backend initialized successfully");
   } catch (error) {
-    console.warn("Failed to initialize backend:", error);
   }
 };
 

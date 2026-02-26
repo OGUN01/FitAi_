@@ -3,11 +3,12 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Dimensions,
-} from "react-native";
-import { Card, THEME } from "../ui";
+  } from "react-native";
+import { Card } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rh, rbr } from "../../utils/responsive";
 import { useProgressData } from "../../hooks/useProgressData";
 
 const { width } = Dimensions.get("window");
@@ -51,9 +52,9 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
   ] as const;
 
   const getProgressColor = (change: number) => {
-    if (change > 0) return THEME.colors.success;
-    if (change < 0) return THEME.colors.warning;
-    return THEME.colors.textSecondary;
+    if (change > 0) return ResponsiveTheme.colors.success;
+    if (change < 0) return ResponsiveTheme.colors.warning;
+    return ResponsiveTheme.colors.textSecondary;
   };
 
   const getProgressIcon = (change: number) => {
@@ -121,7 +122,7 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <View>
         {/* Main Progress Metrics */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Key Metrics</Text>
@@ -131,7 +132,7 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
               <View style={styles.metricHeader}>
                 <Text style={styles.metricIcon}>⚖️</Text>
                 <Text style={styles.metricValue}>
-                  {progressStats.weightChange.current.toFixed(1)}kg
+                  {(progressStats?.weightChange?.current ?? 0).toFixed(1)}kg
                 </Text>
               </View>
               <Text style={styles.metricLabel}>Weight</Text>
@@ -174,7 +175,7 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
               <View style={styles.metricHeader}>
                 <Text style={styles.metricIcon}>📊</Text>
                 <Text style={styles.metricValue}>
-                  {progressStats.bodyFatChange.current.toFixed(1)}%
+                  {(progressStats?.bodyFatChange?.current ?? 0).toFixed(1)}%
                 </Text>
               </View>
               <Text style={styles.metricLabel}>Body Fat</Text>
@@ -217,7 +218,7 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
               <View style={styles.metricHeader}>
                 <Text style={styles.metricIcon}>💪</Text>
                 <Text style={styles.metricValue}>
-                  {progressStats.muscleChange.current.toFixed(1)}kg
+                  {(progressStats?.muscleChange?.current ?? 0).toFixed(1)}kg
                 </Text>
               </View>
               <Text style={styles.metricLabel}>Muscle Mass</Text>
@@ -349,33 +350,33 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
             )}
           </View>
         </View>
-      </ScrollView>
+      </View>
     </Card>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: THEME.spacing.lg,
-    margin: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.lg,
+    margin: ResponsiveTheme.spacing.md,
   },
 
   header: {
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   title: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   timeRangeSelector: {
     flexDirection: "row",
-    backgroundColor: THEME.colors.backgroundSecondary,
-    borderRadius: THEME.borderRadius.md,
-    padding: 4,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    padding: rp(4),
   },
 
   timeRangeButton: {
@@ -383,116 +384,116 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.sm,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
   },
 
   timeRangeButtonActive: {
-    backgroundColor: THEME.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary,
   },
 
   timeRangeIcon: {
-    fontSize: 16,
-    marginRight: THEME.spacing.xs,
+    fontSize: rf(16),
+    marginRight: ResponsiveTheme.spacing.xs,
   },
 
   timeRangeLabel: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   timeRangeLabelActive: {
-    color: THEME.colors.white,
+    color: ResponsiveTheme.colors.white,
   },
 
   section: {
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   sectionTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   metricsGrid: {
-    gap: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
   },
 
   metricCard: {
-    backgroundColor: THEME.colors.backgroundSecondary,
-    padding: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.md,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    padding: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
   metricHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   metricIcon: {
-    fontSize: 24,
-    marginRight: THEME.spacing.sm,
+    fontSize: rf(24),
+    marginRight: ResponsiveTheme.spacing.sm,
   },
 
   metricValue: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
   },
 
   metricLabel: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   changeContainer: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   changeText: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   goalProgress: {
-    marginTop: THEME.spacing.sm,
+    marginTop: ResponsiveTheme.spacing.sm,
   },
 
   goalText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textMuted,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   progressBar: {
-    height: 4,
-    backgroundColor: THEME.colors.backgroundTertiary,
-    borderRadius: 2,
+    height: rh(4),
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: rbr(2),
   },
 
   progressFill: {
     height: "100%",
-    backgroundColor: THEME.colors.primary,
-    borderRadius: 2,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderRadius: rbr(2),
   },
 
   measurementsContainer: {
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   measurementItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: THEME.colors.backgroundSecondary,
-    padding: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.md,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    padding: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
   measurementHeader: {
@@ -500,63 +501,63 @@ const styles = StyleSheet.create({
   },
 
   measurementName: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.text,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   measurementValue: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   measurementChange: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   summaryContainer: {
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   summaryText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    backgroundColor: THEME.colors.backgroundSecondary,
-    padding: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.md,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    padding: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
   insightsContainer: {
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   insightText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    lineHeight: 20,
-    backgroundColor: THEME.colors.backgroundSecondary,
-    padding: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.md,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(20),
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    padding: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
   loadingText: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
-    paddingVertical: THEME.spacing.xl,
+    paddingVertical: ResponsiveTheme.spacing.xl,
   },
 
   emptyText: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   emptySubtext: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textMuted,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textMuted,
     textAlign: "center",
   },
 });

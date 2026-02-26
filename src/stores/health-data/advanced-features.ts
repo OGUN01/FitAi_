@@ -16,7 +16,6 @@ export const createAdvancedFeatures = (
 ) => ({
   getHeartRateZones: async (age: number): Promise<HeartRateZones> => {
     try {
-      console.log("❤️ Calculating heart rate zones...");
       const { metrics, isHealthKitAuthorized, isHealthConnectAuthorized } =
         get();
 
@@ -34,13 +33,6 @@ export const createAdvancedFeatures = (
         : hasHealthData
           ? "Age-based Tanaka formula (no resting HR data yet)"
           : "Age-based Tanaka formula (connect health app for personalized zones)";
-
-      console.log(
-        `📊 Heart rate zone calculation method: ${calculationMethod}`,
-      );
-      console.log(
-        `   Max HR: ${maxHR} bpm, Resting HR: ${restingHR || "not available"}`,
-      );
 
       const calculateZone = (
         minPct: number,
@@ -137,7 +129,6 @@ export const createAdvancedFeatures = (
 
   getSleepRecommendations: async (): Promise<SleepRecommendations> => {
     try {
-      console.log("😴 Getting sleep-based workout recommendations...");
 
       const { isHealthKitAuthorized, settings } = get();
 
@@ -149,9 +140,6 @@ export const createAdvancedFeatures = (
           recommendations.sleepQuality !== null &&
           recommendations.sleepDuration !== null
         ) {
-          console.log(
-            `✅ Got sleep recommendations from HealthKit: ${recommendations.sleepQuality} quality, ${recommendations.sleepDuration}h`,
-          );
           return {
             sleepQuality: recommendations.sleepQuality,
             sleepDuration: recommendations.sleepDuration,
@@ -193,9 +181,6 @@ export const createAdvancedFeatures = (
                 ? "normal"
                 : "longer";
 
-          console.log(
-            `✅ Got sleep recommendations from Health Connect: ${sleepQuality} quality, ${metrics.sleepHours}h`,
-          );
           return {
             sleepQuality,
             sleepDuration: metrics.sleepHours,
@@ -212,7 +197,6 @@ export const createAdvancedFeatures = (
         }
       }
 
-      console.log("ℹ️ No sleep data available from health sources");
       return {
         sleepQuality: null,
         sleepDuration: null,
@@ -232,7 +216,6 @@ export const createAdvancedFeatures = (
     baseCalories: number,
   ): Promise<ActivityAdjustedCalories> => {
     try {
-      console.log("🔥 Getting activity-adjusted calories...");
 
       const {
         isHealthKitAuthorized,
@@ -250,9 +233,6 @@ export const createAdvancedFeatures = (
           result.activityMultiplier !== 1.0 ||
           result.breakdown.activeEnergy > 0
         ) {
-          console.log(
-            `✅ Got activity-adjusted calories from HealthKit: ${result.adjustedCalories} (${result.activityMultiplier}x)`,
-          );
           return result;
         }
       }
@@ -271,10 +251,6 @@ export const createAdvancedFeatures = (
         const stepBonus = Math.floor(steps / 1000) * 20;
         const exerciseBonus = Math.round(activeEnergy * 0.1);
         const adjustedCalories = Math.round(baseCalories * activityMultiplier);
-
-        console.log(
-          `✅ Got activity-adjusted calories from Health Connect: ${adjustedCalories} (${activityMultiplier}x)`,
-        );
 
         const recommendations: string[] = [];
         if (activityMultiplier < 1.0) {
@@ -319,7 +295,6 @@ export const createAdvancedFeatures = (
         };
       }
 
-      console.log("ℹ️ No activity data available - using base calories");
       return {
         adjustedCalories: baseCalories,
         activityMultiplier: 1.0,

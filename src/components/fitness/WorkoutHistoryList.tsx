@@ -10,16 +10,16 @@ import {
   StyleSheet,
   Animated,
   PanResponder,
-  Alert,
 } from "react-native";
 import AnimatedRN, { FadeInDown, FadeInRight } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 interface CompletedWorkout {
   id: string;
   workoutId: string;
@@ -112,7 +112,7 @@ const WorkoutHistoryCard: React.FC<{
   const handleDelete = useCallback(() => {
     haptics.medium();
     closeSwipe();
-    Alert.alert(
+    crossPlatformAlert(
       "Delete Workout",
       `Are you sure you want to delete "${workout.title}"?`,
       [
@@ -169,7 +169,7 @@ const WorkoutHistoryCard: React.FC<{
           style={styles.actionButton}
         >
           <View style={[styles.actionContent, styles.repeatAction]}>
-            <Ionicons name="repeat" size={rf(20)} color="#fff" />
+    color: ResponsiveTheme.colors.white,
             <Text style={styles.actionText}>Repeat</Text>
           </View>
         </AnimatedPressable>
@@ -181,7 +181,7 @@ const WorkoutHistoryCard: React.FC<{
           style={styles.actionButton}
         >
           <View style={[styles.actionContent, styles.deleteAction]}>
-            <Ionicons name="trash-outline" size={rf(20)} color="#fff" />
+            <Ionicons name="trash-outline" size={rf(20)} color={ResponsiveTheme.colors.white} />
             <Text style={styles.actionText}>Delete</Text>
           </View>
         </AnimatedPressable>
@@ -219,7 +219,7 @@ const WorkoutHistoryCard: React.FC<{
                 <Ionicons
                   name={getCategoryIcon()}
                   size={rf(20)}
-                  color={isCompleted ? "#10b981" : "#FF6B6B"}
+                  color={isCompleted ? ResponsiveTheme.colors.successAlt : ResponsiveTheme.colors.errorLight}
                 />
               </View>
 
@@ -243,7 +243,7 @@ const WorkoutHistoryCard: React.FC<{
                     <Ionicons
                       name="checkmark-circle"
                       size={rf(18)}
-                      color="#10b981"
+                      color={ResponsiveTheme.colors.successAlt}
                     />
                   </View>
                 ) : (
@@ -367,18 +367,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: ResponsiveTheme.borderRadius.md,
-    gap: 4,
+    gap: rp(4),
   },
   repeatAction: {
-    backgroundColor: "#10b981",
+    backgroundColor: ResponsiveTheme.colors.successAlt,
   },
   deleteAction: {
-    backgroundColor: "#ef4444",
+    backgroundColor: ResponsiveTheme.colors.errorAlt,
   },
   actionText: {
     fontSize: rf(9),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
   cardContainer: {
     backgroundColor: ResponsiveTheme.colors.background,
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
   date: {
     fontSize: rf(10),
     color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: 2,
+    marginBottom: rp(2),
   },
   title: {
     fontSize: rf(14),
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
   meta: {
     fontSize: rf(11),
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: rp(2),
   },
   statusContainer: {
     alignItems: "flex-end",
@@ -424,13 +424,13 @@ const styles = StyleSheet.create({
   progressBadge: {
     backgroundColor: "rgba(255, 142, 83, 0.15)",
     paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: rp(4),
     borderRadius: ResponsiveTheme.borderRadius.full,
   },
   progressText: {
     fontSize: rf(11),
     fontWeight: "700",
-    color: "#FF8E53",
+    color: ResponsiveTheme.colors.accent,
   },
   emptyState: {
     alignItems: "center",

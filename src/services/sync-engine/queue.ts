@@ -12,6 +12,7 @@ import { generateOperationId, sleep } from "./utils";
 export class QueueManager {
   private queue: SyncOperation[] = [];
   private isSyncing: boolean = false;
+  private rulesRegistered: boolean = false;
 
   private executeOperation?: (operation: SyncOperation) => Promise<void>;
 
@@ -27,8 +28,7 @@ export class QueueManager {
     isOnline: boolean,
   ): Promise<void> {
     if (!userId) {
-      console.warn("[SyncEngine] Cannot queue operation: No user ID");
-      return;
+      throw new Error("[SyncEngine] Cannot queue operation: No user ID provided");
     }
 
     const operation: SyncOperation = {
@@ -40,8 +40,6 @@ export class QueueManager {
       userId,
       status: "pending",
     };
-
-    console.log(`[SyncEngine] Queueing operation: ${type}`);
 
     this.queue.push(operation);
     await this.saveQueue();
@@ -66,7 +64,6 @@ export class QueueManager {
     setLastSyncAt: (timestamp: string) => Promise<void>,
   ): Promise<SyncResult> {
     if (this.isSyncing) {
-      console.log("[SyncEngine] Already syncing, skipping...");
       return {
         success: false,
         syncedItems: 0,
@@ -76,7 +73,6 @@ export class QueueManager {
     }
 
     if (!isOnline) {
-      console.log("[SyncEngine] Offline, cannot process queue");
       return {
         success: false,
         syncedItems: 0,
@@ -86,14 +82,10 @@ export class QueueManager {
     }
 
     if (this.queue.length === 0) {
-      console.log("[SyncEngine] Queue is empty");
       return { success: true, syncedItems: 0, failedItems: 0, errors: [] };
     }
 
     this.isSyncing = true;
-    console.log(
-      `[SyncEngine] Processing queue (${this.queue.length} operations)...`,
-    );
 
     const result: SyncResult = {
       success: true,
@@ -115,7 +107,6 @@ export class QueueManager {
         await this.executeOperationWithConflictResolution(operation);
         completedIds.push(operation.id);
         result.syncedItems++;
-        console.log(`[SyncEngine] Operation completed: ${operation.type}`);
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
@@ -132,9 +123,6 @@ export class QueueManager {
           );
         } else {
           operation.status = "pending";
-          console.warn(
-            `[SyncEngine] Operation failed, will retry (${operation.retryCount}/${MAX_RETRIES}): ${operation.type}`,
-          );
         }
       }
     }
@@ -147,9 +135,6 @@ export class QueueManager {
     this.isSyncing = false;
     result.success = result.failedItems === 0;
 
-    console.log(
-      `[SyncEngine] Queue processing complete. Synced: ${result.syncedItems}, Failed: ${result.failedItems}`,
-    );
     return result;
   }
 
@@ -160,7 +145,6 @@ export class QueueManager {
 
     if (retryCount > 0) {
       const delay = BASE_DELAY_MS * Math.pow(2, retryCount - 1);
-      console.log(`[SyncEngine] Waiting ${delay}ms before retry...`);
       await sleep(delay);
     }
 
@@ -191,22 +175,20 @@ export class QueueManager {
         );
 
         if (conflicts.length > 0) {
-          console.log(
-            `[SyncEngine] Detected ${conflicts.length} conflicts for ${type}, resolving with last-write-wins...`,
-          );
 
-          conflictResolutionService.registerResolutionRule(
-            ".*",
-            () => "use_latest_timestamp",
-          );
+          // Register rule only once to prevent indefinite accumulation
+          if (!this.rulesRegistered) {
+            conflictResolutionService.registerResolutionRule(
+              ".*",
+              () => "use_latest_timestamp",
+            );
+            this.rulesRegistered = true;
+          }
 
           const resolution =
             await conflictResolutionService.resolveConflicts(conflicts);
 
           if (resolution.unresolvedConflicts.length > 0) {
-            console.warn(
-              `[SyncEngine] ${resolution.unresolvedConflicts.length} conflicts could not be auto-resolved for ${type}`,
-            );
           }
 
           resolvedData = {
@@ -215,18 +197,9 @@ export class QueueManager {
             updated_at: new Date().toISOString(),
           };
 
-          console.log(
-            `[SyncEngine] Resolved ${resolution.summary.autoResolved} conflicts automatically`,
-          );
         }
       }
     } catch (conflictError) {
-      console.warn(
-        `[SyncEngine] Conflict detection failed for ${type}, proceeding with original data:`,
-        conflictError instanceof Error
-          ? conflictError.message
-          : "Unknown error",
-      );
     }
 
     if (this.executeOperation) {
@@ -254,10 +227,6 @@ export class QueueManager {
       .single();
 
     if (error && error.code !== "PGRST116") {
-      console.warn(
-        `[SyncEngine] Failed to fetch remote data for ${type}:`,
-        error.message,
-      );
     }
 
     const updatedAt = data?.updated_at ? new Date(data.updated_at) : null;
@@ -269,13 +238,16 @@ export class QueueManager {
       const queueJson = await AsyncStorage.getItem(QUEUE_STORAGE_KEY);
       if (queueJson) {
         this.queue = JSON.parse(queueJson);
-        console.log(
-          `[SyncEngine] Loaded ${this.queue.length} operations from storage`,
-        );
       }
     } catch (error) {
       console.error("[SyncEngine] Failed to load queue:", error);
       this.queue = [];
+      // Clear corrupted data from storage to prevent repeated parse failures on restart
+      try {
+        await AsyncStorage.removeItem(QUEUE_STORAGE_KEY);
+      } catch (clearError) {
+        console.error("[SyncEngine] Failed to clear corrupted queue data:", clearError);
+      }
     }
   }
 

@@ -5,7 +5,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { debounce } from "../../utils/performance";
 import { useAuth } from "../../hooks/useAuth";
 import { useUserStore } from "../../stores/userStore";
@@ -100,14 +100,6 @@ export const EditProvider: React.FC<EditProviderProps> = ({
           sectionData = createDefaultSectionData(section, user, profile);
         }
 
-        console.log(
-          `📝 EditContext: Setting up edit mode for ${section} with data:`,
-          {
-            hasData: !!sectionData,
-            dataKeys: sectionData ? Object.keys(sectionData) : [],
-            sectionData: sectionData,
-          },
-        );
 
         setEditSection(section as EditContextData["editSection"]);
         setOriginalData(sectionData);
@@ -117,10 +109,9 @@ export const EditProvider: React.FC<EditProviderProps> = ({
         setValidationErrors([]);
         setShowOverlay(true);
 
-        console.log("✅ EditContext: Edit mode setup complete");
       } catch (error) {
         console.error("Failed to start edit:", error);
-        Alert.alert("Error", "Failed to load data for editing");
+        crossPlatformAlert("Error", "Failed to load data for editing");
       } finally {
         setIsLoading(false);
       }
@@ -151,7 +142,7 @@ export const EditProvider: React.FC<EditProviderProps> = ({
 
   const saveChanges = useCallback(async (): Promise<boolean> => {
     if (!editSection || !currentData) {
-      Alert.alert("Error", "No data to save");
+      crossPlatformAlert("Error", "No data to save");
       return false;
     }
 
@@ -160,7 +151,7 @@ export const EditProvider: React.FC<EditProviderProps> = ({
 
       const validationResult = validateData(currentData);
       if (!validationResult.isValid && validationResult.errors.length > 0) {
-        Alert.alert(
+        crossPlatformAlert(
           "Validation Error",
           `Please fix the following errors:\n\n• ${validationResult.errors.slice(0, 3).join("\n• ")}`,
         );
@@ -172,10 +163,6 @@ export const EditProvider: React.FC<EditProviderProps> = ({
 
       switch (editSection) {
         case "personalInfo":
-          console.log(
-            "✅ EditContext: Saving PersonalInfo (matches database schema):",
-            currentData,
-          );
           saveResult = await savePersonalInfo(currentData);
           break;
         case "fitnessGoals":
@@ -218,9 +205,6 @@ export const EditProvider: React.FC<EditProviderProps> = ({
               updateProfileWorkoutPreferences(currentData as Partial<WorkoutPreferencesData>);
               break;
           }
-          console.log(
-            `✅ EditContext: Updated ${editSection} in profileStore for guest user`,
-          );
         }
 
         setIsEditMode(false);
@@ -233,7 +217,7 @@ export const EditProvider: React.FC<EditProviderProps> = ({
 
         onEditComplete?.();
 
-        Alert.alert("Success", "Your changes have been saved successfully!");
+        crossPlatformAlert("Success", "Your changes have been saved successfully!");
         return true;
       } else {
         const errorMessage = saveResult.error || "Failed to save data";
@@ -241,7 +225,7 @@ export const EditProvider: React.FC<EditProviderProps> = ({
       }
     } catch (error) {
       console.error("Failed to save changes:", error);
-      Alert.alert("Error", "Failed to save changes. Please try again.");
+      crossPlatformAlert("Error", "Failed to save changes. Please try again.");
       return false;
     } finally {
       setIsSaving(false);
@@ -263,7 +247,7 @@ export const EditProvider: React.FC<EditProviderProps> = ({
 
   const cancelEdit = useCallback(() => {
     if (hasChanges) {
-      Alert.alert(
+      crossPlatformAlert(
         "Discard Changes?",
         "You have unsaved changes. Are you sure you want to discard them?",
         [

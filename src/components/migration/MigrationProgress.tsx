@@ -17,6 +17,8 @@ import {
   MigrationProgress as MigrationProgressType,
   MigrationResult,
 } from "../../services/migration";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr, rs, rh, rw } from "../../utils/responsive";
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -203,7 +205,11 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
             ]}
           >
             <LinearGradient
-              colors={["#E55A2B", "#7C3AED", "#EC4899"]}
+              colors={[
+                ResponsiveTheme.colors.primaryDark,
+                "#7C3AED",
+                ResponsiveTheme.colors.pink,
+              ]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.progressGradient}
@@ -256,9 +262,13 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
               >
                 <Ionicons
                   name={isCompleted ? "checkmark" : (step.icon as any)}
-                  size={20}
+                  size={rs(20)}
                   color={
-                    isCompleted ? "#10B981" : isCurrent ? "#E55A2B" : "#6B7280"
+                    isCompleted
+                      ? ResponsiveTheme.colors.successAlt
+                      : isCurrent
+                        ? ResponsiveTheme.colors.primaryDark
+                        : ResponsiveTheme.colors.textTertiary
                   }
                 />
               </View>
@@ -307,7 +317,11 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
             },
           ]}
         >
-          <Ionicons name="checkmark-circle" size={32} color="#10B981" />
+          <Ionicons
+            name="checkmark-circle"
+            size={rs(32)}
+            color={ResponsiveTheme.colors.successAlt}
+          />
           <Text style={styles.statusTitle}>Migration Complete!</Text>
           <Text style={styles.statusMessage}>
             Your data has been successfully synced to the cloud.
@@ -328,7 +342,11 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
     if (result && !result.success) {
       return (
         <View style={[styles.statusContainer, styles.statusError]}>
-          <Ionicons name="alert-circle" size={32} color="#EF4444" />
+          <Ionicons
+            name="alert-circle"
+            size={rs(32)}
+            color={ResponsiveTheme.colors.errorAlt}
+          />
           <Text style={styles.statusTitle}>Migration Failed</Text>
           <Text style={styles.statusMessage}>
             {result.errors[0]?.message || "An error occurred during migration."}
@@ -394,7 +412,10 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
       <View style={styles.overlay}>
         <View style={styles.container}>
           <LinearGradient
-            colors={["#1F2937", "#111827"]}
+            colors={[
+              ResponsiveTheme.colors.backgroundSecondary,
+              ResponsiveTheme.colors.background,
+            ]}
             style={styles.gradient}
           >
             {renderStatusMessage()}
@@ -415,187 +436,184 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    backgroundColor: ResponsiveTheme.colors.overlayDark,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: rp(20),
   },
   container: {
     width: "100%",
-    maxWidth: 400,
-    borderRadius: 20,
+    maxWidth: rw(400),
+    borderRadius: rbr(20),
     overflow: "hidden",
     elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
+    boxShadow: '0px 10px 20px rgba(0,0,0,0.3)',
   },
   gradient: {
-    padding: 30,
+    padding: rp(30),
   },
   statusContainer: {
     alignItems: "center",
-    marginBottom: 30,
+    marginBottom: rp(30),
   },
   statusSuccess: {
-    backgroundColor: "rgba(16, 185, 129, 0.1)",
-    borderRadius: 15,
-    padding: 20,
+    backgroundColor: ResponsiveTheme.colors.successTint,
+    borderRadius: rbr(15),
+    padding: rp(20),
     borderWidth: 1,
     borderColor: "rgba(16, 185, 129, 0.3)",
   },
   statusError: {
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
-    borderRadius: 15,
-    padding: 20,
+    backgroundColor: ResponsiveTheme.colors.errorTint,
+    borderRadius: rbr(15),
+    padding: rp(20),
     borderWidth: 1,
     borderColor: "rgba(239, 68, 68, 0.3)",
   },
   statusTitle: {
-    fontSize: 24,
+    fontSize: rf(24),
     fontWeight: "bold",
-    color: "#FFFFFF",
-    marginTop: 10,
+    color: ResponsiveTheme.colors.white,
+    marginTop: rp(10),
     textAlign: "center",
   },
   statusMessage: {
-    fontSize: 16,
-    color: "#9CA3AF",
-    marginTop: 8,
+    fontSize: rf(16),
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: rp(8),
     textAlign: "center",
-    lineHeight: 22,
+    lineHeight: rf(22),
   },
   migrationStats: {
-    marginTop: 15,
-    padding: 10,
+    marginTop: rp(15),
+    padding: rp(10),
     backgroundColor: "rgba(79, 70, 229, 0.1)",
-    borderRadius: 10,
+    borderRadius: rbr(10),
     borderWidth: 1,
     borderColor: "rgba(79, 70, 229, 0.3)",
   },
   statsText: {
-    fontSize: 14,
-    color: "#A5B4FC",
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.info,
     textAlign: "center",
   },
   progressBarContainer: {
-    marginBottom: 30,
+    marginBottom: rp(30),
   },
   progressBarBackground: {
-    height: 8,
-    backgroundColor: "rgba(75, 85, 99, 0.3)",
-    borderRadius: 4,
+    height: rh(8),
+    backgroundColor: ResponsiveTheme.colors.glassBorder,
+    borderRadius: rbr(4),
     overflow: "hidden",
   },
   progressBarFill: {
     height: "100%",
-    borderRadius: 4,
+    borderRadius: rbr(4),
   },
   progressGradient: {
     flex: 1,
   },
   progressText: {
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: "bold",
-    color: "#FFFFFF",
+    color: ResponsiveTheme.colors.white,
     textAlign: "center",
-    marginTop: 10,
+    marginTop: rp(10),
   },
   stepsContainer: {
-    marginBottom: 30,
+    marginBottom: rp(30),
   },
   stepItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 15,
-    paddingHorizontal: 10,
+    marginBottom: rp(15),
+    paddingHorizontal: rp(10),
   },
   stepIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: rs(40),
+    height: rs(40),
+    borderRadius: rbr(20),
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 15,
+    marginRight: rp(15),
     borderWidth: 2,
   },
   stepIconCompleted: {
     backgroundColor: "rgba(16, 185, 129, 0.2)",
-    borderColor: "#10B981",
+    borderColor: ResponsiveTheme.colors.successAlt,
   },
   stepIconCurrent: {
     backgroundColor: "rgba(79, 70, 229, 0.2)",
-    borderColor: "#E55A2B",
+    borderColor: ResponsiveTheme.colors.primaryDark,
   },
   stepIconUpcoming: {
     backgroundColor: "rgba(107, 114, 128, 0.1)",
-    borderColor: "#6B7280",
+    borderColor: ResponsiveTheme.colors.textTertiary,
   },
   stepContent: {
     flex: 1,
   },
   stepTitle: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "600",
-    color: "#9CA3AF",
-    marginBottom: 2,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: rp(2),
   },
   stepTitleCompleted: {
-    color: "#10B981",
+    color: ResponsiveTheme.colors.successAlt,
   },
   stepTitleCurrent: {
-    color: "#FFFFFF",
+    color: ResponsiveTheme.colors.white,
   },
   stepDescription: {
-    fontSize: 14,
-    color: "#6B7280",
-    lineHeight: 18,
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.textTertiary,
+    lineHeight: rf(18),
   },
   stepDescriptionCurrent: {
-    color: "#9CA3AF",
+    color: ResponsiveTheme.colors.textSecondary,
   },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 15,
+    gap: rp(15),
   },
   completeButton: {
-    backgroundColor: "#10B981",
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 12,
+    backgroundColor: ResponsiveTheme.colors.successAlt,
+    paddingVertical: rp(15),
+    paddingHorizontal: rp(30),
+    borderRadius: rbr(12),
     alignItems: "center",
   },
   completeButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    color: ResponsiveTheme.colors.white,
+    fontSize: rf(16),
     fontWeight: "600",
   },
   retryButton: {
     flex: 1,
-    backgroundColor: "#E55A2B",
-    paddingVertical: 15,
-    borderRadius: 12,
+    backgroundColor: ResponsiveTheme.colors.primaryDark,
+    paddingVertical: rp(15),
+    borderRadius: rbr(12),
     alignItems: "center",
   },
   retryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    color: ResponsiveTheme.colors.white,
+    fontSize: rf(16),
     fontWeight: "600",
   },
   cancelButton: {
     flex: 1,
     backgroundColor: "rgba(239, 68, 68, 0.2)",
-    paddingVertical: 15,
-    borderRadius: 12,
+    paddingVertical: rp(15),
+    borderRadius: rbr(12),
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#EF4444",
+    borderColor: ResponsiveTheme.colors.errorAlt,
   },
   cancelButtonText: {
-    color: "#EF4444",
-    fontSize: 16,
+    color: ResponsiveTheme.colors.errorAlt,
+    fontSize: rf(16),
     fontWeight: "600",
   },
 });

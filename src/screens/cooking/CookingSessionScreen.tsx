@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
   Alert,
   StyleSheet,
-  SafeAreaView,
-} from "react-native";
+  } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { DayMeal } from "../../types/ai";
 import { completionTrackingService } from "../../services/completionTracking";
@@ -23,6 +23,7 @@ import CurrentStepDisplay from "../../components/cooking/CurrentStepDisplay";
 import StepsList from "../../components/cooking/StepsList";
 import NavigationButtons from "../../components/cooking/NavigationButtons";
 import { colors } from "../../theme/aurora-tokens";
+import { rf, rp } from "../../utils/responsive";
 
 interface CookingSessionScreenProps {
   route: {
@@ -53,7 +54,7 @@ export default function CookingSessionScreen({
     currentStepIndex,
     setCurrentStepIndex,
     completedSteps,
-    toggleStepCompletion,
+    markStepComplete,
     goToNextStep,
     goToPreviousStep,
     scrollViewRef,
@@ -68,7 +69,6 @@ export default function CookingSessionScreen({
     if (!cookingFlow) return;
 
     try {
-      console.log("🍽️ Marking meal as completed:", meal.name, "ID:", meal.id);
       const success = await completionTrackingService.completeMeal(meal.id, {
         completedAt: new Date().toISOString(),
         source: "cooking_session",
@@ -78,9 +78,7 @@ export default function CookingSessionScreen({
       });
 
       if (success) {
-        console.log("✅ Meal completion tracked successfully");
       } else {
-        console.warn("⚠️ Failed to track meal completion, but continuing...");
       }
     } catch (error) {
       console.error("❌ Error tracking meal completion:", error);
@@ -95,7 +93,6 @@ export default function CookingSessionScreen({
       {
         text: "Enjoy Your Meal! 🍽️",
         onPress: () => {
-          console.log("🔙 Navigating back to diet screen with completion flag");
           navigation.navigate("Diet", {
             mealCompleted: true,
             completedMealId: meal.id,
@@ -110,7 +107,7 @@ export default function CookingSessionScreen({
     if (!cookingFlow) return 0;
     const totalSteps = cookingFlow.steps.length;
     const completedStepsCount = completedSteps.size;
-    return Math.round((completedStepsCount / totalSteps) * 100);
+    return totalSteps > 0 ? Math.round((completedStepsCount / totalSteps) * 100) : 0;
   })();
 
   return (
@@ -118,8 +115,21 @@ export default function CookingSessionScreen({
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => {
-            haptics.light();
-            navigation.goBack();
+            Alert.alert(
+              "Leave Cooking Session?",
+              "Are you sure you want to exit? Your cooking progress will be lost.",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Leave",
+                  style: "destructive",
+                  onPress: () => {
+                    haptics.light();
+                    navigation.goBack();
+                  },
+                },
+              ],
+            );
           }}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
@@ -172,7 +182,7 @@ export default function CookingSessionScreen({
         currentStepIndex={currentStepIndex}
         completedSteps={completedSteps}
         onPrevious={goToPreviousStep}
-        onToggleComplete={() => toggleStepCompletion(currentStepIndex)}
+        onToggleComplete={() => markStepComplete(currentStepIndex)}
         onNext={goToNextStep}
         onFinish={completeCooking}
       />
@@ -183,10 +193,6 @@ export default function CookingSessionScreen({
         ingredientName={selectedIngredient || ""}
         meal={meal}
         onMealComplete={(mealId) => {
-          console.log(
-            "🍽️ CookingSessionScreen: Meal completed from ingredient modal:",
-            mealId,
-          );
           navigation.navigate("Diet", {
             mealCompleted: true,
             completedMealId: mealId,
@@ -207,23 +213,23 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: rp(20),
+    paddingVertical: rp(16),
     backgroundColor: colors.background.secondary,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255, 255, 255, 0.08)",
   },
   headerContent: {
     flex: 1,
-    marginLeft: 16,
+    marginLeft: rp(16),
   },
   mealName: {
-    fontSize: 20,
+    fontSize: rf(20),
     fontWeight: "700",
     color: colors.text.primary,
   },
   mealMeta: {
-    fontSize: 14,
+    fontSize: rf(14),
     color: colors.text.secondary,
     marginTop: 2,
   },

@@ -39,7 +39,7 @@ export const OnboardingModals: React.FC<OnboardingModalsProps> = ({
         stats={{
           goal: (workoutPreferences?.primary_goals || [])[0] || "Get Fit",
           workoutsPerWeek: workoutPreferences?.workout_frequency_per_week || 3,
-          calorieTarget: advancedReview?.daily_calories ?? (null as any),
+          calorieTarget: advancedReview?.daily_calories ?? undefined,
         }}
       />
 

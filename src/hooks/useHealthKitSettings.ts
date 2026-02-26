@@ -1,8 +1,9 @@
+import { logger } from '../utils/logger';
 // Custom hook for HealthKit settings logic
 // Extracted from HealthKitSettingsScreen.tsx
 
 import { useState, useEffect } from "react";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import { useHealthKitSync } from "./useHealthKitSync";
 
 export const useHealthKitSettings = () => {
@@ -32,7 +33,7 @@ export const useHealthKitSettings = () => {
           const summaryData = await getHealthSummary();
           setSummary(summaryData);
         } catch (error) {
-          console.error("Failed to load health summary:", error);
+          logger.error('Failed to load health summary', { error: String(error) });
         } finally {
           setLoadingSummary(false);
         }
@@ -45,7 +46,7 @@ export const useHealthKitSettings = () => {
   const handleToggleHealthKit = async (enabled: boolean) => {
     if (enabled) {
       if (!isAvailable) {
-        Alert.alert(
+        crossPlatformAlert(
           "HealthKit Unavailable",
           "HealthKit is not available on this device. This feature requires an iOS device with HealthKit support.",
           [{ text: "OK" }],
@@ -56,7 +57,7 @@ export const useHealthKitSettings = () => {
       if (!isAuthorized) {
         const granted = await requestPermissions();
         if (!granted) {
-          Alert.alert(
+          crossPlatformAlert(
             "Permissions Required",
             "To use HealthKit integration, please grant permissions in the Health app or try again.",
             [{ text: "OK" }],
@@ -84,7 +85,7 @@ export const useHealthKitSettings = () => {
   const handleSyncNow = async () => {
     try {
       await syncNow(true);
-      Alert.alert(
+      crossPlatformAlert(
         "Sync Complete",
         "Your health data has been synchronized successfully.",
       );
@@ -92,7 +93,7 @@ export const useHealthKitSettings = () => {
       const summaryData = await getHealthSummary();
       setSummary(summaryData);
     } catch (error) {
-      Alert.alert(
+      crossPlatformAlert(
         "Sync Failed",
         "Failed to sync health data. Please try again.",
       );
@@ -100,7 +101,7 @@ export const useHealthKitSettings = () => {
   };
 
   const handleOpenHealthApp = () => {
-    Alert.alert(
+    crossPlatformAlert(
       "Open Health App",
       "To manage detailed HealthKit permissions, please open the Health app on your device.",
       [{ text: "Cancel", style: "cancel" }, { text: "OK" }],

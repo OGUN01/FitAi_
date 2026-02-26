@@ -11,7 +11,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 
 interface EmptyPlanStateProps {
   experienceLevel?: "beginner" | "intermediate" | "advanced";
@@ -53,15 +53,15 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
           {/* Icon */}
           <View style={styles.iconWrapper}>
             <LinearGradient
-              colors={["#FF6B35", "#FF8A5C"]}
+              colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.iconContainer}
             >
-              <Ionicons name="sparkles" size={rf(40)} color="#fff" />
+              <Ionicons name="sparkles" size={rf(40)} color={ResponsiveTheme.colors.white} />
             </LinearGradient>
             <View style={styles.iconAccent}>
-              <Ionicons name="fitness" size={rf(20)} color="#FF6B6B" />
+              <Ionicons name="fitness" size={rf(20)} color={ResponsiveTheme.colors.errorLight} />
             </View>
           </View>
 
@@ -81,21 +81,21 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
                 <Ionicons
                   name="calendar-outline"
                   size={rf(16)}
-                  color="#FF6B35"
+                  color={ResponsiveTheme.colors.primary}
                 />
                 <Text style={styles.previewText}>
                   {planDetails.workouts} workouts
                 </Text>
               </View>
               <View style={styles.previewItem}>
-                <Ionicons name="time-outline" size={rf(16)} color="#FF6B35" />
+                <Ionicons name="time-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} />
                 <Text style={styles.previewText}>{planDetails.duration}</Text>
               </View>
             </View>
 
             <View style={styles.previewRow}>
               <View style={styles.previewItem}>
-                <Ionicons name="trophy-outline" size={rf(16)} color="#FF6B35" />
+                <Ionicons name="trophy-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} />
                 <Text style={styles.previewText} numberOfLines={1}>
                   {experienceLevel.charAt(0).toUpperCase() +
                     experienceLevel.slice(1)}{" "}
@@ -104,7 +104,7 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
               </View>
               {primaryGoals.length > 0 && (
                 <View style={styles.previewItem}>
-                  <Ionicons name="flag-outline" size={rf(16)} color="#FF6B35" />
+                  <Ionicons name="flag-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} />
                   <Text style={styles.previewText} numberOfLines={1}>
                     {primaryGoals[0]}
                   </Text>
@@ -127,7 +127,7 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
                 <Ionicons
                   name={feature.icon as keyof typeof Ionicons.glyphMap}
                   size={rf(16)}
-                  color="#10b981"
+                  color={ResponsiveTheme.colors.successAlt}
                 />
                 <Text style={styles.featureText}>{feature.text}</Text>
               </View>
@@ -145,7 +145,7 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
           >
             <LinearGradient
               colors={
-                isGenerating ? ["#6b7280", "#4b5563"] : ["#FF6B35", "#FF8A5C"]
+                isGenerating ? [ResponsiveTheme.colors.neutral, "#4b5563"] : [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]
               }
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -153,12 +153,12 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
             >
               {isGenerating ? (
                 <>
-                  <Ionicons name="sync" size={rf(20)} color="#fff" />
+                  <Ionicons name="sync" size={rf(20)} color={ResponsiveTheme.colors.white} />
                   <Text style={styles.generateButtonText}>Generating...</Text>
                 </>
               ) : (
                 <>
-                  <Ionicons name="sparkles" size={rf(20)} color="#fff" />
+                  <Ionicons name="sparkles" size={rf(20)} color={ResponsiveTheme.colors.white} />
                   <Text style={styles.generateButtonText}>
                     Generate My Plan
                   </Text>
@@ -189,12 +189,12 @@ const styles = StyleSheet.create({
   },
   iconAccent: {
     position: "absolute",
-    right: -8,
-    bottom: -8,
+    right: rp(-8),
+    bottom: rp(-8),
     width: rw(36),
     height: rw(36),
     borderRadius: rw(18),
-    backgroundColor: "rgba(255, 107, 107, 0.15)",
+    backgroundColor: `${ResponsiveTheme.colors.errorLight}26`,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
   },
   previewContainer: {
     width: "100%",
-    backgroundColor: "rgba(255, 107, 53, 0.08)",
+    backgroundColor: `${ResponsiveTheme.colors.primary}14`,
     borderRadius: ResponsiveTheme.borderRadius.lg,
     padding: ResponsiveTheme.spacing.md,
     marginBottom: ResponsiveTheme.spacing.lg,
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
   generateButtonText: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
 });
 

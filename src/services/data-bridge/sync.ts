@@ -31,7 +31,6 @@ import { ONBOARDING_DATA_KEY } from "./constants";
  * Load data from local storage (ProfileStore + AsyncStorage)
  */
 export async function loadFromLocal(): Promise<AllDataResult> {
-  console.log("[DataBridge] Loading from local storage");
 
   try {
     // Check ProfileStore first
@@ -99,7 +98,6 @@ export async function loadFromLocal(): Promise<AllDataResult> {
  * Load data from database
  */
 export async function loadFromDatabase(userId: string): Promise<AllDataResult> {
-  console.log("[DataBridge] Loading from database for user:", userId);
 
   try {
     const [
@@ -151,9 +149,6 @@ export async function loadAllData(
   userId?: string,
 ): Promise<AllDataResult> {
   const targetUserId = userId || currentUserId;
-  console.log(
-    `[DataBridge] loadAllData called, userId: ${targetUserId || "guest"}`,
-  );
 
   try {
     if (!targetUserId) {
@@ -204,9 +199,6 @@ export async function getShadowModeReport(
   loadAllDataFn: () => Promise<AllDataResult>,
 ): Promise<ShadowModeReport> {
   // Shadow mode no longer available - return empty report
-  console.log(
-    "[DataBridge] Shadow mode report not available (old system removed)",
-  );
   return {
     discrepancies: [],
     oldSystemData: null,
@@ -228,7 +220,6 @@ export async function clearLocalData(): Promise<void> {
     // Clear AsyncStorage
     await AsyncStorage.removeItem(ONBOARDING_DATA_KEY);
 
-    console.log("[DataBridge] Local data cleared");
   } catch (error) {
     console.error("[DataBridge] clearLocalData error:", error);
   }

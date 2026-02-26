@@ -1,25 +1,17 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { GlassCard } from "../../components/ui/aurora";
 import { Ionicons } from "@expo/vector-icons";
 import { rf } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
-import { TabValidationResult, PersonalInfoData } from "../../types/onboarding";
+import { TabValidationResult } from "../../types/onboarding";
 
 interface ValidationSummaryProps {
   validationResult: TabValidationResult;
-  formData: PersonalInfoData;
-  onUpdate: (data: Partial<PersonalInfoData>) => void;
-  showCustomCountry: boolean;
-  customCountry: string;
 }
 
 export const ValidationSummary: React.FC<ValidationSummaryProps> = ({
   validationResult,
-  formData,
-  onUpdate,
-  showCustomCountry,
-  customCountry,
 }) => {
   return (
     <View style={styles.validationSummary}>
@@ -54,35 +46,11 @@ export const ValidationSummary: React.FC<ValidationSummaryProps> = ({
           </Text>
         </View>
         <Text style={styles.validationPercentage} numberOfLines={1}>
-          {validationResult.completion_percentage}% Complete
+          {validationResult.is_valid && validationResult.completion_percentage === 0
+            ? "Optional"
+            : `${validationResult.completion_percentage}% Complete`}
         </Text>
 
-        {__DEV__ && (
-          <View style={styles.debugInfo}>
-            <Text style={styles.debugTitle}>Debug Info:</Text>
-            <Text style={styles.debugText}>
-              Name: {formData.first_name} {formData.last_name}
-            </Text>
-            <Text style={styles.debugText}>Age: {formData.age}</Text>
-            <Text style={styles.debugText}>Country: {formData.country}</Text>
-            <Text style={styles.debugText}>State: {formData.state}</Text>
-            <Text style={styles.debugText}>
-              Valid: {validationResult.is_valid ? "YES" : "NO"}
-            </Text>
-            <TouchableOpacity
-              style={styles.debugButton}
-              onPress={() => {
-                const finalData =
-                  showCustomCountry && customCountry
-                    ? { ...formData, country: customCountry }
-                    : formData;
-                onUpdate(finalData);
-              }}
-            >
-              <Text style={styles.debugButtonText}>Force Update</Text>
-            </TouchableOpacity>
-          </View>
-        )}
 
         {validationResult.errors.length > 0 && (
           <View style={styles.validationErrors}>
@@ -136,31 +104,6 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     marginBottom: ResponsiveTheme.spacing.md,
-  },
-  debugInfo: {
-    backgroundColor: "rgba(0,0,0,0.5)",
-    padding: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
-    marginVertical: ResponsiveTheme.spacing.sm,
-  },
-  debugTitle: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 10,
-  },
-  debugText: {
-    color: "#fff",
-    fontSize: 10,
-  },
-  debugButton: {
-    marginTop: 4,
-    backgroundColor: "blue",
-    padding: 4,
-    borderRadius: 4,
-  },
-  debugButtonText: {
-    color: "white",
-    fontSize: 10,
   },
   validationErrors: {
     marginTop: ResponsiveTheme.spacing.sm,

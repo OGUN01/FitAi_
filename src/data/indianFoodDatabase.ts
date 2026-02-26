@@ -728,4 +728,3 @@ export const getTotalFoods = (): number => {
   return Object.keys(INDIAN_FOOD_DATABASE).length;
 };
 
-console.log(`✅ Indian Food Database loaded with ${getTotalFoods()} dishes`);

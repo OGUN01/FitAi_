@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp } from "../../utils/responsive";
 
 interface DayData {
   day: string;
@@ -33,7 +33,7 @@ interface WeeklyNutritionChartProps {
 // Macro colors
 const COLORS = {
   protein: "#FF6B9D",
-  carbs: "#4ECDC4",
+  carbs: ResponsiveTheme.colors.teal,
   fat: "#FFA726",
 };
 
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   legendItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: rp(6),
   },
   legendDot: {
     width: rw(8),
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   barsGroup: {
     flexDirection: "row",
     alignItems: "flex-end",
-    gap: 2,
+    gap: rp(2),
     height: rh(100),
   },
   barContainer: {
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     height: rw(4),
     borderRadius: rw(2),
     backgroundColor: ResponsiveTheme.colors.primary,
-    marginTop: 4,
+    marginTop: rp(4),
   },
   targetLine: {
     flexDirection: "row",

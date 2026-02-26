@@ -71,10 +71,6 @@ export const useWorkoutAchievements = () => {
 
   useEffect(() => {
     if (showCelebration && celebrationAchievement) {
-      console.log(
-        "🎉 Achievement earned during workout:",
-        celebrationAchievement.title,
-      );
 
       showAchievementNotification(celebrationAchievement);
       setRecentAchievements((prev) => [...prev, celebrationAchievement]);
@@ -104,7 +100,6 @@ export const useWorkoutAchievements = () => {
           timestamp: new Date().toISOString(),
         });
       } catch (error) {
-        console.warn("Achievement tracking for set completion failed:", error);
       }
     },
     [user?.id, checkProgress],
@@ -135,10 +130,6 @@ export const useWorkoutAchievements = () => {
           `Exercise ${exerciseIndex + 1}/${totalExercises} Complete! 💪`,
         );
       } catch (error) {
-        console.warn(
-          "Achievement tracking for exercise completion failed:",
-          error,
-        );
       }
     },
     [user?.id, checkProgress, showAchievementMiniToast],
@@ -174,7 +165,6 @@ export const useWorkoutAchievements = () => {
           showAchievementMiniToast("Almost Done! 💪 Final Push!");
         }
       } catch (error) {
-        console.warn("Milestone tracking failed:", error);
       }
     },
     [user?.id, checkProgress, showAchievementMiniToast],
@@ -215,7 +205,6 @@ export const useWorkoutAchievements = () => {
           isConsistent: true,
         });
       } catch (error) {
-        console.warn("Achievement tracking failed:", error);
       }
     },
     [user?.id, checkProgress],

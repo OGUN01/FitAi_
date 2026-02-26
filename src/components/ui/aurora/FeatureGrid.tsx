@@ -18,6 +18,7 @@ import { GlassCard } from "./GlassCard";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { colors, typography, spacing } from "../../../theme/aurora-tokens";
 import { springConfig } from "../../../theme/animations";
+import { rs, rbr } from "../../../utils/responsive";
 
 export interface Feature {
   /**
@@ -282,9 +283,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: rs(48),
+    height: rs(48),
+    borderRadius: rbr(12),
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: colors.glass.background,
@@ -303,7 +304,7 @@ const styles = StyleSheet.create({
   },
   simpleCard: {
     padding: spacing.md,
-    borderRadius: 12,
+    borderRadius: rbr(12),
     backgroundColor: colors.glass.background,
   },
 });

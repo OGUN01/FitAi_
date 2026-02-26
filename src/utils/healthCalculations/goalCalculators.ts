@@ -33,7 +33,7 @@ export class MuscleGainCalculatorService {
         classification: limits.experienceLevel,
       };
     } catch (error) {
-      console.warn("[MuscleGainCalculator] Failed:", error);
+      // Re-throw to caller
       throw error;
     }
   }
@@ -50,7 +50,7 @@ export class MuscleGainCalculatorService {
         user,
       );
     } catch (error) {
-      console.warn("[MuscleGainCalculator] Validation failed:", error);
+      // Validation failed, return safe default
       return {
         valid: false,
         severity: "error",
@@ -110,7 +110,7 @@ export class FatLossValidatorService {
         adjustedTimeline: validation.adjustedTimeline,
       };
     } catch (error) {
-      console.warn("[FatLossValidator] Failed:", error);
+      // Validation failed, return safe default
       return {
         valid: false,
         severity: "error",

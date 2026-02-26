@@ -27,7 +27,7 @@ export function validateEditData(
         return { isValid: true, errors: [], warnings: [] };
     }
   } catch (error) {
-    console.warn("Validation error:", error);
+    // Validation failed, return safe default
     return { isValid: true, errors: [], warnings: [] };
   }
 }

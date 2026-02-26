@@ -185,8 +185,8 @@ export const LocationFields: React.FC<LocationFieldsProps> = ({
 
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
-    marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginTop: ResponsiveTheme.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
     marginHorizontal: -ResponsiveTheme.spacing.lg,
   },
   sectionTitlePadded: {

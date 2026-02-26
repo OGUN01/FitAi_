@@ -47,23 +47,16 @@ export const useActions = (
 
   const updatePersonalInfo = useCallback(
     (data: Partial<PersonalInfoData>) => {
-      console.log("📝 [ONBOARDING] updatePersonalInfo called with data:", data);
       setState((prev) => {
-        console.log(
-          "📝 [ONBOARDING] Previous personalInfo:",
-          prev.personalInfo,
-        );
         const newPersonalInfo = prev.personalInfo
           ? { ...prev.personalInfo, ...data }
           : (data as PersonalInfoData);
-        console.log("📝 [ONBOARDING] Merged personalInfo:", newPersonalInfo);
 
         const updatedState = {
           ...prev,
           personalInfo: newPersonalInfo,
           hasUnsavedChanges: true,
         };
-        console.log("📝 [ONBOARDING] hasUnsavedChanges set to true");
 
         const validationResults = {
           1: validateTab(1, newPersonalInfo),
@@ -72,10 +65,6 @@ export const useActions = (
           4: validateTab(4, prev.workoutPreferences),
           5: validateTab(5, prev.advancedReview),
         };
-        console.log(
-          "📝 [ONBOARDING] Tab 1 validation result:",
-          validationResults[1],
-        );
 
         const finalState = {
           ...updatedState,
@@ -92,29 +81,16 @@ export const useActions = (
 
   const updateDietPreferences = useCallback(
     (data: Partial<DietPreferencesData>) => {
-      console.log(
-        "📝 [ONBOARDING] updateDietPreferences called with data:",
-        data,
-      );
       setState((prev) => {
-        console.log(
-          "📝 [ONBOARDING] Previous dietPreferences:",
-          prev.dietPreferences,
-        );
         const newDietPreferences = prev.dietPreferences
           ? { ...prev.dietPreferences, ...data }
           : (data as DietPreferencesData);
-        console.log(
-          "📝 [ONBOARDING] Merged dietPreferences:",
-          newDietPreferences,
-        );
 
         const updatedState = {
           ...prev,
           dietPreferences: newDietPreferences,
           hasUnsavedChanges: true,
         };
-        console.log("📝 [ONBOARDING] hasUnsavedChanges set to true");
 
         const validationResults = {
           1: validateTab(1, updatedState.personalInfo),
@@ -123,10 +99,6 @@ export const useActions = (
           4: validateTab(4, updatedState.workoutPreferences),
           5: validateTab(5, updatedState.advancedReview),
         };
-        console.log(
-          "📝 [ONBOARDING] Tab 2 validation result:",
-          validationResults[2],
-        );
 
         const finalState = {
           ...updatedState,
@@ -143,23 +115,16 @@ export const useActions = (
 
   const updateBodyAnalysis = useCallback(
     (data: Partial<BodyAnalysisData>) => {
-      console.log("📝 [ONBOARDING] updateBodyAnalysis called with data:", data);
       setState((prev) => {
-        console.log(
-          "📝 [ONBOARDING] Previous bodyAnalysis:",
-          prev.bodyAnalysis,
-        );
         const newBodyAnalysis = prev.bodyAnalysis
           ? { ...prev.bodyAnalysis, ...data }
           : (data as BodyAnalysisData);
-        console.log("📝 [ONBOARDING] Merged bodyAnalysis:", newBodyAnalysis);
 
         const updatedState = {
           ...prev,
           bodyAnalysis: newBodyAnalysis,
           hasUnsavedChanges: true,
         };
-        console.log("📝 [ONBOARDING] hasUnsavedChanges set to true");
 
         const validationResults = {
           1: validateTab(1, updatedState.personalInfo),
@@ -168,10 +133,6 @@ export const useActions = (
           4: validateTab(4, updatedState.workoutPreferences),
           5: validateTab(5, updatedState.advancedReview),
         };
-        console.log(
-          "📝 [ONBOARDING] Tab 3 validation result:",
-          validationResults[3],
-        );
 
         const finalState = {
           ...updatedState,
@@ -188,29 +149,16 @@ export const useActions = (
 
   const updateWorkoutPreferences = useCallback(
     (data: Partial<WorkoutPreferencesData>) => {
-      console.log(
-        "📝 [ONBOARDING] updateWorkoutPreferences called with data:",
-        data,
-      );
       setState((prev) => {
-        console.log(
-          "📝 [ONBOARDING] Previous workoutPreferences:",
-          prev.workoutPreferences,
-        );
         const newWorkoutPreferences = prev.workoutPreferences
           ? { ...prev.workoutPreferences, ...data }
           : (data as WorkoutPreferencesData);
-        console.log(
-          "📝 [ONBOARDING] Merged workoutPreferences:",
-          newWorkoutPreferences,
-        );
 
         const updatedState = {
           ...prev,
           workoutPreferences: newWorkoutPreferences,
           hasUnsavedChanges: true,
         };
-        console.log("📝 [ONBOARDING] hasUnsavedChanges set to true");
 
         const validationResults = {
           1: validateTab(1, updatedState.personalInfo),
@@ -219,10 +167,6 @@ export const useActions = (
           4: validateTab(4, newWorkoutPreferences),
           5: validateTab(5, updatedState.advancedReview),
         };
-        console.log(
-          "📝 [ONBOARDING] Tab 4 validation result:",
-          validationResults[4],
-        );
 
         const finalState = {
           ...updatedState,
@@ -239,22 +183,10 @@ export const useActions = (
 
   const updateAdvancedReview = useCallback(
     (data: Partial<AdvancedReviewData>) => {
-      console.log(
-        "📝 [ONBOARDING] updateAdvancedReview called with data:",
-        data,
-      );
       setState((prev) => {
-        console.log(
-          "📝 [ONBOARDING] Previous advancedReview:",
-          prev.advancedReview,
-        );
         const newAdvancedReview = prev.advancedReview
           ? { ...prev.advancedReview, ...data }
           : (data as AdvancedReviewData);
-        console.log(
-          "📝 [ONBOARDING] Merged advancedReview:",
-          newAdvancedReview,
-        );
 
         const finalState = {
           ...prev,
@@ -263,9 +195,6 @@ export const useActions = (
         };
 
         stateRef.current = finalState;
-        console.log(
-          "📝 [ONBOARDING] advancedReview saved to stateRef, hasUnsavedChanges set to true",
-        );
 
         return finalState;
       });
@@ -274,12 +203,9 @@ export const useActions = (
   );
 
   const resetOnboarding = useCallback(async () => {
-    console.log("🔄 [ONBOARDING] resetOnboarding called - clearing all data");
-
     try {
       await AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING_DATA);
       await AsyncStorage.removeItem("onboarding_completed");
-      console.log("✅ [ONBOARDING] AsyncStorage cleared");
     } catch (error) {
       console.error("❌ [ONBOARDING] Failed to clear AsyncStorage:", error);
     }

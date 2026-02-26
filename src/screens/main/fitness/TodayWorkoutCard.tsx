@@ -4,14 +4,14 @@
  */
 
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh } from "../../../utils/responsive";
+import { rf, rw, rh, rp } from "../../../utils/responsive";
 import { DayWorkout } from "../../../ai";
 
 interface TodayWorkoutCardProps {
@@ -46,8 +46,8 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
     if (isCompleted) {
       return {
         icon: "checkmark-circle" as const,
-        color: "#10b981",
-        gradient: ["#10b981", "#059669"] as [string, string],
+        color: ResponsiveTheme.colors.successAlt,
+        gradient: [ResponsiveTheme.colors.successAlt, "#059669"] as [string, string],
         label: "Completed",
         buttonText: "View Summary",
       };
@@ -55,8 +55,8 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
     if (isRestDay) {
       return {
         icon: "moon" as const,
-        color: "#FF6B35",
-        gradient: ["#FF6B35", "#E55A2B"] as [string, string],
+        color: ResponsiveTheme.colors.primary,
+        gradient: [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark] as [string, string],
         label: "Rest Day",
         buttonText: "Recovery Tips",
       };
@@ -64,16 +64,16 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
     if (progress > 0) {
       return {
         icon: "play-circle" as const,
-        color: "#FF6B6B",
-        gradient: ["#FF6B6B", "#FF8E53"] as [string, string],
+        color: ResponsiveTheme.colors.errorLight,
+        gradient: [ResponsiveTheme.colors.errorLight, "#FF8E53"] as [string, string],
         label: `${progress}% Complete`,
         buttonText: "Continue",
       };
     }
     return {
       icon: "fitness" as const,
-      color: "#FF6B6B",
-      gradient: ["#FF6B6B", "#FF8E53"] as [string, string],
+      color: ResponsiveTheme.colors.errorLight,
+      gradient: [ResponsiveTheme.colors.errorLight, "#FF8E53"] as [string, string],
       label: "Ready to Go",
       buttonText: "Start Workout",
     };
@@ -90,13 +90,13 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
         padding="none"
         borderRadius="xl"
       >
-        <AnimatedPressable
-          onPress={onViewDetails}
-          scaleValue={0.98}
-          hapticFeedback={true}
-          hapticType="light"
-        >
+        <Animated.View>
           <View style={styles.container}>
+            <Pressable
+              onPress={onViewDetails}
+              accessibilityLabel={`${isRestDay ? "Rest & Recover" : workout?.title || "Today's Workout"}, ${config.label}`}
+              accessibilityHint="Double tap to view details"
+            >
             {/* Top Section - Status + Info */}
             <View style={styles.topSection}>
               {/* Left: Icon */}
@@ -106,7 +106,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                 end={{ x: 1, y: 1 }}
                 style={styles.iconContainer}
               >
-                <Ionicons name={config.icon} size={rf(28)} color="#fff" />
+                <Ionicons name={config.icon} size={rf(28)} color={ResponsiveTheme.colors.white} />
               </LinearGradient>
 
               {/* Middle: Workout Info */}
@@ -168,7 +168,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                         color={ResponsiveTheme.colors.textSecondary}
                       />
                       <Text style={styles.metaText}>
-                        {workout.estimatedCalories} cal
+                        {workout.estimatedCalories || 0} cal
                       </Text>
                     </View>
                     <View style={styles.metaItem}>
@@ -206,6 +206,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                 </View>
               </View>
             )}
+            </Pressable>
 
             {/* Bottom Section - Action Button */}
             <View style={styles.bottomSection}>
@@ -236,13 +237,13 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                           : "arrow-forward"
                     }
                     size={rf(18)}
-                    color="#fff"
+                    color={ResponsiveTheme.colors.white}
                   />
                 </LinearGradient>
               </AnimatedPressable>
             </View>
           </View>
-        </AnimatedPressable>
+        </Animated.View>
       </GlassCard>
     </Animated.View>
   );
@@ -270,7 +271,7 @@ const styles = StyleSheet.create({
   dayIndicator: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: rp(4),
     marginBottom: ResponsiveTheme.spacing.xs,
   },
   dayIndicatorText: {
@@ -296,15 +297,15 @@ const styles = StyleSheet.create({
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
+    gap: rp(5),
     paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: rp(4),
     borderRadius: ResponsiveTheme.borderRadius.full,
   },
   statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: rw(6),
+    height: rw(6),
+    borderRadius: rw(3),
   },
   statusText: {
     fontSize: rf(11),
@@ -319,15 +320,15 @@ const styles = StyleSheet.create({
   metaItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: rp(4),
   },
   metaText: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: "rgba(255,255,255,0.65)",
   },
   restDaySubtitle: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: "rgba(255,255,255,0.6)",
     marginTop: ResponsiveTheme.spacing.xs,
     lineHeight: rf(18),
   },
@@ -346,6 +347,7 @@ const styles = StyleSheet.create({
   },
   bottomSection: {
     marginTop: ResponsiveTheme.spacing.lg,
+    marginBottom: rh(4),
   },
   actionButton: {
     borderRadius: ResponsiveTheme.borderRadius.lg,
@@ -356,13 +358,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.md + 2,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
   actionButtonText: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     letterSpacing: 0.5,
   },
 });

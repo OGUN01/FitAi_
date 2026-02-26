@@ -8,7 +8,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
-import { THEME } from "../../utils/constants";
 import { useResponsiveTheme } from "../../hooks/useResponsiveTheme";
 
 // REMOVED: Module-level Dimensions.get() causes crash
@@ -70,6 +69,9 @@ export const TabBar: React.FC<TabBarProps> = ({
               ]}
               onPress={() => onTabPress(tab.key)}
               activeOpacity={0.7}
+              accessibilityRole="tab"
+              accessibilityLabel={tab.title}
+              accessibilityState={{ selected: isActive }}
             >
               <View
                 style={[
@@ -149,7 +151,7 @@ const styles = StyleSheet.create({
 
   activeIndicator: {
     position: "absolute",
-    top: 0,
+    bottom: 0,
     // All responsive styles moved to inline
   },
 });

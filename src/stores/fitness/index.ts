@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { safeAsyncStorage } from "../../utils/safeAsyncStorage";
 import { FitnessState } from "./types";
 import { initialFitnessState } from "./state";
 import { createPlanActions } from "./planActions";
@@ -23,7 +24,7 @@ export const useFitnessStore = create<FitnessState>()(
     }),
     {
       name: "fitness-storage",
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => safeAsyncStorage),
       partialize: (state) => ({
         weeklyWorkoutPlan: state.weeklyWorkoutPlan,
         workoutProgress: state.workoutProgress,

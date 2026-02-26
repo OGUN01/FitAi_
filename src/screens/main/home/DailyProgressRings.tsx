@@ -24,19 +24,19 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 // Ring configuration
 const RINGS = {
-  move: { color: "#FF6B6B", gradientEnd: "#FF8E53", icon: "flame" as const },
+  move: { color: ResponsiveTheme.colors.errorLight, gradientEnd: ResponsiveTheme.colors.accent, icon: "flame" as const },
   exercise: {
-    color: "#4CAF50",
-    gradientEnd: "#8BC34A",
+    color: ResponsiveTheme.colors.success,
+    gradientEnd: ResponsiveTheme.colors.successLight,
     icon: "barbell" as const,
   },
   nutrition: {
-    color: "#2196F3",
+    color: ResponsiveTheme.colors.info,
     gradientEnd: "#03A9F4",
     icon: "restaurant" as const,
   },
   steps: {
-    color: "#FF6B35",
+    color: ResponsiveTheme.colors.primary,
     gradientEnd: "#E040FB",
     icon: "footsteps" as const,
   },
@@ -149,6 +149,8 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
         scaleValue={0.98}
         hapticFeedback={true}
         hapticType="light"
+        accessibilityRole="button"
+        accessibilityLabel="Set your goals"
       >
         <GlassCard
           elevation={2}
@@ -200,6 +202,8 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
       scaleValue={0.98}
       hapticFeedback={true}
       hapticType="light"
+      accessibilityRole="button"
+      accessibilityLabel="Daily progress"
     >
       <GlassCard
         elevation={2}
@@ -307,7 +311,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
               <Text style={styles.statLabel}>Move</Text>
               <Text style={styles.statValue}>
                 {caloriesBurned}
-                <Text style={styles.statUnit}>/{caloriesGoal} cal</Text>
+                <Text style={styles.statUnit}>/{caloriesGoal > 0 ? caloriesGoal : 500} cal</Text>
               </Text>
             </View>
             <View style={styles.statRow}>
@@ -343,7 +347,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
               <Text style={styles.statLabel}>Nutrition</Text>
               <Text style={styles.statValue}>
                 {mealsLogged}
-                <Text style={styles.statUnit}>/{mealsGoal} cal</Text>
+                <Text style={styles.statUnit}>/{mealsGoal > 0 ? mealsGoal : 2000} cal</Text>
               </Text>
             </View>
             {/* Steps from Health Connect/HealthKit */}

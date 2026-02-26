@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { Card } from "../../ui";
+import { rbr } from "../../../utils/responsive";
 import { RecognizedFood } from "../../../services/foodRecognitionService";
 
 interface FoodCardProps {
@@ -68,7 +69,7 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.primary,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: 12,
+    borderRadius: rbr(12),
   },
 
   confidenceText: {

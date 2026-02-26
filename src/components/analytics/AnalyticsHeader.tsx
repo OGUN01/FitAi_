@@ -9,7 +9,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp } from "../../utils/responsive";
 import { PeriodSelector, Period } from "../form/PeriodSelector";
 
 interface AnalyticsHeaderProps {
@@ -41,12 +41,12 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
       <Animated.View entering={FadeInDown.delay(100)} style={styles.titleRow}>
         <View style={styles.titleLeft}>
           <LinearGradient
-            colors={["#FF6B35", "#FF8A5C"]}
+            colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.accent]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.iconContainer}
           >
-            <Ionicons name="analytics" size={rf(18)} color="#FFFFFF" />
+            <Ionicons name="analytics" size={rf(18)} color={ResponsiveTheme.colors.white} />
           </LinearGradient>
           <View>
             <Text style={styles.title}>Analytics</Text>
@@ -54,7 +54,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
           </View>
         </View>
         <View style={styles.badge}>
-          <Ionicons name="sparkles" size={rf(12)} color="#FFD700" />
+          <Ionicons name="sparkles" size={rf(12)} color={ResponsiveTheme.colors.gold} />
           <Text style={styles.badgeText}>AI</Text>
         </View>
       </Animated.View>
@@ -113,10 +113,10 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: rp(4),
     backgroundColor: "rgba(255,215,0,0.12)",
     paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: rp(4),
     borderRadius: ResponsiveTheme.borderRadius.full,
     borderWidth: 1,
     borderColor: "rgba(255,215,0,0.2)",
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: rf(10),
     fontWeight: "700",
-    color: "#FFD700",
+    color: ResponsiveTheme.colors.gold,
   },
   periodSelectorWrapper: {
     alignSelf: "stretch",

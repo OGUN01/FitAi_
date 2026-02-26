@@ -28,7 +28,6 @@ export class ProgressDataService {
   async initialize(): Promise<void> {
     try {
       await crudOperations.initialize();
-      console.log("Progress Data Service initialized with Track B integration");
     } catch (error) {
       console.error("Failed to initialize Progress Data Service:", error);
       throw error;

@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../useAuth";
 import { CalculatedMetrics, UseCalculatedMetricsReturn } from "./types";
@@ -18,7 +19,6 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
 
     const cachedMetrics = getCachedMetrics(userId);
     if (cachedMetrics) {
-      console.log("📊 [useCalculatedMetrics] Returning cached metrics");
       setMetrics(cachedMetrics);
       setHasCalculatedMetrics(true);
       setHasCompletedOnboarding(true);
@@ -51,7 +51,7 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load metrics";
-      console.error("❌ [useCalculatedMetrics] Load error:", message);
+      logger.error('[useCalculatedMetrics] Load error', { error: message });
       setError(message);
       setMetrics(null);
       setHasCalculatedMetrics(false);

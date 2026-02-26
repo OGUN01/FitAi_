@@ -12,6 +12,7 @@ export function calculateSmartAlternatives(
   targetWeight: number,
   gender: "male" | "female",
 ): SmartAlternativesResult {
+  const isWeightGain = currentWeight < targetWeight;
   const minimumCalorieFloor =
     gender === "female" ? MIN_CALORIES_FEMALE : MIN_CALORIES_MALE;
   const weightToLose = Math.abs(currentWeight - targetWeight);
@@ -209,6 +210,112 @@ export function calculateSmartAlternatives(
     if (a.requiresExercise && !b.requiresExercise) return 1;
     return b.weeklyRate - a.weeklyRate;
   });
+
+  if (isWeightGain) {
+    // Weight-gain alternatives: surplus-based tiers
+    const weightToGain = Math.abs(targetWeight - currentWeight);
+    const gainTiers: Array<{
+      id: string;
+      rate: number;
+      label: string;
+      icon: string;
+      isUserOriginal?: boolean;
+      isRecommended?: boolean;
+    }> = [
+      {
+        id: "user_original",
+        rate: userRequestedRate,
+        label: "KEEP MY GOAL",
+        icon: "flame",
+        isUserOriginal: true,
+      },
+      {
+        id: "lean_gain",
+        rate: Math.round(currentWeight * 0.005 * 100) / 100,
+        label: "LEAN GAIN",
+        icon: "shield-checkmark",
+        isRecommended: true,
+      },
+      {
+        id: "moderate_gain",
+        rate: Math.round(currentWeight * 0.0075 * 100) / 100,
+        label: "MODERATE GAIN",
+        icon: "flash",
+      },
+      {
+        id: "aggressive_gain",
+        rate: Math.round(currentWeight * 0.01 * 100) / 100,
+        label: "AGGRESSIVE GAIN",
+        icon: "barbell",
+      },
+    ];
+
+    const gainAlternatives: SmartAlternative[] = [];
+    for (const tier of gainTiers) {
+      if (!tier.isUserOriginal && Math.abs(tier.rate - userRequestedRate) < 0.05)
+        continue;
+      if (tier.rate <= 0) continue;
+
+      const dailySurplus = (tier.rate * CALORIE_PER_KG) / 7;
+      const dailyCalories = Math.round(tdee + dailySurplus);
+      const timelineWeeks =
+        weightToGain > 0 ? Math.ceil(weightToGain / tier.rate) : 0;
+      const bmrDifference = dailyCalories - bmr;
+
+      // For weight gain, risk level reflects fat gain speed, not calorie restriction
+      let riskLevel: RiskLevel;
+      let badge: string;
+      if (tier.isRecommended) {
+        riskLevel = "safe";
+        badge = "Recommended";
+      } else if (tier.rate <= currentWeight * 0.0075) {
+        riskLevel = "easy";
+        badge = "Easy";
+      } else if (tier.rate <= currentWeight * 0.01) {
+        riskLevel = "moderate";
+        badge = "Moderate";
+      } else {
+        riskLevel = "caution";
+        badge = "Caution";
+      }
+
+      gainAlternatives.push({
+        id: tier.id,
+        label: tier.label,
+        weeklyRate: Math.round(tier.rate * 100) / 100,
+        dailyCalories,
+        bmrDifference: Math.round(bmrDifference),
+        timelineWeeks,
+        riskLevel,
+        icon: tier.icon as string,
+        badge,
+        description: `+${Math.round(dailySurplus)} cal/day surplus — ${timelineWeeks} weeks to goal`,
+        isUserOriginal: tier.isUserOriginal || false,
+        isRecommended: tier.isRecommended || false,
+        isBlocked: false,
+        requiresExercise: false,
+      });
+    }
+
+    gainAlternatives.sort((a, b) => {
+      if (a.isUserOriginal) return -1;
+      if (b.isUserOriginal) return 1;
+      return a.weeklyRate - b.weeklyRate;
+    });
+
+    return {
+      alternatives: gainAlternatives,
+      userBMR: Math.round(bmr),
+      userTDEE: Math.round(tdee),
+      currentWeight,
+      targetWeight,
+      weightToLose: weightToGain,
+      originalRequestedRate: userRequestedRate,
+      showRateComparison: gainAlternatives.length > 1,
+      minimumCalorieFloor,
+      rateAtBMR: Math.round(rateAtBMR * 100) / 100,
+    };
+  }
 
   return {
     alternatives,

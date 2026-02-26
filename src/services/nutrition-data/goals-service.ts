@@ -44,10 +44,6 @@ export class GoalsService {
     userId: string,
   ): Promise<NutritionDataResponse<NutritionGoals>> {
     try {
-      console.log(
-        "📊 [NutritionData] getUserNutritionGoals - Loading for user:",
-        userId,
-      );
 
       const { data: advancedReview, error: advancedError } = await supabase
         .from("advanced_review")
@@ -58,10 +54,6 @@ export class GoalsService {
         .maybeSingle();
 
       if (advancedReview && !advancedError) {
-        console.log(
-          "✅ [NutritionData] Found goals in advanced_review (onboarding):",
-          advancedReview,
-        );
 
         const goalsFromOnboarding: NutritionGoals = {
           id: `onboarding_${userId}`,
@@ -107,13 +99,6 @@ export class GoalsService {
       }
 
       if (!data) {
-        console.warn(
-          "⚠️ [NutritionData] No nutrition goals found for user:",
-          userId,
-        );
-        console.warn(
-          "⚠️ [NutritionData] User needs to complete onboarding to calculate nutrition targets",
-        );
         return {
           success: false,
           error:
@@ -121,10 +106,6 @@ export class GoalsService {
         };
       }
 
-      console.log(
-        "✅ [NutritionData] Found goals in nutrition_goals table:",
-        data,
-      );
       return {
         success: true,
         data,

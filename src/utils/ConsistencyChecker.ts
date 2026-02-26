@@ -1076,17 +1076,13 @@ export class ConsistencyChecker {
 
   private log(message: string, data?: any): void {
     if (data !== undefined) {
-      console.log(`[ConsistencyChecker] ${message}`, data);
     } else {
-      console.log(`[ConsistencyChecker] ${message}`);
     }
   }
 
   private logWarning(message: string, data?: any): void {
     if (data !== undefined) {
-      console.warn(`[ConsistencyChecker] WARNING: ${message}`, data);
     } else {
-      console.warn(`[ConsistencyChecker] WARNING: ${message}`);
     }
   }
 

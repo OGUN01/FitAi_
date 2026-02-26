@@ -7,7 +7,9 @@ import {
   StyleSheet,
   Dimensions,
 } from "react-native";
-import { Card, THEME } from "../../../components/ui";
+import { Card } from "../../../components/ui";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rf, rw, rh, rbr } from '../../../utils/responsive';
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -73,61 +75,61 @@ export const ExerciseAnimation: React.FC<ExerciseAnimationProps> = ({
 
 const styles = StyleSheet.create({
   animationCard: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   animationContainer: {
     alignItems: "center",
   },
   exerciseGif: {
     width: screenWidth - 64,
-    height: 200,
-    borderRadius: THEME.borderRadius.lg,
-    marginBottom: THEME.spacing.md,
+    height: rh(200),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   animationPlaceholder: {
     width: screenWidth - 64,
-    height: 200,
-    backgroundColor: THEME.colors.surface,
-    borderRadius: THEME.borderRadius.lg,
+    height: rh(200),
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   animationEmoji: {
-    fontSize: 48,
-    marginBottom: THEME.spacing.sm,
+    fontSize: rf(48),
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   animationText: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
   },
   animationControls: {
     flexDirection: "row",
     alignItems: "center",
-    gap: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
   },
   playButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: THEME.colors.primary,
+    width: rw(48),
+    height: rh(48),
+    borderRadius: rbr(24),
+    backgroundColor: ResponsiveTheme.colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },
   playButtonText: {
-    fontSize: 20,
+    fontSize: rf(20),
   },
   stepIndicators: {
     flexDirection: "row",
-    gap: THEME.spacing.xs,
+    gap: ResponsiveTheme.spacing.xs,
   },
   stepIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: THEME.colors.surface,
+    width: rw(8),
+    height: rh(8),
+    borderRadius: rbr(4),
+    backgroundColor: ResponsiveTheme.colors.surface,
   },
   stepIndicatorActive: {
-    backgroundColor: THEME.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary,
   },
 });

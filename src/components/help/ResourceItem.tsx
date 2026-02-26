@@ -6,7 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw } from "../../utils/responsive";
+import { rf, rw, rp } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
 interface ResourceItemProps {
@@ -71,7 +71,7 @@ export const ResourceItem: React.FC<ResourceItemProps> = ({
 const styles = StyleSheet.create({
   resourceCard: {
     marginBottom: ResponsiveTheme.spacing.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
   },
   resourceContent: {
     flexDirection: "row",
@@ -92,8 +92,8 @@ const styles = StyleSheet.create({
   resourceTitle: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: "#fff",
-    marginBottom: 2,
+    color: ResponsiveTheme.colors.white,
+    marginBottom: rp(2),
   },
   resourceDescription: {
     fontSize: rf(12),

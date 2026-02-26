@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { safeAsyncStorage } from "../utils/safeAsyncStorage";
 
 /**
  * APP STATE STORE - SINGLE SOURCE OF TRUTH FOR SHARED UI STATE
@@ -83,10 +84,9 @@ export const useAppStateStore = create<AppStateState>()(
     }),
     {
       name: "fitai-app-state-storage",
-      storage: createJSONStorage(() => AsyncStorage),
-      // Only persist selectedDay
-      partialize: (state) => ({
-        selectedDay: state.selectedDay,
+      storage: createJSONStorage(() => safeAsyncStorage),
+      // selectedDay is intentionally NOT persisted - always resets to today on app load
+      partialize: (_state) => ({
       }),
     },
   ),

@@ -6,6 +6,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { EventEmitter } from "../utils/EventEmitter";
 import { crudOperations } from "./crudOperations";
 import { dataBridge } from "./DataBridge";
+import { logger } from "../utils/logger";
 
 export interface FitnessMetrics {
   date: string;
@@ -156,14 +157,12 @@ class AnalyticsEngine extends EventEmitter {
    * Initialize the analytics system
    */
   private async initializeAnalytics(): Promise<void> {
-    console.log("📊 Initializing FitAI Analytics Engine...");
+    logger.info("📊 Initializing FitAI Analytics Engine...");
 
     try {
       await this.loadMetricsHistory();
       this.isInitialized = true;
-      console.log(
-        `✅ Analytics Engine initialized with ${this.metricsHistory.length} data points`,
-      );
+      logger.info(`Analytics Engine initialized with ${this.metricsHistory.length} data points`);
     } catch (error) {
       console.error("❌ Analytics initialization failed:", error);
     }

@@ -60,10 +60,10 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
           <Animated.View entering={FadeInDown.delay(100).duration(400)}>
             <View style={styles.appSection}>
               <LinearGradient
-                colors={["#FF6B6B", "#FF8E53"]}
+                colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]}
                 style={styles.appLogo}
               >
-                <Text style={styles.appLogoText}>F</Text>
+              <Text style={styles.appLogoText}>F</Text>
               </LinearGradient>
               <Text style={styles.appName}>FitAI</Text>
               <Text style={styles.appTagline}>
@@ -86,17 +86,17 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
             >
               <LinearGradient
                 colors={[
-                  "rgba(255, 107, 53, 0.15)",
-                  "rgba(229, 90, 43, 0.1)",
+                  `rgba(255, 107, 53, 0.15)`,
+                  `rgba(229, 90, 43, 0.1)`,
                 ]}
                 style={StyleSheet.absoluteFill}
               />
               <View style={styles.missionIconContainer}>
                 <LinearGradient
-                  colors={["#FF6B35", "#E55A2B"]}
+                  colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark]}
                   style={styles.missionIcon}
                 >
-                  <Ionicons name="heart-outline" size={rf(24)} color="#fff" />
+                  <Ionicons name="heart-outline" size={rf(24)} color={ResponsiveTheme.colors.white} />
                 </LinearGradient>
               </View>
               <Text style={styles.missionTitle}>Our Mission</Text>
@@ -142,7 +142,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
 
             <AboutFitAIActionItem
               icon="star-outline"
-              iconColor="#FFD700"
+              iconColor={ResponsiveTheme.colors.warning}
               title="Rate the App"
               description="Help others discover FitAI by rating us"
               onPress={handleRateApp}
@@ -151,7 +151,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
 
             <AboutFitAIActionItem
               icon="share-social-outline"
-              iconColor="#4CAF50"
+              iconColor={ResponsiveTheme.colors.success}
               title="Share with Friends"
               description="Invite friends to join your fitness journey"
               onPress={handleShareApp}
@@ -160,7 +160,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
 
             <AboutFitAIActionItem
               icon="globe-outline"
-              iconColor="#2196F3"
+              iconColor={ResponsiveTheme.colors.info}
               title="Visit Our Website"
               description="Learn more about FitAI and our services"
               onPress={handleWebsite}
@@ -195,7 +195,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
 
             <AboutFitAIActionItem
               icon="document-text-outline"
-              iconColor="#607D8B"
+              iconColor={ResponsiveTheme.colors.textSecondary}
               title="Terms of Service"
               description="Review our terms and conditions"
               onPress={handleTermsOfService}
@@ -204,7 +204,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
 
             <AboutFitAIActionItem
               icon="shield-outline"
-              iconColor="#607D8B"
+              iconColor={ResponsiveTheme.colors.textSecondary}
               title="Privacy Policy"
               description="Learn how we protect your data"
               onPress={handlePrivacyPolicy}
@@ -213,7 +213,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
 
             <AboutFitAIActionItem
               icon="code-slash-outline"
-              iconColor="#607D8B"
+              iconColor={ResponsiveTheme.colors.textSecondary}
               title="Open Source Licenses"
               description="Third-party libraries we use"
               onPress={handleOpenSourceLicenses}
@@ -227,11 +227,11 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
             style={styles.copyrightSection}
           >
             <Text style={styles.copyrightText}>
-              © 2024 FitAI Inc. All rights reserved.
+              © {new Date().getFullYear()} FitAI Inc. All rights reserved.
             </Text>
             <View style={styles.madeWithRow}>
               <Text style={styles.copyrightText}>Made with </Text>
-              <Ionicons name="heart" size={rf(12)} color="#FF6B6B" />
+              <Ionicons name="heart" size={rf(12)} color={ResponsiveTheme.colors.error} />
               <Text style={styles.copyrightText}> for fitness enthusiasts</Text>
             </View>
           </Animated.View>
@@ -270,12 +270,12 @@ const styles = StyleSheet.create({
   appLogoText: {
     fontSize: rf(32),
     fontWeight: "800",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
   appName: {
     fontSize: rf(24),
     fontWeight: "800",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
   appTagline: {
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
   missionTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
   missionText: {

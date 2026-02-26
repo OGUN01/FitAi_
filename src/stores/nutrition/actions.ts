@@ -16,17 +16,12 @@ export const createMealPlanActions = (set: any, get: () => NutritionState) => ({
   saveWeeklyMealPlan: async (plan: WeeklyMealPlan) => {
     try {
       const planTitle = plan.planTitle || `Week ${plan.weekNumber} Meal Plan`;
-      console.log("🍽️ Saving weekly meal plan:", planTitle);
 
       set({ weeklyMealPlan: plan });
-      console.log("✅ Meal plan saved to local storage");
 
       if (!plan.meals || plan.meals.length === 0) {
-        console.warn("⚠️ No meals in plan to save to database");
         return;
       }
-
-      console.log(`📋 Saving ${plan.meals.length} meals to database`);
 
       const timestamp = Date.now();
       const mealLogPromises = plan.meals
@@ -70,10 +65,6 @@ export const createMealPlanActions = (set: any, get: () => NutritionState) => ({
       const savedCount = results.filter((r) => r.success).length;
       const errorCount = results.filter((r) => !r.success).length;
 
-      console.log(
-        `✅ Weekly meal plan saved: ${savedCount} successful, ${errorCount} errors`,
-      );
-
       if (errorCount > 0 && savedCount === 0) {
         throw new Error(`Failed to save any meals (${errorCount} errors)`);
       }
@@ -86,13 +77,10 @@ export const createMealPlanActions = (set: any, get: () => NutritionState) => ({
       if (!get().weeklyMealPlan) {
         throw error;
       }
-      console.log("⚠️ Meal plan saved locally but database save failed");
     }
 
     try {
       await offlineService.clearFailedActionsForTable("weekly_meal_plans");
-
-      console.log("🍽️ Saving complete weekly meal plan to database...");
 
       const userId = getCurrentUserId();
       const planId = generateUUID();
@@ -136,7 +124,6 @@ export const createMealPlanActions = (set: any, get: () => NutritionState) => ({
         userId: getUserIdOrGuest(),
         maxRetries: 3,
       });
-      console.log("✅ Weekly meal plan queued for database sync");
     } catch (weeklyMealPlanError) {
       console.error(
         "❌ Failed to save weekly meal plan to database:",
@@ -196,10 +183,6 @@ export const createMealProgressActions = (
 
   completeMeal: async (mealId: string, logId?: string) => {
     const completedAt = new Date().toISOString();
-    console.log("🍽️ NutritionStore: completeMeal called:", {
-      mealId,
-      logId,
-    });
 
     try {
       if (logId) {
@@ -214,7 +197,6 @@ export const createMealProgressActions = (
             deviceId: "dev-device",
           },
         });
-        console.log(`✅ Meal ${mealId} marked complete in database`);
       }
 
       set((state: NutritionState) => {
@@ -259,7 +241,6 @@ export const createMealProgressActions = (
           },
         },
       }));
-      console.log(`📥 Meal ${mealId} queued for offline sync`);
     }
   },
 

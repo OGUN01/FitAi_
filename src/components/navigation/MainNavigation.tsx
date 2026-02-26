@@ -22,7 +22,6 @@ import { WorkoutSessionScreen } from "../../screens/workout/WorkoutSessionScreen
 import { MealSession } from "../../screens/session/MealSession";
 import CookingSessionScreen from "../../screens/cooking/CookingSessionScreen";
 import { OnboardingContainer } from "../../screens/onboarding/OnboardingContainer";
-import { THEME } from "../../utils/constants";
 import { ResponsiveTheme } from "../../utils/constants";
 import { DayWorkout, DayMeal } from "../../types/ai";
 
@@ -77,12 +76,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
   // Navigation object to pass to screens
   const navigation = {
     navigate: (screen: string, params?: any) => {
-      console.log(`🧭 NAVIGATION: Navigating to ${screen}`, { params });
       if (screen === "WorkoutSession") {
-        console.log(`🧭 Setting workout session:`, {
-          workout: params?.workout?.title,
-          sessionId: params?.sessionId,
-        });
         setWorkoutSession({
           isActive: true,
           workout: params.workout,
@@ -91,15 +85,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       } else if (screen === "MealSession") {
         setMealSession({ isActive: true, meal: params.meal });
       } else if (screen === "CookingSession") {
-        console.log(`🧭 Setting cooking session:`, {
-          meal: params?.meal?.name,
-        });
         setCookingSession({ isActive: true, meal: params.meal });
       } else if (screen === "OnboardingContainer") {
-        console.log(`🧭 Setting onboarding edit session:`, {
-          editMode: params?.editMode,
-          initialTab: params?.initialTab,
-        });
         setOnboardingEditSession({
           isActive: true,
           editMode: params?.editMode,
@@ -108,18 +95,14 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           onEditCancel: params?.onEditCancel,
         });
       } else if (screen === "Progress") {
-        console.log(`🧭 Setting progress session`);
         setProgressSession({ isActive: true });
       } else if (screen === "ProgressTrends") {
-        console.log(`🧭 Setting progress trends session`);
         setProgressTrendsSession({ isActive: true });
       } else if (screen === "Achievements") {
-        console.log(`🧭 Setting achievements session`);
         setAchievementsSession({ isActive: true });
       }
     },
     goBack: () => {
-      console.log(`🧭 NAVIGATION: Going back from session`);
       setWorkoutSession({ isActive: false });
       setMealSession({ isActive: false });
       setCookingSession({ isActive: false });
@@ -206,29 +189,20 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
   const renderScreen = () => {
     // If onboarding edit session is active, show OnboardingContainer in edit mode
     if (onboardingEditSession.isActive) {
-      console.log(`🧭 RENDERING: OnboardingContainer in edit mode with:`, {
-        editMode: onboardingEditSession.editMode,
-        initialTab: onboardingEditSession.initialTab,
-      });
       return (
         <OnboardingContainer
           editMode={onboardingEditSession.editMode}
           initialTab={onboardingEditSession.initialTab}
           onEditComplete={() => {
-            console.log("✅ OnboardingContainer: Edit completed");
             onboardingEditSession.onEditComplete?.();
             navigation.goBack();
           }}
           onEditCancel={() => {
-            console.log("❌ OnboardingContainer: Edit cancelled");
             onboardingEditSession.onEditCancel?.();
             navigation.goBack();
           }}
           onComplete={() => {
             // This won't be called in edit mode, but required prop
-            console.log(
-              "OnboardingContainer: onComplete called (should not happen in edit mode)",
-            );
           }}
         />
       );
@@ -236,11 +210,6 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
 
     // If workout session is active, show workout session screen
     if (workoutSession.isActive && workoutSession.workout) {
-      console.log(`🧭 RENDERING: WorkoutSessionScreen with:`, {
-        workoutTitle: workoutSession.workout.title,
-        sessionId: workoutSession.sessionId,
-        exerciseCount: workoutSession.workout.exercises?.length,
-      });
       return (
         <WorkoutSessionScreen
           route={{
@@ -256,10 +225,6 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
 
     // If cooking session is active, show cooking session screen
     if (cookingSession.isActive && cookingSession.meal) {
-      console.log(`🧭 RENDERING: CookingSessionScreen with:`, {
-        mealName: cookingSession.meal.name,
-        cookingInstructions: cookingSession.meal.cookingInstructions?.length,
-      });
       return (
         <CookingSessionScreen
           route={{
@@ -305,6 +270,10 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
             onNavigateToTab={(tab) => {
               if (tab === "achievements") {
                 setAchievementsSession({ isActive: true });
+              } else if (tab === "progress") {
+                setProgressSession({ isActive: true });
+              } else if (tab === "progressTrends") {
+                setProgressTrendsSession({ isActive: true });
               } else {
                 setActiveTab(tab);
               }
@@ -322,7 +291,21 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       case "profile":
         return <ProfileScreen navigation={navigation} />;
       default:
-        return <HomeScreen onNavigateToTab={setActiveTab} />;
+        return (
+          <HomeScreen
+            onNavigateToTab={(tab) => {
+              if (tab === "achievements") {
+                setAchievementsSession({ isActive: true });
+              } else if (tab === "progress") {
+                setProgressSession({ isActive: true });
+              } else if (tab === "progressTrends") {
+                setProgressTrendsSession({ isActive: true });
+              } else {
+                setActiveTab(tab);
+              }
+            }}
+          />
+        );
     }
   };
 

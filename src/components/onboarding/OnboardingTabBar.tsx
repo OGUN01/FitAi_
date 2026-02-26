@@ -9,7 +9,7 @@ import Animated, {
   withTiming,
   interpolate,
 } from "react-native-reanimated";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { TabValidationResult } from "../../types/onboarding";
 import { animations } from "../../theme/animations";
@@ -114,11 +114,11 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
         >
           {isCompleted ? (
             <View style={styles.checkmarkBg}>
-              <Ionicons name="checkmark" size={rf(11)} color="#FFFFFF" />
+              <Ionicons name="checkmark" size={rf(11)} color={ResponsiveTheme.colors.white} />
             </View>
           ) : isActive ? (
             <LinearGradient
-              colors={["#FF6B35", "#FF8A5C"]}
+              colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.accent]}
               style={styles.activeCircleGradient}
             >
               <Text style={styles.stepNumber}>{tab.id}</Text>
@@ -193,7 +193,7 @@ export const OnboardingTabBar: React.FC<OnboardingTabBarProps> = ({
             style={[styles.progressBarFill, animatedProgressStyle]}
           >
             <LinearGradient
-              colors={["#FF6B35", "#FF8A5C", "#FF8A5C"]}
+              colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.accent, ResponsiveTheme.colors.accent]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={StyleSheet.absoluteFill}
@@ -242,28 +242,28 @@ export const OnboardingTabBar: React.FC<OnboardingTabBarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "rgba(10, 10, 25, 0.95)",
-    paddingTop: rh(6),
-    paddingBottom: rh(10),
-    paddingHorizontal: rw(12),
+    backgroundColor: `${ResponsiveTheme.colors.background}F2`,
+    paddingTop: rp(6),
+    paddingBottom: rp(10),
+    paddingHorizontal: rp(12),
   },
 
   // Progress Bar
   progressBarWrapper: {
-    marginBottom: rh(12),
-    paddingHorizontal: rw(4),
+    marginBottom: rp(12),
+    paddingHorizontal: rp(4),
   },
 
   progressBarBg: {
-    height: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    borderRadius: 1,
+    height: rp(2),
+    backgroundColor: ResponsiveTheme.colors.glassBorder,
+    borderRadius: rbr(1),
     overflow: "hidden",
   },
 
   progressBarFill: {
     height: "100%",
-    borderRadius: 1,
+    borderRadius: rbr(1),
     overflow: "hidden",
   },
 
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    paddingHorizontal: rw(4),
+    paddingHorizontal: rp(4),
   },
 
   stepWrapper: {
@@ -285,8 +285,8 @@ const styles = StyleSheet.create({
   connectionLine: {
     position: "absolute",
     top: rw(11),
-    height: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    height: rp(2),
+    backgroundColor: ResponsiveTheme.colors.glassBorder,
     zIndex: 0,
   },
 
@@ -303,17 +303,17 @@ const styles = StyleSheet.create({
   },
 
   connectionLineActive: {
-    backgroundColor: "#10B981",
+    backgroundColor: ResponsiveTheme.colors.successAlt,
   },
 
   // Step Circle
   stepCircle: {
     width: rw(24),
     height: rw(24),
-    borderRadius: rw(12),
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderRadius: rbr(12),
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
     borderWidth: 1.5,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: ResponsiveTheme.colors.glassHighlight,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1,
@@ -323,27 +323,27 @@ const styles = StyleSheet.create({
   stepCircleActive: {
     backgroundColor: "transparent",
     borderWidth: 0,
-    shadowColor: "#FF6B35",
+    shadowColor: ResponsiveTheme.colors.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
-    shadowRadius: 10,
+    shadowRadius: rp(10),
     elevation: 6,
   },
 
   stepCircleCompleted: {
-    backgroundColor: "#10B981",
-    borderColor: "#10B981",
+    backgroundColor: ResponsiveTheme.colors.successAlt,
+    borderColor: ResponsiveTheme.colors.successAlt,
   },
 
   stepCircleDisabled: {
-    backgroundColor: "rgba(255, 255, 255, 0.02)",
-    borderColor: "rgba(255, 255, 255, 0.05)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    borderColor: ResponsiveTheme.colors.glassSurface,
   },
 
   activeCircleGradient: {
     width: "100%",
     height: "100%",
-    borderRadius: rw(12),
+    borderRadius: rbr(12),
     justifyContent: "center",
     alignItems: "center",
   },
@@ -358,44 +358,44 @@ const styles = StyleSheet.create({
   stepNumber: {
     fontSize: rf(10),
     fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: `${ResponsiveTheme.colors.white}80`,
   },
 
   stepNumberDisabled: {
-    color: "rgba(255, 255, 255, 0.2)",
+    color: `${ResponsiveTheme.colors.white}33`,
   },
 
   // Step Label
   stepLabel: {
     fontSize: rf(9),
     fontWeight: "500",
-    color: "rgba(255, 255, 255, 0.35)",
-    marginTop: rh(5),
+    color: `${ResponsiveTheme.colors.white}8C`,
+    marginTop: rp(5),
     textAlign: "center",
   },
 
   stepLabelActive: {
-    color: "#A78BFA",
+    color: ResponsiveTheme.colors.info,
     fontWeight: "600",
   },
 
   stepLabelCompleted: {
-    color: "#10B981",
+    color: ResponsiveTheme.colors.successAlt,
   },
 
   stepLabelDisabled: {
-    color: "rgba(255, 255, 255, 0.15)",
+    color: `${ResponsiveTheme.colors.white}59`,
   },
 
   // Step Counter
   stepCounter: {
     alignItems: "center",
-    marginTop: rh(8),
+    marginTop: rp(8),
   },
 
   stepCounterText: {
     fontSize: rf(9),
-    color: "rgba(255, 255, 255, 0.4)",
+    color: `${ResponsiveTheme.colors.white}66`,
     fontWeight: "500",
     letterSpacing: 1,
   },

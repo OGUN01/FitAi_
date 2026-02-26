@@ -122,7 +122,6 @@ class ProgressDataService {
   async initialize(): Promise<void> {
     try {
       await crudOperations.initialize();
-      console.log("Progress Data Service initialized with Track B integration");
     } catch (error) {
       console.error("Failed to initialize Progress Data Service:", error);
       throw error;
@@ -260,9 +259,7 @@ class ProgressDataService {
         await analyticsDataService.updateTodaysMetrics(userId, {
           weightKg: entryData.weight_kg,
         });
-        console.log("📊 Analytics metrics updated for weight entry");
       } catch (analyticsError) {
-        console.warn("⚠️ Failed to update analytics metrics:", analyticsError);
       }
 
       return {

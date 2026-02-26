@@ -16,6 +16,7 @@ import Animated, {
 import { GlassCard } from "./GlassCard";
 import { colors, typography, spacing } from "../../../theme/aurora-tokens";
 import { duration, easingFunctions } from "../../../theme/animations";
+import { rbr } from "../../../utils/responsive";
 
 const AnimatedText = Animated.createAnimatedComponent(Text);
 
@@ -255,7 +256,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   iconContainer: {
-    borderRadius: 12,
+    borderRadius: rbr(12),
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: colors.glass.background,

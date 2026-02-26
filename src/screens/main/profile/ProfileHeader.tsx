@@ -8,33 +8,35 @@
  * - NO streak badge (moved to stats row)
  */
 
-import React, { useRef, useCallback } from "react";
-import { View, Text, StyleSheet, Animated as RNAnimated } from "react-native";
+import React from "react";
+import { View, Text, StyleSheet, Platform } from "react-native";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import {
   gradientAuroraSpace,
   toLinearGradientProps,
 } from "../../../theme/gradients";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw } from "../../../utils/responsive";
-import { haptics } from "../../../utils/haptics";
+import { rf, rp, rbr, rw } from "../../../utils/responsive";
+
+const avatarShadow = {
+  shadowColor: ResponsiveTheme.colors.errorLight,
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.3,
+  shadowRadius: 12,
+};
 
 interface ProfileHeaderProps {
   userName: string;
-  memberSince?: string;
+  memberSince?: string | null;
   onEditPress: () => void;
 }
 
 export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   userName,
   memberSince,
-  onEditPress,
+  onEditPress: _onEditPress,
 }) => {
-  const avatarScale = useRef(new RNAnimated.Value(1)).current;
-
   const getInitials = (name?: string) => {
     if (!name) return "U";
     return name
@@ -45,63 +47,36 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       .slice(0, 2);
   };
 
-  const handleAvatarPress = useCallback(() => {
-    RNAnimated.sequence([
-      RNAnimated.timing(avatarScale, {
-        toValue: 0.9,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      RNAnimated.spring(avatarScale, {
-        toValue: 1,
-        tension: 100,
-        friction: 5,
-        useNativeDriver: true,
-      }),
-    ]).start();
-    haptics.medium();
-    onEditPress();
-  }, [avatarScale, onEditPress]);
-
   return (
     <LinearGradient
       {...toLinearGradientProps(gradientAuroraSpace)}
       style={styles.container}
     >
       <View style={styles.content}>
-        {/* Compact Animated Avatar */}
+        {/* Avatar (non-interactive — use Personal Information below to edit) */}
         <Animated.View
           entering={FadeIn.delay(100).duration(400)}
           style={styles.avatarContainer}
         >
-          <AnimatedPressable
-            onPress={handleAvatarPress}
-            scaleValue={0.95}
-            hapticFeedback={false}
+          <LinearGradient
+            colors={["#FF6B6B", "#FF8E53"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.avatar, Platform.OS !== 'web' && avatarShadow]}
           >
-            <RNAnimated.View style={{ transform: [{ scale: avatarScale }] }}>
-              <LinearGradient
-                colors={["#FF6B6B", "#FF8E53"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.avatar}
-              >
-                <Text style={styles.avatarText}>{getInitials(userName)}</Text>
-              </LinearGradient>
-              <View style={styles.editBadge}>
-                <Ionicons name="create-outline" size={rf(12)} color="#fff" />
-              </View>
-            </RNAnimated.View>
-          </AnimatedPressable>
+            <Text style={styles.avatarText}>{getInitials(userName)}</Text>
+          </LinearGradient>
         </Animated.View>
 
         {/* User Info */}
         <Animated.View entering={FadeInDown.delay(200).duration(400)}>
           <Text style={styles.userName}>{userName || "Fitness Champion"}</Text>
           <Text style={styles.memberSince}>
-            {memberSince && memberSince !== "Recently"
-              ? `Member since ${memberSince}`
-              : "Just joined today"}
+            {memberSince === null || memberSince === undefined
+              ? "Just joined today"
+              : /^\d+ (day|week)/.test(memberSince)
+                ? `Member for ${memberSince}`
+                : `Member since ${memberSince}`}
           </Text>
         </Animated.View>
       </View>
@@ -129,50 +104,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 2,
     borderColor: "rgba(255, 255, 255, 0.25)",
-    shadowColor: "#FF6B6B",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
     elevation: 8,
   },
   avatarText: {
     fontSize: rf(32),
     fontWeight: "700",
-    color: "#fff",
-    textShadowColor: "rgba(0, 0, 0, 0.2)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    color: ResponsiveTheme.colors.white,
+    lineHeight: rw(80),
+    textAlignVertical: "center",
+    includeFontPadding: false,
   },
-  editBadge: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: rw(28),
-    height: rw(28),
-    borderRadius: rw(14),
-    backgroundColor: ResponsiveTheme.colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.background,
-    shadowColor: ResponsiveTheme.colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    elevation: 4,
-  },
+
   userName: {
     fontSize: rf(22),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     textAlign: "center",
-    marginBottom: 2,
+    marginBottom: rp(2),
     letterSpacing: 0.3,
   },
   memberSince: {
     fontSize: rf(12),
-    color: "rgba(255, 255, 255, 0.6)",
-    textAlign: "center",
+    color: ResponsiveTheme.colors.text,
+    textAlign: 'center',
+    opacity: 0.85,
   },
 });
 

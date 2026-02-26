@@ -1,6 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Card, THEME } from "../ui";
+import { Card } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr, rw, rh } from '../../utils/responsive';
 import { DayMeal } from "../../types/ai";
 
 interface MealOverviewCardProps {
@@ -57,57 +59,57 @@ export const MealOverviewCard: React.FC<MealOverviewCardProps> = ({
 
 const styles = StyleSheet.create({
   mealOverviewCard: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
   },
   mealHeader: {
     flexDirection: "row",
     alignItems: "center" as const,
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   mealIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: THEME.colors.primary + "15",
+    width: rw(60),
+    height: rh(60),
+    borderRadius: rbr(30),
+    backgroundColor: ResponsiveTheme.colors.primary + "15",
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    marginRight: THEME.spacing.md,
+    marginRight: ResponsiveTheme.spacing.md,
   },
   mealIcon: {
-    fontSize: 28,
+    fontSize: rf(28),
   },
   mealInfo: {
     flex: 1,
   },
   mealName: {
-    fontSize: 20,
+    fontSize: rf(20),
     fontWeight: "600",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   mealDescription: {
-    fontSize: 14,
-    color: THEME.colors.textSecondary,
-    lineHeight: 20,
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(20),
   },
   mealStats: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingTop: THEME.spacing.md,
+    paddingTop: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: ResponsiveTheme.colors.border,
   },
   statItem: {
     alignItems: "center" as const,
   },
   statValue: {
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: "600",
-    color: THEME.colors.text,
+    color: ResponsiveTheme.colors.text,
   },
   statLabel: {
-    fontSize: 12,
-    color: THEME.colors.textSecondary,
-    marginTop: 2,
+    fontSize: rf(12),
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: rp(2),
   },
 });

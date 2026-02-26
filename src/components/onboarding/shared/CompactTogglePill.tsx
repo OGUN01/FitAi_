@@ -7,7 +7,7 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../../utils/responsive";
+import { rf, rs, rbr, rp } from "../../../utils/responsive";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { AnimatedPressable } from "../../../components/ui/aurora";
 
@@ -158,19 +158,19 @@ const styles = StyleSheet.create({
     padding: ResponsiveTheme.spacing.xs,
   },
   compactToggleSwitch: {
-    width: 38,
-    height: 22,
-    borderRadius: 11,
+    width: rs(38),
+    height: rs(22),
+    borderRadius: rbr(11),
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     justifyContent: "center",
-    paddingHorizontal: 2,
+    paddingHorizontal: rp(2),
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
   },
   compactToggleThumb: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    width: rs(18),
+    height: rs(18),
+    borderRadius: rbr(9),
     backgroundColor: ResponsiveTheme.colors.white,
   },
 });

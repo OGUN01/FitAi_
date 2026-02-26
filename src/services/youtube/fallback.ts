@@ -39,7 +39,6 @@ export function getFallbackDemoVideo(mealName: string): VideoSearchResult {
   const randomVideo =
     fallbackVideos[Math.floor(Math.random() * fallbackVideos.length)];
 
-  console.log(`🎬 Using fallback demo video: ${randomVideo.title}`);
   return {
     success: true,
     video: randomVideo,

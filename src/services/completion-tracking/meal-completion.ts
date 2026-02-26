@@ -16,7 +16,6 @@ export async function completeMeal(
   try {
     const nutritionStore = useNutritionStore.getState();
 
-    console.log(`🍽️ Completing meal: ${mealId}`);
 
     await nutritionStore.completeMeal(mealId, logData?.logId);
 
@@ -24,17 +23,9 @@ export async function completeMeal(
       (m) => m.id === mealId,
     );
 
-    console.log(`🍽️ Found meal for completion:`, {
-      found: !!meal,
-      mealName: meal?.name,
-      mealCalories: meal?.totalCalories,
-      mealType: meal?.type,
-      dayOfWeek: meal?.dayOfWeek,
-    });
 
     if (meal) {
       try {
-        console.log(`🍽️ Creating meal log for completed meal: ${meal.name}`);
 
         const currentUserId = userId;
 
@@ -63,9 +54,6 @@ export async function completeMeal(
           };
 
           await crudOperations.createMealLog(mealLog);
-          console.log(
-            `✅ Local meal log created for: ${meal.name} (${meal.totalCalories} calories)`,
-          );
 
           try {
             const supabaseResult = await supabase.from("meal_logs").insert({
@@ -86,33 +74,18 @@ export async function completeMeal(
                 supabaseResult.error,
               );
             } else {
-              console.log(
-                `✅ Supabase meal_logs synced for: ${meal.name} (${meal.totalCalories} cal, P:${meal.totalMacros?.protein}g, C:${meal.totalMacros?.carbohydrates}g, F:${meal.totalMacros?.fat}g)`,
-              );
 
               try {
                 await analyticsDataService.updateTodaysMetrics(currentUserId, {
                   mealsLogged: 1,
                   caloriesConsumed: meal.totalCalories || 0,
                 });
-                console.log("📊 Analytics metrics updated for meal completion");
               } catch (analyticsError) {
-                console.warn(
-                  "⚠️ Failed to update analytics metrics:",
-                  analyticsError,
-                );
               }
 
               try {
                 await nutritionRefreshService.triggerRefresh();
-                console.log(
-                  "🔄 Nutrition refresh triggered after meal completion",
-                );
               } catch (refreshError) {
-                console.warn(
-                  "⚠️ Failed to trigger nutrition refresh:",
-                  refreshError,
-                );
               }
             }
           } catch (supabaseError) {
@@ -122,7 +95,6 @@ export async function completeMeal(
             );
           }
         } else {
-          console.warn(`⚠️ No user ID available, skipping meal log creation`);
         }
       } catch (mealLogError) {
         console.error(`❌ Error creating meal log:`, mealLogError);
@@ -143,12 +115,8 @@ export async function completeMeal(
       };
 
       emitter.emit(event);
-      console.log(
-        `✅ Meal completed: ${meal.name} (${meal.totalCalories} calories)`,
-      );
 
       const savedProgress = nutritionStore.getMealProgress(mealId);
-      console.log(`🍽️ Saved meal progress:`, savedProgress);
 
       return true;
     }

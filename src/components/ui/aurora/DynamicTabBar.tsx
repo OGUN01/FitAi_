@@ -23,6 +23,7 @@ import {
   easingFunctions,
 } from "../../../theme/animations";
 import { haptics } from "../../../utils/haptics";
+import { rf, rs, rbr } from "../../../utils/responsive";
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
@@ -314,19 +315,19 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.glass.border,
   },
   progressContainer: {
-    height: 4,
+    height: rs(4),
     width: "100%",
     paddingHorizontal: spacing.md,
   },
   progressTrack: {
-    height: 4,
+    height: rs(4),
     backgroundColor: colors.glass.background,
-    borderRadius: 2,
+    borderRadius: rbr(2),
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    borderRadius: 2,
+    borderRadius: rbr(2),
   },
   tabsContainer: {
     flex: 1,
@@ -336,9 +337,9 @@ const styles = StyleSheet.create({
   indicator: {
     position: "absolute",
     bottom: 0,
-    height: 3,
-    borderTopLeftRadius: 3,
-    borderTopRightRadius: 3,
+    height: rs(3),
+    borderTopLeftRadius: rbr(3),
+    borderTopRightRadius: rbr(3),
   },
   tab: {
     flex: 1,
@@ -352,13 +353,13 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   iconContainer: {
-    width: 24,
-    height: 24,
+    width: rs(24),
+    height: rs(24),
     justifyContent: "center",
     alignItems: "center",
   },
   iconEmoji: {
-    fontSize: 20,
+    fontSize: rf(20),
     opacity: 0.6,
   },
   iconActive: {
@@ -381,9 +382,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -4,
     right: -4,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: rs(8),
+    height: rs(8),
+    borderRadius: rbr(4),
     borderWidth: 1.5,
     borderColor: colors.background.DEFAULT,
   },
@@ -391,15 +392,15 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -6,
     right: -6,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: rs(16),
+    height: rs(16),
+    borderRadius: rbr(8),
     backgroundColor: colors.success.DEFAULT,
     justifyContent: "center",
     alignItems: "center",
   },
   completionCheck: {
-    fontSize: 10,
+    fontSize: rf(10),
     color: colors.text.primary,
     fontWeight: typography.fontWeight.bold as any,
   },

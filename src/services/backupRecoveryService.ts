@@ -255,7 +255,6 @@ export class BackupRecoveryService {
       await this.cleanupOldBackups();
 
       this.isInitialized = true;
-      console.log("Backup and recovery service initialized");
     } catch (error) {
       console.error("Failed to initialize backup service:", error);
       throw error;
@@ -489,7 +488,6 @@ export class BackupRecoveryService {
       // Update available backups
       await this.updateAvailableBackups();
 
-      console.log(`Backup deleted: ${backupId}`);
     } catch (error) {
       console.error(`Failed to delete backup ${backupId}:`, error);
       throw error;
@@ -534,7 +532,6 @@ export class BackupRecoveryService {
     this.stopAutoBackup();
     await this.saveBackupStatus();
     this.isInitialized = false;
-    console.log("Backup and recovery service stopped");
   }
 
   // ============================================================================
@@ -974,7 +971,6 @@ export class BackupRecoveryService {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        console.warn("Cannot store cloud backup: User not authenticated");
         return;
       }
 
@@ -995,7 +991,6 @@ export class BackupRecoveryService {
         console.error("Failed to upload backup to cloud:", error);
         // Don't throw - cloud backup is optional
       } else {
-        console.log("Backup uploaded to cloud:", backupData.metadata.id);
       }
     } catch (error) {
       console.error("Cloud backup storage error:", error);
@@ -1151,7 +1146,6 @@ export class BackupRecoveryService {
         backup.metadata.checksum &&
         calculatedChecksum !== backup.metadata.checksum
       ) {
-        console.warn("Backup checksum mismatch - data may be corrupted");
       }
 
       return {
@@ -1187,7 +1181,6 @@ export class BackupRecoveryService {
       for (const backup of deleteList) {
         try {
           await this.deleteBackup(backup.id);
-          console.log(`Cleaned up old backup: ${backup.id}`);
         } catch (error) {
           console.error(`Failed to cleanup backup ${backup.id}:`, error);
         }

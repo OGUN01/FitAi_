@@ -1,4 +1,5 @@
 import { useUserStore } from "../../stores/userStore";
+import { useProfileStore } from "../../stores/profileStore";
 import { DayWorkout } from "../../ai";
 import {
   calculateWorkoutCalories,
@@ -13,22 +14,14 @@ export function calculateActualCalories(
     sessionData?.stats?.caloriesBurned &&
     sessionData.stats.caloriesBurned > 0
   ) {
-    console.log(
-      `[completionTracking] Using session stats calories: ${sessionData.stats.caloriesBurned} kcal`,
-    );
     return sessionData.stats.caloriesBurned;
   }
 
   const userStore = useUserStore.getState();
-  const userWeight = userStore.profile?.bodyMetrics?.current_weight_kg;
+  const userWeight = userStore.profile?.bodyMetrics?.current_weight_kg
+    || useProfileStore.getState().bodyAnalysis?.current_weight_kg;
 
   if (!userWeight || userWeight <= 0) {
-    console.warn(
-      "[completionTracking] Cannot calculate calories: user weight not set in profile",
-    );
-    console.warn(
-      "[completionTracking] User should complete onboarding with body metrics",
-    );
     return 0;
   }
 
@@ -47,15 +40,9 @@ export function calculateActualCalories(
     const result = calculateWorkoutCalories(exerciseInputs, userWeight);
 
     if (result.totalCalories > 0) {
-      console.log(
-        `[completionTracking] MET-based calories (weight: ${userWeight}kg): ${result.totalCalories} kcal`,
-      );
       return result.totalCalories;
     }
   }
 
-  console.warn(
-    "[completionTracking] No exercises available for MET calculation",
-  );
   return 0;
 }

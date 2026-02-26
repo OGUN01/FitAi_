@@ -68,12 +68,14 @@ export const WeightManagementSection: React.FC<
           borderRadius="lg"
           style={styles.weightCardInline}
         >
+          {isValidMetric(bodyAnalysis?.target_weight_kg) && (
           <View style={styles.weightHeader}>
             <Text style={styles.weightTitle}>Goal Timeline</Text>
             <Text style={styles.timelineWeeks}>
               {calculatedData.estimated_timeline_weeks} weeks
             </Text>
           </View>
+          )}
 
           <View style={styles.chartContainer}>
             {isValidMetric(bodyAnalysis?.current_weight_kg) &&
@@ -98,8 +100,8 @@ export const WeightManagementSection: React.FC<
             ) : (
               <DataPlaceholder
                 icon="scale-outline"
-                title="Weight Data Needed"
-                message="Complete your body analysis to see your personalized weight projection chart"
+                title="Set a Target Weight"
+                message="Enter a target weight in Body Analysis to see your personalized weight projection and plan"
                 actionText="Go to Body Analysis"
                 onAction={() => onNavigateToTab?.(3)}
               />

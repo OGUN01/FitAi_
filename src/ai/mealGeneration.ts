@@ -22,7 +22,6 @@ export async function generateMeal(
   } = {},
   updateMetadata: (metadata: AIServiceMetadata) => void,
 ): Promise<AIResponse<Meal>> {
-  console.log("🍽️ [aiService] generateMeal called for:", mealType);
 
   try {
     const request = transformForDietRequest(
@@ -32,7 +31,6 @@ export async function generateMeal(
       preferences.dietPreferences,
     );
 
-    console.log("🍽️ [aiService] Calling backend /diet/generate");
     const response = await fitaiWorkersClient.generateDietPlan(request);
 
     if (response.metadata) {
@@ -59,7 +57,6 @@ export async function generateMeal(
       };
     }
 
-    console.log("✅ [aiService] Meal generated successfully");
     return {
       success: true,
       data: meal as Meal,
@@ -78,7 +75,6 @@ export async function generateDailyMealPlan(
   } = {},
   updateMetadata: (metadata: AIServiceMetadata) => void,
 ): Promise<AIResponse<DailyMealPlan>> {
-  console.log("🍽️ [aiService] generateDailyMealPlan called");
 
   try {
     const request = transformForDietRequest(
@@ -88,7 +84,6 @@ export async function generateDailyMealPlan(
       preferences.dietPreferences,
     );
 
-    console.log("🍽️ [aiService] Calling backend /diet/generate");
     const response = await fitaiWorkersClient.generateDietPlan(request);
 
     if (response.metadata) {
@@ -115,7 +110,6 @@ export async function generateDailyMealPlan(
       waterIntake: 0,
     };
 
-    console.log("✅ [aiService] Daily meal plan generated successfully");
     return {
       success: true,
       data: dailyPlan,
@@ -136,11 +130,6 @@ export async function generateWeeklyMealPlan(
   } = {},
   updateMetadata: (metadata: AIServiceMetadata) => void,
 ): Promise<AIResponse<WeeklyMealPlan>> {
-  console.log(
-    "🍽️ [aiService] generateWeeklyMealPlan called for week:",
-    weekNumber,
-  );
-  console.log("🍽️ [aiService] calorieTarget:", options.calorieTarget);
 
   try {
     const request = transformForDietRequest(
@@ -151,18 +140,10 @@ export async function generateWeeklyMealPlan(
       options.calorieTarget,
     );
 
-    console.log("🍽️ [aiService] Calling backend /diet/generate");
     const response = await fitaiWorkersClient.generateDietPlan(request);
 
     if (response.metadata) {
       updateMetadata(response.metadata as AIServiceMetadata);
-      console.log("📊 [aiService] Generation metadata:", {
-        cached: response.metadata.cached,
-        cacheSource: response.metadata.cacheSource,
-        generationTime: response.metadata.generationTime,
-        model: response.metadata.model,
-        cuisineDetected: response.metadata.cuisineDetected,
-      });
     }
 
     if (!response.success || !response.data) {
@@ -181,11 +162,6 @@ export async function generateWeeklyMealPlan(
         error: "Failed to transform diet response",
       };
     }
-
-    console.log("✅ [aiService] Weekly meal plan generated successfully:", {
-      meals: weeklyPlan.meals.length,
-      title: weeklyPlan.planTitle,
-    });
 
     return {
       success: true,

@@ -33,7 +33,8 @@ import {
   warnLowSleep,
   warnMedicalConditions,
   warnBodyRecomp,
-  warnSubstanceImpact,
+  warnAlcoholImpact,
+  warnTobaccoImpact,
   warnHeartDisease,
   warnConcurrentTrainingInterference,
   warnObesitySpecialGuidance,
@@ -264,12 +265,16 @@ export class ValidationEngine {
       );
       if (recompWarn.status !== "OK") warnings.push(recompWarn);
 
-      const substanceWarns = warnSubstanceImpact(
+      const alcoholWarn = warnAlcoholImpact(
         dietPreferences.drinks_alcohol,
-        dietPreferences.smokes_tobacco,
         isAggressive,
       );
-      warnings.push(...substanceWarns);
+      if (alcoholWarn.status === "WARNING") warnings.push(alcoholWarn);
+
+      const tobaccoWarn = warnTobaccoImpact(
+        dietPreferences.smokes_tobacco,
+      );
+      if (tobaccoWarn.status === "WARNING") warnings.push(tobaccoWarn);
 
       const elderlyWarn = warnElderlyUser(personalInfo.age);
       if (elderlyWarn.status === "WARNING") warnings.push(elderlyWarn);
@@ -284,6 +289,7 @@ export class ValidationEngine {
       const heartWarn = warnHeartDisease(
         bodyAnalysis.medical_conditions,
         workoutPreferences.intensity,
+        isAggressive,
       );
       if (heartWarn.status === "WARNING") warnings.push(heartWarn);
 

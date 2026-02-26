@@ -48,7 +48,6 @@ export class ExerciseMatchers {
 
       return null;
     } catch (error) {
-      console.warn(`Fuzzy matching failed for ${exerciseName}:`, error);
       return null;
     }
   }
@@ -100,7 +99,6 @@ export class ExerciseMatchers {
 
       return null;
     } catch (error) {
-      console.warn(`Semantic matching failed for ${exerciseName}:`, error);
       return null;
     }
   }
@@ -136,10 +134,6 @@ export class ExerciseMatchers {
 
       return null;
     } catch (error) {
-      console.warn(
-        `Classification matching failed for ${exerciseName}:`,
-        error,
-      );
       return null;
     }
   }

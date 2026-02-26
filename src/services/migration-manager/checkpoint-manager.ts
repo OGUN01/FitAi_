@@ -22,9 +22,6 @@ export class CheckpointManager {
         MIGRATION_CHECKPOINT_KEY,
         JSON.stringify(checkpoint),
       );
-      console.log(
-        `📍 Migration checkpoint saved: step ${checkpoint.currentStepIndex}/${checkpoint.completedSteps.length}`,
-      );
     } catch (error) {
       console.error("Failed to save migration checkpoint:", error);
     }
@@ -33,7 +30,6 @@ export class CheckpointManager {
   async clearCheckpoint(): Promise<void> {
     try {
       await AsyncStorage.removeItem(MIGRATION_CHECKPOINT_KEY);
-      console.log("🧹 Migration checkpoint cleared");
     } catch (error) {
       console.error("Failed to clear migration checkpoint:", error);
     }

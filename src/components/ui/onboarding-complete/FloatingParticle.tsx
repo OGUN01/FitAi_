@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Easing, StyleSheet } from "react-native";
-import { rw, rh } from "../../../utils/responsive";
+import { rw, rh, rs, rbr } from "../../../utils/responsive";
 
 interface FloatingParticleProps {
   delay: number;
@@ -80,8 +80,8 @@ export const FloatingParticle: React.FC<FloatingParticleProps> = ({
 const styles = StyleSheet.create({
   particle: {
     position: "absolute",
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: rs(8),
+    height: rs(8),
+    borderRadius: rbr(4),
   },
 });

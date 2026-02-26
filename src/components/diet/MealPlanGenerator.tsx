@@ -13,7 +13,7 @@ import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { AuroraSpinner } from "../ui/aurora/AuroraSpinner";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 
 interface MealPlanGeneratorProps {
   onGenerate: () => void;
@@ -38,7 +38,7 @@ export const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({
       {/* Section Header */}
       <View style={styles.sectionHeader}>
         <View style={styles.headerLeft}>
-          <Ionicons name="sparkles" size={rf(18)} color="#FF6B35" />
+          <Ionicons name="sparkles" size={rf(18)} color={ResponsiveTheme.colors.primary} />
           <Text style={styles.sectionTitle}>AI Meal Planning</Text>
         </View>
         {hasPlan && (
@@ -63,7 +63,7 @@ export const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({
           borderRadius="lg"
         >
           <LinearGradient
-            colors={["rgba(255, 107, 53, 0.15)", "rgba(229, 90, 43, 0.1)"]}
+            colors={[ResponsiveTheme.colors.primaryTint, `${ResponsiveTheme.colors.primaryDark}1A`]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.gradientBg}
@@ -74,7 +74,7 @@ export const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({
                 {isGenerating ? (
                   <AuroraSpinner size="md" theme="primary" />
                 ) : (
-                  <Ionicons name="restaurant" size={rf(32)} color="#FF6B35" />
+                  <Ionicons name="restaurant" size={rf(32)} color={ResponsiveTheme.colors.primary} />
                 )}
               </View>
 
@@ -163,22 +163,22 @@ const styles = StyleSheet.create({
   activeBadge: {
     flexDirection: "row",
     alignItems: "center" as const,
-    backgroundColor: "rgba(76, 175, 80, 0.15)",
+    backgroundColor: ResponsiveTheme.colors.successTint,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.full,
-    gap: 6,
+    gap: rp(6),
   },
   activeDot: {
     width: rw(6),
     height: rw(6),
     borderRadius: rw(3),
-    backgroundColor: "#4CAF50",
+    backgroundColor: ResponsiveTheme.colors.success,
   },
   activeText: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: "#4CAF50",
+    color: ResponsiveTheme.colors.success,
   },
   gradientBg: {
     padding: ResponsiveTheme.spacing.md,
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     width: rw(56),
     height: rw(56),
     borderRadius: rw(16),
-    backgroundColor: "rgba(255, 107, 53, 0.15)",
+    backgroundColor: ResponsiveTheme.colors.primaryTint,
     justifyContent: "center" as const,
     alignItems: "center" as const,
     marginRight: ResponsiveTheme.spacing.md,
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     fontSize: rf(15),
     fontWeight: "700",
     color: ResponsiveTheme.colors.text,
-    marginBottom: 2,
+    marginBottom: rp(2),
   },
   planDetails: {
     fontSize: rf(12),
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     fontSize: rf(15),
     fontWeight: "700",
     color: ResponsiveTheme.colors.text,
-    marginBottom: 2,
+    marginBottom: rp(2),
   },
   subtitle: {
     fontSize: rf(12),
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     width: rw(32),
     height: rw(32),
     borderRadius: rw(16),
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
@@ -235,16 +235,16 @@ const styles = StyleSheet.create({
     marginTop: ResponsiveTheme.spacing.md,
     paddingTop: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.05)",
+    borderTopColor: ResponsiveTheme.colors.glassSurface,
   },
   featureTag: {
     flexDirection: "row",
     alignItems: "center" as const,
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: rp(4),
     borderRadius: ResponsiveTheme.borderRadius.sm,
-    gap: 4,
+    gap: rp(4),
   },
   featureText: {
     fontSize: rf(10),

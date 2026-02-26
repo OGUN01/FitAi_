@@ -366,7 +366,6 @@ export class FitAIApi {
       // Restore auth session
       await authService.restoreSession();
     } catch (error) {
-      console.warn("Failed to initialize API:", error);
     }
   }
 

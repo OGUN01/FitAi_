@@ -1,7 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { rf } from "../../utils/responsive";
+import { rf, rp, rbr } from "../../utils/responsive";
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
+import { ResponsiveTheme } from "../../utils/constants";
 
 // ============================================================================
 // Types
@@ -22,10 +23,10 @@ const FEATURE_LABELS: Record<UsageCounterProps["featureKey"], string> = {
   barcode_scan: "Food Scans",
 };
 
-const COLOR_GREEN = "#10B981";
-const COLOR_YELLOW = "#F59E0B";
-const COLOR_RED = "#EF4444";
-const COLOR_MUTED = "#9CA3AF";
+const COLOR_GREEN = ResponsiveTheme.colors.successAlt;
+const COLOR_YELLOW = ResponsiveTheme.colors.warningAlt;
+const COLOR_RED = ResponsiveTheme.colors.errorAlt;
+const COLOR_MUTED = ResponsiveTheme.colors.muted;
 
 // ============================================================================
 // Component
@@ -130,7 +131,7 @@ const styles = StyleSheet.create({
   compactContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: rp(6),
   },
   compactLabel: {
     fontSize: rf(11),
@@ -140,32 +141,32 @@ const styles = StyleSheet.create({
   compactValueRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: rp(4),
   },
   compactValue: {
     fontSize: rf(12),
     fontWeight: "600",
   },
   dotSmall: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: rp(6),
+    height: rp(6),
+    borderRadius: rbr(3),
   },
 
   // Detailed variant
   detailedContainer: {
-    gap: 2,
+    gap: rp(2),
   },
   detailedLabel: {
     fontSize: rf(12),
     color: COLOR_MUTED,
     fontWeight: "500",
-    marginBottom: 2,
+    marginBottom: rp(2),
   },
   detailedValueRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: rp(6),
   },
   detailedValue: {
     fontSize: rf(14),
@@ -177,9 +178,9 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: rp(8),
+    height: rp(8),
+    borderRadius: rbr(4),
   },
 });
 

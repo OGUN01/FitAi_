@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Error Fallback Components
  * Reusable fallback UI components for different error states
  */
@@ -6,7 +6,8 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { THEME } from "../ui";
+import { ResponsiveTheme } from '../../utils/constants';
+
 
 interface ErrorFallbackProps {
   title?: string;
@@ -25,13 +26,13 @@ export const ErrorFallback: React.FC<ErrorFallbackProps> = ({
 }) => {
   return (
     <View style={styles.container}>
-      <Ionicons name={icon} size={48} color={THEME.colors.error} />
+      <Ionicons name={icon} size={48} color={ResponsiveTheme.colors.error} />
 
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.message}>{message}</Text>
 
       {onRetry && (
-        <TouchableOpacity style={styles.button} onPress={onRetry}>
+        <TouchableOpacity style={styles.button} onPress={onRetry} accessibilityRole="button" accessibilityLabel={retryText}>
           <Text style={styles.buttonText}>{retryText}</Text>
         </TouchableOpacity>
       )}
@@ -98,13 +99,13 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 }) => {
   return (
     <View style={styles.container}>
-      <Ionicons name={icon} size={48} color={THEME.colors.textSecondary} />
+      <Ionicons name={icon} size={48} color={ResponsiveTheme.colors.textSecondary} />
 
-      <Text style={[styles.title, { color: THEME.colors.text }]}>{title}</Text>
+      <Text style={[styles.title, { color: ResponsiveTheme.colors.text }]}>{title}</Text>
       <Text style={styles.message}>{message}</Text>
 
       {onAction && actionText && (
-        <TouchableOpacity style={styles.button} onPress={onAction}>
+        <TouchableOpacity style={styles.button} onPress={onAction} accessibilityRole="button" accessibilityLabel={actionText}>
           <Text style={styles.buttonText}>{actionText}</Text>
         </TouchableOpacity>
       )}
@@ -117,38 +118,38 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    padding: THEME.spacing.xl,
+    padding: ResponsiveTheme.spacing.xl,
   },
 
   title: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.error,
-    marginTop: THEME.spacing.lg,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.error,
+    marginTop: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.sm,
     textAlign: "center",
   },
 
   message: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
     lineHeight: 22,
   },
 
   button: {
-    backgroundColor: THEME.colors.primary,
-    paddingVertical: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.lg,
-    borderRadius: THEME.borderRadius.md,
-    marginTop: THEME.spacing.md,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    marginTop: ResponsiveTheme.spacing.md,
   },
 
   buttonText: {
-    color: THEME.colors.white,
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
+    color: ResponsiveTheme.colors.white,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
 });
 

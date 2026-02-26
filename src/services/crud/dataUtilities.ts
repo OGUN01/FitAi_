@@ -67,7 +67,6 @@ export async function exportAllData(): Promise<LocalStorageSchema | null> {
 export async function importData(data: LocalStorageSchema): Promise<void> {
   try {
     await dataBridge.importData(data);
-    console.log("Data imported successfully");
   } catch (error) {
     console.error("Failed to import data:", error);
     throw error;
@@ -77,7 +76,6 @@ export async function importData(data: LocalStorageSchema): Promise<void> {
 export async function clearAllData(): Promise<void> {
   try {
     await dataBridge.clearAllData();
-    console.log("All data cleared successfully");
   } catch (error) {
     console.error("Failed to clear all data:", error);
     throw error;

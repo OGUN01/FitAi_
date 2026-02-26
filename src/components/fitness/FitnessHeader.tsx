@@ -9,7 +9,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 
 interface FitnessHeaderProps {
   userName: string;
@@ -72,6 +72,8 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
         hapticFeedback={true}
         hapticType="light"
         style={styles.calendarButton}
+        accessibilityRole="button"
+        accessibilityLabel="Calendar"
       >
         <View style={styles.calendarIconContainer}>
           <Ionicons
@@ -119,10 +121,10 @@ const styles = StyleSheet.create({
   weekBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: rp(4),
     backgroundColor: `${ResponsiveTheme.colors.primary}15`,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: rp(4),
     borderRadius: ResponsiveTheme.borderRadius.full,
   },
   weekText: {
@@ -141,27 +143,27 @@ const styles = StyleSheet.create({
     width: rw(44),
     height: rw(44),
     borderRadius: rw(22),
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: ResponsiveTheme.colors.glassBorder,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: ResponsiveTheme.colors.glassHighlight,
   },
   progressIndicator: {
     position: "absolute",
     bottom: -4,
     right: -4,
     backgroundColor: ResponsiveTheme.colors.primary,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 8,
-    minWidth: 28,
+    paddingHorizontal: rp(5),
+    paddingVertical: rp(2),
+    borderRadius: rbr(8),
+    minWidth: rp(28),
     alignItems: "center",
   },
   progressIndicatorText: {
     fontSize: rf(9),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
 });
 

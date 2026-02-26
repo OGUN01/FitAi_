@@ -1,6 +1,7 @@
-import React from "react";
+﻿import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Card, THEME } from "../ui";
+import { Card } from "../ui";
+import { ResponsiveTheme } from '../../utils/constants';
 import { MealInsight } from "../../hooks/useMealDetailLogic";
 
 interface MealInsightsProps {
@@ -38,41 +39,41 @@ export const MealInsights: React.FC<MealInsightsProps> = ({
 
 const styles = StyleSheet.create({
   notesCard: {
-    marginBottom: THEME.spacing.md,
-    backgroundColor: THEME.colors.secondary + "10",
+    marginBottom: ResponsiveTheme.spacing.md,
+    backgroundColor: ResponsiveTheme.colors.secondary + "10",
     borderWidth: 1,
-    borderColor: THEME.colors.secondary + "30",
+    borderColor: ResponsiveTheme.colors.secondary + "30",
   },
 
   notesTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.secondary,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.secondary,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   notesText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
     lineHeight: 20,
   },
 
   insightsCard: {
-    marginBottom: THEME.spacing.xxl,
-    backgroundColor: THEME.colors.info + "10",
+    marginBottom: ResponsiveTheme.spacing.xxl,
+    backgroundColor: ResponsiveTheme.colors.info + "10",
     borderWidth: 1,
-    borderColor: THEME.colors.info + "30",
+    borderColor: ResponsiveTheme.colors.info + "30",
   },
 
   insightsTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.info,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.info,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   insightsList: {
-    gap: THEME.spacing.xs,
+    gap: ResponsiveTheme.spacing.xs,
   },
 
   insightItem: {
@@ -81,13 +82,13 @@ const styles = StyleSheet.create({
   },
 
   insightIcon: {
-    fontSize: THEME.fontSize.sm,
-    marginRight: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    marginRight: ResponsiveTheme.spacing.sm,
   },
 
   insightText: {
     flex: 1,
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 });

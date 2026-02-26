@@ -323,6 +323,10 @@ export interface AdvancedReviewData {
   vo2_max_estimate?: number;
   vo2_max_classification?: string;
   heart_rate_zones?: Record<string, { min: number; max: number }>;
+
+  // Fallback indicator — true when population-average defaults were used
+  // because the user did not provide height/weight during onboarding
+  usedFallbackDefaults?: boolean;
 }
 
 // ============================================================================

@@ -40,7 +40,7 @@ export class HeartRateCalculatorService {
     try {
       return heartRateCalculator.calculateZones(age, gender, restingHR);
     } catch (error) {
-      console.warn("[HeartRateCalculator] Failed:", error);
+      // Re-throw to caller
       throw error;
     }
   }
@@ -65,7 +65,7 @@ export class VO2MaxCalculatorService {
       }
       return result;
     } catch (error) {
-      console.warn("[VO2MaxCalculator] Failed:", error);
+      // Re-throw to caller
       throw error;
     }
   }
@@ -125,7 +125,7 @@ export class HealthScoreCalculatorService {
       }
       return result;
     } catch (error) {
-      console.warn("[HealthScoreCalculator] Failed:", error);
+      // Re-throw to caller
       throw error;
     }
   }

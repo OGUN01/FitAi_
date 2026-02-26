@@ -51,7 +51,6 @@ class NotificationService {
       }
 
       if (finalStatus !== "granted") {
-        console.warn("Notification permissions not granted");
         return false;
       }
 
@@ -101,7 +100,6 @@ class NotificationService {
         trigger: trigger as Notifications.NotificationTriggerInput,
       });
 
-      console.log(`Scheduled notification: ${identifier} -> ${notificationId}`);
       return notificationId;
     } catch (error) {
       console.error("Failed to schedule notification:", error);
@@ -112,7 +110,6 @@ class NotificationService {
   async cancelNotification(identifier: string): Promise<void> {
     try {
       await Notifications.cancelScheduledNotificationAsync(identifier);
-      console.log(`Cancelled notification: ${identifier}`);
     } catch (error) {
       console.error("Failed to cancel notification:", error);
     }
@@ -130,9 +127,6 @@ class NotificationService {
         await this.cancelNotification(notification.identifier);
       }
 
-      console.log(
-        `Cancelled ${typeNotifications.length} notifications of type: ${type}`,
-      );
     } catch (error) {
       console.error(`Failed to cancel notifications of type ${type}:`, error);
     }
@@ -152,7 +146,6 @@ class NotificationService {
   async clearAllNotifications(): Promise<void> {
     try {
       await Notifications.cancelAllScheduledNotificationsAsync();
-      console.log("Cleared all scheduled notifications");
     } catch (error) {
       console.error("Failed to clear notifications:", error);
     }

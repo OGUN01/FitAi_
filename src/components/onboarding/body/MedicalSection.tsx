@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../../utils/responsive";
+import { rf, rs, rbr, rp } from "../../../utils/responsive";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
 import { Input, Slider } from "../../../components/ui";
@@ -135,7 +135,10 @@ export const MedicalSection: React.FC<MedicalSectionProps> = ({
 
             {formData.pregnancy_status && (
               <View style={styles.trimesterSelector}>
-                <Text style={styles.inputLabel}>Trimester *</Text>
+                <Text style={styles.inputLabel}>
+                  Trimester{" "}
+                  <Text style={styles.requiredAsterisk}>*</Text>
+                </Text>
                 <View style={styles.trimesterButtons}>
                   {[1, 2, 3].map((trimester) => (
                     <AnimatedPressable
@@ -297,7 +300,7 @@ export const MedicalSection: React.FC<MedicalSectionProps> = ({
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
     marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.md,
     marginHorizontal: -ResponsiveTheme.spacing.lg,
   },
   sectionTitlePadded: {
@@ -346,9 +349,9 @@ const styles = StyleSheet.create({
     gap: ResponsiveTheme.spacing.sm,
   },
   checkboxBox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
+    width: rs(24),
+    height: rs(24),
+    borderRadius: rbr(6),
     borderWidth: 2,
     borderColor: ResponsiveTheme.colors.primary,
     backgroundColor: "transparent",
@@ -363,7 +366,7 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.text,
   },
   trimesterSelector: {
-    marginLeft: 32,
+    marginLeft: rp(32),
     marginBottom: ResponsiveTheme.spacing.lg,
   },
   inputLabel: {
@@ -371,6 +374,9 @@ const styles = StyleSheet.create({
     fontWeight: ResponsiveTheme.fontWeight.medium,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.sm,
+  },
+  requiredAsterisk: {
+    color: ResponsiveTheme.colors.error,
   },
   trimesterButtons: {
     gap: ResponsiveTheme.spacing.xs,
@@ -401,7 +407,7 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     backgroundColor: `${ResponsiveTheme.colors.primary}05`,
-    borderColor: `${ResponsiveTheme.colors.primary}20`,
+    borderColor: ResponsiveTheme.colors.border,
     borderWidth: 1,
   },
   infoContent: {

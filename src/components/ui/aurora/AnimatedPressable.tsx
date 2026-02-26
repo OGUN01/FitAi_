@@ -112,6 +112,9 @@ const getSpringConfig = (config: string) => {
   return animations.spring[springKey] || animations.spring.default;
 };
 
+// Created at module level so it is not recreated on every render
+const AnimatedPressableComponent = Animated.createAnimatedComponent(Pressable);
+
 export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
   scaleValue = animations.scale.press,
   useSpring = true,
@@ -205,7 +208,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
   }));
 
   return (
-    <Pressable
+    <AnimatedPressableComponent
       {...pressableProps}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
@@ -216,9 +219,10 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
       accessibilityState={{ disabled: !!disabled }}
       testID={testID}
       accessible={true}
+      style={[animatedStyle, style] as any}
     >
-      <Animated.View style={[animatedStyle, style]}>{children}</Animated.View>
-    </Pressable>
+      {children}
+    </AnimatedPressableComponent>
   );
 };
 

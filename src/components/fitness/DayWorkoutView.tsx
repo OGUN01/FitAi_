@@ -10,7 +10,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { DayWorkout } from "../../types/ai";
 
 interface DayWorkoutViewProps {
@@ -30,7 +30,7 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Rest Day</Text>
           <Pressable onPress={onClose} style={styles.closeButton}>
-            <Ionicons name="close" size={rf(24)} color="#fff" />
+            <Ionicons name="close" size={rf(24)} color={ResponsiveTheme.colors.white} />
           </Pressable>
         </View>
         <View style={styles.emptyState}>
@@ -63,22 +63,22 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
           </Text>
         </View>
         <Pressable onPress={onClose} style={styles.closeButton}>
-          <Ionicons name="close" size={rf(24)} color="#fff" />
+          <Ionicons name="close" size={rf(24)} color={ResponsiveTheme.colors.white} />
         </Pressable>
       </View>
 
       {/* Workout Stats */}
       <View style={styles.statsRow}>
         <View style={styles.statItem}>
-          <Ionicons name="time-outline" size={rf(20)} color="#FF6B6B" />
+          <Ionicons name="time-outline" size={rf(20)} color={ResponsiveTheme.colors.errorLight} />
           <Text style={styles.statText}>{workout.duration} min</Text>
         </View>
         <View style={styles.statItem}>
-          <Ionicons name="flame-outline" size={rf(20)} color="#FF6B6B" />
-          <Text style={styles.statText}>{workout.estimatedCalories} cal</Text>
+          <Ionicons name="flame-outline" size={rf(20)} color={ResponsiveTheme.colors.errorLight} />
+          <Text style={styles.statText}>{workout.estimatedCalories || 0} cal</Text>
         </View>
         <View style={styles.statItem}>
-          <Ionicons name="barbell-outline" size={rf(20)} color="#FF6B6B" />
+          <Ionicons name="barbell-outline" size={rf(20)} color={ResponsiveTheme.colors.errorLight} />
           <Text style={styles.statText}>
             {workout.exercises.length} exercises
           </Text>
@@ -195,7 +195,7 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
             end={{ x: 1, y: 1 }}
             style={styles.startButton}
           >
-            <Ionicons name="play-circle" size={rf(24)} color="#fff" />
+            <Ionicons name="play-circle" size={rf(24)} color={ResponsiveTheme.colors.white} />
             <Text style={styles.startButtonText}>Start Workout</Text>
           </LinearGradient>
         </AnimatedPressable>
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: rf(24),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     marginBottom: rh(4),
   },
   headerSubtitle: {
@@ -228,10 +228,10 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 0.6)",
   },
   closeButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    width: rp(44),
+    height: rp(44),
+    borderRadius: rbr(22),
+    backgroundColor: ResponsiveTheme.colors.glassHighlight,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   statText: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
   scrollView: {
     flex: 1,
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
   exerciseCard: {
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   exerciseNumber: {
     fontSize: rf(14),
     fontWeight: "700",
-    color: "#FF6B6B",
+    color: ResponsiveTheme.colors.errorLight,
   },
   exerciseInfo: {
     flex: 1,
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   exerciseName: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     marginBottom: rh(4),
   },
   exerciseDetails: {
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   startButtonText: {
     fontSize: rf(16),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
   emptyState: {
     flex: 1,
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: rf(18),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     marginTop: ResponsiveTheme.spacing.md,
     textAlign: "center",
   },

@@ -9,7 +9,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rp } from "../../../utils/responsive";
+import { rf, rp, rbr } from "../../../utils/responsive";
 
 interface CustomInputSectionProps {
   customAmount: string;
@@ -46,7 +46,7 @@ export const CustomInputSection: React.FC<CustomInputSectionProps> = ({
             onErrorChange(null);
           }}
           placeholder="e.g., 0.5"
-          placeholderTextColor="rgba(255,255,255,0.4)"
+          placeholderTextColor={`${ResponsiveTheme.colors.white}66`}
           keyboardType="decimal-pad"
           returnKeyType="done"
           autoFocus
@@ -57,7 +57,7 @@ export const CustomInputSection: React.FC<CustomInputSectionProps> = ({
 
       {error && (
         <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle" size={16} color="#FF6B6B" />
+          <Ionicons name="alert-circle" size={16} color={ResponsiveTheme.colors.errorLight} />
           <Text style={styles.errorText}>{error}</Text>
         </View>
       )}
@@ -76,12 +76,12 @@ export const CustomInputSection: React.FC<CustomInputSectionProps> = ({
           activeOpacity={0.8}
         >
           <LinearGradient
-            colors={[ResponsiveTheme.colors.primary, "#FF8A5C"]}
+            colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.submitButtonGradient}
           >
-            <Ionicons name="add" size={20} color="#fff" />
+            <Ionicons name="add" size={20} color={ResponsiveTheme.colors.white} />
             <Text style={styles.submitButtonText}>Add Water</Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -94,18 +94,18 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: "rgba(255,255,255,0.7)",
+    color: `${ResponsiveTheme.colors.white}B3`,
     marginBottom: rp(12),
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: ResponsiveTheme.colors.glassBorder,
     borderRadius: ResponsiveTheme.borderRadius.lg,
     paddingHorizontal: rp(16),
     marginBottom: rp(16),
     borderWidth: 1,
-    borderColor: "rgba(255, 107, 53, 0.3)",
+    borderColor: `${ResponsiveTheme.colors.primary}4D`,
   },
   inputIcon: {
     marginRight: rp(12),
@@ -114,13 +114,13 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: rf(18),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     paddingVertical: rp(16),
   },
   unitLabel: {
     fontSize: rf(16),
     fontWeight: "500",
-    color: "rgba(255,255,255,0.5)",
+    color: `${ResponsiveTheme.colors.white}80`,
     marginLeft: rp(8),
   },
   errorContainer: {
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: rf(13),
-    color: "#FF6B6B",
+    color: ResponsiveTheme.colors.errorLight,
   },
   actionButtons: {
     flexDirection: "row",
@@ -144,12 +144,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: ResponsiveTheme.borderRadius.lg,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: ResponsiveTheme.colors.glassHighlight,
   },
   cancelButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
   submitButton: {
     flex: 0.6,
@@ -166,6 +166,6 @@ const styles = StyleSheet.create({
   submitButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
 });

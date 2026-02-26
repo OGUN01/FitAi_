@@ -41,7 +41,6 @@ class AnalyticsDataService {
       const userId = metrics.userId;
 
       if (!userId || userId.startsWith("guest") || userId === "local-user") {
-        console.log("⏭️ Skipping metrics sync for guest/local user");
         return true;
       }
 
@@ -60,11 +59,9 @@ class AnalyticsDataService {
       });
 
       if (error) {
-        console.warn("⚠️ Failed to sync metrics to Supabase:", error.message);
         return false;
       }
 
-      console.log(`✅ Daily metrics synced for ${metrics.metricDate}`);
       return true;
     } catch (error) {
       console.error("❌ Metrics sync error:", error);
@@ -80,7 +77,6 @@ class AnalyticsDataService {
     days: number = 30,
   ): Promise<DailyMetrics[]> {
     if (!userId || userId.startsWith("guest") || userId === "local-user") {
-      console.log("⏭️ Skipping metrics load for guest/local user");
       return [];
     }
 
@@ -97,12 +93,10 @@ class AnalyticsDataService {
         .order("metric_date", { ascending: true });
 
       if (error) {
-        console.warn("⚠️ Failed to load metrics from Supabase:", error.message);
         return [];
       }
 
       if (data && data.length > 0) {
-        console.log(`✅ Loaded ${data.length} days of metrics from Supabase`);
         return data.map((row) => ({
           id: row.id,
           userId: row.user_id,

@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw } from "../../../utils/responsive";
+import { rf, rw, rbr } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 
 interface NotificationsHeaderProps {
@@ -23,9 +23,10 @@ export const NotificationsHeader: React.FC<NotificationsHeaderProps> = ({
         }}
         scaleValue={0.9}
         hapticFeedback={false}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <View style={styles.backButton}>
-          <Ionicons name="chevron-back" size={rf(20)} color="#fff" />
+          <Ionicons name="chevron-back" size={rf(20)} color={ResponsiveTheme.colors.text} />
         </View>
       </AnimatedPressable>
       <View style={styles.headerCenter}>
@@ -52,8 +53,8 @@ const styles = StyleSheet.create({
   backButton: {
     width: rw(40),
     height: rw(40),
-    borderRadius: rw(20),
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: rbr(20),
+    backgroundColor: ResponsiveTheme.colors.glassBorder,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
@@ -65,7 +66,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
   },
   headerSpacer: {
     width: rw(40),

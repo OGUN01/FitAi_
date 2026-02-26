@@ -19,7 +19,7 @@ import { PanGestureHandler } from "react-native-gesture-handler";
 import { ResponsiveTheme } from "../../utils/constants";
 import { Button, Card } from "../ui";
 import { RecognizedFood } from "../../services/foodRecognitionService";
-import { rf, rh, rw } from "../../utils/responsive";
+import { rf, rh, rw, rbr } from "../../utils/responsive";
 
 // Custom Slider Component
 interface CustomSliderProps {
@@ -576,7 +576,7 @@ const styles = StyleSheet.create({
   closeButton: {
     width: rw(32),
     height: rh(32),
-    borderRadius: 16,
+    borderRadius: rbr(16),
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
@@ -603,13 +603,13 @@ const styles = StyleSheet.create({
   progressBar: {
     height: rh(4),
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: 2,
+    borderRadius: rbr(2),
   },
 
   progressFill: {
     height: "100%",
     backgroundColor: ResponsiveTheme.colors.primary,
-    borderRadius: 2,
+    borderRadius: rbr(2),
   },
 
   content: {
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: 12,
+    borderRadius: rbr(12),
   },
 
   originalText: {
@@ -734,7 +734,7 @@ const styles = StyleSheet.create({
 
   sliderTrack: {
     height: rh(4),
-    borderRadius: 2,
+    borderRadius: rbr(2),
   },
 
   sliderLabels: {
@@ -898,14 +898,14 @@ const styles = StyleSheet.create({
   customSliderTrack: {
     height: rh(4),
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: 2,
+    borderRadius: rbr(2),
     position: "relative",
   },
 
   customSliderFill: {
     height: "100%",
     backgroundColor: ResponsiveTheme.colors.primary,
-    borderRadius: 2,
+    borderRadius: rbr(2),
     position: "absolute",
     left: 0,
     top: 0,
@@ -917,10 +917,10 @@ const styles = StyleSheet.create({
     width: rw(24),
     height: rh(24),
     backgroundColor: ResponsiveTheme.colors.primary,
-    borderRadius: 12,
+    borderRadius: rbr(12),
     borderWidth: 2,
     borderColor: ResponsiveTheme.colors.white,
-    shadowColor: "#000",
+    shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,

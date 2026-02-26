@@ -39,7 +39,6 @@ class PerformanceMonitor {
     };
 
     this.metrics.set(name, metric);
-    console.log(`⏱️ Started timing: ${name}`);
   }
 
   endTiming(name: string) {
@@ -47,20 +46,15 @@ class PerformanceMonitor {
 
     const metric = this.metrics.get(name);
     if (!metric) {
-      console.warn(`⚠️ No timing started for: ${name}`);
       return;
     }
 
     metric.endTime = Date.now();
     metric.duration = metric.endTime - metric.startTime;
 
-    console.log(`✅ Completed timing: ${name} - ${metric.duration}ms`);
 
     // Log slow operations
     if (metric.duration > 1000) {
-      console.warn(
-        `🐌 Slow operation detected: ${name} took ${metric.duration}ms`,
-      );
     }
 
     return metric;
@@ -78,22 +72,18 @@ class PerformanceMonitor {
     const completedMetrics = this.getMetrics();
 
     if (completedMetrics.length === 0) {
-      console.log("📊 No performance metrics recorded");
       return;
     }
 
-    console.log("📊 Performance Summary:");
     completedMetrics
       .sort((a, b) => (b.duration || 0) - (a.duration || 0))
       .forEach((metric) => {
-        console.log(`  ${metric.name}: ${metric.duration}ms`);
       });
 
     const totalTime = completedMetrics.reduce(
       (sum, m) => sum + (m.duration || 0),
       0,
     );
-    console.log(`  Total measured time: ${totalTime}ms`);
   }
 }
 
@@ -375,7 +365,6 @@ export const bundleOptimizations = {
   preloadCritical: (resources: string[]) => {
     resources.forEach((resource) => {
       // Preload logic would go here
-      console.log(`Preloading: ${resource}`);
     });
   },
 };

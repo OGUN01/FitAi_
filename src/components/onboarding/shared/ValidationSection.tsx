@@ -52,7 +52,9 @@ export const ValidationSection: React.FC<ValidationSectionProps> = ({
           </Text>
         </View>
         <Text style={styles.validationPercentage}>
-          {validationResult.completion_percentage}% Complete
+          {validationResult.is_valid && validationResult.completion_percentage === 0
+            ? "Optional"
+            : `${validationResult.completion_percentage}% Complete`}
         </Text>
 
         {validationResult.errors.length > 0 && (

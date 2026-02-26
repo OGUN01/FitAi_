@@ -13,7 +13,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, StyleSheet, Alert } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SettingsModalWrapper } from "../SettingsModalWrapper";
 import { GlassFormInput } from "../../form/GlassFormInput";
@@ -24,6 +24,8 @@ import { ResponsiveTheme } from "../../../utils/constants";
 import { rf } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 
+import { crossPlatformAlert } from "../../../utils/crossPlatformAlert";
+import type { WorkoutPreferencesData } from "../../../types/onboarding";
 
 interface PersonalInfoEditModalProps {
   visible: boolean;
@@ -183,14 +185,14 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       // ✅ Update activity level in workoutPreferences if changed
       if (activityLevel && activityLevel !== profile?.personalInfo?.activityLevel) {
         updateWorkoutPreferences({
-          activity_level: activityLevel as any,
+          activity_level: activityLevel as WorkoutPreferencesData['activity_level'],
         });
       }
       haptics.success();
       onClose();
     } catch (error) {
       console.error("Error saving personal info:", error);
-      Alert.alert("Error", "Failed to save changes. Please try again.");
+      crossPlatformAlert("Error", "Failed to save changes. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -228,7 +230,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       title="Personal Information"
       subtitle="Update your profile details"
       icon="person-outline"
-      iconColor="#FF6B6B"
+      iconColor={ResponsiveTheme.colors.errorLight}
       onClose={onClose}
       onSave={handleSave}
       isSaving={isSaving}
@@ -238,7 +240,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       <GlassFormInput
         label="Full Name"
         icon="person-outline"
-        iconColor="#FF6B6B"
+        iconColor={ResponsiveTheme.colors.errorLight}
         value={name}
         onChangeText={setName}
         placeholder="Enter your name"
@@ -251,7 +253,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       <GlassFormInput
         label="Age"
         icon="calendar-outline"
-        iconColor="#4CAF50"
+        iconColor={ResponsiveTheme.colors.success}
         value={age}
         onChangeText={setAge}
         placeholder="Enter your age"
@@ -275,7 +277,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       <GlassFormInput
         label="Height"
         icon="resize-outline"
-        iconColor="#2196F3"
+        iconColor={ResponsiveTheme.colors.info}
         value={height}
         onChangeText={setHeight}
         placeholder="Enter your height"
@@ -290,7 +292,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       <GlassFormInput
         label="Weight"
         icon="scale-outline"
-        iconColor="#FF6B35"
+        iconColor={ResponsiveTheme.colors.primary}
         value={weight}
         onChangeText={setWeight}
         placeholder="Enter your weight"

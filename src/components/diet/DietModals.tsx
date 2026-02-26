@@ -92,7 +92,7 @@ export const DietModals: React.FC<DietModalsProps> = (props) => {
             <JobStatusIndicator
               job={{
                 jobId: props.asyncJob.jobId,
-                status: props.asyncJob.status as any,
+                status: props.asyncJob.status,
                 error: props.asyncJob.error,
                 createdAt: props.asyncJob.createdAt,
                 estimatedTimeRemaining: props.asyncJob.estimatedTimeRemaining,
@@ -126,7 +126,7 @@ export const DietModals: React.FC<DietModalsProps> = (props) => {
 const styles = StyleSheet.create({
   asyncJobModalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: ResponsiveTheme.colors.overlay,
     justifyContent: "center",
     alignItems: "center",
     padding: ResponsiveTheme.spacing.lg,

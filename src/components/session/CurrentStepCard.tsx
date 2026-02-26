@@ -1,6 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Card, Button, THEME } from "../ui";
+import { Card, Button } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf } from '../../utils/responsive';
 import { DayMeal } from "../../types/ai";
 
 interface CurrentStepCardProps {
@@ -62,60 +64,60 @@ export const CurrentStepCard: React.FC<CurrentStepCardProps> = ({
 
 const styles = StyleSheet.create({
   currentStepCard: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
   },
   stepHeader: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   stepNumber: {
-    fontSize: 14,
-    color: THEME.colors.primary,
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.primary,
     fontWeight: "600",
-    marginBottom: THEME.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   stepTitle: {
-    fontSize: 20,
+    fontSize: rf(20),
     fontWeight: "600",
-    color: THEME.colors.text,
+    color: ResponsiveTheme.colors.text,
   },
   stepContent: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   stepDetails: {
     flexDirection: "row",
-    gap: THEME.spacing.md,
-    marginBottom: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   stepQuantity: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "600",
-    color: THEME.colors.primary,
+    color: ResponsiveTheme.colors.primary,
   },
   stepCalories: {
-    fontSize: 14,
-    color: THEME.colors.textSecondary,
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.textSecondary,
   },
   stepTime: {
-    fontSize: 14,
-    color: THEME.colors.textSecondary,
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.textSecondary,
   },
   instructionsContainer: {
-    backgroundColor: THEME.colors.background,
-    padding: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.md,
+    backgroundColor: ResponsiveTheme.colors.background,
+    padding: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
   instructionsTitle: {
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: "600",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   instructionsText: {
-    fontSize: 14,
-    color: THEME.colors.textSecondary,
-    lineHeight: 20,
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(20),
   },
   completeButton: {
-    marginTop: THEME.spacing.sm,
+    marginTop: ResponsiveTheme.spacing.sm,
   },
 });

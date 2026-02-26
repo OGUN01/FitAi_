@@ -1,6 +1,7 @@
 import React from "react";
+import { rf, rp, rbr } from '../../utils/responsive';
 import { View, Text, Switch } from "react-native";
-import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
 
 interface AdditionalSettingsCardProps {
   exportToHealthKit: boolean;
@@ -18,19 +19,19 @@ export const AdditionalSettingsCard: React.FC<AdditionalSettingsCardProps> = ({
   return (
     <View
       style={{
-        backgroundColor: THEME.colors.surface,
-        marginHorizontal: 16,
-        marginBottom: 16,
-        borderRadius: 12,
-        padding: 16,
+        backgroundColor: ResponsiveTheme.colors.surface,
+        marginHorizontal: rp(16),
+        marginBottom: rp(16),
+        borderRadius: rbr(12),
+        padding: rp(16),
       }}
     >
       <Text
         style={{
-          fontSize: 16,
+          fontSize: rf(16),
           fontWeight: "600",
-          color: THEME.colors.text,
-          marginBottom: 12,
+          color: ResponsiveTheme.colors.text,
+          marginBottom: rp(12),
         }}
       >
         Additional Settings
@@ -41,23 +42,23 @@ export const AdditionalSettingsCard: React.FC<AdditionalSettingsCardProps> = ({
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          paddingVertical: 8,
+          paddingVertical: rp(8),
         }}
       >
         <View style={{ flex: 1 }}>
           <Text
             style={{
-              fontSize: 16,
-              color: THEME.colors.text,
+              fontSize: rf(16),
+              color: ResponsiveTheme.colors.text,
             }}
           >
             Export FitAI Data to HealthKit
           </Text>
           <Text
             style={{
-              fontSize: 14,
-              color: THEME.colors.textSecondary,
-              marginTop: 2,
+              fontSize: rf(14),
+              color: ResponsiveTheme.colors.textSecondary,
+              marginTop: rp(2),
             }}
           >
             Share your FitAI workouts and nutrition with Health app
@@ -67,8 +68,8 @@ export const AdditionalSettingsCard: React.FC<AdditionalSettingsCardProps> = ({
           value={exportToHealthKit}
           onValueChange={onToggleExport}
           trackColor={{
-            false: THEME.colors.border,
-            true: THEME.colors.primary,
+            false: ResponsiveTheme.colors.border,
+            true: ResponsiveTheme.colors.primary,
           }}
         />
       </View>
@@ -78,26 +79,26 @@ export const AdditionalSettingsCard: React.FC<AdditionalSettingsCardProps> = ({
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          paddingVertical: 8,
-          marginTop: 8,
+          paddingVertical: rp(8),
+          marginTop: rp(8),
           borderTopWidth: 1,
-          borderTopColor: THEME.colors.border,
+          borderTopColor: ResponsiveTheme.colors.border,
         }}
       >
         <View style={{ flex: 1 }}>
           <Text
             style={{
-              fontSize: 16,
-              color: THEME.colors.text,
+              fontSize: rf(16),
+              color: ResponsiveTheme.colors.text,
             }}
           >
             Background Sync
           </Text>
           <Text
             style={{
-              fontSize: 14,
-              color: THEME.colors.textSecondary,
-              marginTop: 2,
+              fontSize: rf(14),
+              color: ResponsiveTheme.colors.textSecondary,
+              marginTop: rp(2),
             }}
           >
             Automatically sync when app becomes active
@@ -107,8 +108,8 @@ export const AdditionalSettingsCard: React.FC<AdditionalSettingsCardProps> = ({
           value={backgroundSyncEnabled}
           onValueChange={onToggleBackgroundSync}
           trackColor={{
-            false: THEME.colors.border,
-            true: THEME.colors.primary,
+            false: ResponsiveTheme.colors.border,
+            true: ResponsiveTheme.colors.primary,
           }}
         />
       </View>

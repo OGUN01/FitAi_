@@ -1,4 +1,4 @@
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import type { ScannedProduct } from "../services/barcodeService";
 
 export const useProductDetails = (
@@ -9,7 +9,7 @@ export const useProductDetails = (
   const handleAddToMeal = () => {
     if (onAddToMeal) {
       onAddToMeal(product);
-      Alert.alert(
+      crossPlatformAlert(
         "Added to Meal",
         `${product.name} has been added to your current meal.`,
         [{ text: "OK", onPress: onClose }],

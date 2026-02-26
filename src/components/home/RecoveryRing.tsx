@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import Animated from "react-native-reanimated";
 import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw } from "../../utils/responsive";
+import { rf, rw, rp } from "../../utils/responsive";
 import { getRecoveryColor } from "../../utils/healthUtils";
 
 interface RecoveryRingProps {
@@ -32,7 +32,7 @@ export const RecoveryRing: React.FC<RecoveryRingProps> = ({ score, size }) => {
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="rgba(255,255,255,0.1)"
+          stroke={ResponsiveTheme.colors.glassHighlight}
           strokeWidth={strokeWidth}
           fill="transparent"
         />
@@ -77,6 +77,6 @@ const styles = StyleSheet.create({
     fontSize: rf(10),
     fontWeight: "600",
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: -2,
+    marginTop: rp(-2),
   },
 });

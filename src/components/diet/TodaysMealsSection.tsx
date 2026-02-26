@@ -12,33 +12,33 @@ import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 
 // Meal type configuration
 const MEAL_CONFIG = {
   breakfast: {
     icon: "sunny-outline" as const,
-    color: "#FF9800",
+    color: ResponsiveTheme.colors.warning,
     time: "8:00 AM",
-    gradient: ["#FF9800", "#FFB74D"],
+    gradient: [ResponsiveTheme.colors.warning, "#FFB74D"],
   },
   lunch: {
     icon: "restaurant-outline" as const,
-    color: "#4CAF50",
+    color: ResponsiveTheme.colors.success,
     time: "1:00 PM",
-    gradient: ["#4CAF50", "#81C784"],
+    gradient: [ResponsiveTheme.colors.success, ResponsiveTheme.colors.successLight],
   },
   dinner: {
     icon: "moon-outline" as const,
-    color: "#FF6B35",
+    color: ResponsiveTheme.colors.primary,
     time: "7:00 PM",
-    gradient: ["#FF6B35", "#FF8A5C"],
+    gradient: [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight],
   },
   snack: {
     icon: "nutrition-outline" as const,
-    color: "#FF6B6B",
+    color: ResponsiveTheme.colors.errorLight,
     time: "4:00 PM",
-    gradient: ["#FF6B6B", "#FF8E53"],
+    gradient: [ResponsiveTheme.colors.errorLight, "#FF8E53"],
   },
 };
 
@@ -98,7 +98,7 @@ const MealCard: React.FC<{
               <Ionicons name={config.icon} size={rf(22)} color={config.color} />
               {isCompleted && (
                 <View style={styles.completedBadge}>
-                  <Ionicons name="checkmark" size={rf(10)} color="#fff" />
+                  <Ionicons name="checkmark" size={rf(10)} color={ResponsiveTheme.colors.white} />
                 </View>
               )}
             </View>
@@ -133,30 +133,30 @@ const MealCard: React.FC<{
                 <View
                   style={[
                     styles.macroBadge,
-                    { backgroundColor: "rgba(255,107,107,0.12)" },
+                    { backgroundColor: `${ResponsiveTheme.colors.errorLight}1F` },
                   ]}
                 >
-                  <Text style={[styles.macroBadgeText, { color: "#FF6B6B" }]}>
+                  <Text style={[styles.macroBadgeText, { color: ResponsiveTheme.colors.errorLight }]}>
                     P {Math.round(meal.protein)}g
                   </Text>
                 </View>
                 <View
                   style={[
                     styles.macroBadge,
-                    { backgroundColor: "rgba(78,205,196,0.12)" },
+                    { backgroundColor: `${ResponsiveTheme.colors.teal}1F` },
                   ]}
                 >
-                  <Text style={[styles.macroBadgeText, { color: "#4ECDC4" }]}>
+                  <Text style={[styles.macroBadgeText, { color: ResponsiveTheme.colors.teal }]}>
                     C {Math.round(meal.carbs)}g
                   </Text>
                 </View>
                 <View
                   style={[
                     styles.macroBadge,
-                    { backgroundColor: "rgba(255,193,7,0.12)" },
+                    { backgroundColor: `${ResponsiveTheme.colors.amber}1F` },
                   ]}
                 >
-                  <Text style={[styles.macroBadgeText, { color: "#FFC107" }]}>
+                  <Text style={[styles.macroBadgeText, { color: ResponsiveTheme.colors.amber }]}>
                     F {Math.round(meal.fat)}g
                   </Text>
                 </View>
@@ -171,13 +171,13 @@ const MealCard: React.FC<{
               hapticType="medium"
               style={[
                 styles.actionButton,
-                { backgroundColor: isCompleted ? "#4CAF50" : config.color },
+                { backgroundColor: isCompleted ? ResponsiveTheme.colors.success : config.color },
               ]}
             >
               <Ionicons
                 name={isCompleted ? "checkmark" : "play"}
                 size={rf(16)}
-                color="#fff"
+                color={ResponsiveTheme.colors.white}
               />
             </AnimatedPressable>
           </View>
@@ -223,12 +223,12 @@ const EmptyMealsState: React.FC<{ onGenerate?: () => void }> = ({
             style={styles.generateButton}
           >
             <LinearGradient
-              colors={["#FF6B35", "#FF8A5C"]}
+              colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.generateButtonGradient}
             >
-              <Ionicons name="sparkles" size={rf(16)} color="#fff" />
+              <Ionicons name="sparkles" size={rf(16)} color={ResponsiveTheme.colors.white} />
               <Text style={styles.generateButtonText}>Generate Plan</Text>
             </LinearGradient>
           </AnimatedPressable>
@@ -268,7 +268,7 @@ export const TodaysMealsSection: React.FC<TodaysMealsSectionProps> = ({
             <View
               style={[
                 styles.statusBadge,
-                { backgroundColor: "rgba(255, 107, 53, 0.15)" },
+                { backgroundColor: `${ResponsiveTheme.colors.primary}26` },
               ]}
             >
               <View
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.full,
-    gap: 6,
+    gap: rp(6),
   },
   statusDot: {
     width: rw(6),
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     gap: ResponsiveTheme.spacing.sm,
   },
   mealCard: {
-    marginBottom: 0,
+    marginBottom: rp(0),
   },
   mealContent: {
     flexDirection: "row",
@@ -377,12 +377,12 @@ const styles = StyleSheet.create({
   },
   completedBadge: {
     position: "absolute",
-    top: -4,
-    right: -4,
+    top: rp(-4),
+    right: rp(-4),
     width: rw(18),
     height: rw(18),
     borderRadius: rw(9),
-    backgroundColor: "#4CAF50",
+    backgroundColor: ResponsiveTheme.colors.success,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 2,
+    marginBottom: rp(2),
   },
   mealName: {
     fontSize: rf(14),
@@ -407,10 +407,10 @@ const styles = StyleSheet.create({
   timeBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    gap: 3,
+    paddingHorizontal: rp(6),
+    paddingVertical: rp(2),
+    borderRadius: rbr(6),
+    gap: rp(3),
   },
   timeText: {
     fontSize: rf(9),
@@ -427,9 +427,9 @@ const styles = StyleSheet.create({
     gap: ResponsiveTheme.spacing.xs,
   },
   macroBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingHorizontal: rp(6),
+    paddingVertical: rp(2),
+    borderRadius: rbr(4),
   },
   macroBadgeText: {
     fontSize: rf(9),
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
     width: rw(64),
     height: rw(64),
     borderRadius: rw(32),
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.md,
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
   generateButtonText: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
 });
 

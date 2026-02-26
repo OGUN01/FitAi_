@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { THEME } from "../../components/ui";
+import { ResponsiveTheme } from "../../utils/constants";
 
 interface NextExercisePreviewProps {
   exerciseName: string;
@@ -17,23 +17,23 @@ export const NextExercisePreview: React.FC<NextExercisePreviewProps> = ({
 
 const styles = StyleSheet.create({
   nextExercisePreview: {
-    backgroundColor: THEME.colors.primary + "20",
-    marginHorizontal: THEME.spacing.lg,
-    marginTop: THEME.spacing.md,
-    padding: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.md,
+    backgroundColor: ResponsiveTheme.colors.primary + "20",
+    marginHorizontal: ResponsiveTheme.spacing.lg,
+    marginTop: ResponsiveTheme.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
     borderLeftWidth: 4,
-    borderLeftColor: THEME.colors.primary,
+    borderLeftColor: ResponsiveTheme.colors.primary,
   },
   nextExerciseTitle: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.primary,
-    fontWeight: THEME.fontWeight.semibold,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   nextExerciseName: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.text,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 });

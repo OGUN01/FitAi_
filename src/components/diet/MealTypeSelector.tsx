@@ -10,11 +10,11 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
-  SafeAreaView,
-} from "react-native";
+  } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { MealType } from "../../services/foodRecognitionService";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rh, rw, rs, rp } from "../../utils/responsive";
+import { rf, rh, rw, rs, rp, rbr } from "../../utils/responsive";
 
 interface MealTypeSelectorProps {
   visible: boolean;
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
   closeButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: rbr(22),
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",

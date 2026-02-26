@@ -1,15 +1,14 @@
-import React, { useRef, useEffect } from "react";
+import React from "react";
 import {
   ScrollView,
   TouchableOpacity,
   Text,
   StyleSheet,
   View,
-  Animated,
 } from "react-native";
 import { ResponsiveTheme } from "../../utils/constants";
 import { AchievementCategory } from "../../services/achievements/types";
-import { rh, rw, rf } from "../../utils/responsive";
+import { rh, rw, rf, rp, rbr } from "../../utils/responsive";
 
 interface AchievementCategoryTabsProps {
   selectedCategory: AchievementCategory | "all";
@@ -31,14 +30,10 @@ const CATEGORIES: { id: AchievementCategory | "all"; label: string }[] = [
 export const AchievementCategoryTabs: React.FC<
   AchievementCategoryTabsProps
 > = ({ selectedCategory, onSelectCategory }) => {
-  const scrollViewRef = useRef<ScrollView>(null);
-
-  // Scroll to selected tab if needed (optional enhancement)
 
   return (
     <View style={styles.container}>
       <ScrollView
-        ref={scrollViewRef}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -51,6 +46,8 @@ export const AchievementCategoryTabs: React.FC<
               style={[styles.tab, isSelected && styles.selectedTab]}
               onPress={() => onSelectCategory(category.id)}
               activeOpacity={0.7}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isSelected }}
             >
               <Text
                 style={[styles.tabText, isSelected && styles.selectedTabText]}
@@ -77,11 +74,13 @@ const styles = StyleSheet.create({
   tab: {
     paddingHorizontal: rw(4),
     paddingVertical: rh(0.8),
-    borderRadius: 20,
+    borderRadius: rbr(20),
     marginRight: rw(2),
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: ResponsiveTheme.colors.glassHighlight,
+    minHeight: rp(44),
+    justifyContent: "center" as const,
   },
   selectedTab: {
     backgroundColor: ResponsiveTheme.colors.primary,
@@ -93,7 +92,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   selectedTabText: {
-    color: "#FFFFFF", // Always white for selected
+    color: ResponsiveTheme.colors.white,
     fontWeight: "700",
   },
 });

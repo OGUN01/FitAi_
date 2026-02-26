@@ -32,9 +32,6 @@ class NutritionDataService {
   async initialize(): Promise<void> {
     try {
       await crudOperations.initialize();
-      console.log(
-        "Nutrition Data Service initialized with Track B integration",
-      );
     } catch (error) {
       console.error("Failed to initialize Nutrition Data Service:", error);
       throw error;

@@ -1,8 +1,9 @@
+import { logger } from '../utils/logger';
 // 🪝 Create Recipe Hook
 // Form state management and recipe generation logic
 
 import { useState } from "react";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 
 const geminiService = {
   isAvailable: () => false,
@@ -40,7 +41,7 @@ export const useCreateRecipe = ({
     const missing = required.filter((key) => !inputs[key]?.trim());
 
     if (missing.length > 0) {
-      Alert.alert(
+      crossPlatformAlert(
         "Missing Information",
         "Please describe what you want to cook.",
         [{ text: "OK" }],
@@ -55,7 +56,7 @@ export const useCreateRecipe = ({
     if (!validateInputs()) return;
 
     if (!geminiService.isAvailable()) {
-      Alert.alert(
+      crossPlatformAlert(
         "Feature Not Available",
         "AI recipe generation is currently disabled. This feature will be available when the backend integration is complete.\n\n🔧 Using Cloudflare Workers backend for AI features.",
         [{ text: "OK" }],
@@ -117,7 +118,7 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
 
         onRecipeCreated(recipeData);
 
-        Alert.alert(
+        crossPlatformAlert(
           "🎉 Recipe Created!",
           `Your custom recipe has been generated successfully!`,
           [
@@ -135,8 +136,8 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
         throw new Error(response.error || "Failed to generate recipe");
       }
     } catch (error) {
-      console.error("Recipe creation failed:", error);
-      Alert.alert(
+      logger.error('Recipe creation failed', { error: String(error) });
+      crossPlatformAlert(
         "Creation Failed",
         "Failed to create recipe. Please try again with a clearer description.",
         [{ text: "OK" }],

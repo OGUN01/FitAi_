@@ -9,7 +9,8 @@ import {
   Dimensions,
 } from "react-native";
 import { Image } from "expo-image";
-import { THEME } from "../../ui";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rf, rp, rbr, rs } from "../../../utils/responsive";
 
 interface FullscreenModalProps {
   visible: boolean;
@@ -74,48 +75,48 @@ const styles = StyleSheet.create({
 
   fullscreenContainer: {
     alignItems: "center",
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
 
   closeButton: {
     position: "absolute",
-    top: 20,
-    right: 20,
+    top: rp(20),
+    right: rp(20),
     zIndex: 10,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 20,
-    width: 40,
-    height: 40,
+    borderRadius: rbr(20),
+    width: rs(40),
+    height: rs(40),
     justifyContent: "center",
     alignItems: "center",
   },
 
   closeButtonText: {
     color: "white",
-    fontSize: 20,
+    fontSize: rf(20),
     fontWeight: "bold",
   },
 
   fullscreenTitle: {
     color: "white",
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
     textAlign: "center",
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
     textTransform: "capitalize",
   },
 
   fullscreenGif: {
     backgroundColor: "rgba(255, 255, 255, 0.05)",
-    borderRadius: THEME.borderRadius.lg,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
   },
 
   fullscreenHint: {
     color: "rgba(255, 255, 255, 0.7)",
-    fontSize: THEME.fontSize.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
     textAlign: "center",
-    marginTop: THEME.spacing.md,
+    marginTop: ResponsiveTheme.spacing.md,
   },
 });

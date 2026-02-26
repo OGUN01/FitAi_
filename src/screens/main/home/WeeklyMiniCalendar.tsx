@@ -9,7 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw } from "../../../utils/responsive";
+import { rf, rw, rp } from "../../../utils/responsive";
 
 interface DayActivity {
   date: Date;
@@ -108,7 +108,7 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
               textColor = ResponsiveTheme.colors.primary;
             } else if (day.workoutCompleted) {
               cellStyle = styles.completedCell;
-              textColor = "#fff";
+              textColor = ResponsiveTheme.colors.white;
             } else if (day.isRestDay) {
               cellStyle = styles.restCell;
             } else if (isPast && day.hasWorkout) {
@@ -129,7 +129,7 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
                 </Text>
                 <View style={[styles.dayCell, cellStyle]}>
                   {day.workoutCompleted ? (
-                    <Ionicons name="checkmark" size={rf(14)} color="#fff" />
+                    <Ionicons name="checkmark" size={rf(14)} color={ResponsiveTheme.colors.white} />
                   ) : (
                     <Text style={[styles.dayNumber, { color: textColor }]}>
                       {day.date.getDate()}
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   },
   dayWrapper: {
     alignItems: "center",
-    gap: 4,
+    gap: rp(4),
   },
   dayLabel: {
     fontSize: rf(10),

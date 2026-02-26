@@ -13,7 +13,7 @@ import { View, Text, StyleSheet, Switch, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw } from "../../utils/responsive";
+import { rf, rw, rp } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
 interface GlassFormSwitchProps {
@@ -104,10 +104,10 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center" as const,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
     borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: ResponsiveTheme.colors.glassBorder,
     padding: ResponsiveTheme.spacing.md,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: rf(15),
     fontWeight: "500",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
   labelDisabled: {
     color: ResponsiveTheme.colors.textMuted,
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   description: {
     fontSize: rf(12),
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: rp(2),
     lineHeight: rf(16),
   },
 });

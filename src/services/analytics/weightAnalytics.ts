@@ -109,8 +109,8 @@ export function analyzeBodyComposition(
 
 export function getUserHeight(metrics: FitnessMetrics[]): number {
   for (const metric of metrics) {
-    if ((metric as any).height && (metric as any).height > 0) {
-      return (metric as any).height;
+    if (metric.height && metric.height > 0) {
+      return metric.height;
     }
   }
   return 0;

@@ -62,7 +62,7 @@ export const useNutritionTracking = (navigation: any) => {
     if (waterGoalML && waterIntakeML >= waterGoalML) {
       Alert.alert(
         "Daily Goal Achieved!",
-        `You've already reached your daily water goal of ${waterGoalLiters?.toFixed(1)}L! Great job staying hydrated!`,
+        `You've already reached your daily water goal of ${waterGoalLiters?.toFixed(2)}L! Great job staying hydrated!`,
         [{ text: "Awesome!" }],
       );
       return;
@@ -79,7 +79,7 @@ export const useNutritionTracking = (navigation: any) => {
       setTimeout(() => {
         Alert.alert(
           "Hydration Goal Achieved!",
-          `Congratulations! You've reached your daily water goal of ${waterGoalLiters?.toFixed(1)}L!`,
+          `Congratulations! You've reached your daily water goal of ${waterGoalLiters?.toFixed(2)}L!`,
           [
             { text: "Keep it up!", style: "default" },
             {
@@ -105,7 +105,7 @@ export const useNutritionTracking = (navigation: any) => {
       );
       Alert.alert(
         "Water Added!",
-        `Great job! ${remainingL.toFixed(1)}L more to reach your goal.`,
+        `Great job! ${remainingL.toFixed(2)}L more to reach your goal.`,
       );
     }
   };

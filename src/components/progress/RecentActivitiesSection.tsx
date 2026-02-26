@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rp } from "../../utils/responsive";
+import { rf, rp, rs, rbr } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
@@ -128,8 +128,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   activityIcon: {
-    width: 40,
-    height: 40,
+    width: rs(40),
+    height: rs(40),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     justifyContent: "center",
@@ -155,9 +155,9 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textTertiary,
   },
   activityBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: rs(24),
+    height: rs(24),
+    borderRadius: rbr(12),
     backgroundColor: ResponsiveTheme.colors.success,
     justifyContent: "center",
     alignItems: "center",

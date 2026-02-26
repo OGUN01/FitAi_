@@ -69,7 +69,6 @@ export function useUserMetrics(autoLoad: boolean = true): UseUserMetricsResult {
    */
   const loadMetrics = async (forceRefresh: boolean = false) => {
     if (!userId) {
-      console.warn('⚠️ [USE-USER-METRICS] No user ID available');
       return;
     }
 
@@ -77,7 +76,6 @@ export function useUserMetrics(autoLoad: boolean = true): UseUserMetricsResult {
     setError(null);
 
     try {
-      console.log('📊 [USE-USER-METRICS] Loading metrics for user:', userId);
 
       const loadedMetrics = await userMetricsService.loadUserMetrics(userId, forceRefresh);
       setMetrics(loadedMetrics);
@@ -86,11 +84,6 @@ export function useUserMetrics(autoLoad: boolean = true): UseUserMetricsResult {
       const quick = userMetricsService.getQuickMetrics(loadedMetrics);
       setQuickMetrics(quick);
 
-      console.log('✅ [USE-USER-METRICS] Metrics loaded successfully', {
-        hasCompletedOnboarding: loadedMetrics.hasCompletedOnboarding,
-        hasCalculatedMetrics: loadedMetrics.hasCalculatedMetrics,
-        dailyCalories: quick.daily_calories,
-      });
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to load user metrics');
       console.error('❌ [USE-USER-METRICS] Error loading metrics:', error);

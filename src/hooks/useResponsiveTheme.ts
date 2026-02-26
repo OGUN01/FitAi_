@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { THEME, createResponsiveTheme } from '../utils/constants';
+import { ResponsiveTheme, createResponsiveTheme } from '../utils/constants';
 
 /**
  * Safe responsive theme hook
@@ -12,7 +12,7 @@ export const useResponsiveTheme = () => {
       return createResponsiveTheme();
     } catch (error) {
       console.warn('ResponsiveTheme calculation failed, using base theme:', error);
-      return THEME; // Fallback to base theme
+      return ResponsiveTheme; // Fallback to base theme
     }
   }, []); // Empty dependency array - calculate once per component
 };
@@ -31,10 +31,10 @@ export const useResponsiveStyles = <T extends Record<string, any>>(
       return styleCreator(theme);
     } catch (error) {
       console.warn('Failed to create responsive styles, using base theme:', error);
-      return styleCreator(THEME as any);
+      return styleCreator(ResponsiveTheme as any);
     }
   }, [theme, styleCreator]);
 };
 
 // For backwards compatibility - use base theme for immediate needs
-export const ResponsiveTheme = THEME;
+// ResponsiveTheme is directly imported from utils/constants

@@ -113,9 +113,7 @@ export async function createProgressEntry(
       await analyticsDataService.updateTodaysMetrics(userId, {
         weightKg: entryData.weight_kg,
       });
-      console.log("📊 Analytics metrics updated for weight entry");
     } catch (analyticsError) {
-      console.warn("⚠️ Failed to update analytics metrics:", analyticsError);
     }
 
     return {

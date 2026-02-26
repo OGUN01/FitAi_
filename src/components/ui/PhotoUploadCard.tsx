@@ -97,8 +97,8 @@ export const PhotoUploadCard: React.FC<PhotoUploadCardProps> = ({
                   <LinearGradient
                     colors={
                       aiProcessing
-                        ? ["#FF6B35", "#FF8A5C"]
-                        : ["#4CAF50", "#45A049"]
+                        ? [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]
+                        : [ResponsiveTheme.colors.success, ResponsiveTheme.colors.success]
                     }
                     style={styles.aiBadgeGradient}
                     start={{ x: 0, y: 0 }}
@@ -118,7 +118,7 @@ export const PhotoUploadCard: React.FC<PhotoUploadCardProps> = ({
                   onPress={onDelete}
                 >
                   <LinearGradient
-                    colors={["#F44336", "#D32F2F"]}
+                    colors={[ResponsiveTheme.colors.error, ResponsiveTheme.colors.error]}
                     style={styles.deleteButtonGradient}
                   >
                     <Text style={styles.deleteButtonText}>×</Text>
@@ -170,10 +170,7 @@ const styles = StyleSheet.create({
     borderRadius: ResponsiveTheme.borderRadius.xl,
     backgroundColor: ResponsiveTheme.colors.background,
     padding: ResponsiveTheme.spacing.md,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    boxShadow: '0px 4px 8px rgba(0,0,0,0.1)',
     elevation: 5,
   },
 
@@ -226,10 +223,7 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: ResponsiveTheme.colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    boxShadow: "0px 4px 8px 0px rgba(255,107,53,0.3)",
     elevation: 5,
   },
 
@@ -258,10 +252,7 @@ const styles = StyleSheet.create({
     right: rp(12),
     borderRadius: ResponsiveTheme.borderRadius.full,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    boxShadow: "0px 2px 4px 0px rgba(0,0,0,0.3)",
     elevation: 5,
   },
 
@@ -284,10 +275,7 @@ const styles = StyleSheet.create({
     height: rf(32),
     borderRadius: rf(16),
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    boxShadow: "0px 2px 4px 0px rgba(0,0,0,0.3)",
     elevation: 5,
   },
 
@@ -310,7 +298,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    backgroundColor: ResponsiveTheme.colors.overlayDark,
     paddingVertical: rp(8),
     alignItems: "center",
   },

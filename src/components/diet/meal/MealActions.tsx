@@ -9,6 +9,7 @@ import {
   borderRadius,
 } from "../../../theme/aurora-tokens";
 import { rf, rw } from "../../../utils/responsive";
+import { ResponsiveTheme } from "../../../utils/constants";
 
 interface MealActionsProps {
   onStartMeal?: () => void;
@@ -72,7 +73,7 @@ export const MealActions: React.FC<MealActionsProps> = ({
             colors={
               isCompleted
                 ? ([colors.success.DEFAULT, colors.success.light] as const)
-                : (["#10B981", "#059669"] as const)
+                : ([ResponsiveTheme.colors.successAlt, ResponsiveTheme.colors.successAltDark] as const)
             }
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}

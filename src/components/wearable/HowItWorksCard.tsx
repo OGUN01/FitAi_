@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw } from "../../utils/responsive";
+import { rf, rp, rbr, rw } from "../../utils/responsive";
 
 interface HowItWorksCardProps {
   platformName: string;
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.md,
   },
   step: {
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
   stepNumber: {
     width: rw(28),
     height: rw(28),
-    borderRadius: rw(14),
+    borderRadius: rbr(14),
     backgroundColor: ResponsiveTheme.colors.primary,
     justifyContent: "center",
     alignItems: "center",
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   stepNumberText: {
     fontSize: rf(14),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
   },
   stepText: {
     flex: 1,

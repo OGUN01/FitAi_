@@ -1,3 +1,4 @@
+import { storeLogger } from '../../utils/logger';
 import { DayMeal } from "../../ai";
 import { SyncStatus } from "../../types/localData";
 import { crudOperations } from "../../services/crudOperations";
@@ -51,10 +52,9 @@ export async function startMealSession(
 
     updateMealProgress(meal.id, 0);
 
-    console.log(`🍽️ Started meal session: ${logId}`);
     return logId;
   } catch (error) {
-    console.error("❌ Failed to start meal session:", error);
+    storeLogger.error('Failed to start meal session', { error: String(error) });
     throw error;
   }
 }
@@ -80,9 +80,8 @@ export async function endMealSession(
 
     setCurrentMealSession(null);
 
-    console.log(`✅ Completed meal session: ${logId}`);
   } catch (error) {
-    console.error("❌ Failed to end meal session:", error);
+    storeLogger.error('Failed to end meal session', { error: String(error) });
     throw error;
   }
 }

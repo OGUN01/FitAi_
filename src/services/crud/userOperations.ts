@@ -6,7 +6,6 @@ export async function createOnboardingData(
 ): Promise<void> {
   try {
     await dataBridge.storeOnboardingData(data);
-    console.log("Onboarding data created successfully");
   } catch (error) {
     console.error("Failed to create onboarding data:", error);
     throw error;
@@ -37,7 +36,6 @@ export async function updateOnboardingData(
     };
 
     await dataBridge.storeOnboardingData(updated);
-    console.log("Onboarding data updated successfully");
   } catch (error) {
     console.error("Failed to update onboarding data:", error);
     throw error;
@@ -49,7 +47,6 @@ export async function updateUserPreferences(
 ): Promise<void> {
   try {
     await dataBridge.updateUserPreferences(preferences);
-    console.log("User preferences updated successfully");
   } catch (error) {
     console.error("Failed to update user preferences:", error);
     throw error;

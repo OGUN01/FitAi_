@@ -162,7 +162,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
         {/* Animated line path */}
         <AnimatedPath
           d={linePath}
-          stroke="#4CAF50"
+          stroke={ResponsiveTheme.colors.success}
           strokeWidth={3}
           fill="none"
           strokeDasharray={1000}
@@ -174,8 +174,8 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
           cx={getX(0)}
           cy={getY(currentWeight)}
           r={6}
-          fill="#FF6B35"
-          stroke="#fff"
+          fill={ResponsiveTheme.colors.primary}
+          stroke={ResponsiveTheme.colors.white}
           strokeWidth={2}
         />
 
@@ -184,8 +184,8 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
           cx={getX(weeks)}
           cy={getY(targetWeight)}
           r={6}
-          fill="#4CAF50"
-          stroke="#fff"
+          fill={ResponsiveTheme.colors.success}
+          stroke={ResponsiveTheme.colors.white}
           strokeWidth={2}
         />
 
@@ -196,8 +196,8 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
               cx={point!.x}
               cy={point!.y}
               r={4}
-              fill="#2196F3"
-              stroke="#fff"
+              fill={ResponsiveTheme.colors.info}
+              stroke={ResponsiveTheme.colors.white}
               strokeWidth={1.5}
             />
           </G>
@@ -208,7 +208,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
           x={getX(0)}
           y={getY(currentWeight) - 15}
           fill={ResponsiveTheme.colors.text}
-          fontSize={12}
+          fontSize={rf(12)}
           textAnchor="middle"
           fontWeight="bold"
         >
@@ -219,7 +219,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
           x={getX(weeks)}
           y={getY(targetWeight) - 15}
           fill={ResponsiveTheme.colors.text}
-          fontSize={12}
+          fontSize={rf(12)}
           textAnchor="middle"
           fontWeight="bold"
         >
@@ -231,7 +231,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
           x={padding}
           y={height - 10}
           fill={ResponsiveTheme.colors.textSecondary}
-          fontSize={10}
+          fontSize={rf(10)}
           textAnchor="middle"
         >
           Now
@@ -241,7 +241,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
           x={Math.round(padding + chartWidth)}
           y={height - 10}
           fill={ResponsiveTheme.colors.textSecondary}
-          fontSize={10}
+          fontSize={rf(10)}
           textAnchor="middle"
         >
           Week {weeks}
@@ -250,16 +250,16 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
 
       <View style={styles.legend}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: "#FF6B35" }]} />
+          <View style={[styles.legendDot, { backgroundColor: ResponsiveTheme.colors.primary }]} />
           <Text style={styles.legendText}>Current</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: "#4CAF50" }]} />
+          <View style={[styles.legendDot, { backgroundColor: ResponsiveTheme.colors.success }]} />
           <Text style={styles.legendText}>Target</Text>
         </View>
         {milestones.length > 0 && (
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: "#2196F3" }]} />
+            <View style={[styles.legendDot, { backgroundColor: ResponsiveTheme.colors.info }]} />
             <Text style={styles.legendText}>Milestone</Text>
           </View>
         )}

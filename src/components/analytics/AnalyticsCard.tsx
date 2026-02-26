@@ -1,9 +1,10 @@
-// Analytics Card Component
+﻿// Analytics Card Component
 // Displays key metrics and insights in a beautiful card format
 
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr, rh } from "../../utils/responsive";
 
 interface AnalyticsCardProps {
   title: string;
@@ -31,7 +32,7 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({
 }) => {
   const getBackgroundColor = () => {
     const colors = {
-      blue: THEME.colors.primary,
+      blue: ResponsiveTheme.colors.primary,
       green: "#10B981",
       purple: "#FF8A5C",
       orange: "#F59E0B",
@@ -58,27 +59,27 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({
     switch (size) {
       case "small":
         return {
-          container: { padding: 16, minHeight: 80 },
-          title: { fontSize: 14 },
-          value: { fontSize: 20 },
-          subtitle: { fontSize: 12 },
-          icon: { fontSize: 24 },
+          container: { padding: rp(16), minHeight: rh(80) },
+          title: { fontSize: rf(14) },
+          value: { fontSize: rf(20) },
+          subtitle: { fontSize: rf(12) },
+          icon: { fontSize: rf(24) },
         };
       case "large":
         return {
-          container: { padding: 24, minHeight: 140 },
-          title: { fontSize: 18 },
-          value: { fontSize: 28 },
-          subtitle: { fontSize: 16 },
-          icon: { fontSize: 32 },
+          container: { padding: rp(24), minHeight: rh(140) },
+          title: { fontSize: rf(18) },
+          value: { fontSize: rf(28) },
+          subtitle: { fontSize: rf(16) },
+          icon: { fontSize: rf(32) },
         };
       default:
         return {
-          container: { padding: 20, minHeight: 110 },
-          title: { fontSize: 16 },
-          value: { fontSize: 24 },
-          subtitle: { fontSize: 14 },
-          icon: { fontSize: 28 },
+          container: { padding: rp(20), minHeight: rh(110) },
+          title: { fontSize: rf(16) },
+          value: { fontSize: rf(24) },
+          subtitle: { fontSize: rf(14) },
+          icon: { fontSize: rf(28) },
         };
     }
   };
@@ -127,7 +128,7 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({
 
   if (onPress) {
     return (
-      <Pressable onPress={onPress} style={styles.pressable}>
+      <Pressable onPress={onPress} style={styles.pressable} accessibilityRole="button" accessibilityLabel={title}>
         <CardContent />
       </Pressable>
     );
@@ -138,7 +139,7 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 12,
+    borderRadius: rbr(12),
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -153,7 +154,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 12,
+    marginBottom: rp(12),
   },
   title: {
     color: "rgba(255, 255, 255, 0.8)",
@@ -165,7 +166,7 @@ const styles = StyleSheet.create({
   value: {
     color: "#fff",
     fontWeight: "bold",
-    marginBottom: 4,
+    marginBottom: rp(4),
   },
   subtitle: {
     color: "rgba(255, 255, 255, 0.7)",
@@ -180,8 +181,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   trendIcon: {
-    fontSize: 14,
-    marginRight: 4,
+    fontSize: rf(14),
+    marginRight: rp(4),
     color: "#fff",
   },
   trendValue: {

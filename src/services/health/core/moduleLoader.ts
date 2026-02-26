@@ -9,17 +9,10 @@ export const isHealthConnectNativeAvailable = (): boolean => {
       NativeModules.HealthConnect || NativeModules.RNHealthConnect
     );
     if (!hasNativeModule) {
-      console.log(
-        "Health Connect native module not found - package may not be linked",
-      );
       return false;
     }
     return true;
   } catch (error) {
-    console.log(
-      "Error checking Health Connect native module availability:",
-      error,
-    );
     return false;
   }
 };
@@ -46,7 +39,6 @@ export const getHealthConnectModule = async (): Promise<any | null> => {
     healthConnectAvailable = true;
     return module;
   } catch (error) {
-    console.warn("Failed to load react-native-health-connect:", error);
     healthConnectAvailable = false;
     return null;
   }

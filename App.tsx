@@ -13,6 +13,7 @@ import { OnboardingReviewData } from "./src/types/onboarding";
 import { ThemeProvider } from "./src/theme/ThemeProvider";
 import { colors, spacing, typography } from "./src/theme/aurora-tokens";
 import { initializeBackend } from "./src/utils/integration";
+import { offlineService } from "./src/services/offline/OfflineService";
 import { useAuth } from "./src/hooks/useAuth";
 import { ErrorBoundary } from "./src/components/ErrorBoundary";
 import { useUserStore } from "./src/stores/userStore";
@@ -47,14 +48,7 @@ const isExpoGo = (() => {
 
   const isExpoGoDetected = Object.values(detectionMethods).some(Boolean);
 
-  console.log("🔍 Environment Detection:", {
-    ...detectionMethods,
-    result: isExpoGoDetected,
-    appOwnership: Constants.appOwnership,
-    executionEnvironment: Constants.executionEnvironment,
-    isDevice: Constants.isDevice,
-    __DEV__,
-  });
+
 
   return isExpoGoDetected;
 })();
@@ -63,25 +57,21 @@ const isExpoGo = (() => {
 let useNotificationStore: any = null;
 if (!isExpoGo) {
   try {
-    console.log("📱 Attempting to load notification modules...");
+
     const notificationStore = require("./src/stores/notificationStore");
     useNotificationStore = notificationStore.useNotificationStore;
-    console.log("✅ Notification modules loaded successfully");
+
   } catch (error: any) {
     console.error(
       "⚠️ Failed to load notification modules:",
       error?.message || error,
     );
-    console.log("🛡️ Continuing without notifications - app will still work");
+
   }
 } else {
-  console.log(
-    "🚫 Expo Go detected - notifications disabled to prevent ExpoPushTokenManager error",
-  );
 }
-
 export default function App() {
-  console.log("🎬 App: Component rendering...");
+
 
   // Default to false - user must complete onboarding unless we find completed data
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
@@ -91,12 +81,7 @@ export default function App() {
 
   const { user, isLoading, isInitialized, isGuestMode, guestId } = useAuth();
 
-  console.log("🔍 App: Auth state -", {
-    isInitialized,
-    isLoading,
-    isLoadingOnboarding,
-    user: !!user,
-  });
+
   const { setProfile, profile } = useUserStore();
   const { setGuestMode: setGuestModeInStore } = useAuthStore();
 
@@ -104,7 +89,7 @@ export default function App() {
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (isLoadingOnboarding) {
-        console.warn("⚠️ App: Onboarding loading timeout - forcing completion");
+
         setIsLoadingOnboarding(false);
       }
     }, 5000);
@@ -125,6 +110,16 @@ export default function App() {
 
     return () => clearTimeout(timeout);
   }, [isInitialized]);
+
+  // DBUG-005/016 FIX: Reset to WelcomeScreen on sign-out
+  // When user becomes null (signed out) while app was initialized,
+  // reset showWelcome to true so returning users see the Sign In option
+  useEffect(() => {
+    if (!user && isInitialized && !isLoading) {
+      setShowWelcome(true);
+      setIsOnboardingComplete(false);
+    }
+  }, [user, isInitialized, isLoading]);
 
   // Only use notification store if not in Expo Go
   const notificationStore = useNotificationStore
@@ -396,16 +391,14 @@ export default function App() {
         key.startsWith("onboarding_"),
       );
 
-      console.log(
-        `🔍 App: Found ${onboardingKeys.length} potential onboarding data keys`,
-      );
+
 
       // Try to find data with different guest IDs
       for (const key of onboardingKeys) {
         if (key !== `onboarding_${currentGuestId}`) {
           const data = await AsyncStorage.getItem(key);
           if (data) {
-            console.log(`📦 App: Found legacy onboarding data at key: ${key}`);
+
             const parsedData: OnboardingReviewData = JSON.parse(data);
 
             // Migrate to new key
@@ -414,15 +407,13 @@ export default function App() {
             // Remove old key to prevent conflicts
             await AsyncStorage.removeItem(key);
 
-            console.log(
-              `✅ App: Migrated data from ${key} to onboarding_${currentGuestId}`,
-            );
+
             return parsedData;
           }
         }
       }
 
-      console.log("📭 App: No legacy onboarding data found to migrate");
+
       return null;
     } catch (error) {
       console.error("❌ App: Failed to migrate guest data:", error);
@@ -440,7 +431,7 @@ export default function App() {
     const missingTables: string[] = [];
 
     try {
-      console.log("🔍 [DB-VERIFY] Checking database data for user:", userId);
+
 
       // Check profiles table
       const { data: profile, error: profileError } = await supabase
@@ -499,9 +490,7 @@ export default function App() {
       }
       if (!advancedReview) missingTables.push("advanced_review");
 
-      console.log(
-        `🔍 [DB-VERIFY] User ${userId}: Missing tables: ${missingTables.length > 0 ? missingTables.join(", ") : "none"}`,
-      );
+
 
       return {
         hasData: missingTables.length === 0,
@@ -521,20 +510,17 @@ export default function App() {
     const savedTables: string[] = []; // Track successful saves for rollback
 
     try {
-      console.log(
-        "🔄 [SYNC] Starting local-to-database sync for user:",
-        userId,
-      );
+
 
       // Load from onboarding_data (primary source used by useOnboardingState)
       const onboardingDataStr = await AsyncStorage.getItem("onboarding_data");
       if (!onboardingDataStr) {
-        console.log("🔄 [SYNC] No onboarding_data found in AsyncStorage");
+
         return { success: false, errors: ["No local data found"] };
       }
 
       const onboardingData = JSON.parse(onboardingDataStr);
-      console.log("🔄 [SYNC] Found onboarding_data, syncing to database...");
+
 
       // CONFLICT RESOLUTION: Check if database already has data
       const existingProfile = await PersonalInfoService.load(userId);
@@ -552,7 +538,7 @@ export default function App() {
       );
 
       if (hasRemoteData) {
-        console.warn("⚠️ [SYNC] Remote data exists - merging with local data");
+
         // Merge strategy: Local data wins for onboarding (newest)
         // In production, you might want to compare timestamps or ask user
       }
@@ -570,7 +556,7 @@ export default function App() {
             throw new Error("Failed to save personalInfo");
           }
           savedTables.push("profiles");
-          console.log("✅ [SYNC] PersonalInfo synced to database");
+
         } catch (e) {
           const errorMsg = `Error saving personalInfo: ${e}`;
           errors.push(errorMsg);
@@ -592,7 +578,7 @@ export default function App() {
             throw new Error("Failed to save bodyAnalysis");
           }
           savedTables.push("body_analysis");
-          console.log("✅ [SYNC] BodyAnalysis synced to database");
+
         } catch (e) {
           const errorMsg = `Error saving bodyAnalysis: ${e}`;
           errors.push(errorMsg);
@@ -612,7 +598,7 @@ export default function App() {
             throw new Error("Failed to save dietPreferences");
           }
           savedTables.push("diet_preferences");
-          console.log("✅ [SYNC] DietPreferences synced to database");
+
         } catch (e) {
           const errorMsg = `Error saving dietPreferences: ${e}`;
           errors.push(errorMsg);
@@ -632,7 +618,7 @@ export default function App() {
             throw new Error("Failed to save workoutPreferences");
           }
           savedTables.push("workout_preferences");
-          console.log("✅ [SYNC] WorkoutPreferences synced to database");
+
         } catch (e) {
           const errorMsg = `Error saving workoutPreferences: ${e}`;
           errors.push(errorMsg);
@@ -652,7 +638,7 @@ export default function App() {
             throw new Error("Failed to save advancedReview");
           }
           savedTables.push("advanced_review");
-          console.log("✅ [SYNC] AdvancedReview synced to database");
+
         } catch (e) {
           const errorMsg = `Error saving advancedReview: ${e}`;
           errors.push(errorMsg);
@@ -661,9 +647,7 @@ export default function App() {
         }
       }
 
-      console.log(
-        `🔄 [SYNC] Sync completed. Tables saved: ${savedTables.length}, Errors: ${errors.length}`,
-      );
+
 
       // Success if personal info saved (minimum requirement)
       const hasMinimumData = savedTables.includes("profiles");
@@ -690,11 +674,11 @@ export default function App() {
     savedTables: string[],
     userId: string,
   ): Promise<void> => {
-    console.warn("🔄 [ROLLBACK] Attempting to rollback partial sync...");
+
 
     for (const table of savedTables) {
       try {
-        console.log(`🔄 [ROLLBACK] Rolling back ${table}...`);
+
 
         switch (table) {
           case "profiles":
@@ -704,7 +688,7 @@ export default function App() {
           // For now, we only rollback profiles as it's the critical one
         }
 
-        console.log(`✅ [ROLLBACK] ${table} rolled back`);
+
       } catch (rollbackError) {
         console.error(
           `❌ [ROLLBACK] Failed to rollback ${table}:`,
@@ -724,13 +708,13 @@ export default function App() {
       setIsLoadingOnboarding(true);
 
       try {
-        console.log("📱 App: Loading existing onboarding data...");
+
 
         // If user is authenticated, check if profile exists in store
         if (user && profile) {
           if (!mounted) return;
 
-          console.log("✅ App: Found existing user profile in store");
+
 
           // Validate profile has all required fields
           const { checkProfileComplete } = useUserStore.getState();
@@ -738,21 +722,16 @@ export default function App() {
 
           if (isValid) {
             // NEW: Verify database actually has the data (fix for sync issues)
-            console.log("🔍 App: Profile valid locally, verifying database...");
+
             const dbVerification = await verifyDatabaseData(user.id);
 
             if (!mounted) return;
 
             if (!dbVerification.hasData) {
-              console.warn(
-                "⚠️ App: Profile valid locally but DB missing data:",
-                dbVerification.missingTables,
-              );
+
 
               // Attempt to sync local data to database
-              console.log(
-                "🔄 App: Attempting to sync local data to database...",
-              );
+
               const syncResult = await syncLocalToDatabase(user.id);
 
               if (!mounted) return;
@@ -763,28 +742,18 @@ export default function App() {
                   syncResult.errors,
                 );
                 // Still show main navigation - local data exists, DB sync can happen later
-                console.log(
-                  "⚠️ App: Continuing with local data, DB sync failed",
-                );
+
               } else {
-                console.log(
-                  "✅ App: Local data synced to database successfully",
-                );
+
               }
             } else {
-              console.log(
-                "✅ App: Database verification passed - all data present",
-              );
+
             }
 
-            console.log(
-              "✅ App: Profile validation passed - showing MainNavigation",
-            );
+
             setIsOnboardingComplete(true);
           } else {
-            console.log(
-              "⚠️ App: Profile exists but incomplete - showing onboarding",
-            );
+
             setIsOnboardingComplete(false);
           }
 
@@ -794,38 +763,32 @@ export default function App() {
 
         // If user is authenticated but no profile in store, try to load from database
         if (user && !profile) {
-          console.log(
-            "🔄 App: User authenticated but no profile in store, loading from database...",
-          );
+
           try {
-            const { getProfile } = useUserStore.getState();
-            const profileResponse = await getProfile(user.id);
+            const { getCompleteProfile } = useUserStore.getState();
+            const profileResponse = await getCompleteProfile(user.id);
 
             if (!mounted) return;
 
             if (profileResponse.success && profileResponse.data) {
-              console.log("✅ App: Profile loaded from database successfully");
+
 
               // Validate profile has all required fields
               const { checkProfileComplete } = useUserStore.getState();
               const isValid = checkProfileComplete(profileResponse.data);
 
               if (isValid) {
-                console.log(
-                  "✅ App: Profile validation passed - showing MainNavigation",
-                );
+
                 setIsOnboardingComplete(true);
               } else {
-                console.log("⚠️ App: Profile incomplete - showing onboarding");
+
                 setIsOnboardingComplete(false);
               }
 
               setIsLoadingOnboarding(false);
               return;
             } else {
-              console.log(
-                "📝 App: No profile found in database for authenticated user - needs onboarding",
-              );
+
               setIsOnboardingComplete(false);
             }
           } catch (error) {
@@ -846,9 +809,7 @@ export default function App() {
         if (!mounted) return;
 
         if (onboardingCompleted === "true") {
-          console.log(
-            "✅ App: Onboarding marked complete for guest user - validating data...",
-          );
+
 
           // Load onboarding data from AsyncStorage and convert to profile format
           try {
@@ -859,9 +820,7 @@ export default function App() {
 
             if (onboardingDataStr) {
               const onboardingData = JSON.parse(onboardingDataStr);
-              console.log(
-                "📦 App: Found onboarding data in AsyncStorage, converting to profile...",
-              );
+
 
               // Convert to profile format and load into userStore
               const userProfile = convertOnboardingToProfile(onboardingData);
@@ -872,24 +831,16 @@ export default function App() {
               const isValid = checkProfileComplete(userProfile);
 
               if (isValid) {
-                console.log(
-                  "✅ App: Guest profile validation passed - showing MainNavigation",
-                );
+
                 setIsOnboardingComplete(true);
               } else {
-                console.log(
-                  "⚠️ App: Guest profile incomplete - showing onboarding",
-                );
+
                 setIsOnboardingComplete(false);
               }
 
-              console.log(
-                "✅ App: Guest user profile loaded successfully from AsyncStorage",
-              );
+
             } else {
-              console.warn(
-                "⚠️ App: Onboarding marked complete but no data found - showing onboarding",
-              );
+
               setIsOnboardingComplete(false);
             }
           } catch (error) {
@@ -901,13 +852,13 @@ export default function App() {
             setIsOnboardingComplete(false);
           }
         } else {
-          console.log("📝 App: Onboarding not completed - showing onboarding");
+
           setIsOnboardingComplete(false);
         }
 
         // Enable guest mode if no user is authenticated
         if (!isGuestMode && !user) {
-          console.log("👤 App: Enabling guest mode...");
+
           setGuestModeInStore(true);
         }
       } catch (error) {
@@ -917,9 +868,7 @@ export default function App() {
       } finally {
         if (!mounted) return;
         setIsLoadingOnboarding(false);
-        console.log(
-          `🏁 App: Loading complete. Onboarding status: ${isOnboardingComplete ? "COMPLETE" : "INCOMPLETE"}`,
-        );
+
       }
     };
 
@@ -938,21 +887,29 @@ export default function App() {
 
     const initializeApp = async () => {
       try {
-        console.log("🚀 FitAI: Starting app initialization...");
+
         await initializeBackend();
 
         if (!mounted) return;
 
-        console.log("✅ FitAI: Backend initialization completed");
+
+
+        // BUG-001 cleanup: clear stale workout_sessions queue items with old camelCase columns
+        try {
+          await offlineService.clearFailedActionsForTable('workout_sessions');
+
+        } catch (cleanupError) {
+
+        }
 
         // Initialize Google Sign-In
         try {
-          console.log("📱 FitAI: Initializing Google Sign-In...");
+
           await googleAuthService.configure();
 
           if (!mounted) return;
 
-          console.log("✅ FitAI: Google Sign-In initialization completed");
+
         } catch (error) {
           if (!mounted) return;
           console.error(
@@ -962,15 +919,7 @@ export default function App() {
         }
 
         // 🎯 AI BACKEND STATUS - Cloudflare Workers
-        console.log(
-          "🔧 FitAI: AI generation handled by Cloudflare Workers backend",
-        );
-        console.log(
-          "📡 Endpoint: https://fitai-workers.sharmaharsh9887.workers.dev",
-        );
-        console.log(
-          "⚠️  Client-side AI has been disabled - all generation happens server-side",
-        );
+
 
         // Initialize notifications only if not in Expo Go
         if (
@@ -978,13 +927,13 @@ export default function App() {
           initializeNotifications &&
           !areNotificationsInitialized
         ) {
-          console.log("📱 FitAI: Initializing notifications...");
+
           try {
             await initializeNotifications();
 
             if (!mounted) return;
 
-            console.log("✅ FitAI: Notifications initialization completed");
+
           } catch (notifError) {
             if (!mounted) return;
             console.error(
@@ -993,10 +942,8 @@ export default function App() {
             );
           }
         } else if (isExpoGo) {
-          console.log("⚠️ FitAI: Running in Expo Go - notifications disabled");
-          console.log(
-            "ℹ️ FitAI: Build a development build to enable notifications",
-          );
+
+
         }
       } catch (error) {
         if (!mounted) return;
@@ -1033,19 +980,19 @@ export default function App() {
         `onboarding_partial_${currentGuestId}`,
         JSON.stringify(mergedData),
       );
-      console.log("💾 App: Partial onboarding data saved");
+
     } catch (error) {
       console.error("❌ App: Failed to save partial onboarding data:", error);
     }
   };
 
   const handleOnboardingComplete = async (data: OnboardingReviewData) => {
-    console.log("🎉 App: Onboarding completed with data:", data);
+
 
     try {
       // Ensure guest mode is enabled if not authenticated
       if (!user && !isGuestMode) {
-        console.log("👤 App: Enabling guest mode for onboarding completion");
+
         setGuestModeInStore(true);
       }
 
@@ -1054,15 +1001,15 @@ export default function App() {
 
       // Convert to profile format and store in userStore for persistence
       const userProfile = convertOnboardingToProfile(data);
-      console.log("💾 App: Setting profile in userStore...");
+
       setProfile(userProfile);
 
       // ⚠️ CRITICAL: Wait for Zustand persist middleware to finish async save
       // Without this delay, MainNavigation renders before persistence completes,
       // causing ProfileScreen to read from empty userStore
-      console.log("⏳ App: Waiting for persist middleware to complete...");
+
       await new Promise((resolve) => setTimeout(resolve, 150));
-      console.log("✅ App: Persist middleware should have completed");
+
 
       // Store backup data in AsyncStorage with guest ID (for legacy compatibility)
       const currentGuestId =
@@ -1078,9 +1025,7 @@ export default function App() {
       // is already saved by useOnboardingState.saveToLocal() in completeOnboarding().
       // Saving the simplified OnboardingReviewData here would OVERWRITE the complete data
       // and cause calculated metrics (water goal, calories, etc.) to be lost.
-      console.log(
-        "✅ App: Guest ID backup stored (complete data already saved by useOnboardingState)",
-      );
+
 
       // Mark onboarding as complete
       await AsyncStorage.setItem("onboarding_completed", "true");
@@ -1088,13 +1033,11 @@ export default function App() {
       // Remove partial data since onboarding is complete
       await AsyncStorage.removeItem(`onboarding_partial_${currentGuestId}`);
 
-      console.log("✅ App: All onboarding data stored successfully");
-      console.log(
-        "🎉 App: Now setting isOnboardingComplete=true to show MainNavigation",
-      );
+
+
 
       // Invalidate metrics cache to ensure HomeScreen loads fresh data
-      console.log("📊 App: Invalidating metrics cache before navigation");
+
       invalidateMetricsCache();
 
       // Set complete flag LAST after all async operations finish
@@ -1136,7 +1079,7 @@ export default function App() {
                 <WelcomeScreen
                   onGetStarted={() => setShowWelcome(false)}
                   onSignInSuccess={() => {
-                    console.log('✅ App: Sign-in success from WelcomeScreen, reloading profile...');
+
                     setShowWelcome(false);
                     setIsLoadingOnboarding(true);
                   }}

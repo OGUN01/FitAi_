@@ -97,7 +97,6 @@ export class IntelligentSyncScheduler {
       }, 30000);
 
       this.isActive = true;
-      console.log("Intelligent sync scheduler started");
     } catch (error) {
       console.error("Failed to start sync scheduler:", error);
       throw error;
@@ -114,7 +113,6 @@ export class IntelligentSyncScheduler {
 
     await this.saveStats();
     this.isActive = false;
-    console.log("Intelligent sync scheduler stopped");
   }
 
   async makeSyncDecision(

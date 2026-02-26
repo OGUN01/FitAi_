@@ -10,7 +10,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh } from "../../../utils/responsive";
+import { rf, rw, rh, rp } from "../../../utils/responsive";
 
 interface WorkoutInfo {
   hasWeeklyPlan: boolean;
@@ -154,7 +154,7 @@ export const TodaysFocus: React.FC<TodaysFocusProps> = ({
             <Ionicons
               name={workoutInfo.isCompleted ? "eye-outline" : "play"}
               size={rf(16)}
-              color="#fff"
+              color={ResponsiveTheme.colors.white}
             />
           </View>
         </View>
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: rf(12),
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: rp(2),
   },
   progressContainer: {
     flexDirection: "row",

@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw } from "../../utils/responsive";
+import { rf, rw, rp } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
 interface PickerOption {
@@ -133,7 +133,7 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
                           size={rf(18)}
                           color={
                             selected
-                              ? "#FF6B35"
+                              ? ResponsiveTheme.colors.primary
                               : ResponsiveTheme.colors.textSecondary
                           }
                         />
@@ -164,7 +164,7 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
                         <Ionicons
                           name="checkmark"
                           size={rf(14)}
-                          color="#FF6B35"
+                          color={ResponsiveTheme.colors.primary}
                         />
                       </View>
                     )}
@@ -217,10 +217,10 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.xs,
   },
   optionButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
     borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: ResponsiveTheme.colors.glassBorder,
     overflow: "hidden",
     minHeight: rw(52),
     justifyContent: "center" as const,
@@ -255,13 +255,13 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textSecondary,
   },
   optionLabelSelected: {
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     fontWeight: "600",
   },
   optionDescription: {
     fontSize: rf(11),
     color: ResponsiveTheme.colors.textMuted,
-    marginTop: 2,
+    marginTop: rp(2),
   },
   checkmark: {
     width: rw(22),

@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { Alert, Animated, Share } from "react-native";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Alert, Animated, Platform, Share } from "react-native";
 import { useAuth } from "../hooks/useAuth";
 import { useProgressData } from "../hooks/useProgressData";
 import { useCalculatedMetrics } from "../hooks/useCalculatedMetrics";
@@ -7,6 +7,8 @@ import { useHealthDataStore } from "../stores/healthDataStore";
 import DataRetrievalService from "../services/dataRetrieval";
 import { completionTrackingService } from "../services/completionTracking";
 
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+type TimeoutId = ReturnType<typeof setTimeout> | null;
 export const useProgressScreen = (navigation: any) => {
   const [selectedPeriod, setSelectedPeriod] = useState("week");
   const [refreshing, setRefreshing] = useState(false);
@@ -64,6 +66,12 @@ export const useProgressScreen = (navigation: any) => {
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
+
+  // Bug 1 fix: ref to track setTimeout for cleanup on unmount
+  const loadMoreTimeoutRef = useRef<TimeoutId>(null);
+
+  // Bug 2 fix: ref to hold latest refreshProgressData to avoid stale closures
+  const refreshRef = useRef<() => Promise<void>>(async () => {});
 
   // Generate weekly chart data from activities
   const generateWeeklyChartData = (activities: any[]) => {
@@ -130,8 +138,8 @@ export const useProgressScreen = (navigation: any) => {
 
     setLoadingMoreActivities(true);
 
-    // Simulate loading more activities (in real app, this would be an API call)
-    setTimeout(() => {
+    // Bug 1 fix: store timeout ID in ref for cleanup
+    loadMoreTimeoutRef.current = setTimeout(() => {
       const startIndex = activitiesPage * ACTIVITIES_PER_PAGE;
       const moreActivities = DataRetrievalService.getRecentActivities(
         200,
@@ -150,7 +158,13 @@ export const useProgressScreen = (navigation: any) => {
   };
 
   // Load real data on mount and subscribe to completion events
+  // Bug 2 fix: keep ref in sync with latest refreshProgressData on every render
   useEffect(() => {
+    refreshRef.current = refreshProgressData;
+  });
+
+  useEffect(() => {
+    // Initial data load
     // Initial data load
     const init = async () => {
       setIsLoading(true);
@@ -167,17 +181,11 @@ export const useProgressScreen = (navigation: any) => {
 
     // Subscribe to completion events for real-time updates
     const unsubscribe = completionTrackingService.subscribe((event) => {
-      console.log(
-        "[PROGRESS] Progress Tab - Received completion event:",
-        event,
-      );
 
       // Refresh progress data when meals or workouts are completed
       if (event.type === "meal" || event.type === "workout") {
-        console.log(
-          "[PROGRESS] Progress Tab - Refreshing data due to completion event",
-        );
-        refreshProgressData();
+        // Bug 2 fix: call via ref to avoid stale closure
+        refreshRef.current();
       }
     });
 
@@ -198,6 +206,11 @@ export const useProgressScreen = (navigation: any) => {
     // Cleanup subscription on unmount
     return () => {
       unsubscribe();
+      // Bug 1 fix: clear pending timeout on unmount
+      if (loadMoreTimeoutRef.current !== null) {
+        clearTimeout(loadMoreTimeoutRef.current);
+        loadMoreTimeoutRef.current = null;
+      }
     };
   }, []);
 
@@ -210,7 +223,7 @@ export const useProgressScreen = (navigation: any) => {
       // Refresh all activities for modal
       loadAllActivities();
 
-      Alert.alert("Refreshed", "Progress data has been updated!");
+      // Bug 4 fix: removed Alert.alert — pull-to-refresh has visual feedback via RefreshControl spinner
     } catch (error) {
       Alert.alert("Error", "Failed to refresh progress data");
     } finally {
@@ -219,47 +232,51 @@ export const useProgressScreen = (navigation: any) => {
   };
 
   const handleAddProgressEntry = async () => {
-    if (!user?.id) {
-      Alert.alert(
-        "Authentication Required",
-        "Please sign in to track progress.",
-      );
-      return;
-    }
-
+    // Allow both authenticated and guest users to open the weight modal
     setShowWeightModal(true);
   };
 
   const handleShareProgress = async () => {
-    try {
-      const currentWeight = progressStats?.weightChange?.current;
-      const weightDisplay = currentWeight
-        ? `${currentWeight.toFixed(1)} kg`
-        : "Not recorded";
-      const bmi = calculatedMetrics?.calculatedBMI
-        ? calculatedMetrics.calculatedBMI.toFixed(1)
-        : "Not calculated";
+    const currentWeight = progressStats?.weightChange?.current;
+    const weightDisplay = currentWeight
+      ? `${currentWeight.toFixed(1)} kg`
+      : "Not recorded";
+    const bmi = calculatedMetrics?.calculatedBMI
+      ? calculatedMetrics.calculatedBMI.toFixed(1)
+      : "Not calculated";
 
-      const message = `My FitAI Progress Update!
+    const message = `My FitAI Progress Update!
 
 Current Weight: ${weightDisplay}
 BMI: ${bmi}
 Period: ${
-        selectedPeriod === "week"
-          ? "This Week"
-          : selectedPeriod === "month"
-            ? "This Month"
-            : "This Year"
-      }
+      selectedPeriod === "week"
+        ? "This Week"
+        : selectedPeriod === "month"
+          ? "This Month"
+          : "This Year"
+    }
 
 Track your fitness journey with FitAI!`;
 
+    try {
       await Share.share({
         message,
         title: "My FitAI Progress",
       });
     } catch (error) {
-      console.error("Error sharing progress:", error);
+      // Share API may fail on web or unsupported browsers — fall back to clipboard
+      try {
+        if (Platform.OS === "web" && typeof navigator !== "undefined" && navigator.clipboard) {
+          await navigator.clipboard.writeText(message);
+          Alert.alert("Copied!", "Progress summary copied to clipboard.");
+        } else {
+          Alert.alert("Share Unavailable", "Unable to share on this device.");
+        }
+      } catch (clipboardError) {
+        console.error("Clipboard fallback failed:", clipboardError);
+        Alert.alert("Share Unavailable", "Unable to share on this device.");
+      }
     }
   };
 
@@ -356,7 +373,8 @@ Track your fitness journey with FitAI!`;
       };
 
   // Real achievements based on actual user progress
-  const achievements = [
+  // Bug 3 fix: memoize achievements to avoid recomputing every render
+  const achievements = useMemo(() => [
     {
       id: "first-workout",
       title: "First Workout",
@@ -424,17 +442,17 @@ Track your fitness journey with FitAI!`;
       description: "Burn 1000+ calories in workouts",
       iconName: "flame-outline",
       date:
-        DataRetrievalService.getTotalCaloriesBurned() >= 1000
+        todaysData?.totalCaloriesBurned >= 1000
           ? "Completed"
           : "Not yet",
-      completed: DataRetrievalService.getTotalCaloriesBurned() >= 1000,
+      completed: todaysData?.totalCaloriesBurned >= 1000,
       category: "Fitness",
       points: 150,
       rarity: "rare",
-      progress: DataRetrievalService.getTotalCaloriesBurned(),
+      progress: todaysData?.totalCaloriesBurned ?? 0,
       target: 1000,
     },
-  ];
+  ], [weeklyProgress, todaysData]);
 
   const weeklyData =
     realWeeklyData.length > 0

@@ -8,7 +8,8 @@ import {
   ViewStyle,
 } from "react-native";
 import { DayMeal } from "../../types/ai";
-import { THEME } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr } from "../../utils/responsive";
 
 interface MacroDashboardProps {
   meal: DayMeal;
@@ -146,7 +147,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
       value: meal.totalCalories || 0,
       label: "Calories",
       unit: "cal",
-      color: "#FF6B6B",
+      color: ResponsiveTheme.colors.errorLight,
       target: dailyTargets?.calories ?? undefined,
       percentage: calculatePercentage(
         meal.totalCalories || 0,
@@ -157,7 +158,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
       value: meal.totalMacros?.protein || 0,
       label: "Protein",
       unit: "g",
-      color: "#4ECDC4",
+      color: ResponsiveTheme.colors.teal,
       target: dailyTargets?.protein ?? undefined,
       percentage: calculatePercentage(
         meal.totalMacros?.protein || 0,
@@ -228,7 +229,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
                   style={[
                     styles.breakdownBar,
                     {
-                      backgroundColor: "#4ECDC4",
+                      backgroundColor: ResponsiveTheme.colors.teal,
                       flex:
                         (meal.totalMacros.protein * 4) /
                         (meal.totalCalories || 1),
@@ -274,26 +275,26 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: THEME.colors.surface,
-    borderRadius: 16,
-    padding: THEME.spacing.lg,
-    marginVertical: THEME.spacing.md,
-    shadowColor: "#000",
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: rbr(16),
+    padding: ResponsiveTheme.spacing.lg,
+    marginVertical: ResponsiveTheme.spacing.md,
+    shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
   containerCompact: {
-    padding: THEME.spacing.md,
-    marginVertical: THEME.spacing.sm,
-    borderRadius: 12,
+    padding: ResponsiveTheme.spacing.md,
+    marginVertical: ResponsiveTheme.spacing.sm,
+    borderRadius: rbr(12),
   },
   title: {
-    fontSize: THEME.fontSize.lg,
+    fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: "700",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
     textAlign: "center",
   },
   macroGrid: {
@@ -302,7 +303,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   macroGridCompact: {
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
   macroItem: {
     alignItems: "center",
@@ -314,24 +315,24 @@ const styles = StyleSheet.create({
     minWidth: 60,
   },
   progressRingContainer: {
-    width: 60,
-    height: 60,
-    marginBottom: THEME.spacing.sm,
+    width: rp(60),
+    height: rp(60),
+    marginBottom: ResponsiveTheme.spacing.sm,
     position: "relative",
     justifyContent: "center",
     alignItems: "center",
   },
   progressRingBackground: {
     position: "absolute",
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: rp(60),
+    height: rp(60),
+    borderRadius: rbr(30),
     borderWidth: 6,
   },
   progressRing: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: rp(60),
+    height: rp(60),
+    borderRadius: rbr(30),
     borderWidth: 6,
     borderRightColor: "transparent",
     borderBottomColor: "transparent",
@@ -344,91 +345,91 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   macroValue: {
-    fontSize: THEME.fontSize.xl,
+    fontSize: ResponsiveTheme.fontSize.xl,
     fontWeight: "700",
     lineHeight: 24,
   },
   macroValueCompact: {
-    fontSize: THEME.fontSize.lg,
+    fontSize: ResponsiveTheme.fontSize.lg,
     lineHeight: 20,
   },
   macroUnit: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
-    marginTop: -2,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: rp(-2),
   },
   macroUnitCompact: {
-    fontSize: 10,
+    fontSize: rf(10),
   },
   macroLabel: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
     fontWeight: "600",
-    marginTop: THEME.spacing.xs,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
   macroLabelCompact: {
-    fontSize: THEME.fontSize.xs,
-    marginTop: 2,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    marginTop: rp(2),
   },
   macroTarget: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
-    marginTop: 2,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: rp(2),
   },
   macroPercentage: {
-    fontSize: THEME.fontSize.xs,
+    fontSize: ResponsiveTheme.fontSize.xs,
     fontWeight: "600",
-    marginTop: 2,
+    marginTop: rp(2),
   },
   additionalInfo: {
-    marginTop: THEME.spacing.lg,
-    paddingTop: THEME.spacing.md,
+    marginTop: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: ResponsiveTheme.colors.border,
   },
   fiberInfo: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   fiberLabel: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
     fontWeight: "500",
   },
   fiberValue: {
-    fontSize: THEME.fontSize.md,
-    color: "#FF8A5C",
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.accent,
     fontWeight: "700",
   },
   caloricBreakdown: {
-    marginTop: THEME.spacing.md,
+    marginTop: ResponsiveTheme.spacing.md,
   },
   breakdownTitle: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
     fontWeight: "600",
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   breakdownBars: {
     flexDirection: "row",
-    height: 8,
-    borderRadius: 4,
+    height: rp(8),
+    borderRadius: rbr(4),
     overflow: "hidden",
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
   breakdownItem: {
     justifyContent: "center",
   },
   breakdownBar: {
-    height: 8,
+    height: rp(8),
   },
   breakdownLabel: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
-    marginTop: THEME.spacing.xs,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
 });
 

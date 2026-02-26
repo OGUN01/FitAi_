@@ -1,7 +1,7 @@
 // Hook for AI Meals Panel logic and state management
 
 import { useState } from "react";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 
 export interface MealGenerationOption {
   id: string;
@@ -144,7 +144,7 @@ export const useAIMealsPanel = (
       // Reset selections after successful generation
       setSelectedOptions([]);
     } catch (error) {
-      Alert.alert(
+      crossPlatformAlert(
         "Generation Failed",
         "Failed to generate meal. Please try again.",
       );
@@ -158,7 +158,7 @@ export const useAIMealsPanel = (
         actionType: action.action,
       });
     } catch (error) {
-      Alert.alert(
+      crossPlatformAlert(
         "Action Failed",
         `Failed to execute ${action.title}. Please try again.`,
       );

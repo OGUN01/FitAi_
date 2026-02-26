@@ -48,7 +48,6 @@ class WorkoutEngineService {
     },
   ): Promise<AIResponse<Workout>> {
     try {
-      console.log("🏋️ [WorkoutEngine] Delegating to aiService.generateWorkout");
 
       // Delegate to the UnifiedAIService which connects to Cloudflare Workers
       const result = await getAiService().generateWorkout(
@@ -80,9 +79,6 @@ class WorkoutEngineService {
           "intermediate",
       );
 
-      console.log(
-        "✅ [WorkoutEngine] Workout generated and enhanced successfully",
-      );
       return {
         success: true,
         data: enhancedWorkout,

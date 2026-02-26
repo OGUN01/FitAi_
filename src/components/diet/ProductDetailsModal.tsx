@@ -9,10 +9,12 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Modal, Button, THEME } from "../ui";
+import { Modal, Button } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
 import { colors } from "../../theme/aurora-tokens";
 import { HealthScoreIndicator } from "./HealthScoreIndicator";
 import type { ScannedProduct } from "../../services/barcodeService";
+import { rf, rp, rbr } from "../../utils/responsive";
 
 const NUTRI_SCORE_COLORS: Record<string, string> = {
   a: "#038141",
@@ -195,11 +197,11 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return "#22c55e";
+    if (score >= 80) return ResponsiveTheme.colors.successAlt;
     if (score >= 60) return "#84cc16";
     if (score >= 40) return "#eab308";
     if (score >= 20) return "#f97316";
-    return "#ef4444";
+    return ResponsiveTheme.colors.errorAlt;
   };
 
   return (
@@ -249,7 +251,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                   {
                     backgroundColor:
                       NUTRI_SCORE_COLORS[product.nutriScore.toLowerCase()] ??
-                      "#aaa",
+                      ResponsiveTheme.colors.neutral,
                   },
                 ]}
               >
@@ -415,16 +417,16 @@ const styles = StyleSheet.create({
 
   headerContainer: {
     flexDirection: "row",
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: THEME.colors.border,
+    borderBottomColor: ResponsiveTheme.colors.border,
   },
 
   productImage: {
     width: 80,
     height: 80,
-    borderRadius: THEME.borderRadius.md,
-    marginRight: THEME.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    marginRight: ResponsiveTheme.spacing.md,
   },
 
   productInfo: {
@@ -433,51 +435,51 @@ const styles = StyleSheet.create({
   },
 
   productName: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold as "700",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   productBrand: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.primary,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.primary,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   productCategory: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   barcodeText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
     fontFamily: "monospace",
   },
 
   healthScoreContainer: {
     alignItems: "center",
-    padding: THEME.spacing.lg,
-    backgroundColor: THEME.colors.surface,
+    padding: ResponsiveTheme.spacing.lg,
+    backgroundColor: ResponsiveTheme.colors.surface,
   },
 
   confidenceText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.sm,
   },
 
   nutritionContainer: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
   },
 
   sectionTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold as "700",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   nutritionGrid: {
@@ -488,179 +490,179 @@ const styles = StyleSheet.create({
 
   nutritionItem: {
     width: "48%",
-    backgroundColor: THEME.colors.surface,
-    padding: THEME.spacing.sm,
-    borderRadius: THEME.borderRadius.md,
-    marginBottom: THEME.spacing.sm,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    padding: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    marginBottom: ResponsiveTheme.spacing.sm,
     alignItems: "center",
   },
 
   nutritionLabel: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   nutritionValue: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.bold as "700",
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
+    color: ResponsiveTheme.colors.text,
   },
 
   breakdownContainer: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: ResponsiveTheme.colors.border,
   },
 
   breakdownItem: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   breakdownHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: THEME.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   breakdownLabel: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold as "600",
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
+    color: ResponsiveTheme.colors.text,
   },
 
   breakdownScore: {
-    paddingHorizontal: THEME.spacing.sm,
-    paddingVertical: THEME.spacing.xs,
-    borderRadius: THEME.borderRadius.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
   },
 
   breakdownScoreText: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.bold as "700",
-    color: THEME.colors.white,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
+    color: ResponsiveTheme.colors.white,
   },
 
   breakdownMessage: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   alertsContainer: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: ResponsiveTheme.colors.border,
   },
 
   alertItem: {
-    backgroundColor: "rgba(244, 67, 54, 0.12)",
-    padding: THEME.spacing.sm,
-    borderRadius: THEME.borderRadius.md,
+    backgroundColor: `${ResponsiveTheme.colors.error}1F`,
+    padding: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.md,
     borderLeftWidth: 4,
     borderLeftColor: colors.error.DEFAULT,
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   alertText: {
-    fontSize: THEME.fontSize.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
     color: colors.error.light,
   },
 
   recommendationsContainer: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: ResponsiveTheme.colors.border,
   },
 
   recommendationItem: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   recommendationText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.text,
-    lineHeight: 20,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
+    lineHeight: rf(20),
   },
 
   benefitsContainer: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: ResponsiveTheme.colors.border,
   },
 
   benefitItem: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   benefitText: {
-    fontSize: THEME.fontSize.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
     color: colors.success.light,
-    lineHeight: 20,
+    lineHeight: rf(20),
   },
 
   concernsContainer: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: ResponsiveTheme.colors.border,
   },
 
   concernItem: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   concernText: {
-    fontSize: THEME.fontSize.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
     color: colors.warning.light,
-    lineHeight: 20,
+    lineHeight: rf(20),
   },
 
   alternativesContainer: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: ResponsiveTheme.colors.border,
   },
 
   alternativeItem: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   alternativeText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.text,
-    lineHeight: 20,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
+    lineHeight: rf(20),
   },
 
   additionalInfoContainer: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: ResponsiveTheme.colors.border,
   },
 
   infoSection: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   infoTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold as "600",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   infoText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    lineHeight: 18,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(18),
   },
 
   actionButtons: {
-    padding: THEME.spacing.md,
-    gap: THEME.spacing.sm,
+    padding: ResponsiveTheme.spacing.md,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   addButton: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   closeButton: {
@@ -668,84 +670,84 @@ const styles = StyleSheet.create({
   },
 
   aiDisclaimer: {
-    backgroundColor: "rgba(255, 152, 0, 0.12)",
-    borderRadius: 8,
-    padding: 12,
-    marginHorizontal: THEME.spacing.md,
-    marginBottom: 12,
-    marginTop: THEME.spacing.sm,
+    backgroundColor: `${ResponsiveTheme.colors.warning}1F`,
+    borderRadius: rbr(8),
+    padding: rp(12),
+    marginHorizontal: ResponsiveTheme.spacing.md,
+    marginBottom: rp(12),
+    marginTop: ResponsiveTheme.spacing.sm,
     borderWidth: 1,
-    borderColor: "rgba(255, 152, 0, 0.25)",
+    borderColor: `${ResponsiveTheme.colors.warning}40`,
   },
 
   aiDisclaimerText: {
-    color: colors.warning.light,
-    fontSize: 13,
-    lineHeight: 18,
+    color: ResponsiveTheme.colors.warning,
+    fontSize: rf(13),
+    lineHeight: rf(18),
   },
 
   qualityBadgesContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "flex-start",
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.sm,
-    gap: THEME.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: ResponsiveTheme.colors.border,
   },
 
   nutriScoreBadge: {
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    minWidth: 56,
+    borderRadius: rbr(8),
+    paddingHorizontal: rp(12),
+    paddingVertical: rp(8),
+    minWidth: rp(56),
   },
 
   nutriScoreLabel: {
-    fontSize: 9,
+    fontSize: rf(9),
     fontWeight: "700" as const,
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    marginBottom: 2,
+    marginBottom: rp(2),
   },
 
   nutriScoreText: {
-    fontSize: 22,
+    fontSize: rf(22),
     fontWeight: "900" as const,
-    color: "#fff",
-    lineHeight: 26,
+    color: ResponsiveTheme.colors.white,
+    lineHeight: rf(26),
   },
 
   novaContainer: {
     flex: 1,
     justifyContent: "center",
-    paddingVertical: 4,
+    paddingVertical: rp(4),
   },
 
   novaTitle: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.bold as "700",
-    color: THEME.colors.text,
-    marginBottom: 2,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rp(2),
   },
 
   novaLabel: {
-    fontSize: THEME.fontSize.sm,
-    lineHeight: 16,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    lineHeight: rf(16),
   },
 
   originContainer: {
     justifyContent: "center",
-    paddingVertical: 4,
+    paddingVertical: rp(4),
   },
 
   originText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 });
 

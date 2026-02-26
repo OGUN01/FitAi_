@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import { colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rf, rp } from "../../../utils/responsive";
 
 interface PaywallFeaturesListProps {
   features: string[];
@@ -38,39 +39,39 @@ const PaywallFeaturesList: React.FC<PaywallFeaturesListProps> = ({
 
 const styles = StyleSheet.create({
   featuresSection: {
-    padding: spacing.md,
+    padding: rp(16),
     paddingTop: 0,
   },
   featuresHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: rp(12),
   },
   featuresTitle: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "600",
-    color: colors.text.primary,
+    color: ResponsiveTheme.colors.text,
   },
   featuresToggle: {
-    fontSize: 24,
-    color: colors.text.secondary,
+    fontSize: rf(24),
+    color: ResponsiveTheme.colors.textSecondary,
   },
   featuresList: {
-    marginTop: spacing.sm,
+    marginTop: rp(8),
   },
   featureItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: spacing.sm,
+    paddingVertical: rp(8),
   },
   featureIcon: {
-    fontSize: 20,
-    marginRight: 12,
+    fontSize: rf(20),
+    marginRight: rp(12),
   },
   featureText: {
-    fontSize: 14,
-    color: colors.text.secondary,
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.textSecondary,
     flex: 1,
   },
 });

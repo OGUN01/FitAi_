@@ -49,9 +49,6 @@ export class MealService {
         };
       }
 
-      console.log(
-        `📊 meal_logs query result: ${data?.length || 0} meals for date ${date || "all"}`,
-      );
 
       const meals =
         data?.map((mealLog: any) => ({
@@ -190,10 +187,6 @@ export class MealService {
           .insert(mealFoodsData);
 
         if (mealFoodsError) {
-          console.warn(
-            "Warning: Failed to create meal_foods entries:",
-            mealFoodsError,
-          );
         }
       }
 

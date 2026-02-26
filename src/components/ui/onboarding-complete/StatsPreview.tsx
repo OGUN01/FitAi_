@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AnimatedRN, { FadeInUp } from "react-native-reanimated";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf } from "../../../utils/responsive";
+import { rf, rp, rbr } from "../../../utils/responsive";
 
 interface StatsPreviewProps {
   stats?: {
@@ -27,10 +27,10 @@ export const StatsPreview: React.FC<StatsPreviewProps> = ({ stats }) => {
             <View
               style={[
                 styles.statIcon,
-                { backgroundColor: "rgba(255, 107, 107, 0.15)" },
+                { backgroundColor: ResponsiveTheme.colors.errorTint },
               ]}
             >
-              <Ionicons name="flag" size={rf(18)} color="#FF6B6B" />
+              <Ionicons name="flag" size={rf(18)} color={ResponsiveTheme.colors.errorLight} />
             </View>
             <Text style={styles.statLabel}>Goal</Text>
             <Text style={styles.statValue} numberOfLines={1}>
@@ -43,10 +43,10 @@ export const StatsPreview: React.FC<StatsPreviewProps> = ({ stats }) => {
             <View
               style={[
                 styles.statIcon,
-                { backgroundColor: "rgba(255, 107, 53, 0.15)" },
+                { backgroundColor: ResponsiveTheme.colors.primaryTint },
               ]}
             >
-              <Ionicons name="barbell" size={rf(18)} color="#FF6B35" />
+              <Ionicons name="barbell" size={rf(18)} color={ResponsiveTheme.colors.primary} />
             </View>
             <Text style={styles.statLabel}>Weekly</Text>
             <Text style={styles.statValue}>
@@ -59,10 +59,10 @@ export const StatsPreview: React.FC<StatsPreviewProps> = ({ stats }) => {
             <View
               style={[
                 styles.statIcon,
-                { backgroundColor: "rgba(16, 185, 129, 0.15)" },
+                { backgroundColor: ResponsiveTheme.colors.successTint },
               ]}
             >
-              <Ionicons name="flame" size={rf(18)} color="#10b981" />
+              <Ionicons name="flame" size={rf(18)} color={ResponsiveTheme.colors.successAlt} />
             </View>
             <Text style={styles.statLabel}>Target</Text>
             <Text style={styles.statValue}>{stats.calorieTarget} cal</Text>
@@ -84,30 +84,30 @@ const styles = StyleSheet.create({
   },
   statItem: {
     flex: 1,
-    minWidth: 70,
-    maxWidth: 100,
+    minWidth: rp(70),
+    maxWidth: rp(100),
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.03)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.md,
   },
   statIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: rp(32),
+    height: rp(32),
+    borderRadius: rbr(16),
     justifyContent: "center",
     alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
   statLabel: {
-    fontSize: 10,
+    fontSize: rf(10),
     color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: 2,
+    marginBottom: rp(2),
   },
   statValue: {
-    fontSize: 10,
-    fontWeight: "700",
+    fontSize: rf(10),
+    fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
     textAlign: "center",
   },

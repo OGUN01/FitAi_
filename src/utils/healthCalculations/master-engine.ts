@@ -14,19 +14,56 @@ import { HealthScoring } from "./health-scoring";
 import { SleepAnalysis } from "./sleep-analysis";
 
 export class HealthCalculationEngine {
+  /**
+   * Population-average defaults used when body measurements are missing.
+   * These allow the engine to produce reasonable (non-zero) calorie/macro targets
+   * even when a user skips entering height/weight during onboarding.
+   */
+  private static readonly FALLBACK_DEFAULTS = {
+    male:   { weight_kg: 75, height_cm: 175 },
+    female: { weight_kg: 62, height_cm: 163 },
+    default: { weight_kg: 70, height_cm: 170 },
+  } as const;
+
   static calculateAllMetrics(
     personalInfo: PersonalInfoData,
     dietPreferences: DietPreferencesData,
     bodyAnalysis: BodyAnalysisData,
     workoutPreferences: WorkoutPreferencesData,
   ): AdvancedReviewData {
+    // --- Fallback logic for missing body measurements ---
+    let weightKg = bodyAnalysis.current_weight_kg;
+    let heightCm = bodyAnalysis.height_cm;
+    let usedFallbackDefaults = false;
+
+    if (weightKg <= 0 || heightCm <= 0) {
+      const genderKey =
+        personalInfo.gender === 'male' || personalInfo.gender === 'female'
+          ? personalInfo.gender
+          : 'default';
+      const defaults = this.FALLBACK_DEFAULTS[genderKey];
+
+      if (weightKg <= 0) {
+        console.warn(
+          `⚠️ [HealthCalculationEngine] current_weight_kg is ${weightKg}. Using fallback: ${defaults.weight_kg}kg (${genderKey})`,
+        );
+        weightKg = defaults.weight_kg;
+      }
+      if (heightCm <= 0) {
+        console.warn(
+          `⚠️ [HealthCalculationEngine] height_cm is ${heightCm}. Using fallback: ${defaults.height_cm}cm (${genderKey})`,
+        );
+        heightCm = defaults.height_cm;
+      }
+      usedFallbackDefaults = true;
+    }
     const bmi = MetabolicCalculations.calculateBMI(
-      bodyAnalysis.current_weight_kg,
-      bodyAnalysis.height_cm,
+      weightKg,
+      heightCm,
     );
     const bmr = MetabolicCalculations.calculateBMR(
-      bodyAnalysis.current_weight_kg,
-      bodyAnalysis.height_cm,
+      weightKg,
+      heightCm,
       personalInfo.age,
       personalInfo.gender,
     );
@@ -42,17 +79,19 @@ export class HealthCalculationEngine {
 
     const idealWeightRange =
       BodyCompositionCalculations.calculateIdealWeightRange(
-        bodyAnalysis.height_cm,
+        heightCm,
         personalInfo.gender,
         personalInfo.age,
       );
     const weeklyWeightLossRate =
       BodyCompositionCalculations.calculateHealthyWeightLossRate(
-        bodyAnalysis.current_weight_kg,
+        weightKg,
         personalInfo.gender,
       );
-    const isWeightLoss =
-      bodyAnalysis.current_weight_kg > bodyAnalysis.target_weight_kg;
+    const targetWeightKg = bodyAnalysis.target_weight_kg > 0
+      ? bodyAnalysis.target_weight_kg
+      : weightKg; // If no target set, assume maintenance
+    const isWeightLoss = weightKg > targetWeightKg;
     const dailyCalories = NutritionalCalculations.calculateDailyCaloriesForGoal(
       tdee,
       workoutPreferences.weekly_weight_loss_goal || weeklyWeightLossRate,
@@ -65,7 +104,7 @@ export class HealthCalculationEngine {
       dietPreferences,
     );
     const dailyWater = MetabolicCalculations.calculateWaterIntake(
-      bodyAnalysis.current_weight_kg,
+      weightKg,
     );
     const dailyFiber = MetabolicCalculations.calculateFiber(dailyCalories);
 
@@ -75,7 +114,7 @@ export class HealthCalculationEngine {
     );
     const bodyComposition = bodyAnalysis.body_fat_percentage
       ? BodyCompositionCalculations.calculateBodyComposition(
-          bodyAnalysis.current_weight_kg,
+          weightKg,
           bodyAnalysis.body_fat_percentage,
         )
       : { leanMass: 0, fatMass: 0 };
@@ -188,6 +227,8 @@ export class HealthCalculationEngine {
       data_completeness_percentage: 0,
       reliability_score: 0,
       personalization_level: 0,
+
+      usedFallbackDefaults,
     };
   }
 }

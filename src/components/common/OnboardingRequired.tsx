@@ -87,7 +87,7 @@ export const OnboardingRequired: React.FC<OnboardingRequiredProps> = ({
           ]}
           style={styles.iconGradient}
         >
-          <Ionicons name="clipboard-outline" size={rf(28)} color="#fff" />
+          <Ionicons name="clipboard-outline" size={rf(28)} color={ResponsiveTheme.colors.white} />
         </LinearGradient>
       </View>
 
@@ -146,7 +146,7 @@ export const OnboardingRequired: React.FC<OnboardingRequiredProps> = ({
             end={{ x: 1, y: 0 }}
           >
             <Text style={styles.buttonText}>Complete Onboarding</Text>
-            <Ionicons name="arrow-forward" size={rf(16)} color="#fff" />
+            <Ionicons name="arrow-forward" size={rf(16)} color={ResponsiveTheme.colors.white} />
           </LinearGradient>
         </AnimatedPressable>
       )}
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
   // Compact styles
   compactContainer: {

@@ -1,4 +1,5 @@
-import { Alert, Platform } from "react-native";
+import { Platform } from "react-native";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 const safeString = (value: any, fallback: string = ""): string => {
   if (value === null || value === undefined) return fallback;
@@ -34,7 +35,7 @@ export const showWorkoutCompleteAlert = (
     });
   }
 
-  Alert.alert("🎉 Workout Complete!", completionMessage, [
+  crossPlatformAlert("🎉 Workout Complete!", completionMessage, [
     {
       text: "View Achievements",
       onPress: onViewAchievements,
@@ -57,7 +58,7 @@ export const showWorkoutCompleteErrorAlert = (
   stats: any,
   onDone: () => void,
 ) => {
-  Alert.alert(
+  crossPlatformAlert(
     "Workout Complete!",
     `Great job! You completed "${safeString(workout.title, "Workout")}" in ${safeString(stats.totalDuration)} minutes.\n\nNote: Progress may not have been saved.`,
     [{ text: "Done", onPress: onDone }],
@@ -82,7 +83,7 @@ export const showExitWorkoutAlert = (
   }
 
   if (hasProgress) {
-    Alert.alert(
+    crossPlatformAlert(
       "Save Progress?",
       `You've completed ${safeString(exercisesCompleted)}/${safeString(totalExercises)} exercises and ${safeString(setsCompleted)} sets.\n\nYour progress will be saved.`,
       [
@@ -94,7 +95,7 @@ export const showExitWorkoutAlert = (
       ],
     );
   } else {
-    Alert.alert(
+    crossPlatformAlert(
       "Exit Workout?",
       "Are you sure you want to exit? No progress has been made.",
       [

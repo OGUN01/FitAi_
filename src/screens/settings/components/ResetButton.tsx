@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw } from "../../../utils/responsive";
+import { rf, rw, rp, rbr } from "../../../utils/responsive";
 
 interface ResetButtonProps {
   onPress: () => void;
@@ -31,10 +31,10 @@ export const ResetButton: React.FC<ResetButtonProps> = ({ onPress }) => {
             <View
               style={[
                 styles.iconContainer,
-                { backgroundColor: "rgba(244, 67, 54, 0.15)" },
+                { backgroundColor: ResponsiveTheme.colors.errorTint },
               ]}
             >
-              <Ionicons name="refresh-outline" size={rf(20)} color="#F44336" />
+              <Ionicons name="refresh-outline" size={rf(20)} color={ResponsiveTheme.colors.error} />
             </View>
             <View style={styles.actionTextContainer}>
               <Text style={styles.actionTitle}>Reset to Defaults</Text>
@@ -56,7 +56,7 @@ export const ResetButton: React.FC<ResetButtonProps> = ({ onPress }) => {
 
 const styles = StyleSheet.create({
   actionCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
   },
   actionContent: {
     flexDirection: "row",
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: rw(44),
     height: rw(44),
-    borderRadius: rw(12),
+    borderRadius: rbr(12),
     justifyContent: "center" as const,
     alignItems: "center" as const,
     marginRight: ResponsiveTheme.spacing.md,
@@ -77,8 +77,8 @@ const styles = StyleSheet.create({
   actionTitle: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: "#fff",
-    marginBottom: 2,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rp(2),
   },
   actionDescription: {
     fontSize: rf(12),

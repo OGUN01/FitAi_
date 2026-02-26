@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { THEME } from "../../ui";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rf, rw } from "../../../utils/responsive";
 import { Exercise, WorkoutSet } from "../../../types/workout";
 
 interface ExerciseCardDetailsProps {
@@ -49,31 +50,31 @@ export const ExerciseCardDetails: React.FC<ExerciseCardDetailsProps> = ({
 
 const styles = StyleSheet.create({
   detailsSection: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   detailRow: {
     flexDirection: "row",
     alignItems: "center" as const,
-    marginBottom: THEME.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   detailIcon: {
-    fontSize: 16,
-    marginRight: THEME.spacing.sm,
-    width: 20,
+    fontSize: rf(16),
+    marginRight: ResponsiveTheme.spacing.sm,
+    width: rw(20),
   },
 
   detailLabel: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginRight: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginRight: ResponsiveTheme.spacing.sm,
     minWidth: 80,
   },
 
   detailValue: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.text,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 });

@@ -38,11 +38,11 @@ export const WeightGoalsSection: React.FC<WeightGoalsSectionProps> = ({
               color={ResponsiveTheme.colors.warning}
               style={{ marginRight: 4 }}
             />
-            <Text style={styles.readOnlyText}>READ ONLY - FROM TAB 3</Text>
+            <Text style={styles.readOnlyText}>READ ONLY</Text>
           </View>
         </View>
         <Text style={styles.sectionSubtitle}>
-          This information was entered in your Body Analysis (Tab 3)
+          This information was entered in your Body Analysis
         </Text>
       </View>
 
@@ -71,7 +71,7 @@ export const WeightGoalsSection: React.FC<WeightGoalsSectionProps> = ({
             <View style={styles.weightGoalItem}>
               <Text style={styles.weightGoalLabel}>Target Weight</Text>
               <Text style={styles.weightGoalValue}>
-                {bodyAnalysisData.target_weight_kg}kg
+                {bodyAnalysisData.target_weight_kg ? `${bodyAnalysisData.target_weight_kg}kg` : 'Not set'}
               </Text>
             </View>
 
@@ -106,7 +106,7 @@ export const WeightGoalsSection: React.FC<WeightGoalsSectionProps> = ({
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
     marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.md,
     marginHorizontal: -ResponsiveTheme.spacing.lg,
   },
   sectionTitlePadded: {

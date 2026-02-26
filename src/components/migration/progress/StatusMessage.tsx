@@ -5,6 +5,8 @@ import {
   MigrationProgress,
   MigrationResult,
 } from "../../../services/migration";
+import { rf, rp, rbr } from "../../../utils/responsive";
+import { ResponsiveTheme } from "../../../utils/constants";
 
 interface StatusMessageProps {
   progress: MigrationProgress | null;
@@ -35,7 +37,11 @@ export const StatusMessage: React.FC<StatusMessageProps> = ({
           },
         ]}
       >
-        <Ionicons name="checkmark-circle" size={32} color="#10B981" />
+        <Ionicons
+          name="checkmark-circle"
+          size={rf(32)}
+          color={ResponsiveTheme.colors.successAlt}
+        />
         <Text style={styles.statusTitle}>Migration Complete!</Text>
         <Text style={styles.statusMessage}>
           Your data has been successfully synced to the cloud.
@@ -56,7 +62,11 @@ export const StatusMessage: React.FC<StatusMessageProps> = ({
   if (result && !result.success) {
     return (
       <View style={[styles.statusContainer, styles.statusError]}>
-        <Ionicons name="alert-circle" size={32} color="#EF4444" />
+        <Ionicons
+          name="alert-circle"
+          size={rf(32)}
+          color={ResponsiveTheme.colors.errorAlt}
+        />
         <Text style={styles.statusTitle}>Migration Failed</Text>
         <Text style={styles.statusMessage}>
           {result.errors[0]?.message || "An error occurred during migration."}
@@ -83,47 +93,47 @@ export const StatusMessage: React.FC<StatusMessageProps> = ({
 const styles = StyleSheet.create({
   statusContainer: {
     alignItems: "center",
-    marginBottom: 30,
+    marginBottom: rp(30),
   },
   statusSuccess: {
-    backgroundColor: "rgba(16, 185, 129, 0.1)",
-    borderRadius: 15,
-    padding: 20,
+    backgroundColor: ResponsiveTheme.colors.successTint,
+    borderRadius: rbr(15),
+    padding: rp(20),
     borderWidth: 1,
-    borderColor: "rgba(16, 185, 129, 0.3)",
+    borderColor: ResponsiveTheme.colors.successAlt,
   },
   statusError: {
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
-    borderRadius: 15,
-    padding: 20,
+    backgroundColor: ResponsiveTheme.colors.errorTint,
+    borderRadius: rbr(15),
+    padding: rp(20),
     borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.3)",
+    borderColor: ResponsiveTheme.colors.errorAlt,
   },
   statusTitle: {
-    fontSize: 24,
+    fontSize: rf(24),
     fontWeight: "bold",
-    color: "#FFFFFF",
-    marginTop: 10,
+    color: ResponsiveTheme.colors.white,
+    marginTop: rp(10),
     textAlign: "center",
   },
   statusMessage: {
-    fontSize: 16,
-    color: "#9CA3AF",
-    marginTop: 8,
+    fontSize: rf(16),
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: rp(8),
     textAlign: "center",
-    lineHeight: 22,
+    lineHeight: rf(22),
   },
   migrationStats: {
-    marginTop: 15,
-    padding: 10,
-    backgroundColor: "rgba(79, 70, 229, 0.1)",
-    borderRadius: 10,
+    marginTop: rp(15),
+    padding: rp(10),
+    backgroundColor: ResponsiveTheme.colors.primaryTint,
+    borderRadius: rbr(10),
     borderWidth: 1,
-    borderColor: "rgba(79, 70, 229, 0.3)",
+    borderColor: ResponsiveTheme.colors.primaryFaded,
   },
   statsText: {
-    fontSize: 14,
-    color: "#A5B4FC",
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.info,
     textAlign: "center",
   },
 });

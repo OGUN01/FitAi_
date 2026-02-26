@@ -8,6 +8,7 @@ import {
   Animated,
   Modal,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -16,7 +17,7 @@ import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable"
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
 import { gradients, toLinearGradientProps } from "../../theme/gradients";
-import { rf, rw } from "../../utils/responsive";
+import { rf, rw, rp } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { Button } from "../../components/ui";
 import { useAuth } from "../../hooks/useAuth";
@@ -36,6 +37,9 @@ import { MealSuggestions } from "../../components/diet/MealSuggestions";
 import { DietModals } from "../../components/diet/DietModals";
 import { DietQuickActions } from "../../components/diet/DietQuickActions";
 import { ManualBarcodeEntry } from "../../components/diet/ManualBarcodeEntry";
+import { LogMealModal } from "../../components/diet/LogMealModal";
+import { MealDetailModal } from "../../components/diet/MealDetailModal";
+import { DayMeal } from "../../types/ai";
 
 import { useMealPlanning } from "../../hooks/useMealPlanning";
 import { useNutritionTracking } from "../../hooks/useNutritionTracking";
@@ -61,6 +65,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   const [userRecipes, setUserRecipes] = useState<any[]>([]);
   const [showAIMealsPanel, setShowAIMealsPanel] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
+  const [showLogMealModal, setShowLogMealModal] = useState(false);
+  const [showMealDetailModal, setShowMealDetailModal] = useState(false);
+  const [selectedMealForDetail, setSelectedMealForDetail] = useState<DayMeal | null>(null);
 
   const fabScale = useRef(new Animated.Value(1)).current;
   const fabRotation = useRef(new Animated.Value(0)).current;
@@ -138,7 +145,38 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   } = useAIMealGeneration();
 
   const { setSelectedDay } = useAppStateStore();
-  const { getMealProgress: storeGetMealProgress } = useNutritionStore();
+
+  // Day name → index mapping for date navigation
+  const DAY_NAME_TO_INDEX: Record<string, number> = {
+    sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+    thursday: 4, friday: 5, saturday: 6,
+  };
+  const INDEX_TO_DAY_NAME = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
+
+  // Compute the actual Date for the currently selected day
+  const selectedDate = React.useMemo(() => {
+    const today = new Date();
+    const todayIndex = today.getDay(); // 0=sun
+    const targetIndex = DAY_NAME_TO_INDEX[selectedDay] ?? todayIndex;
+    const diff = targetIndex - todayIndex;
+    const d = new Date(today);
+    d.setDate(today.getDate() + diff);
+    return d;
+  }, [selectedDay]);
+
+  const onPrevDay = useCallback(() => {
+    const prev = new Date(selectedDate);
+    prev.setDate(selectedDate.getDate() - 1);
+    setSelectedDay(INDEX_TO_DAY_NAME[prev.getDay()] as any);
+  }, [selectedDate, setSelectedDay]);
+
+  const onNextDay = useCallback(() => {
+    const next = new Date(selectedDate);
+    next.setDate(selectedDate.getDate() + 1);
+    setSelectedDay(INDEX_TO_DAY_NAME[next.getDay()] as any);
+  }, [selectedDate, setSelectedDay]);
+
+  const { getMealProgress: storeGetMealProgress, dailyMeals } = useNutritionStore();
   const { personalInfo, bodyAnalysis, dietPreferences, workoutPreferences, advancedReview } = useProfileStore();
   const userProfile = { personalInfo, bodyMetrics: bodyAnalysis, fitnessGoals: advancedReview, dietPreferences, workoutPreferences };
 
@@ -164,7 +202,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   }, [route?.params, navigation, forceRefresh]);
 
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive || Platform.OS === 'web') return;
     const pulseAnimation = Animated.loop(
       Animated.sequence([
         Animated.timing(fabScale, {
@@ -196,13 +234,32 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   };
 
   const handleSearchFood = () => {
-    setShowAIMealsPanel(true);
+    setShowLogMealModal(true);
   };
 
   const handleRecipeCreated = (recipe: any) => {
     setUserRecipes((prev) => [recipe, ...prev]);
     setShowCreateRecipe(false);
   };
+
+  const handleMealCardPress = useCallback((meal: DayMeal) => {
+    setSelectedMealForDetail(meal);
+    setShowMealDetailModal(true);
+  }, []);
+
+  const handleMealDetailComplete = useCallback((meal: DayMeal) => {
+    completeMealPreparation(meal);
+    setShowMealDetailModal(false);
+    setSelectedMealForDetail(null);
+  }, [completeMealPreparation]);
+
+  const handleMealDetailDelete = useCallback(async (meal: DayMeal) => {
+    const result = await handleDeleteMeal(meal);
+    if (result) {
+      setShowMealDetailModal(false);
+      setSelectedMealForDetail(null);
+    }
+  }, [handleDeleteMeal]);
 
   const handleManualProductFound = useCallback(
     (product: ScannedProduct) => {
@@ -258,8 +315,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   const onGenerateWeeklyPlan = () => generateWeeklyMealPlan(setShowGuestSignUp);
   const onGenerateDailyPlan = () =>
     generateDailyMealPlanAction(setShowGuestSignUp);
-  const onGenerateAIMeal = (type: string) =>
-    generateAIMeal(type, setShowGuestSignUp);
+  const onGenerateAIMeal = async (type: string, options?: any) => {
+    setShowAIMealsPanel(false);
+    await generateAIMeal(type, setShowGuestSignUp, options);
+  };
   const onHandleCameraCapture = (uri: string) =>
     handleCameraCapture(uri, setShowGuestSignUp);
   const onHandleAddProductToMeal = (product: any) =>
@@ -300,6 +359,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               onGenerateDailyPlan={onGenerateDailyPlan}
               handleSearchFood={handleSearchFood}
               trackBStatus={trackBStatus}
+              selectedDate={selectedDate}
+              onPrevDay={onPrevDay}
+              onNextDay={onNextDay}
             />
 
             {(foodsLoading || userMealsLoading || isGeneratingMeal) && (
@@ -340,7 +402,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               onScanBarcode={handleScanProduct}
               onLogMeal={handleSearchFood}
               onLogWater={() => setShowWaterIntakeModal(true)}
-              onGenerateMeal={() => onGenerateAIMeal("lunch")}
+              onGenerateMeal={() => setShowAIMealsPanel(true)}
               onViewRecipes={() => setShowCreateRecipe(true)}
               isGenerating={isGeneratingMeal}
             />
@@ -352,8 +414,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             >
               <Ionicons
                 name="keypad-outline"
-                size={rf(18)}
-                color={ResponsiveTheme.colors.primary}
+                size={rf(14)}
+                color={ResponsiveTheme.colors.textSecondary}
               />
               <Text style={styles.manualEntryText}>Enter Barcode Manually</Text>
             </AnimatedPressable>
@@ -361,7 +423,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             {!weeklyMealPlan?.meals || weeklyMealPlan.meals.length === 0 ? (
               <View
                 style={{
-                  paddingVertical: ResponsiveTheme.spacing.xl,
+                  paddingTop: ResponsiveTheme.spacing.md,
+                  paddingBottom: ResponsiveTheme.spacing.xl,
                   alignItems: "center",
                   justifyContent: "center",
                 }}
@@ -410,9 +473,37 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                   fat: macroTargets.fat || 0,
                 }}
                 calorieTarget={calorieTarget || 0}
+                onMealPress={handleMealCardPress}
               />
             )}
 
+
+            {dailyMeals.length > 0 && (
+              <View style={styles.dailyMealsSection}>
+                <Text style={styles.dailyMealsSectionTitle}>Today's Added Meals</Text>
+                {dailyMeals
+                  .filter((meal) => {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    return meal.createdAt && meal.createdAt.startsWith(todayStr);
+                  })
+                  .map((meal) => (
+                    <GlassCard key={meal.id} elevation={1} padding="md" style={styles.dailyMealCard}>
+                      <View style={styles.dailyMealRow}>
+                        <View style={styles.dailyMealInfo}>
+                          <Text style={styles.dailyMealName}>{meal.name}</Text>
+                          <Text style={styles.dailyMealMacros}>
+                            {meal.totalCalories} cal | {meal.totalMacros?.protein || 0}g P | {meal.totalMacros?.carbohydrates || 0}g C | {meal.totalMacros?.fat || 0}g F
+                          </Text>
+                        </View>
+                        <View style={styles.dailyMealBadge}>
+                          <Ionicons name="checkmark-circle" size={rf(20)} color={ResponsiveTheme.colors.primary} />
+                        </View>
+                      </View>
+                    </GlassCard>
+                  ))
+                }
+              </View>
+            )}
             <MealSuggestions />
 
             <HydrationPanel
@@ -467,6 +558,22 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           onHandleAddProductToMeal={onHandleAddProductToMeal}
         />
 
+        <MealDetailModal
+          visible={showMealDetailModal}
+          meal={selectedMealForDetail}
+          onClose={() => {
+            setShowMealDetailModal(false);
+            setSelectedMealForDetail(null);
+          }}
+          onMarkComplete={handleMealDetailComplete}
+          onDelete={handleMealDetailDelete}
+          isCompleted={
+            selectedMealForDetail
+              ? (storeGetMealProgress(selectedMealForDetail.id)?.progress ?? 0) >= 100
+              : false
+          }
+        />
+
         {isProcessingBarcode && (
           <View style={styles.barcodeLoadingOverlay}>
             <View style={styles.barcodeLoadingCard}>
@@ -495,6 +602,11 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           </View>
         </Modal>
 
+        <LogMealModal
+          visible={showLogMealModal}
+          onClose={() => setShowLogMealModal(false)}
+        />
+
         <Animated.View
           style={{
             transform: [
@@ -510,7 +622,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
         >
           <AnimatedPressable
             style={styles.fab}
-            onPress={handleSearchFood}
+            onPress={() => setShowAIMealsPanel(true)}
             scaleValue={0.9}
           >
             <LinearGradient
@@ -554,20 +666,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     marginHorizontal: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.sm,
     borderRadius: ResponsiveTheme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     gap: ResponsiveTheme.spacing.xs,
   },
   manualEntryText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: "600" as const,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontWeight: "400" as const,
   },
   barcodeLoadingOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -596,15 +705,49 @@ const styles = StyleSheet.create({
   fab: {
     position: "absolute",
     right: ResponsiveTheme.spacing.lg,
-    bottom: ResponsiveTheme.spacing.lg,
+    bottom: rp(88),
   },
   fabGradient: {
-    width: rw(56),
-    height: rw(56),
-    borderRadius: rw(28),
+    width: rw(44),
+    height: rw(44),
+    borderRadius: rw(22),
     justifyContent: "center",
     alignItems: "center",
     elevation: 5,
   },
-  fabIcon: { fontSize: rf(32), color: ResponsiveTheme.colors.white },
+  dailyMealsSection: {
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+  dailyMealsSectionTitle: {
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: "700" as const,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+  dailyMealCard: {
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+  dailyMealRow: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+  },
+  dailyMealInfo: {
+    flex: 1,
+  },
+  dailyMealName: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: "600" as const,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xxs,
+  },
+  dailyMealMacros: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+  dailyMealBadge: {
+    marginLeft: ResponsiveTheme.spacing.sm,
+  },
+  fabIcon: { fontSize: rf(20), color: ResponsiveTheme.colors.white },
 });

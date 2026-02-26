@@ -1,4 +1,4 @@
-// AI Status Indicator Component
+﻿// AI Status Indicator Component
 // Shows whether the app is using real AI or demo mode
 
 import React from "react";
@@ -10,7 +10,8 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf } from "../../utils/responsive";
 import { aiService } from "../../ai";
 
 interface AIStatusIndicatorProps {
@@ -26,8 +27,8 @@ export const AIStatusIndicator: React.FC<AIStatusIndicatorProps> = ({
 
   const getStatusColor = () => {
     return status.mode === "real"
-      ? THEME.colors.success || "#4CAF50"
-      : THEME.colors.warning || "#FF9800";
+      ? ResponsiveTheme.colors.success
+      : ResponsiveTheme.colors.warning;
   };
 
   const getStatusIcon = () => {
@@ -60,21 +61,21 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: THEME.spacing.sm,
-    paddingVertical: THEME.spacing.xs,
-    borderRadius: THEME.borderRadius.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
     borderWidth: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: ResponsiveTheme.colors.glassHighlight,
   },
 
   icon: {
-    fontSize: 14,
-    marginRight: THEME.spacing.xs,
+    fontSize: rf(14),
+    marginRight: ResponsiveTheme.spacing.xs,
   },
 
   text: {
-    fontSize: THEME.fontSize.xs,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 });
 

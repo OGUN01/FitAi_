@@ -162,7 +162,6 @@ export class MigrationManager {
 
     try {
       // Step 1: Create backup of local data before migration
-      console.log("💾 Creating backup before migration...");
       const backupCreated = await this.createMigrationBackup();
 
       // Step 2: Create initial checkpoint
@@ -180,7 +179,6 @@ export class MigrationManager {
         errors: [],
       };
       await this.saveCheckpoint(checkpoint);
-      console.log("📍 Initial checkpoint created");
 
       // Step 3: Subscribe to migration progress and update checkpoints
       this.currentMigration.unsubscribe = migrationEngine.onProgress(
@@ -206,13 +204,11 @@ export class MigrationManager {
       );
 
       // Step 4: Start migration
-      console.log("🚀 Starting migration with checkpoint tracking...");
       const result = await migrationEngine.migrateToSupabase(userId);
 
       // Step 5: Handle result
       if (result.success) {
         // Clear checkpoint and backup on success
-        console.log("✅ Migration completed successfully, cleaning up...");
         await this.clearCheckpoint();
         await this.clearBackup();
       } else {
@@ -224,7 +220,6 @@ export class MigrationManager {
           timestamp: new Date().toISOString(),
         });
         await this.saveCheckpoint(checkpoint);
-        console.log("⚠️ Migration failed, checkpoint preserved for resume");
       }
 
       this.currentMigration.result = result as any;
@@ -313,7 +308,6 @@ export class MigrationManager {
 
     try {
       // Migration cancellation - pending implementation in migration engine
-      console.log("Migration cancellation requested");
 
       if (this.currentMigration.unsubscribe) {
         this.currentMigration.unsubscribe();
@@ -484,9 +478,6 @@ export class MigrationManager {
         MIGRATION_CHECKPOINT_KEY,
         JSON.stringify(checkpoint),
       );
-      console.log(
-        `📍 Migration checkpoint saved: step ${checkpoint.currentStepIndex}/${checkpoint.completedSteps.length}`,
-      );
     } catch (error) {
       console.error("Failed to save migration checkpoint:", error);
     }
@@ -498,7 +489,6 @@ export class MigrationManager {
   private async clearCheckpoint(): Promise<void> {
     try {
       await AsyncStorage.removeItem(MIGRATION_CHECKPOINT_KEY);
-      console.log("🧹 Migration checkpoint cleared");
     } catch (error) {
       console.error("Failed to clear migration checkpoint:", error);
     }
@@ -518,7 +508,6 @@ export class MigrationManager {
         MIGRATION_BACKUP_KEY,
         JSON.stringify(localData),
       );
-      console.log("💾 Migration backup created successfully");
       return true;
     } catch (error) {
       console.error("Failed to create migration backup:", error);
@@ -539,7 +528,6 @@ export class MigrationManager {
 
       const backupData = JSON.parse(backupJson);
       await dataBridge.importAllData(backupData);
-      console.log("✅ Local data restored from backup");
       return true;
     } catch (error) {
       console.error("Failed to restore from backup:", error);
@@ -553,7 +541,6 @@ export class MigrationManager {
   private async clearBackup(): Promise<void> {
     try {
       await AsyncStorage.removeItem(MIGRATION_BACKUP_KEY);
-      console.log("🧹 Migration backup cleared");
     } catch (error) {
       console.error("Failed to clear migration backup:", error);
     }
@@ -567,7 +554,6 @@ export class MigrationManager {
    * Resume an interrupted migration from the last checkpoint
    */
   async resumeMigration(userId: string): Promise<MigrationResult> {
-    console.log("🔄 Attempting to resume interrupted migration...");
 
     const checkpoint = await this.loadCheckpoint();
     if (!checkpoint) {
@@ -606,12 +592,6 @@ export class MigrationManager {
       } as any;
     }
 
-    console.log(
-      `📍 Resuming from step ${checkpoint.currentStepIndex}: ${checkpoint.currentStepName}`,
-    );
-    console.log(
-      `✅ Previously completed steps: ${checkpoint.completedSteps.join(", ")}`,
-    );
 
     // Update checkpoint to show we're resuming
     checkpoint.status = "in_progress";
@@ -698,7 +678,6 @@ export class MigrationManager {
   async rollbackMigration(
     userId: string,
   ): Promise<{ success: boolean; message: string }> {
-    console.log("⏪ Rolling back migration...");
 
     const checkpoint = await this.loadCheckpoint();
 
@@ -711,15 +690,11 @@ export class MigrationManager {
 
       // Step 2: Clear any partially uploaded remote data
       if (checkpoint && checkpoint.completedSteps.length > 0) {
-        console.log(
-          `🗑️ Cleaning up ${checkpoint.completedSteps.length} completed steps from remote...`,
-        );
 
         // Delete data from Supabase for each completed step
         for (const step of checkpoint.completedSteps.reverse()) {
           try {
             await this.rollbackStep(step, userId);
-            console.log(`  ✅ Rolled back step: ${step}`);
           } catch (stepError) {
             console.error(`  ❌ Failed to rollback step ${step}:`, stepError);
             // Continue with other steps even if one fails
@@ -745,7 +720,6 @@ export class MigrationManager {
       // Refresh state
       await this.checkMigrationStatus();
 
-      console.log("✅ Migration rollback completed");
       return {
         success: true,
         message:
@@ -798,7 +772,6 @@ export class MigrationManager {
         break;
 
       default:
-        console.log(`  ⏭️ No rollback needed for step: ${step}`);
     }
   }
 
@@ -870,7 +843,6 @@ export class MigrationManager {
    */
   async checkProfileMigrationNeeded(userId: string): Promise<boolean> {
     try {
-      console.log("🔍 Checking profile migration for user:", userId);
 
       // Set user ID in data manager
       dataBridge.setUserId(userId);
@@ -883,10 +855,8 @@ export class MigrationManager {
 
       // Check if user has local profile data
       const hasLocalData = await dataBridge.hasLocalData();
-      console.log("📊 Local data check result:", hasLocalData);
 
       if (!hasLocalData) {
-        console.log("📊 No local profile data found, migration not needed");
         return false;
       }
 
@@ -905,9 +875,6 @@ export class MigrationManager {
 
       // If user has local data but no remote data, migration is needed
       const migrationNeeded = hasLocalData && !remoteProfile;
-      console.log(
-        `📊 Profile migration needed: ${migrationNeeded} (local: ${hasLocalData}, remote: ${!!remoteProfile})`,
-      );
 
       return migrationNeeded;
     } catch (error) {
@@ -920,14 +887,12 @@ export class MigrationManager {
    * Start profile data migration process
    */
   async startProfileMigration(userId: string): Promise<MigrationResult> {
-    console.log("🚀 Starting profile data migration for user:", userId);
 
     try {
       // Use DataBridge for the actual migration
       const result = await dataBridge.migrateGuestToUser(userId);
 
       if (result.success) {
-        console.log("✅ Profile migration completed successfully");
 
         // Update migration history
         const attempt: MigrationAttempt = {
@@ -1054,27 +1019,19 @@ export class MigrationManager {
    */
   async testMigrationFlow(userId: string): Promise<void> {
     try {
-      console.log("🧪 Testing complete migration flow for user:", userId);
 
       // Step 0: Test localStorage methods directly
-      console.log("🧪 Step 0: Testing localStorage methods...");
       await dataBridge.testLocalStorageMethods();
 
       // Step 1: Test data manager methods
-      console.log("🧪 Step 1: Testing DataManager methods...");
       await dataBridge.testMigrationDetection();
 
       // Step 2: Test migration detection
-      console.log("🧪 Step 2: Testing migration detection...");
       const migrationNeeded = await this.checkProfileMigrationNeeded(userId);
-      console.log("📊 Migration needed result:", migrationNeeded);
 
       // Step 3: Test profile data validation
-      console.log("🧪 Step 3: Testing profile data validation...");
       const validationResult = await this.validateProfileData();
-      console.log("📊 Validation result:", validationResult);
 
-      console.log("✅ Migration flow test completed successfully");
     } catch (error) {
       console.error("❌ Migration flow test failed:", error);
     }
@@ -1085,7 +1042,6 @@ export class MigrationManager {
    */
   async setupTestEnvironment(userId: string): Promise<boolean> {
     try {
-      console.log("🧪 Setting up test environment for migration...");
 
       // Set user ID
       dataBridge.setUserId(userId);
@@ -1094,7 +1050,6 @@ export class MigrationManager {
       const sampleCreated = await dataBridge.createSampleProfileData();
 
       if (sampleCreated) {
-        console.log("✅ Test environment setup completed");
         return true;
       } else {
         console.error("❌ Failed to create sample data");

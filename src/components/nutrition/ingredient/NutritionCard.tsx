@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { THEME } from "../../ui";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rbr } from "../../../utils/responsive";
 import { MealItem } from "../../../types/ai";
 
 interface NutritionRowProps {
@@ -114,55 +115,55 @@ export const NutritionCard: React.FC<NutritionCardProps> = ({
 
 const styles = StyleSheet.create({
   nutritionCard: {
-    backgroundColor: THEME.colors.surface,
-    borderRadius: 16,
-    padding: THEME.spacing.lg,
-    marginBottom: THEME.spacing.lg,
-    shadowColor: "#000",
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: rbr(16),
+    padding: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
+    shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
   sectionTitle: {
-    fontSize: THEME.fontSize.lg,
+    fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: "700",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   calorieSection: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   calorieLabel: {
-    fontSize: THEME.fontSize.lg,
+    fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: "600",
-    color: THEME.colors.text,
+    color: ResponsiveTheme.colors.text,
   },
   calorieValue: {
-    fontSize: THEME.fontSize.xxl,
+    fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: "700",
-    color: "#FF6B6B",
+    color: ResponsiveTheme.colors.errorLight,
   },
   divider: {
     height: 1,
-    backgroundColor: THEME.colors.border,
-    marginVertical: THEME.spacing.md,
+    backgroundColor: ResponsiveTheme.colors.border,
+    marginVertical: ResponsiveTheme.spacing.md,
   },
   macroSection: {
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
   nutritionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: THEME.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.sm,
   },
   nutritionLabel: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
     fontWeight: "500",
     flex: 1,
   },
@@ -173,9 +174,9 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   nutritionValue: {
-    fontSize: THEME.fontSize.md,
+    fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: "700",
-    marginRight: THEME.spacing.md,
+    marginRight: ResponsiveTheme.spacing.md,
   },
   percentageContainer: {
     flexDirection: "row",
@@ -185,16 +186,16 @@ const styles = StyleSheet.create({
   percentageBar: {
     height: 6,
     flex: 1,
-    borderRadius: 3,
-    marginRight: THEME.spacing.sm,
+    borderRadius: rbr(3),
+    marginRight: ResponsiveTheme.spacing.sm,
   },
   percentageFill: {
     height: "100%",
-    borderRadius: 3,
+    borderRadius: rbr(3),
   },
   percentageText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
     width: 30,
   },
 });

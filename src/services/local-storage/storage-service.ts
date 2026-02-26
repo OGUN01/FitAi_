@@ -56,7 +56,6 @@ export class EnhancedLocalStorageService {
       await this.checkAndMigrateVersion();
       this.storageOps.setInitialized(true);
       await this.storageOps.updateStorageInfo();
-      console.log("Enhanced Local Storage Service initialized successfully");
     } catch (error) {
       console.error(
         "Failed to initialize Enhanced Local Storage Service:",

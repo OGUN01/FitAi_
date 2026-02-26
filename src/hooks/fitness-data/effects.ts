@@ -21,11 +21,9 @@ export const useFitnessDataEffects = (
       const unsubscribe = fitnessRefreshService.onRefreshNeeded(
         callbacks.refreshAll,
       );
-      console.log("📡 Registered fitness data hook with refresh service");
 
       return () => {
         unsubscribe();
-        console.log("📡 Unregistered fitness data hook from refresh service");
       };
     }
   }, [isAuthenticated, userId, callbacks.refreshAll]);

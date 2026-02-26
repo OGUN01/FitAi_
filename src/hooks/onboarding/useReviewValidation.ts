@@ -60,61 +60,93 @@ export const useReviewValidation = ({
     if (
       !personalInfo ||
       !dietPreferences ||
-      !bodyAnalysis ||
       !workoutPreferences
     ) {
       setCalculationError("Missing required data for calculations");
       return;
     }
 
+    // Body analysis is optional — check if the user actually entered weight/height
+    const hasBodyData =
+      !!bodyAnalysis &&
+      bodyAnalysis.current_weight_kg > 0 &&
+      bodyAnalysis.height_cm > 0;
+
     setIsCalculating(true);
     setCalculationError(null);
 
     try {
-      console.log(
-        "[CALC] useReviewValidation: Running validation and calculations...",
-      );
 
       // Use ValidationEngine for comprehensive validation
+      // Skip body-dependent validation when body data was not entered (it is optional)
       let validationResultsData: ValidationResults;
-      try {
-        validationResultsData = ValidationEngine.validateUserPlan(
-          personalInfo,
-          dietPreferences,
-          bodyAnalysis,
-          workoutPreferences,
-        );
+      if (hasBodyData && bodyAnalysis) {
+        try {
+          validationResultsData = ValidationEngine.validateUserPlan(
+            personalInfo,
+            dietPreferences,
+            bodyAnalysis,
+            workoutPreferences,
+          );
+          setValidationResults(validationResultsData);
+        } catch (error) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Failed to validate user plan";
+          console.error("[ERROR] useReviewValidation: Validation error:", error);
+          setCalculationError(`Validation failed: ${message}`);
+          return;
+        }
+      } else {
+        // Body data not entered — use a neutral pass-through result
+        validationResultsData = {
+          errors: [],
+          warnings: [],
+          hasErrors: false,
+          hasWarnings: false,
+          canProceed: true,
+          calculatedMetrics: {
+            bmr: 0,
+            tdee: 0,
+            targetCalories: 0,
+            protein: 0,
+            carbs: 0,
+            fat: 0,
+            weeklyRate: 0,
+            originalWeeklyRate: 0,
+            wasRateCapped: false,
+            timeline: 0,
+          },
+          adjustments: undefined,
+        } as ValidationResults;
         setValidationResults(validationResultsData);
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Failed to validate user plan";
-        console.error("[ERROR] useReviewValidation: Validation error:", error);
-        setCalculationError(`Validation failed: ${message}`);
-        return;
       }
 
-      // Run legacy calculations for additional metrics
+      // Run legacy calculations for additional metrics (body-dependent, skip if no body data)
       let calculations;
-      try {
-        calculations = HealthCalculationEngine.calculateAllMetrics(
-          personalInfo,
-          dietPreferences,
-          bodyAnalysis,
-          workoutPreferences,
-        );
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Failed to calculate health metrics";
-        console.error(
-          "[ERROR] useReviewValidation: Legacy calculations error:",
-          error,
-        );
-        setCalculationError(`Calculation failed: ${message}`);
-        return;
+      if (hasBodyData && bodyAnalysis) {
+        try {
+          calculations = HealthCalculationEngine.calculateAllMetrics(
+            personalInfo,
+            dietPreferences,
+            bodyAnalysis,
+            workoutPreferences,
+          );
+        } catch (error) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Failed to calculate health metrics";
+          console.error(
+            "[ERROR] useReviewValidation: Legacy calculations error:",
+            error,
+          );
+          setCalculationError(`Calculation failed: ${message}`);
+          return;
+        }
+      } else {
+        calculations = {};
       }
 
       // Merge validation metrics with legacy calculations
@@ -160,19 +192,11 @@ export const useReviewValidation = ({
 
         // Calculate climate-adjusted water intake
         waterIntake = waterCalculator.calculate(
-          bodyAnalysis.current_weight_kg,
+          bodyAnalysis && hasBodyData ? bodyAnalysis.current_weight_kg : 70,
           activityLevel,
           detectedClimate,
         );
 
-        console.log("[CALC] Climate-adaptive water calculation:", {
-          country: personalInfo.country,
-          state: personalInfo.state,
-          detectedClimate,
-          activityLevel,
-          weight: bodyAnalysis.current_weight_kg,
-          waterIntakeML: waterIntake,
-        });
 
         fiberIntake = MetabolicCalculations.calculateFiber(
           validationResultsData.calculatedMetrics.targetCalories,
@@ -233,8 +257,9 @@ export const useReviewValidation = ({
       setCalculatedData(finalCalculations);
       onUpdate(finalCalculations);
 
-      // Calculate smart alternatives if the user's rate requires eating below BMR
-      if (bodyAnalysis.current_weight_kg > bodyAnalysis.target_weight_kg) {
+      // Calculate smart alternatives only when body data was entered
+      // Calculate smart alternatives when body data was entered and there is a weight difference
+      if (hasBodyData && bodyAnalysis && bodyAnalysis.target_weight_kg > 0 && bodyAnalysis.current_weight_kg !== bodyAnalysis.target_weight_kg) {
         const weightDifference = Math.abs(
           bodyAnalysis.current_weight_kg - bodyAnalysis.target_weight_kg,
         );
@@ -270,12 +295,6 @@ export const useReviewValidation = ({
         setSmartAlternatives(null);
       }
 
-      console.log(
-        "[SUCCESS] useReviewValidation: Validation and calculations completed",
-      );
-      console.log("  - Can Proceed:", validationResultsData.canProceed);
-      console.log("  - Errors:", validationResultsData.errors.length);
-      console.log("  - Warnings:", validationResultsData.warnings.length);
     } catch (error) {
       const message =
         error instanceof Error

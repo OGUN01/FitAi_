@@ -40,7 +40,6 @@ export const useOnboardingIntegration = () => {
       const localSaveSuccess = await dataBridge.savePersonalInfo(personalInfo);
 
       if (!localSaveSuccess) {
-        console.warn("⚠️ Failed to save personal info locally");
       }
 
       if (isAuthenticated && authUser) {
@@ -57,14 +56,6 @@ export const useOnboardingIntegration = () => {
           lastName = nameParts.slice(1).join(" ") || "";
         }
 
-        console.log(
-          "📝 integration.ts: Processing name for database storage:",
-          {
-            fullName: personalData.name,
-            firstName,
-            lastName,
-          },
-        );
 
         const heightValue =
           personalData.height_cm ||
@@ -76,11 +67,6 @@ export const useOnboardingIntegration = () => {
           undefined;
         const ageValue = personalData.age;
 
-        console.log("📝 integration.ts: Processed measurements:", {
-          height_cm: heightValue,
-          current_weight_kg: weightValue,
-          age: ageValue,
-        });
 
         const profileData = {
           name: personalData.name || `${firstName} ${lastName}`.trim(),
@@ -112,12 +98,8 @@ export const useOnboardingIntegration = () => {
         }
 
         if (!response.success) {
-          console.warn(
-            "⚠️ Failed to save personal info to remote, but saved locally",
-          );
         }
       } else {
-        console.log("📱 Guest mode: Personal info saved locally only");
       }
 
       return { success: true };
@@ -145,7 +127,6 @@ export const useOnboardingIntegration = () => {
       );
 
       if (!localSaveSuccess) {
-        console.warn("⚠️ Failed to save fitness goals locally");
       }
 
       if (isAuthenticated && authUser) {
@@ -179,12 +160,8 @@ export const useOnboardingIntegration = () => {
         }
 
         if (!response.success) {
-          console.warn(
-            "⚠️ Failed to save fitness goals to remote, but saved locally",
-          );
         }
       } else {
-        console.log("📱 Guest mode: Fitness goals saved locally only");
       }
 
       return { success: true };
@@ -225,7 +202,6 @@ export const useOnboardingIntegration = () => {
       );
 
       if (!localSaveSuccess) {
-        console.warn("⚠️ Failed to save diet preferences locally");
       }
 
       if (isAuthenticated && authUser) {
@@ -240,19 +216,10 @@ export const useOnboardingIntegration = () => {
             });
 
           if (error) {
-            console.warn(
-              "⚠️ Failed to save diet preferences to remote, but saved locally:",
-              error.message,
-            );
           }
         } catch (remoteError) {
-          console.warn(
-            "⚠️ Failed to save diet preferences to remote, but saved locally:",
-            remoteError,
-          );
         }
       } else {
-        console.log("📱 Guest mode: Diet preferences saved locally only");
       }
 
       return { success: true };
@@ -279,7 +246,6 @@ export const useOnboardingIntegration = () => {
         await dataBridge.saveWorkoutPreferences(workoutPreferences);
 
       if (!localSaveSuccess) {
-        console.warn("⚠️ Failed to save workout preferences locally");
       }
 
       if (isAuthenticated && authUser) {
@@ -302,19 +268,10 @@ export const useOnboardingIntegration = () => {
             });
 
           if (error) {
-            console.warn(
-              "⚠️ Failed to save workout preferences to remote, but saved locally:",
-              error.message,
-            );
           }
         } catch (remoteError) {
-          console.warn(
-            "⚠️ Failed to save workout preferences to remote, but saved locally:",
-            remoteError,
-          );
         }
       } else {
-        console.log("📱 Guest mode: Workout preferences saved locally only");
       }
 
       return { success: true };
@@ -336,7 +293,6 @@ export const useOnboardingIntegration = () => {
     try {
       const currentUserId = getUserId();
 
-      console.log("📱 Body analysis saved locally only (feature is optional)");
 
       if (isAuthenticated && authUser) {
         try {
@@ -347,16 +303,8 @@ export const useOnboardingIntegration = () => {
           });
 
           if (error) {
-            console.warn(
-              "⚠️ Failed to save body analysis to remote, continuing without it:",
-              error.message,
-            );
           }
         } catch (remoteError) {
-          console.warn(
-            "⚠️ Failed to save body analysis to remote, continuing without it:",
-            remoteError,
-          );
         }
       }
 

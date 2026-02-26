@@ -3,13 +3,16 @@ import {
   View,
   Text,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   Animated,
   LayoutAnimation,
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { Card, THEME } from "../ui";
+import { Card } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr, rw, rs } from "../../utils/responsive";
 import { Exercise, WorkoutSet } from "../../types/workout";
 
 interface ExerciseCardProps {
@@ -72,7 +75,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
       cardio: "#FF7675",
       flexibility: "#A29BFE",
     };
-    return colors[group.toLowerCase()] || THEME.colors.primary;
+    return colors[group.toLowerCase()] || ResponsiveTheme.colors.primary;
   };
 
   const getDifficultyIcon = (difficulty: string) => {
@@ -97,41 +100,41 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
       }
       variant="outlined"
     >
-      <TouchableOpacity
-        style={styles.cardContent}
-        onPress={handleToggleExpand}
-        activeOpacity={0.7}
-      >
-        {/* Header */}
+      <View style={styles.cardContent}>
         <View style={styles.header}>
-          <View style={styles.exerciseNumber}>
-            <Text style={styles.exerciseNumberText}>{exerciseNumber}</Text>
-          </View>
-
-          <View style={styles.titleSection}>
-            <Text
-              style={[
-                styles.exerciseName,
-                isCompleted && styles.exerciseNameCompleted,
-              ]}
-            >
-              {exercise.name}
-            </Text>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaText}>
-                {workoutSet.sets} sets × {formatReps(workoutSet.reps)} reps
-              </Text>
-              {workoutSet.weight && (
-                <Text style={styles.metaText}> • {workoutSet.weight}kg</Text>
-              )}
-              {workoutSet.duration && (
-                <Text style={styles.metaText}>
-                  {" "}
-                  • {formatTime(workoutSet.duration)}
-                </Text>
-              )}
+          <Pressable
+            onPress={handleToggleExpand}
+            style={styles.headerPressable}
+          >
+            <View style={styles.exerciseNumber}>
+              <Text style={styles.exerciseNumberText}>{exerciseNumber}</Text>
             </View>
-          </View>
+
+            <View style={styles.titleSection}>
+              <Text
+                style={[
+                  styles.exerciseName,
+                  isCompleted && styles.exerciseNameCompleted,
+                ]}
+              >
+                {exercise.name}
+              </Text>
+              <View style={styles.metaRow}>
+                <Text style={styles.metaText}>
+                  {workoutSet.sets} sets × {formatReps(workoutSet.reps)} reps
+                </Text>
+                {workoutSet.weight && (
+                  <Text style={styles.metaText}> • {workoutSet.weight}kg</Text>
+                )}
+                {workoutSet.duration && (
+                  <Text style={styles.metaText}>
+                    {" "}
+                    • {formatTime(workoutSet.duration)}
+                  </Text>
+                )}
+              </View>
+            </View>
+          </Pressable>
 
           <View style={styles.statusSection}>
             {isCompleted ? (
@@ -281,49 +284,54 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           </View>
         )}
 
-        {/* Expand/Collapse Indicator */}
-        <View style={styles.expandIndicator}>
+        <Pressable onPress={handleToggleExpand} style={styles.expandIndicator}>
           <Text style={styles.expandIcon}>{isExpanded ? "▲" : "▼"}</Text>
-        </View>
-      </TouchableOpacity>
+        </Pressable>
+      </View>
     </Card>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   cardCompleted: {
-    backgroundColor: `${THEME.colors.success}08`,
-    borderColor: THEME.colors.success,
+    backgroundColor: `${ResponsiveTheme.colors.success}08`,
+    borderColor: ResponsiveTheme.colors.success,
   },
 
   cardContent: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
   },
 
   header: {
     flexDirection: "row",
     alignItems: "center" as const,
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  headerPressable: {
+    flexDirection: "row",
+    alignItems: "center" as const,
+    flex: 1,
   },
 
   exerciseNumber: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: THEME.colors.primary,
+    width: rs(32),
+    height: rs(32),
+    borderRadius: rbr(16),
+    backgroundColor: ResponsiveTheme.colors.primary,
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    marginRight: THEME.spacing.md,
+    marginRight: ResponsiveTheme.spacing.md,
   },
 
   exerciseNumberText: {
-    color: THEME.colors.white,
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.bold,
+    color: ResponsiveTheme.colors.white,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
   },
 
   titleSection: {
@@ -331,14 +339,14 @@ const styles = StyleSheet.create({
   },
 
   exerciseName: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: 4,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rp(4),
   },
 
   exerciseNameCompleted: {
-    color: THEME.colors.success,
+    color: ResponsiveTheme.colors.success,
   },
 
   metaRow: {
@@ -347,8 +355,8 @@ const styles = StyleSheet.create({
   },
 
   metaText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   statusSection: {
@@ -356,214 +364,214 @@ const styles = StyleSheet.create({
   },
 
   completedBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: THEME.colors.success,
+    width: rs(32),
+    height: rs(32),
+    borderRadius: rbr(16),
+    backgroundColor: ResponsiveTheme.colors.success,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
 
   completedIcon: {
-    color: THEME.colors.white,
-    fontSize: 16,
+    color: ResponsiveTheme.colors.white,
+    fontSize: rf(16),
     fontWeight: "bold",
   },
 
   playButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: THEME.colors.backgroundSecondary,
+    borderRadius: rbr(22),
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
 
   playIcon: {
-    fontSize: 14,
+    fontSize: rf(14),
   },
 
   timerSection: {
     alignItems: "center" as const,
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   timerDisplay: {
-    backgroundColor: THEME.colors.warning,
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.sm,
-    borderRadius: THEME.borderRadius.md,
+    backgroundColor: ResponsiveTheme.colors.warning,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
   timerText: {
-    color: THEME.colors.white,
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.bold,
+    color: ResponsiveTheme.colors.white,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
   },
 
   expandedContent: {
-    marginTop: THEME.spacing.md,
-    paddingTop: THEME.spacing.md,
+    marginTop: ResponsiveTheme.spacing.md,
+    paddingTop: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: ResponsiveTheme.colors.border,
   },
 
   detailsSection: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   detailRow: {
     flexDirection: "row",
     alignItems: "center" as const,
-    marginBottom: THEME.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   detailIcon: {
-    fontSize: 16,
-    marginRight: THEME.spacing.sm,
-    width: 20,
+    fontSize: rf(16),
+    marginRight: ResponsiveTheme.spacing.sm,
+    width: rw(20),
   },
 
   detailLabel: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginRight: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginRight: ResponsiveTheme.spacing.sm,
     minWidth: 80,
   },
 
   detailValue: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.text,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   sectionTitle: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   muscleGroupsSection: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   muscleGroupsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: THEME.spacing.xs,
+    gap: ResponsiveTheme.spacing.xs,
   },
 
   muscleGroupChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: rp(8),
+    paddingVertical: rp(4),
+    borderRadius: rbr(12),
   },
 
   muscleGroupText: {
-    color: THEME.colors.white,
-    fontSize: THEME.fontSize.xs,
-    fontWeight: THEME.fontWeight.medium,
+    color: ResponsiveTheme.colors.white,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
     textTransform: "capitalize",
   },
 
   equipmentSection: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   equipmentContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: THEME.spacing.xs,
+    gap: ResponsiveTheme.spacing.xs,
   },
 
   equipmentChip: {
-    backgroundColor: THEME.colors.backgroundSecondary,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    paddingHorizontal: rp(8),
+    paddingVertical: rp(4),
+    borderRadius: rbr(12),
   },
 
   equipmentText: {
-    color: THEME.colors.text,
-    fontSize: THEME.fontSize.xs,
-    fontWeight: THEME.fontWeight.medium,
+    color: ResponsiveTheme.colors.text,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
     textTransform: "capitalize",
   },
 
   instructionsSection: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   instructionItem: {
     flexDirection: "row",
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   instructionNumber: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.primary,
-    marginRight: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
+    marginRight: ResponsiveTheme.spacing.sm,
     minWidth: 20,
   },
 
   instructionText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
     flex: 1,
-    lineHeight: 20,
+    lineHeight: rf(20),
   },
 
   tipsSection: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   tipText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.xs,
-    lineHeight: 18,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.xs,
+    lineHeight: rf(18),
   },
 
   actionButtons: {
     alignItems: "center" as const,
-    marginTop: THEME.spacing.md,
+    marginTop: ResponsiveTheme.spacing.md,
   },
 
   completeButton: {
-    backgroundColor: THEME.colors.success,
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.sm,
-    borderRadius: THEME.borderRadius.md,
+    backgroundColor: ResponsiveTheme.colors.success,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.md,
     minHeight: 44,
     justifyContent: "center",
   },
 
   completeButtonText: {
-    color: THEME.colors.white,
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.semibold,
+    color: ResponsiveTheme.colors.white,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
 
   completedStatus: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.sm,
   },
 
   completedStatusText: {
-    color: THEME.colors.success,
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.semibold,
+    color: ResponsiveTheme.colors.success,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
 
   expandIndicator: {
     alignItems: "center" as const,
-    marginTop: THEME.spacing.sm,
+    marginTop: ResponsiveTheme.spacing.sm,
   },
 
   expandIcon: {
-    fontSize: 12,
-    color: THEME.colors.textMuted,
+    fontSize: rf(12),
+    color: ResponsiveTheme.colors.textMuted,
   },
 });

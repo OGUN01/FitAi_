@@ -24,8 +24,6 @@ export async function migrateGuestToUser(
   userId: string,
   setUserId: (id: string) => void,
 ): Promise<MigrationResult> {
-  console.log("[MIGRATION] ====== STARTING GUEST-TO-USER MIGRATION ======");
-  console.log("[MIGRATION] User ID:", userId);
 
   const result: MigrationResult = {
     success: true,
@@ -37,17 +35,12 @@ export async function migrateGuestToUser(
 
   try {
     // Step 1: Load all local guest data
-    console.log(
-      "[MIGRATION] Step 1/6: Loading guest data from AsyncStorage...",
-    );
     const localData = await loadFromLocal();
     const foundKeys = Object.keys(localData).filter(
       (k) => localData[k as keyof AllDataResult] && k !== "source",
     );
-    console.log("[MIGRATION] Found data keys:", foundKeys);
 
     if (foundKeys.length === 0) {
-      console.log("[MIGRATION] No guest data found to migrate");
       return result;
     }
 
@@ -62,7 +55,6 @@ export async function migrateGuestToUser(
       saveFn: (data: any, userId: string) => Promise<SaveResult>,
       transform?: (data: any) => any,
     ) => {
-      console.log(`[MIGRATION] Migrating ${key}...`);
       const dataToSave = transform ? transform(data) : data;
       const saveResult = await saveFn(dataToSave, userId);
 
@@ -70,16 +62,11 @@ export async function migrateGuestToUser(
       // Local sync is considered successful if the method didn't throw
       result.migratedKeys.push(key);
       result.localSyncKeys!.push(key);
-      console.log(`[MIGRATION] ✅ ${key} LOCAL sync successful`);
 
       // Track remote sync separately
       if (saveResult.newSystemSuccess === true) {
         result.remoteSyncKeys!.push(key);
-        console.log(`[MIGRATION] ✅ ${key} REMOTE sync successful`);
       } else {
-        console.warn(
-          `[MIGRATION] ⚠️ ${key} REMOTE sync pending - will retry automatically`,
-        );
         // Don't add to errors - it's queued for retry, not a failure
       }
     };
@@ -136,33 +123,12 @@ export async function migrateGuestToUser(
       result.remoteSyncKeys!.length === result.localSyncKeys!.length;
     if (allRemoteSynced) {
       await AsyncStorage.removeItem(ONBOARDING_DATA_KEY);
-      console.log(
-        "[MIGRATION] ✅ Guest data cleared - all data synced to database",
-      );
     } else {
-      console.log(
-        "[MIGRATION] ⚠️ Keeping guest data - some items pending remote sync",
-      );
-      console.log(
-        "[MIGRATION] Pending:",
-        result.localSyncKeys!.filter(
-          (k) => !result.remoteSyncKeys!.includes(k),
-        ),
-      );
     }
 
     // Migration is successful if local sync worked (data available in app)
     // Remote sync failures are handled by retry mechanism
     result.success = result.localSyncKeys!.length > 0;
-
-    console.log("[MIGRATION] ====== MIGRATION COMPLETE ======");
-    console.log("[MIGRATION] Summary:", {
-      localSyncKeys: result.localSyncKeys,
-      remoteSyncKeys: result.remoteSyncKeys,
-      pendingRemoteSync: result.localSyncKeys!.filter(
-        (k) => !result.remoteSyncKeys!.includes(k),
-      ),
-    });
 
     return result;
   } catch (error) {

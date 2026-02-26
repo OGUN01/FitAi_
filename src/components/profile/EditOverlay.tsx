@@ -19,14 +19,15 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
-  TouchableWithoutFeedback,
-  SafeAreaView,
+  Pressable,
   StatusBar,
   TouchableOpacity,
-} from "react-native";
+  } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useEditContext } from "../../contexts/EditContext";
-import { THEME } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr } from "../../utils/responsive";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -70,21 +71,18 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({
   visible,
   onClose,
 }) => {
-  // Safe context access with error handling
-  const contextData = (() => {
-    try {
-      return useEditContext();
-    } catch (error) {
-      console.error("EditOverlay: Error accessing EditContext:", error);
-      return {
-        editSection: null,
-        isLoading: false,
-        isSaving: false,
-      };
-    }
-  })();
-
-  const { editSection, isLoading, isSaving } = contextData;
+  // Safe context access - call hook at top level (Rules of Hooks)
+  let editSection: string | null = null;
+  let isLoading = false;
+  let isSaving = false;
+  try {
+    const ctx = useEditContext();
+    editSection = ctx.editSection;
+    isLoading = ctx.isLoading;
+    isSaving = ctx.isSaving;
+  } catch {
+    // EditOverlay rendered outside EditProvider — use defaults
+  }
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -141,7 +139,7 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({
             <Ionicons
               name="information-circle-outline"
               size={48}
-              color={THEME.colors.primary}
+              color={ResponsiveTheme.colors.primary}
             />
           </View>
           <Text style={styles.title}>No Section Selected</Text>
@@ -149,7 +147,7 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({
             Please use the dedicated edit buttons on the Profile screen to
             modify your information.
           </Text>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
             <Text style={styles.closeButtonText}>Close</Text>
           </TouchableOpacity>
         </View>
@@ -162,7 +160,7 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({
           <Ionicons
             name={sectionInfo.icon as any}
             size={48}
-            color={THEME.colors.primary}
+              color={ResponsiveTheme.colors.primary}
           />
         </View>
         <Text style={styles.title}>{sectionInfo.title}</Text>
@@ -171,14 +169,14 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({
           <Ionicons
             name="bulb-outline"
             size={20}
-            color={THEME.colors.warning}
+            color={ResponsiveTheme.colors.warning}
           />
           <Text style={styles.infoText}>
             This overlay is deprecated. Use the edit icons on each section of
             the Profile screen for a better experience.
           </Text>
         </View>
-        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+        <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
           <Text style={styles.closeButtonText}>Got it</Text>
         </TouchableOpacity>
       </View>
@@ -203,7 +201,7 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({
       onRequestClose={onClose}
     >
       <StatusBar
-        backgroundColor="rgba(0, 0, 0, 0.5)"
+        backgroundColor={ResponsiveTheme.colors.overlay}
         barStyle="light-content"
         translucent={true}
       />
@@ -217,9 +215,9 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({
           },
         ]}
       >
-        <TouchableWithoutFeedback onPress={onClose}>
+        <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Dismiss overlay">
           <View style={styles.backdropTouchable} />
-        </TouchableWithoutFeedback>
+        </Pressable>
       </Animated.View>
 
       {/* Modal Content */}
@@ -274,7 +272,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: ResponsiveTheme.colors.overlay,
     zIndex: 1,
   },
 
@@ -298,12 +296,12 @@ const styles = StyleSheet.create({
   },
 
   modalContent: {
-    backgroundColor: THEME.colors.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderTopLeftRadius: rbr(24),
+    borderTopRightRadius: rbr(24),
     maxHeight: SCREEN_HEIGHT * 0.6,
     minHeight: SCREEN_HEIGHT * 0.4,
-    shadowColor: "#000",
+    shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: {
       width: 0,
       height: -4,
@@ -315,79 +313,79 @@ const styles = StyleSheet.create({
 
   modalHeader: {
     alignItems: "center",
-    paddingVertical: THEME.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: THEME.colors.border,
+    borderBottomColor: ResponsiveTheme.colors.border,
   },
 
   dragIndicator: {
-    width: 40,
-    height: 4,
-    backgroundColor: THEME.colors.textSecondary,
-    borderRadius: 2,
+    width: rp(40),
+    height: rp(4),
+    backgroundColor: ResponsiveTheme.colors.textSecondary,
+    borderRadius: rbr(2),
     opacity: 0.3,
   },
 
   contentContainer: {
     flex: 1,
-    padding: THEME.spacing.xl,
+    padding: ResponsiveTheme.spacing.xl,
     alignItems: "center",
     justifyContent: "center",
   },
 
   iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: `${THEME.colors.primary}15`,
+    width: rp(80),
+    height: rp(80),
+    borderRadius: rbr(40),
+    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   title: {
-    fontSize: 20,
+    fontSize: rf(20),
     fontWeight: "600",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
     textAlign: "center",
   },
 
   description: {
-    fontSize: 15,
-    color: THEME.colors.textSecondary,
+    fontSize: rf(15),
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
-    lineHeight: 22,
-    marginBottom: THEME.spacing.lg,
+    lineHeight: rf(22),
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   infoBox: {
     flexDirection: "row",
     alignItems: "flex-start",
-    backgroundColor: `${THEME.colors.warning}15`,
-    padding: THEME.spacing.md,
-    borderRadius: 12,
-    marginBottom: THEME.spacing.lg,
-    gap: THEME.spacing.sm,
+    backgroundColor: `${ResponsiveTheme.colors.warning}15`,
+    padding: ResponsiveTheme.spacing.md,
+    borderRadius: rbr(12),
+    marginBottom: ResponsiveTheme.spacing.lg,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   infoText: {
     flex: 1,
-    fontSize: 13,
-    color: THEME.colors.textSecondary,
-    lineHeight: 18,
+    fontSize: rf(13),
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(18),
   },
 
   closeButton: {
-    backgroundColor: THEME.colors.primary,
-    paddingVertical: THEME.spacing.md,
-    paddingHorizontal: THEME.spacing.xl * 2,
-    borderRadius: 12,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.xl * 2,
+    borderRadius: rbr(12),
   },
 
   closeButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    color: ResponsiveTheme.colors.white,
+    fontSize: rf(16),
     fontWeight: "600",
   },
 
@@ -404,10 +402,10 @@ const styles = StyleSheet.create({
   },
 
   loadingContainer: {
-    backgroundColor: THEME.colors.surface,
-    borderRadius: 12,
-    padding: THEME.spacing.xl,
-    shadowColor: "#000",
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: rbr(12),
+    padding: ResponsiveTheme.spacing.xl,
+    shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: {
       width: 0,
       height: 4,
@@ -418,12 +416,12 @@ const styles = StyleSheet.create({
   },
 
   loadingSpinner: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: rp(40),
+    height: rp(40),
+    borderRadius: rbr(20),
     borderWidth: 3,
-    borderColor: THEME.colors.border,
-    borderTopColor: THEME.colors.primary,
+    borderColor: ResponsiveTheme.colors.border,
+    borderTopColor: ResponsiveTheme.colors.primary,
   },
 });
 

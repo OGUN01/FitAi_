@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, Text, StyleSheet, Alert } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -20,9 +20,10 @@ import { GlassCard } from "../../ui/aurora/GlassCard";
 import { useProfileStore } from "../../../stores/profileStore";
 import { useUser } from "../../../hooks/useUser";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw } from "../../../utils/responsive";
+import { rf, rw, rp, rbr } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 
+import { crossPlatformAlert } from "../../../utils/crossPlatformAlert";
 
 interface BodyMeasurementsEditModalProps {
   visible: boolean;
@@ -65,10 +66,10 @@ export const BodyMeasurementsEditModal: React.FC<
   const bmiCategory = useMemo(() => {
     if (!bmi) return null;
     const bmiValue = parseFloat(bmi);
-    if (bmiValue < 18.5) return { label: "Underweight", color: "#2196F3" };
-    if (bmiValue < 25) return { label: "Normal", color: "#4CAF50" };
-    if (bmiValue < 30) return { label: "Overweight", color: "#FF9800" };
-    return { label: "Obese", color: "#F44336" };
+    if (bmiValue < 18.5) return { label: "Underweight", color: ResponsiveTheme.colors.info };
+    if (bmiValue < 25) return { label: "Normal", color: ResponsiveTheme.colors.success };
+    if (bmiValue < 30) return { label: "Overweight", color: ResponsiveTheme.colors.warning };
+    return { label: "Obese", color: ResponsiveTheme.colors.error };
   }, [bmi]);
 
   // Validation
@@ -115,7 +116,7 @@ export const BodyMeasurementsEditModal: React.FC<
       onClose();
     } catch (error) {
       console.error("Error saving body measurements:", error);
-      Alert.alert("Error", "Failed to save changes. Please try again.");
+      crossPlatformAlert("Error", "Failed to save changes. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -136,7 +137,7 @@ export const BodyMeasurementsEditModal: React.FC<
       title="Body Measurements"
       subtitle="Track your body composition"
       icon="body-outline"
-      iconColor="#FF6B35"
+      iconColor={ResponsiveTheme.colors.primary}
       onClose={onClose}
       onSave={handleSave}
       isSaving={isSaving}
@@ -189,25 +190,25 @@ export const BodyMeasurementsEditModal: React.FC<
                 <View
                   style={[
                     styles.bmiScaleSegment,
-                    { backgroundColor: "#2196F3", flex: 18.5 },
+                    { backgroundColor: ResponsiveTheme.colors.info, flex: 18.5 },
                   ]}
                 />
                 <View
                   style={[
                     styles.bmiScaleSegment,
-                    { backgroundColor: "#4CAF50", flex: 6.5 },
+                    { backgroundColor: ResponsiveTheme.colors.success, flex: 6.5 },
                   ]}
                 />
                 <View
                   style={[
                     styles.bmiScaleSegment,
-                    { backgroundColor: "#FF9800", flex: 5 },
+                    { backgroundColor: ResponsiveTheme.colors.warning, flex: 5 },
                   ]}
                 />
                 <View
                   style={[
                     styles.bmiScaleSegment,
-                    { backgroundColor: "#F44336", flex: 10 },
+                    { backgroundColor: ResponsiveTheme.colors.error, flex: 10 },
                   ]}
                 />
               </View>
@@ -225,7 +226,7 @@ export const BodyMeasurementsEditModal: React.FC<
       <GlassFormInput
         label="Height"
         icon="resize-outline"
-        iconColor="#2196F3"
+        iconColor={ResponsiveTheme.colors.info}
         value={height}
         onChangeText={setHeight}
         placeholder="Enter your height"
@@ -240,7 +241,7 @@ export const BodyMeasurementsEditModal: React.FC<
       <GlassFormInput
         label="Current Weight"
         icon="scale-outline"
-        iconColor="#FF6B35"
+        iconColor={ResponsiveTheme.colors.primary}
         value={weight}
         onChangeText={setWeight}
         placeholder="Enter your weight"
@@ -294,7 +295,7 @@ const styles = StyleSheet.create({
   bmiIcon: {
     width: rw(40),
     height: rw(40),
-    borderRadius: rw(20),
+    borderRadius: rbr(20),
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
@@ -305,7 +306,7 @@ const styles = StyleSheet.create({
   bmiCategory: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.text,
   },
   bmiRight: {
     alignItems: "flex-end",
@@ -323,8 +324,8 @@ const styles = StyleSheet.create({
   },
   bmiScaleBar: {
     flexDirection: "row",
-    height: 6,
-    borderRadius: 3,
+    height: rp(6),
+    borderRadius: rbr(3),
     overflow: "hidden",
   },
   bmiScaleSegment: {
@@ -333,8 +334,8 @@ const styles = StyleSheet.create({
   bmiScaleLabels: {
     flexDirection: "row",
     justifyContent: "space-between" as const,
-    marginTop: 4,
-    paddingHorizontal: 2,
+    marginTop: rp(4),
+    paddingHorizontal: rp(2),
   },
   bmiScaleLabel: {
     fontSize: rf(9),
@@ -342,7 +343,7 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     marginTop: ResponsiveTheme.spacing.md,
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
   },
   infoRow: {
     flexDirection: "row",

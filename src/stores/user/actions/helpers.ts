@@ -21,19 +21,16 @@ export const createUtilityActions: StateCreator<
 
   checkProfileComplete: (profile) => {
     if (!profile) {
-      console.log("⚠️ checkProfileComplete: Profile is null/undefined");
       return false;
     }
 
     const { personalInfo, fitnessGoals } = profile;
 
     if (!personalInfo) {
-      console.log("⚠️ checkProfileComplete: personalInfo is missing");
       return false;
     }
 
     if (!fitnessGoals) {
-      console.log("⚠️ checkProfileComplete: fitnessGoals is missing");
       return false;
     }
 
@@ -56,9 +53,6 @@ export const createUtilityActions: StateCreator<
     );
 
     const isComplete = hasPersonalInfo && hasFitnessGoals;
-    console.log(
-      `✅ checkProfileComplete: hasPersonalInfo=${hasPersonalInfo}, hasFitnessGoals=${hasFitnessGoals}, isComplete=${isComplete}`,
-    );
 
     return isComplete;
   },

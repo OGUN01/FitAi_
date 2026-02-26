@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rp } from "../../../utils/responsive";
+import { rf, rp, rbr } from "../../../utils/responsive";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { GlassCard } from "../../ui/aurora/GlassCard";
 import { GradientBarChart } from "../../ui";
@@ -84,21 +84,21 @@ export const NutritionalNeedsSection: React.FC<
                 label: "Protein",
                 value: calculatedData.daily_protein_g || 0,
                 maxValue: 300,
-                gradient: ["#FF6B35", "#FF8A5C"],
+                gradient: [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.accent],
                 unit: "g",
               },
               {
                 label: "Carbs",
                 value: calculatedData.daily_carbs_g || 0,
                 maxValue: 400,
-                gradient: ["#4CAF50", "#45A049"],
+                gradient: [ResponsiveTheme.colors.success, ResponsiveTheme.colors.successAltDark],
                 unit: "g",
               },
               {
                 label: "Fats",
                 value: calculatedData.daily_fat_g || 0,
                 maxValue: 150,
-                gradient: ["#2196F3", "#1976D2"],
+                gradient: [ResponsiveTheme.colors.info, ResponsiveTheme.colors.info],
                 unit: "g",
               },
             ]}
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 0,
     borderLeftWidth: 0,
     borderRightWidth: 0,
-    borderRadius: 0,
+    borderRadius: rbr(0),
   },
   sectionTitlePadded: {
     paddingHorizontal: rp(20),

@@ -1,7 +1,8 @@
 import React from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr, rs } from '../../utils/responsive';
 
 interface SyncStatusCardProps {
   syncStatus: "idle" | "syncing" | "success" | "error";
@@ -21,13 +22,13 @@ export const SyncStatusCard: React.FC<SyncStatusCardProps> = ({
   const getSyncStatusColor = () => {
     switch (syncStatus) {
       case "success":
-        return THEME.colors.success;
+        return ResponsiveTheme.colors.success;
       case "error":
-        return THEME.colors.error;
+        return ResponsiveTheme.colors.error;
       case "syncing":
-        return THEME.colors.warning;
+        return ResponsiveTheme.colors.warning;
       default:
-        return THEME.colors.text;
+        return ResponsiveTheme.colors.text;
     }
   };
 
@@ -60,11 +61,11 @@ export const SyncStatusCard: React.FC<SyncStatusCardProps> = ({
   return (
     <View
       style={{
-        backgroundColor: THEME.colors.surface,
-        marginHorizontal: 16,
-        marginBottom: 16,
-        borderRadius: 12,
-        padding: 16,
+        backgroundColor: ResponsiveTheme.colors.surface,
+        marginHorizontal: rp(16),
+        marginBottom: rp(16),
+        borderRadius: rbr(12),
+        padding: rp(16),
       }}
     >
       <View
@@ -72,14 +73,14 @@ export const SyncStatusCard: React.FC<SyncStatusCardProps> = ({
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: 12,
+          marginBottom: rp(12),
         }}
       >
         <Text
           style={{
-            fontSize: 16,
+            fontSize: rf(16),
             fontWeight: "600",
-            color: THEME.colors.text,
+            color: ResponsiveTheme.colors.text,
           }}
         >
           Sync Status
@@ -90,24 +91,24 @@ export const SyncStatusCard: React.FC<SyncStatusCardProps> = ({
           style={{
             flexDirection: "row",
             alignItems: "center",
-            paddingVertical: 6,
-            paddingHorizontal: 12,
-            backgroundColor: THEME.colors.primary,
-            borderRadius: 8,
+            paddingVertical: rp(6),
+            paddingHorizontal: rp(12),
+            backgroundColor: ResponsiveTheme.colors.primary,
+            borderRadius: rbr(8),
             opacity: syncStatus === "syncing" ? 0.6 : 1,
           }}
         >
           {syncStatus === "syncing" ? (
             <ActivityIndicator size="small" color="white" />
           ) : (
-            <Ionicons name="refresh" size={16} color="white" />
+            <Ionicons name="refresh" size={rs(16)} color="white" />
           )}
           <Text
             style={{
               color: "white",
-              fontSize: 14,
+              fontSize: rf(14),
               fontWeight: "600",
-              marginLeft: 4,
+              marginLeft: rp(4),
             }}
           >
             {syncStatus === "syncing" ? "Syncing..." : "Sync Now"}
@@ -119,19 +120,19 @@ export const SyncStatusCard: React.FC<SyncStatusCardProps> = ({
         style={{
           flexDirection: "row",
           alignItems: "center",
-          marginBottom: 8,
+          marginBottom: rp(8),
         }}
       >
         <Ionicons
           name="time-outline"
-          size={16}
-          color={THEME.colors.textSecondary}
+          size={rs(16)}
+          color={ResponsiveTheme.colors.textSecondary}
         />
         <Text
           style={{
-            fontSize: 14,
-            color: THEME.colors.textSecondary,
-            marginLeft: 8,
+            fontSize: rf(14),
+            color: ResponsiveTheme.colors.textSecondary,
+            marginLeft: rp(8),
           }}
         >
           Last sync: {formatLastSync(lastSyncTime)}
@@ -146,14 +147,14 @@ export const SyncStatusCard: React.FC<SyncStatusCardProps> = ({
       >
         <Ionicons
           name={getSyncStatusIcon()}
-          size={16}
+          size={rs(16)}
           color={getSyncStatusColor()}
         />
         <Text
           style={{
-            fontSize: 14,
+            fontSize: rf(14),
             color: getSyncStatusColor(),
-            marginLeft: 8,
+            marginLeft: rp(8),
             flex: 1,
           }}
         >

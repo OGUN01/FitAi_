@@ -46,7 +46,7 @@ export const FoodRecognitionPanel: React.FC<FoodRecognitionPanelProps> = ({
     <>
       {showCamera && (
         <Camera
-          mode={cameraMode as any}
+          mode={cameraMode as "food" | "progress" | "barcode"}
           onCapture={onHandleCameraCapture}
           onBarcodeScanned={
             cameraMode === "barcode" ? handleBarcodeScanned : undefined

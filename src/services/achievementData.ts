@@ -29,7 +29,6 @@ class AchievementDataService {
   ): Promise<boolean> {
     try {
       if (!userId || userId.startsWith("guest") || userId === "local-user") {
-        console.log("⏭️ Skipping achievement sync for guest/local user");
         return true;
       }
 
@@ -46,16 +45,9 @@ class AchievementDataService {
       });
 
       if (error) {
-        console.warn(
-          "⚠️ Failed to sync achievement to Supabase:",
-          error.message,
-        );
         return false;
       }
 
-      console.log(
-        `✅ Achievement synced to Supabase: ${achievement.achievementId}`,
-      );
       return true;
     } catch (error) {
       console.error("❌ Achievement sync error:", error);
@@ -77,7 +69,6 @@ class AchievementDataService {
     };
 
     if (!userId || userId.startsWith("guest") || userId === "local-user") {
-      console.log("⏭️ Skipping achievement batch sync for guest/local user");
       return result;
     }
 
@@ -93,9 +84,6 @@ class AchievementDataService {
       }
     }
 
-    console.log(
-      `📊 Achievement sync complete: ${result.synced}/${achievementsArray.length} synced`,
-    );
     return result;
   }
 
@@ -108,7 +96,6 @@ class AchievementDataService {
     const achievementsMap = new Map<string, UserAchievement>();
 
     if (!userId || userId.startsWith("guest") || userId === "local-user") {
-      console.log("⏭️ Skipping achievement load for guest/local user");
       return achievementsMap;
     }
 
@@ -119,10 +106,6 @@ class AchievementDataService {
         .eq("user_id", userId);
 
       if (error) {
-        console.warn(
-          "⚠️ Failed to load achievements from Supabase:",
-          error.message,
-        );
         return achievementsMap;
       }
 
@@ -141,7 +124,6 @@ class AchievementDataService {
           };
           achievementsMap.set(row.achievement_id, userAchievement);
         }
-        console.log(`✅ Loaded ${data.length} achievements from Supabase`);
       }
     } catch (error) {
       console.error("❌ Error loading achievements from Supabase:", error);

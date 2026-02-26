@@ -7,6 +7,7 @@ import {
   useAchievementStore,
   DayName,
 } from "../stores";
+import { useProfileStore } from "../stores/profileStore";
 import { aiService } from "../ai";
 import { completionTrackingService } from "../services/completionTracking";
 import { supabase } from "../services/supabase";
@@ -49,6 +50,7 @@ export const useMealPlanning = (navigation: any) => {
   const { selectedDay } = useAppStateStore();
   const { profile } = useUserStore();
   const { user } = useAuth();
+  const { bodyAnalysis } = useProfileStore();
   const { currentStreak: achievementStreak } = useAchievementStore();
 
   const { getCalorieTarget } = useCalculatedMetrics();
@@ -129,9 +131,18 @@ export const useMealPlanning = (navigation: any) => {
     const maxAttempts = 60;
     const initialInterval = 3000;
     const maxInterval = 15000;
+    const startTime = Date.now();
+    const MAX_WALL_MS = 3 * 60 * 1000; // 3-minute absolute deadline
 
     const poll = async () => {
       pollAttempt++;
+
+      // Wall-clock absolute deadline check
+      if (Date.now() - startTime > MAX_WALL_MS) {
+        handlePollTimeout();
+        return;
+      }
+
       try {
         const response = await aiService.checkMealPlanJobStatus(jobId, 1);
 
@@ -185,6 +196,7 @@ export const useMealPlanning = (navigation: any) => {
 
     const handlePollTimeout = () => {
       setAiError("Generation is taking longer than expected.");
+      setAsyncJob(null);
       Alert.alert("Taking Longer Than Expected", "Check back later.");
       cleanupPolling();
     };
@@ -205,14 +217,14 @@ export const useMealPlanning = (navigation: any) => {
   ) => {
     if (!user?.id || user.id.startsWith("guest")) {
       Alert.alert(
-        "Sign Up Required",
-        "Create an account to generate personalized AI meal plans.",
+        "Sign In Required",
+        "Create a free account to generate your personalized AI meal plan and save your progress.",
         [
-          { text: "Cancel", style: "cancel" },
           {
             text: "Sign Up",
             onPress: () => setShowGuestSignUp(true),
           },
+          { text: "Not Now", style: "cancel" },
         ],
       );
       return;
@@ -241,7 +253,7 @@ export const useMealPlanning = (navigation: any) => {
         profile!.fitnessGoals,
         1,
         {
-          bodyMetrics: profile!.bodyMetrics,
+          bodyMetrics: profile?.bodyMetrics || bodyAnalysis || undefined,
           dietPreferences: (profile!.dietPreferences ||
             dietPreferences ||
             undefined) as any,
@@ -267,6 +279,7 @@ export const useMealPlanning = (navigation: any) => {
           estimatedTimeRemaining: response.data.estimatedTimeMinutes * 60,
         });
         startJobPolling(response.data.jobId);
+        setGeneratingPlan(false); // Polling manages its own state from here
       }
     } catch (error) {
       setAiError(error instanceof Error ? error.message : "Failed");

@@ -47,6 +47,42 @@ export const THEME = {
     info: "#2196f3",
     accent: "#FF8A5C", // Accent color (same as primaryLight)
 
+    // Extended Status Colors
+    successAlt: "#10B981",       // Tailwind green-500
+    successAltDark: "#059669",   // Tailwind green-600
+    successLight: "#8BC34A",     // Material light green
+    errorLight: "#FF6B6B",       // Soft red / destructive accent
+    errorAlt: "#EF4444",         // Tailwind red-500
+    warningAlt: "#F59E0B",       // Tailwind amber-500
+
+    // Accent Colors
+    gold: "#FFD700",             // Achievement / gold star
+    amber: "#FFC107",            // Carbs / material amber
+    teal: "#4ECDC4",             // Teal macro
+    pink: "#EC4899",             // Pink accent
+    cyan: "#06B6D4",             // Cyan accent
+    neutral: "#9E9E9E",          // Neutral/muted icon
+    purple: "#9333EA",           // Purple accent
+    orange: "#F97316",           // Orange accent
+    blue: "#3B82F6",             // Blue accent
+    amberBright: "#FBBF24",      // Amber bright
+    successBright: "#4ADE80",    // Green bright (Tailwind green-400)
+    muted: "#9CA3AF",            // Muted gray (Tailwind gray-400)
+
+    // Glass / Surface Effects
+    glassSurface: "rgba(255, 255, 255, 0.04)",
+    glassBorder: "rgba(255, 255, 255, 0.08)",
+    glassHighlight: "rgba(255, 255, 255, 0.1)",
+
+    // Overlay Colors
+    overlay: "rgba(0, 0, 0, 0.5)",
+    overlayDark: "rgba(0, 0, 0, 0.7)",
+
+    // Tinted Backgrounds
+    primaryTint: "rgba(255, 107, 53, 0.1)",
+    successTint: "rgba(76, 175, 80, 0.15)",
+    errorTint: "rgba(244, 67, 54, 0.15)",
+    warningTint: "rgba(255, 152, 0, 0.15)",
     // Utility Colors
     white: "#ffffff",
     black: "#000000",

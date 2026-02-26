@@ -1,5 +1,11 @@
 import { Alternative, CurrentData } from "./types";
 import { FALLBACK_DAILY_CALORIES } from "../../constants/diet";
+import { logger } from "../../utils/logger";
+import {
+  calculateWeightRateAlternatives,
+  calculateExerciseAlternatives,
+  calculateTrainingReductionAlternatives,
+} from "./weightCalculations";
 
 export const calculateGainRateAlternatives = (
   data: CurrentData,
@@ -135,7 +141,7 @@ export const calculateAlternativesForError = (
     currentTimeline > 0;
 
   if (!hasValidData) {
-    console.warn("[AdjustmentWizard] Invalid data for calculations:", {
+    logger.warn('[AdjustmentWizard] Invalid data for calculations', {
       bmr,
       tdee,
       currentWeight,
@@ -174,11 +180,6 @@ export const calculateAlternativesForError = (
   const safeOptimalRate = currentWeight * 0.0075;
   const safeMaxRate = currentWeight * 0.01;
 
-  const {
-    calculateWeightRateAlternatives,
-    calculateExerciseAlternatives,
-    calculateTrainingReductionAlternatives,
-  } = require("./weightCalculations");
 
   switch (errorCode) {
     case "EXTREMELY_UNREALISTIC":

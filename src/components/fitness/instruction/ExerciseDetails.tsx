@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { THEME } from "../../ui";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rf } from "../../../utils/responsive";
 
 interface ExerciseDetailsProps {
   exercise?: {
@@ -118,103 +119,103 @@ export const ExerciseDetails: React.FC<ExerciseDetailsProps> = ({
 
 const styles = StyleSheet.create({
   detailsContainer: {
-    paddingBottom: THEME.spacing.xl,
+    paddingBottom: ResponsiveTheme.spacing.xl,
   },
 
   detailSection: {
-    marginBottom: THEME.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
 
   detailSectionTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   chipContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   chip: {
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.sm,
-    borderRadius: THEME.borderRadius.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
   },
 
   primaryChip: {
-    backgroundColor: THEME.colors.primary + "20",
+    backgroundColor: ResponsiveTheme.colors.primary + "20",
   },
 
   primaryChipText: {
-    color: THEME.colors.primary,
-    fontSize: THEME.fontSize.sm,
+    color: ResponsiveTheme.colors.primary,
+    fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: "600",
     textTransform: "capitalize",
   },
 
   secondaryChip: {
-    backgroundColor: THEME.colors.warning + "20",
+    backgroundColor: ResponsiveTheme.colors.warning + "20",
   },
 
   secondaryChipText: {
-    color: THEME.colors.warning,
-    fontSize: THEME.fontSize.sm,
+    color: ResponsiveTheme.colors.warning,
+    fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: "600",
     textTransform: "capitalize",
   },
 
   equipmentChip: {
-    backgroundColor: THEME.colors.info + "20",
+    backgroundColor: ResponsiveTheme.colors.info + "20",
   },
 
   equipmentChipText: {
-    color: THEME.colors.info,
-    fontSize: THEME.fontSize.sm,
+    color: ResponsiveTheme.colors.info,
+    fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: "600",
     textTransform: "capitalize",
   },
 
   bodyPartChip: {
-    backgroundColor: THEME.colors.success + "20",
+    backgroundColor: ResponsiveTheme.colors.success + "20",
   },
 
   bodyPartChipText: {
-    color: THEME.colors.success,
-    fontSize: THEME.fontSize.sm,
+    color: ResponsiveTheme.colors.success,
+    fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: "600",
     textTransform: "capitalize",
   },
 
   tipContainer: {
-    backgroundColor: THEME.colors.backgroundSecondary,
-    padding: THEME.spacing.lg,
-    borderRadius: THEME.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    padding: ResponsiveTheme.spacing.lg,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
   },
 
   tipText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.text,
-    lineHeight: 20,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
+    lineHeight: rf(20),
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   noDataContainer: {
     alignItems: "center",
-    paddingVertical: THEME.spacing.xl,
+    paddingVertical: ResponsiveTheme.spacing.xl,
   },
 
   noDataEmoji: {
-    fontSize: 48,
-    marginBottom: THEME.spacing.md,
+    fontSize: rf(48),
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   noDataText: {
-    fontSize: THEME.fontSize.md,
+    fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: "600",
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 });

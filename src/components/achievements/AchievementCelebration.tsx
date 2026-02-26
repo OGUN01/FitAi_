@@ -13,6 +13,8 @@ import {
   StyleSheet,
 } from "react-native";
 import { Achievement } from "../../services/achievementEngine";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr } from "../../utils/responsive";
 import useAchievementStore from "../../stores/achievementStore";
 
 interface AchievementCelebrationProps {
@@ -36,6 +38,9 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
+  // Confetti animation references for cleanup
+  const confettiAnimations = useRef<Animated.CompositeAnimation[]>([]);
+
   // Confetti animations
   const confetti = useRef(
     Array.from({ length: 20 }, () => ({
@@ -46,26 +51,28 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
     })),
   ).current;
 
-  const panResponder = PanResponder.create({
-    onMoveShouldSetPanResponder: (evt, gestureState) => {
-      return Math.abs(gestureState.dy) > 20;
-    },
-    onPanResponderMove: (evt, gestureState) => {
-      if (gestureState.dy > 0) {
-        slideAnim.setValue(gestureState.dy);
-      }
-    },
-    onPanResponderRelease: (evt, gestureState) => {
-      if (gestureState.dy > 100 || gestureState.vy > 0.8) {
-        handleClose();
-      } else {
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          useNativeDriver: true,
-        }).start();
-      }
-    },
-  });
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        return Math.abs(gestureState.dy) > 20;
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        if (gestureState.dy > 0) {
+          slideAnim.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        if (gestureState.dy > 100 || gestureState.vy > 0.8) {
+          handleClose();
+        } else {
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    }),
+  ).current;
 
   useEffect(() => {
     if (visible && achievement) {
@@ -123,11 +130,18 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
       return () => {
         clearTimeout(timer);
         pulseAnimation.stop();
+        // Stop all confetti animations to prevent memory leaks
+        confettiAnimations.current.forEach((anim) => anim.stop());
+        confettiAnimations.current = [];
       };
     }
   }, [visible, achievement]);
 
   const startConfettiAnimation = () => {
+    // Clear previous animation references
+    confettiAnimations.current.forEach((anim) => anim.stop());
+    confettiAnimations.current = [];
+
     confetti.forEach((item, index) => {
       // Reset positions
       item.x.setValue(Math.random() * screenWidth);
@@ -135,7 +149,7 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
       item.rotation.setValue(0);
 
       // Animate falling
-      Animated.parallel([
+      const animation = Animated.parallel([
         Animated.timing(item.y, {
           toValue: screenHeight + 100,
           duration: 3000 + Math.random() * 2000,
@@ -148,7 +162,9 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
             useNativeDriver: true,
           }),
         ),
-      ]).start();
+      ]);
+      confettiAnimations.current.push(animation);
+      animation.start();
     });
   };
 
@@ -177,27 +193,24 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
     const colors = {
       bronze: "#CD7F32",
       silver: "#C0C0C0",
-      gold: "#FFD700",
+      gold: ResponsiveTheme.colors.gold,
       platinum: "#E5E4E2",
       diamond: "#B9F2FF",
-      legendary: "#FF6B6B",
+      legendary: ResponsiveTheme.colors.errorLight,
     };
     return colors[tier as keyof typeof colors] || "#CD7F32";
   };
 
-  const getTierGradient = (tier: string) => {
-    const gradients = {
-      bronze: "from-orange-300 to-orange-600",
-      silver: "from-gray-300 to-gray-600",
-      gold: "from-yellow-300 to-yellow-600",
-      platinum: "from-gray-200 to-gray-500",
-      diamond: "from-cyan-200 to-cyan-500",
-      legendary: "from-red-300 to-red-600",
+  const getTierGradient = (tier: string): [string, string] => {
+    const gradients: Record<string, [string, string]> = {
+      bronze: ["#CD8032", "#A0522D"],
+      silver: ["#C0C0C0", "#808080"],
+      gold: ["#FFD700", "#DAA520"],
+      platinum: ["#E5E4E2", "#A9A9A9"],
+      diamond: ["#B9F2FF", "#00BCD4"],
+      legendary: ["#FF6B6B", "#CC3333"],
     };
-    return (
-      gradients[tier as keyof typeof gradients] ||
-      "from-orange-300 to-orange-600"
-    );
+    return gradients[tier as keyof typeof gradients] || ["#CD8032", "#A0522D"];
   };
 
   if (!visible || !achievement) {
@@ -229,9 +242,9 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
               {
                 backgroundColor:
                   index % 3 === 0
-                    ? "#FFD700"
+                    ? ResponsiveTheme.colors.gold
                     : index % 3 === 1
-                      ? "#FF6B6B"
+                      ? ResponsiveTheme.colors.errorLight
                       : "#4FC3F7",
                 transform: [
                   { translateX: item.x },
@@ -334,111 +347,111 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    backgroundColor: ResponsiveTheme.colors.overlayDark,
   },
   confetti: {
     position: "absolute",
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: rp(12),
+    height: rp(12),
+    borderRadius: rbr(6),
   },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 32,
+    paddingHorizontal: rp(32),
   },
   achievementCard: {
-    borderRadius: 24,
-    padding: 32,
-    shadowColor: "#000",
+    borderRadius: rbr(24),
+    padding: rp(32),
+    shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 10,
-    maxWidth: 320,
+    maxWidth: rp(320),
     width: "100%",
   },
   iconContainer: {
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: rp(24),
   },
   achievementIcon: {
-    fontSize: 96,
-    marginBottom: 8,
+    fontSize: rf(96),
+    marginBottom: rp(8),
   },
   tierBadge: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: rp(16),
+    paddingVertical: rp(8),
+    borderRadius: rbr(20),
     backgroundColor: "rgba(255, 255, 255, 0.25)",
   },
   tierText: {
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: "bold",
     textTransform: "capitalize",
   },
   detailsContainer: {
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: rp(24),
   },
   celebrationText: {
-    fontSize: 24,
+    fontSize: rf(24),
     fontWeight: "bold",
-    color: "white",
+    color: ResponsiveTheme.colors.white,
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: rp(8),
   },
   titleText: {
-    fontSize: 20,
+    fontSize: rf(20),
     fontWeight: "bold",
-    color: "white",
+    color: ResponsiveTheme.colors.white,
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: rp(8),
   },
   descriptionText: {
-    fontSize: 16,
+    fontSize: rf(16),
     color: "rgba(255, 255, 255, 0.9)",
     textAlign: "center",
-    marginBottom: 16,
+    marginBottom: rp(16),
   },
   rewardContainer: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: rbr(12),
+    padding: rp(16),
     width: "100%",
   },
   rewardText: {
-    color: "white",
+    color: ResponsiveTheme.colors.white,
     fontWeight: "600",
     textAlign: "center",
   },
   closeButton: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    borderRadius: rbr(12),
+    paddingVertical: rp(12),
+    paddingHorizontal: rp(24),
     alignSelf: "center",
   },
   closeButtonText: {
-    color: "white",
+    color: ResponsiveTheme.colors.white,
     fontWeight: "bold",
-    fontSize: 18,
+    fontSize: rf(18),
   },
   swipeIndicatorContainer: {
     alignItems: "center",
-    marginTop: 16,
+    marginTop: rp(16),
   },
   swipeIndicator: {
-    width: 32,
-    height: 4,
+    width: rp(32),
+    height: rp(4),
     backgroundColor: "rgba(255, 255, 255, 0.4)",
-    borderRadius: 2,
+    borderRadius: rbr(2),
   },
   swipeText: {
     color: "rgba(255, 255, 255, 0.6)",
-    fontSize: 12,
-    marginTop: 8,
+    fontSize: rf(12),
+    marginTop: rp(8),
   },
 });
 

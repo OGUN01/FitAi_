@@ -1,6 +1,8 @@
-import React from "react";
+﻿import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Card, THEME } from "../ui";
+import { Card } from "../ui";
+import { ResponsiveTheme } from '../../utils/constants';
+import { rf } from '../../utils/responsive';
 import { MealData } from "../../hooks/useMealDetailLogic";
 
 interface MealInfoCardProps {
@@ -59,14 +61,14 @@ export const MealInfoCard: React.FC<MealInfoCardProps> = ({
 
 const styles = StyleSheet.create({
   mealCard: {
-    marginVertical: THEME.spacing.md,
+    marginVertical: ResponsiveTheme.spacing.md,
   },
 
   mealHeader: {
     flexDirection: "row",
     justifyContent: "space-between" as const,
     alignItems: "flex-start",
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   mealInfo: {
@@ -76,59 +78,59 @@ const styles = StyleSheet.create({
   mealTitleRow: {
     flexDirection: "row",
     alignItems: "center" as const,
-    marginBottom: THEME.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   mealIcon: {
-    fontSize: 24,
-    marginRight: THEME.spacing.sm,
+    fontSize: rf(24),
+    marginRight: ResponsiveTheme.spacing.sm,
   },
 
   mealName: {
-    fontSize: THEME.fontSize.xxl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
   },
 
   completedBadge: {
-    fontSize: THEME.fontSize.lg,
-    color: THEME.colors.success,
-    marginLeft: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    color: ResponsiveTheme.colors.success,
+    marginLeft: ResponsiveTheme.spacing.sm,
   },
 
   mealTime: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   caloriesContainer: {
     alignItems: "center" as const,
-    backgroundColor: THEME.colors.primary + "20",
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.sm,
-    borderRadius: THEME.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.primary + "20",
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: THEME.colors.primary + "40",
+    borderColor: ResponsiveTheme.colors.primary + "40",
   },
 
   caloriesValue: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.primary,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
   },
 
   caloriesLabel: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.primary,
-    marginTop: THEME.spacing.xs / 2,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.primary,
+    marginTop: ResponsiveTheme.spacing.xs / 2,
   },
 
   quickStats: {
     flexDirection: "row",
     justifyContent: "space-between" as const,
-    paddingTop: THEME.spacing.md,
+    paddingTop: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: ResponsiveTheme.colors.border,
   },
 
   statItem: {
@@ -136,14 +138,14 @@ const styles = StyleSheet.create({
   },
 
   statValue: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
   },
 
   statLabel: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.xs / 2,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs / 2,
   },
 });

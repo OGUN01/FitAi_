@@ -77,7 +77,7 @@ export function calculateAverageMacros(metrics: FitnessMetrics[]): {
   averageCalories: number;
 } {
   const metricsWithNutrition = metrics.filter(
-    (m) => (m as any).nutrition || m.nutritionScore,
+    (m) => m.nutrition || m.nutritionScore,
   );
 
   if (metricsWithNutrition.length === 0) {
@@ -95,7 +95,7 @@ export function calculateAverageMacros(metrics: FitnessMetrics[]): {
   let dataPoints = 0;
 
   for (const metric of metrics) {
-    const nutrition = (metric as any).nutrition;
+    const nutrition = metric.nutrition;
     if (nutrition) {
       totalProtein += nutrition.protein || 0;
       totalCarbs += nutrition.carbohydrates || nutrition.carbs || 0;

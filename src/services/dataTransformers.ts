@@ -753,12 +753,10 @@ function estimateCaloriesBurned(
     // Calculate calories per minute based on TDEE and activity multiplier
     const caloriesPerMinute = metadata.calculatedMetricsSummary.tdee / 1440 * 3; // 3x resting rate for exercise
     const calories = Math.round(duration * caloriesPerMinute);
-    console.log(`[dataTransformers] TDEE-based calorie estimate: ${calories} kcal`);
     return calories;
   }
   
   // NO FALLBACK - return 0, will be calculated at workout completion with actual user weight
-  console.log('[dataTransformers] Cannot estimate calories: no TDEE available, will calculate at completion');
   return 0;
 }
 

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Alert } from "react-native";
 import { DayMeal } from "../types/ai";
+import completionTrackingService from "../services/completionTracking";
+import { ResponsiveTheme } from "../utils/constants";
 
 interface UseMealSessionLogicProps {
   meal: DayMeal;
@@ -19,8 +21,8 @@ export const useMealSessionLogic = ({
 
   // Initialize completed steps array
   useEffect(() => {
-    setCompletedSteps(new Array(meal.items.length).fill(false));
-  }, [meal.items.length]);
+    setCompletedSteps(new Array(meal.items?.length ?? 0).fill(false));
+  }, [meal.items?.length]);
 
   // Timer effect
   useEffect(() => {
@@ -55,24 +57,15 @@ export const useMealSessionLogic = ({
   };
 
   const getDifficultyColor = (difficulty: string) => {
-    const THEME = {
-      colors: {
-        success: "#4CAF50",
-        warning: "#FF9800",
-        error: "#F44336",
-        textSecondary: "#757575",
-      },
-    };
-
     switch (difficulty) {
       case "easy":
-        return THEME.colors.success;
+        return ResponsiveTheme.colors.success;
       case "medium":
-        return THEME.colors.warning;
+        return ResponsiveTheme.colors.warning;
       case "hard":
-        return THEME.colors.error;
+        return ResponsiveTheme.colors.error;
       default:
-        return THEME.colors.textSecondary;
+        return ResponsiveTheme.colors.textSecondary;
     }
   };
 
@@ -87,7 +80,7 @@ export const useMealSessionLogic = ({
     setCompletedSteps(newCompletedSteps);
 
     // Move to next step if not the last one
-    if (stepIndex < meal.items.length - 1) {
+    if (stepIndex < (meal.items?.length ?? 0) - 1) {
       setCurrentStep(stepIndex + 1);
     } else {
       // All steps completed
@@ -95,7 +88,17 @@ export const useMealSessionLogic = ({
     }
   };
 
-  const handleMealComplete = () => {
+  const handleMealComplete = async () => {
+    try {
+      await completionTrackingService.completeMeal(meal.id, {
+        completedAt: new Date().toISOString(),
+        source: "meal_session",
+        sessionTime,
+      });
+    } catch (error) {
+      console.error("❌ Failed to persist meal completion:", error);
+    }
+
     Alert.alert(
       "🎉 Meal Completed!",
       `Congratulations! You've successfully prepared "${meal.name}". Enjoy your meal!`,
@@ -128,7 +131,7 @@ export const useMealSessionLogic = ({
   };
 
   const progress =
-    (completedSteps.filter(Boolean).length / meal.items.length) * 100;
+    (completedSteps.filter(Boolean).length / (meal.items?.length || 1)) * 100;
 
   return {
     state: {

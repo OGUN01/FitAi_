@@ -1,5 +1,6 @@
+import { logger } from '../utils/logger';
 import { useState } from "react";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import { DayMeal, MealItem } from "../types/ai";
 import { completionTrackingService } from "../services/completionTracking";
 import { mealMotivationService } from "../features/nutrition/MealMotivation";
@@ -31,17 +32,11 @@ export const useIngredientDetail = ({
 
   const handleMarkComplete = async () => {
     if (isCompleted || isCompleting) {
-      console.log("🍽️ Meal already completed or completing in progress");
       return;
     }
 
     try {
       setIsCompleting(true);
-      console.log(
-        "🍽️ IngredientDetailModal: Marking meal as completed:",
-        meal.name,
-        meal.id,
-      );
 
       // Use the completion tracking service to mark meal as complete
       const success = await completionTrackingService.completeMeal(meal.id, {
@@ -57,13 +52,10 @@ export const useIngredientDetail = ({
           {},
         );
 
-        Alert.alert("🎉 Meal Completed!", completionMessage, [
+        crossPlatformAlert("🎉 Meal Completed!", completionMessage, [
           {
             text: "Awesome! 🍽️",
             onPress: () => {
-              console.log(
-                "🍽️ IngredientDetailModal: Meal completion confirmed",
-              );
 
               // Call the completion callback
               if (onMealComplete) {
@@ -76,13 +68,12 @@ export const useIngredientDetail = ({
           },
         ]);
 
-        console.log("✅ Meal completed successfully from ingredient modal");
       } else {
         throw new Error("Failed to complete meal");
       }
     } catch (error) {
-      console.error("❌ Failed to complete meal from ingredient modal:", error);
-      Alert.alert(
+      logger.error('Failed to complete meal from ingredient modal', { error: String(error) });
+      crossPlatformAlert(
         "❌ Error",
         "Failed to mark meal as completed. Please try again.",
         [{ text: "OK" }],

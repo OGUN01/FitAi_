@@ -12,8 +12,10 @@ import {
   ViewStyle,
   Easing,
   StyleProp,
+  DimensionValue,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { rbr, rp, rs, rh } from "../../../utils/responsive";
 
 // ============================================================================
 // TYPES
@@ -136,21 +138,21 @@ export const Skeleton: React.FC<SkeletonProps> = ({
         };
       case "text":
         return {
-          width: width as any,
-          height: 16,
-          borderRadius: 4,
+          width: width as DimensionValue,
+          height: rh(16),
+          borderRadius: rbr(4),
         };
       case "card":
         return {
-          width: width as any,
-          height: (height || 200) as any,
-          borderRadius: 12,
+          width: width as DimensionValue,
+          height: (height || rh(200)) as DimensionValue,
+          borderRadius: rbr(12),
         };
       case "rect":
       default:
         return {
-          width: width as any,
-          height: height as any,
+          width: width as DimensionValue,
+          height: height as DimensionValue,
           borderRadius,
         };
     }
@@ -231,11 +233,11 @@ export const SkeletonCard: React.FC<{ style?: StyleProp<ViewStyle> }> = ({
   style,
 }) => (
   <View style={[styles.card, style]}>
-    <Skeleton variant="rect" width="100%" height={120} borderRadius={8} />
+    <Skeleton variant="rect" width="100%" height={rh(120)} borderRadius={rbr(8)} />
     <View style={styles.cardContent}>
       <Skeleton variant="text" width="80%" />
-      <Skeleton variant="text" width="60%" style={{ marginTop: 8 }} />
-      <Skeleton variant="text" width="40%" style={{ marginTop: 8 }} />
+      <Skeleton variant="text" width="60%" style={{ marginTop: rp(8) }} />
+      <Skeleton variant="text" width="40%" style={{ marginTop: rp(8) }} />
     </View>
   </View>
 );
@@ -250,7 +252,7 @@ export const SkeletonListItem: React.FC<{ style?: StyleProp<ViewStyle> }> = ({
     <Skeleton variant="circle" width={48} />
     <View style={styles.listItemContent}>
       <Skeleton variant="text" width="70%" />
-      <Skeleton variant="text" width="50%" style={{ marginTop: 8 }} />
+      <Skeleton variant="text" width="50%" style={{ marginTop: rp(8) }} />
     </View>
   </View>
 );
@@ -263,8 +265,8 @@ export const SkeletonProfile: React.FC<{ style?: StyleProp<ViewStyle> }> = ({
 }) => (
   <View style={[styles.profile, style]}>
     <Skeleton variant="circle" width={80} />
-    <Skeleton variant="text" width="60%" style={{ marginTop: 16 }} />
-    <Skeleton variant="text" width="40%" style={{ marginTop: 8 }} />
+    <Skeleton variant="text" width="60%" style={{ marginTop: rp(16) }} />
+    <Skeleton variant="text" width="40%" style={{ marginTop: rp(8) }} />
   </View>
 );
 
@@ -281,7 +283,7 @@ export const SkeletonText: React.FC<{
         key={index}
         variant="text"
         width={index === lines - 1 ? "60%" : "100%"}
-        style={index > 0 ? { marginTop: 8 } : undefined}
+        style={index > 0 ? { marginTop: rp(8) } : undefined}
       />
     ))}
   </View>
@@ -295,13 +297,13 @@ export const SkeletonGrid: React.FC<{
   rows?: number;
   gap?: number;
   style?: StyleProp<ViewStyle>;
-}> = ({ columns = 2, rows = 2, gap = 16, style }) => (
+}> = ({ columns = 2, rows = 2, gap = rp(16), style }) => (
   <View style={[styles.grid, { gap }, style]}>
     {Array.from({ length: rows }).map((_, rowIndex) => (
       <View key={rowIndex} style={[styles.gridRow, { gap }]}>
         {Array.from({ length: columns }).map((_, colIndex) => (
           <View key={colIndex} style={[styles.gridItem, { flex: 1 / columns }]}>
-            <Skeleton variant="card" width="100%" height={150} />
+            <Skeleton variant="card" width="100%" height={rh(150)} />
           </View>
         ))}
       </View>
@@ -333,7 +335,7 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   shimmerGradient: {
-    width: 300,
+    width: rs(300),
     height: "100%",
   },
   groupContainer: {
@@ -343,7 +345,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   cardContent: {
-    marginTop: 12,
+    marginTop: rp(12),
   },
   listItem: {
     flexDirection: "row",
@@ -351,7 +353,7 @@ const styles = StyleSheet.create({
   },
   listItemContent: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: rp(12),
   },
   profile: {
     alignItems: "center" as const,

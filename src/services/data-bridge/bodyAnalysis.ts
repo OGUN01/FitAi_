@@ -14,7 +14,6 @@ import { saveToLocal } from "./localStorage";
  * Handles nested structures like bodyAnalysis.measurements
  */
 export function transformBodyAnalysisForDB(data: any): BodyAnalysisData {
-  console.log("[DataBridge] Transforming bodyAnalysis data:", data);
 
   // Check if data is in old format (nested measurements)
   if (data.measurements) {
@@ -61,7 +60,6 @@ export function transformBodyAnalysisForDB(data: any): BodyAnalysisData {
       transformed.ai_confidence_score = data.aiAnalysis.confidence || null;
     }
 
-    console.log("[DataBridge] Transformed bodyAnalysis:", transformed);
     return transformed as BodyAnalysisData;
   }
 
@@ -76,9 +74,6 @@ export async function saveBodyAnalysis(
   data: BodyAnalysisData,
   currentUserId: string | null,
 ): Promise<SaveResult> {
-  console.log(
-    `[DataBridge] saveBodyAnalysis, userId: ${currentUserId || "guest"}`,
-  );
 
   const result: SaveResult = {
     success: true,
@@ -97,9 +92,6 @@ export async function saveBodyAnalysis(
         const dbSuccess = await BodyAnalysisService.save(currentUserId, data);
         result.newSystemSuccess = dbSuccess;
         if (!dbSuccess) {
-          console.warn(
-            "[DataBridge] bodyAnalysis DB save failed - queueing for retry",
-          );
           syncEngine.queueOperation("bodyAnalysis", data);
         }
       } catch (dbError) {

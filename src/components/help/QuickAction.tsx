@@ -51,7 +51,7 @@ export const QuickAction: React.FC<QuickActionProps> = ({
             colors={gradientColors}
             style={styles.quickActionIcon}
           >
-            <Ionicons name={icon} size={rf(22)} color="#fff" />
+            <Ionicons name={icon} size={rf(22)} color={ResponsiveTheme.colors.white} />
           </LinearGradient>
           <Text style={styles.quickActionTitle}>{title}</Text>
         </GlassCard>
@@ -66,8 +66,9 @@ const styles = StyleSheet.create({
   },
   quickActionCard: {
     alignItems: "center" as const,
+    justifyContent: "center" as const,
     paddingVertical: ResponsiveTheme.spacing.lg,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
   },
   quickActionIcon: {
     width: rw(48),
@@ -80,7 +81,7 @@ const styles = StyleSheet.create({
   quickActionTitle: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     textAlign: "center",
   },
 });

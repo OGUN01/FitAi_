@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { safeAsyncStorage } from "../utils/safeAsyncStorage";
 import NotificationServiceClass, {
   NotificationPreferences,
   WaterReminderConfig,
@@ -234,7 +235,6 @@ export const useNotificationStore = create<NotificationState>()(
             await notificationService.scheduleSleepReminders(preferences.sleep);
           }
 
-          console.log("All notifications scheduled successfully");
         } catch (error) {
           console.error("Failed to schedule notifications:", error);
           set({ error: "Failed to schedule notifications" });
@@ -255,7 +255,7 @@ export const useNotificationStore = create<NotificationState>()(
     }),
     {
       name: "notification-store",
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => safeAsyncStorage),
       partialize: (state) => ({
         preferences: state.preferences,
         isInitialized: state.isInitialized,

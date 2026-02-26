@@ -17,9 +17,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh } from "../../../utils/responsive";
+import { rf, rw, rh, rp } from "../../../utils/responsive";
 import { PeriodSelector, Period } from "./PeriodSelector";
 import { haptics } from "../../../utils/haptics";
+import { crossPlatformAlert } from "../../../utils/crossPlatformAlert";
 
 interface AnalyticsHeaderProps {
   selectedPeriod: Period;
@@ -65,12 +66,12 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
       <Animated.View entering={FadeInDown.delay(100)} style={styles.titleRow}>
         <View style={styles.titleLeft}>
           <LinearGradient
-            colors={["#FF6B35", "#E55A2B"]}
+            colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.iconContainer}
           >
-            <Ionicons name="analytics" size={rf(18)} color="#FFFFFF" />
+            <Ionicons name="analytics" size={rf(18)} color={ResponsiveTheme.colors.white} />
           </LinearGradient>
           <View>
             <Text style={styles.title}>Analytics</Text>
@@ -89,6 +90,8 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
                 onProgressPress();
               }}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Progress"
             >
               <Ionicons
                 name="fitness-outline"
@@ -107,6 +110,8 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
                 onTrendsPress();
               }}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Trends"
             >
               <Ionicons
                 name="trending-up-outline"
@@ -117,10 +122,23 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
           )}
 
           {/* AI Badge */}
-          <View style={styles.badge}>
-            <Ionicons name="sparkles" size={rf(12)} color="#FFD700" />
+          <TouchableOpacity
+            style={styles.badge}
+            activeOpacity={0.7}
+            onPress={() => {
+              haptics.light();
+              crossPlatformAlert(
+                "AI Insights",
+                "AI Insights coming soon! Complete workouts and log meals to unlock AI-powered analytics.",
+                [{ text: "Got it", style: "default" }],
+              );
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="AI Insights"
+          >
+            <Ionicons name="sparkles" size={rf(12)} color={ResponsiveTheme.colors.gold} />
             <Text style={styles.badgeText}>AI</Text>
-          </View>
+          </TouchableOpacity>
         </View>
       </Animated.View>
 
@@ -165,11 +183,11 @@ const styles = StyleSheet.create({
     width: rw(36),
     height: rw(36),
     borderRadius: rw(10),
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: ResponsiveTheme.colors.glassBorder,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: ResponsiveTheme.colors.glassHighlight,
   },
   iconContainer: {
     width: rw(36),
@@ -188,23 +206,23 @@ const styles = StyleSheet.create({
     fontSize: rf(11),
     fontWeight: "500",
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: -2,
+    marginTop: rp(-2),
   },
   badge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(255,215,0,0.12)",
+    gap: rp(4),
+    backgroundColor: ResponsiveTheme.colors.warningTint,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: rp(4),
     borderRadius: ResponsiveTheme.borderRadius.full,
     borderWidth: 1,
-    borderColor: "rgba(255,215,0,0.2)",
+    borderColor: ResponsiveTheme.colors.warningTint,
   },
   badgeText: {
     fontSize: rf(10),
     fontWeight: "700",
-    color: "#FFD700",
+    color: ResponsiveTheme.colors.gold,
   },
   periodSelectorWrapper: {
     alignSelf: "stretch",

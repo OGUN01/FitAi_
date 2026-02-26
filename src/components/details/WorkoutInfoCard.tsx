@@ -1,6 +1,8 @@
-import React from "react";
+﻿import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Card, THEME } from "../ui";
+import { Card } from "../ui";
+import { ResponsiveTheme } from '../../utils/constants';
+import { rf, rw, rh, rbr } from '../../utils/responsive';
 
 interface WorkoutInfoCardProps {
   workout: {
@@ -106,13 +108,13 @@ export const WorkoutInfoCard: React.FC<WorkoutInfoCardProps> = ({
 
 const styles = StyleSheet.create({
   workoutCard: {
-    marginVertical: THEME.spacing.md,
+    marginVertical: ResponsiveTheme.spacing.md,
   },
 
   workoutHeader: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   workoutInfo: {
@@ -120,64 +122,64 @@ const styles = StyleSheet.create({
   },
 
   workoutName: {
-    fontSize: THEME.fontSize.xxl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   workoutDescription: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
-    lineHeight: 22,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(22),
   },
 
   workoutIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: THEME.colors.primary,
+    width: rw(60),
+    height: rh(60),
+    borderRadius: rbr(30),
+    backgroundColor: ResponsiveTheme.colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: THEME.spacing.md,
+    marginLeft: ResponsiveTheme.spacing.md,
   },
 
   workoutEmoji: {
-    fontSize: 24,
+    fontSize: rf(24),
   },
 
   progressContainer: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   progressBar: {
-    height: 8,
-    backgroundColor: THEME.colors.surface,
-    borderRadius: 4,
+    height: rh(8),
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: rbr(4),
     overflow: "hidden",
   },
 
   progressFill: {
     height: "100%",
-    backgroundColor: THEME.colors.primary,
-    borderRadius: 4,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderRadius: rbr(4),
   },
 
   progressText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.primary,
-    marginTop: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.primary,
+    marginTop: ResponsiveTheme.spacing.xs,
     textAlign: "center",
   },
 
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: THEME.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: THEME.colors.border,
-    marginVertical: THEME.spacing.md,
+    borderColor: ResponsiveTheme.colors.border,
+    marginVertical: ResponsiveTheme.spacing.md,
   },
 
   statItem: {
@@ -185,75 +187,75 @@ const styles = StyleSheet.create({
   },
 
   statValue: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.primary,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
   },
 
   statLabel: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.xs / 2,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs / 2,
   },
 
   musclesContainer: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   musclesTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   musclesList: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: THEME.spacing.xs,
+    gap: ResponsiveTheme.spacing.xs,
   },
 
   muscleTag: {
-    backgroundColor: THEME.colors.primary + "20",
-    paddingHorizontal: THEME.spacing.sm,
-    paddingVertical: THEME.spacing.xs / 2,
-    borderRadius: THEME.borderRadius.md,
+    backgroundColor: ResponsiveTheme.colors.primary + "20",
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs / 2,
+    borderRadius: ResponsiveTheme.borderRadius.md,
     borderWidth: 1,
-    borderColor: THEME.colors.primary + "40",
+    borderColor: ResponsiveTheme.colors.primary + "40",
   },
 
   muscleText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.primary,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   equipmentContainer: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   equipmentTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   equipmentList: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: THEME.spacing.xs,
+    gap: ResponsiveTheme.spacing.xs,
   },
 
   equipmentTag: {
-    backgroundColor: THEME.colors.surface,
-    paddingHorizontal: THEME.spacing.sm,
-    paddingVertical: THEME.spacing.xs / 2,
-    borderRadius: THEME.borderRadius.md,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs / 2,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
   equipmentText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 });

@@ -8,7 +8,7 @@ import {
   UserAchievement,
 } from "../../services/achievements/types";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rh, rw, rs } from "../../utils/responsive";
+import { rf, rh, rw, rs, rbr, rp } from "../../utils/responsive";
 import GlassCard from "../ui/GlassCard";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -35,10 +35,10 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
     const colors = {
       bronze: "#CD7F32",
       silver: "#C0C0C0",
-      gold: "#FFD700",
+      gold: ResponsiveTheme.colors.gold,
       platinum: "#E5E4E2",
       diamond: "#B9F2FF",
-      legendary: "#FF6B6B",
+      legendary: ResponsiveTheme.colors.errorLight,
     };
     return colors[tier as keyof typeof colors] || "#CD7F32";
   };
@@ -165,10 +165,10 @@ const styles = StyleSheet.create({
   },
   checkBadge: {
     position: "absolute",
-    bottom: -4,
-    right: -4,
+    bottom: -rp(4),
+    right: -rp(4),
     backgroundColor: ResponsiveTheme.colors.background,
-    borderRadius: 8,
+    borderRadius: rbr(8),
   },
   info: {
     flex: 1,
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: rw(1.5),
     paddingVertical: rh(0.2),
-    borderRadius: 6,
+    borderRadius: rbr(6),
   },
   tierText: {
     fontSize: rf(1),

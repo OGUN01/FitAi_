@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rw } from "../../utils/responsive";
+import { rf, rw, rp, rbr } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { ValidationResult } from "../../services/validationEngine";
 
@@ -44,7 +44,7 @@ export const ErrorCard: React.FC<ErrorCardProps> = ({ errors, onAdjust }) => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerIcon}>
-          <Ionicons name="alert-circle" size={rf(20)} color="#EF4444" />
+          <Ionicons name="alert-circle" size={rf(20)} color={ResponsiveTheme.colors.errorAlt} />
         </View>
         <Text style={styles.headerTitle}>Action Required</Text>
       </View>
@@ -94,7 +94,7 @@ export const ErrorCard: React.FC<ErrorCardProps> = ({ errors, onAdjust }) => {
                     <Ionicons
                       name="chevron-forward"
                       size={rf(16)}
-                      color="#F59E0B"
+                      color={ResponsiveTheme.colors.warningAlt}
                     />
                   </LinearGradient>
                 </TouchableOpacity>
@@ -112,15 +112,15 @@ export const ErrorCard: React.FC<ErrorCardProps> = ({ errors, onAdjust }) => {
         disabled={isLoading}
       >
         <LinearGradient
-          colors={isLoading ? ["#9CA3AF", "#6B7280"] : ["#EF4444", "#DC2626"]}
+          colors={isLoading ? [ResponsiveTheme.colors.neutral, ResponsiveTheme.colors.textTertiary] : [ResponsiveTheme.colors.errorAlt, ResponsiveTheme.colors.error]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.fixButtonGradient}
         >
           {isLoading ? (
-            <ActivityIndicator size="small" color="#fff" />
+            <ActivityIndicator size="small" color={ResponsiveTheme.colors.white} />
           ) : (
-            <Ionicons name="build" size={rf(16)} color="#fff" />
+            <Ionicons name="build" size={rf(16)} color={ResponsiveTheme.colors.white} />
           )}
           <Text style={styles.fixButtonText}>
             {isLoading ? "Processing..." : "Fix Issues"}
@@ -137,39 +137,39 @@ export const ErrorCard: React.FC<ErrorCardProps> = ({ errors, onAdjust }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "rgba(239, 68, 68, 0.08)",
+    backgroundColor: ResponsiveTheme.colors.errorTint,
     borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.3)",
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.md,
+    borderColor: `${ResponsiveTheme.colors.errorAlt}4D`,
+    borderRadius: rbr(ResponsiveTheme.borderRadius.lg),
+    padding: rp(ResponsiveTheme.spacing.md),
+    marginBottom: rp(ResponsiveTheme.spacing.md),
   },
 
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: rp(ResponsiveTheme.spacing.md),
   },
 
   headerIcon: {
     width: rw(32),
     height: rw(32),
     borderRadius: rw(16),
-    backgroundColor: "rgba(239, 68, 68, 0.15)",
+    backgroundColor: `${ResponsiveTheme.colors.errorAlt}26`,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: rp(ResponsiveTheme.spacing.sm),
   },
 
   headerTitle: {
     fontSize: rf(16),
     fontWeight: "700",
-    color: "#FCA5A5",
+    color: ResponsiveTheme.colors.errorLight,
     letterSpacing: -0.3,
   },
 
   errorItem: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: rp(ResponsiveTheme.spacing.sm),
   },
 
   errorMessage: {
@@ -180,14 +180,14 @@ const styles = StyleSheet.create({
   },
 
   recommendationsContainer: {
-    marginTop: ResponsiveTheme.spacing.sm,
-    gap: ResponsiveTheme.spacing.xs,
+    marginTop: rp(ResponsiveTheme.spacing.sm),
+    gap: rp(ResponsiveTheme.spacing.xs),
   },
 
   recommendationItem: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: rp(ResponsiveTheme.spacing.xs),
   },
 
   recommendationText: {
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   },
 
   alternativesContainer: {
-    marginTop: ResponsiveTheme.spacing.md,
+    marginTop: rp(ResponsiveTheme.spacing.md),
   },
 
   alternativesTitle: {
@@ -207,35 +207,35 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: rp(ResponsiveTheme.spacing.sm),
   },
 
   alternativeButton: {
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: rbr(ResponsiveTheme.borderRadius.md),
     overflow: "hidden",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: rp(ResponsiveTheme.spacing.xs),
     borderWidth: 1,
-    borderColor: "rgba(245, 158, 11, 0.3)",
+    borderColor: `${ResponsiveTheme.colors.warningAlt}4D`,
   },
 
   alternativeGradient: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: rp(ResponsiveTheme.spacing.sm),
+    paddingHorizontal: rp(ResponsiveTheme.spacing.md),
   },
 
   alternativeButtonText: {
     flex: 1,
     fontSize: rf(13),
-    color: "#FCD34D",
+    color: ResponsiveTheme.colors.warning,
     fontWeight: "500",
   },
 
   fixButton: {
-    marginTop: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    marginTop: rp(ResponsiveTheme.spacing.md),
+    borderRadius: rbr(ResponsiveTheme.borderRadius.md),
     overflow: "hidden",
   },
 
@@ -247,13 +247,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    gap: ResponsiveTheme.spacing.xs,
+    paddingVertical: rp(ResponsiveTheme.spacing.sm),
+    gap: rp(ResponsiveTheme.spacing.xs),
   },
 
   fixButtonText: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
 });

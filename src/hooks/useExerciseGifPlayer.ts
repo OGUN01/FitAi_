@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { useState, useEffect } from "react";
 import { exerciseFilterService } from "../services/exerciseFilterService";
 
@@ -29,15 +30,11 @@ export const useExerciseGifPlayer = ({
     );
     if (matchingId) {
       exercise = exerciseFilterService.getExerciseById(matchingId);
-      console.log(`🔄 Used fallback lookup: "${exerciseId}" → "${matchingId}"`);
     }
   }
 
   // 🐛 DEBUG: Log exercise lookup details (DISABLED TO STOP SPAM)
   if (exerciseId && !exercise) {
-    console.log(
-      `🔍 ExerciseGifPlayer - Exercise NOT FOUND for ID: "${exerciseId}"`,
-    );
   }
 
   // Always prioritize database name over passed name to avoid showing IDs
@@ -50,9 +47,7 @@ export const useExerciseGifPlayer = ({
     } else {
       setIsLoading(false);
       setHasError(true);
-      console.error(
-        `🚨 EXERCISE NOT FOUND: ID "${exerciseId}" not in database`,
-      );
+      logger.error('Exercise not found in database', { exerciseId });
     }
   }, [exercise, exerciseId]);
 
@@ -64,9 +59,7 @@ export const useExerciseGifPlayer = ({
   const handleImageError = () => {
     setIsLoading(false);
     setHasError(true);
-    console.error(
-      `🚨 GIF LOAD ERROR: Failed to load GIF for exercise ID "${exerciseId}"`,
-    );
+    logger.error('GIF load error', { exerciseId });
   };
 
   const togglePlayback = () => {

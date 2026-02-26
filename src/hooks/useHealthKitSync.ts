@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // React Hook for HealthKit Integration
 // Provides convenient access to HealthKit functionality with automatic sync management
 
@@ -101,7 +102,7 @@ export const useHealthKitSync = (
         try {
           await initializeHealthKit();
         } catch (error) {
-          console.error("❌ Failed to auto-initialize HealthKit:", error);
+          logger.error('Failed to auto-initialize HealthKit', { error: String(error) });
         } finally {
           setIsLoading(false);
         }
@@ -116,7 +117,6 @@ export const useHealthKitSync = (
 
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (nextAppState === "active") {
-        console.log("📱 App became active, checking HealthKit sync...");
 
         // Sync if enough time has passed
         const checkAndSync = async () => {
@@ -129,16 +129,14 @@ export const useHealthKitSync = (
               const hoursSinceLastSync = (now - lastSync) / (1000 * 60 * 60);
 
               if (hoursSinceLastSync >= hoursInterval) {
-                console.log("🔄 Performing background HealthKit sync...");
                 await syncHealthData(false);
               }
             } else {
               // No previous sync, sync now
-              console.log("🔄 Performing initial background HealthKit sync...");
               await syncHealthData(false);
             }
           } catch (error) {
-            console.error("❌ Background sync failed:", error);
+            logger.error('Background sync failed', { error: String(error) });
           }
         };
 
@@ -175,10 +173,9 @@ export const useHealthKitSync = (
 
     const periodicSync = async () => {
       try {
-        console.log("⏰ Performing periodic HealthKit sync...");
         await syncHealthData(false);
       } catch (error) {
-        console.error("❌ Periodic sync failed:", error);
+        logger.error('Periodic sync failed', { error: String(error) });
       }
     };
 
@@ -303,7 +300,6 @@ export const useHealthKitWorkout = () => {
 
   const startWorkoutTracking = useCallback(async (workoutType: string) => {
     // Could implement workout session tracking here
-    console.log(`🏃 Starting HealthKit workout tracking: ${workoutType}`);
   }, []);
 
   const finishWorkoutTracking = useCallback(
@@ -314,7 +310,6 @@ export const useHealthKitWorkout = () => {
       calories: number;
       distance?: number;
     }) => {
-      console.log("🏁 Finishing workout, exporting to HealthKit...");
       return await healthKit.exportWorkout(workout);
     },
     [healthKit],
@@ -342,7 +337,6 @@ export const useHealthKitNutrition = () => {
       water?: number;
     }) => {
       if (healthKit.settings.dataTypesToSync.nutrition) {
-        console.log("🍎 Exporting daily nutrition to HealthKit...");
         return await healthKit.exportNutrition({
           ...nutritionData,
           date: new Date(),
@@ -391,9 +385,6 @@ export const useHealthKitDashboard = () => {
       // VALIDATION: No fallback for weight - null means no data available
       const lastWeight = healthKit.healthMetrics.weight;
       if (!lastWeight || lastWeight === 0) {
-        console.warn(
-          "[useHealthKitDashboard] Weight data missing from HealthKit",
-        );
       }
 
       setDashboardData({

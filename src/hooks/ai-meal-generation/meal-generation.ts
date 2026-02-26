@@ -8,6 +8,26 @@ interface DietPreferences {
   dislikes?: string[];
 }
 
+/** Extended preferences shape built locally for meal generation calls. */
+interface MealGenerationPreferences {
+  dietaryRestrictions: string[];
+  cuisinePreference: string;
+  prepTimeLimit: number;
+  calorieTarget: number;
+  dietType: string[];
+  dislikes: string[];
+  customOptions: Record<string, unknown>;
+  suggestions: string[];
+  specialAction?: string;
+}
+
+/** Preferences shape for daily meal plan generation. */
+interface DailyPlanPreferences {
+  calorieTarget: number;
+  dietaryRestrictions: string[];
+  cuisinePreferences: string[];
+}
+
 export const createMealGenerationHandlers = (
   userId: string | undefined,
   profile: any,
@@ -84,10 +104,7 @@ export const createMealGenerationHandlers = (
       );
 
       if (response.success && response.data) {
-        setAiMeals((prev) => [response.data!, ...prev]);
-
-        if (userId && response.data.ingredients && foods.length > 0) {
-        }
+        setAiMeals((prev) => [response.data! as unknown as Meal, ...prev]);
 
         Alert.alert(
           "Meal Generated!",

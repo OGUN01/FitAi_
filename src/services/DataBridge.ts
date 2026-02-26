@@ -132,9 +132,6 @@ class DataBridge {
   };
 
   private constructor() {
-    console.log(
-      "[DataBridge] Initialized - Using NEW architecture only (old system removed)",
-    );
   }
 
   static getInstance(): DataBridge {
@@ -149,21 +146,14 @@ class DataBridge {
   // ============================================================================
 
   switchToNewSystem(): void {
-    console.log("[DataBridge] Already using NEW system (old system removed)");
     this.config.USE_NEW_SYSTEM = true;
   }
 
   switchToOldSystem(): void {
-    console.log(
-      "[DataBridge] WARNING: Old system has been removed. Using new system.",
-    );
     this.config.USE_NEW_SYSTEM = true; // Always use new system
   }
 
   setShadowMode(enabled: boolean): void {
-    console.log(
-      `[DataBridge] Shadow mode no longer available (old system removed)`,
-    );
     this.config.SHADOW_MODE = false;
   }
 
@@ -180,7 +170,6 @@ class DataBridge {
     if (userId) {
       syncEngine.setUserId(userId);
     }
-    console.log(`[DataBridge] User ID set to: ${userId || "guest"}`);
   }
 
   getUserId(): string | null {
@@ -193,7 +182,6 @@ class DataBridge {
 
   setOnlineStatus(online: boolean): void {
     this.isOnline = online;
-    console.log(`[DataBridge] Online status: ${online}`);
   }
 
   getOnlineStatus(): boolean {
@@ -206,12 +194,10 @@ class DataBridge {
 
   async initialize(): Promise<void> {
     if (this.isInitialized) {
-      console.log("[DataBridge] Already initialized");
       return;
     }
 
     try {
-      console.log("[DataBridge] Initializing...");
       // Load any persisted data into ProfileStore
       const data = await this.loadFromLocal();
       if (data.personalInfo) {
@@ -234,7 +220,6 @@ class DataBridge {
           profileStore.updateAdvancedReview(data.advancedReview);
       }
       this.isInitialized = true;
-      console.log("[DataBridge] Initialization complete");
     } catch (error) {
       console.error("[DataBridge] Initialization error:", error);
       this.isInitialized = true; // Mark as initialized even on error to prevent loops
@@ -247,9 +232,6 @@ class DataBridge {
 
   async loadAllData(userId?: string): Promise<AllDataResult> {
     const targetUserId = userId || this.currentUserId;
-    console.log(
-      `[DataBridge] loadAllData called, userId: ${targetUserId || "guest"}`,
-    );
 
     try {
       if (!targetUserId) {
@@ -263,7 +245,6 @@ class DataBridge {
   }
 
   private async loadFromLocal(): Promise<AllDataResult> {
-    console.log("[DataBridge] Loading from local storage");
 
     try {
       // Check ProfileStore first
@@ -328,7 +309,6 @@ class DataBridge {
   }
 
   private async loadFromDatabase(userId: string): Promise<AllDataResult> {
-    console.log("[DataBridge] Loading from database for user:", userId);
 
     try {
       const [
@@ -432,9 +412,6 @@ class DataBridge {
     userId?: string,
   ): Promise<SaveResult> {
     const targetUserId = userId || this.currentUserId;
-    console.log(
-      `[DataBridge] savePersonalInfo, userId: ${targetUserId || "guest"}`,
-    );
 
     const result: SaveResult = {
       success: true,
@@ -490,9 +467,6 @@ class DataBridge {
     userId?: string,
   ): Promise<SaveResult> {
     const targetUserId = userId || this.currentUserId;
-    console.log(
-      `[DataBridge] saveDietPreferences, userId: ${targetUserId || "guest"}`,
-    );
 
     const result: SaveResult = {
       success: true,
@@ -542,9 +516,6 @@ class DataBridge {
     userId?: string,
   ): Promise<SaveResult> {
     const targetUserId = userId || this.currentUserId;
-    console.log(
-      `[DataBridge] saveBodyAnalysis, userId: ${targetUserId || "guest"}`,
-    );
 
     const result: SaveResult = {
       success: true,
@@ -591,9 +562,6 @@ class DataBridge {
     userId?: string,
   ): Promise<SaveResult> {
     const targetUserId = userId || this.currentUserId;
-    console.log(
-      `[DataBridge] saveWorkoutPreferences, userId: ${targetUserId || "guest"}`,
-    );
 
     const result: SaveResult = {
       success: true,
@@ -643,9 +611,6 @@ class DataBridge {
     userId?: string,
   ): Promise<SaveResult> {
     const targetUserId = userId || this.currentUserId;
-    console.log(
-      `[DataBridge] saveAdvancedReview, userId: ${targetUserId || "guest"}`,
-    );
 
     const result: SaveResult = {
       success: true,
@@ -699,7 +664,6 @@ class DataBridge {
    * Handles nested structures like bodyAnalysis.measurements
    */
   private transformBodyAnalysisForDB(data: any): BodyAnalysisData {
-    console.log("[DataBridge] Transforming bodyAnalysis data:", data);
 
     // Check if data is in old format (nested measurements)
     if (data.measurements) {
@@ -747,7 +711,6 @@ class DataBridge {
         transformed.ai_confidence_score = data.aiAnalysis.confidence || null;
       }
 
-      console.log("[DataBridge] Transformed bodyAnalysis:", transformed);
       return transformed as BodyAnalysisData;
     }
 
@@ -759,7 +722,6 @@ class DataBridge {
    * Transform old workoutPreferences format to new database format
    */
   private transformWorkoutPreferencesForDB(data: any): WorkoutPreferencesData {
-    console.log("[DataBridge] Transforming workoutPreferences data:", data);
 
     // Map old field names to new ones
     const transformed: any = {
@@ -788,13 +750,10 @@ class DataBridge {
         data.preferredWorkoutTimes || data.preferred_workout_times || [],
     };
 
-    console.log("[DataBridge] Transformed workoutPreferences:", transformed);
     return transformed as WorkoutPreferencesData;
   }
 
   async migrateGuestToUser(userId: string): Promise<MigrationResult> {
-    console.log("[MIGRATION] ====== STARTING GUEST-TO-USER MIGRATION ======");
-    console.log("[MIGRATION] User ID:", userId);
 
     const result: MigrationResult = {
       success: true,
@@ -806,17 +765,12 @@ class DataBridge {
 
     try {
       // Step 1: Load all local guest data
-      console.log(
-        "[MIGRATION] Step 1/6: Loading guest data from AsyncStorage...",
-      );
       const localData = await this.loadFromLocal();
       const foundKeys = Object.keys(localData).filter(
         (k) => localData[k as keyof AllDataResult] && k !== "source",
       );
-      console.log("[MIGRATION] Found data keys:", foundKeys);
 
       if (foundKeys.length === 0) {
-        console.log("[MIGRATION] No guest data found to migrate");
         return result;
       }
 
@@ -830,7 +784,6 @@ class DataBridge {
         saveFn: (data: any, userId: string) => Promise<SaveResult>,
         transform?: (data: any) => any,
       ) => {
-        console.log(`[MIGRATION] Migrating ${key}...`);
         const dataToSave = transform ? transform(data) : data;
         const saveResult = await saveFn.call(this, dataToSave, userId);
 
@@ -838,12 +791,10 @@ class DataBridge {
         // Local sync is considered successful if the method didn't throw
         result.migratedKeys.push(key);
         result.localSyncKeys!.push(key);
-        console.log(`[MIGRATION] ✅ ${key} LOCAL sync successful`);
 
         // Track remote sync separately
         if (saveResult.newSystemSuccess === true) {
           result.remoteSyncKeys!.push(key);
-          console.log(`[MIGRATION] ✅ ${key} REMOTE sync successful`);
         } else {
           console.warn(
             `[MIGRATION] ⚠️ ${key} REMOTE sync pending - will retry automatically`,
@@ -904,33 +855,13 @@ class DataBridge {
         result.remoteSyncKeys!.length === result.localSyncKeys!.length;
       if (allRemoteSynced) {
         await AsyncStorage.removeItem(ONBOARDING_DATA_KEY);
-        console.log(
-          "[MIGRATION] ✅ Guest data cleared - all data synced to database",
-        );
       } else {
-        console.log(
-          "[MIGRATION] ⚠️ Keeping guest data - some items pending remote sync",
-        );
-        console.log(
-          "[MIGRATION] Pending:",
-          result.localSyncKeys!.filter(
-            (k) => !result.remoteSyncKeys!.includes(k),
-          ),
-        );
       }
 
       // Migration is successful if local sync worked (data available in app)
       // Remote sync failures are handled by retry mechanism
       result.success = result.localSyncKeys!.length > 0;
 
-      console.log("[MIGRATION] ====== MIGRATION COMPLETE ======");
-      console.log("[MIGRATION] Summary:", {
-        localSyncKeys: result.localSyncKeys,
-        remoteSyncKeys: result.remoteSyncKeys,
-        pendingRemoteSync: result.localSyncKeys!.filter(
-          (k) => !result.remoteSyncKeys!.includes(k),
-        ),
-      });
 
       return result;
     } catch (error) {
@@ -983,9 +914,6 @@ class DataBridge {
 
   async getShadowModeReport(): Promise<ShadowModeReport> {
     // Shadow mode no longer available - return empty report
-    console.log(
-      "[DataBridge] Shadow mode report not available (old system removed)",
-    );
     return {
       discrepancies: [],
       oldSystemData: null,
@@ -1007,7 +935,6 @@ class DataBridge {
       await AsyncStorage.removeItem(MEAL_LOGS_KEY);
       await AsyncStorage.removeItem(BODY_MEASUREMENTS_KEY);
 
-      console.log("[DataBridge] Local data cleared");
     } catch (error) {
       console.error("[DataBridge] clearLocalData error:", error);
     }
@@ -1048,7 +975,6 @@ class DataBridge {
       if (data.advancedReview)
         profileStore.updateAdvancedReview(data.advancedReview);
 
-      console.log("[DataBridge] Onboarding data stored");
       return true;
     } catch (error) {
       console.error("[DataBridge] storeOnboardingData error:", error);
@@ -1464,7 +1390,6 @@ class DataBridge {
         state: "CA",
       };
       await this.savePersonalInfo(samplePersonalInfo as any);
-      console.log("[DataBridge] Sample profile data created");
       return true;
     } catch (error) {
       console.error("[DataBridge] createSampleProfileData error:", error);
@@ -1503,7 +1428,6 @@ class DataBridge {
         ONBOARDING_DATA_KEY,
         JSON.stringify(updatedData),
       );
-      console.log(`[DataBridge] Saved ${field} to local storage`);
     } catch (error) {
       console.error(`[DataBridge] Failed to save ${field} to local:`, error);
       throw error;

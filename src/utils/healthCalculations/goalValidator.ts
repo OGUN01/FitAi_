@@ -10,7 +10,6 @@ export class GoalValidator {
     user: UserProfile,
     goal: GoalInput,
   ): GoalValidationResult {
-    console.log("[FACADE] Validating goal:", goal.type);
 
     if (goal.type === "fat_loss") {
       if (!goal.targetWeight || !goal.timelineWeeks) {

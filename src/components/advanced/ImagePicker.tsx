@@ -10,7 +10,9 @@ import {
   Dimensions,
 } from "react-native";
 import * as ImagePickerExpo from "expo-image-picker";
-import { Button, Card, Modal, THEME } from "../ui";
+import { Button, Card, Modal } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rs, rbr } from '../../utils/responsive';
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -237,47 +239,47 @@ const styles = StyleSheet.create({
   actionsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   actionButton: {
     alignItems: "center",
-    padding: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.lg,
-    backgroundColor: THEME.colors.surface,
+    padding: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.surface,
     minWidth: 120,
   },
 
   actionIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: THEME.colors.primary + "20",
+    width: rs(60),
+    height: rs(60),
+    borderRadius: rbr(30),
+    backgroundColor: ResponsiveTheme.colors.primary + "20",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   actionEmoji: {
-    fontSize: 24,
+    fontSize: rf(24),
   },
 
   actionText: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium as "500",
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
+    color: ResponsiveTheme.colors.text,
     textAlign: "center",
   },
 
   selectedSection: {
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   selectedTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold as "600",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   selectedImagesContainer: {
@@ -286,58 +288,58 @@ const styles = StyleSheet.create({
 
   selectedImageContainer: {
     position: "relative",
-    marginRight: THEME.spacing.sm,
+    marginRight: ResponsiveTheme.spacing.sm,
   },
 
   selectedImage: {
-    width: 80,
-    height: 80,
-    borderRadius: THEME.borderRadius.md,
+    width: rs(80),
+    height: rs(80),
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
   removeButton: {
     position: "absolute",
     top: -8,
     right: -8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: THEME.colors.error,
+    width: rs(24),
+    height: rs(24),
+    borderRadius: rbr(12),
+    backgroundColor: ResponsiveTheme.colors.error,
     alignItems: "center",
     justifyContent: "center",
   },
 
   removeButtonText: {
-    fontSize: 12,
-    color: THEME.colors.white,
-    fontWeight: THEME.fontWeight.bold as "700",
+    fontSize: rf(12),
+    color: ResponsiveTheme.colors.white,
+    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
   },
 
   tipsCard: {
-    marginBottom: THEME.spacing.lg,
-    backgroundColor: THEME.colors.info + "10",
+    marginBottom: ResponsiveTheme.spacing.lg,
+    backgroundColor: ResponsiveTheme.colors.info + "10",
     borderWidth: 1,
-    borderColor: THEME.colors.info + "30",
+    borderColor: ResponsiveTheme.colors.info + "30",
   },
 
   tipsTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold as "600",
-    color: THEME.colors.info,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
+    color: ResponsiveTheme.colors.info,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   tipText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.xs / 2,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.xs / 2,
   },
 
   bottomActions: {
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   confirmButton: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 });

@@ -30,10 +30,10 @@ export const ContactCard: React.FC<ContactCardProps> = ({ onContactEmail }) => {
         />
         <View style={styles.contactIconContainer}>
           <LinearGradient
-            colors={["#FF6B35", "#FF8A5C"]}
+            colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]}
             style={styles.contactIcon}
           >
-            <Ionicons name="headset-outline" size={rf(24)} color="#fff" />
+            <Ionicons name="headset-outline" size={rf(24)} color={ResponsiveTheme.colors.white} />
           </LinearGradient>
         </View>
         <Text style={styles.contactTitle}>Need immediate help?</Text>
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   contactTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
     marginBottom: ResponsiveTheme.spacing.xs,
     textAlign: "center",
   },
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     justifyContent: "center" as const,
     gap: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.md,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: ResponsiveTheme.colors.glassBorder,
     borderRadius: ResponsiveTheme.borderRadius.lg,
   },
   contactMethodText: {

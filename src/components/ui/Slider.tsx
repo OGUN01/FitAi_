@@ -24,7 +24,7 @@ import {
   PanGestureHandler,
   PanGestureHandlerGestureEvent,
 } from "react-native-gesture-handler";
-import { rf, rp, rh, rw } from "../../utils/responsive";
+import { rf, rp, rh, rw, rbr } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { hapticSelection } from "../../utils/haptics";
 
@@ -302,74 +302,68 @@ const styles = StyleSheet.create({
 
   sliderContainer: {
     position: "relative",
-    paddingTop: 22, // Reduced space for tooltip
+    paddingTop: rp(22), // Reduced space for tooltip
   },
 
   // Minimal track container - compact height
   trackContainer: {
-    height: 28, // Reduced from 32
+    height: rp(28), // Reduced from 32
     justifyContent: "center",
-    marginBottom: 4, // Reduced from 6
+    marginBottom: rp(4), // Reduced from 6
   },
 
   // Thinner, elegant track
   track: {
     position: "absolute",
-    height: 6,
-    borderRadius: 3,
+    height: rp(6),
+    borderRadius: rbr(3),
     left: 0,
     right: 0,
   },
 
   inactiveTrack: {
-    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    backgroundColor: ResponsiveTheme.colors.glassHighlight,
   },
 
   activeTrack: {
     backgroundColor: ResponsiveTheme.colors.primary,
     // Subtle inner shadow for depth
-    shadowColor: ResponsiveTheme.colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    boxShadow: '0px 0px 4px rgba(255,107,53,0.3)',
   },
 
   // Refined thumb - smaller and cleaner
   thumb: {
     position: "absolute",
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: rp(22),
+    height: rp(22),
+    borderRadius: rbr(11),
     backgroundColor: ResponsiveTheme.colors.primary,
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: -11,
+    marginLeft: rp(-11),
     // Clean white border
     borderWidth: 3,
     borderColor: ResponsiveTheme.colors.white,
     // Subtle shadow
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0,0,0,0.2)',
     elevation: 4,
   },
 
   // Subtle inner indicator
   thumbInner: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    width: rp(6),
+    height: rp(6),
+    borderRadius: rbr(3),
+    backgroundColor: ResponsiveTheme.colors.glassHighlight,
   },
 
   // Glow effect behind thumb when dragging
   thumbGlow: {
     position: "absolute",
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    marginLeft: -11,
+    width: rp(22),
+    height: rp(22),
+    borderRadius: rbr(11),
+    marginLeft: rp(-11),
   },
 
   thumbDisabled: {
@@ -381,23 +375,20 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     alignItems: "center",
-    marginLeft: -20,
+    marginLeft: rp(-20),
     zIndex: 10,
   },
 
   // Smaller, cleaner tooltip bubble
   tooltipBubble: {
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingHorizontal: rp(8),
+    paddingVertical: rp(4),
+    borderRadius: rbr(6),
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.primary,
     // Subtle shadow
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
+    boxShadow: '0px 1px 2px rgba(0,0,0,0.15)',
     elevation: 2,
   },
 
@@ -410,7 +401,7 @@ const styles = StyleSheet.create({
   labelsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingHorizontal: 2,
+    paddingHorizontal: rp(2),
   },
 
   rangeLabel: {

@@ -8,7 +8,7 @@ import {
   ViewStyle,
 } from "react-native";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rh, rw } from "../../../utils/responsive";
+import { rh, rw, rbr } from "../../../utils/responsive";
 
 interface CustomSliderProps {
   minimumValue: number;
@@ -81,13 +81,13 @@ const styles = StyleSheet.create({
   track: {
     height: rh(4),
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: 2,
+    borderRadius: rbr(2),
     position: "relative",
   },
   fill: {
     height: "100%",
     backgroundColor: ResponsiveTheme.colors.primary,
-    borderRadius: 2,
+    borderRadius: rbr(2),
     position: "absolute",
     left: 0,
     top: 0,
@@ -98,17 +98,14 @@ const styles = StyleSheet.create({
     width: rw(24),
     height: rh(24),
     backgroundColor: ResponsiveTheme.colors.primary,
-    borderRadius: 12,
+    borderRadius: rbr(12),
     borderWidth: 2,
     borderColor: ResponsiveTheme.colors.white,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0,0,0,0.2)',
     elevation: 4,
   },
   thumbActive: {
     transform: [{ scale: 1.2 }],
-    shadowOpacity: 0.3,
+    boxShadow: '0px 2px 4px rgba(0,0,0,0.3)',
   },
 });

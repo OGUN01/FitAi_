@@ -17,9 +17,6 @@ export async function savePersonalInfo(
   data: PersonalInfoData | PersonalInfo,
   currentUserId: string | null,
 ): Promise<SaveResult> {
-  console.log(
-    `[DataBridge] savePersonalInfo, userId: ${currentUserId || "guest"}`,
-  );
 
   const result: SaveResult = {
     success: true,
@@ -47,9 +44,6 @@ export async function savePersonalInfo(
         );
         result.newSystemSuccess = dbSuccess;
         if (!dbSuccess) {
-          console.warn(
-            "[DataBridge] personalInfo DB save failed - queueing for retry",
-          );
           syncEngine.queueOperation("personalInfo", data);
         }
       } catch (dbError) {

@@ -3,30 +3,54 @@ import { UserAchievement } from "../../services/achievementEngine";
 
 export const achievementStorage = {
   getItem: async (name: string): Promise<string | null> => {
-    const value = await AsyncStorage.getItem(name);
-    if (!value) return null;
+    try {
+      const value = await AsyncStorage.getItem(name);
+      if (!value) return null;
 
-    const parsed = JSON.parse(value);
-    if (parsed.state?.userAchievementsArray) {
-      parsed.state.userAchievements = new Map(
-        parsed.state.userAchievementsArray,
-      );
-      delete parsed.state.userAchievementsArray;
+      try {
+        const parsed = JSON.parse(value);
+        if (parsed.state?.userAchievementsArray) {
+          parsed.state.userAchievements = new Map(
+            parsed.state.userAchievementsArray,
+          );
+          delete parsed.state.userAchievementsArray;
+        }
+        return JSON.stringify(parsed);
+      } catch {
+        console.warn(`⚠️ [achievementStorage] Corrupt data for key "${name}", clearing`);
+        await AsyncStorage.removeItem(name);
+        return null;
+      }
+    } catch (e) {
+      console.warn(`⚠️ [achievementStorage] Failed to read "${name}":`, e);
+      return null;
     }
-    return JSON.stringify(parsed);
   },
   setItem: async (name: string, value: string): Promise<void> => {
-    const parsed = JSON.parse(value);
-    if (parsed.state?.userAchievements instanceof Map) {
-      parsed.state.userAchievementsArray = Array.from(
-        parsed.state.userAchievements.entries(),
-      );
-      delete parsed.state.userAchievements;
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed.state?.userAchievements instanceof Map) {
+        parsed.state.userAchievementsArray = Array.from(
+          parsed.state.userAchievements.entries(),
+        );
+        delete parsed.state.userAchievements;
+      }
+      await AsyncStorage.setItem(name, JSON.stringify(parsed));
+    } catch (e) {
+      console.warn(`⚠️ [achievementStorage] Failed to write "${name}":`, e);
+      try {
+        await AsyncStorage.setItem(name, typeof value === 'string' ? value : JSON.stringify(value));
+      } catch {
+        // Silently fail
+      }
     }
-    await AsyncStorage.setItem(name, JSON.stringify(parsed));
   },
   removeItem: async (name: string): Promise<void> => {
-    await AsyncStorage.removeItem(name);
+    try {
+      await AsyncStorage.removeItem(name);
+    } catch (e) {
+      console.warn(`⚠️ [achievementStorage] Failed to remove "${name}":`, e);
+    }
   },
 };
 

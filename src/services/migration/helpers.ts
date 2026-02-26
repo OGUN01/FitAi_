@@ -34,7 +34,6 @@ export async function uploadToSupabase(
 
     const query = `INSERT INTO ${table} (${columns}) VALUES (${values})`;
 
-    console.log(`Uploading to ${table}:`, data);
 
     await sleep(50 + Math.random() * 100);
   } catch (error) {
@@ -53,7 +52,6 @@ export async function deleteFromSupabase(
     const projectId = "mqfrwtmkokivoxgukgsz";
     const query = `DELETE FROM ${table} WHERE id = '${id}'`;
 
-    console.log(`Deleting from ${table}: ${id}`);
     await sleep(50 + Math.random() * 100);
   } catch (error) {
     throw new Error(
@@ -70,26 +68,21 @@ export async function verifyDataInSupabase(
 
     if (context.uploadedData.user) {
       const query = `SELECT COUNT(*) as count FROM profiles WHERE id = '${context.userId}'`;
-      console.log("Verifying user profile in Supabase");
     }
 
     if (context.uploadedData.fitness) {
       const query = `SELECT COUNT(*) as count FROM workouts WHERE user_id = '${context.userId}'`;
-      console.log("Verifying fitness data in Supabase");
     }
 
     if (context.uploadedData.nutrition) {
       const query = `SELECT COUNT(*) as count FROM meals WHERE user_id = '${context.userId}'`;
-      console.log("Verifying nutrition data in Supabase");
     }
 
     if (context.uploadedData.progress) {
       const query = `SELECT COUNT(*) as count FROM progress_entries WHERE user_id = '${context.userId}'`;
-      console.log("Verifying progress data in Supabase");
     }
 
     await sleep(200 + Math.random() * 300);
-    console.log("Data verification completed successfully");
   } catch (error) {
     throw new Error(
       `Data verification failed: ${error instanceof Error ? error.message : String(error)}`,

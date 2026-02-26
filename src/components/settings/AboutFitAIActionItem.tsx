@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw } from "../../utils/responsive";
+import { rf, rw, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
 interface AboutFitAIActionItemProps {
@@ -70,7 +70,7 @@ export const AboutFitAIActionItem: React.FC<AboutFitAIActionItemProps> = ({
 const styles = StyleSheet.create({
   actionCard: {
     marginBottom: ResponsiveTheme.spacing.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
   },
   actionContent: {
     flexDirection: "row",
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: rw(40),
     height: rw(40),
-    borderRadius: rw(12),
+    borderRadius: rbr(12),
     justifyContent: "center",
     alignItems: "center",
     marginRight: ResponsiveTheme.spacing.md,
@@ -91,8 +91,8 @@ const styles = StyleSheet.create({
   actionTitle: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: "#fff",
-    marginBottom: 2,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rp(2),
   },
   actionDescription: {
     fontSize: rf(12),

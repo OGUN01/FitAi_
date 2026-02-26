@@ -67,7 +67,6 @@ export class BackupRecoveryService {
       );
 
       this.isInitialized = true;
-      console.log("Backup and recovery service initialized");
     } catch (error) {
       console.error("Failed to initialize backup service:", error);
       throw error;
@@ -119,7 +118,6 @@ export class BackupRecoveryService {
     try {
       await deleteBackup(backupId, this.config.enableCloudBackup);
       await this.refreshAvailableBackups();
-      console.log(`Backup deleted: ${backupId}`);
     } catch (error) {
       console.error(`Failed to delete backup ${backupId}:`, error);
       throw error;
@@ -153,7 +151,6 @@ export class BackupRecoveryService {
     this.stopAutoBackup();
     await this.saveBackupStatus();
     this.isInitialized = false;
-    console.log("Backup and recovery service stopped");
   }
 
   onStatusChange(callback: (status: BackupStatus) => void): () => void {

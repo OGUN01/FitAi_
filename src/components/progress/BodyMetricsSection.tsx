@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useMemo } from "react";
+import { View, Text, StyleSheet, DimensionValue } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rh } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
@@ -23,6 +23,16 @@ export const BodyMetricsSection: React.FC<BodyMetricsSectionProps> = ({
   stats,
   progressEntries,
 }) => {
+  const weightProgressWidth: DimensionValue = useMemo(() => {
+    const current = Number(stats.weight.current);
+    const goal = Number(stats.weight.goal);
+    if (current <= 0 || !isFinite(current)) {
+    return "0%" as DimensionValue;
+    }
+    const raw = ((current - goal) / current) * 100 + 50;
+    const clamped = Math.max(0, Math.min(100, isFinite(raw) ? raw : 0));
+    return `${clamped}%` as DimensionValue;
+  }, [stats.weight.current, stats.weight.goal]);
   // Helper to render trend icon
   const renderTrendIcon = (trend: string) => {
     if (trend === "stable") return null;
@@ -57,7 +67,7 @@ export const BodyMetricsSection: React.FC<BodyMetricsSectionProps> = ({
         name="create-outline"
         size={rf(12)}
         color={ResponsiveTheme.colors.textSecondary}
-        style={{ marginRight: 4 }}
+        style={{ marginRight: rp(4) }}
       />
       <Text style={styles.manualEntryText}>
         Manual{date ? ` • ${formatDate(date)}` : ""}
@@ -133,19 +143,7 @@ export const BodyMetricsSection: React.FC<BodyMetricsSectionProps> = ({
                   <View
                     style={[
                       styles.progressFill,
-                      (() => {
-                        const current = Number(stats.weight.current);
-                        const goal = Number(stats.weight.goal);
-                        if (current <= 0 || !isFinite(current)) {
-                          return { width: "0%" };
-                        }
-                        const raw = ((current - goal) / current) * 100 + 50;
-                        const clamped = Math.max(
-                          0,
-                          Math.min(100, isFinite(raw) ? raw : 0),
-                        );
-                        return { width: `${clamped}%` };
-                      })(),
+                      { width: weightProgressWidth },
                     ]}
                   />
                 </View>
@@ -265,7 +263,7 @@ export const BodyMetricsSection: React.FC<BodyMetricsSectionProps> = ({
                     name="calculator-outline"
                     size={rf(12)}
                     color={ResponsiveTheme.colors.textSecondary}
-                    style={{ marginRight: 4 }}
+                    style={{ marginRight: rp(4) }}
                   />
                   <Text style={styles.manualEntryText}>Calculated</Text>
                 </View>
@@ -293,7 +291,7 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 120,
+    minHeight: rh(120),
     padding: ResponsiveTheme.spacing.lg,
   },
   emptyIcon: {
@@ -301,13 +299,13 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   emptyTitle: {
-    fontSize: rf(16),
+    fontSize: rf(18),
     color: ResponsiveTheme.colors.textSecondary,
     fontWeight: "500",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
   emptySubtitle: {
-    fontSize: rf(14),
+    fontSize: rf(16),
     color: ResponsiveTheme.colors.textSecondary,
     opacity: 0.6,
   },
@@ -357,10 +355,10 @@ const styles = StyleSheet.create({
   manualEntry: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 4,
+    marginTop: rp(4),
   },
   manualEntryText: {
-    fontSize: rf(11),
+    fontSize: rf(12),
     color: ResponsiveTheme.colors.textSecondary,
   },
   goalProgress: {

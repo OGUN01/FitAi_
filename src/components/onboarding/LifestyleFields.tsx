@@ -188,7 +188,7 @@ export const LifestyleFields: React.FC<LifestyleFieldsProps> = ({
                   <Ionicons
                     name="sunny-outline"
                     size={rf(20)}
-                    color="#F59E0B"
+                    color={ResponsiveTheme.colors.warningAlt}
                   />
                   <Text style={styles.timeText} numberOfLines={1}>
                     {formatTimeForDisplay(formData.wake_time)}
@@ -206,7 +206,7 @@ export const LifestyleFields: React.FC<LifestyleFieldsProps> = ({
                 onPress={() => setShowSleepTimePicker(true)}
               >
                 <View style={styles.timeIconContainer}>
-                  <Ionicons name="moon-outline" size={rf(20)} color="#FF6B35" />
+                  <Ionicons name="moon-outline" size={rf(20)} color={ResponsiveTheme.colors.primary} />
                   <Text style={styles.timeText} numberOfLines={1}>
                     {formatTimeForDisplay(formData.sleep_time)}
                   </Text>
@@ -299,8 +299,8 @@ export const LifestyleFields: React.FC<LifestyleFieldsProps> = ({
 
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
-    marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginTop: ResponsiveTheme.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
     marginHorizontal: -ResponsiveTheme.spacing.lg,
   },
   sectionTitlePadded: {

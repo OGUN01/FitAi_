@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { CookingFlow } from "../../utils/cookingFlowGenerator";
 import { colors } from "../../theme/aurora-tokens";
+import { ResponsiveTheme } from '../../utils/constants';
+import { rf, rp, rbr } from '../../utils/responsive';
 
 interface NavigationButtonsProps {
   cookingFlow: CookingFlow | null;
@@ -41,7 +43,7 @@ export default function NavigationButtons({
         <Ionicons
           name="chevron-back"
           size={24}
-          color={currentStepIndex === 0 ? colors.text.disabled : "#FFFFFF"}
+          color={currentStepIndex === 0 ? colors.text.disabled : ResponsiveTheme.colors.white}
         />
         <Text
           style={[
@@ -67,7 +69,7 @@ export default function NavigationButtons({
               : "checkmark-circle-outline"
           }
           size={24}
-          color="#FFFFFF"
+          color={ResponsiveTheme.colors.white}
         />
         <Text style={styles.completeButtonText}>
           {isCurrentStepCompleted ? "Step Done ✓" : "Mark Complete"}
@@ -84,7 +86,7 @@ export default function NavigationButtons({
         <Ionicons
           name={isLastStep ? "checkmark" : "chevron-forward"}
           size={24}
-          color="#FFFFFF"
+          color={ResponsiveTheme.colors.white}
         />
       </TouchableOpacity>
     </View>
@@ -94,11 +96,11 @@ export default function NavigationButtons({
 const styles = StyleSheet.create({
   navigationSection: {
     flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: rp(16),
+    paddingVertical: rp(12),
     backgroundColor: colors.background.secondary,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.08)",
+    borderTopColor: ResponsiveTheme.colors.glassBorder,
   },
   navButton: {
     flex: 1,
@@ -106,9 +108,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.background.tertiary,
-    paddingVertical: 14,
-    borderRadius: 8,
-    marginHorizontal: 4,
+    paddingVertical: rp(14),
+    borderRadius: rbr(8),
+    marginHorizontal: rp(4),
   },
   disabledButton: {
     backgroundColor: "rgba(255, 255, 255, 0.05)",
@@ -122,26 +124,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.primary.DEFAULT,
-    paddingVertical: 14,
-    borderRadius: 8,
-    marginHorizontal: 4,
+    paddingVertical: rp(14),
+    borderRadius: rbr(8),
+    marginHorizontal: rp(4),
   },
   completedStepButton: {
     backgroundColor: colors.success.DEFAULT,
   },
   navButtonText: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "600",
-    color: "#FFFFFF",
-    marginHorizontal: 4,
+    color: ResponsiveTheme.colors.white,
+    marginHorizontal: rp(4),
   },
   disabledButtonText: {
     color: colors.text.disabled,
   },
   completeButtonText: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "600",
-    color: "#FFFFFF",
-    marginLeft: 8,
+    color: ResponsiveTheme.colors.white,
+    marginLeft: rp(8),
   },
 });

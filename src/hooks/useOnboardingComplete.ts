@@ -20,22 +20,13 @@ export const useOnboardingComplete = ({
 
   useEffect(() => {
     if (visible) {
-      console.log(
-        "🎯 OnboardingCompleteModal: Modal visible, screenWidth:",
-        screenWidth,
-        "modalWidth:",
-        modalWidth,
-      );
       haptics.success();
     }
   }, [visible, screenWidth, modalWidth]);
 
   const handleGetStarted = () => {
-    console.log("🎯 OnboardingCompleteModal: handleGetStarted called");
     haptics.medium();
-    console.log("🎯 OnboardingCompleteModal: Calling onGetStarted prop...");
     onGetStarted();
-    console.log("🎯 OnboardingCompleteModal: onGetStarted completed");
   };
 
   return {

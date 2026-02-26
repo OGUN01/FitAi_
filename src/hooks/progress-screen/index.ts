@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Animated } from "react-native";
 import { completionTrackingService } from "../../services/completionTracking";
 import { useProgressScreenState } from "./state";
@@ -15,6 +15,7 @@ import { UseProgressScreenReturn } from "./types";
 export const useProgressScreen = (navigation: any): UseProgressScreenReturn => {
   const stateValues = useProgressScreenState();
 
+  const loadMoreTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const {
     selectedPeriod,
     setSelectedPeriod,
@@ -89,15 +90,8 @@ export const useProgressScreen = (navigation: any): UseProgressScreenReturn => {
     init();
 
     const unsubscribe = completionTrackingService.subscribe((event) => {
-      console.log(
-        "[PROGRESS] Progress Tab - Received completion event:",
-        event,
-      );
 
       if (event.type === "meal" || event.type === "workout") {
-        console.log(
-          "[PROGRESS] Progress Tab - Refreshing data due to completion event",
-        );
         refreshProgressData(
           setTodaysData,
           setWeeklyProgress,
@@ -122,6 +116,9 @@ export const useProgressScreen = (navigation: any): UseProgressScreenReturn => {
 
     return () => {
       unsubscribe();
+      if (loadMoreTimeoutRef.current !== undefined) {
+        clearTimeout(loadMoreTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -198,6 +195,9 @@ export const useProgressScreen = (navigation: any): UseProgressScreenReturn => {
       setShowAnalytics,
       setShowAllActivities,
       ...actions,
+      loadMoreActivities: () => {
+        loadMoreTimeoutRef.current = actions.loadMoreActivities();
+      },
     },
   };
 };

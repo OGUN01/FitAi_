@@ -1,7 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { THEME } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
 import { colors } from "../../theme/aurora-tokens";
+import { rf, rw, rh, rbr } from "../../utils/responsive";
 
 interface HealthScoreIndicatorProps {
   score: number;
@@ -54,21 +55,21 @@ export const HealthScoreIndicator: React.FC<HealthScoreIndicatorProps> = ({
     switch (size) {
       case "small":
         return {
-          container: { width: 60, height: 60 },
-          scoreText: { fontSize: 14 },
-          labelText: { fontSize: 10 },
+          container: { width: rw(60), height: rh(60) },
+          scoreText: { fontSize: rf(14) },
+          labelText: { fontSize: rf(10) },
         };
       case "large":
         return {
-          container: { width: 100, height: 100 },
-          scoreText: { fontSize: 24 },
-          labelText: { fontSize: 14 },
+          container: { width: rw(100), height: rh(100) },
+          scoreText: { fontSize: rf(24) },
+          labelText: { fontSize: rf(14) },
         };
       default:
         return {
-          container: { width: 80, height: 80 },
-          scoreText: { fontSize: 18 },
-          labelText: { fontSize: 12 },
+          container: { width: rw(80), height: rh(80) },
+          scoreText: { fontSize: rf(18) },
+          labelText: { fontSize: rf(12) },
         };
     }
   };
@@ -111,7 +112,7 @@ const styles = StyleSheet.create({
   },
 
   scoreCircle: {
-    borderRadius: 50,
+    borderRadius: rbr(50),
     borderWidth: 3,
     alignItems: "center",
     justifyContent: "center",
@@ -119,29 +120,29 @@ const styles = StyleSheet.create({
   },
 
   scoreText: {
-    fontWeight: THEME.fontWeight.bold as "700",
-    lineHeight: 20,
+    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
+    lineHeight: rf(20),
   },
 
   scoreUnit: {
-    fontSize: 8,
-    color: THEME.colors.textSecondary,
+    fontSize: rf(8),
+    color: ResponsiveTheme.colors.textSecondary,
     marginTop: -2,
   },
 
   labelContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: THEME.spacing.xs,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
 
   iconText: {
-    fontSize: 12,
-    marginRight: THEME.spacing.xs,
+    fontSize: rf(12),
+    marginRight: ResponsiveTheme.spacing.xs,
   },
 
   labelText: {
-    fontWeight: THEME.fontWeight.semibold as "600",
+    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
     textAlign: "center",
   },
 });

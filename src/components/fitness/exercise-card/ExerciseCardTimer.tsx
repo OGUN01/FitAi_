@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { THEME } from "../../ui";
+import { ResponsiveTheme } from "../../../utils/constants";
 
 interface ExerciseCardTimerProps {
   showTimer: boolean;
@@ -27,19 +27,19 @@ export const ExerciseCardTimer: React.FC<ExerciseCardTimerProps> = ({
 const styles = StyleSheet.create({
   timerSection: {
     alignItems: "center" as const,
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   timerDisplay: {
-    backgroundColor: THEME.colors.warning,
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.sm,
-    borderRadius: THEME.borderRadius.md,
+    backgroundColor: ResponsiveTheme.colors.warning,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
   timerText: {
-    color: THEME.colors.white,
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.bold,
+    color: ResponsiveTheme.colors.white,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
   },
 });

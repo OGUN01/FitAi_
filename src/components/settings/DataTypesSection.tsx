@@ -1,7 +1,8 @@
 import React from "react";
 import { View, Text, Switch } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr, rs } from '../../utils/responsive';
 
 interface HealthDataType {
   key: string;
@@ -24,19 +25,19 @@ export const DataTypesSection: React.FC<DataTypesSectionProps> = ({
   return (
     <View
       style={{
-        backgroundColor: THEME.colors.surface,
-        marginHorizontal: 16,
-        marginBottom: 16,
-        borderRadius: 12,
-        padding: 16,
+        backgroundColor: ResponsiveTheme.colors.surface,
+        marginHorizontal: rp(16),
+        marginBottom: rp(16),
+        borderRadius: rbr(12),
+        padding: rp(16),
       }}
     >
       <Text
         style={{
-          fontSize: 16,
+          fontSize: rf(16),
           fontWeight: "600",
-          color: THEME.colors.text,
-          marginBottom: 12,
+          color: ResponsiveTheme.colors.text,
+          marginBottom: rp(12),
         }}
       >
         Data Types to Sync
@@ -48,32 +49,32 @@ export const DataTypesSection: React.FC<DataTypesSectionProps> = ({
           style={{
             flexDirection: "row",
             alignItems: "center",
-            paddingVertical: 12,
+            paddingVertical: rp(12),
             borderTopWidth: index > 0 ? 1 : 0,
-            borderTopColor: THEME.colors.border,
+            borderTopColor: ResponsiveTheme.colors.border,
           }}
         >
           <Ionicons
             name={dataType.icon}
-            size={24}
-            color={THEME.colors.primary}
-            style={{ marginRight: 12 }}
+            size={rs(24)}
+            color={ResponsiveTheme.colors.primary}
+            style={{ marginRight: rp(12) }}
           />
           <View style={{ flex: 1 }}>
             <Text
               style={{
-                fontSize: 16,
+                fontSize: rf(16),
                 fontWeight: "500",
-                color: THEME.colors.text,
+              color: ResponsiveTheme.colors.text,
               }}
             >
               {dataType.title}
             </Text>
             <Text
               style={{
-                fontSize: 14,
-                color: THEME.colors.textSecondary,
-                marginTop: 2,
+                fontSize: rf(14),
+              color: ResponsiveTheme.colors.textSecondary,
+                marginTop: rp(2),
               }}
             >
               {dataType.description}
@@ -83,8 +84,8 @@ export const DataTypesSection: React.FC<DataTypesSectionProps> = ({
             value={enabledDataTypes[dataType.key]}
             onValueChange={(value) => onToggle(dataType.key, value)}
             trackColor={{
-              false: THEME.colors.border,
-              true: THEME.colors.primary,
+              false: ResponsiveTheme.colors.border,
+              true: ResponsiveTheme.colors.primary,
             }}
           />
         </View>

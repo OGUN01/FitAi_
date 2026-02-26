@@ -95,7 +95,6 @@ class DataBridge {
   setUserId(userId: string | null): void {
     this.currentUserId = userId;
     if (userId) syncEngine.setUserId(userId);
-    console.log(`[DataBridge] User ID set to: ${userId || "guest"}`);
   }
 
   getUserId(): string | null {
@@ -107,7 +106,6 @@ class DataBridge {
 
   setOnlineStatus(online: boolean): void {
     this.isOnline = online;
-    console.log(`[DataBridge] Online status: ${online}`);
   }
 
   getOnlineStatus(): boolean {
@@ -116,11 +114,9 @@ class DataBridge {
 
   async initialize(): Promise<void> {
     if (this.isInitialized) {
-      console.log("[DataBridge] Already initialized");
       return;
     }
     try {
-      console.log("[DataBridge] Initializing...");
       const data = await loadFromLocal();
       if (data.personalInfo) {
         const store = useProfileStore.getState();
@@ -139,7 +135,6 @@ class DataBridge {
           store.updateAdvancedReview(data.advancedReview);
       }
       this.isInitialized = true;
-      console.log("[DataBridge] Initialization complete");
     } catch (error) {
       console.error("[DataBridge] Initialization error:", error);
       this.isInitialized = true;

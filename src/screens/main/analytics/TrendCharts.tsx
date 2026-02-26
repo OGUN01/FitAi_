@@ -36,7 +36,7 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
         <SectionHeader
           title="Detailed Analytics"
           icon="bar-chart"
-          iconColor="#FF6B35"
+          iconColor={ResponsiveTheme.colors.primary}
         />
       </View>
 
@@ -44,27 +44,27 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
         <ChartCard
           title="Weight Progress"
           icon="trending-down"
-          iconColor="#FF6B35"
+          iconColor={ResponsiveTheme.colors.primary}
           legend={
             weightData && weightData.length > 0
-              ? [{ color: "#FF6B35", label: "Weight" }]
+              ? [{ color: ResponsiveTheme.colors.primary, label: "Weight" }]
               : undefined
           }
           delay={0}
           onPress={() => onChartPress?.("weight")}
         >
-          <LineChart data={weightData || []} color="#FF6B35" unit="kg" />
+          <LineChart data={weightData || []} color={ResponsiveTheme.colors.primary} unit="kg" />
         </ChartCard>
 
         <ChartCard
           title="Calorie Analysis"
           icon="flame"
-          iconColor="#FF9800"
+          iconColor={ResponsiveTheme.colors.warning}
           legend={
             calorieData && calorieData.length > 0
               ? [
-                  { color: "#4CAF50", label: "Consumed" },
-                  { color: "#FF9800", label: "Burned" },
+                  { color: ResponsiveTheme.colors.success, label: "Consumed" },
+                  { color: ResponsiveTheme.colors.warning, label: "Burned" },
                 ]
               : undefined
           }
@@ -74,8 +74,8 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
           {calorieData && calorieData.length > 0 ? (
             <BarChart
               data={calorieData}
-              color="#4CAF50"
-              gradientColors={["#4CAF50", "#8BC34A"]}
+              color={ResponsiveTheme.colors.success}
+              gradientColors={[ResponsiveTheme.colors.success, ResponsiveTheme.colors.successLight]}
             />
           ) : (
             <View style={styles.emptyChart}>
@@ -97,15 +97,15 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
         <ChartCard
           title="Workout Consistency"
           icon="barbell"
-          iconColor="#2196F3"
+          iconColor={ResponsiveTheme.colors.info}
           delay={200}
           onPress={() => onChartPress?.("workouts")}
         >
           {workoutData && workoutData.length > 0 ? (
             <BarChart
               data={workoutData}
-              color="#2196F3"
-              gradientColors={["#2196F3", "#64B5F6"]}
+              color={ResponsiveTheme.colors.info}
+              gradientColors={[ResponsiveTheme.colors.info, ResponsiveTheme.colors.info]}
               maxValue={Math.max(...workoutData.map((d) => d.value), 4)}
             />
           ) : (

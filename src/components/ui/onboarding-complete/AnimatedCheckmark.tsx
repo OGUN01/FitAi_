@@ -3,7 +3,7 @@ import { Animated, Easing, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf } from "../../../utils/responsive";
+import { rf, rs, rbr } from "../../../utils/responsive";
 
 export const AnimatedCheckmark: React.FC = () => {
   const scale = useRef(new Animated.Value(0)).current;
@@ -48,12 +48,12 @@ export const AnimatedCheckmark: React.FC = () => {
       ]}
     >
       <LinearGradient
-        colors={["#10b981", "#059669"]}
+        colors={[ResponsiveTheme.colors.successAlt, ResponsiveTheme.colors.successAltDark]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.checkmarkGradient}
       >
-        <Ionicons name="checkmark" size={rf(48)} color="#fff" />
+        <Ionicons name="checkmark" size={rf(48)} color={ResponsiveTheme.colors.white} />
       </LinearGradient>
     </Animated.View>
   );
@@ -65,15 +65,12 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.lg,
   },
   checkmarkGradient: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: rs(80),
+    height: rs(80),
+    borderRadius: rbr(40),
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#10b981",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
+    boxShadow: '0px 8px 16px rgba(16,185,129,0.4)',
     elevation: 10,
   },
 });

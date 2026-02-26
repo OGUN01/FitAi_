@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { safeAsyncStorage } from "../../utils/safeAsyncStorage";
 import type { HealthDataState } from "./types";
 import { initialState } from "./state";
 import { createHealthKitActions } from "./healthkit-actions";
@@ -21,7 +22,7 @@ export const useHealthDataStore = create<HealthDataState>()(
     }),
     {
       name: "fitai-health-data-store",
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => safeAsyncStorage),
       partialize: (state) => ({
         metrics: state.metrics,
         settings: state.settings,

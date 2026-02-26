@@ -672,7 +672,7 @@ export const useAIMealGeneration = () => {
       );
 
       if (response.success && response.data) {
-        setAiMeals((prev) => [...response.data!.meals, ...prev]);
+        setAiMeals((prev) => [...(response.data!.meals as unknown as DayMeal[]), ...prev]);
         Alert.alert("Daily Meal Plan Generated!", "Your plan is ready!");
       } else {
         setAiError(response.error || "Failed to generate plan");

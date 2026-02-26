@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rh } from "../../../utils/responsive";
+import { rh, rbr } from "../../../utils/responsive";
 
 interface ProgressIndicatorProps {
   currentIndex: number;
@@ -49,12 +49,12 @@ const styles = StyleSheet.create({
   progressBar: {
     height: rh(4),
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: 2,
+    borderRadius: rbr(2),
   },
 
   progressFill: {
     height: "100%",
     backgroundColor: ResponsiveTheme.colors.primary,
-    borderRadius: 2,
+    borderRadius: rbr(2),
   },
 });

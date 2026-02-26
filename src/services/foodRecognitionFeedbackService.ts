@@ -34,14 +34,6 @@ export class FoodRecognitionFeedbackService {
     error?: string;
   }> {
     try {
-      console.log("📝 Submitting food recognition feedback:", {
-        userId,
-        mealId,
-        feedbackCount: feedback.length,
-        averageRating:
-          feedback.reduce((sum, f) => sum + f.accuracyRating, 0) /
-          feedback.length,
-      });
 
       // Calculate overall feedback statistics
       const stats = this.calculateFeedbackStats(feedback, recognizedFoods);
@@ -81,9 +73,6 @@ export class FoodRecognitionFeedbackService {
         .single();
       let { data, error } = insertRes;
       if (error) {
-        console.log(
-          "📝 Feedback table may not exist, attempting to store in alternative location...",
-        );
         const alt = await this.storeFeedbackAlternative(feedbackData);
         data = alt.data;
         error = alt.error;
@@ -100,10 +89,6 @@ export class FoodRecognitionFeedbackService {
       // Update recognition accuracy tracking
       await this.updateAccuracyMetrics(stats);
 
-      console.log(
-        "✅ Feedback submitted successfully:",
-        data?.id || "alternative-storage",
-      );
 
       return {
         success: true,
@@ -139,11 +124,6 @@ export class FoodRecognitionFeedbackService {
         .single();
       if (error) {
         // If that fails too, just log it locally and return success
-        console.log("📝 Stored feedback locally for future sync:", {
-          feedbackId: `local_${Date.now()}`,
-          userId: feedbackData.user_id,
-          submittedAt: feedbackData.submitted_at,
-        });
 
         return {
           data: { id: `local_${Date.now()}` },
@@ -153,9 +133,6 @@ export class FoodRecognitionFeedbackService {
 
       return { data, error };
     } catch (error) {
-      console.warn(
-        "Warning: All feedback storage methods failed, storing locally",
-      );
       return {
         data: { id: `local_${Date.now()}` },
         error: null,
@@ -300,15 +277,9 @@ export class FoodRecognitionFeedbackService {
         .select()
         .single();
       if (accError) {
-        console.log(
-          "📊 Accuracy metrics table not available, skipping update:",
-          accError.message,
-        );
       }
 
-      console.log("📊 Updated accuracy metrics with new feedback");
     } catch (error) {
-      console.warn("Warning: Failed to update accuracy metrics:", error);
     }
   }
 
@@ -342,7 +313,6 @@ export class FoodRecognitionFeedbackService {
       const { data, error } = await query;
 
       if (error || !data) {
-        console.log("📊 No feedback data available for statistics");
         return {
           totalFeedbacks: 0,
           averageRating: 0,

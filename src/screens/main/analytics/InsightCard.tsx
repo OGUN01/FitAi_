@@ -36,8 +36,8 @@ const getInsightConfig = (type: InsightType) => {
     case "positive":
       return {
         icon: "checkmark-circle" as const,
-        color: "#4CAF50",
-        gradientColors: ["rgba(76,175,80,0.15)", "rgba(76,175,80,0.05)"] as [
+        color: ResponsiveTheme.colors.success,
+        gradientColors: [ResponsiveTheme.colors.successTint, "rgba(76,175,80,0.05)"] as [
           string,
           string,
         ],
@@ -46,8 +46,8 @@ const getInsightConfig = (type: InsightType) => {
     case "negative":
       return {
         icon: "alert-circle" as const,
-        color: "#F44336",
-        gradientColors: ["rgba(244,67,54,0.15)", "rgba(244,67,54,0.05)"] as [
+        color: ResponsiveTheme.colors.error,
+        gradientColors: [ResponsiveTheme.colors.errorTint, "rgba(244,67,54,0.05)"] as [
           string,
           string,
         ],
@@ -56,8 +56,8 @@ const getInsightConfig = (type: InsightType) => {
     case "neutral":
       return {
         icon: "information-circle" as const,
-        color: "#FF9800",
-        gradientColors: ["rgba(255,152,0,0.15)", "rgba(255,152,0,0.05)"] as [
+        color: ResponsiveTheme.colors.warning,
+        gradientColors: [ResponsiveTheme.colors.warningTint, "rgba(255,152,0,0.05)"] as [
           string,
           string,
         ],
@@ -66,7 +66,7 @@ const getInsightConfig = (type: InsightType) => {
     case "achievement":
       return {
         icon: "trophy" as const,
-        color: "#FFD700",
+        color: ResponsiveTheme.colors.gold,
         gradientColors: ["rgba(255,215,0,0.15)", "rgba(255,215,0,0.05)"] as [
           string,
           string,
@@ -76,9 +76,9 @@ const getInsightConfig = (type: InsightType) => {
     case "recommendation":
       return {
         icon: "bulb" as const,
-        color: "#FF6B35",
+        color: ResponsiveTheme.colors.primary,
         gradientColors: [
-          "rgba(255, 107, 53, 0.15)",
+          ResponsiveTheme.colors.primaryTint,
           "rgba(255, 107, 53, 0.05)",
         ] as [string, string],
         borderColor: "rgba(255, 107, 53, 0.3)",
@@ -86,7 +86,7 @@ const getInsightConfig = (type: InsightType) => {
     default:
       return {
         icon: "information-circle" as const,
-        color: "#9E9E9E",
+        color: ResponsiveTheme.colors.neutral,
         gradientColors: [
           "rgba(158,158,158,0.15)",
           "rgba(158,158,158,0.05)",
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   confidenceBar: {
     flex: 1,
     height: rh(4),
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: ResponsiveTheme.colors.glassHighlight,
     borderRadius: rh(2),
     overflow: "hidden",
   },

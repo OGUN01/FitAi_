@@ -251,7 +251,6 @@ class FitnessDataService {
         .single();
 
       if (error) {
-        console.warn("Error fetching fitness goals:", error);
         return {
           success: false,
           error: error.message,
@@ -263,7 +262,6 @@ class FitnessDataService {
         data,
       };
     } catch (error) {
-      console.warn("Error in getUserFitnessGoals:", error);
       return {
         success: false,
         error:
@@ -538,9 +536,6 @@ class FitnessDataService {
 
       // For now, just return the workout without exercises
       // Exercise creation and linking skipped - pending exercise database population
-      console.log(
-        "Workout created successfully. Exercise linking skipped for now.",
-      );
 
       return {
         success: true,

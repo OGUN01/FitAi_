@@ -1,9 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
-import { colors } from "../../theme/aurora-tokens";
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
 
 interface AchievementsSectionProps {
@@ -13,6 +12,13 @@ interface AchievementsSectionProps {
 export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
   achievements,
 }) => {
+  const rarityStyleMap: Record<string, ViewStyle> = {
+    common: styles.rarityCommon,
+    uncommon: styles.rarityUncommon,
+    rare: styles.rarityRare,
+    epic: styles.rarityEpic,
+  };
+
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Achievements</Text>
@@ -34,7 +40,7 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
               ]}
             >
               <Ionicons
-                name={(achievement as any).iconName}
+                name={achievement.iconName}
                 size={rf(24)}
                 color={
                   achievement.completed
@@ -91,17 +97,11 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
               <View
                 style={[
                   styles.rarityBadge,
-                  // @ts-ignore - dynamic style access
-                  styles[
-                    `rarity${
-                      achievement.rarity.charAt(0).toUpperCase() +
-                      achievement.rarity.slice(1)
-                    }`
-                  ],
+                  rarityStyleMap[(achievement.rarity || "common")] ?? styles.rarityCommon,
                 ]}
               >
                 <Text style={styles.rarityText}>
-                  {achievement.rarity.toUpperCase()}
+                  {(achievement.rarity || "common").toUpperCase()}
                 </Text>
               </View>
             </View>
@@ -235,9 +235,9 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 152, 0, 0.3)",
   },
   rarityText: {
-    fontSize: rf(8),
+    fontSize: rf(10),
     fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: colors.text.primary,
+    color: ResponsiveTheme.colors.text,
   },
   achievementDate: {
     fontSize: ResponsiveTheme.fontSize.xs,

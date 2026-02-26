@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { ResponsiveTheme } from "../../../../utils/constants";
-import { rf, rh } from "../../../../utils/responsive";
+import { rf, rh, rp } from "../../../../utils/responsive";
 
 export interface ChartData {
   label: string;
@@ -84,6 +84,6 @@ const styles = StyleSheet.create({
     fontSize: rf(10),
     fontWeight: "700",
     color: ResponsiveTheme.colors.text,
-    marginTop: 2,
+    marginTop: rp(2),
   },
 });

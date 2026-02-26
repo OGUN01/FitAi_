@@ -36,19 +36,17 @@ function validateSupabaseResponse(
 // Map LocalWorkoutSession camelCase fields to Supabase snake_case columns
 function mapSessionToDb(data: Record<string, unknown>) {
   return {
+    id: data.id,
     user_id: data.userId,
-    workout_plan_id: null, // data.workoutId is not a UUID FK to user_workout_plans
-    workout_name: typeof data.notes === 'string' ? data.notes?.split(' - ')[1] || 'Workout' : 'Workout',
-    workout_type: 'general',
+    workout_id: data.workoutId || null,
     started_at: data.startedAt,
     completed_at: data.completedAt,
-    total_duration_minutes: data.duration,
+    duration: data.duration,
     calories_burned: data.caloriesBurned,
-    exercises_completed: data.exercises,
+    exercises: data.exercises,
     notes: data.notes || '',
-    enjoyment_rating: data.rating || 0,
+    rating: data.rating || 0,
     is_completed: data.isCompleted,
-    completion_percentage: data.isCompleted ? 100 : 0,
   };
 }
 
@@ -59,9 +57,6 @@ export async function executeAction(action: OfflineAction): Promise<void> {
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(
-        `🔄 Attempting ${type} on ${table} (attempt ${attempt}/${maxRetries})`,
-      );
 
       switch (type) {
         case "CREATE":
@@ -75,7 +70,6 @@ export async function executeAction(action: OfflineAction): Promise<void> {
           if (!createValidation.valid) {
             throw new Error(createValidation.error);
           }
-          console.log(`✅ Successfully created record in ${table}`);
           break;
 
         case "UPDATE":
@@ -118,9 +112,6 @@ export async function executeAction(action: OfflineAction): Promise<void> {
           if (!deleteValidation.valid) {
             throw new Error(deleteValidation.error);
           }
-          console.log(
-            `✅ Successfully deleted record ${data.id} from ${table}`,
-          );
           break;
 
         default:
@@ -137,13 +128,11 @@ export async function executeAction(action: OfflineAction): Promise<void> {
 
       if (attempt < maxRetries) {
         const backoffDelay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
-        console.log(`⏳ Retrying in ${backoffDelay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, backoffDelay));
       }
     }
   }
 
   const errorMessage = `Failed to execute ${type} on ${table} after ${maxRetries} attempts: ${lastError?.message}`;
-  console.error(errorMessage);
   throw new Error(errorMessage);
 }

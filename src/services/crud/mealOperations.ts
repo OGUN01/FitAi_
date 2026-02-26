@@ -6,23 +6,13 @@ export async function createMealLog(
   initialize: () => Promise<void>,
 ): Promise<void> {
   try {
-    console.log("🍽️ Creating meal log:", {
-      id: mealLog.id,
-      userId: mealLog.userId || "local-user",
-      mealType: mealLog.mealType,
-      foodCount: mealLog.foods?.length || 0,
-      calories: mealLog.totalCalories,
-    });
 
     await initialize();
     await dataBridge.storeMealLog(mealLog);
-    console.log(`✅ Meal log ${mealLog.id} created successfully`);
 
     const stored = await readMealLog(mealLog.id, initialize);
     if (!stored) {
-      console.warn("⚠️ Meal log was not found after creation");
     } else {
-      console.log("✅ Meal log verified in storage");
     }
   } catch (error) {
     console.error("❌ Failed to create meal log:", error);
@@ -78,7 +68,6 @@ export async function updateMealLog(
     };
 
     await dataBridge.storeMealLog(updated);
-    console.log(`Meal log ${logId} updated successfully`);
   } catch (error) {
     console.error("Failed to update meal log:", error);
     throw error;
@@ -99,7 +88,6 @@ export async function deleteMealLog(
       },
       initialize,
     );
-    console.log(`Meal log ${logId} marked as deleted`);
   } catch (error) {
     console.error("Failed to delete meal log:", error);
     throw error;

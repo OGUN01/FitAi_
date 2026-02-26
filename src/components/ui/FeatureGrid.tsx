@@ -15,7 +15,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rp } from "../../utils/responsive";
+import { rf, rp, rbr } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 
 export interface FeatureItem {
@@ -114,10 +114,10 @@ const FeatureGridItem: React.FC<{
       {selectable && item.selected && (
         <View style={styles.selectionIndicator}>
           <LinearGradient
-            colors={["#4CAF50", "#45A049"]}
+            colors={[ResponsiveTheme.colors.success, ResponsiveTheme.colors.success]}
             style={styles.selectionIndicatorGradient}
           >
-            <Ionicons name="checkmark" size={rf(14)} color="#FFFFFF" />
+            <Ionicons name="checkmark" size={rf(14)} color={ResponsiveTheme.colors.white} />
           </LinearGradient>
         </View>
       )}
@@ -182,10 +182,7 @@ const styles = StyleSheet.create({
     position: "relative",
     borderRadius: ResponsiveTheme.borderRadius.lg,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
     elevation: 3,
   },
 
@@ -194,7 +191,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 100,
+    minHeight: rp(100),
     borderWidth: 2,
     borderColor: "transparent",
     borderRadius: ResponsiveTheme.borderRadius.lg,
@@ -221,16 +218,13 @@ const styles = StyleSheet.create({
 
   selectionIndicator: {
     position: "absolute",
-    top: 8,
-    right: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    top: rp(8),
+    right: rp(8),
+    width: rp(24),
+    height: rp(24),
+    borderRadius: rbr(12),
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    boxShadow: "0px 2px 4px 0px rgba(0,0,0,0.3)",
     elevation: 5,
   },
 

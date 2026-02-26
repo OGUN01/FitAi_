@@ -9,7 +9,7 @@ import Animated, {
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rw } from "../../../utils/responsive";
+import { rf, rw, rp } from "../../../utils/responsive";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { Alternative } from "../../../hooks/useAdjustmentWizard";
 import { MetricPill } from "./MetricPill";
@@ -105,7 +105,7 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
                 </Text>
                 {isRecommended && (
                   <View style={styles.recommendedBadge}>
-                    <Ionicons name="star" size={rf(10)} color="#F59E0B" />
+                    <Ionicons name="star" size={rf(10)} color={ResponsiveTheme.colors.warningAlt} />
                     <Text style={styles.recommendedText}>Recommended</Text>
                   </View>
                 )}
@@ -119,7 +119,7 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
                 ]}
               >
                 {isSelected && (
-                  <Ionicons name="checkmark" size={rf(14)} color="#fff" />
+                  <Ionicons name="checkmark" size={rf(14)} color={ResponsiveTheme.colors.white} />
                 )}
               </View>
             </View>
@@ -142,7 +142,7 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
                   icon="fitness-outline"
                   label="Target"
                   value={`${alternative.newTargetWeight} kg`}
-                  color="#10B981"
+                  color={ResponsiveTheme.colors.successAlt}
                 />
               )}
               <MetricPill
@@ -156,14 +156,14 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
                   icon="barbell-outline"
                   label="Workouts"
                   value={`${alternative.newWorkoutFrequency}×/wk`}
-                  color="#FF8A5C"
+                  color={ResponsiveTheme.colors.accent}
                 />
               )}
               <MetricPill
                 icon="trending-down-outline"
                 label="Rate"
                 value={`${alternative.weeklyRate != null ? alternative.weeklyRate.toFixed(2) : "--"} kg/wk`}
-                color="#EC4899"
+                color={ResponsiveTheme.colors.pink}
               />
             </View>
 
@@ -175,7 +175,7 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
                   <Ionicons
                     name="checkmark-circle"
                     size={rf(14)}
-                    color="#10B981"
+                    color={ResponsiveTheme.colors.successAlt}
                   />
                   <Text style={styles.prosTitle}>Benefits</Text>
                 </View>
@@ -192,7 +192,7 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
               {/* Cons */}
               <View style={styles.consSection}>
                 <View style={styles.consHeader}>
-                  <Ionicons name="alert-circle" size={rf(14)} color="#F59E0B" />
+                  <Ionicons name="alert-circle" size={rf(14)} color={ResponsiveTheme.colors.warningAlt} />
                   <Text style={styles.consTitle}>Trade-offs</Text>
                 </View>
                 {(alternative.cons || []).slice(0, 2).map((con, i) => (
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: 2,
+    padding: rp(2),
   },
   selectionGradient: {
     flex: 1,
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     fontSize: rf(15),
     fontWeight: "600",
     color: ResponsiveTheme.colors.text,
-    marginBottom: 2,
+    marginBottom: rp(2),
   },
   cardTitleSelected: {
     color: ResponsiveTheme.colors.primary,
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(245, 158, 11, 0.15)",
-    paddingVertical: 2,
+    paddingVertical: rp(2),
     paddingHorizontal: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.sm,
     alignSelf: "flex-start",
@@ -276,8 +276,8 @@ const styles = StyleSheet.create({
   recommendedText: {
     fontSize: rf(9),
     fontWeight: "600",
-    color: "#F59E0B",
-    marginLeft: 3,
+    color: ResponsiveTheme.colors.warningAlt,
+    marginLeft: rp(3),
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
@@ -326,35 +326,35 @@ const styles = StyleSheet.create({
   prosHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 4,
+    marginBottom: rp(4),
   },
   consHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 4,
+    marginBottom: rp(4),
   },
   prosTitle: {
     fontSize: rf(10),
     fontWeight: "600",
-    color: "#10B981",
-    marginLeft: 4,
+    color: ResponsiveTheme.colors.successAlt,
+    marginLeft: rp(4),
     textTransform: "uppercase",
   },
   consTitle: {
     fontSize: rf(10),
     fontWeight: "600",
-    color: "#F59E0B",
-    marginLeft: 4,
+    color: ResponsiveTheme.colors.warningAlt,
+    marginLeft: rp(4),
     textTransform: "uppercase",
   },
   prosText: {
     fontSize: rf(10),
     color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: 2,
+    marginBottom: rp(2),
   },
   consText: {
     fontSize: rf(10),
     color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: 2,
+    marginBottom: rp(2),
   },
 });

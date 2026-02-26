@@ -1,6 +1,6 @@
-import React from "react";
-import { View, StyleSheet, SafeAreaView, StatusBar } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import React, { useMemo } from "react";
+import { View, StyleSheet, StatusBar } from "react-native";
+import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { ResponsiveTheme } from "../../utils/constants";
 import { useOnboardingLogic } from "../../hooks/useOnboardingLogic";
 import OnboardingProgressIndicator from "../../components/onboarding/OnboardingProgressIndicator";
@@ -33,29 +33,33 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = (
 
   const logic = useOnboardingLogic(props);
 
+  const canJumpToReview =
+    logic.completedTabs.has(4) || logic.completedTabs.has(5);
+
+  const commonProps = useMemo(() => ({
+    onNext: logic.handleNextTab,
+    onBack: logic.handlePreviousTab,
+    onNavigateToTab: canJumpToReview ? logic.setCurrentTab : undefined,
+    isLoading: logic.isLoading,
+    isAutoSaving: logic.isAutoSaving,
+    isNavigating: logic.isNavigating,
+    isSaving: logic.isSaving,
+    isEditingFromReview: logic.isEditingFromReview,
+    onReturnToReview: logic.handleReturnToReview,
+  }), [
+    logic.handleNextTab,
+    logic.handlePreviousTab,
+    canJumpToReview,
+    logic.setCurrentTab,
+    logic.isLoading,
+    logic.isAutoSaving,
+    logic.isNavigating,
+    logic.isSaving,
+    logic.isEditingFromReview,
+    logic.handleReturnToReview,
+  ]);
+
   const renderTabContent = () => {
-    console.log(
-      "🎭 OnboardingContainer: renderTabContent, currentTab:",
-      logic.currentTab,
-      "isEditingFromReview:",
-      logic.isEditingFromReview,
-    );
-
-    const canJumpToReview =
-      logic.completedTabs.has(4) || logic.completedTabs.has(5);
-
-    const commonProps = {
-      onNext: logic.handleNextTab,
-      onBack: logic.handlePreviousTab,
-      onNavigateToTab: canJumpToReview ? logic.setCurrentTab : undefined,
-      isLoading: logic.isLoading,
-      isAutoSaving: logic.isAutoSaving,
-      isNavigating: logic.isNavigating,
-      isSaving: logic.isSaving,
-      isEditingFromReview: logic.isEditingFromReview,
-      onReturnToReview: logic.handleReturnToReview,
-    };
-
     switch (logic.currentTab) {
       case 1:
         return (
@@ -164,7 +168,7 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = (
       <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <OnboardingHeader
           activeTab={logic.currentTab}
-          tabs={logic.getTabConfigs()}
+          tabs={logic.tabConfigs}
           onTabPress={logic.handleTabPress}
           completionPercentage={logic.overallCompletion}
           editMode={props.editMode}
@@ -179,9 +183,7 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = (
           workoutPreferences={logic.workoutPreferences}
           advancedReview={logic.advancedReview}
           onCompletionGetStarted={logic.handleCompletionGetStarted}
-          onDismissDialog={() =>
-            logic.setCompletionDialog((prev) => ({ ...prev, visible: false }))
-          }
+          onDismissDialog={logic.handleDismissDialog}
         />
       </View>
     </AuroraBackground>

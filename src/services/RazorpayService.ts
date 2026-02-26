@@ -170,7 +170,7 @@ class RazorpayService {
           ? errorObj.description
           : "Payment could not be completed";
 
-      if (code === 0 || description.includes("cancelled")) {
+      if (code === 0 || code === "0" || description.includes("cancelled")) {
         throw new RazorpayServiceError(
           "Checkout was cancelled",
           "CHECKOUT_CANCELLED",

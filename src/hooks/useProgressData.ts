@@ -8,6 +8,7 @@ import {
 } from "../services/progressData";
 import { useAuth } from "./useAuth";
 import useTrackBIntegration from "./useTrackBIntegration";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface UseProgressDataReturn {
   // Progress entries
@@ -104,21 +105,47 @@ export const useProgressData = (): UseProgressDataReturn => {
   // Load progress entries
   const loadProgressEntries = useCallback(
     async (limit?: number) => {
-      if (!user?.id) return;
-
       setProgressLoading(true);
       setProgressError(null);
 
       try {
-        const response = await progressDataService.getUserProgressEntries(
-          user.id,
-          limit,
-        );
+        if (user?.id) {
+          // Authenticated user: load from Supabase
+          const response = await progressDataService.getUserProgressEntries(
+            user.id,
+            limit,
+          );
 
-        if (response.success && response.data) {
-          setProgressEntries(response.data);
+          if (response.success && response.data) {
+            setProgressEntries(response.data);
+          } else {
+            setProgressError(response.error || "Failed to load progress entries");
+          }
         } else {
-          setProgressError(response.error || "Failed to load progress entries");
+          // Guest user: load from AsyncStorage
+          const existingData = await AsyncStorage.getItem("guest_weight_entries");
+          if (existingData) {
+            const guestEntries = JSON.parse(existingData) as Array<{
+              id: string;
+              weight_kg: number;
+              body_fat_percentage?: number;
+              notes?: string;
+              created_at: string;
+            }>;
+            const mapped: ProgressEntry[] = guestEntries.map((entry) => ({
+              id: entry.id,
+              user_id: "guest",
+              entry_date: entry.created_at,
+              weight_kg: entry.weight_kg,
+              body_fat_percentage: entry.body_fat_percentage,
+              muscle_mass_kg: undefined,
+              measurements: {},
+              notes: entry.notes,
+              recorded_at: entry.created_at,
+              created_at: entry.created_at,
+            }));
+            setProgressEntries(mapped);
+          }
         }
       } catch (error) {
         setProgressError(
@@ -262,23 +289,25 @@ export const useProgressData = (): UseProgressDataReturn => {
 
   // Refresh all data
   const refreshAll = useCallback(async () => {
-    if (!isAuthenticated || !user?.id) return;
-
-    await Promise.all([
-      loadProgressEntries(),
-      loadBodyAnalysis(),
-      loadProgressStats(),
-      loadProgressGoals(),
-    ]);
+    if (user?.id) {
+      // Authenticated: load all from Supabase
+      await Promise.all([
+        loadProgressEntries(),
+        loadBodyAnalysis(),
+        loadProgressStats(),
+        loadProgressGoals(),
+      ]);
+    } else {
+      // Guest: only load local weight entries
+      await loadProgressEntries();
+    }
   }, [
-    isAuthenticated,
     user?.id,
     loadProgressEntries,
     loadBodyAnalysis,
     loadProgressStats,
     loadProgressGoals,
   ]);
-
   // Clear all errors
   const clearErrors = useCallback(() => {
     setProgressError(null);
@@ -287,14 +316,21 @@ export const useProgressData = (): UseProgressDataReturn => {
     setGoalsError(null);
   }, []);
 
-  // Load initial data when user is authenticated
+  // Load initial data when user is authenticated OR guest has local data
   useEffect(() => {
     let isMounted = true;
 
-    if (isAuthenticated && user?.id && trackB.integration.isInitialized) {
+    if (user?.id && isAuthenticated && trackB.integration.isInitialized) {
       refreshAll().catch((error) => {
         if (isMounted) {
           console.error("Failed to refresh progress data:", error);
+        }
+      });
+    } else if (!user?.id) {
+      // Guest user: load local entries
+      loadProgressEntries().catch((error) => {
+        if (isMounted) {
+          console.error("Failed to load guest progress entries:", error);
         }
       });
     }

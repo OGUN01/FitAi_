@@ -9,7 +9,7 @@ import { View, Text, StyleSheet, ScrollView, ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh } from "../../../utils/responsive";
+import { rf, rw, rh, rp } from "../../../utils/responsive";
 
 interface QuickAction {
   id: string;
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     borderRadius: rw(9),
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 4,
+    paddingHorizontal: rp(4),
     borderWidth: 2,
     borderColor: ResponsiveTheme.colors.background,
   },

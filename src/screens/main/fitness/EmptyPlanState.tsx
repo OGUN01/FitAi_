@@ -53,15 +53,15 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
           {/* Icon */}
           <View style={styles.iconWrapper}>
             <LinearGradient
-              colors={["#FF6B35", "#E55A2B"]}
+              colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.iconContainer}
             >
-              <Ionicons name="sparkles" size={rf(40)} color="#fff" />
+              <Ionicons name="sparkles" size={rf(40)} color={ResponsiveTheme.colors.white} />
             </LinearGradient>
             <View style={styles.iconAccent}>
-              <Ionicons name="fitness" size={rf(20)} color="#FF6B6B" />
+              <Ionicons name="heart" size={rf(16)} color={ResponsiveTheme.colors.primary} />
             </View>
           </View>
 
@@ -81,21 +81,21 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
                 <Ionicons
                   name="calendar-outline"
                   size={rf(16)}
-                  color="#FF6B35"
+                  color={ResponsiveTheme.colors.primary}
                 />
                 <Text style={styles.previewText}>
                   {planDetails.workouts} workouts
                 </Text>
               </View>
               <View style={styles.previewItem}>
-                <Ionicons name="time-outline" size={rf(16)} color="#FF6B35" />
+                <Ionicons name="time-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} />
                 <Text style={styles.previewText}>{planDetails.duration}</Text>
               </View>
             </View>
 
             <View style={styles.previewRow}>
               <View style={styles.previewItem}>
-                <Ionicons name="trophy-outline" size={rf(16)} color="#FF6B35" />
+                <Ionicons name="trophy-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} />
                 <Text style={styles.previewText} numberOfLines={1}>
                   {experienceLevel.charAt(0).toUpperCase() +
                     experienceLevel.slice(1)}{" "}
@@ -104,9 +104,9 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
               </View>
               {primaryGoals.length > 0 && (
                 <View style={styles.previewItem}>
-                  <Ionicons name="flag-outline" size={rf(16)} color="#FF6B35" />
+                  <Ionicons name="flag-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} />
                   <Text style={styles.previewText} numberOfLines={1}>
-                    {primaryGoals[0]}
+                    {primaryGoals[0].replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
                   </Text>
                 </View>
               )}
@@ -133,7 +133,7 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
                 <Ionicons
                   name={feature.icon as keyof typeof Ionicons.glyphMap}
                   size={rf(16)}
-                  color="#10b981"
+                  color={ResponsiveTheme.colors.successAlt}
                 />
                 <Text style={styles.featureText}>{feature.text}</Text>
               </View>
@@ -141,39 +141,41 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
           </View>
 
           {/* Generate Button */}
-          <AnimatedPressable
-            onPress={onGeneratePlan}
-            scaleValue={0.96}
-            hapticFeedback={true}
-            hapticType="medium"
-            disabled={isGenerating}
-            style={styles.generateButton}
-          >
-            <LinearGradient
-              colors={
-                isGenerating ? ["#6b7280", "#4b5563"] : ["#FF6B35", "#E55A2B"]
-              }
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.generateButtonGradient}
+          <View style={styles.generateButtonWrapper}>
+            <AnimatedPressable
+              onPress={onGeneratePlan}
+              scaleValue={0.96}
+              hapticFeedback={true}
+              hapticType="medium"
+              disabled={isGenerating}
+              style={styles.generateButton}
             >
-              {isGenerating ? (
-                <>
-                  <Ionicons name="sync" size={rf(20)} color="#fff" />
-                  <Text style={styles.generateButtonText}>
-                    Finding best exercises for you...
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <Ionicons name="sparkles" size={rf(20)} color="#fff" />
-                  <Text style={styles.generateButtonText}>
-                    Generate AI Workout
-                  </Text>
-                </>
-              )}
-            </LinearGradient>
-          </AnimatedPressable>
+              <LinearGradient
+                colors={
+                  isGenerating ? ["#6b7280", "#4b5563"] : [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark]
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.generateButtonGradient}
+              >
+                {isGenerating ? (
+                  <>
+                    <Ionicons name="sync" size={rf(20)} color={ResponsiveTheme.colors.white} />
+                    <Text style={styles.generateButtonText}>
+                      Finding best exercises for you...
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons name="sparkles" size={rf(20)} color={ResponsiveTheme.colors.white} />
+                    <Text style={styles.generateButtonText}>
+                      Generate AI Workout
+                    </Text>
+                  </>
+                )}
+              </LinearGradient>
+            </AnimatedPressable>
+          </View>
         </View>
       </GlassCard>
     </Animated.View>
@@ -182,11 +184,11 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: "center",
+    alignItems: "flex-start",
   },
   iconWrapper: {
     position: "relative",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
   iconContainer: {
     width: rw(80),
@@ -212,22 +214,24 @@ const styles = StyleSheet.create({
     fontSize: rf(20),
     fontWeight: "700",
     color: ResponsiveTheme.colors.text,
-    textAlign: "center",
+    textAlign: "left",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
   subtitle: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
-    textAlign: "center",
+    color: ResponsiveTheme.colors.text,
+    opacity: 0.75,
+    textAlign: "left",
     lineHeight: rf(20),
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingHorizontal: 0,
     marginBottom: ResponsiveTheme.spacing.lg,
   },
   previewContainer: {
     width: "100%",
     backgroundColor: "rgba(255, 107, 53, 0.08)",
     borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.lg,
     marginBottom: ResponsiveTheme.spacing.lg,
   },
   previewTitle: {
@@ -268,6 +272,10 @@ const styles = StyleSheet.create({
     fontSize: rf(13),
     color: ResponsiveTheme.colors.text,
   },
+  generateButtonWrapper: {
+    width: "100%",
+    marginBottom: rh(20),
+  },
   generateButton: {
     width: "100%",
     borderRadius: ResponsiveTheme.borderRadius.lg,
@@ -284,7 +292,7 @@ const styles = StyleSheet.create({
   generateButtonText: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: "#fff",
+    color: ResponsiveTheme.colors.white,
   },
 });
 

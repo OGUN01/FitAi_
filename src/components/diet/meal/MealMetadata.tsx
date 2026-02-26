@@ -7,7 +7,7 @@ import {
   spacing,
   borderRadius,
 } from "../../../theme/aurora-tokens";
-import { rf } from "../../../utils/responsive";
+import { rf, rp, rbr } from "../../../utils/responsive";
 import { DayMeal } from "../../../types/ai";
 
 interface MealMetadataProps {
@@ -125,13 +125,13 @@ const styles = StyleSheet.create({
   metadataDot: {
     width: 4,
     height: 4,
-    borderRadius: 2,
+    borderRadius: rbr(2),
     backgroundColor: colors.text.muted,
     marginHorizontal: spacing.sm,
   },
   difficultyBadgeContainer: {
     paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
+    paddingVertical: rp(2),
     borderRadius: borderRadius.full,
   },
   difficultyBadge: {

@@ -115,7 +115,7 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
               onSelect={(id) =>
                 updateField("gender", id as PersonalInfoData["gender"])
               }
-              gradient={["#FF6B35", "#FF8A5C"]}
+              gradient={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.accent]}
               style={styles.genderSegmentedControl}
             />
             {hasFieldError("gender") && (
@@ -131,8 +131,8 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
 
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
-    marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginTop: ResponsiveTheme.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
     marginHorizontal: -ResponsiveTheme.spacing.lg,
   },
   sectionTitlePadded: {

@@ -104,7 +104,6 @@ class NotificationService {
       }
 
       if (finalStatus !== "granted") {
-        console.warn("Notification permissions not granted");
         return false;
       }
 
@@ -156,7 +155,6 @@ class NotificationService {
         trigger: trigger as Notifications.NotificationTriggerInput,
       });
 
-      console.log(`Scheduled notification: ${identifier} -> ${notificationId}`);
       return notificationId;
     } catch (error) {
       console.error("Failed to schedule notification:", error);
@@ -168,7 +166,6 @@ class NotificationService {
   async cancelNotification(identifier: string): Promise<void> {
     try {
       await Notifications.cancelScheduledNotificationAsync(identifier);
-      console.log(`Cancelled notification: ${identifier}`);
     } catch (error) {
       console.error("Failed to cancel notification:", error);
     }
@@ -187,9 +184,6 @@ class NotificationService {
         await this.cancelNotification(notification.identifier);
       }
 
-      console.log(
-        `Cancelled ${typeNotifications.length} notifications of type: ${type}`,
-      );
     } catch (error) {
       console.error(`Failed to cancel notifications of type ${type}:`, error);
     }
@@ -483,7 +477,6 @@ class NotificationService {
   async clearAllNotifications(): Promise<void> {
     try {
       await Notifications.cancelAllScheduledNotificationsAsync();
-      console.log("Cleared all scheduled notifications");
     } catch (error) {
       console.error("Failed to clear notifications:", error);
     }
@@ -501,7 +494,6 @@ class NotificationService {
       // Also attempt to save to Supabase if available
       await this.savePreferencesToSupabase(preferences);
 
-      console.log("Notification preferences saved");
     } catch (error) {
       console.error("Failed to save notification preferences:", error);
     }
@@ -519,7 +511,6 @@ class NotificationService {
       } = await supabase.auth.getUser();
 
       if (authError || !user) {
-        console.log("📱 No authenticated user - skipping Supabase sync");
         return;
       }
 
@@ -536,21 +527,13 @@ class NotificationService {
       if (error) {
         // If the column doesn't exist, log gracefully
         if (error.code === "42703") {
-          console.log(
-            "📱 notification_preferences column not in schema - storing locally only",
-          );
           return;
         }
         throw error;
       }
 
-      console.log("✅ Notification preferences synced to Supabase");
     } catch (error) {
       // Don't throw error - AsyncStorage backup is sufficient
-      console.warn(
-        "Could not sync notification preferences to Supabase:",
-        error,
-      );
     }
   }
 
@@ -587,7 +570,6 @@ class NotificationService {
       } = await supabase.auth.getUser();
 
       if (authError || !user) {
-        console.log("📱 No authenticated user - loading from local storage");
         return null;
       }
 
@@ -601,25 +583,17 @@ class NotificationService {
       if (error) {
         // If the column doesn't exist, fall back to local storage
         if (error.code === "42703" || error.code === "PGRST116") {
-          console.log(
-            "📱 notification_preferences not in schema - using local storage",
-          );
           return null;
         }
         throw error;
       }
 
       if (data?.notification_preferences) {
-        console.log("✅ Loaded notification preferences from Supabase");
         return data.notification_preferences as NotificationPreferences;
       }
 
       return null;
     } catch (error) {
-      console.warn(
-        "Could not load notification preferences from Supabase:",
-        error,
-      );
       return null;
     }
   }

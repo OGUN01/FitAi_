@@ -239,8 +239,8 @@ export const GoalsSection: React.FC<GoalsSectionProps> = ({
                     numberOfLines={2}
                     ellipsizeMode="tail"
                   >
-                    Activity level is automatically determined by your
-                    occupation type from Personal Info (Tab 1).
+                    Activity level is automatically determined based on your
+                    occupation type.
                   </Text>
                 </View>
               </View>
@@ -256,7 +256,7 @@ export const GoalsSection: React.FC<GoalsSectionProps> = ({
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
     marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.md,
     marginHorizontal: -ResponsiveTheme.spacing.lg,
   },
   sectionTitlePadded: {

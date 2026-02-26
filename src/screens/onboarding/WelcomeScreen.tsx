@@ -11,7 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
-import { Button, Input, PasswordInput, THEME } from "../../components/ui";
+import { Button, Input, PasswordInput } from "../../components/ui";
 import { useAuth } from "../../hooks/useAuth";
 import { GoogleIcon } from "../../components/icons/GoogleIcon";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
@@ -154,6 +154,8 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 style={styles.backButton}
                 onPress={switchToWelcome}
                 scaleValue={0.97}
+                accessibilityLabel="Go back"
+                accessibilityRole="button"
               >
                 <Ionicons
                   name="arrow-back"
@@ -229,7 +231,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                   {"Don't have an account? "}
                 </Text>
                 <AnimatedPressable onPress={onGetStarted} scaleValue={0.97}>
-                  <Text style={styles.footerLink}>Get Started</Text>
+                  <Text style={styles.footerLink}>Sign Up</Text>
                 </AnimatedPressable>
               </View>
             </View>
@@ -277,33 +279,28 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                     {feature.description}
                   </Text>
                 </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={rf(16)}
-                  color={`${ResponsiveTheme.colors.primary}80`}
-                />
               </View>
             ))}
           </View>
-
-          <View style={styles.ctaSection}>
-            <Button
-              title="Get Started"
-              onPress={onGetStarted}
-              variant="primary"
-              size="lg"
-              fullWidth
-              pulse
-            />
-
-            <View style={styles.signInPromptRow}>
-              <Text style={styles.footerText}>Already have an account? </Text>
-              <AnimatedPressable onPress={switchToSignIn} scaleValue={0.97}>
-                <Text style={styles.footerLink}>Sign In</Text>
-              </AnimatedPressable>
-            </View>
-          </View>
         </ScrollView>
+
+        <View style={styles.ctaSection}>
+          <Button
+            title="Get Started"
+            onPress={onGetStarted}
+            variant="primary"
+            size="lg"
+            fullWidth
+            pulse
+          />
+
+          <View style={styles.signInPromptRow}>
+            <Text style={styles.footerText}>Already have an account? </Text>
+            <AnimatedPressable onPress={switchToSignIn} scaleValue={0.97}>
+              <Text style={styles.footerLink}>Sign In</Text>
+            </AnimatedPressable>
+          </View>
+        </View>
       </SafeAreaView>
     </AuroraBackground>
   );
@@ -326,8 +323,7 @@ const styles = StyleSheet.create({
 
   welcomeScrollContent: {
     flexGrow: 1,
-    justifyContent: "space-between",
-    paddingBottom: ResponsiveTheme.spacing.xl,
+    paddingBottom: ResponsiveTheme.spacing.md,
   },
 
   brandingSection: {
@@ -420,7 +416,11 @@ const styles = StyleSheet.create({
 
   ctaSection: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.md,
+    paddingBottom: ResponsiveTheme.spacing.lg,
     gap: ResponsiveTheme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: `${ResponsiveTheme.colors.border}40`,
   },
 
   signInPromptRow: {
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     marginBottom: ResponsiveTheme.spacing.lg,
     elevation: 3,
-    shadowColor: "#000",
+    shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
   },
 
   googleButtonText: {
-    color: "#FFFFFF",
+    color: ResponsiveTheme.colors.white,
     fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
   },

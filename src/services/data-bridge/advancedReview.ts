@@ -16,9 +16,6 @@ export async function saveAdvancedReview(
   data: AdvancedReviewData,
   currentUserId: string | null,
 ): Promise<SaveResult> {
-  console.log(
-    `[DataBridge] saveAdvancedReview, userId: ${currentUserId || "guest"}`,
-  );
 
   const result: SaveResult = {
     success: true,
@@ -37,9 +34,6 @@ export async function saveAdvancedReview(
         const dbSuccess = await AdvancedReviewService.save(currentUserId, data);
         result.newSystemSuccess = dbSuccess;
         if (!dbSuccess) {
-          console.warn(
-            "[DataBridge] advancedReview DB save failed - queueing for retry",
-          );
           syncEngine.queueOperation("advancedReview", data);
         }
       } catch (dbError) {

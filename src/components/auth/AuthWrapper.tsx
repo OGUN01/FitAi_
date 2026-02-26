@@ -3,6 +3,8 @@ import { View, Text, ActivityIndicator } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
 import { useUser } from "../../hooks/useUser";
 import { initializeBackend } from "../../utils/integration";
+import { rf, rp } from "../../utils/responsive";
+import { THEME } from "../../utils/constants";
 
 interface AuthWrapperProps {
   children: React.ReactNode;
@@ -39,7 +41,7 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({
     return (
       loadingComponent || (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#ff6b35" />
+          <ActivityIndicator size="large" color={THEME.colors.primary} />
           <Text style={styles.loadingText}>Initializing FitAI...</Text>
         </View>
       )
@@ -74,29 +76,29 @@ const styles = {
     flex: 1,
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    backgroundColor: "#0a0f1c",
+    backgroundColor: THEME.colors.background,
   },
   loadingText: {
-    color: "#ffffff",
-    marginTop: 16,
-    fontSize: 16,
+    color: THEME.colors.text,
+    marginTop: rp(16),
+    fontSize: rf(16),
   },
   authContainer: {
     flex: 1,
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    backgroundColor: "#0a0f1c",
-    padding: 20,
+    backgroundColor: THEME.colors.background,
+    padding: rp(20),
   },
   authTitle: {
-    color: "#ffffff",
-    fontSize: 32,
+    color: THEME.colors.text,
+    fontSize: rf(32),
     fontWeight: "bold" as const,
-    marginBottom: 8,
+    marginBottom: rp(8),
   },
   authSubtitle: {
-    color: "#8e9aaf",
-    fontSize: 16,
+    color: THEME.colors.textSecondary,
+    fontSize: rf(16),
     textAlign: "center" as const,
   },
 };

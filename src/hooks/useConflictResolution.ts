@@ -1,7 +1,7 @@
 // Custom hook for managing conflict resolution state and logic
 
 import { useState } from "react";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import {
   DataConflict,
   ResolutionStrategy,
@@ -68,7 +68,7 @@ export const useConflictResolution = (
     );
 
     if (unresolvedConflicts.length > 0) {
-      Alert.alert(
+      crossPlatformAlert(
         "Unresolved Conflicts",
         `You have ${unresolvedConflicts.length} unresolved conflicts. Please make a choice for each conflict.`,
         [{ text: "OK" }],

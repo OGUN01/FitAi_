@@ -1,6 +1,7 @@
-import React from "react";
+﻿import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp } from "../../utils/responsive";
 import type { ProgressStats } from "../../services/progressData";
 
 /**
@@ -33,25 +34,25 @@ const InsightCard: React.FC<{
   onAction?: (insight: InsightItem) => void;
 }> = ({ insight, onAction }) => {
   const getCardStyle = (type: string, priority: string) => {
-    let backgroundColor = THEME.colors.surface;
-    let borderColor = THEME.colors.border;
+    let backgroundColor = ResponsiveTheme.colors.surface;
+    let borderColor = ResponsiveTheme.colors.border;
 
     switch (type) {
       case "achievement":
-        backgroundColor = THEME.colors.surface;
-        borderColor = THEME.colors.success;
+        backgroundColor = ResponsiveTheme.colors.surface;
+        borderColor = ResponsiveTheme.colors.success;
         break;
       case "tip":
-        backgroundColor = THEME.colors.surface;
-        borderColor = THEME.colors.primary;
+        backgroundColor = ResponsiveTheme.colors.surface;
+        borderColor = ResponsiveTheme.colors.primary;
         break;
       case "motivation":
-        backgroundColor = THEME.colors.surface;
-        borderColor = THEME.colors.secondary;
+        backgroundColor = ResponsiveTheme.colors.surface;
+        borderColor = ResponsiveTheme.colors.secondary;
         break;
       case "goal":
-        backgroundColor = THEME.colors.surface;
-        borderColor = THEME.colors.warning;
+        backgroundColor = ResponsiveTheme.colors.surface;
+        borderColor = ResponsiveTheme.colors.warning;
         break;
     }
 
@@ -258,8 +259,8 @@ export const ProgressInsights: React.FC<ProgressInsightsProps> = ({
     insights ||
     generateDefaultInsights(progressStats, workoutStreak, nutritionAdherence);
 
-  // Sort by priority (high first)
-  const sortedInsights = displayInsights.sort((a, b) => {
+  // Sort by priority (high first) - create copy to avoid mutating original
+  const sortedInsights = [...displayInsights].sort((a, b) => {
     const priorityOrder = { high: 3, medium: 2, low: 1 };
     return priorityOrder[b.priority] - priorityOrder[a.priority];
   });
@@ -276,9 +277,9 @@ export const ProgressInsights: React.FC<ProgressInsightsProps> = ({
       {/* High Priority Insights */}
       {highPriorityInsights.length > 0 && (
         <View style={styles.prioritySection}>
-          {highPriorityInsights.map((insight) => (
+          {highPriorityInsights.map((insight, index) => (
             <InsightCard
-              key={insight.id}
+              key={insight.id + '-' + index}
               insight={insight}
               onAction={onInsightAction}
             />
@@ -289,9 +290,9 @@ export const ProgressInsights: React.FC<ProgressInsightsProps> = ({
       {/* Other Insights */}
       {otherInsights.length > 0 && (
         <View style={styles.regularSection}>
-          {otherInsights.slice(0, 3).map((insight) => (
+          {otherInsights.slice(0, 3).map((insight, index) => (
             <InsightCard
-              key={insight.id}
+              key={insight.id + '-' + index}
               insight={insight}
               onAction={onInsightAction}
             />
@@ -312,82 +313,82 @@ export const ProgressInsights: React.FC<ProgressInsightsProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingBottom: THEME.spacing.xxl, // Extra bottom padding for tab bar
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingBottom: ResponsiveTheme.spacing.xxl, // Extra bottom padding for tab bar
   },
   sectionTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   prioritySection: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   regularSection: {
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
   insightCard: {
-    borderRadius: THEME.borderRadius.lg,
-    padding: THEME.spacing.md,
-    marginBottom: THEME.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    padding: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   insightHeader: {
     flexDirection: "row",
     alignItems: "flex-start",
   },
   insightIcon: {
-    fontSize: 24,
-    marginRight: THEME.spacing.sm,
-    marginTop: 2,
+    fontSize: rf(24),
+    marginRight: ResponsiveTheme.spacing.sm,
+    marginTop: rp(2),
   },
   insightContent: {
     flex: 1,
   },
   insightTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   insightMessage: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.normal,
-    color: THEME.colors.textSecondary,
-    lineHeight: 18,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.normal,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(18),
   },
   actionButton: {
     alignSelf: "flex-start",
-    marginTop: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.xs,
-    backgroundColor: THEME.colors.primary,
-    borderRadius: THEME.borderRadius.md,
+    marginTop: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
   actionText: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.white,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.white,
   },
   motivationalFooter: {
-    backgroundColor: THEME.colors.surface,
-    borderRadius: THEME.borderRadius.lg,
-    padding: THEME.spacing.lg,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    padding: ResponsiveTheme.spacing.lg,
     alignItems: "center" as const,
     borderWidth: 1,
-    borderColor: THEME.colors.border,
+    borderColor: ResponsiveTheme.colors.border,
   },
   footerText: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.text,
     textAlign: "center",
     fontStyle: "italic",
-    marginBottom: THEME.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   footerAuthor: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.normal,
-    color: THEME.colors.textMuted,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.normal,
+    color: ResponsiveTheme.colors.textMuted,
   },
 });

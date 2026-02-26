@@ -34,8 +34,7 @@ export const ProgressErrorStates: React.FC<ProgressErrorStatesProps> = ({
   if (progressLoading || statsLoading) {
     return (
       <View
-        style={[styles.loadingContainer, StyleSheet.absoluteFill]}
-        pointerEvents="box-only"
+        style={[styles.loadingContainer, StyleSheet.absoluteFill, { pointerEvents: "box-only" }]}
       >
         <AuroraSpinner size="lg" theme="primary" />
         <Text style={styles.loadingText}>Loading progress data...</Text>
@@ -140,7 +139,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: ResponsiveTheme.spacing.xl,
     zIndex: 10,
-    backgroundColor: "rgba(0,0,0,0.5)", // Semi-transparent background
+    backgroundColor: ResponsiveTheme.colors.overlay, // Semi-transparent background
     justifyContent: "center",
   },
   loadingText: {

@@ -57,7 +57,6 @@ export class StorageManager {
         STORAGE_KEYS.PERMISSIONS_KEY,
         STORAGE_KEYS.INITIALIZED_KEY,
       ]);
-      console.log("✅ Health Connect cache cleared");
     } catch (error) {
       console.error("❌ Error clearing Health Connect cache:", error);
     }

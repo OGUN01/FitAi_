@@ -1,7 +1,8 @@
 import React from "react";
 import { View, Text, Switch, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rbr, rs } from '../../utils/responsive';
 
 interface HealthKitToggleProps {
   enabled: boolean;
@@ -19,10 +20,10 @@ export const HealthKitToggle: React.FC<HealthKitToggleProps> = ({
   return (
     <View
       style={{
-        backgroundColor: THEME.colors.surface,
-        margin: 16,
-        borderRadius: 12,
-        padding: 16,
+        backgroundColor: ResponsiveTheme.colors.surface,
+        margin: rp(16),
+        borderRadius: rbr(12),
+        padding: rp(16),
       }}
     >
       <View
@@ -30,38 +31,38 @@ export const HealthKitToggle: React.FC<HealthKitToggleProps> = ({
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: 8,
+          marginBottom: rp(8),
         }}
       >
         <View style={{ flex: 1 }}>
           <Text
             style={{
-              fontSize: 18,
+              fontSize: rf(18),
               fontWeight: "bold",
-              color: THEME.colors.text,
+              color: ResponsiveTheme.colors.text,
             }}
           >
             Enable HealthKit Integration
           </Text>
           <Text
             style={{
-              fontSize: 14,
-              color: THEME.colors.textSecondary,
-              marginTop: 4,
+              fontSize: rf(14),
+              color: ResponsiveTheme.colors.textSecondary,
+              marginTop: rp(4),
             }}
           >
             Sync your health data with Apple Health
           </Text>
         </View>
         {isLoading ? (
-          <ActivityIndicator color={THEME.colors.primary} />
+          <ActivityIndicator color={ResponsiveTheme.colors.primary} />
         ) : (
           <Switch
             value={enabled && isAuthorized}
             onValueChange={onToggle}
             trackColor={{
-              false: THEME.colors.border,
-              true: THEME.colors.primary,
+              false: ResponsiveTheme.colors.border,
+              true: ResponsiveTheme.colors.primary,
             }}
           />
         )}
@@ -71,22 +72,22 @@ export const HealthKitToggle: React.FC<HealthKitToggleProps> = ({
         style={{
           flexDirection: "row",
           alignItems: "center",
-          marginTop: 12,
-          paddingTop: 12,
+          marginTop: rp(12),
+          paddingTop: rp(12),
           borderTopWidth: 1,
-          borderTopColor: THEME.colors.border,
+          borderTopColor: ResponsiveTheme.colors.border,
         }}
       >
         <Ionicons
           name={isAuthorized ? "checkmark-circle" : "alert-circle"}
-          size={16}
-          color={isAuthorized ? THEME.colors.success : THEME.colors.warning}
+          size={rs(16)}
+          color={isAuthorized ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.warning}
         />
         <Text
           style={{
-            fontSize: 14,
-            color: isAuthorized ? THEME.colors.success : THEME.colors.warning,
-            marginLeft: 8,
+            fontSize: rf(14),
+            color: isAuthorized ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.warning,
+            marginLeft: rp(8),
           }}
         >
           {isAuthorized ? "Connected to HealthKit" : "Not connected"}

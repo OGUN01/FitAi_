@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { safeAsyncStorage } from "../utils/safeAsyncStorage";
 import * as crypto from "expo-crypto";
 import { WeeklyWorkoutPlan, DayWorkout, WorkoutSet } from "../ai";
 import { crudOperations } from "../services/crudOperations";
@@ -113,20 +114,16 @@ export const useFitnessStore = create<FitnessState>()(
         try {
           const planTitle =
             plan.planTitle || `Week ${plan.weekNumber} Workout Plan`;
-          console.log("💾 Saving weekly workout plan:", planTitle);
 
           // Save to local storage via Zustand persist first
           set({ weeklyWorkoutPlan: plan });
 
-          console.log("✅ Plan saved to local storage");
 
           // Validate plan data
           if (!plan.workouts || plan.workouts.length === 0) {
-            console.warn("⚠️ No workouts in plan to save to database");
             return;
           }
 
-          console.log(`📋 Plan saved with ${plan.workouts.length} workouts (sessions will be created on start)`);
 
         } catch (error) {
           console.error("❌ Failed to save workout plan:", error);
@@ -141,7 +138,6 @@ export const useFitnessStore = create<FitnessState>()(
           if (!get().weeklyWorkoutPlan) {
             throw error;
           }
-          console.log("⚠️ Plan saved locally but database save failed");
         }
 
         // ALSO save the complete weekly plan to the new weekly_workout_plans table
@@ -151,14 +147,11 @@ export const useFitnessStore = create<FitnessState>()(
             "weekly_workout_plans",
           );
 
-          console.log("📋 Saving complete weekly workout plan to database...");
 
           // Get authenticated user ID via StoreCoordinator (removes cross-store dependency)
           const userId = getCurrentUserId();
           const planId = generateUUID();
 
-          console.log("🔍 FitnessStore: User ID from coordinator:", userId);
-          console.log("🔍 FitnessStore: Plan ID generated:", planId);
 
           // Ensure user is authenticated before database operation
           if (!userId) {
@@ -176,7 +169,6 @@ export const useFitnessStore = create<FitnessState>()(
             throw new Error("Invalid plan UUID format");
           }
 
-          console.log("✅ UUID validation passed:", { userId, planId });
 
           const weeklyPlanData = {
             id: planId,
@@ -199,7 +191,6 @@ export const useFitnessStore = create<FitnessState>()(
             userId: getUserIdOrGuest(),
             maxRetries: 3,
           });
-          console.log("✅ Weekly workout plan queued for database sync");
         } catch (weeklyPlanError) {
           console.error(
             "❌ Failed to save weekly workout plan to database:",
@@ -220,7 +211,6 @@ export const useFitnessStore = create<FitnessState>()(
           // First check local storage
           const currentPlan = get().weeklyWorkoutPlan;
           if (currentPlan) {
-            console.log("📋 Found workout plan in local storage");
             return currentPlan;
           }
 
@@ -228,7 +218,6 @@ export const useFitnessStore = create<FitnessState>()(
           try {
             const userId = getCurrentUserId();
             if (userId) {
-              console.log("🔄 Loading weekly workout plan from database...");
               const { data: weeklyPlans, error } = await supabase
                 .from("weekly_workout_plans")
                 .select("*")
@@ -239,37 +228,23 @@ export const useFitnessStore = create<FitnessState>()(
 
               if (!error && weeklyPlans && weeklyPlans.length > 0) {
                 const latestPlan = weeklyPlans[0];
-                console.log(
-                  `✅ Found weekly workout plan in database: ${latestPlan.plan_title}`,
-                );
 
                 // Extract the complete plan data from JSONB
                 const planData = latestPlan.plan_data;
                 if (planData && planData.workouts) {
                   // Update local storage with retrieved plan
                   set({ weeklyWorkoutPlan: planData });
-                  console.log(
-                    "📋 Restored weekly workout plan from database to local storage",
-                  );
                   return planData;
                 }
               } else {
-                console.log("📋 No weekly workout plan found in database");
               }
             }
           } catch (dbError) {
-            console.warn(
-              "⚠️ Failed to load from database, trying individual sessions:",
-              dbError,
-            );
           }
 
           // Fallback: Try to load individual workout sessions
           const workoutSessions = await crudOperations.readWorkoutSessions();
           if (workoutSessions.length > 0) {
-            console.log(
-              `📋 Found ${workoutSessions.length} individual workout sessions in database`,
-            );
             // Could reconstruct weekly plan from sessions if needed in the future
           }
 
@@ -317,7 +292,6 @@ export const useFitnessStore = create<FitnessState>()(
                 deviceId: "dev-device",
               },
             });
-            console.log(`✅ Workout ${workoutId} marked complete in database`);
           }
 
           // THEN update Zustand cache
@@ -332,7 +306,6 @@ export const useFitnessStore = create<FitnessState>()(
               },
             },
           }));
-          console.log(`✅ Workout ${workoutId} cache updated`);
         } catch (error) {
           console.error(`❌ Failed to complete workout ${workoutId}:`, error);
 
@@ -361,7 +334,6 @@ export const useFitnessStore = create<FitnessState>()(
               },
             },
           }));
-          console.log(`📥 Workout ${workoutId} queued for offline sync`);
         }
       },
 
@@ -510,7 +482,6 @@ export const useFitnessStore = create<FitnessState>()(
           // Initialize progress
           get().updateWorkoutProgress(workout.id, 0);
 
-          console.log(`🏋️ Started workout session: ${sessionId}`);
           return sessionId;
         } catch (error) {
           console.error("❌ Failed to start workout session:", error);
@@ -535,7 +506,6 @@ export const useFitnessStore = create<FitnessState>()(
 
           set({ currentWorkoutSession: null });
 
-          console.log(`✅ Completed workout session: ${sessionId}`);
         } catch (error) {
           console.error("❌ Failed to end workout session:", error);
           throw error;
@@ -602,13 +572,12 @@ export const useFitnessStore = create<FitnessState>()(
       persistData: async () => {
         try {
           const state = get();
-          await crudOperations.clearAllData(); // Clear old data
-
+          // BUG FIX: Don't call crudOperations.clearAllData() — it clears ALL CRUD data
+          // (nutrition, etc.), not just fitness. Use upsert logic instead.
           if (state.weeklyWorkoutPlan) {
             await get().saveWeeklyWorkoutPlan(state.weeklyWorkoutPlan);
           }
 
-          console.log("💾 Fitness data persisted");
         } catch (error) {
           console.error("❌ Failed to persist fitness data:", error);
         }
@@ -620,7 +589,6 @@ export const useFitnessStore = create<FitnessState>()(
           if (plan) {
             set({ weeklyWorkoutPlan: plan });
           }
-          console.log("📂 Fitness data loaded");
         } catch (error) {
           console.error("❌ Failed to load fitness data:", error);
         }
@@ -637,9 +605,6 @@ export const useFitnessStore = create<FitnessState>()(
 
       clearOldWorkoutData: async () => {
         try {
-          console.log(
-            "🧹 Clearing old workout data with descriptive exercise names...",
-          );
 
           // Clear local store data
           get().clearData();
@@ -653,7 +618,6 @@ export const useFitnessStore = create<FitnessState>()(
           ).default;
           await AsyncStorage.removeItem("fitness-storage");
 
-          console.log("✅ Old workout data cleared successfully");
 
           // Set flag to force regeneration
           get().forceWorkoutRegeneration();
@@ -664,15 +628,11 @@ export const useFitnessStore = create<FitnessState>()(
       },
 
       forceWorkoutRegeneration: () => {
-        console.log(
-          "🔄 Forcing workout regeneration with new constraint system...",
-        );
         set({
           weeklyWorkoutPlan: null,
           planError: null,
           isGeneratingPlan: false,
         });
-        console.log("✅ Ready for fresh workout generation with database IDs");
       },
 
       setupRealtimeSubscription: (userId: string) => {
@@ -691,10 +651,6 @@ export const useFitnessStore = create<FitnessState>()(
               filter: `user_id=eq.${userId}`,
             },
             (payload) => {
-              console.log(
-                "📡 Workout session change detected:",
-                payload.eventType,
-              );
               get().loadData();
             },
           )
@@ -721,7 +677,7 @@ export const useFitnessStore = create<FitnessState>()(
     }),
     {
       name: "fitness-storage",
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => safeAsyncStorage),
       partialize: (state) => ({
         weeklyWorkoutPlan: state.weeklyWorkoutPlan,
         workoutProgress: state.workoutProgress,

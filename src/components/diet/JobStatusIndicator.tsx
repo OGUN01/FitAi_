@@ -42,25 +42,25 @@ const STATUS_CONFIG: Record<
   },
   pending: {
     emoji: "⏳",
-    color: "#f59e0b",
+    color: ResponsiveTheme.colors.warningAlt,
     bgColor: "#fffbeb",
     message: "Waiting in queue...",
   },
   processing: {
     emoji: "🧠",
-    color: "#3b82f6",
+    color: ResponsiveTheme.colors.blue,
     bgColor: "#eff6ff",
     message: "AI is cooking up your meals...",
   },
   completed: {
     emoji: "✅",
-    color: "#10b981",
+    color: ResponsiveTheme.colors.successAlt,
     bgColor: "#ecfdf5",
     message: "Meal plan ready!",
   },
   failed: {
     emoji: "❌",
-    color: "#ef4444",
+    color: ResponsiveTheme.colors.errorAlt,
     bgColor: "#fef2f2",
     message: "Generation failed",
   },
@@ -403,13 +403,13 @@ const styles = StyleSheet.create({
   errorInfo: {
     marginTop: ResponsiveTheme.spacing.sm,
     padding: ResponsiveTheme.spacing.sm,
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    backgroundColor: `${ResponsiveTheme.colors.errorAlt}1A`,
     borderRadius: ResponsiveTheme.borderRadius.sm,
   },
 
   errorText: {
     fontSize: ResponsiveTheme.fontSize.sm,
-    color: "#ef4444",
+    color: ResponsiveTheme.colors.errorAlt,
   },
 
   tipsSection: {

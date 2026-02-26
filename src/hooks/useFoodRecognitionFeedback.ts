@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import { RecognizedFood } from "../services/foodRecognitionService";
 import { FoodFeedback } from "../components/diet/feedback/types";
 
@@ -44,7 +44,7 @@ export const useFoodRecognitionFeedback = ({
       setIsSubmitting(true);
       await onSubmitFeedback(feedback);
 
-      Alert.alert(
+      crossPlatformAlert(
         "🙏 Thank You!",
         "Your feedback helps improve our food recognition accuracy for everyone!",
         [{ text: "You're Welcome!" }],
@@ -52,7 +52,7 @@ export const useFoodRecognitionFeedback = ({
 
       onClose();
     } catch (error) {
-      Alert.alert("Error", "Failed to submit feedback. Please try again.");
+      crossPlatformAlert("Error", "Failed to submit feedback. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

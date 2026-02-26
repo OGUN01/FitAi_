@@ -9,6 +9,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { CookingFlow } from "../../utils/cookingFlowGenerator";
 import { colors } from "../../theme/aurora-tokens";
+import { ResponsiveTheme } from '../../utils/constants';
+import { rf, rp, rbr } from '../../utils/responsive';
 
 interface StepsListProps {
   cookingFlow: CookingFlow;
@@ -102,29 +104,29 @@ export default function StepsList({
 const styles = StyleSheet.create({
   stepsListSection: {
     backgroundColor: colors.background.secondary,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 12,
+    marginHorizontal: rp(16),
+    marginBottom: rp(16),
+    borderRadius: rbr(12),
     overflow: "hidden",
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: "600",
     color: colors.text.primary,
-    padding: 16,
-    paddingBottom: 8,
+    padding: rp(16),
+    paddingBottom: rp(8),
   },
   stepsList: {
     maxHeight: 300,
   },
   stepItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: rp(16),
+    paddingVertical: rp(12),
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.08)",
+    borderBottomColor: ResponsiveTheme.colors.glassBorder,
   },
   currentStepItem: {
-    backgroundColor: "rgba(255, 107, 53, 0.10)",
+    backgroundColor: ResponsiveTheme.colors.primaryTint,
   },
   completedStepItem: {
     backgroundColor: "rgba(76, 175, 80, 0.08)",
@@ -136,14 +138,14 @@ const styles = StyleSheet.create({
   stepNumber: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: rbr(16),
     backgroundColor: colors.background.tertiary,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: rp(12),
   },
   stepNumberText: {
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: "600",
     color: colors.text.secondary,
   },
@@ -155,34 +157,34 @@ const styles = StyleSheet.create({
   },
   stepTextContainer: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: rp(12),
   },
   stepItemText: {
     flex: 1,
-    fontSize: 16,
+    fontSize: rf(16),
     color: colors.text.secondary,
   },
   stepTimeText: {
-    fontSize: 12,
+    fontSize: rf(12),
     color: colors.text.muted,
-    marginTop: 4,
+    marginTop: rp(4),
   },
   proTipsSection: {
     backgroundColor: "rgba(255, 152, 0, 0.10)",
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 16,
+    padding: rp(16),
+    borderRadius: rbr(12),
+    marginTop: rp(16),
   },
   proTipsTitle: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "700",
     color: colors.warning.DEFAULT,
-    marginBottom: 8,
+    marginBottom: rp(8),
   },
   proTipText: {
-    fontSize: 14,
+    fontSize: rf(14),
     color: colors.warning.DEFAULT,
-    lineHeight: 20,
-    marginBottom: 4,
+    lineHeight: rf(20),
+    marginBottom: rp(4),
   },
 });
