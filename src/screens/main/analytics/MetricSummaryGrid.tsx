@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Platform } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
@@ -101,7 +101,7 @@ const MetricCard: React.FC<{
 
   return (
     <Animated.View
-      entering={FadeInUp.delay(delay).duration(400)}
+      entering={Platform.OS !== 'web' ? FadeInUp.delay(delay).duration(400) : undefined}
       style={styles.cardWrapper}
     >
       <AnimatedPressable
@@ -231,6 +231,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
         <MetricCard
           title="Calories"
           value={formatCalories(data.calories?.burned)}
+          subtitle={!hasCaloriesData ? "Log meals to track" : undefined}
           icon="flame-outline"
           color={ResponsiveTheme.colors.warning}
           trend={hasCaloriesData ? data.calories?.trend : undefined}
@@ -249,7 +250,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
         <MetricCard
           title="Workouts"
           value={data.workouts?.count?.toString() || "0"}
-          subtitle={`this ${period}`}
+          subtitle={`This ${period.charAt(0).toUpperCase() + period.slice(1)}`}
           icon="barbell-outline"
           color={ResponsiveTheme.colors.info}
           trend={hasWorkoutsData ? data.workouts?.trend : undefined}
@@ -394,8 +395,8 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.xs,
   },
   subtitleText: {
-    fontSize: rf(9),
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: rf(12),
+    color: ResponsiveTheme.colors.textSecondary,
   },
   trendRow: {
     flexDirection: "row",

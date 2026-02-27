@@ -14,7 +14,7 @@ export class GoalsService {
         .from("diet_preferences")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Error fetching diet preferences:", error);

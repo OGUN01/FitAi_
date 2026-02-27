@@ -35,7 +35,7 @@ export const WorkoutNavigation: React.FC<WorkoutNavigationProps> = ({
         }
         onPress={onNext}
         variant="primary"
-        style={[styles.navButton, styles.primaryNavButton] as any}
+        style={StyleSheet.flatten([styles.navButton, styles.primaryNavButton])}
       />
     </View>
   );

@@ -53,18 +53,19 @@ export async function getFitnessGoals(
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      if (error.code === "PGRST116") {
-        return {
-          success: false,
-          error: "No fitness goals found",
-        };
-      }
       return {
         success: false,
         error: error.message,
+      };
+    }
+
+    if (!data) {
+      return {
+        success: false,
+        error: "No fitness goals found",
       };
     }
 
@@ -104,7 +105,7 @@ export async function updateFitnessGoals(
         },
       )
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       return {

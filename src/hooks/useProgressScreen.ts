@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Alert, Animated, Platform, Share } from "react-native";
+import { Animated, Platform, Share } from "react-native";
 import { useAuth } from "../hooks/useAuth";
 import { useProgressData } from "../hooks/useProgressData";
 import { useCalculatedMetrics } from "../hooks/useCalculatedMetrics";
@@ -7,6 +7,7 @@ import { useHealthDataStore } from "../stores/healthDataStore";
 import DataRetrievalService from "../services/dataRetrieval";
 import { completionTrackingService } from "../services/completionTracking";
 
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 type TimeoutId = ReturnType<typeof setTimeout> | null;
 export const useProgressScreen = (navigation: any) => {
@@ -225,7 +226,7 @@ export const useProgressScreen = (navigation: any) => {
 
       // Bug 4 fix: removed Alert.alert — pull-to-refresh has visual feedback via RefreshControl spinner
     } catch (error) {
-      Alert.alert("Error", "Failed to refresh progress data");
+      crossPlatformAlert("Error", "Failed to refresh progress data");
     } finally {
       setRefreshing(false);
     }
@@ -269,13 +270,13 @@ Track your fitness journey with FitAI!`;
       try {
         if (Platform.OS === "web" && typeof navigator !== "undefined" && navigator.clipboard) {
           await navigator.clipboard.writeText(message);
-          Alert.alert("Copied!", "Progress summary copied to clipboard.");
+          crossPlatformAlert("Copied!", "Progress summary copied to clipboard.");
         } else {
-          Alert.alert("Share Unavailable", "Unable to share on this device.");
+          crossPlatformAlert("Share Unavailable", "Unable to share on this device.");
         }
       } catch (clipboardError) {
         console.error("Clipboard fallback failed:", clipboardError);
-        Alert.alert("Share Unavailable", "Unable to share on this device.");
+        crossPlatformAlert("Share Unavailable", "Unable to share on this device.");
       }
     }
   };

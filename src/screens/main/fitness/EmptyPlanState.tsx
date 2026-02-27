@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   previewTitle: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.sm,
     textTransform: "uppercase",
     letterSpacing: 0.5,

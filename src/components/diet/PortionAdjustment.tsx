@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   Modal,
   ScrollView,
-  Alert,
+
   ActivityIndicator,
   Animated,
   TextInput,
@@ -20,6 +20,7 @@ import { ResponsiveTheme } from "../../utils/constants";
 import { Button, Card } from "../ui";
 import { RecognizedFood } from "../../services/foodRecognitionService";
 import { rf, rh, rw, rbr } from "../../utils/responsive";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 // Custom Slider Component
 interface CustomSliderProps {
@@ -197,7 +198,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
         (adj) => adj.adjustmentRatio !== 1.0,
       );
       if (changedFoods.length > 0) {
-        Alert.alert(
+        crossPlatformAlert(
           "✅ Portions Adjusted!",
           `Updated portion sizes for ${changedFoods.length} food item${changedFoods.length !== 1 ? "s" : ""}.\n\nNutrition values have been recalculated automatically.`,
           [{ text: "Perfect!" }],
@@ -205,7 +206,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
       }
     } catch (error) {
       console.error("Error applying portion adjustments:", error);
-      Alert.alert(
+      crossPlatformAlert(
         "Error",
         "Failed to apply portion adjustments. Please try again.",
       );
@@ -924,6 +925,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.2)',
     elevation: 4,
   },
 

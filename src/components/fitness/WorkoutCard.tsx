@@ -255,6 +255,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 8,
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
   },
 
   progressContainer: {

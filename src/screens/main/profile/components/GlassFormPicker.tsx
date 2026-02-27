@@ -120,17 +120,17 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
                     />
                   )}
 
-                  <View style={styles.optionContent}>
+                  <View style={[styles.optionContent, columns === 3 && { paddingHorizontal: ResponsiveTheme.spacing.xs }]}>
                     {option.icon && (
                       <View
                         style={[
                           styles.optionIcon,
                           selected && styles.optionIconSelected,
-                        ]}
-                      >
+                          columns === 3 && { width: rw(24), height: rw(24), borderRadius: rw(12), marginRight: ResponsiveTheme.spacing.xs },
+                        ]}>
                         <Ionicons
                           name={option.icon}
-                          size={rf(18)}
+                          size={columns === 3 ? rf(14) : rf(18)}
                           color={
                             selected
                               ? ResponsiveTheme.colors.primary
@@ -145,8 +145,9 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
                         style={[
                           styles.optionLabel,
                           selected && styles.optionLabelSelected,
+                          columns === 3 && { fontSize: rf(12) },
                         ]}
-                      >
+                        numberOfLines={1}>
                         {option.label}
                       </Text>
                       {option.description && (
@@ -160,10 +161,10 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
                     </View>
 
                     {selected && (
-                      <View style={styles.checkmark}>
+                      <View style={[styles.checkmark, columns === 3 && { width: rw(18), height: rw(18), borderRadius: rw(9) }]}>
                         <Ionicons
                           name="checkmark"
-                          size={rf(14)}
+                          size={columns === 3 ? rf(10) : rf(14)}
                           color={ResponsiveTheme.colors.primary}
                         />
                       </View>
@@ -231,7 +232,7 @@ const styles = StyleSheet.create({
   optionContent: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.sm,
   },
   optionIcon: {

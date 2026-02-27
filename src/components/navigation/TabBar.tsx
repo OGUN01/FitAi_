@@ -1,10 +1,11 @@
 import React from "react";
 import {
   View,
-  TouchableOpacity,
+  Pressable,
   Text,
   StyleSheet,
   Dimensions,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
@@ -59,20 +60,23 @@ export const TabBar: React.FC<TabBarProps> = ({
           const isActive = activeTab === tab.key;
 
           return (
-            <TouchableOpacity
+            <Pressable
               key={tab.key}
-              style={[
+              style={({ pressed }) => [
                 styles.tab,
                 {
                   paddingVertical: responsiveTheme.spacing.sm,
+                  opacity: pressed ? 0.7 : 1,
                 },
               ]}
               onPress={() => onTabPress(tab.key)}
-              activeOpacity={0.7}
               accessibilityRole="tab"
               accessibilityLabel={tab.title}
               accessibilityState={{ selected: isActive }}
+              testID={`tab-${tab.key}`}
+              aria-label={tab.title}
             >
+
               <View
                 style={[
                   styles.iconContainer,
@@ -101,18 +105,16 @@ export const TabBar: React.FC<TabBarProps> = ({
 
               {isActive && (
                 <View
-                  style={[
-                    styles.activeIndicator,
-                    {
-                      width: rw(24),
-                      height: rh(3),
-                      backgroundColor: responsiveTheme.colors.primary,
-                      borderRadius: responsiveTheme.borderRadius.full,
-                    },
-                  ]}
+                  style={{
+                    width: rw(24),
+                    height: rh(3),
+                    backgroundColor: responsiveTheme.colors.primary,
+                    borderRadius: responsiveTheme.borderRadius.full,
+                    marginTop: rp(2),
+                  }}
                 />
               )}
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
       </View>
@@ -138,6 +140,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     position: "relative",
     minHeight: 44,
+    overflow: "hidden",
   },
 
   iconContainer: {
@@ -149,9 +152,5 @@ const styles = StyleSheet.create({
     // All responsive styles moved to inline
   },
 
-  activeIndicator: {
-    position: "absolute",
-    bottom: 0,
-    // All responsive styles moved to inline
-  },
+  // activeIndicator removed - now inline with flow layout
 });

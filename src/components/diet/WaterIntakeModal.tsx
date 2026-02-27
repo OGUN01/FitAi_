@@ -59,7 +59,6 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
   // Reset state when closing
   const handleClose = useCallback(() => {
     setCustomAmount("");
-    setShowCustomInput(false);
     setError(null);
     onClose();
   }, [onClose]);
@@ -176,126 +175,92 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
               </View>
 
               {/* Quick Add Options */}
-              {!showCustomInput ? (
-                <>
-                  <Text style={styles.sectionTitle}>Quick Add</Text>
-                  <View style={styles.quickOptionsContainer}>
-                    {quickOptions.map((option) => (
-                      <TouchableOpacity
-                        key={option.label}
-                        style={styles.quickOption}
-                        onPress={() => handleQuickAdd(option.amount)}
-                        activeOpacity={0.7}
-                      >
-                        <LinearGradient
-                          colors={[
-                            `${ResponsiveTheme.colors.primary}33`,
-                            `${ResponsiveTheme.colors.primaryLight}33`,
-                          ]}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 1 }}
-                          style={styles.quickOptionGradient}
-                        >
-                          <Ionicons
-                            name={option.icon}
-                            size={rf(28)}
-                            color={ResponsiveTheme.colors.primary}
-                          />
-                          <Text style={styles.quickOptionLabel}>
-                            {option.label}
-                          </Text>
-                        </LinearGradient>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-
-                  {/* Custom Amount Button */}
+              <Text style={styles.sectionTitle}>Quick Add</Text>
+              <View style={styles.quickOptionsContainer}>
+                {quickOptions.map((option) => (
                   <TouchableOpacity
-                    style={styles.customButton}
-                    onPress={() => setShowCustomInput(true)}
+                    key={option.label}
+                    style={styles.quickOption}
+                    onPress={() => handleQuickAdd(option.amount)}
                     activeOpacity={0.7}
                   >
-                    <Ionicons
-                      name="add-circle-outline"
-                      size={20}
-                      color={ResponsiveTheme.colors.primary}
-                    />
-                    <Text style={styles.customButtonText}>Custom Amount</Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <>
-                  {/* Custom Input */}
-                  <Text style={styles.sectionTitle}>
-                    Enter Amount (Liters)
-                  </Text>
-                  <View style={styles.inputContainer}>
-                    <Ionicons
-                      name="water-outline"
-                      size={20}
-                      color={ResponsiveTheme.colors.primary}
-                      style={styles.inputIcon}
-                    />
-                    <TextInput
-                      style={styles.input}
-                      value={customAmount}
-                      onChangeText={(text) => {
-                        setCustomAmount(text);
-                        setError(null);
-                      }}
-                      placeholder="e.g., 0.5"
-                      placeholderTextColor="rgba(255,255,255,0.4)"
-                      keyboardType="decimal-pad"
-                      returnKeyType="done"
-                      autoFocus
-                      onSubmitEditing={handleCustomSubmit}
-                    />
-                    <Text style={styles.unitLabel}>L</Text>
-                  </View>
-
-                  {/* Error Message */}
-                  {error && (
-                    <View style={styles.errorContainer}>
+                    <LinearGradient
+                      colors={[
+                        `${ResponsiveTheme.colors.primary}33`,
+                        `${ResponsiveTheme.colors.primaryLight}33`,
+                      ]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.quickOptionGradient}
+                    >
                       <Ionicons
-                        name="alert-circle"
-                        size={16}
-                        color={ResponsiveTheme.colors.errorLight}
+                        name={option.icon}
+                        size={rf(28)}
+                        color={ResponsiveTheme.colors.primary}
                       />
-                      <Text style={styles.errorText}>{error}</Text>
-                    </View>
-                  )}
+                      <Text style={styles.quickOptionLabel}>
+                        {option.label}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                ))}
+              </View>
 
-                  {/* Action Buttons */}
-                  <View style={styles.actionButtons}>
-                    <TouchableOpacity
-                      style={styles.cancelButton}
-                      onPress={() => {
-                        setShowCustomInput(false);
-                        setCustomAmount("");
-                        setError(null);
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.cancelButtonText}>Back</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.submitButton}
-                      onPress={handleCustomSubmit}
-                      activeOpacity={0.8}
-                    >
-                      <LinearGradient
-                        colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={styles.submitButtonGradient}
-                      >
-                        <Ionicons name="add" size={20} color={ResponsiveTheme.colors.white} />
-                        <Text style={styles.submitButtonText}>Add Water</Text>
-                      </LinearGradient>
-                    </TouchableOpacity>
-                  </View>
-                </>
+              {/* Custom Amount Input - always visible for accessibility */}
+              <Text style={styles.sectionTitle}>
+                Custom Amount (Liters)
+              </Text>
+              <View style={styles.inputContainer}>
+                <Ionicons
+                  name="water-outline"
+                  size={20}
+                  color={ResponsiveTheme.colors.primary}
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  value={customAmount}
+                  onChangeText={(text) => {
+                    setCustomAmount(text);
+                    setError(null);
+                  }}
+                  placeholder="e.g., 0.5"
+                  placeholderTextColor="rgba(255,255,255,0.4)"
+                  keyboardType="decimal-pad"
+                  returnKeyType="done"
+                  onSubmitEditing={handleCustomSubmit}
+                />
+                <Text style={styles.unitLabel}>L</Text>
+              </View>
+
+              {/* Error Message */}
+              {error && (
+                <View style={styles.errorContainer}>
+                  <Ionicons
+                    name="alert-circle"
+                    size={16}
+                    color={ResponsiveTheme.colors.errorLight}
+                  />
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
               )}
+
+              {/* Add Water Button */}
+              <TouchableOpacity
+                style={styles.submitButton}
+                onPress={handleCustomSubmit}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.submitButtonGradient}
+                >
+                  <Ionicons name="add" size={20} color={ResponsiveTheme.colors.white} />
+                  <Text style={styles.submitButtonText}>Add Water</Text>
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
           </BlurView>
         </KeyboardAvoidingView>
@@ -480,9 +445,9 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.white,
   },
   submitButton: {
-    flex: 0.6,
     overflow: "hidden",
     borderRadius: ResponsiveTheme.borderRadius.lg,
+    marginTop: rp(8),
   },
   submitButtonGradient: {
     flexDirection: "row",

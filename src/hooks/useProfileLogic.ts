@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-import { Alert, Platform } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "./useAuth";
 import { useUser } from "./useUser";
 import { useProfileStore } from "../stores/profileStore";
 import { useUnifiedStats } from "./useUnifiedStats";
 import { clearAllUserData } from "../utils/clearUserData";
+import { useSubscriptionStore } from "../stores/subscriptionStore";
 import type { SettingItem } from "../screens/main/profile";
 
 // AsyncStorage keys for settings preferences
@@ -19,7 +20,8 @@ export const useProfileLogic = () => {
   const { user, isAuthenticated, isGuestMode, logout, guestId } = useAuth();
   const { profile, clearProfile } = useUser();
   const userStats = useUnifiedStats();
-  const { bodyAnalysis } = useProfileStore();
+  const { bodyAnalysis, personalInfo: profileStorePersonalInfo } = useProfileStore();
+  const { currentPlan: subscriptionPlan } = useSubscriptionStore();
 
   // State
   const [currentSettingsScreen, setCurrentSettingsScreen] = useState<
@@ -34,6 +36,7 @@ export const useProfileLogic = () => {
   const [showUnitsModal, setShowUnitsModal] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showClearCacheModal, setShowClearCacheModal] = useState(false);
+  const [showPaywallModal, setShowPaywallModal] = useState(false);
 
   // Persisted preferences
   const [themePreference, setThemePreference] =
@@ -120,7 +123,7 @@ export const useProfileLogic = () => {
       console.log("[ProfileScreen] Logout complete - all user data cleared");
     } catch (error) {
       console.error("[ProfileScreen] Logout error:", error);
-      Alert.alert("Error", "Failed to sign out. Please try again.");
+      crossPlatformAlert("Error", "Failed to sign out. Please try again.");
     }
   };
 
@@ -200,14 +203,17 @@ export const useProfileLogic = () => {
         setShowEditModal("measurements");
         break;
       case "subscription":
-        setCurrentSettingsScreen("subscription");
+        setShowPaywallModal(true);
         break;
       case "notifications":
         setCurrentSettingsScreen("notifications");
         break;
-      case "theme":
-        setShowThemeModal(true);
+      case "theme": {
+        // Toggle dark mode directly instead of opening modal
+        const nextTheme: ThemePreference = themePreference === "dark" ? "light" : "dark";
+        handleThemeSelect(nextTheme);
         break;
+      }
       case "units":
         setShowUnitsModal(true);
         break;
@@ -224,21 +230,13 @@ export const useProfileLogic = () => {
         setCurrentSettingsScreen("about");
         break;
       case "terms":
-        Alert.alert("Terms & Privacy", "Opening legal documents...");
+        crossPlatformAlert("Terms & Privacy", "Opening legal documents...");
         break;
       case "export":
-        if (Platform.OS === 'web') {
-          window.alert('Export Data\n\nExport feature coming soon!');
-        } else {
-          Alert.alert('Export Data', 'Export feature coming soon!');
-        }
+        crossPlatformAlert('Export Data', 'Export feature coming soon!');
         break;
       case "sync":
-        if (Platform.OS === 'web') {
-          window.alert('Sync\n\nSync settings coming soon!');
-        } else {
-          Alert.alert('Sync', 'Sync settings coming soon!');
-        }
+        crossPlatformAlert('Sync', 'Sync settings coming soon!');
         break;
       case "wearables":
         setCurrentSettingsScreen("wearables");
@@ -254,11 +252,7 @@ export const useProfileLogic = () => {
   // Stat card press handlers
   const handleStatPress = useCallback((statId: string) => {
     const showAlert = (title: string, message: string) => {
-      if (Platform.OS === 'web') {
-        window.alert(`${title}\n\n${message}`);
-      } else {
-        Alert.alert(title, message);
-      }
+      crossPlatformAlert(title, message);
     };
     switch (statId) {
       case 'current-streak': {
@@ -340,7 +334,7 @@ export const useProfileLogic = () => {
     {
       id: "subscription",
       title: "Manage Subscription",
-      subtitle: "Plan, usage, billing",
+      subtitle: `Current tier: ${subscriptionPlan?.tier ? subscriptionPlan.tier.charAt(0).toUpperCase() + subscriptionPlan.tier.slice(1) : "Free"} — Tap to upgrade`,
       icon: "diamond-outline",
       iconColor: "#FF8A5C",
       isPremium: true,
@@ -370,7 +364,7 @@ export const useProfileLogic = () => {
     },
     {
       id: "theme",
-      title: "Theme Preference",
+      title: "Dark Mode / Theme",
       subtitle: themeSubtitleMap[themePreference],
       icon: "color-palette-outline",
       iconColor: "#FF6B35",
@@ -448,7 +442,7 @@ export const useProfileLogic = () => {
   ];
 
   // Get user display info
-  const userName = profile?.personalInfo?.name; // NO FALLBACK - single source of truth
+  const userName = profile?.personalInfo?.name || profileStorePersonalInfo?.name || `${profileStorePersonalInfo?.first_name || ''} ${profileStorePersonalInfo?.last_name || ''}`.trim() || undefined;
   const memberSince = (() => {
     if (!user?.createdAt) return null; // null = show 'Just joined today' fallback
     const created = new Date(user.createdAt);
@@ -490,6 +484,8 @@ export const useProfileLogic = () => {
     setShowLanguageModal,
     showClearCacheModal,
     setShowClearCacheModal,
+    showPaywallModal,
+    setShowPaywallModal,
 
     // Persisted preferences
     themePreference,

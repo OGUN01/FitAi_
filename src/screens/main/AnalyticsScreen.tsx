@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, Text, StyleSheet, RefreshControl, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, RefreshControl, ActivityIndicator, Platform } from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -72,7 +72,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
   const { user } = useAuthStore();
   const { metrics: healthMetrics } = useHealthDataStore();
   const { weeklyWorkoutPlan, workoutProgress } = useFitnessStore();
-  const { bodyAnalysis, personalInfo } = useProfileStore();
+  const { bodyAnalysis, personalInfo, workoutPreferences } = useProfileStore();
   const { metrics: calculatedMetrics } = useCalculatedMetrics();
   const {
     initialize: initializeAnalytics,
@@ -88,42 +88,44 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     }
   }, [isInitialized, initializeAnalytics]);
 
+  // Compute period days from selected period
+  const periodDays = useMemo(() => {
+    switch (selectedPeriod) {
+      case 'week': return 7;
+      case 'month': return 30;
+      case 'quarter': return 90;
+      default: return 365;
+    }
+  }, [selectedPeriod]);
+
+  // Shared data loader used by both useEffect and handleRefresh
+  const loadHistoryData = useCallback(async () => {
+    if (!user?.id) {
+      setIsDataLoading(false);
+      return;
+    }
+
+    try {
+      setDataError(null);
+      const [weightData, calorieData] = await Promise.all([
+        analyticsDataService.getWeightHistory(user.id, periodDays),
+        analyticsDataService.getCalorieHistory(user.id, periodDays),
+      ]);
+
+      setWeightHistory(weightData);
+      setCalorieHistory(calorieData);
+    } catch (error) {
+      console.error('Failed to load analytics history:', error);
+      setDataError('Failed to load analytics data. Pull to refresh.');
+    } finally {
+      setIsDataLoading(false);
+    }
+  }, [user?.id, periodDays]);
+
   // Load weight and calorie history from Supabase
   useEffect(() => {
-    const loadHistoryData = async () => {
-      if (!user?.id) {
-        setIsDataLoading(false);
-        return;
-      }
-
-      const periodDays =
-        selectedPeriod === "week"
-          ? 7
-          : selectedPeriod === "month"
-            ? 30
-            : selectedPeriod === "quarter"
-              ? 90
-              : 365;
-
-      try {
-        setDataError(null);
-        const [weightData, calorieData] = await Promise.all([
-          analyticsDataService.getWeightHistory(user.id, periodDays),
-          analyticsDataService.getCalorieHistory(user.id, periodDays),
-        ]);
-
-        setWeightHistory(weightData);
-        setCalorieHistory(calorieData);
-      } catch (error) {
-        console.error("Failed to load analytics history:", error);
-        setDataError("Failed to load analytics data. Pull to refresh.");
-      } finally {
-        setIsDataLoading(false);
-      }
-    };
-
     loadHistoryData();
-  }, [user?.id, selectedPeriod]);
+  }, [loadHistoryData]);
 
   // Calculate metrics data - prioritize calculatedMetrics from onboarding
   const metricsData = useMemo((): MetricData => {
@@ -188,12 +190,14 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
       calories: {
         burned: displayCalories,
         target: calculatedMetrics?.dailyCalories || undefined,
-        change: displayCalories > 0 ? 15 : 0,
+        change: calorieHistory.length >= 2
+          ? Math.round(calorieHistory[calorieHistory.length - 1].consumed - calorieHistory[0].consumed)
+          : undefined,
         trend: displayCalories > 0 ? ("up" as const) : ("stable" as const),
       },
       workouts: {
         count: completedWorkouts,
-        change: completedWorkouts > 0 ? 3 : 0,
+        change: undefined,
         trend: completedWorkouts > 0 ? ("up" as const) : ("stable" as const),
       },
       streak: {
@@ -219,7 +223,15 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
         : (currentWeight && bodyAnalysis?.height_cm && bodyAnalysis.height_cm > 0 && personalInfo?.age && personalInfo?.gender)
           ? Math.round((personalInfo.gender === 'male'
             ? (10 * currentWeight + 6.25 * bodyAnalysis.height_cm - 5 * personalInfo.age + 5)
-            : (10 * currentWeight + 6.25 * bodyAnalysis.height_cm - 5 * personalInfo.age - 161)) * 1.55) // Moderate activity multiplier
+            : (10 * currentWeight + 6.25 * bodyAnalysis.height_cm - 5 * personalInfo.age - 161)) * (() => {
+              const level = workoutPreferences?.activity_level;
+              if (level === 'sedentary') return 1.2;
+              if (level === 'light') return 1.375;
+              if (level === 'moderate') return 1.55;
+              if (level === 'active') return 1.725;
+              if (level === 'extreme') return 1.9;
+              return 1.55; // default moderate if unknown
+            })())
           : undefined,
       dailyWater: calculatedMetrics?.dailyWaterML,
     };
@@ -231,6 +243,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     weeklyWorkoutPlan,
     workoutProgress,
     calculatedMetrics,
+    workoutPreferences,
   ]);
 
   // Generate chart data based on period
@@ -343,30 +356,14 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     haptics.light();
     try {
       await refreshAnalytics();
-      // Re-load history data
-      if (user?.id) {
-        const periodDays =
-          selectedPeriod === "week"
-            ? 7
-            : selectedPeriod === "month"
-              ? 30
-              : selectedPeriod === "quarter"
-                ? 90
-                : 365;
-        const [weightData, calorieData] = await Promise.all([
-          analyticsDataService.getWeightHistory(user.id, periodDays),
-          analyticsDataService.getCalorieHistory(user.id, periodDays),
-        ]);
-        setWeightHistory(weightData);
-        setCalorieHistory(calorieData);
-      }
+      await loadHistoryData();
     } catch (error) {
-      console.error("Refresh error:", error);
-      setDataError("Failed to refresh data. Please try again.");
+      console.error('Refresh error:', error);
+      setDataError('Failed to refresh data. Please try again.');
     } finally {
       setRefreshing(false);
     }
-  }, [refreshAnalytics, user?.id, selectedPeriod]);
+  }, [refreshAnalytics, loadHistoryData]);
 
   const handleMetricPress = useCallback((metric: string) => {
     haptics.light();
@@ -394,7 +391,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top"]}>
         <Animated.View
-          entering={FadeIn.duration(300)}
+          entering={Platform.OS !== 'web' ? FadeIn.duration(300) : undefined}
           style={styles.animatedContainer}
         >
           <Animated.ScrollView
@@ -467,7 +464,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
             )}
 
             {/* Bottom Spacing */}
-            <View style={{ height: insets.bottom + rh(90) }} />
+            <View style={{ height: insets.bottom + rh(100) }} />
           </Animated.ScrollView>
         </Animated.View>
       </SafeAreaView>
@@ -487,7 +484,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: ResponsiveTheme.spacing.md,
+    paddingBottom: rh(120),
   },
   sectionContainer: {
     position: "relative" as const,

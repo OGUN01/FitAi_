@@ -149,7 +149,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
       blurAmount={blurIntensity}
       borderRadius={borderRadiusValue}
       showBorder={!gradientBorder && showBorder}
-      style={[styles.glassContainer, containerStyle, style] as any}
+      style={[styles.glassContainer, containerStyle, style]}
     >
       <View style={[styles.content, { padding: paddingValue }, contentStyle]}>
         {children}

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
@@ -12,6 +12,7 @@ import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rw, rh } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
 import razorpayService from "../../services/RazorpayService";
 import { RazorpayServiceError } from "../../services/RazorpayService";
@@ -102,7 +103,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
   const tier = currentPlan?.tier ?? "free";
   const planName = currentPlan?.name ?? "Free Plan";
   const tierColors = TIER_COLORS[tier] ?? TIER_COLORS.free;
-  const statusInfo = STATUS_CONFIG[subscriptionStatus ?? ""] ?? null;
+  const statusInfo = (tier !== "free" && subscriptionStatus) ? (STATUS_CONFIG[subscriptionStatus] ?? null) : null;
 
   // ---- Usage calculations ----
   const aiMonthly = usage.ai_generation.monthly;
@@ -126,7 +127,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
 
   const handleCancel = useCallback(() => {
     haptics.medium();
-    Alert.alert(
+    crossPlatformAlert(
       "Cancel Subscription?",
       `Your subscription will remain active until ${formatDate(currentPeriodEnd)}. After that, you'll be downgraded to the Free plan.`,
       [
@@ -139,7 +140,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
             try {
               await razorpayService.cancelSubscription();
               await fetchSubscriptionStatus();
-              Alert.alert(
+              crossPlatformAlert(
                 "Subscription Cancelled",
                 `You can continue using premium features until ${formatDate(currentPeriodEnd)}.`,
               );
@@ -148,7 +149,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
                 error instanceof RazorpayServiceError
                   ? error.message
                   : "Failed to cancel subscription. Please try again.";
-              Alert.alert("Error", message);
+              crossPlatformAlert("Error", message);
             } finally {
               setActionLoading(null);
             }
@@ -160,7 +161,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
 
   const handlePause = useCallback(() => {
     haptics.medium();
-    Alert.alert(
+    crossPlatformAlert(
       "Pause Subscription?",
       "Your subscription will be paused immediately. You can resume anytime.",
       [
@@ -172,7 +173,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
             try {
               await razorpayService.pauseSubscription();
               await fetchSubscriptionStatus();
-              Alert.alert(
+              crossPlatformAlert(
                 "Subscription Paused",
                 "Your subscription has been paused. Resume anytime to continue.",
               );
@@ -181,7 +182,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
                 error instanceof RazorpayServiceError
                   ? error.message
                   : "Failed to pause subscription. Please try again.";
-              Alert.alert("Error", message);
+              crossPlatformAlert("Error", message);
             } finally {
               setActionLoading(null);
             }
@@ -197,7 +198,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
     try {
       await razorpayService.resumeSubscription();
       await fetchSubscriptionStatus();
-      Alert.alert(
+      crossPlatformAlert(
         "Subscription Resumed",
         "Welcome back! Your premium features are active again.",
       );
@@ -206,7 +207,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
         error instanceof RazorpayServiceError
           ? error.message
           : "Failed to resume subscription. Please try again.";
-      Alert.alert("Error", message);
+      crossPlatformAlert("Error", message);
     } finally {
       setActionLoading(null);
     }
@@ -272,7 +273,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
-      <SafeAreaView style={styles.container} edges={["top"]}>
+      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
         {/* Header */}
         <Animated.View
           entering={FadeInDown.delay(50).duration(400)}
@@ -318,7 +319,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
                   </Text>
                 </LinearGradient>
 
-                {statusInfo && (
+                {statusInfo && tier !== "free" && (
                   <View
                     style={[
                       styles.statusBadge,
@@ -653,7 +654,7 @@ const styles = StyleSheet.create({
 
   // Card
   card: {
-    marginBottom: rh(16),
+    marginBottom: rh(10),
     padding: rw(16),
   },
 
@@ -662,7 +663,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: rh(12),
+    marginBottom: rh(8),
   },
   planBadge: {
     flexDirection: "row",
@@ -724,7 +725,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: rw(8),
-    marginBottom: rh(16),
+    marginBottom: rh(10),
   },
   sectionTitle: {
     fontSize: rf(16),
@@ -732,13 +733,13 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.text,
   },
   usageRow: {
-    marginBottom: rh(16),
+    marginBottom: rh(10),
   },
   usageHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: rh(8),
+    marginBottom: rh(6),
   },
   usageLabelRow: {
     flexDirection: "row",
@@ -781,7 +782,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: rw(6),
-    paddingVertical: rh(8),
+    paddingVertical: rh(6),
     paddingHorizontal: rw(10),
     borderRadius: rw(10),
     backgroundColor: "rgba(255,255,255,0.05)",
@@ -826,7 +827,7 @@ const styles = StyleSheet.create({
   // Upgrade CTA
   upgradeCta: {
     borderRadius: rw(16),
-    padding: rw(20),
+    padding: rw(14),
     marginBottom: rh(16),
   },
   upgradeCtaContent: {
@@ -848,8 +849,8 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.8)",
   },
   upgradeBenefits: {
-    marginTop: rh(16),
-    gap: rh(8),
+    marginTop: rh(10),
+    gap: rh(6),
   },
   benefitRow: {
     flexDirection: "row",
@@ -864,7 +865,7 @@ const styles = StyleSheet.create({
 
   // Bottom
   bottomSpacing: {
-    height: 100,
+    height: rh(180),
   },
 });
 

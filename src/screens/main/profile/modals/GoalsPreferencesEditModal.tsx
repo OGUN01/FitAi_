@@ -10,16 +10,18 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, StyleSheet, Alert } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SettingsModalWrapper } from "../components/SettingsModalWrapper";
 import { GlassFormPicker } from "../components/GlassFormPicker";
 import { useProfileStore } from "../../../../stores/profileStore";
+import { useUserStore } from "../../../../stores/userStore";
 import { useUser } from "../../../../hooks/useUser";
 import { useAuth } from "../../../../hooks/useAuth";
 import { ResponsiveTheme } from "../../../../utils/constants";
 import { rf } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
+import { crossPlatformAlert } from "../../../../utils/crossPlatformAlert";
 import type { FitnessGoals } from "../../../../types/user";
 import { userProfileService } from "../../../../services/userProfile";
 
@@ -118,7 +120,7 @@ const TIME_COMMITMENT_OPTIONS = [
 export const GoalsPreferencesEditModal: React.FC<
   GoalsPreferencesEditModalProps
 > = ({ visible, onClose }) => {
-  const { profile, updateFitnessGoalsLocal } = useUser();
+  const { profile } = useUser();
   const { user } = useAuth();
   const { updateWorkoutPreferences, workoutPreferences } = useProfileStore();
 
@@ -248,7 +250,16 @@ export const GoalsPreferencesEditModal: React.FC<
       updateWorkoutPreferences(updatedGoals);
 
       // Also update userStore so reads from profile.fitnessGoals stay in sync
-      updateFitnessGoalsLocal(updatedGoals);
+      const currentProfile = useUserStore.getState().profile;
+      if (currentProfile) {
+        useUserStore.getState().setProfile({
+          ...currentProfile,
+          fitnessGoals: {
+            ...currentProfile.fitnessGoals,
+            ...updatedGoals,
+          },
+        });
+      }
 
       // Sync to Supabase
       if (user?.id) {
@@ -264,11 +275,10 @@ export const GoalsPreferencesEditModal: React.FC<
               "Failed to sync fitness goals to database:",
               result.error,
             );
-            Alert.alert(
+            crossPlatformAlert(
               "Saved Locally",
               "Your goals were saved locally but failed to sync to the server. They will sync automatically when connection is restored.",
             );
-          } else {
             console.log("✅ Fitness goals synced to database");
           }
         } catch (syncError) {
@@ -281,7 +291,7 @@ export const GoalsPreferencesEditModal: React.FC<
       onClose();
     } catch (error) {
       console.error("Error saving fitness goals:", error);
-      Alert.alert("Error", "Failed to save changes. Please try again.");
+      crossPlatformAlert("Error", "Failed to save changes. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -291,7 +301,7 @@ export const GoalsPreferencesEditModal: React.FC<
     timeCommitment,
     profile,
     updateWorkoutPreferences,
-    updateFitnessGoalsLocal,
+
     onClose,
     validate,
     user,

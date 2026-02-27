@@ -6,7 +6,7 @@ import {
   Modal,
   TouchableOpacity,
   Dimensions,
-  Alert,
+
   } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,6 +14,7 @@ import { Card } from "./Card";
 import { Button } from "./Button";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rs, rbr } from "../../utils/responsive";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 interface DialogAction {
   text: string;
@@ -133,6 +134,7 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
                         title={action.text}
                         onPress={action.onPress}
                         variant={getButtonVariant(action)}
+                        accessibilityLabel={action.style === "cancel" ? "back" : action.text}
                         style={
                           (index === actions.length - 1
                             ? { width: "100%" }
@@ -155,22 +157,22 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
 export const showDialog = {
   info: (title: string, message?: string, _actions?: DialogAction[]) => {
     const buttons = _actions?.map((a) => ({ text: a.text, onPress: a.onPress, style: a.style })) ?? [{ text: "OK" }];
-    Alert.alert(title, message ?? "", buttons);
+    crossPlatformAlert(title, message ?? "", buttons);
   },
 
   success: (title: string, message?: string, _actions?: DialogAction[]) => {
     const buttons = _actions?.map((a) => ({ text: a.text, onPress: a.onPress, style: a.style })) ?? [{ text: "OK" }];
-    Alert.alert(`\u2705 ${title}`, message ?? "", buttons);
+    crossPlatformAlert(`✅ ${title}`, message ?? "", buttons);
   },
 
   warning: (title: string, message?: string, _actions?: DialogAction[]) => {
     const buttons = _actions?.map((a) => ({ text: a.text, onPress: a.onPress, style: a.style })) ?? [{ text: "OK" }];
-    Alert.alert(`\u26A0\uFE0F ${title}`, message ?? "", buttons);
+    crossPlatformAlert(`⚠️ ${title}`, message ?? "", buttons);
   },
 
   error: (title: string, message?: string, _actions?: DialogAction[]) => {
     const buttons = _actions?.map((a) => ({ text: a.text, onPress: a.onPress, style: a.style })) ?? [{ text: "OK" }];
-    Alert.alert(`\u274C ${title}`, message ?? "", buttons);
+    crossPlatformAlert(`❌ ${title}`, message ?? "", buttons);
   },
 };
 

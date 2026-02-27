@@ -124,12 +124,12 @@ export class ConsistencyChecker {
           .from("diet_preferences")
           .select("*")
           .eq("user_id", userId)
-          .single(),
+          .maybeSingle(),
         supabase
           .from("body_analysis")
           .select("*")
           .eq("user_id", userId)
-          .single(),
+          .maybeSingle(),
         supabase
           .from("workout_preferences")
           .select("*")
@@ -139,7 +139,7 @@ export class ConsistencyChecker {
           .from("advanced_review")
           .select("*")
           .eq("user_id", userId)
-          .single(),
+          .maybeSingle(),
       ]);
 
       if (profileError && profileError.code !== "PGRST116") {

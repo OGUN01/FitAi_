@@ -211,7 +211,7 @@ class FitnessDataService {
         .from("workout_preferences")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Error fetching workout preferences:", error);
@@ -248,7 +248,7 @@ class FitnessDataService {
         .from("fitness_goals")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         return {

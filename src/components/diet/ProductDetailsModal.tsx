@@ -6,7 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  Alert,
+
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Modal, Button } from "../ui";
@@ -16,6 +16,7 @@ import { HealthScoreIndicator } from "./HealthScoreIndicator";
 import type { ScannedProduct } from "../../services/barcodeService";
 import { rf, rp, rbr } from "../../utils/responsive";
 
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 const NUTRI_SCORE_COLORS: Record<string, string> = {
   a: "#038141",
   b: "#85BB2F",
@@ -63,7 +64,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   const handleAddToMeal = () => {
     if (onAddToMeal) {
       onAddToMeal(product);
-      Alert.alert(
+      crossPlatformAlert(
         "Added to Meal",
         `${product.name} has been added to your current meal.`,
         [{ text: "OK", onPress: onClose }],

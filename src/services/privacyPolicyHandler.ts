@@ -1,8 +1,9 @@
 // Privacy Policy Handler for Health Connect Compliance
 // Handles privacy policy intent from Health Connect app
 
-import { Linking, Alert } from "react-native";
+import { Linking } from "react-native";
 import * as WebBrowser from "expo-web-browser";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 
 export interface PrivacyPolicyHandlerService {
   handlePrivacyPolicyRequest: () => Promise<boolean>;
@@ -25,7 +26,7 @@ class PrivacyPolicyHandler implements PrivacyPolicyHandlerService {
 
       if (!isAccessible) {
         console.error("❌ PRIVACY: Privacy policy URL not accessible");
-        Alert.alert(
+        crossPlatformAlert(
           "Privacy Policy Unavailable",
           "Unable to access privacy policy at this time. Please try again later.",
           [{ text: "OK" }],
@@ -41,7 +42,7 @@ class PrivacyPolicyHandler implements PrivacyPolicyHandlerService {
         "❌ PRIVACY: Failed to handle privacy policy request:",
         error,
       );
-      Alert.alert(
+      crossPlatformAlert(
         "Privacy Policy Error",
         "Unable to open privacy policy. Please visit fitai.app/privacy directly.",
         [{ text: "OK" }],

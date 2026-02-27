@@ -19,7 +19,6 @@ import {
   ScrollView,
   Modal,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -33,6 +32,7 @@ import type { DayMeal } from "../../types/ai";
 import { useNutritionStore } from "../../stores/nutritionStore";
 import { supabase } from "../../services/supabase";
 import { haptics } from "../../utils/haptics";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 interface MealEditModalProps {
   visible: boolean;
@@ -134,12 +134,12 @@ export const MealEditModal: React.FC<MealEditModalProps> = ({
   // Save changes
   const handleSave = async () => {
     if (!meal || !mealName.trim()) {
-      Alert.alert("Error", "Please enter a meal name");
+      crossPlatformAlert("Error", "Please enter a meal name");
       return;
     }
 
     if (ingredients.length === 0) {
-      Alert.alert("Error", "Please add at least one ingredient");
+      crossPlatformAlert("Error", "Please add at least one ingredient");
       return;
     }
 
@@ -209,12 +209,12 @@ export const MealEditModal: React.FC<MealEditModalProps> = ({
       }
 
       haptics.success();
-      Alert.alert("Success", "Meal updated successfully");
+      crossPlatformAlert("Success", "Meal updated successfully");
       onSave(updatedMeal);
       onClose();
     } catch (error) {
       console.error("Error saving meal:", error);
-      Alert.alert("Error", "Failed to save changes. Please try again.");
+      crossPlatformAlert("Error", "Failed to save changes. Please try again.");
     } finally {
       setIsSaving(false);
     }

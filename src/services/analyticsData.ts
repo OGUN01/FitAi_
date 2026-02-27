@@ -56,7 +56,7 @@ class AnalyticsDataService {
         water_intake_ml: metrics.waterIntakeMl || 0,
         steps: metrics.steps,
         sleep_hours: metrics.sleepHours,
-      });
+      }, { onConflict: 'user_id,metric_date' });
 
       if (error) {
         return false;
@@ -180,7 +180,7 @@ class AnalyticsDataService {
         .select("*")
         .eq("user_id", userId)
         .eq("metric_date", today)
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         return null;
@@ -212,36 +212,43 @@ class AnalyticsDataService {
     userId: string,
     updates: Partial<DailyMetrics>,
   ): Promise<boolean> {
-    if (!userId || userId.startsWith("guest") || userId === "local-user") {
+    if (!userId || userId.startsWith('guest') || userId === 'local-user') {
       return true;
     }
 
     try {
-      const today = new Date().toISOString().split("T")[0];
-      const existingMetrics = await this.getTodaysMetrics(userId);
+      const today = new Date().toISOString().split('T')[0];
 
-      const mergedMetrics: DailyMetrics = {
-        userId,
-        metricDate: today,
-        weightKg: updates.weightKg ?? existingMetrics?.weightKg ?? null,
-        caloriesConsumed:
-          updates.caloriesConsumed ?? existingMetrics?.caloriesConsumed ?? null,
-        caloriesBurned:
-          updates.caloriesBurned ?? existingMetrics?.caloriesBurned ?? null,
-        workoutsCompleted:
-          (updates.workoutsCompleted ?? 0) +
-          (existingMetrics?.workoutsCompleted ?? 0),
-        mealsLogged:
-          (updates.mealsLogged ?? 0) + (existingMetrics?.mealsLogged ?? 0),
-        waterIntakeMl:
-          (updates.waterIntakeMl ?? 0) + (existingMetrics?.waterIntakeMl ?? 0),
-        steps: updates.steps ?? existingMetrics?.steps ?? null,
-        sleepHours: updates.sleepHours ?? existingMetrics?.sleepHours ?? null,
+      // Build the row to upsert — only include fields the caller provided,
+      // plus required identifiers. Supabase upsert (on_conflict) will
+      // create-or-update atomically, avoiding the read+increment race.
+      const row: Record<string, unknown> = {
+        id: `${userId}_${today}`,
+        user_id: userId,
+        metric_date: today,
       };
 
-      return await this.saveDailyMetrics(mergedMetrics);
+      if (updates.weightKg !== undefined) row.weight_kg = updates.weightKg;
+      if (updates.caloriesConsumed !== undefined) row.calories_consumed = updates.caloriesConsumed;
+      if (updates.caloriesBurned !== undefined) row.calories_burned = updates.caloriesBurned;
+      if (updates.workoutsCompleted !== undefined) row.workouts_completed = updates.workoutsCompleted;
+      if (updates.mealsLogged !== undefined) row.meals_logged = updates.mealsLogged;
+      if (updates.waterIntakeMl !== undefined) row.water_intake_ml = updates.waterIntakeMl;
+      if (updates.steps !== undefined) row.steps = updates.steps;
+      if (updates.sleepHours !== undefined) row.sleep_hours = updates.sleepHours;
+
+      const { error } = await supabase
+        .from('analytics_metrics')
+        .upsert(row, { onConflict: 'user_id,metric_date' });
+
+      if (error) {
+        console.error('\u274c Metrics upsert error:', error);
+        return false;
+      }
+
+      return true;
     } catch (error) {
-      console.error("❌ Error updating today's metrics:", error);
+      console.error('\u274c Error updating today\'s metrics:', error);
       return false;
     }
   }

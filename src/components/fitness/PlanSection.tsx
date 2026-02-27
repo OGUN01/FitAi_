@@ -1,6 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { ResponsiveTheme } from "../../utils/constants";
+import { DayName } from "../../stores/appStateStore";
 
 // Importing from screens/main/fitness as they are currently located there
 // These should ideally be moved to components/fitness in a future refactor
@@ -11,7 +12,7 @@ interface PlanSectionProps {
   weeklyWorkoutPlan: any;
   workoutProgress: any;
   selectedDay: any;
-  onDayPress: (day: string) => void;
+  onDayPress: (day: DayName) => void;
   onViewFullPlan: () => void;
   onRegeneratePlan: () => void;
   isGeneratingPlan: boolean;

@@ -16,19 +16,20 @@ export async function getProgressGoals(
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      if (error.code === "PGRST116") {
-        return {
-          success: true,
-          data: getDefaultGoals(userId),
-        };
-      }
       console.error("Error fetching progress goals:", error);
       return {
         success: false,
         error: error.message,
+      };
+    }
+
+    if (!data) {
+      return {
+        success: true,
+        data: getDefaultGoals(userId),
       };
     }
 

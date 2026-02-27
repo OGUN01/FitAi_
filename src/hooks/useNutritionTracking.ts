@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import Constants from "expo-constants";
 import { useHydrationStore, useNutritionStore } from "../stores";
 import { useCalculatedMetrics } from "./useCalculatedMetrics";
@@ -54,13 +54,14 @@ export const useNutritionTracking = (navigation: any) => {
   }, [calculatedMetrics?.dailyWaterML]);
 
   const waterConsumedLiters = waterIntakeML / 1000;
-  const waterGoalLiters = waterGoalML ? waterGoalML / 1000 : null;
+  const DEFAULT_WATER_GOAL_ML = 2500; // 2.5L default when no profile metrics available
+  const waterGoalLiters = (waterGoalML || DEFAULT_WATER_GOAL_ML) / 1000;
 
   const handleAddWater = () => {
     const incrementAmountML = 250;
 
     if (waterGoalML && waterIntakeML >= waterGoalML) {
-      Alert.alert(
+      crossPlatformAlert(
         "Daily Goal Achieved!",
         `You've already reached your daily water goal of ${waterGoalLiters?.toFixed(2)}L! Great job staying hydrated!`,
         [{ text: "Awesome!" }],
@@ -77,7 +78,7 @@ export const useNutritionTracking = (navigation: any) => {
       previousIntake < waterGoalML
     ) {
       setTimeout(() => {
-        Alert.alert(
+        crossPlatformAlert(
           "Hydration Goal Achieved!",
           `Congratulations! You've reached your daily water goal of ${waterGoalLiters?.toFixed(2)}L!`,
           [
@@ -88,7 +89,7 @@ export const useNutritionTracking = (navigation: any) => {
                 if (navigation) {
                   navigation.navigate("Settings", { screen: "Notifications" });
                 } else {
-                  Alert.alert(
+                  crossPlatformAlert(
                     "Water Settings",
                     "Navigate to Settings > Notifications to adjust your water goal and reminder schedule.",
                   );
@@ -103,7 +104,7 @@ export const useNutritionTracking = (navigation: any) => {
         (waterGoalML - (previousIntake + incrementAmountML)) / 1000,
         0,
       );
-      Alert.alert(
+      crossPlatformAlert(
         "Water Added!",
         `Great job! ${remainingL.toFixed(2)}L more to reach your goal.`,
       );

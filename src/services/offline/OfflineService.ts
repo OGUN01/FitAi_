@@ -36,6 +36,19 @@ class OfflineService {
 
   private async initializeService(): Promise<void> {
     await this.storage.loadData();
+    // Purge stale workout_sessions actions that use old camelCase field names
+    const queue = this.storage.getSyncQueue();
+    const cleaned = queue.filter((action) => {
+      if (action.table === 'workout_sessions' && action.type === 'CREATE') {
+        const d = action.data as Record<string, unknown>;
+        return !('caloriesBurned' in d || 'userId' in d || 'workoutId' in d);
+      }
+      return true;
+    });
+    if (cleaned.length !== queue.length) {
+      this.storage.setSyncQueue(cleaned);
+      await this.storage.saveData();
+    }
     await this.network.initialize();
     this.network.setOnlineCallback(() => this.syncOfflineActions());
   }

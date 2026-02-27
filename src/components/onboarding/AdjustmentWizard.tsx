@@ -369,6 +369,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
+    boxShadow: `0px 4px 8px ${ResponsiveTheme.colors.primary}4D`,
     elevation: 4,
   },
 

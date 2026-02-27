@@ -178,7 +178,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
   if (isExpoGo) {
     return (
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
-        <SafeAreaView style={styles.container} edges={["top"]}>
+        <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
           <NotificationsHeader onBack={onBack} />
           <ExpoGoMessage />
         </SafeAreaView>
@@ -204,7 +204,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
-      <SafeAreaView style={styles.container} edges={["top"]}>
+      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
         <NotificationsHeader onBack={onBack} />
 
         <ScrollView

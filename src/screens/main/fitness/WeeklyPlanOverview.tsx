@@ -4,7 +4,7 @@
  */
 
 import React, { useMemo } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
@@ -12,6 +12,7 @@ import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressab
 import { ResponsiveTheme } from "../../../utils/constants";
 import { rf, rw, rh, rp, rbr } from "../../../utils/responsive";
 import { WeeklyWorkoutPlan } from "../../../ai";
+import { DayName } from "../../../stores/appStateStore";
 
 interface WorkoutProgressItem {
   workoutId: string;
@@ -23,14 +24,14 @@ interface WeeklyPlanOverviewProps {
   plan: WeeklyWorkoutPlan;
   workoutProgress: Record<string, WorkoutProgressItem>;
   selectedDay: string;
-  onDayPress: (day: string) => void;
+  onDayPress: (day: DayName) => void;
   onViewFullPlan: () => void;
   onRegeneratePlan?: () => void;
   isRegenerating?: boolean;
 }
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const DAY_KEYS = [
+const DAY_KEYS: DayName[] = [
   "monday",
   "tuesday",
   "wednesday",
@@ -113,27 +114,30 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
             </Text>
           </View>
           <View style={styles.headerActions}>
-            {onRegeneratePlan && (
-              <AnimatedPressable
-                onPress={onRegeneratePlan}
-                disabled={isRegenerating}
-                scaleValue={0.95}
-                hapticFeedback={true}
-                hapticType="medium"
-                style={styles.regenerateButton}
-              >
+          {onRegeneratePlan && (
+            <Pressable
+              onPress={onRegeneratePlan}
+              disabled={isRegenerating}
+              accessibilityRole="button"
+              accessibilityLabel="Regenerate plan"
+              style={styles.regenerateButton}
+            >
+              <View style={styles.regenerateButtonInner}>
                 <Ionicons
                   name={isRegenerating ? "sync" : "refresh"}
-                  size={rf(16)}
+                  size={rf(14)}
                   color={
                     isRegenerating
                       ? ResponsiveTheme.colors.textSecondary
                       : ResponsiveTheme.colors.primary
                   }
-                  style={isRegenerating ? styles.spinning : undefined}
                 />
-              </AnimatedPressable>
-            )}
+                <Text style={[styles.regenerateText, isRegenerating && styles.regenerateTextDisabled]}>
+                  {isRegenerating ? "Generating..." : "Regenerate"}
+                </Text>
+              </View>
+            </Pressable>
+          )}
             <AnimatedPressable
               onPress={onViewFullPlan}
               scaleValue={0.95}
@@ -265,7 +269,19 @@ const styles = StyleSheet.create({
   },
   regenerateButton: {
     padding: ResponsiveTheme.spacing.xs,
-    opacity: 1,
+  },
+  regenerateButtonInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(4),
+  },
+  regenerateText: {
+    fontSize: rf(12),
+    fontWeight: "600",
+    color: ResponsiveTheme.colors.primary,
+  },
+  regenerateTextDisabled: {
+    color: ResponsiveTheme.colors.textSecondary,
   },
   spinning: {
     // Animation will be added via Reanimated

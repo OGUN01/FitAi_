@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 /**
  * Aurora Design System - Complete Design Tokens
  * Based on cult.fit Aurora design language
@@ -160,72 +162,43 @@ export const borderRadius = {
   full: 9999,
 } as const;
 
+const isWeb = Platform.OS === 'web';
+
+// Helper to create platform-appropriate shadow styles
+// On web, only boxShadow is used (deprecated shadow* props cause warnings)
+// On native, both native shadow props and elevation are used
+const makeShadow = (
+  offsetY: number,
+  radius: number,
+  opacity: number,
+  elevation: number,
+  boxShadow: string,
+) => {
+  if (isWeb) {
+    return { boxShadow };
+  }
+  return {
+    shadowOffset: { width: 0, height: offsetY },
+    shadowRadius: radius,
+    shadowOpacity: opacity,
+    shadowColor: '#000000',
+    elevation,
+    boxShadow,
+  };
+};
+
 // Shadow System (8 levels)
 export const shadows = {
-  level1: {
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-    shadowOpacity: 0.1,
-    shadowColor: "#000000",
-    elevation: 1,
-  },
-  level2: {
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    shadowOpacity: 0.15,
-    shadowColor: "#000000",
-    elevation: 2,
-  },
-  level3: {
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-    shadowOpacity: 0.2,
-    shadowColor: "#000000",
-    elevation: 3,
-  },
-  level4: {
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 12,
-    shadowOpacity: 0.25,
-    shadowColor: "#000000",
-    elevation: 4,
-  },
-  level5: {
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 16,
-    shadowOpacity: 0.3,
-    shadowColor: "#000000",
-    elevation: 5,
-  },
-  level6: {
-    shadowOffset: { width: 0, height: 12 },
-    shadowRadius: 24,
-    shadowOpacity: 0.35,
-    shadowColor: "#000000",
-    elevation: 6,
-  },
-  level7: {
-    shadowOffset: { width: 0, height: 16 },
-    shadowRadius: 32,
-    shadowOpacity: 0.4,
-    shadowColor: "#000000",
-    elevation: 7,
-  },
-  level8: {
-    shadowOffset: { width: 0, height: 24 },
-    shadowRadius: 48,
-    shadowOpacity: 0.45,
-    shadowColor: "#000000",
-    elevation: 8,
-  },
-  glass: {
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 32,
-    shadowOpacity: 0.37,
-    shadowColor: "#000000",
-    elevation: 4,
-  },
-} as const;
+  level1: makeShadow(1, 2, 0.1, 1, '0px 1px 2px rgba(0, 0, 0, 0.1)'),
+  level2: makeShadow(2, 4, 0.15, 2, '0px 2px 4px rgba(0, 0, 0, 0.15)'),
+  level3: makeShadow(4, 8, 0.2, 3, '0px 4px 8px rgba(0, 0, 0, 0.2)'),
+  level4: makeShadow(6, 12, 0.25, 4, '0px 6px 12px rgba(0, 0, 0, 0.25)'),
+  level5: makeShadow(8, 16, 0.3, 5, '0px 8px 16px rgba(0, 0, 0, 0.3)'),
+  level6: makeShadow(12, 24, 0.35, 6, '0px 12px 24px rgba(0, 0, 0, 0.35)'),
+  level7: makeShadow(16, 32, 0.4, 7, '0px 16px 32px rgba(0, 0, 0, 0.4)'),
+  level8: makeShadow(24, 48, 0.45, 8, '0px 24px 48px rgba(0, 0, 0, 0.45)'),
+  glass: makeShadow(8, 32, 0.37, 4, '0px 8px 32px rgba(0, 0, 0, 0.37)'),
+};
 
 // Glass Surface Specifications
 export const glassSurface = {

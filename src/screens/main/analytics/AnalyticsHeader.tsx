@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh, rp } from "../../../utils/responsive";
+import { rf, rw, rh, rp, rs } from "../../../utils/responsive";
 import { PeriodSelector, Period } from "./PeriodSelector";
 import { haptics } from "../../../utils/haptics";
 import { crossPlatformAlert } from "../../../utils/crossPlatformAlert";
@@ -63,7 +63,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
   return (
     <View style={[styles.container, { paddingTop: topPadding }]}>
       {/* Title Row */}
-      <Animated.View entering={FadeInDown.delay(100)} style={styles.titleRow}>
+      <Animated.View entering={Platform.OS !== 'web' ? FadeInDown.delay(100) : undefined} style={styles.titleRow}>
         <View style={styles.titleLeft}>
           <LinearGradient
             colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark]}
@@ -121,6 +121,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
             </TouchableOpacity>
           )}
 
+ 
           {/* AI Badge */}
           <TouchableOpacity
             style={styles.badge}
@@ -136,7 +137,6 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
             accessibilityRole="button"
             accessibilityLabel="AI Insights"
           >
-            <Ionicons name="sparkles" size={rf(12)} color={ResponsiveTheme.colors.gold} />
             <Text style={styles.badgeText}>AI</Text>
           </TouchableOpacity>
         </View>
@@ -144,7 +144,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
 
       {/* Period Selector */}
       <Animated.View
-        entering={FadeInDown.delay(200)}
+        entering={Platform.OS !== 'web' ? FadeInDown.delay(200) : undefined}
         style={styles.periodSelectorWrapper}
       >
         <PeriodSelector
@@ -173,16 +173,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: ResponsiveTheme.spacing.sm,
+    flex: 1,
+    minWidth: 0,
   },
   titleRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: ResponsiveTheme.spacing.xs,
+    flexShrink: 0,
   },
   navButton: {
-    width: rw(36),
-    height: rw(36),
-    borderRadius: rw(10),
+    width: rw(32),
+    height: rw(32),
+    borderRadius: rw(8),
     backgroundColor: ResponsiveTheme.colors.glassBorder,
     justifyContent: "center",
     alignItems: "center",
@@ -209,20 +212,23 @@ const styles = StyleSheet.create({
     marginTop: rp(-2),
   },
   badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rp(4),
+    width: rw(32),
+    height: rw(32),
+    borderRadius: rw(16),
     backgroundColor: ResponsiveTheme.colors.warningTint,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: rp(4),
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.warningTint,
   },
   badgeText: {
-    fontSize: rf(10),
+    fontSize: rf(11),
     fontWeight: "700",
     color: ResponsiveTheme.colors.gold,
+    letterSpacing: 0.5,
+    textAlign: "center",
+    lineHeight: rf(11),
+    ...(Platform.OS === "android" ? { includeFontPadding: false } : {}),
   },
   periodSelectorWrapper: {
     alignSelf: "stretch",

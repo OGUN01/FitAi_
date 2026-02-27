@@ -12,6 +12,7 @@ import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { WeeklyWorkoutPlan } from "../../types/ai";
+import { DayName } from "../../stores/appStateStore";
 
 interface WorkoutProgressItem {
   workoutId: string;
@@ -23,12 +24,12 @@ interface WeeklyPlanOverviewProps {
   plan: WeeklyWorkoutPlan;
   workoutProgress: Record<string, WorkoutProgressItem>;
   selectedDay: string;
-  onDayPress: (day: string) => void;
+  onDayPress: (day: DayName) => void;
   onViewFullPlan: () => void;
 }
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const DAY_KEYS = [
+const DAY_KEYS: DayName[] = [
   "monday",
   "tuesday",
   "wednesday",

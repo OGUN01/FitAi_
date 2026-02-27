@@ -345,6 +345,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 16,
+    boxShadow: '0px 8px 16px rgba(0, 0, 0, 0.25)',
     elevation: 20,
   },
 

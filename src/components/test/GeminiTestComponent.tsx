@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  Alert,
+
 } from "react-native";
 import geminiTest, {
 import { ResponsiveTheme } from '../../utils/constants';
@@ -13,6 +13,7 @@ import { ResponsiveTheme } from '../../utils/constants';
   TestResult,
 } from "../../test/geminiStructuredOutputTest";
 
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 interface GeminiTestComponentProps {
   onClose?: () => void;
@@ -56,7 +57,7 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
       setCurrentTest("Tests completed!");
 
       // Show alert with results
-      Alert.alert(
+      crossPlatformAlert(
         results.overallSuccess
           ? "✅ All Tests Passed!"
           : "❌ Some Tests Failed",
@@ -66,7 +67,7 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
       );
     } catch (error) {
       console.error("Test execution failed:", error);
-      Alert.alert(
+      crossPlatformAlert(
         "💥 Test Execution Failed",
         error instanceof Error ? error.message : "Unknown error occurred",
         [{ text: "OK" }],
@@ -83,7 +84,7 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
 
     try {
       const result = await geminiTest.testSimpleStructuredOutput();
-      Alert.alert(
+      crossPlatformAlert(
         result ? "✅ Quick Test Passed!" : "❌ Quick Test Failed",
         result
           ? "Simple structured output is working correctly!"
@@ -91,7 +92,7 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
         [{ text: "OK" }],
       );
     } catch (error: any) {
-      Alert.alert("❌ Quick Test Error", error.message, [{ text: "OK" }]);
+      crossPlatformAlert("❌ Quick Test Error", error.message, [{ text: "OK" }]);
     } finally {
       setIsRunning(false);
       setCurrentTest("");
@@ -104,7 +105,7 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
 
     try {
       const result = await geminiTest.testEndToEndGeneration();
-      Alert.alert(
+      crossPlatformAlert(
         result ? "✅ Workout Test Passed!" : "❌ Workout Test Failed",
         result
           ? "Weekly workout generation is working perfectly!"
@@ -112,7 +113,7 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
         [{ text: "OK" }],
       );
     } catch (error: any) {
-      Alert.alert("❌ Workout Test Error", error.message, [{ text: "OK" }]);
+      crossPlatformAlert("❌ Workout Test Error", error.message, [{ text: "OK" }]);
     } finally {
       setIsRunning(false);
       setCurrentTest("");

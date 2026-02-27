@@ -44,12 +44,19 @@ export async function getProfile(userId: string): Promise<UserProfileResponse> {
       .from("profiles")
       .select("*")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       return {
         success: false,
         error: error.message,
+      };
+    }
+
+    if (!data) {
+      return {
+        success: false,
+        error: "Profile not found",
       };
     }
 
@@ -79,7 +86,7 @@ export async function updateProfile(
       .update(dbUpdates)
       .eq("id", userId)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       return {

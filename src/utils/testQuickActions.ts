@@ -1,7 +1,7 @@
 // 🧪 FitAI Quick Actions In-App Test Suite
 // React Native compatible testing utilities
 
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "./crossPlatformAlert";
 import { foodRecognitionService } from "../services/foodRecognitionService";
 import { APIKeyRotator } from "../utils/apiKeyRotator";
 import { foodRecognitionE2ETests } from "./testFoodRecognitionE2E";
@@ -316,7 +316,7 @@ class QuickActionsTestSuite {
         });
       }
 
-      Alert.alert("🧪 Quick Actions Test Results", message, [
+      crossPlatformAlert("🧪 Quick Actions Test Results", message, [
         {
           text: "View Details",
           onPress: () => this.showDetailedResults(results),
@@ -324,7 +324,7 @@ class QuickActionsTestSuite {
         { text: "OK" },
       ]);
     } catch (error) {
-      Alert.alert("❌ Test Suite Error", `Failed to run tests: ${error}`, [
+      crossPlatformAlert("❌ Test Suite Error", `Failed to run tests: ${error}`, [
         { text: "OK" },
       ]);
     }
@@ -343,7 +343,7 @@ class QuickActionsTestSuite {
       })
       .join("\n");
 
-    Alert.alert("📋 Detailed Test Results", detailedMessage, [{ text: "OK" }]);
+    crossPlatformAlert("📋 Detailed Test Results", detailedMessage, [{ text: "Close" }]);
   }
 }
 
@@ -357,7 +357,7 @@ export const runQuickActionsTests = () => {
 
 // Export E2E test runner
 export const runFoodRecognitionE2ETests = async () => {
-  Alert.alert(
+  crossPlatformAlert(
     "🧪 Starting Food Recognition E2E Tests",
     "This will test the complete food recognition and meal logging workflow. It may take 30-60 seconds.",
     [
@@ -370,7 +370,7 @@ export const runFoodRecognitionE2ETests = async () => {
               await foodRecognitionE2ETests.runAllTests("test-user-e2e");
 
             const emoji = results.failed === 0 ? "🎉" : "⚠️";
-            Alert.alert(`${emoji} E2E Test Results`, `${results.summary}`, [
+              crossPlatformAlert(`${emoji} E2E Test Results`, `${results.summary}`, [
               { text: "OK" },
               {
                 text: "View Details",
@@ -382,14 +382,14 @@ export const runFoodRecognitionE2ETests = async () => {
                     )
                     .join("\n\n");
 
-                  Alert.alert("📊 Detailed E2E Results", detailedResults, [
+                  crossPlatformAlert("📊 Detailed E2E Results", detailedResults, [
                     { text: "Close" },
                   ]);
                 },
               },
             ]);
           } catch (error) {
-            Alert.alert(
+            crossPlatformAlert(
               "❌ E2E Test Error",
               `Failed to run E2E tests: ${error}`,
               [{ text: "OK" }],

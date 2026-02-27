@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import { DayMeal } from "../types/ai";
 import completionTrackingService from "../services/completionTracking";
 import { ResponsiveTheme } from "../utils/constants";
@@ -99,7 +99,7 @@ export const useMealSessionLogic = ({
       console.error("❌ Failed to persist meal completion:", error);
     }
 
-    Alert.alert(
+    crossPlatformAlert(
       "🎉 Meal Completed!",
       `Congratulations! You've successfully prepared "${meal.name}". Enjoy your meal!`,
       [
@@ -116,7 +116,7 @@ export const useMealSessionLogic = ({
   };
 
   const handleQuit = () => {
-    Alert.alert(
+    crossPlatformAlert(
       "Quit Meal Preparation?",
       "Are you sure you want to quit? Your progress will be lost.",
       [

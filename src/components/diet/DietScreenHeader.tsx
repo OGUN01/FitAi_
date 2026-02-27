@@ -150,7 +150,7 @@ export const DietScreenHeader: React.FC<DietScreenHeaderProps> = ({
           onPress={handleSearchFood}
           scaleValue={0.95}
           accessibilityRole="button"
-          accessibilityLabel="Add food"
+          accessibilityLabel="Log Meal"
         >
           <Ionicons
             name="add-circle-outline"
@@ -166,18 +166,20 @@ export const DietScreenHeader: React.FC<DietScreenHeaderProps> = ({
 const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingTop: ResponsiveTheme.spacing.lg,
     paddingBottom: ResponsiveTheme.spacing.md,
+    gap: rp(6),
   },
   title: {
     fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: "bold",
     color: ResponsiveTheme.colors.text,
   },
-  headerButtons: { flexDirection: "row", alignItems: "center", gap: rp(12) },
+  headerButtons: { flexDirection: "row", alignItems: "center", gap: rp(6), flexShrink: 1 },
   aiButton: {
     backgroundColor: ResponsiveTheme.colors.primary,
     paddingHorizontal: rp(10),

@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
+
   Dimensions,
   ActivityIndicator,
   Modal,
@@ -16,6 +16,7 @@ import { Button } from "../ui";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rbr, rs } from '../../utils/responsive';
 import { isProductBarcode, normalizeBarcode } from "@/utils/countryMapping";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 // Error Boundary Component
 class CameraErrorBoundary extends React.Component<
@@ -108,7 +109,7 @@ const CameraComponent: React.FC<CameraProps> = ({
         onCapture(photo.uri);
       } catch (error) {
         console.error("Camera capture error:", error);
-        Alert.alert("Error", "Failed to take picture. Please try again.");
+        crossPlatformAlert("Error", "Failed to take picture. Please try again.");
       } finally {
         setIsCapturing(false);
       }

@@ -1,4 +1,5 @@
-import { Alert, Share } from "react-native";
+import { Share } from "react-native";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import {
   refreshProgressData,
   loadAllActivities,
@@ -43,9 +44,9 @@ export const createActions = (
         setHasMoreActivities,
       );
 
-      Alert.alert("Refreshed", "Progress data has been updated!");
+      crossPlatformAlert("Refreshed", "Progress data has been updated!");
     } catch (error) {
-      Alert.alert("Error", "Failed to refresh progress data");
+      crossPlatformAlert("Error", "Failed to refresh progress data");
     } finally {
       setRefreshing(false);
     }
@@ -53,7 +54,7 @@ export const createActions = (
 
   const handleAddProgressEntry = async () => {
     if (!user?.id) {
-      Alert.alert(
+      crossPlatformAlert(
         "Authentication Required",
         "Please sign in to track progress.",
       );

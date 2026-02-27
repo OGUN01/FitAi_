@@ -550,15 +550,23 @@ export const useUserStore = create<UserState>()(
           fitnessGoals.primary_goals || fitnessGoals.primaryGoals;
         const timeCommitment =
           fitnessGoals.time_commitment || fitnessGoals.timeCommitment;
-        const hasFitnessGoals = !!(
-          primaryGoals?.length > 0 &&
-          timeCommitment &&
-          fitnessGoals.experience
-        );
+        const hasFitnessGoals = !!(primaryGoals?.length > 0 && timeCommitment && fitnessGoals.experience);
 
-        const isComplete = hasPersonalInfo && hasFitnessGoals;
+        // Also accept workoutPreferences as proof of completeness —
+        // goals are saved to workout_preferences during onboarding, not fitness_goals table
+        const workoutPrefs = (profile as any).workoutPreferences;
+        const hasWorkoutPrefs = !!(workoutPrefs &&
+          ((workoutPrefs.primary_goals?.length > 0) ||
+           (workoutPrefs.primaryGoals?.length > 0) ||
+           (workoutPrefs.workout_types?.length > 0) ||
+           (workoutPrefs.workoutTypes?.length > 0) ||
+           (workoutPrefs.location && workoutPrefs.intensity)));
+
+        const hasSufficientGoalData = hasFitnessGoals || hasWorkoutPrefs;
+
+        const isComplete = hasPersonalInfo && hasSufficientGoalData;
         console.log(
-          `✅ checkProfileComplete: hasPersonalInfo=${hasPersonalInfo}, hasFitnessGoals=${hasFitnessGoals}, isComplete=${isComplete}`,
+          `✅ checkProfileComplete: hasPersonalInfo=${hasPersonalInfo}, hasFitnessGoals=${hasFitnessGoals}, hasWorkoutPrefs=${hasWorkoutPrefs}, isComplete=${isComplete}`,
         );
 
         return isComplete;

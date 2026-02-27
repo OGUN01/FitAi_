@@ -1,4 +1,3 @@
-import { Platform } from "react-native";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 const safeString = (value: any, fallback: string = ""): string => {
@@ -73,14 +72,8 @@ export const showExitWorkoutAlert = (
   onSaveAndExit: () => void,
   onExit: () => void,
 ) => {
-  if (Platform.OS === "web") {
-    if (hasProgress) {
-      onSaveAndExit();
-    } else {
-      onExit();
-    }
-    return;
-  }
+  // crossPlatformAlert works on all platforms including web
+  // No need to skip the dialog on web
 
   if (hasProgress) {
     crossPlatformAlert(

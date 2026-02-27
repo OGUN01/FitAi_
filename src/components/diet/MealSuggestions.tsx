@@ -5,10 +5,10 @@ import {
   ScrollView,
   Animated,
   PanResponder,
-  Alert,
   StyleSheet,
 } from "react-native";
 import { GlassCard } from "../ui/aurora/GlassCard";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { haptics } from "../../utils/haptics";
 import { ResponsiveTheme } from "../../utils/constants";
@@ -176,11 +176,11 @@ export const MealSuggestions: React.FC = () => {
 
     haptics.medium();
     setTimeout(() => {
-      Alert.alert(
+      crossPlatformAlert(
         "Added to Plan",
         `${suggestion.name} has been added to your meal plan`,
       );
-    }, 300);
+    }, 500);
   };
 
   const handleDismissSuggestion = (suggestionId: number) => {

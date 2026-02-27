@@ -67,7 +67,7 @@ export class FoodService {
           "calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g",
         )
         .eq("id", foodItem.food_id)
-        .single();
+        .maybeSingle();
 
       if (food) {
         const multiplier = foodItem.quantity_grams / 100;

@@ -111,6 +111,8 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
             <TouchableOpacity
               onPress={() => navigation.goBack()}
               style={styles.backButton}
+              accessibilityRole="button"
+              accessibilityLabel="back"
             >
               <Ionicons
                 name="arrow-back"

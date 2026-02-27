@@ -49,7 +49,7 @@ export async function loadPreferencesFromSupabase(): Promise<NotificationPrefere
       .from("profiles")
       .select("notification_preferences")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       if (error.code === "42703" || error.code === "PGRST116") {

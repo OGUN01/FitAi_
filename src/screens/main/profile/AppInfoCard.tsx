@@ -100,6 +100,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(255, 107, 107, 0.3)',
     elevation: 4,
   },
   logoText: {

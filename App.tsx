@@ -85,17 +85,20 @@ export default function App() {
   const { setProfile, profile } = useUserStore();
   const { setGuestMode: setGuestModeInStore } = useAuthStore();
 
-  // Safety timeout: Force loading to complete after 5 seconds
+  // Ref to track whether the safety timeout has fired — prevents late async
+  // callbacks from re-showing the loading screen after it was forcibly cleared.
+  const loadingAllowed = React.useRef(true);
+
+  // Safety timeout: Force loading to complete after 3 seconds — runs ONCE on mount.
+  // Using [] dep so it cannot be reset by re-renders or state changes.
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (isLoadingOnboarding) {
-
-        setIsLoadingOnboarding(false);
-      }
-    }, 5000);
-
+      loadingAllowed.current = false;
+      setIsLoadingOnboarding(false);
+    }, 3000);
     return () => clearTimeout(timeout);
-  }, [isLoadingOnboarding]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Safety timeout for auth initialization
   useEffect(() => {
@@ -705,7 +708,11 @@ export default function App() {
     const loadExistingData = async () => {
       if (!isInitialized) return;
 
-      setIsLoadingOnboarding(true);
+      // Only show loading spinner for authenticated users who need profile checks.
+      // Unauthenticated users resolve quickly — no need to re-show the spinner.
+      if (user && loadingAllowed.current) {
+        setIsLoadingOnboarding(true);
+      }
 
       try {
 
@@ -737,8 +744,8 @@ export default function App() {
               if (!mounted) return;
 
               if (!syncResult.success) {
-                console.error(
-                  "❌ App: Failed to sync local data to DB:",
+                console.warn(
+                  "⚠️ App: No local data to sync to DB (expected for new users):",
                   syncResult.errors,
                 );
                 // Still show main navigation - local data exists, DB sync can happen later
@@ -753,6 +760,26 @@ export default function App() {
 
             setIsOnboardingComplete(true);
           } else {
+            // Local profile is incomplete — try to load fresh from DB before showing onboarding
+            try {
+              const { getCompleteProfile } = useUserStore.getState();
+              const profileResponse = await getCompleteProfile(user.id);
+
+              if (!mounted) return;
+
+              if (profileResponse.success && profileResponse.data) {
+                const { checkProfileComplete: checkFresh } = useUserStore.getState();
+                const isFreshValid = checkFresh(profileResponse.data);
+
+                if (isFreshValid) {
+                  setIsOnboardingComplete(true);
+                  setIsLoadingOnboarding(false);
+                  return;
+                }
+              }
+            } catch (dbFallbackError) {
+              console.error('❌ App: DB fallback for incomplete profile failed:', dbFallbackError);
+            }
 
             setIsOnboardingComplete(false);
           }
@@ -1081,7 +1108,9 @@ export default function App() {
                   onSignInSuccess={() => {
 
                     setShowWelcome(false);
-                    setIsLoadingOnboarding(true);
+                    if (loadingAllowed.current) {
+                      setIsLoadingOnboarding(true);
+                    }
                   }}
                 />
               ) : (

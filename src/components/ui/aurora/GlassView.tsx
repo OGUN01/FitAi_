@@ -5,7 +5,7 @@
  */
 
 import React from "react";
-import { StyleSheet, View, ViewStyle, Platform } from "react-native";
+import { StyleSheet, View, ViewStyle, StyleProp, Platform } from "react-native";
 import { BlurView } from "expo-blur";
 import { colors, glassSurface } from "../../../theme/aurora-tokens";
 
@@ -69,7 +69,7 @@ interface GlassViewProps {
   /**
    * Additional styles
    */
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 const getBlurAmount = (amount: BlurAmount): number => {

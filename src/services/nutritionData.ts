@@ -256,10 +256,10 @@ class NutritionDataService {
         .from("diet_preferences")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        console.error("Error fetching diet preferences:", error);
+        console.warn("Diet preferences not found or access denied:", error.message);
         return {
           success: false,
           error: error.message,
@@ -271,7 +271,7 @@ class NutritionDataService {
         data,
       };
     } catch (error) {
-      console.error("Error in getUserDietPreferences:", error);
+      console.warn("Error in getUserDietPreferences:", error instanceof Error ? error.message : error);
       return {
         success: false,
         error:
@@ -353,9 +353,9 @@ class NutritionDataService {
         .maybeSingle();
 
       if (error) {
-        console.error(
-          "❌ [NutritionData] Error fetching nutrition goals:",
-          error,
+        console.warn(
+          "⚠️ [NutritionData] Nutrition goals table not accessible:",
+          error.message,
         );
         return {
           success: false,
@@ -389,9 +389,9 @@ class NutritionDataService {
         data,
       };
     } catch (error) {
-      console.error(
-        "❌ [NutritionData] Error in getUserNutritionGoals:",
-        error,
+      console.warn(
+        "⚠️ [NutritionData] Error in getUserNutritionGoals:",
+        error instanceof Error ? error.message : error,
       );
       return {
         success: false,
@@ -472,7 +472,7 @@ class NutritionDataService {
           consumed_at: new Date().toISOString(),
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Error creating meal:", error);
@@ -493,7 +493,7 @@ class NutritionDataService {
                 "calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g",
               )
               .eq("id", food.food_id)
-              .single();
+              .maybeSingle();
 
             const multiplier = food.quantity_grams / 100;
             return {
@@ -565,7 +565,7 @@ class NutritionDataService {
           "calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g",
         )
         .eq("id", foodItem.food_id)
-        .single();
+        .maybeSingle();
 
       if (food) {
         const multiplier = foodItem.quantity_grams / 100;

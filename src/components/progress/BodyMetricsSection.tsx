@@ -111,29 +111,32 @@ export const BodyMetricsSection: React.FC<BodyMetricsSectionProps> = ({
               borderRadius="lg"
             >
               <View style={styles.statHeader}>
-                <Text style={styles.statValue}>
-                  {stats.weight.current && stats.weight.current > 0
-                    ? stats.weight.current
-                    : "--"}
-                </Text>
-                <Text style={styles.statUnit}>{stats.weight.unit}</Text>
+                <View style={styles.statValueRow}>
+                  <Text style={styles.statValue}>
+                    {stats.weight.current && stats.weight.current > 0
+                      ? stats.weight.current
+                      : "--"}
+                  </Text>
+                  <Text style={styles.statUnit}>{stats.weight.unit}</Text>
+                </View>
                 {stats.weight.change !== null &&
                   stats.weight.change !== 0 &&
                   renderTrendIcon(stats.weight.trend)}
               </View>
               <Text style={styles.statLabel}>Weight</Text>
-              <Text
-                style={[
-                  styles.statChange,
-                  (stats.weight.change ?? 0) < 0
-                    ? styles.statChangePositive
-                    : styles.statChangeNegative,
-                ]}
-              >
-                {renderChangeText(stats.weight.change, stats.weight.unit)}
-              </Text>
-              {stats.weight.current &&
-                renderManualLabel(progressEntries[0]?.entry_date)}
+              {stats.weight.change !== null && stats.weight.change !== 0 && (
+                <Text
+                  style={[
+                    styles.statChange,
+                    (stats.weight.change ?? 0) < 0
+                      ? styles.statChangePositive
+                      : styles.statChangeNegative,
+                  ]}
+                >
+                  {renderChangeText(stats.weight.change, stats.weight.unit)}
+                </Text>
+              )}
+              {stats.weight.current ? renderManualLabel(progressEntries[0]?.entry_date) : null}
               <View style={styles.goalProgress}>
                 <Text style={styles.goalText}>
                   Goal: {stats.weight.goal}
@@ -159,29 +162,32 @@ export const BodyMetricsSection: React.FC<BodyMetricsSectionProps> = ({
               borderRadius="lg"
             >
               <View style={styles.statHeader}>
-                <Text style={styles.statValue}>
-                  {stats.bodyFat.current && stats.bodyFat.current > 0
-                    ? stats.bodyFat.current
-                    : "--"}
-                </Text>
-                <Text style={styles.statUnit}>{stats.bodyFat.unit}</Text>
+                <View style={styles.statValueRow}>
+                  <Text style={styles.statValue}>
+                    {stats.bodyFat.current && stats.bodyFat.current > 0
+                      ? stats.bodyFat.current
+                      : "--"}
+                  </Text>
+                  <Text style={styles.statUnit}>{stats.bodyFat.unit}</Text>
+                </View>
                 {stats.bodyFat.change !== null &&
                   stats.bodyFat.change !== 0 &&
                   renderTrendIcon(stats.bodyFat.trend)}
               </View>
               <Text style={styles.statLabel}>Body Fat</Text>
-              <Text
-                style={[
-                  styles.statChange,
-                  (stats.bodyFat.change ?? 0) < 0
-                    ? styles.statChangePositive
-                    : styles.statChangeNegative,
-                ]}
-              >
-                {renderChangeText(stats.bodyFat.change, stats.bodyFat.unit)}
-              </Text>
-              {stats.bodyFat.current &&
-                renderManualLabel(progressEntries[0]?.entry_date)}
+              {stats.bodyFat.change !== null && stats.bodyFat.change !== 0 && (
+                <Text
+                  style={[
+                    styles.statChange,
+                    (stats.bodyFat.change ?? 0) < 0
+                      ? styles.statChangePositive
+                      : styles.statChangeNegative,
+                  ]}
+                >
+                  {renderChangeText(stats.bodyFat.change, stats.bodyFat.unit)}
+                </Text>
+              )}
+              {stats.bodyFat.current ? renderManualLabel(progressEntries[0]?.entry_date) : null}
             </GlassCard>
           </View>
 
@@ -195,12 +201,14 @@ export const BodyMetricsSection: React.FC<BodyMetricsSectionProps> = ({
               borderRadius="lg"
             >
               <View style={styles.statHeader}>
-                <Text style={styles.statValue}>
-                  {stats.muscle.current && stats.muscle.current > 0
-                    ? stats.muscle.current
-                    : "--"}
-                </Text>
-                <Text style={styles.statUnit}>{stats.muscle.unit}</Text>
+                <View style={styles.statValueRow}>
+                  <Text style={styles.statValue}>
+                    {stats.muscle.current && stats.muscle.current > 0
+                      ? stats.muscle.current
+                      : "--"}
+                  </Text>
+                  <Text style={styles.statUnit}>{stats.muscle.unit}</Text>
+                </View>
                 {stats.muscle.change !== null && stats.muscle.change !== 0 && (
                   <Ionicons
                     name={
@@ -218,18 +226,19 @@ export const BodyMetricsSection: React.FC<BodyMetricsSectionProps> = ({
                 )}
               </View>
               <Text style={styles.statLabel}>Muscle Mass</Text>
-              <Text
-                style={[
-                  styles.statChange,
-                  (stats.muscle.change ?? 0) > 0
-                    ? styles.statChangePositive
-                    : styles.statChangeNegative,
-                ]}
-              >
-                {renderChangeText(stats.muscle.change, stats.muscle.unit)}
-              </Text>
-              {stats.muscle.current &&
-                renderManualLabel(progressEntries[0]?.entry_date)}
+              {stats.muscle.change !== null && stats.muscle.change !== 0 && (
+                <Text
+                  style={[
+                    styles.statChange,
+                    (stats.muscle.change ?? 0) > 0
+                      ? styles.statChangePositive
+                      : styles.statChangeNegative,
+                  ]}
+                >
+                  {renderChangeText(stats.muscle.change, stats.muscle.unit)}
+                </Text>
+              )}
+              {stats.muscle.current ? renderManualLabel(progressEntries[0]?.entry_date) : null}
             </GlassCard>
 
             {/* BMI Card */}
@@ -241,22 +250,17 @@ export const BodyMetricsSection: React.FC<BodyMetricsSectionProps> = ({
               borderRadius="lg"
             >
               <View style={styles.statHeader}>
-                <Text style={styles.statValue}>
-                  {stats.bmi.current && stats.bmi.current > 0
-                    ? Number(stats.bmi.current).toFixed(1)
-                    : "--"}
-                </Text>
-                <Text style={styles.statUnit}>BMI</Text>
+                <View style={styles.statValueRow}>
+                  <Text style={styles.statValue}>
+                    {stats.bmi.current && stats.bmi.current > 0
+                      ? Number(stats.bmi.current).toFixed(1)
+                      : "--"}
+                  </Text>
+                  <Text style={styles.statUnit}>BMI</Text>
+                </View>
               </View>
               <Text style={styles.statLabel}>Body Mass Index</Text>
-              <Text
-                style={[
-                  styles.statChange,
-                  { color: ResponsiveTheme.colors.textSecondary },
-                ]}
-              >
-                --
-              </Text>
+              {null}
               {stats.bmi.current && (
                 <View style={styles.manualEntry}>
                   <Ionicons
@@ -321,10 +325,15 @@ const styles = StyleSheet.create({
   },
   statHeader: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "space-between",
     marginBottom: ResponsiveTheme.spacing.xs,
     width: "100%",
+  },
+  statValueRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: rp(2),
   },
   statValue: {
     fontSize: ResponsiveTheme.fontSize.xxl,
@@ -334,7 +343,7 @@ const styles = StyleSheet.create({
   statUnit: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textMuted,
-    marginTop: -ResponsiveTheme.spacing.xs,
+    marginBottom: rp(2),
   },
   statLabel: {
     fontSize: ResponsiveTheme.fontSize.sm,
@@ -351,6 +360,9 @@ const styles = StyleSheet.create({
   },
   statChangeNegative: {
     color: ResponsiveTheme.colors.error,
+  },
+  statChangeNeutral: {
+    color: ResponsiveTheme.colors.textSecondary,
   },
   manualEntry: {
     flexDirection: "row",

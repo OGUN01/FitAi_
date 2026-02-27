@@ -25,7 +25,7 @@ export interface ProgressEntry {
   };
   progress_photos?: string[];
   notes?: string;
-  recorded_at: string;
+  recorded_at?: string;
   created_at: string;
 }
 
@@ -212,7 +212,6 @@ class ProgressDataService {
     try {
       const now = new Date();
       const entryDate = now.toISOString().split("T")[0];
-      const recordedAt = now.toISOString();
 
       // Create body measurement for Track B
       const bodyMeasurement: BodyMeasurement = {
@@ -241,7 +240,6 @@ class ProgressDataService {
           measurements: entryData.measurements || {},
           progress_photos: entryData.progress_photos || [],
           notes: entryData.notes,
-          recorded_at: recordedAt,
         })
         .select()
         .single();
@@ -291,7 +289,7 @@ class ProgressDataService {
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Error fetching body analysis:", error);
@@ -558,7 +556,7 @@ class ProgressDataService {
       measurements: (measurement as any).measurements || {},
       progress_photos: measurement.photos || [],
       notes: measurement.notes,
-      recorded_at: measurement.date,
+      recorded_at: measurement.date,  // kept for legacy consumers; column is optional
       created_at: measurement.date,
     };
   }

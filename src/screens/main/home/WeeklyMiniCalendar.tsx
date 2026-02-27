@@ -57,12 +57,7 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
   }, [week]);
 
   return (
-    <AnimatedPressable
-      onPress={onViewFullCalendar}
-      scaleValue={0.99}
-      hapticFeedback={true}
-      hapticType="light"
-    >
+    <View>
       <GlassCard
         elevation={2}
         blurIntensity="light"
@@ -81,7 +76,13 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
             </View>
             <Text style={styles.headerTitle}>This Week</Text>
           </View>
-          <View style={styles.statsRow}>
+          <AnimatedPressable
+            onPress={onViewFullCalendar}
+            scaleValue={0.97}
+            hapticFeedback={true}
+            hapticType="light"
+            style={styles.statsRow}
+          >
             <Text style={styles.statsText}>
               {stats.completed}/{stats.total}
             </Text>
@@ -90,7 +91,7 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
               size={rf(14)}
               color={ResponsiveTheme.colors.textSecondary}
             />
-          </View>
+          </AnimatedPressable>
         </View>
 
         {/* Week Grid */}
@@ -141,7 +142,7 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
           })}
         </View>
       </GlassCard>
-    </AnimatedPressable>
+    </View>
   );
 };
 

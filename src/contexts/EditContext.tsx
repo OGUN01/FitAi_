@@ -5,7 +5,7 @@
  */
 
 import React, { createContext, useContext, useState, useCallback, ReactNode, useMemo } from 'react';
-import { Alert } from 'react-native';
+import { crossPlatformAlert } from '../utils/crossPlatformAlert';
 import { profileValidator } from '../services/profileValidator';
 import { debounce } from '../utils/performance';
 import { useAuth } from '../hooks/useAuth';
@@ -242,7 +242,7 @@ export const EditProvider: React.FC<EditProviderProps> = ({
 
       } catch (error) {
         console.error('Failed to start edit:', error);
-        Alert.alert('Error', 'Failed to load data for editing');
+        crossPlatformAlert('Error', 'Failed to load data for editing');
       } finally {
         setIsLoading(false);
       }
@@ -320,7 +320,7 @@ export const EditProvider: React.FC<EditProviderProps> = ({
 
   const saveChanges = useCallback(async (): Promise<boolean> => {
     if (!editSection || !currentData) {
-      Alert.alert('Error', 'No data to save');
+      crossPlatformAlert('Error', 'No data to save');
       return false;
     }
 
@@ -330,7 +330,7 @@ export const EditProvider: React.FC<EditProviderProps> = ({
       // Quick validation - only validate required fields
       const validationResult = validateData(currentData);
       if (!validationResult.isValid && validationResult.errors.length > 0) {
-        Alert.alert(
+        crossPlatformAlert(
           'Validation Error',
           `Please fix the following errors:\n\n• ${validationResult.errors.slice(0, 3).join('\n• ')}`
         );
@@ -403,7 +403,7 @@ export const EditProvider: React.FC<EditProviderProps> = ({
         // Trigger completion callback
         onEditComplete?.();
 
-        Alert.alert('Success', 'Your changes have been saved successfully!');
+        crossPlatformAlert('Success', 'Your changes have been saved successfully!');
         return true;
       } else {
         const errorMessage = saveResult.error || 'Failed to save data';
@@ -411,7 +411,7 @@ export const EditProvider: React.FC<EditProviderProps> = ({
       }
     } catch (error) {
       console.error('Failed to save changes:', error);
-      Alert.alert('Error', 'Failed to save changes. Please try again.');
+      crossPlatformAlert('Error', 'Failed to save changes. Please try again.');
       return false;
     } finally {
       setIsSaving(false);
@@ -420,7 +420,7 @@ export const EditProvider: React.FC<EditProviderProps> = ({
 
   const cancelEdit = useCallback(() => {
     if (hasChanges) {
-      Alert.alert(
+      crossPlatformAlert(
         'Discard Changes?',
         'You have unsaved changes. Are you sure you want to discard them?',
         [

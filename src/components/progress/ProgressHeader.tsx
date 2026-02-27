@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rp, rh, rw } from "../../utils/responsive";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 
@@ -157,9 +157,9 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.primary,
   },
   addButton: {
-    width: rw(32),
-    height: rh(32),
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    width: rs(36),
+    height: rs(36),
+    borderRadius: rs(18),
     backgroundColor: ResponsiveTheme.colors.primary,
     justifyContent: "center",
     alignItems: "center",

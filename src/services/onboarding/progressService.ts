@@ -50,7 +50,7 @@ export class OnboardingProgressService {
         .from("onboarding_progress")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== "PGRST116") {
         console.error(

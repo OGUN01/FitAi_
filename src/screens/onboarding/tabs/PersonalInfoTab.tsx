@@ -313,6 +313,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
+    boxShadow: '0px 4px 8px rgba(255, 107, 53, 0.3)',
     elevation: 4,
   },
   nextButtonText: {

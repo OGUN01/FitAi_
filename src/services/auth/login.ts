@@ -84,6 +84,9 @@ export async function login(
       // Store session in AsyncStorage for persistence
       await AsyncStorage.setItem("auth_session", JSON.stringify(session));
 
+      // Clear any stale offline sync queue from previous sessions
+      await AsyncStorage.removeItem(SYNC_QUEUE_KEY).catch(() => {});
+
       // Set user ID in data bridge for potential migration
       dataBridge.setUserId(authUser.id);
 

@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
-import { Alert, BackHandler } from "react-native";
+import { BackHandler } from "react-native";
 import { useOnboardingState } from "./useOnboardingState";
 import type { OnboardingReviewData } from "../types/onboarding";
 import type { TabConfig } from "../components/onboarding/OnboardingTabBar";
 import { ONBOARDING_TABS } from "../components/onboarding/OnboardingTabBar";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 
 // ============================================================================
 // TYPES
@@ -161,7 +162,7 @@ export const useOnboardingLogic = ({
     const isAccessible = getTabAccessibility(tabNumber);
 
     if (!isAccessible) {
-      Alert.alert(
+      crossPlatformAlert(
         "Tab Not Available",
         "Please complete the previous tab before accessing this one.",
         [{ text: "OK" }],
@@ -170,7 +171,7 @@ export const useOnboardingLogic = ({
     }
 
     if (hasUnsavedChanges && tabNumber !== currentTab) {
-      Alert.alert(
+      crossPlatformAlert(
         "Unsaved Changes",
         "You have unsaved changes. Do you want to save before switching tabs?",
         [
@@ -205,7 +206,7 @@ export const useOnboardingLogic = ({
       const validation = validateTab(currentTab, currentTabData);
 
       if (!validation.is_valid) {
-        Alert.alert(
+        crossPlatformAlert(
           "Incomplete Information",
           `Please complete all required fields:\n\n${validation.errors.join("\n")}`,
           [{ text: "OK" }],
@@ -261,7 +262,7 @@ export const useOnboardingLogic = ({
     if (currentTab > 1) {
       setCurrentTab(currentTab - 1);
     } else if (hasUnsavedChanges) {
-      Alert.alert(
+      crossPlatformAlert(
         "Exit Onboarding",
         "You have unsaved changes. Are you sure you want to exit?",
         [
@@ -287,7 +288,7 @@ export const useOnboardingLogic = ({
 
   const handleBackPress = useCallback(() => {
     if (hasUnsavedChanges) {
-      Alert.alert(
+      crossPlatformAlert(
         "Exit Onboarding",
         "You have unsaved changes. Are you sure you want to exit?",
         [

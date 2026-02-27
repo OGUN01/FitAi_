@@ -125,7 +125,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                   </View>
                 )}
                 <View style={styles.titleRow}>
-                  <Text style={styles.title} numberOfLines={1}>
+                  <Text style={styles.title} numberOfLines={2}>
                     {isRestDay
                       ? "Rest & Recover"
                       : workout?.title ||
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: ResponsiveTheme.spacing.sm,
-    flexWrap: "wrap",
+    flexWrap: "nowrap",
   },
   title: {
     fontSize: rf(17),
@@ -301,6 +301,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: rp(4),
     borderRadius: ResponsiveTheme.borderRadius.full,
+    flexShrink: 0,
   },
   statusDot: {
     width: rw(6),

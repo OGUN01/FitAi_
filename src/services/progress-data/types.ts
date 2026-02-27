@@ -17,7 +17,7 @@ export interface ProgressEntry {
   };
   progress_photos?: string[];
   notes?: string;
-  recorded_at: string;
+  recorded_at?: string; // column does not exist in DB — optional for legacy compat
   created_at: string;
 }
 

@@ -12,7 +12,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, Text, StyleSheet, Alert, LayoutChangeEvent } from "react-native";
+import { View, Text, StyleSheet, LayoutChangeEvent } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -25,6 +25,7 @@ import { useAuth } from "../../../../hooks/useAuth";
 import { ResponsiveTheme } from "../../../../utils/constants";
 import { rf, rp, rbr, rw } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
+import { crossPlatformAlert } from "../../../../utils/crossPlatformAlert";
 import { supabase } from "../../../../services/supabase";
 
 interface BodyMeasurementsEditModalProps {
@@ -44,6 +45,9 @@ export const BodyMeasurementsEditModal: React.FC<
   const [weight, setWeight] = useState("");
   const [targetWeight, setTargetWeight] = useState("");
   const [bodyFat, setBodyFat] = useState("");
+  const [chest, setChest] = useState("");
+  const [waist, setWaist] = useState("");
+  const [hips, setHips] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [scaleBarWidth, setScaleBarWidth] = useState(0);
@@ -57,8 +61,11 @@ export const BodyMeasurementsEditModal: React.FC<
       // Note: bodyMetrics may have 0 values (never populated by onboarding), so check > 0
       setHeight((bodyMetrics?.height_cm && bodyMetrics.height_cm > 0) ? bodyMetrics.height_cm.toString() : (bodyAnalysisData?.height_cm?.toString() || ""));
       setWeight((bodyMetrics?.current_weight_kg && bodyMetrics.current_weight_kg > 0) ? bodyMetrics.current_weight_kg.toString() : (bodyAnalysisData?.current_weight_kg?.toString() || ""));
-      setTargetWeight((bodyMetrics?.target_weight_kg && bodyMetrics.target_weight_kg > 0) ? bodyMetrics.target_weight_kg.toString() : (bodyAnalysisData?.target_weight_kg?.toString() || ""));
-      setBodyFat((bodyMetrics?.body_fat_percentage && bodyMetrics.body_fat_percentage > 0) ? bodyMetrics.body_fat_percentage.toString() : (bodyAnalysisData?.body_fat_percentage?.toString() || ""));
+      setTargetWeight((bodyMetrics?.target_weight_kg && bodyMetrics.target_weight_kg > 0) ? bodyMetrics.target_weight_kg.toString() : ((bodyAnalysisData?.target_weight_kg && bodyAnalysisData.target_weight_kg > 0) ? bodyAnalysisData.target_weight_kg.toString() : ""));
+      setBodyFat((bodyMetrics?.body_fat_percentage && bodyMetrics.body_fat_percentage > 0) ? bodyMetrics.body_fat_percentage.toString() : ((bodyAnalysisData?.body_fat_percentage && bodyAnalysisData.body_fat_percentage > 0) ? bodyAnalysisData.body_fat_percentage.toString() : ""));
+      setChest((bodyAnalysisData?.chest_cm && bodyAnalysisData.chest_cm > 0) ? bodyAnalysisData.chest_cm.toString() : "");
+      setWaist((bodyAnalysisData?.waist_cm && bodyAnalysisData.waist_cm > 0) ? bodyAnalysisData.waist_cm.toString() : "");
+      setHips((bodyAnalysisData?.hip_cm && bodyAnalysisData.hip_cm > 0) ? bodyAnalysisData.hip_cm.toString() : "");
       setErrors({});
     }
   }, [visible, profile]);
@@ -123,9 +130,33 @@ export const BodyMeasurementsEditModal: React.FC<
       newErrors.bodyFat = "Enter valid body fat % (3-50)";
     }
 
+    // Chest is optional but must be valid if provided
+    if (
+      chest &&
+      (isNaN(Number(chest)) || Number(chest) < 50 || Number(chest) > 200)
+    ) {
+      newErrors.chest = "Enter valid chest measurement in cm (50-200)";
+    }
+
+    // Waist is optional but must be valid if provided
+    if (
+      waist &&
+      (isNaN(Number(waist)) || Number(waist) < 40 || Number(waist) > 200)
+    ) {
+      newErrors.waist = "Enter valid waist measurement in cm (40-200)";
+    }
+
+    // Hips is optional but must be valid if provided
+    if (
+      hips &&
+      (isNaN(Number(hips)) || Number(hips) < 50 || Number(hips) > 200)
+    ) {
+      newErrors.hips = "Enter valid hips measurement in cm (50-200)";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [height, weight, targetWeight, bodyFat]);
+  }, [height, weight, targetWeight, bodyFat, chest, waist, hips]);
 
   // Save handler
   const handleSave = useCallback(async () => {
@@ -148,6 +179,9 @@ export const BodyMeasurementsEditModal: React.FC<
         current_weight_kg: parseFloat(weight),
         ...(targetWeight ? { target_weight_kg: parseFloat(targetWeight) } : {}),
         body_fat_percentage: bodyFat ? parseFloat(bodyFat) : undefined,
+        chest_cm: chest ? parseFloat(chest) : undefined,
+        waist_cm: waist ? parseFloat(waist) : undefined,
+        hip_cm: hips ? parseFloat(hips) : undefined,
         // Preserve other fields from existing profile data
         medical_conditions: profile.bodyMetrics?.medical_conditions || bodyAnalysisData?.medical_conditions || [],
         medications: profile.bodyMetrics?.medications || bodyAnalysisData?.medications || [],
@@ -170,6 +204,9 @@ export const BodyMeasurementsEditModal: React.FC<
               current_weight_kg: parseFloat(weight),
               target_weight_kg: targetWeight ? parseFloat(targetWeight) : null,
               body_fat_percentage: bodyFat ? parseFloat(bodyFat) : null,
+              chest_cm: chest ? parseFloat(chest) : null,
+              waist_cm: waist ? parseFloat(waist) : null,
+              hip_cm: hips ? parseFloat(hips) : null,
               updated_at: new Date().toISOString(),
             },
             {
@@ -182,7 +219,7 @@ export const BodyMeasurementsEditModal: React.FC<
               "Failed to sync body measurements to database:",
               error,
             );
-            Alert.alert(
+            crossPlatformAlert(
               "Saved Locally",
               "Your measurements were saved locally but failed to sync to the server. They will sync automatically when connection is restored.",
             );
@@ -199,7 +236,7 @@ export const BodyMeasurementsEditModal: React.FC<
       onClose();
     } catch (error) {
       console.error("Error saving body measurements:", error);
-      Alert.alert("Error", "Failed to save changes. Please try again.");
+      crossPlatformAlert("Error", "Failed to save changes. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -208,6 +245,9 @@ export const BodyMeasurementsEditModal: React.FC<
     weight,
     targetWeight,
     bodyFat,
+    chest,
+    waist,
+    hips,
     profile,
     user,
     onClose,
@@ -216,25 +256,30 @@ export const BodyMeasurementsEditModal: React.FC<
   ]);
 
   const hasChanges = useCallback(() => {
+    const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
     if (!profile?.bodyMetrics) {
-      const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
       if (!bodyAnalysisData) return true;
       return (
         height !== (bodyAnalysisData.height_cm?.toString() || "") ||
         weight !== (bodyAnalysisData.current_weight_kg?.toString() || "") ||
         targetWeight !== (bodyAnalysisData.target_weight_kg?.toString() || "") ||
-        bodyFat !== (bodyAnalysisData.body_fat_percentage?.toString() || "")
+        bodyFat !== (bodyAnalysisData.body_fat_percentage?.toString() || "") ||
+        chest !== ((bodyAnalysisData.chest_cm && bodyAnalysisData.chest_cm > 0) ? bodyAnalysisData.chest_cm.toString() : "") ||
+        waist !== ((bodyAnalysisData.waist_cm && bodyAnalysisData.waist_cm > 0) ? bodyAnalysisData.waist_cm.toString() : "") ||
+        hips !== ((bodyAnalysisData.hip_cm && bodyAnalysisData.hip_cm > 0) ? bodyAnalysisData.hip_cm.toString() : "")
       );
     }
     const bodyMetrics = profile.bodyMetrics;
-    const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
     return (
       height !== ((bodyMetrics.height_cm && bodyMetrics.height_cm > 0) ? bodyMetrics.height_cm.toString() : (bodyAnalysisData?.height_cm?.toString() || "")) ||
       weight !== ((bodyMetrics.current_weight_kg && bodyMetrics.current_weight_kg > 0) ? bodyMetrics.current_weight_kg.toString() : (bodyAnalysisData?.current_weight_kg?.toString() || "")) ||
       targetWeight !== ((bodyMetrics.target_weight_kg && bodyMetrics.target_weight_kg > 0) ? bodyMetrics.target_weight_kg.toString() : (bodyAnalysisData?.target_weight_kg?.toString() || "")) ||
-      bodyFat !== ((bodyMetrics.body_fat_percentage && bodyMetrics.body_fat_percentage > 0) ? bodyMetrics.body_fat_percentage.toString() : (bodyAnalysisData?.body_fat_percentage?.toString() || ""))
+      bodyFat !== ((bodyMetrics.body_fat_percentage && bodyMetrics.body_fat_percentage > 0) ? bodyMetrics.body_fat_percentage.toString() : (bodyAnalysisData?.body_fat_percentage?.toString() || "")) ||
+      chest !== ((bodyAnalysisData?.chest_cm && bodyAnalysisData.chest_cm > 0) ? bodyAnalysisData.chest_cm.toString() : "") ||
+      waist !== ((bodyAnalysisData?.waist_cm && bodyAnalysisData.waist_cm > 0) ? bodyAnalysisData.waist_cm.toString() : "") ||
+      hips !== ((bodyAnalysisData?.hip_cm && bodyAnalysisData.hip_cm > 0) ? bodyAnalysisData.hip_cm.toString() : "")
     );
-  }, [height, weight, targetWeight, bodyFat, profile]);
+  }, [height, weight, targetWeight, bodyFat, chest, waist, hips, profile]);
 
   return (
     <SettingsModalWrapper
@@ -405,6 +450,51 @@ export const BodyMeasurementsEditModal: React.FC<
         hint="Optional - if you know it"
       />
 
+      {/* Chest Measurement */}
+      <GlassFormInput
+        label="Chest"
+        icon="ellipse-outline"
+        iconColor="#9C27B0"
+        value={chest}
+        onChangeText={setChest}
+        placeholder="Enter chest measurement"
+        keyboardType="decimal-pad"
+        maxLength={5}
+        suffix="cm"
+        error={errors.chest}
+        hint="Optional - chest circumference"
+      />
+
+      {/* Waist Measurement */}
+      <GlassFormInput
+        label="Waist"
+        icon="radio-button-off-outline"
+        iconColor="#00BCD4"
+        value={waist}
+        onChangeText={setWaist}
+        placeholder="Enter waist measurement"
+        keyboardType="decimal-pad"
+        maxLength={5}
+        suffix="cm"
+        error={errors.waist}
+        hint="Optional - waist circumference"
+      />
+
+      {/* Hips Measurement */}
+      <GlassFormInput
+        label="Hips"
+        icon="ellipse-outline"
+        iconColor="#E91E63"
+        value={hips}
+        onChangeText={setHips}
+        placeholder="Enter hips measurement"
+        keyboardType="decimal-pad"
+        maxLength={5}
+        suffix="cm"
+        error={errors.hips}
+        hint="Optional - hips circumference"
+      />
+
       {/* Info Card */}
       <GlassCard
         elevation={1}
@@ -499,6 +589,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.3,
     shadowRadius: 2,
+    boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.3)',
     elevation: 3,
   },
   bmiScaleSegment: {

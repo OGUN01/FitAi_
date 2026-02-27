@@ -58,9 +58,11 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
         borderRadius="lg"
       >
         {/* Header */}
-        <Pressable
+      <Pressable
           onPress={onPress}
-          accessibilityRole="none"
+          accessibilityRole="button"
+          accessibilityLabel="View Progress"
+          testID="progress-card"
           style={styles.headerPressable}
         >
           <View style={styles.headerLeft}>

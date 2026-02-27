@@ -209,7 +209,16 @@ export const useNotificationStore = create<NotificationState>()(
       },
 
       scheduleAllNotifications: async () => {
-        const { preferences } = get();
+        const raw = get().preferences;
+        // Guard against stale/partial persisted state by merging with defaults
+        const defaults = getDefaultPreferences();
+        const preferences = {
+          water: { ...defaults.water, ...(raw?.water ?? {}) },
+          workout: { ...defaults.workout, ...(raw?.workout ?? {}) },
+          meals: { ...defaults.meals, ...(raw?.meals ?? {}) },
+          sleep: { ...defaults.sleep, ...(raw?.sleep ?? {}) },
+          progress: { ...defaults.progress, ...(raw?.progress ?? {}) },
+        };
 
         try {
           const notificationService = getNotificationService();

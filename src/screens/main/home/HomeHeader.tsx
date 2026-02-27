@@ -9,13 +9,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh, rp, rbr } from "../../../utils/responsive";
+import { rf, rw, rh, rp, rbr, rs } from "../../../utils/responsive";
 
 const avatarGradientShadow = {
   shadowColor: ResponsiveTheme.colors.black,
   shadowOffset: { width: 0, height: 4 },
   shadowOpacity: 0.2,
   shadowRadius: 8,
+  boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)',
 };
 
 interface HomeHeaderProps {
@@ -168,15 +169,15 @@ const styles = StyleSheet.create({
     gap: ResponsiveTheme.spacing.md,
   },
   avatarGradient: {
-    width: rw(48),
-    height: rw(48),
-    borderRadius: rw(24),
+    width: rs(36),
+    height: rs(36),
+    borderRadius: rs(18),
     justifyContent: "center",
     alignItems: "center",
     elevation: 4,
   },
   avatarText: {
-    fontSize: rf(20),
+    fontSize: rf(16),
     fontWeight: "800",
     color: ResponsiveTheme.colors.white,
   },
@@ -231,9 +232,9 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.errorLight,
   },
   notificationBtn: {
-    width: rw(42),
-    height: rw(42),
-    borderRadius: rw(21),
+    width: rs(36),
+    height: rs(36),
+    borderRadius: rs(18),
     backgroundColor: ResponsiveTheme.colors.glassBorder,
     justifyContent: "center",
     alignItems: "center",

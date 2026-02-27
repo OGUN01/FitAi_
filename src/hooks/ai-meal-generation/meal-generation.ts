@@ -1,4 +1,4 @@
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { aiService } from "../../ai";
 import { Meal } from "../../types/ai";
 
@@ -48,8 +48,8 @@ export const createMealGenerationHandlers = (
     }
 
     if (!userId || userId.startsWith("guest")) {
-      Alert.alert(
-        "Sign Up Required",
+      crossPlatformAlert(
+        "Sign In Required",
         "Create an account to generate personalized AI meals.",
         [
           { text: "Cancel", style: "cancel" },
@@ -60,7 +60,7 @@ export const createMealGenerationHandlers = (
     }
 
     if (!profile?.personalInfo || !profile?.fitnessGoals) {
-      Alert.alert("Profile Incomplete", "Please complete your profile.");
+      crossPlatformAlert("Profile Incomplete", "Please complete your profile.");
       return;
     }
 
@@ -106,19 +106,19 @@ export const createMealGenerationHandlers = (
       if (response.success && response.data) {
         setAiMeals((prev) => [response.data! as unknown as Meal, ...prev]);
 
-        Alert.alert(
+        crossPlatformAlert(
           "Meal Generated!",
           `Your personalized ${mealType} is ready!`,
         );
       } else {
         setAiError(response.error || "Failed to generate meal");
-        Alert.alert("Generation Failed", response.error || "Failed.");
+        crossPlatformAlert("Generation Failed", response.error || "Failed.");
       }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       setAiError(errorMessage);
-      Alert.alert("Error", errorMessage);
+      crossPlatformAlert("Error", errorMessage);
     } finally {
       setIsGeneratingMeal(false);
     }
@@ -128,8 +128,8 @@ export const createMealGenerationHandlers = (
     setShowGuestSignUp: (show: boolean) => void,
   ) => {
     if (!userId || userId.startsWith("guest")) {
-      Alert.alert(
-        "Sign Up Required",
+      crossPlatformAlert(
+        "Sign In Required",
         "Create an account to generate meal plans.",
         [
           { text: "Cancel", style: "cancel" },
@@ -140,7 +140,7 @@ export const createMealGenerationHandlers = (
     }
 
     if (!profile?.personalInfo || !profile?.fitnessGoals) {
-      Alert.alert("Profile Incomplete", "Please complete your profile.");
+      crossPlatformAlert("Profile Incomplete", "Please complete your profile.");
       return;
     }
 
@@ -165,14 +165,14 @@ export const createMealGenerationHandlers = (
 
       if (response.success && response.data) {
         setAiMeals((prev) => [...response.data!.meals, ...prev]);
-        Alert.alert("Daily Meal Plan Generated!", "Your plan is ready!");
+        crossPlatformAlert("Daily Meal Plan Generated!", "Your plan is ready!");
       } else {
         setAiError(response.error || "Failed to generate plan");
-        Alert.alert("Generation Failed", response.error || "Failed.");
+        crossPlatformAlert("Generation Failed", response.error || "Failed.");
       }
     } catch (error) {
       setAiError(String(error));
-      Alert.alert("Error", String(error));
+      crossPlatformAlert("Error", String(error));
     } finally {
       setIsGeneratingMeal(false);
     }

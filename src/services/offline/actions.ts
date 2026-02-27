@@ -17,7 +17,7 @@ function validateSupabaseResponse(
 ): { valid: boolean; error?: string } {
   if (!isValidSupabaseResponse(response)) {
     const errorMsg = `Received malformed Supabase response for ${operation} on ${table}: ${typeof response}`;
-    console.error(errorMsg, response);
+    console.warn(errorMsg, response);
     return { valid: false, error: errorMsg };
   }
 
@@ -25,7 +25,7 @@ function validateSupabaseResponse(
 
   if (supabaseRes.error) {
     const errorMsg = `Supabase error for ${operation} on ${table}: ${supabaseRes.error.message}`;
-    console.error(errorMsg, supabaseRes.error);
+    console.warn(errorMsg, supabaseRes.error);
     return { valid: false, error: errorMsg };
   }
 
@@ -121,8 +121,8 @@ export async function executeAction(action: OfflineAction): Promise<void> {
       return;
     } catch (error) {
       lastError = error as Error;
-      console.error(
-        `❌ Attempt ${attempt} failed for ${type} on ${table}:`,
+      console.warn(
+        `⚠️ Attempt ${attempt} failed for ${type} on ${table}:`,
         error,
       );
 

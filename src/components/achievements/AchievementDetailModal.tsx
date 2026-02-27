@@ -207,6 +207,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
+    boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.5)',
     elevation: 10,
   },
   header: {

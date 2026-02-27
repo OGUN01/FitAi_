@@ -30,6 +30,7 @@ interface ButtonProps {
   textStyle?: TextStyle;
   fullWidth?: boolean;
   pulse?: boolean;
+  accessibilityLabel?: string;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -43,6 +44,7 @@ export const Button: React.FC<ButtonProps> = ({
   textStyle,
   fullWidth = false,
   pulse = false,
+  accessibilityLabel,
 }) => {
   const pulseAnimation = useSharedValue(1);
 
@@ -139,7 +141,7 @@ export const Button: React.FC<ButtonProps> = ({
         disabled={disabled || loading}
         activeOpacity={0.8}
         accessibilityRole="button"
-        accessibilityLabel={title}
+        accessibilityLabel={accessibilityLabel ?? title}
       >
         <LinearGradient
           colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]}
@@ -165,7 +167,7 @@ export const Button: React.FC<ButtonProps> = ({
       disabled={disabled || loading}
       activeOpacity={0.8}
       accessibilityRole="button"
-      accessibilityLabel={title}
+      accessibilityLabel={accessibilityLabel ?? title}
     >
       {buttonContent}
     </AnimatedTouchable>

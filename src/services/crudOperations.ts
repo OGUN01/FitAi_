@@ -147,19 +147,17 @@ export class CrudOperationsService {
       }
 
       const { error } = await supabase.from("workout_sessions").upsert({
+        id: session.id,
         user_id: userId,
-        workout_plan_id: null, // session.workoutId is not a UUID FK to user_workout_plans
-        workout_name: session.notes?.split(' - ')[1] || 'Workout',
-        workout_type: 'general',
+        workout_id: session.workoutId || null,
         started_at: session.startedAt,
         completed_at: session.completedAt,
-        total_duration_minutes: session.duration,
+        duration: session.duration,
         calories_burned: session.caloriesBurned,
-        exercises_completed: session.exercises,
+        exercises: session.exercises,
         notes: session.notes || "",
-        enjoyment_rating: session.rating || 0,
+        rating: session.rating || 0,
         is_completed: session.isCompleted,
-        completion_percentage: session.isCompleted ? 100 : 0,
       }, { onConflict: 'id', ignoreDuplicates: false });
 
       if (error) {

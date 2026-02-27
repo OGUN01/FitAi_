@@ -7,7 +7,7 @@ import {
   Modal,
   ScrollView,
   TextInput,
-  Alert,
+
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native";
@@ -16,6 +16,7 @@ import { Button, Card } from "../ui";
 import { RecognizedFood } from "../../services/foodRecognitionService";
 import { rf, rh, rw, rbr } from "../../utils/responsive";
 
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 interface FoodRecognitionFeedbackProps {
   visible: boolean;
   recognizedFoods: RecognizedFood[];
@@ -79,7 +80,7 @@ export const FoodRecognitionFeedback: React.FC<
       setIsSubmitting(true);
       await onSubmitFeedback(feedback);
 
-      Alert.alert(
+      crossPlatformAlert(
         "🙏 Thank You!",
         "Your feedback helps improve our food recognition accuracy for everyone!",
         [{ text: "You're Welcome!" }],
@@ -87,7 +88,7 @@ export const FoodRecognitionFeedback: React.FC<
 
       onClose();
     } catch (error) {
-      Alert.alert("Error", "Failed to submit feedback. Please try again.");
+      crossPlatformAlert("Error", "Failed to submit feedback. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

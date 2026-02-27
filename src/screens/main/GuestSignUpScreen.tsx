@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Alert, Platform } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
@@ -11,6 +11,7 @@ import { RegisterCredentials } from "../../types/user";
 import { GoogleIcon } from "../../components/icons/GoogleIcon";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 // Note: Migration is now handled automatically by auth.ts - no manual migration needed in this screen
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 interface GuestSignUpScreenProps {
   onBack: () => void;
@@ -50,7 +51,7 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
       // On native, pre-fill with current email if available
       email = formData.email.trim() || null;
       if (!email) {
-        Alert.alert(
+        crossPlatformAlert(
           'Forgot Password',
           'Please enter your email address in the Email field first, then tap Forgot Password.',
         );
@@ -62,26 +63,14 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
 
     try {
       const result = await resetPassword(email.trim().toLowerCase());
-      if (Platform.OS === 'web') {
-        window.alert(
-          result.success
-            ? 'Password Reset Email Sent\n\nCheck your inbox for a link to reset your password.'
-            : 'Reset Failed\n\n' + (result.error || 'Unable to send reset email. Please try again.')
-        );
-      } else {
-        Alert.alert(
-          result.success ? 'Password Reset Email Sent' : 'Reset Failed',
-          result.success
-            ? 'Check your inbox for a link to reset your password.'
-            : result.error || 'Unable to send reset email. Please try again.',
-        );
-      }
+      crossPlatformAlert(
+        result.success ? 'Password Reset Email Sent' : 'Reset Failed',
+        result.success
+          ? 'Check your inbox for a link to reset your password.'
+          : result.error || 'Unable to send reset email. Please try again.',
+      );
     } catch (err) {
-      if (Platform.OS === 'web') {
-        window.alert('Error\n\nFailed to send reset email. Please try again.');
-      } else {
-        Alert.alert('Error', 'Failed to send reset email. Please try again.');
-      }
+      crossPlatformAlert('Error', 'Failed to send reset email. Please try again.');
     }
   };
 
@@ -132,18 +121,10 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
         // The actual sign-in completes when the browser redirects back to the callback URL.
         // Don't show a failure alert — the redirect is in progress.
       } else {
-        if (Platform.OS === 'web') {
-          window.alert('Sign Up Failed\n\n' + (response.error || 'Please try again.'));
-        } else {
-          Alert.alert('Sign Up Failed', response.error || 'Please try again.');
-        }
+          crossPlatformAlert('Sign Up Failed', response.error || 'Please try again.');
       }
     } catch (error) {
-      if (Platform.OS === 'web') {
-        window.alert('Error\n\nGoogle Sign Up failed. Please try again.');
-      } else {
-        Alert.alert('Error', 'Google Sign Up failed. Please try again.');
-      }
+      crossPlatformAlert('Error', 'Google Sign Up failed. Please try again.');
       console.error("Google Sign Up error:", error);
     } finally {
       setIsLoading(false);
@@ -168,13 +149,7 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
       if (result.success) {
         // Email verification required before login
         // Migration will happen automatically when user logs in after verification
-        if (Platform.OS === 'web') {
-          window.alert(
-            'Account Created Successfully!\n\nPlease check your email and click the verification link to activate your account. After verification, you can log in and your profile data will be automatically synced.'
-          );
-          onBack();
-        } else {
-          Alert.alert(
+          crossPlatformAlert(
             'Account Created Successfully!',
             'Please check your email and click the verification link to activate your account. After verification, you can log in and your profile data will be automatically synced.',
             [
@@ -186,23 +161,14 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
               },
             ],
           );
-        }
       } else {
-        if (Platform.OS === 'web') {
-          window.alert('Sign Up Failed\n\n' + (result.error || 'Unable to create account. Please try again.'));
-        } else {
-          Alert.alert(
+          crossPlatformAlert(
             'Sign Up Failed',
             result.error || 'Unable to create account. Please try again.',
           );
-        }
       }
     } catch (error) {
-      if (Platform.OS === 'web') {
-        window.alert('Error\n\nAn unexpected error occurred during sign up.');
-      } else {
-        Alert.alert('Error', 'An unexpected error occurred during sign up.');
-      }
+        crossPlatformAlert('Error', 'An unexpected error occurred during sign up.');
       console.error("Email sign up error:", error);
     } finally {
       setIsLoading(false);
@@ -245,21 +211,13 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
         // No need for blocking alerts - just proceed immediately
         onSignUpSuccess();
       } else {
-        if (Platform.OS === 'web') {
-          window.alert('Sign In Failed\n\n' + (result.error || 'Invalid email or password. Please try again.'));
-        } else {
-          Alert.alert(
+          crossPlatformAlert(
             'Sign In Failed',
             result.error || 'Invalid email or password. Please try again.',
           );
-        }
       }
     } catch (error) {
-      if (Platform.OS === 'web') {
-        window.alert('Error\n\nAn unexpected error occurred during sign in.');
-      } else {
-        Alert.alert('Error', 'An unexpected error occurred during sign in.');
-      }
+      crossPlatformAlert('Error', 'An unexpected error occurred during sign in.');
       console.error("Email sign in error:", error);
     } finally {
       setIsLoading(false);
@@ -479,6 +437,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
   },
 
 

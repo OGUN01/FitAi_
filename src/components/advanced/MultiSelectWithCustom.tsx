@@ -7,7 +7,7 @@ import {
   ScrollView,
   Modal,
   TextInput,
-  Alert,
+
   StyleProp,
   ViewStyle,
 } from "react-native";
@@ -15,6 +15,7 @@ import { Button } from "../ui";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rs, rbr, rp } from '../../utils/responsive';
 
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 interface Option {
   id: string;
   label: string;
@@ -111,7 +112,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
       newSelection = tempSelectedValues.filter((val) => val !== option.value);
     } else {
       if (maxSelections && tempSelectedValues.length >= maxSelections) {
-        Alert.alert(
+        crossPlatformAlert(
           "Maximum Selections",
           `You can only select up to ${maxSelections} items.`,
           [{ text: "OK" }],
@@ -128,7 +129,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
     const trimmedValue = customValue.trim();
 
     if (!trimmedValue) {
-      Alert.alert("Invalid Input", "Please enter a valid value.", [
+      crossPlatformAlert("Invalid Input", "Please enter a valid value.", [
         { text: "OK" },
       ]);
       return;
@@ -140,7 +141,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
     );
 
     if (existingOption) {
-      Alert.alert("Duplicate Entry", "This option already exists.", [
+      crossPlatformAlert("Duplicate Entry", "This option already exists.", [
         { text: "OK" },
       ]);
       return;
@@ -159,7 +160,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
 
     // Add to selected values
     if (maxSelections && tempSelectedValues.length >= maxSelections) {
-      Alert.alert(
+      crossPlatformAlert(
         "Maximum Selections",
         `You can only select up to ${maxSelections} items.`,
         [{ text: "OK" }],

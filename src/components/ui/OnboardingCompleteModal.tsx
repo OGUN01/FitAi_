@@ -420,6 +420,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 16,
     elevation: 10,
+    boxShadow: '0px 8px 16px rgba(0, 0, 0, 0.4)',
   },
   title: {
     fontSize: rf(26),

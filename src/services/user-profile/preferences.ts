@@ -10,16 +10,17 @@ export async function getDietPreferences(
       .from("diet_preferences")
       .select("*")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      if (error.code === "PGRST116") {
-        return { success: true, data: null };
-      }
       return {
         success: false,
         error: error.message,
       };
+    }
+
+    if (!data) {
+      return { success: true, data: null };
     }
 
     const transformedData = fromDb(data);
@@ -85,16 +86,17 @@ export async function getWorkoutPreferences(
       .from("workout_preferences")
       .select("*")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      if (error.code === "PGRST116") {
-        return { success: true, data: null };
-      }
       return {
         success: false,
         error: error.message,
       };
+    }
+
+    if (!data) {
+      return { success: true, data: null };
     }
 
     const transformedData = fromDb(data);
@@ -149,7 +151,7 @@ export async function updateWorkoutPreferences(
         },
       )
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       return {

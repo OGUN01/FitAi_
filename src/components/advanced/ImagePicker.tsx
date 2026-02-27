@@ -5,7 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
-  Alert,
+
   ScrollView,
   Dimensions,
 } from "react-native";
@@ -13,6 +13,7 @@ import * as ImagePickerExpo from "expo-image-picker";
 import { Button, Card, Modal } from "../ui";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rs, rbr } from '../../utils/responsive';
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -50,7 +51,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
     const { status } =
       await ImagePickerExpo.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(
+      crossPlatformAlert(
         "Permission Required",
         "Sorry, we need camera roll permissions to select images.",
         [{ text: "OK" }],
@@ -88,7 +89,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
         }
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to pick image from library");
+      crossPlatformAlert("Error", "Failed to pick image from library");
     } finally {
       setIsLoading(false);
     }
@@ -97,7 +98,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
   const takePhoto = async () => {
     const { status } = await ImagePickerExpo.requestCameraPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(
+      crossPlatformAlert(
         "Permission Required",
         "Sorry, we need camera permissions to take photos.",
         [{ text: "OK" }],
@@ -126,7 +127,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
         }
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to take photo");
+      crossPlatformAlert("Error", "Failed to take photo");
     } finally {
       setIsLoading(false);
     }

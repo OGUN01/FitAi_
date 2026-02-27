@@ -12,12 +12,12 @@ import {
   Modal,
   ScrollView,
   TouchableOpacity,
-  Alert,
   } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Card, Button } from "../ui";
 import { ResponsiveTheme } from '../../utils/constants';
 import { SyncConflict, ConflictResolution } from "../../types/profileData";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 interface ConflictResolutionModalProps {
   visible: boolean;
@@ -50,7 +50,7 @@ export const ConflictResolutionModal: React.FC<
 
   const handleResolveAll = () => {
     if (resolutions.size !== conflicts.length) {
-      Alert.alert(
+      crossPlatformAlert(
         "Incomplete Resolution",
         "Please resolve all conflicts before proceeding.",
         [{ text: "OK" }],
@@ -63,7 +63,7 @@ export const ConflictResolutionModal: React.FC<
   };
 
   const handleUseAllLocal = () => {
-    Alert.alert(
+    crossPlatformAlert(
       "Use All Local Data",
       "This will keep all your local data and overwrite any cloud data. Are you sure?",
       [
@@ -85,7 +85,7 @@ export const ConflictResolutionModal: React.FC<
   };
 
   const handleUseAllRemote = () => {
-    Alert.alert(
+    crossPlatformAlert(
       "Use All Cloud Data",
       "This will keep all your cloud data and overwrite any local data. Are you sure?",
       [

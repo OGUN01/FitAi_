@@ -8,7 +8,6 @@ import {
   ScrollView,
   Dimensions,
   SafeAreaView,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,6 +16,7 @@ import { rf, rp, rbr } from "../../utils/responsive";
 import { DayMeal } from "../../types/ai";
 import { completionTrackingService } from "../../services/completionTracking";
 import { mealMotivationService } from "../../features/nutrition/MealMotivation";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 interface IngredientDetailModalProps {
   visible: boolean;
@@ -69,7 +69,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
           {},
         );
 
-        Alert.alert("🎉 Meal Completed!", completionMessage, [
+        crossPlatformAlert("🎉 Meal Completed!", completionMessage, [
           {
             text: "Awesome! 🍽️",
             onPress: () => {
@@ -90,7 +90,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
       }
     } catch (error) {
       console.error("❌ Failed to complete meal from ingredient modal:", error);
-      Alert.alert(
+      crossPlatformAlert(
         "❌ Error",
         "Failed to mark meal as completed. Please try again.",
         [{ text: "OK" }],
@@ -455,6 +455,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
     elevation: 4,
   },
   sectionTitle: {
@@ -539,6 +540,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
     elevation: 4,
   },
   contextInfo: {
@@ -558,6 +560,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
     elevation: 4,
   },
   quantityInfo: {

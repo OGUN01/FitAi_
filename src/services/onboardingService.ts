@@ -85,7 +85,7 @@ export class PersonalInfoService {
         .from("profiles")
         .select("*")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error(
@@ -238,7 +238,7 @@ export class DietPreferencesService {
         .from("diet_preferences")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== "PGRST116") {
         // PGRST116 = no rows returned
@@ -387,7 +387,7 @@ export class BodyAnalysisService {
         .from("body_analysis")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== "PGRST116") {
         console.error(
@@ -521,7 +521,7 @@ export class WorkoutPreferencesService {
         .from("workout_preferences")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== "PGRST116") {
         console.error(
@@ -708,7 +708,7 @@ export class AdvancedReviewService {
         .from("advanced_review")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== "PGRST116") {
         console.error(
@@ -780,7 +780,7 @@ export class OnboardingProgressService {
         .from("onboarding_progress")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== "PGRST116") {
         // PGRST116 = no rows returned

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Alert, Platform } from "react-native";
+import { Platform } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import {
   useNutritionStore,
   useAppStateStore,
@@ -15,6 +16,8 @@ import { WeeklyMealPlan, DayMeal } from "../types/ai";
 import { useCalculatedMetrics } from "./useCalculatedMetrics";
 import { useNutritionData } from "./useNutritionData";
 import { useAuth } from "./useAuth";
+import { useSubscriptionStore } from "../stores/subscriptionStore";
+// usePaywall import removed — triggerPaywall now via subscriptionStore
 import { mealMotivationService } from "../features/nutrition/MealMotivation";
 
 export const useMealPlanning = (navigation: any) => {
@@ -54,6 +57,8 @@ export const useMealPlanning = (navigation: any) => {
   const { currentStreak: achievementStreak } = useAchievementStore();
 
   const { getCalorieTarget } = useCalculatedMetrics();
+  const { canUseFeature, incrementUsage, triggerPaywall } = useSubscriptionStore();
+
   const { dietPreferences, loadDailyNutrition } = useNutritionData();
 
   const forceRefresh = useCallback(() => {
@@ -105,25 +110,26 @@ export const useMealPlanning = (navigation: any) => {
     };
   }, []);
 
-  const refreshMealData = async () => {
+  const refreshMealData = useCallback(async () => {
     try {
       await loadNutritionStoreData();
       forceRefresh();
     } catch (error) {
       console.error("[ERROR] Error refreshing meal data:", error);
     }
-  };
+  }, [loadNutritionStoreData, forceRefresh]);
 
   const handleMealPlanResult = async (weeklyPlan: WeeklyMealPlan) => {
     await saveWeeklyMealPlan(weeklyPlan);
     setWeeklyMealPlan(weeklyPlan);
     forceRefresh();
 
-    Alert.alert(
+    crossPlatformAlert(
       "Meal Plan Generated!",
       `Your personalized 7-day meal plan "${weeklyPlan.planTitle}" is ready!`,
       [{ text: "View Plan", onPress: () => {} }],
     );
+    incrementUsage('ai_generation');
   };
 
   const startJobPolling = (jobId: string) => {
@@ -165,10 +171,10 @@ export const useMealPlanning = (navigation: any) => {
 
         if (status === "failed") {
           setAiError(error || "Meal plan generation failed");
-          Alert.alert(
-            "Generation Failed",
-            error || "Failed to generate meal plan.",
-          );
+        crossPlatformAlert(
+          "Generation Failed",
+          error || "Failed to generate meal plan.",
+        );
           cleanupPolling();
           return;
         }
@@ -197,7 +203,7 @@ export const useMealPlanning = (navigation: any) => {
     const handlePollTimeout = () => {
       setAiError("Generation is taking longer than expected.");
       setAsyncJob(null);
-      Alert.alert("Taking Longer Than Expected", "Check back later.");
+      crossPlatformAlert("Taking Longer Than Expected", "Check back later.");
       cleanupPolling();
     };
 
@@ -216,7 +222,7 @@ export const useMealPlanning = (navigation: any) => {
     setShowGuestSignUp: (show: boolean) => void,
   ) => {
     if (!user?.id || user.id.startsWith("guest")) {
-      Alert.alert(
+      crossPlatformAlert(
         "Sign In Required",
         "Create a free account to generate your personalized AI meal plan and save your progress.",
         [
@@ -237,7 +243,12 @@ export const useMealPlanning = (navigation: any) => {
       missingItems.push("Diet Preferences");
 
     if (missingItems.length > 0) {
-      Alert.alert("Profile Incomplete", "Please complete your profile.");
+      crossPlatformAlert("Profile Incomplete", "Please complete your profile.");
+      return;
+    }
+
+    if (!canUseFeature('ai_generation')) {
+      triggerPaywall("You've used your free AI generation for this month. Upgrade to Pro for unlimited meal plans.");
       return;
     }
 
@@ -282,8 +293,13 @@ export const useMealPlanning = (navigation: any) => {
         setGeneratingPlan(false); // Polling manages its own state from here
       }
     } catch (error) {
-      setAiError(error instanceof Error ? error.message : "Failed");
-      Alert.alert("Error", "Failed to start meal plan generation.");
+      const errMsg = error instanceof Error ? error.message : String(error);
+      if (errMsg.toLowerCase().includes('feature limit exceeded') || errMsg.toLowerCase().includes('limit exceeded')) {
+        triggerPaywall("You've reached your AI generation limit. Upgrade to Pro for unlimited access.");
+      } else {
+        setAiError(errMsg);
+        crossPlatformAlert("Error", "Failed to start meal plan generation.");
+      }
       setGeneratingPlan(false);
     }
   };
@@ -333,7 +349,7 @@ export const useMealPlanning = (navigation: any) => {
       return true;
     } catch (error) {
       console.error("Delete failed", error);
-      Alert.alert("Error", "Failed to delete meal");
+      crossPlatformAlert("Error", "Failed to delete meal");
       return false;
     }
   };
@@ -370,7 +386,7 @@ export const useMealPlanning = (navigation: any) => {
 
   const handleStartMeal = (meal: DayMeal) => {
     if (!navigation) {
-      Alert.alert("Error", "Navigation not available");
+      crossPlatformAlert("Error", "Navigation not available");
       return;
     }
 
@@ -417,7 +433,7 @@ export const useMealPlanning = (navigation: any) => {
       .map((tip) => `- ${tip}`)
       .join("\n")}`;
 
-    Alert.alert("Ready to Cook?", fullMessage, [
+    crossPlatformAlert("Ready to Cook?", fullMessage, [
       { text: "Maybe Later", style: "cancel" },
       {
         text: "Let's Cook!",
@@ -448,16 +464,16 @@ export const useMealPlanning = (navigation: any) => {
           setShowMealPreparationModal(false);
           setSelectedMealForPreparation(null);
         } else {
-          Alert.alert(
+          crossPlatformAlert(
             "Meal Complete!",
             `You've completed "${meal.name}"!\n\nCheck the Progress tab to see your achievement!`,
           );
         }
       } else {
-        Alert.alert("Error", "Failed to mark meal as complete.");
+        crossPlatformAlert("Error", "Failed to mark meal as complete.");
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to mark meal as complete.");
+      crossPlatformAlert("Error", "Failed to mark meal as complete.");
     }
   };
 

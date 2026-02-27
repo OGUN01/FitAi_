@@ -18,7 +18,7 @@ export const useExerciseGifPlayer = ({
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Direct lookup by exercise ID with fallbacks
+  // Direct lookup by exercise ID with fallbacks, then name-based fuzzy match
   let exercise = exerciseFilterService.getExerciseById(exerciseId);
 
   // Fallback: Try case-insensitive and trimmed lookup if first attempt fails
@@ -31,6 +31,16 @@ export const useExerciseGifPlayer = ({
     if (matchingId) {
       exercise = exerciseFilterService.getExerciseById(matchingId);
     }
+  }
+
+  // Name-based fuzzy match using exerciseName prop
+  if (!exercise && exerciseName) {
+    exercise = exerciseFilterService.getExerciseByName(exerciseName);
+  }
+
+  // Try using exerciseId itself as a name (e.g. "sun_salutation" -> "Sun Salutation")
+  if (!exercise && exerciseId) {
+    exercise = exerciseFilterService.getExerciseByName(exerciseId);
   }
 
   // 🐛 DEBUG: Log exercise lookup details (DISABLED TO STOP SPAM)
@@ -47,7 +57,7 @@ export const useExerciseGifPlayer = ({
     } else {
       setIsLoading(false);
       setHasError(true);
-      logger.error('Exercise not found in database', { exerciseId });
+      logger.warn('Exercise not found in database', { exerciseId });
     }
   }, [exercise, exerciseId]);
 

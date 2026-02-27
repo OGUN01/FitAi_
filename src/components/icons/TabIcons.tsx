@@ -141,7 +141,7 @@ export const ProgressIcon: React.FC<IconProps> = ({
   </View>
 );
 
-// Analytics Icon (Line Chart)
+// Analytics Icon (Line Chart - redesigned with thicker strokes for web clarity)
 export const AnalyticsIcon: React.FC<IconProps> = ({
   size = 24,
   color = ResponsiveTheme.colors.textMuted,
@@ -154,45 +154,36 @@ export const AnalyticsIcon: React.FC<IconProps> = ({
       active && styles.activeIcon,
     ]}
   >
+    {/* Three vertical bars at different heights to represent a chart */}
     <View
       style={[
-        styles.analyticsLine1,
+        styles.analyticsBar1,
         { backgroundColor: active ? ResponsiveTheme.colors.primary : color },
       ]}
     />
     <View
       style={[
-        styles.analyticsLine2,
+        styles.analyticsBar2,
         { backgroundColor: active ? ResponsiveTheme.colors.primary : color },
       ]}
     />
     <View
       style={[
-        styles.analyticsLine3,
+        styles.analyticsBar3,
         { backgroundColor: active ? ResponsiveTheme.colors.primary : color },
       ]}
     />
+    {/* Baseline */}
     <View
       style={[
-        styles.analyticsPoint1,
+        styles.analyticsBaseline,
         { backgroundColor: active ? ResponsiveTheme.colors.primary : color },
       ]}
     />
+    {/* Trend dot on top of tallest bar */}
     <View
       style={[
-        styles.analyticsPoint2,
-        { backgroundColor: active ? ResponsiveTheme.colors.primary : color },
-      ]}
-    />
-    <View
-      style={[
-        styles.analyticsPoint3,
-        { backgroundColor: active ? ResponsiveTheme.colors.primary : color },
-      ]}
-    />
-    <View
-      style={[
-        styles.analyticsPoint4,
+        styles.analyticsDot,
         { backgroundColor: active ? ResponsiveTheme.colors.primary : color },
       ]}
     />
@@ -298,12 +289,13 @@ const styles = StyleSheet.create({
   },
 
   appleLeaf: {
-    width: rs(4),
+    width: rs(7),
     height: rs(2),
-    borderRadius: rbr(2),
+    borderRadius: rbr(4),
     position: "absolute",
-    top: 2,
-    right: 4,
+    top: 6,
+    right: 3,
+    transform: [{ rotate: "-45deg" }],
   },
 
   // Chart Icon Styles
@@ -350,67 +342,48 @@ const styles = StyleSheet.create({
     bottom: 2,
   },
 
-  // Analytics Icon Styles (Line Chart)
-  analyticsLine1: {
-    width: rs(4),
-    height: rs(1),
-    position: "absolute",
-    left: 2,
-    top: 8,
-    transform: [{ rotate: "15deg" }],
-  },
-
-  analyticsLine2: {
-    width: rs(4),
-    height: rs(1),
-    position: "absolute",
-    left: 6,
-    top: 6,
-    transform: [{ rotate: "-20deg" }],
-  },
-
-  analyticsLine3: {
-    width: rs(4),
-    height: rs(1),
-    position: "absolute",
-    left: 10,
-    top: 10,
-    transform: [{ rotate: "25deg" }],
-  },
-
-  analyticsPoint1: {
-    width: rs(2),
-    height: rs(2),
+  // Analytics Icon Styles (Bar Chart with trend dot)
+  analyticsBar1: {
+    width: rs(3),
+    height: rs(6),
     borderRadius: rbr(1),
     position: "absolute",
-    left: 2,
-    top: 8,
+    left: 3,
+    bottom: 3,
   },
 
-  analyticsPoint2: {
-    width: rs(2),
-    height: rs(2),
+  analyticsBar2: {
+    width: rs(3),
+    height: rs(12),
     borderRadius: rbr(1),
     position: "absolute",
-    left: 6,
-    top: 5,
+    left: 8,
+    bottom: 3,
   },
 
-  analyticsPoint3: {
-    width: rs(2),
-    height: rs(2),
+  analyticsBar3: {
+    width: rs(3),
+    height: rs(8),
     borderRadius: rbr(1),
     position: "absolute",
-    left: 10,
-    top: 11,
+    right: 3,
+    bottom: 3,
   },
 
-  analyticsPoint4: {
-    width: rs(2),
-    height: rs(2),
-    borderRadius: rbr(1),
+  analyticsBaseline: {
+    width: rs(18),
+    height: rs(1.5),
     position: "absolute",
-    right: 2,
-    top: 7,
+    bottom: 2,
+    borderRadius: rbr(1),
+  },
+
+  analyticsDot: {
+    width: rs(3),
+    height: rs(3),
+    borderRadius: rbr(2),
+    position: "absolute",
+    left: 8,
+    top: 3,
   },
 });

@@ -4,7 +4,7 @@ import type { DatabaseProfile, DatabaseFitnessGoals } from "./types";
 /**
  * Map database profile to UserProfile type
  */
-export function mapDatabaseProfileToUserProfile(dbProfile: DatabaseProfile) {
+export function mapDatabaseProfileToUserProfile(dbProfile: DatabaseProfile, workoutPrefs?: any) {
   // Cast to any to access fields in either camelCase (after fromDb) or snake_case
   const profile = dbProfile as any;
 
@@ -61,10 +61,15 @@ export function mapDatabaseProfileToUserProfile(dbProfile: DatabaseProfile) {
     email,
     personalInfo,
     fitnessGoals: {
-      primary_goals: [],
-      time_commitment: '',
-      experience: '',
-      experience_level: '',
+      // Populate from workoutPrefs if fitnessGoals table data is absent
+      primary_goals: workoutPrefs?.primary_goals || workoutPrefs?.primaryGoals || [],
+      time_commitment: workoutPrefs?.time_commitment || '',
+      experience:
+        workoutPrefs?.experience_level ||
+        workoutPrefs?.experienceLevel || '',
+      experience_level:
+        workoutPrefs?.experience_level ||
+        workoutPrefs?.experienceLevel || '',
     },
     createdAt,
     updatedAt,
@@ -96,20 +101,13 @@ export function mapDatabaseGoalsToFitnessGoals(
     time_commitment:
       goals.time_commitment ||
       goals.timeCommitment ||
-      goals.preferred_workout_duration?.toString() ||
-      goals.preferredWorkoutDuration?.toString() ||
       "",
     experience:
-      goals.fitness_level ||
-      goals.fitnessLevel ||
       goals.experience_level ||
       goals.experienceLevel ||
       "",
     experience_level:
-      goals.fitness_level ||
-      goals.fitnessLevel ||
       goals.experience_level ||
       goals.experienceLevel ||
-      "",
   };
 }

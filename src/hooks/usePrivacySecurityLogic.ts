@@ -3,7 +3,7 @@
  */
 
 import { useState, useCallback, useEffect } from "react";
-import { Alert, Platform } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../services/supabase";
 import { haptics } from "../utils/haptics";
@@ -68,7 +68,7 @@ export const usePrivacySecurityLogic = () => {
           data: { user },
         } = await supabase.auth.getUser();
         if (!user) {
-          Alert.alert("Error", "You must be logged in to export data.");
+          crossPlatformAlert("Error", "You must be logged in to export data.");
           return;
         }
 
@@ -97,36 +97,27 @@ export const usePrivacySecurityLogic = () => {
         // In a real app, this would upload to a storage bucket and email the link
         // For now, we log it and show success
 
-        Alert.alert(
+        crossPlatformAlert(
           "Export Complete",
           "Your data has been exported. In a production app, this would be emailed to you.",
         );
       } catch (error) {
         console.error("Data export failed:", error);
-        Alert.alert("Error", "Failed to export data. Please try again.");
+        crossPlatformAlert("Error", "Failed to export data. Please try again.");
       }
     };
 
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm(
-        "Export Data\n\nYour data export will be prepared. This may take a few moments.\n\nClick OK to proceed."
-      );
-      if (confirmed) {
-        await doExport();
-      }
-    } else {
-      Alert.alert(
-        "Export Data",
-        "Your data export will be prepared. This may take a few moments.",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Export",
-            onPress: doExport,
-          },
-        ],
-      );
-    }
+    crossPlatformAlert(
+      "Export Data",
+      "Your data export will be prepared. This may take a few moments.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Export",
+          onPress: doExport,
+        },
+      ],
+    );
   }, []);
 
   const handleDeleteAccount = useCallback(async () => {
@@ -139,7 +130,7 @@ export const usePrivacySecurityLogic = () => {
           data: { user },
         } = await supabase.auth.getUser();
         if (!user) {
-          Alert.alert(
+          crossPlatformAlert(
             "Error",
             "You must be logged in to delete your account.",
           );
@@ -157,58 +148,44 @@ export const usePrivacySecurityLogic = () => {
         // Sign out (actual account deletion would require server-side implementation)
         await supabase.auth.signOut();
 
-        Alert.alert(
+        crossPlatformAlert(
           "Account Deleted",
           "Your local data has been cleared and you have been signed out. Contact support to complete server-side deletion.",
         );
       } catch (error) {
         console.error("Account deletion failed:", error);
-        Alert.alert(
+        crossPlatformAlert(
           "Error",
           "Failed to delete account. Please try again.",
         );
       }
     };
 
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm(
-        "Delete Account\n\nThis action cannot be undone. All your data will be permanently deleted.\n\nClick OK to proceed."
-      );
-      if (confirmed) {
-        const finalConfirm = window.confirm(
-          "Final Confirmation\n\nAre you absolutely sure? This will permanently delete your account and all associated data."
-        );
-        if (finalConfirm) {
-          await doDelete();
-        }
-      }
-    } else {
-      Alert.alert(
-        "Delete Account",
-        "This action cannot be undone. All your data will be permanently deleted.",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: () => {
-              Alert.alert(
-                "Final Confirmation",
-                "Are you absolutely sure? This will permanently delete your account and all associated data.",
-                [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Delete Forever",
-                    style: "destructive",
-                    onPress: doDelete,
-                  },
-                ],
-              );
-            },
+    crossPlatformAlert(
+      "Delete Account",
+      "This action cannot be undone. All your data will be permanently deleted.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            crossPlatformAlert(
+              "Final Confirmation",
+              "Are you absolutely sure? This will permanently delete your account and all associated data.",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Delete Forever",
+                  style: "destructive",
+                  onPress: doDelete,
+                },
+              ],
+            );
           },
-        ],
-      );
-    }
+        },
+      ],
+    );
   }, []);
 
   const saveSettings = useCallback(async () => {
@@ -220,10 +197,10 @@ export const usePrivacySecurityLogic = () => {
         JSON.stringify(settings),
       );
       setHasChanges(false);
-      Alert.alert("Success", "Privacy settings saved successfully!");
+      crossPlatformAlert("Success", "Privacy settings saved successfully!");
     } catch (error) {
       console.error("Failed to save privacy settings:", error);
-      Alert.alert("Error", "Failed to save settings. Please try again.");
+      crossPlatformAlert("Error", "Failed to save settings. Please try again.");
     }
   }, [settings]);
 

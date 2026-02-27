@@ -18,7 +18,7 @@ export async function getPendingConflicts(
           .from(operation.table)
           .select("*")
           .eq("id", operation.recordId)
-          .single();
+          .maybeSingle();
 
         if (data && new Date(data.updated_at) > operation.timestamp) {
           conflicts.push({

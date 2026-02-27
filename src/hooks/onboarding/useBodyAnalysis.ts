@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import {
   BodyAnalysisData,
   PersonalInfoData,
@@ -281,7 +281,7 @@ export const useBodyAnalysis = ({
 
   const openPhotoOptions = (photoType: "front" | "side" | "back") => {
     setCurrentPhotoType(photoType);
-    Alert.alert("Add Photo", "How would you like to add your photo?", [
+    crossPlatformAlert("Add Photo", "How would you like to add your photo?", [
       { text: "Camera", onPress: () => setShowCamera(true) },
       { text: "Photo Library", onPress: () => setShowImagePicker(true) },
       { text: "Cancel", style: "cancel" },
@@ -310,7 +310,7 @@ export const useBodyAnalysis = ({
     ].filter(Boolean);
 
     if (photoUrls.length === 0) {
-      Alert.alert("No Photos", "Please add at least one photo to analyze.");
+      crossPlatformAlert("No Photos", "Please add at least one photo to analyze.");
       return;
     }
 
@@ -335,14 +335,14 @@ export const useBodyAnalysis = ({
         ai_confidence_score: mockAnalysis.confidenceScore,
       }));
 
-      Alert.alert(
+      crossPlatformAlert(
         "Analysis Complete!",
         `Body analysis completed with ${mockAnalysis.confidenceScore}% confidence. Review the results below.`,
         [{ text: "Great!" }],
       );
     } catch (error) {
       console.error("Photo analysis failed:", error);
-      Alert.alert(
+      crossPlatformAlert(
         "Analysis Failed",
         "Unable to analyze photos. Please try again.",
       );

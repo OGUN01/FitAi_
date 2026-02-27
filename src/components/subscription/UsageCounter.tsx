@@ -23,6 +23,11 @@ const FEATURE_LABELS: Record<UsageCounterProps["featureKey"], string> = {
   barcode_scan: "Food Scans",
 };
 
+const PERIOD_LABELS: Record<UsageCounterProps["featureKey"], string> = {
+  ai_generation: "this month",
+  barcode_scan: "today",
+};
+
 const COLOR_GREEN = ResponsiveTheme.colors.successAlt;
 const COLOR_YELLOW = ResponsiveTheme.colors.warningAlt;
 const COLOR_RED = ResponsiveTheme.colors.errorAlt;
@@ -99,7 +104,7 @@ export const UsageCounter: React.FC<UsageCounterProps> = ({
         <View style={styles.detailedValueRow}>
           <View style={[styles.dot, { backgroundColor: color }]} />
           <Text style={[styles.detailedValue, { color }]}>
-            {bucket.current}/{bucket.limit}
+            {bucket.current}/{bucket.limit} {PERIOD_LABELS[featureKey]}
           </Text>
         </View>
         <Text style={styles.detailedRemaining}>{remaining} remaining</Text>
@@ -115,7 +120,7 @@ export const UsageCounter: React.FC<UsageCounterProps> = ({
       <View style={styles.compactValueRow}>
         <View style={[styles.dotSmall, { backgroundColor: color }]} />
         <Text style={[styles.compactValue, { color }]}>
-          {bucket.current}/{bucket.limit}
+          {bucket.current}/{bucket.limit} {PERIOD_LABELS[featureKey]}
         </Text>
       </View>
     </View>

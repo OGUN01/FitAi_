@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Alert,
   StyleSheet,
   } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -24,6 +23,7 @@ import StepsList from "../../components/cooking/StepsList";
 import NavigationButtons from "../../components/cooking/NavigationButtons";
 import { colors } from "../../theme/aurora-tokens";
 import { rf, rp } from "../../utils/responsive";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 interface CookingSessionScreenProps {
   route: {
@@ -89,7 +89,7 @@ export default function CookingSessionScreen({
       {},
     );
 
-    Alert.alert("🎉 Cooking Complete!", completionMessage, [
+    crossPlatformAlert("🎉 Cooking Complete!", completionMessage, [
       {
         text: "Enjoy Your Meal! 🍽️",
         onPress: () => {
@@ -115,7 +115,7 @@ export default function CookingSessionScreen({
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => {
-            Alert.alert(
+            crossPlatformAlert(
               "Leave Cooking Session?",
               "Are you sure you want to exit? Your cooking progress will be lost.",
               [

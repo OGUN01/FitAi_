@@ -17,7 +17,7 @@ import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable"
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
 import { gradients, toLinearGradientProps } from "../../theme/gradients";
-import { rf, rw, rp } from "../../utils/responsive";
+import { rf, rw, rp, rh } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { Button } from "../../components/ui";
 import { useAuth } from "../../hooks/useAuth";
@@ -45,6 +45,9 @@ import { useMealPlanning } from "../../hooks/useMealPlanning";
 import { useNutritionTracking } from "../../hooks/useNutritionTracking";
 import { useAIMealGeneration } from "../../hooks/useAIMealGeneration";
 import { ScannedProduct } from "../../services/barcodeService";
+import { calculateMealSchedule } from "../../utils/mealSchedule";
+import PaywallModal from "../../components/subscription/PaywallModal";
+import { useSubscriptionStore } from "../../stores/subscriptionStore";
 
 interface DietScreenProps {
   navigation?: any;
@@ -68,6 +71,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   const [showLogMealModal, setShowLogMealModal] = useState(false);
   const [showMealDetailModal, setShowMealDetailModal] = useState(false);
   const [selectedMealForDetail, setSelectedMealForDetail] = useState<DayMeal | null>(null);
+
+  const { showPaywall, paywallReason, dismissPaywall } = useSubscriptionStore();
 
   const fabScale = useRef(new Animated.Value(1)).current;
   const fabRotation = useRef(new Animated.Value(0)).current;
@@ -99,6 +104,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     dailyNutrition,
     foodsLoading,
     userMealsLoading,
+    userMeals,
     foodsError,
     userMealsError,
     refreshAll,
@@ -186,7 +192,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     if (isActive) {
       refreshMealData();
     }
-  }, [isActive]);
+  }, [isActive, refreshMealData]);
 
   useEffect(() => {
     if (route?.params?.mealCompleted) {
@@ -220,6 +226,14 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     pulseAnimation.start();
     return () => pulseAnimation.stop();
   }, [isActive]);
+
+  useEffect(() => {
+    Animated.timing(fabRotation, {
+      toValue: showAIMealsPanel ? 1 : 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [showAIMealsPanel, fabRotation]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -271,11 +285,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   );
 
   const storeNutrition = getTodaysConsumedNutrition();
+  // If store has zeros (no weekly plan tracked), fall back to dailyNutrition from meal_logs
+  const hasStoreData = storeNutrition.calories > 0 || storeNutrition.protein > 0;
   const currentNutrition = {
-    calories: storeNutrition.calories,
-    protein: storeNutrition.protein,
-    carbs: storeNutrition.carbs,
-    fat: storeNutrition.fat,
+    calories: hasStoreData ? storeNutrition.calories : (dailyNutrition?.calories || 0),
+    protein: hasStoreData ? storeNutrition.protein : (dailyNutrition?.protein || 0),
+    carbs: hasStoreData ? storeNutrition.carbs : (dailyNutrition?.carbs || 0),
+    fat: hasStoreData ? storeNutrition.fat : (dailyNutrition?.fat || 0),
     mealsCount: dailyNutrition?.mealsCount || 0,
   };
 
@@ -302,7 +318,6 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   };
 
   const mealSchedule = React.useMemo(() => {
-    const { calculateMealSchedule } = require("../../utils/mealSchedule");
     return calculateMealSchedule(
       userProfile?.personalInfo?.wake_time,
       userProfile?.personalInfo?.sleep_time,
@@ -364,7 +379,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               onNextDay={onNextDay}
             />
 
-            {(foodsLoading || userMealsLoading || isGeneratingMeal) && (
+            {(foodsLoading || userMealsLoading || isGeneratingMeal) ? (
               <View style={styles.loadingContainer}>
                 <AuroraSpinner size="lg" theme="primary" />
                 <Text style={styles.loadingText}>
@@ -373,20 +388,18 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                     : "Loading nutrition data..."}
                 </Text>
               </View>
-            )}
-            {(foodsError || userMealsError || aiError) && (
+            ) : (foodsError || userMealsError || aiError) ? (
               <GlassCard style={styles.errorCard} elevation={1} padding="md">
                 <Text style={styles.errorText}>
                   {foodsError || userMealsError || aiError}
                 </Text>
                 <Button
                   title="Retry"
-                  onPress={refreshAll}
-                  variant="outline"
+                  onPress={() => { refreshAll().catch(console.error); }}
                   size="sm"
                 />
               </GlassCard>
-            )}
+            ) : null}
             {!canAccessMealFeatures && (
               <GlassCard style={styles.errorCard} elevation={1} padding="md">
                 <Text style={styles.errorText}>
@@ -415,12 +428,32 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               <Ionicons
                 name="keypad-outline"
                 size={rf(14)}
-                color={ResponsiveTheme.colors.textSecondary}
+                color={ResponsiveTheme.colors.text}
               />
               <Text style={styles.manualEntryText}>Enter Barcode Manually</Text>
             </AnimatedPressable>
 
             {!weeklyMealPlan?.meals || weeklyMealPlan.meals.length === 0 ? (
+              userMeals && userMeals.length > 0 ? (
+                <View style={styles.dailyMealsSection}>
+                  <Text style={styles.dailyMealsSectionTitle}>Today's Meals</Text>
+                  {userMeals.map((meal) => (
+                    <GlassCard key={meal.id} elevation={1} padding="md" style={styles.dailyMealCard}>
+                      <View style={styles.dailyMealRow}>
+                        <View style={styles.dailyMealInfo}>
+                          <Text style={styles.dailyMealName}>{meal.name || meal.type}</Text>
+                          <Text style={styles.dailyMealMacros}>
+                            {meal.total_calories} cal | {Math.round(meal.total_protein || 0)}g P | {Math.round(meal.total_carbs || 0)}g C | {Math.round(meal.total_fat || 0)}g F
+                          </Text>
+                        </View>
+                        <View style={styles.dailyMealBadge}>
+                          <Ionicons name="checkmark-circle" size={rf(20)} color={ResponsiveTheme.colors.primary} />
+                        </View>
+                      </View>
+                    </GlassCard>
+                  ))}
+                </View>
+              ) : (
               <View
                 style={{
                   paddingTop: ResponsiveTheme.spacing.md,
@@ -457,6 +490,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                   Tap + to log your first meal
                 </Text>
               </View>
+              )
             ) : (
               <MealPlanView
                 weeklyMealPlan={weeklyMealPlan}
@@ -607,6 +641,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           onClose={() => setShowLogMealModal(false)}
         />
 
+        {!showLogMealModal && !showAIMealsPanel && !showManualEntry && !showMealDetailModal && (
         <Animated.View
           style={{
             transform: [
@@ -633,6 +668,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             </LinearGradient>
           </AnimatedPressable>
         </Animated.View>
+        )}
+      <PaywallModal
+        visible={showPaywall}
+        reason={paywallReason ?? undefined}
+        onClose={dismissPaywall}
+      />
       </SafeAreaView>
     </AuroraBackground>
   );
@@ -661,7 +702,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: ResponsiveTheme.spacing.md,
   },
-  bottomSpacing: { height: ResponsiveTheme.spacing.xl },
+  bottomSpacing: { height: rh(80) },
   manualEntryButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -675,12 +716,13 @@ const styles = StyleSheet.create({
   },
   manualEntryText: {
     fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: "400" as const,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: "500" as const,
+    opacity: 0.7,
   },
   barcodeLoadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // TODO: use theme overlay color when added
     justifyContent: "center",
     alignItems: "center",
     zIndex: 999,
@@ -699,13 +741,13 @@ const styles = StyleSheet.create({
   },
   manualEntryOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // TODO: use theme overlay color when added
     justifyContent: "center",
   },
   fab: {
     position: "absolute",
     right: ResponsiveTheme.spacing.lg,
-    bottom: rp(88),
+    bottom: rp(16),
   },
   fabGradient: {
     width: rw(44),

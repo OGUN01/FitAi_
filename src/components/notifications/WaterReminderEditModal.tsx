@@ -7,7 +7,6 @@ import {
   SafeAreaView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ScrollView,
   Platform,
 } from "react-native";
@@ -15,6 +14,7 @@ import { Card, Button } from "../ui";
 import { ResponsiveTheme } from "../../utils/constants";
 import Constants from "expo-constants";
 
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 // Simple Expo Go detection
 const isExpoGo =
   Constants.appOwnership === "expo" ||
@@ -74,7 +74,7 @@ export const WaterReminderEditModal: React.FC<WaterReminderEditModalProps> = ({
 
       // Validation
       if (isNaN(goalLiters) || goalLiters < 1 || goalLiters > 10) {
-        Alert.alert(
+        crossPlatformAlert(
           "Invalid Goal",
           "Please enter a daily water goal between 1 and 10 liters.",
         );
@@ -83,7 +83,7 @@ export const WaterReminderEditModal: React.FC<WaterReminderEditModalProps> = ({
       }
 
       if (!isValidTimeFormat(wakeUpTime) || !isValidTimeFormat(sleepTime)) {
-        Alert.alert(
+        crossPlatformAlert(
           "Invalid Time",
           "Please enter times in HH:MM format (e.g., 07:30).",
         );
@@ -96,7 +96,7 @@ export const WaterReminderEditModal: React.FC<WaterReminderEditModalProps> = ({
       const sleepMinutes = timeToMinutes(sleepTime);
 
       if (wakeMinutes >= sleepMinutes && sleepMinutes !== 0) {
-        Alert.alert(
+        crossPlatformAlert(
           "Time Conflict",
           "Wake up time should be before sleep time. Are you sure about these times?",
           [
@@ -111,7 +111,7 @@ export const WaterReminderEditModal: React.FC<WaterReminderEditModalProps> = ({
       await saveTimes();
     } catch (error) {
       console.error("Error saving water reminder settings:", error);
-      Alert.alert(
+      crossPlatformAlert(
         "Error",
         "Failed to save water reminder settings. Please try again.",
       );
@@ -127,7 +127,7 @@ export const WaterReminderEditModal: React.FC<WaterReminderEditModalProps> = ({
     });
 
     setIsLoading(false);
-    Alert.alert(
+    crossPlatformAlert(
       "Settings Saved!",
       "Your water reminder settings have been updated. Smart notifications will be rescheduled accordingly.",
       [{ text: "OK", onPress: onClose }],

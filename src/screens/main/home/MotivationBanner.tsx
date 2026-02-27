@@ -71,7 +71,7 @@ const QUOTES = {
 const GRADIENTS = {
   morning: ["#C94E2A", "#B5622E"] as [string, string],
   afternoon: ["#C45020", "#B86240"] as [string, string],
-  evening: ["#0d7a72", "#29c265"] as [string, string],
+  evening: ["rgba(46, 125, 50, 0.85)", "rgba(27, 94, 32, 0.95)"] as [string, string],
 };
 
 interface MotivationBannerProps {

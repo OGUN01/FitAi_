@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import { useUserStore, useNutritionStore } from "../stores";
 import { aiService } from "../ai";
 import {
@@ -13,6 +13,8 @@ import { useAuth } from "./useAuth";
 import { useNutritionData } from "./useNutritionData";
 import { useCalculatedMetrics } from "./useCalculatedMetrics";
 import { Meal, DayMeal, WeeklyMealPlan } from "../types/ai";
+import { useSubscriptionStore } from "../stores/subscriptionStore";
+// usePaywall import removed — triggerPaywall now via subscriptionStore
 
 const generateHealthAssessment = (product: ScannedProduct) => {
   const { nutrition, healthScore } = product;
@@ -145,6 +147,8 @@ export const useAIMealGeneration = () => {
   const { foods, loadDailyNutrition, refreshAll, dietPreferences } =
     useNutritionData();
   const { getCalorieTarget } = useCalculatedMetrics();
+  const { canUseFeature, incrementUsage, triggerPaywall } = useSubscriptionStore();
+
 
   const [aiMeals, setAiMeals] = useState<DayMeal[]>([]);
   const [isGeneratingMeal, setIsGeneratingMeal] = useState(false);
@@ -216,7 +220,7 @@ export const useAIMealGeneration = () => {
     setShowCamera(false);
 
     if (isGuestMode || !user?.id) {
-      Alert.alert(
+      crossPlatformAlert(
         "Sign Up for AI Features",
         "AI food recognition uses advanced machine learning to analyze your meals with 90%+ accuracy.\n\nCreate a free account to:\n• Scan food photos instantly\n• Get personalized nutrition insights\n• Track your meals automatically",
         [
@@ -232,7 +236,7 @@ export const useAIMealGeneration = () => {
     }
 
     if (!foodRecognitionService) {
-      Alert.alert("Error", "Food recognition service not available.");
+      crossPlatformAlert("Error", "Food recognition service not available.");
       return;
     }
 
@@ -255,7 +259,7 @@ export const useAIMealGeneration = () => {
           0,
         );
 
-        Alert.alert(
+        crossPlatformAlert(
           "Food Recognition Complete!",
           `Recognized ${recognizedFoods.length} food item(s):\n\n` +
             `${recognizedFoods.map((food: any) => `• ${food.name} (${Math.round(food.nutrition.calories)} cal)`).join("\n")}\n\n` +
@@ -286,7 +290,7 @@ export const useAIMealGeneration = () => {
               onPress: async () => {
                 try {
                   if (!user?.id) {
-                    Alert.alert(
+                    crossPlatformAlert(
                       "Sign In Required",
                       "Please sign in to log meals.",
                     );
@@ -300,7 +304,7 @@ export const useAIMealGeneration = () => {
                     );
 
                   if (logResult.success) {
-                    Alert.alert(
+                    crossPlatformAlert(
                       "Meal Logged Successfully!",
                       `${recognizedFoods.length} food item(s) logged`,
                     );
@@ -317,7 +321,7 @@ export const useAIMealGeneration = () => {
                     throw new Error(logResult.error || "Failed to log meal");
                   }
                 } catch (logError) {
-                  Alert.alert("Meal Logging Failed", String(logError));
+                  crossPlatformAlert("Meal Logging Failed", String(logError));
                 }
               },
             },
@@ -330,7 +334,7 @@ export const useAIMealGeneration = () => {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       setAiError(errorMessage);
-      Alert.alert("Recognition Failed", errorMessage);
+      crossPlatformAlert("Recognition Failed", errorMessage);
     } finally {
       setIsGeneratingMeal(false);
     }
@@ -340,7 +344,7 @@ export const useAIMealGeneration = () => {
     if (!feedbackData) return;
     try {
       if (!user?.id) {
-        Alert.alert("Sign In Required", "Please sign in to submit feedback.");
+        crossPlatformAlert("Sign In Required", "Please sign in to submit feedback.");
         return;
       }
       const result = await foodRecognitionFeedbackService.submitFeedback(
@@ -352,10 +356,10 @@ export const useAIMealGeneration = () => {
       );
 
       if (!result.success) {
-        Alert.alert("Error", "Failed to submit feedback. Please try again.");
+        crossPlatformAlert("Error", "Failed to submit feedback. Please try again.");
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to submit feedback. Please try again.");
+      crossPlatformAlert("Error", "Failed to submit feedback. Please try again.");
     }
   };
 
@@ -372,7 +376,7 @@ export const useAIMealGeneration = () => {
           ?.portionSize.estimatedGrams,
     ).length;
 
-    Alert.alert(
+    crossPlatformAlert(
       "Portions Updated!",
       `${adjustedCount > 0 ? `Updated ${adjustedCount} portion size${adjustedCount !== 1 ? "s" : ""}!\n\n` : ""}` +
         `${adjustedFoods.map((food: any) => `- ${food.name} (${food.portionSize.estimatedGrams}g - ${Math.round(food.nutrition.calories)} cal)`).join("\n")}\n\n` +
@@ -395,7 +399,7 @@ export const useAIMealGeneration = () => {
           onPress: async () => {
             try {
               if (!user?.id) {
-                Alert.alert("Sign In Required", "Please sign in to log meals.");
+                crossPlatformAlert("Sign In Required", "Please sign in to log meals.");
                 return;
               }
               const logResult = await recognizedFoodLogger.logRecognizedFoods(
@@ -405,7 +409,7 @@ export const useAIMealGeneration = () => {
               );
 
               if (logResult.success) {
-                Alert.alert(
+                crossPlatformAlert(
                   "Meal Logged Successfully!",
                   `${adjustedFoods.length} food item${adjustedFoods.length !== 1 ? "s" : ""} logged\n` +
                     `Total: ${logResult.totalCalories} calories\n` +
@@ -421,7 +425,7 @@ export const useAIMealGeneration = () => {
                 throw new Error(logResult.error || "Failed to log meal");
               }
             } catch (error) {
-              Alert.alert("Error", "Failed to log meal. Please try again.");
+              crossPlatformAlert("Error", "Failed to log meal. Please try again.");
             }
           },
         },
@@ -439,7 +443,7 @@ export const useAIMealGeneration = () => {
       const lookupResult = await barcodeService.lookupProduct(barcode);
 
       if (!lookupResult.success || !lookupResult.product) {
-        Alert.alert(
+        crossPlatformAlert(
           "Product Not Found",
           lookupResult.error || "Product not in database.",
         );
@@ -453,13 +457,13 @@ export const useAIMealGeneration = () => {
       setProductHealthAssessment(healthAssessment);
       setShowProductModal(true);
 
-      Alert.alert(
+      crossPlatformAlert(
         "Product Scanned Successfully!",
         `Found: ${product.name}\nHealth Score: ${healthAssessment.overallScore}/100`,
         [{ text: "View Details", onPress: () => setShowProductModal(true) }],
       );
     } catch (error) {
-      Alert.alert("Scanning Error", String(error));
+      crossPlatformAlert("Scanning Error", String(error));
     } finally {
       setIsProcessingBarcode(false);
     }
@@ -470,7 +474,7 @@ export const useAIMealGeneration = () => {
     setShowGuestSignUp: (show: boolean) => void,
   ) => {
     if (isGuestMode || !user?.id) {
-      Alert.alert(
+      crossPlatformAlert(
         "Sign Up to Log Meals",
         "Create an account to track your meals.",
         [
@@ -488,7 +492,7 @@ export const useAIMealGeneration = () => {
       return;
     }
 
-    Alert.alert("Add to Meal", `Add ${product.name} to your current meal?`, [
+    crossPlatformAlert("Add to Meal", `Add ${product.name} to your current meal?`, [
       { text: "Cancel", style: "cancel" },
       {
         text: "Add",
@@ -519,7 +523,7 @@ export const useAIMealGeneration = () => {
             );
 
             if (logResult.success) {
-              Alert.alert(
+              crossPlatformAlert(
                 "Added to Meal",
                 `${product.name} added to ${selectedMealType}.`,
               );
@@ -530,7 +534,7 @@ export const useAIMealGeneration = () => {
               throw new Error(logResult.error || "Failed to log meal");
             }
           } catch (error) {
-            Alert.alert("Error", "Failed to add product to meal.");
+            crossPlatformAlert("Error", "Failed to add product to meal.");
           }
         },
       },
@@ -547,7 +551,7 @@ export const useAIMealGeneration = () => {
     }
 
     if (!user?.id || user.id.startsWith("guest")) {
-      Alert.alert(
+      crossPlatformAlert(
         "Sign Up Required",
         "Create an account to generate personalized AI meals.",
         [
@@ -559,7 +563,12 @@ export const useAIMealGeneration = () => {
     }
 
     if (!profile?.personalInfo || !profile?.fitnessGoals) {
-      Alert.alert("Profile Incomplete", "Please complete your profile.");
+      crossPlatformAlert("Profile Incomplete", "Please complete your profile.");
+      return;
+    }
+
+    if (!canUseFeature('ai_generation')) {
+      triggerPaywall("You've used your free AI generation for this month. Upgrade to Pro for unlimited meal plans.");
       return;
     }
 
@@ -614,19 +623,29 @@ export const useAIMealGeneration = () => {
         };
         setWeeklyMealPlan(updatedPlan);
 
-        Alert.alert(
+        crossPlatformAlert(
           "Meal Generated!",
           `Your personalized ${mealType} is ready!`,
         );
+        incrementUsage('ai_generation');
       } else {
-        setAiError(response.error || "Failed to generate meal");
-        Alert.alert("Generation Failed", response.error || "Failed.");
+        const errMsg = response.error || 'Failed to generate meal';
+        if (errMsg.toLowerCase().includes('feature limit exceeded') || errMsg.toLowerCase().includes('limit exceeded')) {
+          triggerPaywall("You've reached your AI generation limit. Upgrade to Pro for unlimited access.");
+        } else {
+          setAiError(errMsg);
+          crossPlatformAlert("Generation Failed", errMsg);
+        }
       }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
-      setAiError(errorMessage);
-      Alert.alert("Error", errorMessage);
+      if (errorMessage.toLowerCase().includes('feature limit exceeded') || errorMessage.toLowerCase().includes('limit exceeded')) {
+        triggerPaywall("You've reached your AI generation limit. Upgrade to Pro for unlimited access.");
+      } else {
+        setAiError(errorMessage);
+        crossPlatformAlert("Error", errorMessage);
+      }
     } finally {
       setIsGeneratingMeal(false);
     }
@@ -636,7 +655,7 @@ export const useAIMealGeneration = () => {
     setShowGuestSignUp: (show: boolean) => void,
   ) => {
     if (!user?.id || user.id.startsWith("guest")) {
-      Alert.alert(
+      crossPlatformAlert(
         "Sign Up Required",
         "Create an account to generate meal plans.",
         [
@@ -648,7 +667,12 @@ export const useAIMealGeneration = () => {
     }
 
     if (!profile?.personalInfo || !profile?.fitnessGoals) {
-      Alert.alert("Profile Incomplete", "Please complete your profile.");
+      crossPlatformAlert("Profile Incomplete", "Please complete your profile.");
+      return;
+    }
+
+    if (!canUseFeature('ai_generation')) {
+      triggerPaywall("You've used your free AI generation for this month. Upgrade to Pro for unlimited meal plans.");
       return;
     }
 
@@ -673,14 +697,25 @@ export const useAIMealGeneration = () => {
 
       if (response.success && response.data) {
         setAiMeals((prev) => [...(response.data!.meals as unknown as DayMeal[]), ...prev]);
-        Alert.alert("Daily Meal Plan Generated!", "Your plan is ready!");
+        crossPlatformAlert("Daily Meal Plan Generated!", "Your plan is ready!");
+        incrementUsage('ai_generation');
       } else {
-        setAiError(response.error || "Failed to generate plan");
-        Alert.alert("Generation Failed", response.error || "Failed.");
+        const errMsg = response.error || 'Failed to generate plan';
+        if (errMsg.toLowerCase().includes('feature limit exceeded') || errMsg.toLowerCase().includes('limit exceeded')) {
+          triggerPaywall("You've reached your AI generation limit. Upgrade to Pro for unlimited access.");
+        } else {
+          setAiError(errMsg);
+          crossPlatformAlert("Generation Failed", errMsg);
+        }
       }
     } catch (error) {
       setAiError(String(error));
-      Alert.alert("Error", String(error));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.toLowerCase().includes('feature limit exceeded') || errorMessage.toLowerCase().includes('limit exceeded')) {
+        triggerPaywall("You've reached your AI generation limit. Upgrade to Pro for unlimited access.");
+      } else {
+        crossPlatformAlert("Error", errorMessage);
+      }
     } finally {
       setIsGeneratingMeal(false);
     }

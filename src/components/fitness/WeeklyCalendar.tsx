@@ -159,6 +159,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         {days.map((day) => (
           <TouchableOpacity
             key={day.dayName}
+            testID={`day-${day.dayName}`}
+            accessibilityLabel={`day ${day.dayName}`}
             style={[
               styles.dayButton,
               selectedDay === day.dayName && styles.dayButtonSelected,
@@ -174,7 +176,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                 day.isToday && styles.dayLabelToday,
               ]}
             >
-              {day.dayName.slice(0, 3).toUpperCase()}
+              {day.dayName.charAt(0).toUpperCase() + day.dayName.slice(1, 3)}
             </Text>
 
             <Text

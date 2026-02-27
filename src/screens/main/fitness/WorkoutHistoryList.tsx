@@ -10,7 +10,6 @@ import {
   StyleSheet,
   Animated,
   PanResponder,
-  Alert,
 } from "react-native";
 import AnimatedRN, { FadeInDown, FadeInRight } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,6 +18,7 @@ import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressab
 import { ResponsiveTheme } from "../../../utils/constants";
 import { rf, rw, rh, rp } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
+import { crossPlatformAlert } from "../../../utils/crossPlatformAlert";
 
 interface CompletedWorkout {
   id: string;
@@ -112,7 +112,7 @@ const WorkoutHistoryCard: React.FC<{
   const handleDelete = useCallback(() => {
     haptics.medium();
     closeSwipe();
-    Alert.alert(
+    crossPlatformAlert(
       "Delete Workout",
       `Are you sure you want to delete "${workout.title}"?`,
       [

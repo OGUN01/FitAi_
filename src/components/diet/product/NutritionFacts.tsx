@@ -15,34 +15,34 @@ export const NutritionFacts: React.FC<NutritionFactsProps> = ({
     <View style={styles.nutritionGrid}>
       <View style={styles.nutritionItem}>
         <Text style={styles.nutritionLabel}>Calories</Text>
-        <Text style={styles.nutritionValue}>{nutrition.calories}</Text>
+        <Text style={styles.nutritionValue}>{Number(nutrition.calories).toFixed(0)}</Text>
       </View>
       <View style={styles.nutritionItem}>
         <Text style={styles.nutritionLabel}>Protein</Text>
-        <Text style={styles.nutritionValue}>{nutrition.protein}g</Text>
+        <Text style={styles.nutritionValue}>{Number(nutrition.protein).toFixed(1)}g</Text>
       </View>
       <View style={styles.nutritionItem}>
         <Text style={styles.nutritionLabel}>Carbs</Text>
-        <Text style={styles.nutritionValue}>{nutrition.carbs}g</Text>
+        <Text style={styles.nutritionValue}>{Number(nutrition.carbs).toFixed(1)}g</Text>
       </View>
       <View style={styles.nutritionItem}>
         <Text style={styles.nutritionLabel}>Fat</Text>
-        <Text style={styles.nutritionValue}>{nutrition.fat}g</Text>
+        <Text style={styles.nutritionValue}>{Number(nutrition.fat).toFixed(1)}g</Text>
       </View>
       <View style={styles.nutritionItem}>
         <Text style={styles.nutritionLabel}>Fiber</Text>
-        <Text style={styles.nutritionValue}>{nutrition.fiber}g</Text>
+        <Text style={styles.nutritionValue}>{Number(nutrition.fiber).toFixed(1)}g</Text>
       </View>
       {nutrition.sugar !== undefined && (
         <View style={styles.nutritionItem}>
           <Text style={styles.nutritionLabel}>Sugar</Text>
-          <Text style={styles.nutritionValue}>{nutrition.sugar}g</Text>
+          <Text style={styles.nutritionValue}>{Number(nutrition.sugar).toFixed(1)}g</Text>
         </View>
       )}
       {nutrition.sodium !== undefined && (
         <View style={styles.nutritionItem}>
           <Text style={styles.nutritionLabel}>Sodium</Text>
-          <Text style={styles.nutritionValue}>{nutrition.sodium}g</Text>
+          <Text style={styles.nutritionValue}>{Number(nutrition.sodium).toFixed(2)}g</Text>
         </View>
       )}
     </View>

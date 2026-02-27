@@ -11,12 +11,12 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Alert,
 } from "react-native";
 
 import { dataBridge } from "../../services/DataBridge";
 import { migrationManager } from "../../services/migrationManager";
 import { ResponsiveTheme } from '../../utils/constants';
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 interface TestResult {
   test: string;
@@ -157,13 +157,13 @@ export const MigrationTestComponent: React.FC = () => {
       // Test 6: Test complete flow
       await runTest("Test Complete Migration Flow", testCompleteFlow);
 
-      Alert.alert(
+      crossPlatformAlert(
         "Tests Complete",
         "All migration tests have been completed. Check the results below.",
       );
     } catch (error) {
       console.error("❌ Test suite failed:", error);
-      Alert.alert("Test Failed", "The test suite encountered an error.");
+      crossPlatformAlert("Test Failed", "The test suite encountered an error.");
     } finally {
       setIsRunning(false);
     }
@@ -175,7 +175,7 @@ export const MigrationTestComponent: React.FC = () => {
 
   const clearDataAndResults = async () => {
     await runTest("Clear Test Data", clearTestData);
-    Alert.alert("Data Cleared", "Test data has been cleared.");
+    crossPlatformAlert("Data Cleared", "Test data has been cleared.");
   };
 
   return (

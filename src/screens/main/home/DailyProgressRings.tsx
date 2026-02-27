@@ -204,6 +204,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
       hapticType="light"
       accessibilityRole="button"
       accessibilityLabel="Daily progress"
+      testID="daily-progress-rings"
     >
       <GlassCard
         elevation={2}
@@ -385,6 +386,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: ResponsiveTheme.spacing.md,
+    minHeight: rw(148),
   },
   emptyStateContainer: {
     alignItems: "center",

@@ -45,11 +45,12 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Direct lookup by exercise ID with fallbacks (memoized to avoid side effects in render)
+  // Direct lookup by exercise ID with fallbacks, then name-based fuzzy match
   const exercise = useMemo(() => {
+    // 1. Direct ID lookup
     let result = exerciseFilterService.getExerciseById(exerciseId);
 
-    // Fallback: Try case-insensitive and trimmed lookup if first attempt fails
+    // 2. Case-insensitive ID fallback
     if (!result && exerciseId) {
       const cleanId = exerciseId.trim();
       const allIds = exerciseFilterService.getAllExerciseIds();
@@ -61,8 +62,18 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
       }
     }
 
+    // 3. Name-based fuzzy match using exerciseName prop
+    if (!result && exerciseName) {
+      result = exerciseFilterService.getExerciseByName(exerciseName);
+    }
+
+    // 4. Try using exerciseId itself as a name (e.g. "sun_salutation" -> "Sun Salutation")
+    if (!result && exerciseId) {
+      result = exerciseFilterService.getExerciseByName(exerciseId);
+    }
+
     return result;
-  }, [exerciseId]);
+  }, [exerciseId, exerciseName]);
 
 
   // Always prioritize database name over passed name to avoid showing IDs
@@ -318,6 +329,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
   },
 
   gif: {

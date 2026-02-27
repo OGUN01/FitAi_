@@ -9,12 +9,13 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  Alert,
+
 } from "react-native";
 import { Card } from "../ui";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rh, rw, rs, rp } from "../../utils/responsive";
 import { colors } from "../../theme/aurora-tokens";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 interface AIMealsPanelProps {
   visible: boolean;
@@ -170,7 +171,7 @@ export const AIMealsPanel: React.FC<AIMealsPanelProps> = ({
       // Reset selections after successful generation
       setSelectedOptions([]);
     } catch (error) {
-      Alert.alert(
+      crossPlatformAlert(
         "Generation Failed",
         "Failed to generate meal. Please try again.",
       );
@@ -184,7 +185,7 @@ export const AIMealsPanel: React.FC<AIMealsPanelProps> = ({
         actionType: action.action,
       });
     } catch (error) {
-      Alert.alert(
+      crossPlatformAlert(
         "Action Failed",
         `Failed to execute ${action.title}. Please try again.`,
       );

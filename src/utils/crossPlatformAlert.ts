@@ -64,8 +64,14 @@ export function crossPlatformAlert(
   const confirmed = window.confirm(fullMessage);
 
   if (confirmed) {
-    actionButton?.onPress?.();
+    // Use setTimeout to allow any nested crossPlatformAlert calls to fire
+    // after the current confirm dialog closes (avoids swallowed dialogs)
+    if (actionButton?.onPress) {
+      setTimeout(() => actionButton.onPress?.(), 50);
+    }
   } else {
-    cancelButton?.onPress?.();
+    if (cancelButton?.onPress) {
+      setTimeout(() => cancelButton.onPress?.(), 50);
+    }
   }
 }

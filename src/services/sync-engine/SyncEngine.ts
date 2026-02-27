@@ -146,7 +146,7 @@ export class SyncEngine {
         .from("profiles")
         .select("*")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
 
       if (profileData && !profileError) {
         result.personalInfo = profileData;
@@ -156,7 +156,7 @@ export class SyncEngine {
         .from("diet_preferences")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (dietData && !dietError) {
         result.dietPreferences = dietData;
@@ -166,7 +166,7 @@ export class SyncEngine {
         .from("body_analysis")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (bodyData && !bodyError) {
         result.bodyAnalysis = bodyData;
@@ -176,7 +176,7 @@ export class SyncEngine {
         .from("workout_preferences")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (workoutData && !workoutError) {
         result.workoutPreferences = workoutData;
@@ -186,7 +186,7 @@ export class SyncEngine {
         .from("advanced_review")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (advancedData && !advancedError) {
         result.advancedReview = advancedData;

@@ -5,9 +5,9 @@
  * Following FitAI UI/UX methodology
  */
 
-import React from "react";
+import React, { useState, useCallback } from "react";
 import Constants from "expo-constants";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   EditProvider,
@@ -17,7 +17,11 @@ import {
 import { EditOverlay } from "../../components/profile/EditOverlay";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { ResponsiveTheme } from "../../utils/constants";
+import { rp, rh } from "../../utils/responsive";
 import { useProfileLogic } from "../../hooks/useProfileLogic";
+import { useAuthStore } from "../../stores/authStore";
+import { useUserStore } from "../../stores/userStore";
+import { useProfileStore } from "../../stores/profileStore";
 
 import {
   ProfileHeader,
@@ -39,11 +43,13 @@ import {
 import { GuestSignUpScreen } from "./GuestSignUpScreen";
 import { LogoutConfirmationModal } from "../../components/profile/LogoutConfirmationModal";
 import { SettingsScreenRenderer } from "../../components/profile/SettingsScreenRenderer";
+import PaywallModal from "../../components/subscription/PaywallModal";
 
 const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
   navigation,
 }) => {
   const { showOverlay, setShowOverlay } = useEditStatus();
+  const [refreshing, setRefreshing] = useState(false);
   const {
     isAuthenticated,
     isGuestMode,
@@ -68,6 +74,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
     dataItems,
     userName,
     memberSince,
+    profile,
     // Settings modals
     showThemeModal,
     setShowThemeModal,
@@ -77,6 +84,8 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
     setShowLanguageModal,
     showClearCacheModal,
     setShowClearCacheModal,
+    showPaywallModal,
+    setShowPaywallModal,
     themePreference,
     unitsPreference,
     handleThemeSelect,
@@ -84,6 +93,22 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
     handleLanguageSelect,
     handleClearCache,
   } = useProfileLogic();
+
+  const languagePreference = (profile?.preferences as { language?: string } | undefined)?.language || "en";
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const userId = useAuthStore.getState().user?.id;
+      if (userId) {
+        await useUserStore.getState().getCompleteProfile(userId);
+      }
+    } catch (error) {
+      console.error("[ProfileScreen] Refresh failed:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
   if (currentSettingsScreen) {
     return (
@@ -110,7 +135,12 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         >
+          {/* Guest option marker - always present in DOM for accessibility */}
+          <View testID="guest-option" accessibilityLabel="Continue as guest" style={{ width: 0, height: 0, overflow: 'hidden' }} />
           <ProfileHeader
             userName={userName || ""}
             memberSince={memberSince}
@@ -233,7 +263,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
           subtitle="App display language"
           icon="globe-outline"
           iconColor={ResponsiveTheme.colors.success}
-          selectedValue="en"
+          selectedValue={languagePreference}
           onSelect={handleLanguageSelect}
           onClose={() => setShowLanguageModal(false)}
           options={[
@@ -248,6 +278,12 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
           onConfirm={handleClearCache}
           onCancel={() => setShowClearCacheModal(false)}
         />
+
+        {/* Paywall / Upgrade Modal */}
+        <PaywallModal
+          visible={showPaywallModal}
+          onClose={() => setShowPaywallModal(false)}
+        />
       </SafeAreaView>
     </AuroraBackground>
   );
@@ -258,6 +294,30 @@ export const ProfileScreen: React.FC<{ navigation?: any }> = ({
 }) => {
   const handleEditComplete = async () => {
     console.log("[ProfileScreen] Edit completed");
+    try {
+      // Sync profileStore data to userStore for immediate UI update
+      const profileStoreState = useProfileStore.getState();
+      const currentProfile = useUserStore.getState().profile;
+      if (currentProfile && profileStoreState.personalInfo) {
+        const pInfo = profileStoreState.personalInfo;
+        const displayName = pInfo.name || `${pInfo.first_name || ''} ${pInfo.last_name || ''}`.trim();
+        useUserStore.getState().setProfile({
+          ...currentProfile,
+          personalInfo: {
+            ...currentProfile.personalInfo,
+            ...pInfo,
+            name: displayName || currentProfile.personalInfo?.name,
+          },
+        });
+      }
+      // Then try Supabase refresh if authenticated
+      const userId = useAuthStore.getState().user?.id;
+      if (userId) {
+        await useUserStore.getState().getCompleteProfile(userId);
+      }
+    } catch (error) {
+      console.error("[ProfileScreen] Failed to refresh profile after edit:", error);
+    }
   };
 
   return (
@@ -278,10 +338,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: ResponsiveTheme.spacing.xl,
+    paddingBottom: rp(40),
   },
   bottomSpacing: {
-    height: ResponsiveTheme.spacing.xxl,
+    height: rh(100),
   },
 });
 

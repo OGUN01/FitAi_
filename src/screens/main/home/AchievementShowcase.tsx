@@ -151,15 +151,26 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
     >
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
+        <AnimatedPressable
+          onPress={onViewAll}
+          scaleValue={0.98}
+          hapticFeedback={true}
+          hapticType="light"
+          accessibilityRole="button"
+          accessibilityLabel="Achievements"
+          testID="achievement-section"
+          style={styles.headerLeft}
+        >
           <View style={styles.headerIconBg}>
             <Ionicons name="trophy" size={rf(16)} color={ResponsiveTheme.colors.amber} />
           </View>
           <Text style={styles.headerTitle}>Achievements</Text>
-          <View style={styles.countBadge}>
-            <Text style={styles.countText}>{totalBadges}</Text>
-          </View>
-        </View>
+          {totalBadges ? (
+            <View style={styles.countBadge}>
+              <Text style={styles.countText}>{totalBadges}</Text>
+            </View>
+          ) : null}
+        </AnimatedPressable>
 
         <AnimatedPressable
           onPress={onViewAll}

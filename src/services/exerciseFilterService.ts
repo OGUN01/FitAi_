@@ -392,6 +392,60 @@ class ExerciseFilterService {
   }
 
   /**
+   * Get exercise by name with fuzzy matching fallback.
+   * Tries exact match first, then case-insensitive, then partial match.
+   */
+  getExerciseByName(name: string): FilteredExercise | null {
+    if (!name) return null;
+
+    const normalizedName = name.trim().toLowerCase();
+
+    // 1. Exact case-insensitive match
+    const exact = this.exercises.find(
+      (ex) => ex.name.toLowerCase() === normalizedName,
+    );
+    if (exact) return exact;
+
+    // 2. Normalize underscores/hyphens to spaces and try again
+    const spacedName = normalizedName.replace(/[_-]/g, ' ');
+    const spacedMatch = this.exercises.find(
+      (ex) => ex.name.toLowerCase() === spacedName,
+    );
+    if (spacedMatch) return spacedMatch;
+
+    // 3. Contains match — exercise name contains the search term or vice versa
+    const containsMatch = this.exercises.find((ex) => {
+      const exName = ex.name.toLowerCase();
+      return exName.includes(spacedName) || spacedName.includes(exName);
+    });
+    if (containsMatch) return containsMatch;
+
+    // 4. Word-overlap scoring — pick the exercise with the most matching words
+    const searchWords = spacedName.split(/\s+/).filter((w) => w.length > 2);
+    if (searchWords.length === 0) return null;
+
+    let bestMatch: FilteredExercise | null = null;
+    let bestScore = 0;
+
+    for (const ex of this.exercises) {
+      const exWords = ex.name.toLowerCase().split(/\s+/);
+      let score = 0;
+      for (const sw of searchWords) {
+        if (exWords.some((ew) => ew.includes(sw) || sw.includes(ew))) {
+          score++;
+        }
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = ex;
+      }
+    }
+
+    // Require at least 1 word match to avoid random results
+    return bestScore >= 1 ? bestMatch : null;
+  }
+
+  /**
    * Get all exercise IDs for validation
    */
   getAllExerciseIds(): string[] {

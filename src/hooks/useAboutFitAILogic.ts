@@ -3,9 +3,10 @@
  */
 
 import { useCallback } from "react";
-import { Alert, Linking, Platform } from "react-native";
+import { Linking, Platform } from "react-native";
 import * as Application from "expo-application";
 import Constants from "expo-constants";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import { haptics } from "../utils/haptics";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -82,13 +83,13 @@ export const useAboutFitAILogic = () => {
       );
       if (confirmed) {
         haptics.success();
-        Alert.alert(
+          crossPlatformAlert(
           "App Store",
           "App Store link will be available after app publication.",
         );
       }
     } else {
-      Alert.alert(
+      crossPlatformAlert(
         "Rate FitAI",
         "Thank you for using FitAI! Your feedback helps us improve.",
         [
@@ -97,7 +98,7 @@ export const useAboutFitAILogic = () => {
             text: "Rate on App Store",
             onPress: () => {
               haptics.success();
-              Alert.alert(
+              crossPlatformAlert(
                 "App Store",
                 "App Store link will be available after app publication.",
               );
@@ -115,10 +116,10 @@ export const useAboutFitAILogic = () => {
       );
       if (confirmed) {
         haptics.success();
-        Alert.alert("Share", "Native sharing will be implemented here.");
+        crossPlatformAlert("Share", "Native sharing will be implemented here.");
       }
     } else {
-      Alert.alert(
+      crossPlatformAlert(
         "Share FitAI",
         "Invite your friends to join you on your fitness journey!",
         [
@@ -127,7 +128,7 @@ export const useAboutFitAILogic = () => {
             text: "Share",
             onPress: () => {
               haptics.success();
-              Alert.alert("Share", "Native sharing will be implemented here.");
+              crossPlatformAlert("Share", "Native sharing will be implemented here.");
             },
           },
         ],
@@ -154,7 +155,7 @@ export const useAboutFitAILogic = () => {
         window.open(url, '_blank');
       } else {
         Linking.openURL(url).catch(() => {
-          Alert.alert("Error", "Could not open social media link.");
+          crossPlatformAlert("Error", "Could not open social media link.");
         });
       }
     }
@@ -167,7 +168,7 @@ export const useAboutFitAILogic = () => {
       window.open(url, '_blank');
     } else {
       Linking.openURL(url).catch(() =>
-        Alert.alert(
+        crossPlatformAlert(
           "Terms of Service",
           "Visit https://fitai.app/terms to view our Terms of Service.",
         ),
@@ -182,7 +183,7 @@ export const useAboutFitAILogic = () => {
       window.open(url, '_blank');
     } else {
       Linking.openURL(url).catch(() =>
-        Alert.alert(
+        crossPlatformAlert(
           "Privacy Policy",
           "Visit https://fitai.app/privacy to view our Privacy Policy.",
         ),
@@ -197,7 +198,7 @@ export const useAboutFitAILogic = () => {
       window.open(url, '_blank');
     } else {
       Linking.openURL(url).catch(() =>
-        Alert.alert(
+        crossPlatformAlert(
           "Open Source Licenses",
           "FitAI uses the following open source libraries:\n\n" +
             "• React Native (MIT)\n" +

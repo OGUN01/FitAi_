@@ -13,16 +13,18 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, StyleSheet, Alert } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SettingsModalWrapper } from "../components/SettingsModalWrapper";
 import { GlassFormInput } from "../components/GlassFormInput";
 import { GlassFormPicker } from "../components/GlassFormPicker";
 import { useProfileStore } from "../../../../stores/profileStore";
 import { useUser } from "../../../../hooks/useUser";
+import { useUserStore } from "../../../../stores/userStore";
 import { ResponsiveTheme } from "../../../../utils/constants";
 import { rf, rp, rbr } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
+import { crossPlatformAlert } from "../../../../utils/crossPlatformAlert";
 
 interface PersonalInfoEditModalProps {
   visible: boolean;
@@ -268,6 +270,31 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
         occupation_type: profile?.personalInfo?.occupation_type as any,
       });
 
+      // Sync to userStore so header/display components pick up the change immediately
+      const currentProfile = useUserStore.getState().profile;
+      if (currentProfile) {
+        useUserStore.getState().setProfile({
+          ...currentProfile,
+          personalInfo: {
+            ...currentProfile.personalInfo,
+            name: name.trim(),
+            first_name: firstName,
+            last_name: lastName,
+            age: parseInt(age, 10),
+            gender: gender as "male" | "female" | "other" | "prefer_not_to_say",
+          },
+          bodyMetrics: {
+            ...currentProfile.bodyMetrics,
+            height_cm: height ? parseFloat(height) : (currentProfile.bodyMetrics?.height_cm ?? 0),
+            current_weight_kg: weight ? parseFloat(weight) : (currentProfile.bodyMetrics?.current_weight_kg ?? 0),
+          },
+          workoutPreferences: {
+            ...currentProfile.workoutPreferences,
+            activity_level: activityLevel || currentProfile.workoutPreferences?.activity_level || "moderate",
+          },
+        });
+      }
+
       // ✅ Update body measurements via profileStore's bodyAnalysis
       if (height && weight) {
         updateBodyAnalysis({
@@ -292,7 +319,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       onClose();
     } catch (error) {
       console.error("Error saving personal info:", error);
-      Alert.alert("Error", "Failed to save changes. Please try again.");
+      crossPlatformAlert("Error", "Failed to save changes. Please try again.");
     } finally {
       setIsSaving(false);
     }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 
 export function useCookingTimer() {
   const [cookingTimer, setCookingTimer] = useState<number | null>(null);
@@ -21,7 +21,7 @@ export function useCookingTimer() {
         clearInterval(interval);
         timerIntervalRef.current = null;
         setCookingTimer(null);
-        Alert.alert("Timer Complete!", "Your cooking step is ready.");
+        crossPlatformAlert("Timer Complete!", "Your cooking step is ready.");
       } else {
         setCookingTimer(remaining);
       }

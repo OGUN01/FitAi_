@@ -1,4 +1,5 @@
 import React from "react";
+import { Platform } from "react-native";
 import { Path, Circle, Line, G, Rect, Text as SvgText } from "react-native-svg";
 import Animated from "react-native-reanimated";
 import { ResponsiveTheme } from "../../../../utils/constants";
@@ -150,7 +151,10 @@ export const DataPoints: React.FC<DataPointsProps> = ({
             cy={y}
             r={rw(15)}
             fill="transparent"
-            onPress={() => onPointPress(selectedPoint === index ? -1 : index)}
+            {...(Platform.OS === 'web'
+              ? { onClick: () => onPointPress(selectedPoint === index ? -1 : index) }
+              : { onPress: () => onPointPress(selectedPoint === index ? -1 : index) }
+            )}
           />
         </G>
       );

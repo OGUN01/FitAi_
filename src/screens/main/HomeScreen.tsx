@@ -28,6 +28,7 @@ import {
   StyleSheet,
   Animated,
   RefreshControl,
+  Platform,
 } from "react-native";
 import {
   SafeAreaView,
@@ -95,6 +96,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     calculatedMetrics,
     handleRefresh,
     handleAddWater,
+    weightUnit,
+    syncHealthData,
+    syncFromHealthConnect,
   } = useHomeLogic();
 
   // Achievement data
@@ -112,14 +116,30 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
       createQuickActions({
         isHealthKitAuthorized: healthMetrics?.sources ? true : false,
         isHealthConnectAuthorized: healthMetrics?.sources ? true : false,
-        syncHealthData: async () => {},
-        syncFromHealthConnect: async () => {},
+        syncHealthData: Platform.OS === "web"
+          ? async () => {
+              crossPlatformAlert(
+                "Health Sync",
+                "Health sync is only available on iOS/Android. Open the app on your phone to sync.",
+              );
+            }
+          : syncHealthData,
+        syncFromHealthConnect: Platform.OS === "web"
+          ? async () => {
+              crossPlatformAlert(
+                "Health Sync",
+                "Health sync is only available on iOS/Android. Open the app on your phone to sync.",
+              );
+            }
+          : async (days: number) => {
+              await syncFromHealthConnect(days);
+            },
         onLogWeight: () => setShowWeightModal(true),
         onScanFood: () => onNavigateToTab?.("diet"),
         onLogMeal: () => onNavigateToTab?.("diet"),
         onLogWater: () => onNavigateToTab?.("diet"),
       }),
-    [healthMetrics, setShowWeightModal, onNavigateToTab],
+    [healthMetrics, setShowWeightModal, onNavigateToTab, syncHealthData, syncFromHealthConnect],
   );
 
   if (showGuestSignUp) {
@@ -183,6 +203,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 <MotivationBanner />
               </View>
 
+
               {/* Guest Banner */}
               {isGuestMode && (
                 <View style={styles.section}>
@@ -208,7 +229,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   stepsGoal={healthMetrics?.stepsGoal} // NO HARDCODED - from healthDataStore
                   activeCalories={healthMetrics?.activeCalories} // NO FALLBACK - single source
                   age={userAge}
-                  onPress={() => onNavigateToTab?.("progress")}
+                  onPress={() => onNavigateToTab?.("analytics")}
                   onDetailPress={(metric) => {
                     if (metric === "heart")
                       crossPlatformAlert("Heart Rate", "Detailed heart rate data");
@@ -222,7 +243,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
               <View style={styles.section}>
                 <DailyProgressRings
                   caloriesBurned={realCaloriesBurned}
-                  caloriesGoal={actualCaloriesGoal} // From TDEE/healthMetrics - properly calculated
+                  caloriesGoal={calculatedMetrics?.calculatedTDEE ?? actualCaloriesGoal} // TDEE for burn goal
                   workoutMinutes={workoutMinutes}
                   workoutGoal={
                     calculatedMetrics?.workoutDurationMinutes ??
@@ -230,11 +251,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                     30
                   } // User's preferred workout duration from onboarding
                   mealsLogged={caloriesConsumed}
-                  mealsGoal={actualCaloriesGoal}
+                  mealsGoal={calculatedMetrics?.dailyCalories ?? actualCaloriesGoal} // Intake target for nutrition goal
                   steps={healthMetrics?.steps ?? 0} // From Health Connect/HealthKit - TODAY only
                   stepsGoal={healthMetrics?.stepsGoal ?? 10000} // Default 10k steps if not set
                   stepsSource={healthMetrics?.sources?.steps} // Data source attribution
-                  onPress={() => onNavigateToTab?.("progress")}
+                  onPress={() => onNavigateToTab?.("analytics")}
                 />
                 <EmptyMealsMessage mealsLogged={caloriesConsumed} onLogMeal={() => onNavigateToTab?.("diet")} />
                 {/* Wearable Sync Status */}
@@ -295,7 +316,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   goalWeight={weightData.goalWeight}
                   startingWeight={weightData.startingWeight}
                   weightHistory={weightData.weightHistory}
-                  unit="kg"
+                  unit={weightUnit}
                   onPress={() => onNavigateToTab?.("progress")}
                   onPhotoPress={() =>
                     crossPlatformAlert(
@@ -332,7 +353,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
               </View>
 
               {/* Bottom Spacing */}
-              <View style={{ height: insets.bottom + rh(90) }} />
+              <View style={{ height: insets.bottom + rh(100) }} />
             </Animated.ScrollView>
           </Animated.View>
         </SafeAreaView>
@@ -343,7 +364,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         visible={showWeightModal}
         onClose={() => setShowWeightModal(false)}
         currentWeight={weightData.currentWeight}
-        unit="kg"
+        unit={weightUnit}
         onSuccess={() => {
           setShowWeightModal(false);
           handleRefresh();
@@ -365,7 +386,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 120,
+    paddingBottom: rh(120),
   },
   section: {
     paddingHorizontal: ResponsiveTheme.spacing.md,

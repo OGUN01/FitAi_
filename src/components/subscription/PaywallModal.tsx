@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -19,6 +19,11 @@ interface PaywallModalProps {
 }
 
 const TIER_FEATURES: Record<string, string[]> = {
+  free: [
+    "1 AI generation per month",
+    "10 food scans per day",
+    "Basic progress tracking",
+  ],
   basic: [
     "10 AI generations per day",
     "Unlimited barcode scans",
@@ -44,8 +49,16 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
 
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
-    "yearly",
+    "monthly",
   );
+
+  // Reset state every time the modal opens so there's no stale selection
+  useEffect(() => {
+    if (visible) {
+      setSelectedPlanId(null);
+      setBillingCycle("monthly");
+    }
+  }, [visible]);
 
   const displayPlans = useMemo(() => {
     const basicPlan = plans.find(
@@ -140,7 +153,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
             {/* ── Billing Toggle (Monthly / Yearly) ───────── */}
             <View style={styles.toggleRow}>
               <Pressable
-                onPress={() => setBillingCycle("monthly")}
+                onPress={() => { setBillingCycle("monthly"); setSelectedPlanId(null); }}
                 style={[
                   styles.toggleBtn,
                   billingCycle === "monthly" && styles.toggleBtnActive,
@@ -157,7 +170,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
               </Pressable>
 
               <Pressable
-                onPress={() => setBillingCycle("yearly")}
+                onPress={() => { setBillingCycle("yearly"); setSelectedPlanId(null); }}
                 style={[
                   styles.toggleBtn,
                   billingCycle === "yearly" && styles.toggleBtnActive,
@@ -183,6 +196,32 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
 
             {/* ── Plan Cards ──────────────────────────────── */}
             <View style={styles.plansList}>
+              {/* Free Tier Card (static, always shown) */}
+              <View
+                style={[
+                  styles.planCard,
+                  isCurrentTier("free") && styles.planCardCurrent,
+                ]}
+              >
+                {isCurrentTier("free") && (
+                  <View style={styles.currentBadge}>
+                    <Text style={styles.currentBadgeText}>Current Plan</Text>
+                  </View>
+                )}
+                <Text style={styles.planName}>Free Plan</Text>
+                <View style={styles.priceRow}>
+                  <Text style={styles.priceAmount}>₹0</Text>
+                  <Text style={styles.pricePeriod}>/mo</Text>
+                </View>
+                <View style={styles.featureList}>
+                  {(TIER_FEATURES.free ?? []).map((feat, i) => (
+                    <View key={i} style={styles.featureRow}>
+                      <Text style={styles.featureCheck}>✓</Text>
+                      <Text style={styles.featureText}>{feat}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
               {displayPlans.map((plan) => {
                 if (!plan) return null;
                 const isSelected = effectiveSelectedId === plan.id;

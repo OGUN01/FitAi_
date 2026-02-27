@@ -21,6 +21,9 @@ interface TodayWorkoutCardProps {
   progress: number;
   onStartWorkout: () => void;
   onViewDetails: () => void;
+  onRecoveryTips?: () => void;
+  selectedDay?: string;
+  isToday?: boolean;
 }
 
 export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
@@ -30,6 +33,9 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
   progress,
   onStartWorkout,
   onViewDetails,
+  onRecoveryTips,
+  selectedDay,
+  isToday = true,
 }) => {
   const getStatusConfig = () => {
     if (isCompleted) {

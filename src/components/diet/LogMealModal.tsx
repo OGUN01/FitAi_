@@ -340,7 +340,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.overlay,
+    backgroundColor: ResponsiveTheme.colors.overlayDark,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
@@ -351,6 +351,7 @@ const styles = StyleSheet.create({
   content: {
     borderRadius: rbr(20),
     padding: rp(20),
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
   },
   header: {
     flexDirection: "row",
@@ -384,7 +385,8 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: ResponsiveTheme.colors.surface,
     borderRadius: rbr(12),
-    padding: rp(12),
+    paddingHorizontal: rp(12),
+    paddingVertical: rh(12),
     fontSize: rf(16),
     color: ResponsiveTheme.colors.text,
     borderWidth: 1,
@@ -434,7 +436,8 @@ const styles = StyleSheet.create({
   macroInput: {
     backgroundColor: ResponsiveTheme.colors.surface,
     borderRadius: rbr(10),
-    padding: rp(10),
+    paddingHorizontal: rp(8),
+    paddingVertical: rh(10),
     fontSize: rf(15),
     color: ResponsiveTheme.colors.text,
     borderWidth: 1,

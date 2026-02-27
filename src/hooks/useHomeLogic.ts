@@ -4,12 +4,13 @@
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Platform, Animated, Alert } from "react-native";
+import { Platform, Animated } from "react-native";
 import { haptics } from "../utils/haptics";
 import { useDashboardIntegration } from "../utils/integration";
 import { useAuth } from "./useAuth";
 import { useCalculatedMetrics } from "./useCalculatedMetrics";
 import DataRetrievalService from "../services/dataRetrieval";
+import { progressDataService } from "../services/progressData";
 import {
   useFitnessStore,
   useNutritionStore,
@@ -25,9 +26,12 @@ import { completionTrackingService } from "../services/completionTracking";
 
 export const useHomeLogic = () => {
   const { getUserStats, profile } = useDashboardIntegration();
-  const { isGuestMode } = useAuth();
+  const { user, isGuestMode } = useAuth();
   const userProfile = useUserStore((state) => state.profile);
-  const { bodyAnalysis } = useProfileStore();
+  const { bodyAnalysis, personalInfo } = useProfileStore();
+
+  // Derived weight unit from user preferences
+  const weightUnit: "kg" | "lbs" = personalInfo?.units === "imperial" ? "lbs" : "kg";
 
   // Stores
   const { loadData: loadFitnessData, weeklyWorkoutPlan } = useFitnessStore();
@@ -81,6 +85,7 @@ export const useHomeLogic = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [historicalWeightEntries, setHistoricalWeightEntries] = useState<{ date: string; weight: number }[]>([]);
 
   // Refresh data on mount
   useEffect(() => {
@@ -98,6 +103,29 @@ export const useHomeLogic = () => {
         console.warn("[HomeScreen] Failed to load data on mount:", err);
       });
   }, [refreshMetrics]);
+
+  // Fetch historical weight entries
+  useEffect(() => {
+    const fetchWeightHistory = async () => {
+      try {
+        const userId = user?.id;
+        if (!userId) return;
+        const response = await progressDataService.getUserProgressEntries(userId, 30);
+        if (response.success && response.data && response.data.length > 0) {
+          const entries = response.data.map((entry) => ({
+            date: entry.entry_date,
+            weight: entry.weight_kg,
+          }));
+          // Sort ascending by date for chart display
+          entries.sort((a, b) => a.date.localeCompare(b.date));
+          setHistoricalWeightEntries(entries);
+        }
+      } catch (err) {
+        console.warn("[HomeScreen] Failed to fetch weight history:", err);
+      }
+    };
+    fetchWeightHistory();
+  }, [user?.id]);
 
   // Sync hydration goal
   useEffect(() => {
@@ -236,25 +264,31 @@ export const useHomeLogic = () => {
   }, [profile]);
 
   const weightData = useMemo(() => {
-    const currentWeight = profile?.bodyMetrics?.current_weight_kg || bodyAnalysis?.current_weight_kg;
-    const goalWeight = profile?.bodyMetrics?.target_weight_kg || bodyAnalysis?.target_weight_kg;
+    const currentWeight = bodyAnalysis?.current_weight_kg ?? profile?.bodyMetrics?.current_weight_kg;
+    const goalWeight = bodyAnalysis?.target_weight_kg ?? profile?.bodyMetrics?.target_weight_kg;
     const startingWeight =
       currentWeight && currentWeight > 0 ? currentWeight : undefined;
+
+    // Use historical entries if available, otherwise fall back to today's entry
+    let weightHistory: { date: string; weight: number }[] = [];
+    if (historicalWeightEntries.length > 0) {
+      weightHistory = historicalWeightEntries;
+    } else if (currentWeight && currentWeight > 0) {
+      weightHistory = [
+        {
+          date: new Date().toISOString().split("T")[0],
+          weight: currentWeight,
+        },
+      ];
+    }
 
     return {
       currentWeight: currentWeight && currentWeight > 0 ? currentWeight : undefined,
       goalWeight: goalWeight && goalWeight > 0 ? goalWeight : undefined,
       startingWeight,
-      weightHistory: currentWeight && currentWeight > 0
-        ? [
-            {
-              date: new Date().toISOString().split("T")[0],
-              weight: currentWeight,
-            },
-          ]
-        : [],
+      weightHistory,
     };
-  }, [healthMetrics, userProfile, calculatedMetrics, bodyAnalysis]);
+  }, [healthMetrics, userProfile, calculatedMetrics, bodyAnalysis, historicalWeightEntries]);
 
   const caloriesConsumed = useMemo(() => {
     const consumedNutrition = useNutritionStore
@@ -367,6 +401,12 @@ export const useHomeLogic = () => {
     // Weight data
     weightData,
 
+    // Weight unit preference
+    weightUnit,
+
+    // Health sync functions
+    syncHealthData,
+    syncFromHealthConnect,
     // Calculated metrics
     calculatedMetrics,
 

@@ -10,7 +10,7 @@
  */
 
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,6 +26,7 @@ import { usePrivacySecurityLogic } from "../../hooks/usePrivacySecurityLogic";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 interface PrivacySecurityScreenProps {
   onBack?: () => void;
@@ -45,7 +46,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
-      <SafeAreaView style={styles.container} edges={["top"]}>
+      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
         <Animated.View entering={FadeIn.duration(300)} style={styles.header}>
           <AnimatedPressable
             onPress={() => {
@@ -174,7 +175,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
               title="Privacy Policy"
               description="Read our complete privacy policy"
               onPress={() =>
-                Alert.alert(
+                crossPlatformAlert(
                   "Privacy Policy",
                   "Privacy policy will be displayed here.",
                 )
@@ -188,7 +189,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
               title="Terms of Service"
               description="Review our terms and conditions"
               onPress={() =>
-                Alert.alert(
+                crossPlatformAlert(
                   "Terms of Service",
                   "Terms of service will be displayed here.",
                 )

@@ -7,7 +7,6 @@ import {
   SafeAreaView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ScrollView,
   Switch,
   Platform,
@@ -15,6 +14,7 @@ import {
 import { Card, Button } from "../ui";
 import { ResponsiveTheme } from "../../utils/constants";
 import Constants from "expo-constants";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 // Simple Expo Go detection
 const isExpoGo =
@@ -132,7 +132,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
       }
     } catch (error) {
       console.error("Error saving notification settings:", error);
-      Alert.alert("Error", "Failed to save settings. Please try again.");
+      crossPlatformAlert("Error", "Failed to save settings. Please try again.");
       setIsLoading(false);
     }
   };
@@ -141,7 +141,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
     const minutes = parseInt(workoutReminderMinutes);
 
     if (isNaN(minutes) || minutes < 5 || minutes > 120) {
-      Alert.alert(
+      crossPlatformAlert(
         "Invalid Time",
         "Please enter a reminder time between 5 and 120 minutes.",
       );
@@ -154,7 +154,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
     });
 
     setIsLoading(false);
-    Alert.alert(
+    crossPlatformAlert(
       "Workout Reminders Updated!",
       `You'll be reminded ${minutes} minutes before your scheduled workouts.`,
       [{ text: "OK", onPress: onClose }],
@@ -166,7 +166,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
     const times = [breakfastTime, lunchTime, dinnerTime];
     for (const time of times) {
       if (!isValidTimeFormat(time)) {
-        Alert.alert(
+        crossPlatformAlert(
           "Invalid Time",
           "Please enter times in HH:MM format (e.g., 08:30).",
         );
@@ -186,7 +186,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
     ).length;
 
     setIsLoading(false);
-    Alert.alert(
+    crossPlatformAlert(
       "Meal Reminders Updated!",
       `${enabledCount} meal reminder${enabledCount !== 1 ? "s" : ""} ${enabledCount > 0 ? "enabled" : "disabled"}.`,
       [{ text: "OK", onPress: onClose }],
@@ -197,7 +197,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
     const minutes = parseInt(sleepReminderMinutes);
 
     if (isNaN(minutes) || minutes < 5 || minutes > 60) {
-      Alert.alert(
+      crossPlatformAlert(
         "Invalid Time",
         "Please enter a reminder time between 5 and 60 minutes.",
       );
@@ -206,7 +206,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
     }
 
     if (!isValidTimeFormat(bedtime)) {
-      Alert.alert(
+      crossPlatformAlert(
         "Invalid Time",
         "Please enter bedtime in HH:MM format (e.g., 22:30).",
       );
@@ -220,7 +220,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
     });
 
     setIsLoading(false);
-    Alert.alert(
+    crossPlatformAlert(
       "Sleep Reminders Updated!",
       `You'll be reminded ${minutes} minutes before your ${bedtime} bedtime.`,
       [{ text: "OK", onPress: onClose }],

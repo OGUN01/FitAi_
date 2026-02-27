@@ -17,38 +17,31 @@ interface NutritionSummaryCardProps {
 export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
   nutritionTargets,
 }) => {
-  // Detect when ALL targets are 0 — show friendly empty state
+  // Use sensible defaults when targets are 0 (incomplete profile)
+  const DEFAULT_CALORIES = 2000;
+  const DEFAULT_PROTEIN = 150;
+  const DEFAULT_CARBS = 250;
+  const DEFAULT_FAT = 65;
+
   const allTargetsZero =
     nutritionTargets.calories.target === 0 &&
     nutritionTargets.protein.target === 0 &&
     nutritionTargets.carbs.target === 0 &&
     nutritionTargets.fat.target === 0;
 
-  if (allTargetsZero) {
-    return (
-      <View style={styles.section}>
-        <GlassCard
-          elevation={2}
-          blurIntensity="light"
-          padding="lg"
-          borderRadius="lg"
-        >
-          <View style={styles.emptyStateContainer}>
-            <Text style={styles.emptyStateIcon}>🍎</Text>
-            <Text style={styles.emptyStateTitle}>
-              Complete your body measurements for personalized nutrition targets
-            </Text>
-            <Text style={styles.emptyStateAction}>Update Profile</Text>
-          </View>
-        </GlassCard>
-      </View>
-    );
-  }
+  // Use defaults if no targets set yet - show usable UI instead of blocking empty state
+  const resolvedTargets = allTargetsZero ? {
+    calories: { current: nutritionTargets.calories.current, target: DEFAULT_CALORIES },
+    protein: { current: nutritionTargets.protein.current, target: DEFAULT_PROTEIN },
+    carbs: { current: nutritionTargets.carbs.current, target: DEFAULT_CARBS },
+    fat: { current: nutritionTargets.fat.current, target: DEFAULT_FAT },
+  } : nutritionTargets;
+  const showDefaultsNotice = allTargetsZero;
 
   const OVERFLOW_COLOR = "#ef4444";
-  const proteinOverflow = nutritionTargets.protein.target > 0 && nutritionTargets.protein.current > nutritionTargets.protein.target;
-  const carbsOverflow = nutritionTargets.carbs.target > 0 && nutritionTargets.carbs.current > nutritionTargets.carbs.target;
-  const fatOverflow = nutritionTargets.fat.target > 0 && nutritionTargets.fat.current > nutritionTargets.fat.target;
+  const proteinOverflow = resolvedTargets.protein.target > 0 && resolvedTargets.protein.current > resolvedTargets.protein.target;
+  const carbsOverflow = resolvedTargets.carbs.target > 0 && resolvedTargets.carbs.current > resolvedTargets.carbs.target;
+  const fatOverflow = resolvedTargets.fat.target > 0 && resolvedTargets.fat.current > resolvedTargets.fat.target;
   return (
     <View style={styles.section}>
       <GlassCard
@@ -60,9 +53,9 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
         <View style={styles.calorieOverviewCenter}>
           <LargeProgressRing
             progress={
-              nutritionTargets.calories.target
-                ? (nutritionTargets.calories.current /
-                    nutritionTargets.calories.target) *
+              resolvedTargets.calories.target
+                ? (resolvedTargets.calories.current /
+                    resolvedTargets.calories.target) *
                   100
                 : 0
             }
@@ -71,17 +64,17 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
           >
             <View style={styles.calorieCenter}>
               <Text style={styles.caloriesRemaining}>
-                {nutritionTargets.calories.target
+                {resolvedTargets.calories.target
                   ? Math.max(
                       0,
-                      nutritionTargets.calories.target -
-                        nutritionTargets.calories.current,
+                      resolvedTargets.calories.target -
+                        resolvedTargets.calories.current,
                     )
                   : 0}
               </Text>
               <Text style={styles.caloriesLabel}>Calories left</Text>
               <Text style={styles.caloriesTarget}>
-                of {nutritionTargets.calories.target}
+                of {resolvedTargets.calories.target}
               </Text>
             </View>
           </LargeProgressRing>
@@ -95,8 +88,8 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
                 <Text style={styles.macroLabel}>Protein</Text>
               </View>
               <Text style={styles.macroAmount}>
-                <Text style={[styles.macroValue, proteinOverflow && { color: OVERFLOW_COLOR }]}>{Math.round(nutritionTargets.protein.current)}g</Text>
-                <Text style={styles.macroTarget}> / {nutritionTargets.protein.target}g</Text>
+                <Text style={[styles.macroValue, proteinOverflow && { color: OVERFLOW_COLOR }]}>{Math.round(resolvedTargets.protein.current)}g</Text>
+                <Text style={styles.macroTarget}> / {resolvedTargets.protein.target}g</Text>
               </Text>
             </View>
             <View style={styles.progressTrack}>
@@ -105,7 +98,7 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
                   styles.progressFill,
                   {
                     backgroundColor: proteinOverflow ? OVERFLOW_COLOR : "#4A90D9",
-                    width: `${Math.min(100, nutritionTargets.protein.target > 0 ? (nutritionTargets.protein.current / nutritionTargets.protein.target) * 100 : 0)}%` as any,
+                    width: `${Math.min(100, resolvedTargets.protein.target > 0 ? (resolvedTargets.protein.current / resolvedTargets.protein.target) * 100 : 0)}%` as any,
                   },
                 ]}
               />
@@ -119,8 +112,8 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
                 <Text style={styles.macroLabel}>Carbs</Text>
               </View>
               <Text style={styles.macroAmount}>
-                <Text style={[styles.macroValue, carbsOverflow && { color: OVERFLOW_COLOR }]}>{Math.round(nutritionTargets.carbs.current)}g</Text>
-                <Text style={styles.macroTarget}> / {nutritionTargets.carbs.target}g</Text>
+                <Text style={[styles.macroValue, carbsOverflow && { color: OVERFLOW_COLOR }]}>{Math.round(resolvedTargets.carbs.current)}g</Text>
+                <Text style={styles.macroTarget}> / {resolvedTargets.carbs.target}g</Text>
               </Text>
             </View>
             <View style={styles.progressTrack}>
@@ -129,7 +122,7 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
                   styles.progressFill,
                   {
                     backgroundColor: carbsOverflow ? OVERFLOW_COLOR : "#F5A623",
-                    width: `${Math.min(100, nutritionTargets.carbs.target > 0 ? (nutritionTargets.carbs.current / nutritionTargets.carbs.target) * 100 : 0)}%` as any,
+                    width: `${Math.min(100, resolvedTargets.carbs.target > 0 ? (resolvedTargets.carbs.current / resolvedTargets.carbs.target) * 100 : 0)}%` as any,
                   },
                 ]}
               />
@@ -139,12 +132,12 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
           <View style={styles.macroRow}>
             <View style={styles.macroRowHeader}>
               <View style={styles.macroLabelRow}>
-                <View style={[styles.macroDot, { backgroundColor: "#F8C84B" }]} />
+                <View style={[styles.macroDot, { backgroundColor: "#2ECC71" }]} />
                 <Text style={styles.macroLabel}>Fats</Text>
               </View>
               <Text style={styles.macroAmount}>
-                <Text style={[styles.macroValue, fatOverflow && { color: OVERFLOW_COLOR }]}>{Math.round(nutritionTargets.fat.current)}g</Text>
-                <Text style={styles.macroTarget}> / {nutritionTargets.fat.target}g</Text>
+                <Text style={[styles.macroValue, fatOverflow && { color: OVERFLOW_COLOR }]}>{Math.round(resolvedTargets.fat.current)}g</Text>
+                <Text style={styles.macroTarget}> / {resolvedTargets.fat.target}g</Text>
               </Text>
             </View>
             <View style={styles.progressTrack}>
@@ -152,8 +145,8 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
                 style={[
                   styles.progressFill,
                   {
-                    backgroundColor: fatOverflow ? OVERFLOW_COLOR : "#F8C84B",
-                    width: `${Math.min(100, nutritionTargets.fat.target > 0 ? (nutritionTargets.fat.current / nutritionTargets.fat.target) * 100 : 0)}%` as any,
+                    backgroundColor: fatOverflow ? OVERFLOW_COLOR : "#2ECC71",
+                    width: `${Math.min(100, resolvedTargets.fat.target > 0 ? (resolvedTargets.fat.current / resolvedTargets.fat.target) * 100 : 0)}%` as any,
                   },
                 ]}
               />

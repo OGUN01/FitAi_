@@ -169,7 +169,7 @@ const WorkoutHistoryCard: React.FC<{
           style={styles.actionButton}
         >
           <View style={[styles.actionContent, styles.repeatAction]}>
-    color: ResponsiveTheme.colors.white,
+            <Ionicons name="repeat" size={rf(20)} color={ResponsiveTheme.colors.white} />
             <Text style={styles.actionText}>Repeat</Text>
           </View>
         </AnimatedPressable>

@@ -10,7 +10,7 @@ import {
   ScrollView,
   Modal,
   StyleSheet,
-  Alert,
+
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -18,6 +18,7 @@ import {
 import { Card } from "../ui";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rh, rw, rs, rp } from "../../utils/responsive";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { RECIPE_CREATION_SCHEMA } from "../../ai/schemas/foodRecognitionSchema";
 
 // Stub for deprecated AI service (migrated to Cloudflare Workers)
@@ -118,7 +119,7 @@ export const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
     const missing = required.filter((key) => !inputs[key]?.trim());
 
     if (missing.length > 0) {
-      Alert.alert(
+      crossPlatformAlert(
         "Missing Information",
         "Please describe what you want to cook.",
         [{ text: "OK" }],
@@ -134,7 +135,7 @@ export const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
 
     // Check if AI service is available
     if (!geminiService.isAvailable()) {
-      Alert.alert(
+      crossPlatformAlert(
         "Feature Not Available",
         "AI recipe generation is currently disabled. This feature will be available when the backend integration is complete.\n\n🔧 Using Cloudflare Workers backend for AI features.",
         [{ text: "OK" }],
@@ -199,7 +200,7 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
 
         onRecipeCreated(recipeData);
 
-        Alert.alert(
+        crossPlatformAlert(
           "🎉 Recipe Created!",
           `Your custom recipe has been generated successfully!`,
           [
@@ -220,7 +221,7 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
       }
     } catch (error) {
       console.error("Recipe creation failed:", error);
-      Alert.alert(
+      crossPlatformAlert(
         "Creation Failed",
         "Failed to create recipe. Please try again with a clearer description.",
         [{ text: "OK" }],

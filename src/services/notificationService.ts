@@ -89,6 +89,12 @@ class NotificationService {
   async initialize(): Promise<boolean> {
     if (this.initialized) return true;
 
+    // Notifications are not supported on web - return success silently
+    if (Platform.OS === 'web') {
+      this.initialized = true;
+      return true;
+    }
+
     try {
       // Set up notification handler first
       ensureNotificationHandlerSet();
@@ -142,6 +148,7 @@ class NotificationService {
     trigger: Notifications.NotificationTriggerInput,
     data?: any,
   ): Promise<string | null> {
+    if (Platform.OS === 'web') return null;
     try {
       const notificationId = await Notifications.scheduleNotificationAsync({
         identifier,
@@ -164,6 +171,7 @@ class NotificationService {
 
   // Cancel notification by identifier
   async cancelNotification(identifier: string): Promise<void> {
+    if (Platform.OS === 'web') return;
     try {
       await Notifications.cancelScheduledNotificationAsync(identifier);
     } catch (error) {
@@ -173,6 +181,7 @@ class NotificationService {
 
   // Cancel all notifications by type
   async cancelNotificationsByType(type: string): Promise<void> {
+    if (Platform.OS === 'web') return;
     try {
       const scheduledNotifications =
         await Notifications.getAllScheduledNotificationsAsync();
@@ -465,6 +474,7 @@ class NotificationService {
   async getScheduledNotifications(): Promise<
     Notifications.NotificationRequest[]
   > {
+    if (Platform.OS === 'web') return [];
     try {
       return await Notifications.getAllScheduledNotificationsAsync();
     } catch (error) {
@@ -475,6 +485,7 @@ class NotificationService {
 
   // Clear all notifications
   async clearAllNotifications(): Promise<void> {
+    if (Platform.OS === 'web') return;
     try {
       await Notifications.cancelAllScheduledNotificationsAsync();
     } catch (error) {

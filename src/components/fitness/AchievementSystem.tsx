@@ -5,11 +5,12 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
+
 } from "react-native";
 import { Card } from "../ui";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rp, rbr, rs } from "../../utils/responsive";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../services/supabase";
 
@@ -211,7 +212,7 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
         if (!error) {
           // Show achievement notification
           const titles = newAchievements.map((a) => a.title).join(", ");
-          Alert.alert(
+          crossPlatformAlert(
             "🎉 Achievement Unlocked!",
             `Congratulations! You earned: ${titles}`,
             [{ text: "Awesome!" }],

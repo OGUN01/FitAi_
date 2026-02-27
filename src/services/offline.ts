@@ -34,6 +34,26 @@ interface SupabaseResponse {
   } | null;
 }
 
+// Map LocalWorkoutSession camelCase fields to Supabase snake_case columns
+function mapSessionToDb(data: Record<string, unknown>) {
+  if ('caloriesBurned' in data || 'userId' in data || 'workoutId' in data) {
+    return {
+      id: data.id,
+      user_id: data.userId,
+      workout_id: data.workoutId || null,
+      started_at: data.startedAt,
+      completed_at: data.completedAt,
+      duration: data.duration,
+      calories_burned: data.caloriesBurned,
+      exercises: data.exercises,
+      notes: data.notes || '',
+      rating: data.rating || 0,
+      is_completed: data.isCompleted,
+    };
+  }
+  return data;
+}
+
 function isValidSupabaseResponse(
   response: unknown,
 ): response is SupabaseResponse {
@@ -50,7 +70,7 @@ function validateSupabaseResponse(
 ): { valid: boolean; error?: string } {
   if (!isValidSupabaseResponse(response)) {
     const errorMsg = `Received malformed Supabase response for ${operation} on ${table}: ${typeof response}`;
-    console.error(errorMsg, response);
+    console.warn(errorMsg, response);
     return { valid: false, error: errorMsg };
   }
 
@@ -58,7 +78,7 @@ function validateSupabaseResponse(
 
   if (supabaseRes.error) {
     const errorMsg = `Supabase error for ${operation} on ${table}: ${supabaseRes.error.message}`;
-    console.error(errorMsg, supabaseRes.error);
+    console.warn(errorMsg, supabaseRes.error);
     return { valid: false, error: errorMsg };
   }
 
@@ -132,6 +152,18 @@ class OfflineService {
 
       if (queueData) {
         this.syncQueue = JSON.parse(queueData);
+        // Purge stale workout_sessions actions with camelCase fields
+        const before = this.syncQueue.length;
+        this.syncQueue = this.syncQueue.filter((action) => {
+          if (action.table === 'workout_sessions' && action.type === 'CREATE') {
+            const d = action.data as Record<string, unknown>;
+            return !('caloriesBurned' in d || 'userId' in d || 'workoutId' in d);
+          }
+          return true;
+        });
+        if (this.syncQueue.length !== before) {
+          this.saveOfflineData().catch(() => {});
+        }
       }
 
       if (offlineData) {
@@ -341,7 +373,8 @@ class OfflineService {
 
         switch (type) {
           case "CREATE":
-            const createResponse = await supabase.from(table).insert([data]);
+            const insertData = table === 'workout_sessions' ? mapSessionToDb(data as Record<string, unknown>) : data;
+            const createResponse = await supabase.from(table).insert([insertData]);
             const createValidation = validateSupabaseResponse(
               createResponse,
               "CREATE",
@@ -401,8 +434,8 @@ class OfflineService {
         return;
       } catch (error) {
         lastError = error as Error;
-        console.error(
-          `❌ Attempt ${attempt} failed for ${type} on ${table}:`,
+        console.warn(
+          `⚠️ Attempt ${attempt} failed for ${type} on ${table}:`,
           error,
         );
 
@@ -416,7 +449,7 @@ class OfflineService {
 
     // All attempts failed
     const errorMessage = `Failed to execute ${type} on ${table} after ${maxRetries} attempts: ${lastError?.message}`;
-    console.error(errorMessage);
+    console.warn(errorMessage);
     throw new Error(errorMessage);
   }
 

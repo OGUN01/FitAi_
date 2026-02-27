@@ -25,7 +25,7 @@ export class PreferencesService {
         .from("workout_preferences")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Error fetching workout preferences:", error);
@@ -59,7 +59,7 @@ export class PreferencesService {
         .from("fitness_goals")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Error fetching fitness goals:", error);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import { useSubscriptionStore } from "../stores/subscriptionStore";
 import razorpayService, {
   RazorpayServiceError,
@@ -56,7 +56,8 @@ const FALLBACK_PLANS: PlanConfig[] = [
     id: "fallback-pro-yearly",
     tier: "pro",
     name: "Pro Plan (Yearly)",
-    price_monthly: 499,
+    // ₹4799/year ÷ 12 ≈ ₹400/mo effective (~33% savings vs ₹599/mo)
+    price_monthly: 400,
     billing_cycle: "yearly",
   },
 ];
@@ -82,19 +83,20 @@ export const usePaywall = () => {
     let cancelled = false;
 
     const fetchPlans = async () => {
-      const { data, error } = await supabase
-        .from("subscription_plans")
-        .select("*")
-        .eq("active", true)
-        .neq("tier", "free")
-        .order("price_monthly");
+      try {
+        const { data, error } = await supabase
+          .from("subscription_plans")
+          .select("*")
+          .eq("active", true)
+          .neq("tier", "free")
+          .order("price_monthly");
 
-      if (cancelled) return;
+        if (cancelled) return;
 
-      if (error || !data || data.length === 0) {
-        setPlans(FALLBACK_PLANS);
-        return;
-      }
+        if (error || !data || data.length === 0) {
+          setPlans(FALLBACK_PLANS);
+          return;
+        }
 
       const configs: PlanConfig[] = [];
 
@@ -106,7 +108,7 @@ export const usePaywall = () => {
           configs.push({
             id: `${row.id}_monthly`,
             tier,
-            name: tier === "basic" ? "Basic Plan" : "Pro Plan (Monthly)",
+            name: tier === "basic" ? "Basic Plan" : "Pro Plan",
             price_monthly: Math.round(row.price_monthly / 100),
             billing_cycle: "monthly",
           });
@@ -125,6 +127,12 @@ export const usePaywall = () => {
       }
 
       setPlans(configs.length > 0 ? configs : FALLBACK_PLANS);
+      } catch (err) {
+        console.warn("[usePaywall] Failed to fetch plans, using fallback:", err);
+        if (!cancelled) {
+          setPlans(FALLBACK_PLANS);
+        }
+      }
     };
 
     fetchPlans();
@@ -198,7 +206,7 @@ export const usePaywall = () => {
       );
 
       if (!verified) {
-        Alert.alert(
+        crossPlatformAlert(
           "Payment Verification Failed",
           "Unable to verify your payment. Please contact support.",
           [{ text: "OK" }],
@@ -212,7 +220,7 @@ export const usePaywall = () => {
 
       // Step 6: Success! Dismiss paywall and show success message
       dismiss();
-      Alert.alert(
+      crossPlatformAlert(
         "🎉 Welcome to Premium!",
         "Your subscription is now active. Enjoy all premium features!",
         [{ text: "Get Started" }],
@@ -231,7 +239,7 @@ export const usePaywall = () => {
         }
 
         if (error.code === "PAYMENT_FAILED") {
-          Alert.alert(
+          crossPlatformAlert(
             "Payment Failed",
             error.message ||
               "Your payment could not be processed. Please try again.",
@@ -241,14 +249,14 @@ export const usePaywall = () => {
         }
 
         if (error.code === "AUTH_ERROR") {
-          Alert.alert("Authentication Error", "Please log in and try again.", [
+          crossPlatformAlert("Authentication Error", "Please log in and try again.", [
             { text: "OK" },
           ]);
           return false;
         }
 
         // Generic Razorpay error
-        Alert.alert(
+        crossPlatformAlert(
           "Error",
           error.message || "Something went wrong. Please try again.",
           [{ text: "OK" }],
@@ -257,7 +265,7 @@ export const usePaywall = () => {
       }
 
       // Unknown error — surfaced via Alert below
-      Alert.alert(
+      crossPlatformAlert(
         "Error",
         "An unexpected error occurred. Please try again later.",
         [{ text: "OK" }],

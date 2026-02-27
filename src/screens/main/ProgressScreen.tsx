@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
 import { ResponsiveTheme } from "../../utils/constants";
+import { rh } from "../../utils/responsive";
 
 // Hooks
 import { useProgressScreen } from "../../hooks/useProgressScreen";
@@ -115,6 +116,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({
           >
             <ScrollView
               style={styles.scrollView}
+              contentContainerStyle={{ paddingBottom: rh(120) }}
               showsVerticalScrollIndicator={false}
               refreshControl={
                 <RefreshControl
@@ -196,7 +198,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({
                     </>
                   )}
 
-                <View style={styles.bottomSpacing} />
+                <View style={[styles.bottomSpacing, { height: insets.bottom + rh(100) }]} />
               </View>
             </ScrollView>
           </Animated.View>

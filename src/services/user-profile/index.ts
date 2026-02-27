@@ -61,6 +61,18 @@ class UserProfileService {
 
       if (workoutResponse.success && workoutResponse.data) {
         userProfile.workoutPreferences = workoutResponse.data;
+        // If fitness_goals table returned nothing, synthesize fitnessGoals from workoutPreferences
+        // so checkProfileComplete can correctly determine profile is complete
+        const hasNoGoals = !userProfile.fitnessGoals?.primary_goals?.length;
+        if (hasNoGoals) {
+          const wp = workoutResponse.data as any;
+          userProfile.fitnessGoals = {
+            primary_goals: wp.primary_goals || wp.primaryGoals || [],
+            time_commitment: wp.time_commitment || '',
+            experience: wp.experience_level || wp.experienceLevel || '',
+            experience_level: wp.experience_level || wp.experienceLevel || '',
+          };
+        }
       }
 
       return {

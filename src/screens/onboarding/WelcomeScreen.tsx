@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Alert,
   Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,6 +16,7 @@ import { GoogleIcon } from "../../components/icons/GoogleIcon";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { LoginCredentials } from "../../types/user";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -97,13 +97,13 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       if (result.success && result.user) {
         onSignInSuccess();
       } else {
-        Alert.alert(
+        crossPlatformAlert(
           "Sign In Failed",
           result.error || "Invalid email or password. Please try again.",
         );
       }
     } catch (error) {
-      Alert.alert("Error", "An unexpected error occurred during sign in.");
+      crossPlatformAlert("Error", "An unexpected error occurred during sign in.");
       console.error("Email sign in error:", error);
     } finally {
       setIsLoading(false);
@@ -118,10 +118,10 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       if (response.success && response.user) {
         onSignInSuccess();
       } else {
-        Alert.alert("Sign In Failed", response.error || "Please try again.");
+        crossPlatformAlert("Sign In Failed", response.error || "Please try again.");
       }
     } catch (error) {
-      Alert.alert("Error", "Google Sign In failed. Please try again.");
+      crossPlatformAlert("Error", "Google Sign In failed. Please try again.");
       console.error("Google Sign In error:", error);
     } finally {
       setIsLoading(false);
@@ -298,6 +298,11 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
             <Text style={styles.footerText}>Already have an account? </Text>
             <AnimatedPressable onPress={switchToSignIn} scaleValue={0.97}>
               <Text style={styles.footerLink}>Sign In</Text>
+            </AnimatedPressable>
+          </View>
+          <View style={styles.signInPromptRow}>
+            <AnimatedPressable onPress={onGetStarted} scaleValue={0.97}>
+              <Text style={styles.footerLink}>Continue as Guest</Text>
             </AnimatedPressable>
           </View>
         </View>
@@ -481,6 +486,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
   },
 
   buttonDisabled: {

@@ -346,7 +346,7 @@ class SyncEngine {
       .from(table)
       .select("*")
       .eq(idField, userId)
-      .single();
+      .maybeSingle();
 
     if (error && error.code !== "PGRST116") {
       // PGRST116 = no rows found, which is fine
@@ -1000,7 +1000,7 @@ class SyncEngine {
         .from("profiles")
         .select("*")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
 
       if (profileData && !profileError) {
         result.personalInfo = profileData;
@@ -1011,7 +1011,7 @@ class SyncEngine {
         .from("diet_preferences")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (dietData && !dietError) {
         result.dietPreferences = dietData;
@@ -1022,7 +1022,7 @@ class SyncEngine {
         .from("body_analysis")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (bodyData && !bodyError) {
         result.bodyAnalysis = bodyData;
@@ -1033,7 +1033,7 @@ class SyncEngine {
         .from("workout_preferences")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (workoutData && !workoutError) {
         result.workoutPreferences = workoutData;
@@ -1044,7 +1044,7 @@ class SyncEngine {
         .from("advanced_review")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (advancedData && !advancedError) {
         result.advancedReview = advancedData;

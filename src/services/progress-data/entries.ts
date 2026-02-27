@@ -1,3 +1,5 @@
+// v2 - recorded_at removed (column does not exist in DB)
+
 import * as crypto from "expo-crypto";
 import { supabase } from "../supabase";
 import { crudOperations } from "../crudOperations";
@@ -70,8 +72,6 @@ export async function createProgressEntry(
   try {
     const now = new Date();
     const entryDate = now.toISOString().split("T")[0];
-    const recordedAt = now.toISOString();
-
     const bodyMeasurement: BodyMeasurement = {
       id: `progress_${Date.now()}_${crypto.randomUUID().replace(/-/g, "").substring(0, 9)}`,
       date: entryDate,
@@ -96,7 +96,6 @@ export async function createProgressEntry(
         measurements: entryData.measurements || {},
         progress_photos: entryData.progress_photos || [],
         notes: entryData.notes,
-        recorded_at: recordedAt,
       })
       .select()
       .single();

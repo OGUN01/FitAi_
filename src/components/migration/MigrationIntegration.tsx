@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { Alert } from "react-native";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { useMigration } from "../../hooks/useMigration";
 import { useAuth } from "../../hooks/useAuth";
 import { MigrationProgressModal } from "./MigrationProgressModal";
@@ -61,7 +61,7 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
   // ============================================================================
 
   const promptMigration = () => {
-    Alert.alert(
+    crossPlatformAlert(
       "Sync Your Profile Data",
       "We found profile data on your device. Would you like to sync it to the cloud so you can access it from any device?",
       [
@@ -85,7 +85,7 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
 
   const startMigration = async () => {
     if (!user?.id) {
-      Alert.alert("Error", "Please log in to sync your data");
+      crossPlatformAlert("Error", "Please log in to sync your data");
       return;
     }
 
@@ -116,7 +116,7 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
           setShowProgress(false);
           onMigrationComplete?.(false);
 
-          Alert.alert(
+          crossPlatformAlert(
             "Migration Failed",
             `Failed to sync your data: ${migration.result.errors.join(", ")}`,
             [
@@ -131,7 +131,7 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
       setShowProgress(false);
       onMigrationComplete?.(false);
 
-      Alert.alert(
+      crossPlatformAlert(
         "Sync Error",
         "An unexpected error occurred while syncing your data. Please try again.",
         [
@@ -176,7 +176,7 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
         setShowProgress(false);
         onMigrationComplete?.(false);
 
-        Alert.alert(
+        crossPlatformAlert(
           "Migration Failed",
           "Failed to complete migration after resolving conflicts.",
           [{ text: "OK" }],
@@ -187,7 +187,7 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
       setShowProgress(false);
       onMigrationComplete?.(false);
 
-      Alert.alert(
+      crossPlatformAlert(
         "Resolution Error",
         "Failed to resolve conflicts. Please try again.",
         [{ text: "OK" }],
@@ -204,7 +204,7 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
     onMigrationComplete?.(success);
 
     if (!success) {
-      Alert.alert(
+      crossPlatformAlert(
         "Migration Failed",
         "Failed to sync your data. You can try again later from your profile settings.",
         [{ text: "OK" }],
@@ -215,7 +215,7 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
   const handleProgressCancel = () => {
     setShowProgress(false);
 
-    Alert.alert(
+    crossPlatformAlert(
       "Cancel Migration",
       "Are you sure you want to cancel the data sync? You can start it again later.",
       [
@@ -234,7 +234,7 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
   const handleConflictCancel = () => {
     setShowConflicts(false);
 
-    Alert.alert(
+    crossPlatformAlert(
       "Skip Sync",
       "Your data will not be synced to the cloud. You can try again later from your profile settings.",
       [{ text: "OK" }],
@@ -282,7 +282,7 @@ export const MigrationPrompt: React.FC<MigrationPromptProps> = ({
   onDismiss,
 }) => {
   useEffect(() => {
-    Alert.alert(
+    crossPlatformAlert(
       "Sync Your Data",
       "We found profile data on your device. Would you like to sync it to the cloud?",
       [

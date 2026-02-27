@@ -77,7 +77,7 @@ export class DietPreferencesService {
         .from("diet_preferences")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== "PGRST116") {
         console.error(

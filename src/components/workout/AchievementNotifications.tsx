@@ -119,6 +119,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
   },
 
   achievementToastIcon: {
@@ -156,6 +157,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 5,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.2)',
   },
 
   miniToastText: {
