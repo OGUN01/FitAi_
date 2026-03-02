@@ -37,6 +37,9 @@ export const createMealGenerationHandlers = (
   setIsGeneratingMeal: (loading: boolean) => void,
   setAiError: (error: string | null) => void,
   setAiMeals: React.Dispatch<React.SetStateAction<Meal[]>>,
+  canUseFeature: (featureKey: "ai_generation" | "barcode_scan") => boolean,
+  incrementUsage: (featureKey: "ai_generation" | "barcode_scan") => void,
+  triggerPaywall: (reason: string) => void,
 ) => {
   const generateAIMeal = async (
     mealType: string,
@@ -56,6 +59,11 @@ export const createMealGenerationHandlers = (
           { text: "Sign Up", onPress: () => setShowGuestSignUp(true) },
         ],
       );
+      return;
+    }
+
+    if (!canUseFeature("ai_generation")) {
+      triggerPaywall("ai_generation_limit");
       return;
     }
 
@@ -104,6 +112,7 @@ export const createMealGenerationHandlers = (
       );
 
       if (response.success && response.data) {
+        incrementUsage("ai_generation");
         setAiMeals((prev) => [response.data! as unknown as Meal, ...prev]);
 
         crossPlatformAlert(
@@ -139,6 +148,11 @@ export const createMealGenerationHandlers = (
       return;
     }
 
+    if (!canUseFeature("ai_generation")) {
+      triggerPaywall("ai_generation_limit");
+      return;
+    }
+
     if (!profile?.personalInfo || !profile?.fitnessGoals) {
       crossPlatformAlert("Profile Incomplete", "Please complete your profile.");
       return;
@@ -164,6 +178,7 @@ export const createMealGenerationHandlers = (
       );
 
       if (response.success && response.data) {
+        incrementUsage("ai_generation");
         setAiMeals((prev) => [...response.data!.meals, ...prev]);
         crossPlatformAlert("Daily Meal Plan Generated!", "Your plan is ready!");
       } else {

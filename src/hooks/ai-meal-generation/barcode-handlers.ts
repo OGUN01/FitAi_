@@ -8,6 +8,7 @@ import {
 import { generateHealthAssessment } from "./health-assessment";
 import { HealthAssessment } from "./types";
 
+
 function mapScannedProductToRecognizedFood(
   product: ScannedProduct,
 ): RecognizedFood {
@@ -67,8 +68,16 @@ export const createBarcodeHandlers = (
   setShowProductModal: (show: boolean) => void,
   loadDailyNutrition: () => Promise<void>,
   refreshAll: () => Promise<void>,
+  canUseFeature: (featureKey: "ai_generation" | "barcode_scan") => boolean,
+  incrementUsage: (featureKey: "ai_generation" | "barcode_scan") => void,
+  triggerPaywall: (reason: string) => void,
+  onBarcodeNotFound?: (barcode: string) => void,
 ) => {
   const handleBarcodeScanned = async (barcode: string) => {
+    if (!canUseFeature('barcode_scan')) {
+      triggerPaywall('barcode_scan_limit');
+      return;
+    }
     setIsProcessingBarcode(true);
 
     try {
@@ -78,6 +87,7 @@ export const createBarcodeHandlers = (
         // Let the caller/UI handle the "not found" state via scannedProduct being null
         setScannedProduct(null);
         setProductHealthAssessment(null);
+        onBarcodeNotFound?.(barcode);
         return;
       }
 
@@ -118,6 +128,8 @@ export const createBarcodeHandlers = (
       }
 
       const healthAssessment = generateHealthAssessment(product);
+
+      incrementUsage('barcode_scan');
 
       setScannedProduct(product);
       setProductHealthAssessment(healthAssessment);

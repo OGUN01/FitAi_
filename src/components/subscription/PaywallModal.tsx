@@ -20,7 +20,7 @@ interface PaywallModalProps {
 
 const TIER_FEATURES: Record<string, string[]> = {
   free: [
-    "1 AI generation per month",
+    "10 AI generations per month",
     "10 food scans per day",
     "Basic progress tracking",
   ],

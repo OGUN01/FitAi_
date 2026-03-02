@@ -5,6 +5,8 @@
 
 import { FreeNutritionAPIs, BarcodeSearchResult } from "./freeNutritionAPIs";
 import { normalizeBarcode } from "@/utils/countryMapping";
+import { supabase } from '@/services/supabase';
+import { sqliteFood } from './sqliteFood';
 
 // Enhanced product information interface
 export interface ScannedProduct {
@@ -53,6 +55,26 @@ export interface ProductLookupResult {
   confidence: number;
 }
 
+
+// Shape returned by the lookup_barcode() Supabase RPC function
+interface LookupBarcodeRow {
+  barcode: string;
+  product_name: string | null;
+  brand: string | null;
+  energy_kcal_100g: number | null;
+  proteins_100g: number | null;
+  carbohydrates_100g: number | null;
+  sugars_100g: number | null;
+  fat_100g: number | null;
+  fiber_100g: number | null;
+  sodium_100g: number | null;
+  nutriscore_grade: string | null;
+  nova_group: number | null;
+  image_url: string | null;
+  source: string;
+  confidence: number;
+  tier: number;
+}
 class BarcodeService {
   private nutritionAPI: FreeNutritionAPIs;
   private scanCache = new Map<string, ScannedProduct>();
@@ -142,7 +164,110 @@ class BarcodeService {
         };
       }
 
-      // Single API call via freeNutritionAPIs (OFF v2 → UPCitemdb fallback)
+      // ─── Step 0a: On-device SQLite (zero-latency, offline-first) ───────────
+      if (sqliteFood.isDatabaseReady()) {
+        try {
+          const sqliteRow = await sqliteFood.lookupBarcode(normalizedBarcode);
+          if (sqliteRow && sqliteRow.energy_kcal_100g !== null) {
+            const sqliteProduct: ScannedProduct = {
+              barcode: normalizedBarcode,
+              name: sqliteRow.product_name ?? ('Product ' + normalizedBarcode),
+              brand: sqliteRow.brands ?? undefined,
+              nutrition: {
+                calories: sqliteRow.energy_kcal_100g ?? 0,
+                protein:  sqliteRow.proteins_100g    ?? 0,
+                carbs:    sqliteRow.carbohydrates_100g ?? 0,
+                fat:      sqliteRow.fat_100g          ?? 0,
+                fiber:    sqliteRow.fiber_100g        ?? 0,
+                sugar:    sqliteRow.sugars_100g       ?? undefined,
+                sodium:   sqliteRow.sodium_100g       ?? undefined,
+                servingSize: 100,
+                servingUnit: 'g',
+              },
+              additionalInfo: { imageUrl: sqliteRow.image_url ?? undefined },
+              healthScore: this.calculateHealthScore({
+                calories: sqliteRow.energy_kcal_100g ?? 0,
+                protein:  sqliteRow.proteins_100g    ?? undefined,
+                fat:      sqliteRow.fat_100g         ?? undefined,
+                sugar:    sqliteRow.sugars_100g      ?? undefined,
+                sodium:   sqliteRow.sodium_100g      ?? undefined,
+                fiber:    sqliteRow.fiber_100g       ?? undefined,
+              }),
+              confidence: 92,
+              source: 'sqlite-local',
+              lastScanned: new Date().toISOString(),
+              nutriScore:  sqliteRow.nutriscore_grade ?? undefined,
+              novaGroup:   sqliteRow.nova_group       ?? undefined,
+              isAIEstimated: false,
+            };
+            this.cacheProduct(normalizedBarcode, sqliteProduct);
+            this.updateRecentScans(normalizedBarcode);
+            return { success: true, product: sqliteProduct, confidence: 92 };
+          }
+        } catch (sqliteErr) {
+          console.warn('⚠️ SQLite lookup failed, falling through:', sqliteErr);
+        }
+      }
+
+      // ─────────────────────────────────────────────────────────────
+      // Step 0: Query Supabase DB (off_products / user contributions / cache)
+      //   Tier 1 = self-hosted OFF India  (confidence 90)
+      //   Tier 2 = user contributions     (confidence 80)
+      //   Tier 3 = barcode_lookup_cache   (runtime API cache, 7-day TTL)
+      // ─────────────────────────────────────────────────────────────
+      try {
+        const { data: dbRows, error: dbErr } = await supabase.rpc('lookup_barcode', {
+          p_barcode: normalizedBarcode,
+        });
+        if (!dbErr && dbRows && (dbRows as LookupBarcodeRow[]).length > 0) {
+          const row = (dbRows as LookupBarcodeRow[])[0];
+          if (row.energy_kcal_100g !== null) {
+            const dbProduct: ScannedProduct = {
+              barcode: normalizedBarcode,
+              name: row.product_name ?? ("Product " + normalizedBarcode),
+              brand: row.brand ?? undefined,
+              nutrition: {
+                calories: row.energy_kcal_100g ?? 0,
+                protein:  row.proteins_100g    ?? 0,
+                carbs:    row.carbohydrates_100g ?? 0,
+                fat:      row.fat_100g          ?? 0,
+                fiber:    row.fiber_100g        ?? 0,
+                sugar:    row.sugars_100g       ?? undefined,
+                sodium:   row.sodium_100g       ?? undefined,
+                servingSize: 100,
+                servingUnit: 'g',
+              },
+              additionalInfo: {
+                imageUrl: row.image_url ?? undefined,
+              },
+              healthScore:  this.calculateHealthScore({
+                calories: row.energy_kcal_100g ?? 0,
+                protein:  row.proteins_100g    ?? undefined,
+                fat:      row.fat_100g         ?? undefined,
+                sugar:    row.sugars_100g      ?? undefined,
+                sodium:   row.sodium_100g      ?? undefined,
+                fiber:    row.fiber_100g       ?? undefined,
+              }),
+              confidence: row.confidence,
+              source:     row.source,
+              lastScanned: new Date().toISOString(),
+              nutriScore:  row.nutriscore_grade ?? undefined,
+              novaGroup:   row.nova_group ?? undefined,
+              isAIEstimated: false,
+            };
+            this.cacheProduct(normalizedBarcode, dbProduct);
+            this.updateRecentScans(normalizedBarcode);
+            return { success: true, product: dbProduct, confidence: row.confidence };
+          }
+        }
+      } catch (dbLookupError) {
+        // Non-fatal: fall through to live API
+        console.warn('⚠️ DB barcode lookup failed, falling back to live API:', dbLookupError);
+      }
+
+      // ─────────────────────────────────────────────────────────────
+      // Step 1: Live API fallback (OFF v2 → UPCitemdb → USDA → Gemini)
+      // ─────────────────────────────────────────────────────────────
       const result = await this.nutritionAPI.searchByBarcode(normalizedBarcode);
 
       if (!result) {
@@ -188,14 +313,34 @@ class BarcodeService {
         lastScanned: new Date().toISOString(),
         nutriScore: info.nutriScore,
         novaGroup: info.novaGroup,
-        isAIEstimated: false,
+        isAIEstimated: result.isAIEstimated ?? false,
         gs1Country: info.gs1Country,
         needsNutritionEstimate: result.needsNutritionEstimate,
       };
 
-      // Cache the result
+      // Cache in memory
       this.cacheProduct(normalizedBarcode, scannedProduct);
       this.updateRecentScans(normalizedBarcode);
+
+      // Persist to Supabase barcode_lookup_cache (7-day TTL) — fire and forget
+      supabase.rpc('upsert_barcode_cache', {
+        p_barcode:            normalizedBarcode,
+        p_product_name:       scannedProduct.name,
+        p_brand:              scannedProduct.brand ?? null,
+        p_energy_kcal_100g:   scannedProduct.nutrition.calories,
+        p_proteins_100g:      scannedProduct.nutrition.protein,
+        p_carbohydrates_100g: scannedProduct.nutrition.carbs,
+        p_sugars_100g:        scannedProduct.nutrition.sugar ?? null,
+        p_fat_100g:           scannedProduct.nutrition.fat,
+        p_fiber_100g:         scannedProduct.nutrition.fiber,
+        p_sodium_100g:        scannedProduct.nutrition.sodium ?? null,
+        p_nutriscore_grade:   scannedProduct.nutriScore ?? null,
+        p_nova_group:         scannedProduct.novaGroup ?? null,
+        p_image_url:          scannedProduct.additionalInfo?.imageUrl ?? null,
+        p_source:             scannedProduct.source,
+        p_confidence:         scannedProduct.confidence,
+        p_is_ai_estimated:    scannedProduct.isAIEstimated ?? false,
+      }).then(undefined, (e: unknown) => console.warn('⚠️ upsert_barcode_cache failed:', e));
 
       return {
         success: true,

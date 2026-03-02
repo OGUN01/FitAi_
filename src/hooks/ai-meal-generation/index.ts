@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useUserStore } from "../../stores";
+import { useSubscriptionStore } from "../../stores/subscriptionStore";
 import { MealType } from "../../services/foodRecognitionService";
 import { useAuth } from "../useAuth";
 import { useNutritionData } from "../useNutritionData";
@@ -23,6 +24,7 @@ export const useAIMealGeneration = (): UseAIMealGenerationReturn => {
   const { foods, loadDailyNutrition, refreshAll, dietPreferences } =
     useNutritionData();
   const { getCalorieTarget } = useCalculatedMetrics();
+  const { canUseFeature, incrementUsage, triggerPaywall } = useSubscriptionStore();
 
   const [aiMeals, setAiMeals] = useState<Meal[]>([]);
   const [isGeneratingMeal, setIsGeneratingMeal] = useState(false);
@@ -103,6 +105,9 @@ export const useAIMealGeneration = (): UseAIMealGenerationReturn => {
     setShowProductModal,
     loadDailyNutrition,
     refreshAll,
+    canUseFeature,
+    incrementUsage,
+    triggerPaywall,
   );
 
   const mealGenerationHandlers = createMealGenerationHandlers(
@@ -114,6 +119,9 @@ export const useAIMealGeneration = (): UseAIMealGenerationReturn => {
     setIsGeneratingMeal,
     setAiError,
     setAiMeals,
+    canUseFeature,
+    incrementUsage,
+    triggerPaywall,
   );
 
   const handlePortionAdjustmentComplete = (adjustedFoods: any[]) => {

@@ -18,6 +18,7 @@ import { handleMediaServe, handleMediaUpload, handleMediaDelete } from './handle
 import { handleDebugTest } from './handlers/debugTest';
 import { handleAnalytics } from './handlers/analytics';
 import { handleFoodRecognition } from './handlers/foodRecognition';
+import { handleNutritionEstimate } from './handlers/nutritionEstimate';
 import { handleHealthSync, handleHealthLatest, handleWorkoutSession } from './handlers/healthSync';
 import {
 	handleCreateSubscription,
@@ -329,6 +330,21 @@ app.post(
 	rateLimitMiddleware(RATE_LIMITS.AI_GENERATION),
 	subscriptionGateMiddleware('barcode_scan'),
 	handleFoodRecognition,
+);
+
+/**
+ * POST /nutrition/barcode-estimate - Estimate nutrition for a named product via AI
+ * - Requires authentication
+ * - Rate limit: 50 requests per hour (AI_GENERATION tier)
+ * - Accepts productName, brand, country — NEVER a raw barcode number
+ * - Returns macros per 100g estimated by Gemini via AI Gateway
+ */
+app.post(
+	'/nutrition/barcode-estimate',
+	authMiddleware,
+	rateLimitMiddleware(RATE_LIMITS.AI_GENERATION),
+	subscriptionGateMiddleware('barcode_scan'),
+	handleNutritionEstimate,
 );
 
 /**

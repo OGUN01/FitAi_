@@ -23,6 +23,7 @@ import { WorkoutSessionScreen } from "../../screens/workout/WorkoutSessionScreen
 import { MealSession } from "../../screens/session/MealSession";
 import CookingSessionScreen from "../../screens/cooking/CookingSessionScreen";
 import { OnboardingContainer } from "../../screens/onboarding/OnboardingContainer";
+import { ContributeFood } from "../../screens/ContributeFood";
 import { ResponsiveTheme } from "../../utils/constants";
 import { DayWorkout, DayMeal } from "../../types/ai";
 
@@ -74,6 +75,11 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     isActive: boolean;
   }>({ isActive: false });
 
+  // ContributeFood session state
+  const [contributeFoodSession, setContributeFoodSession] = useState<{
+    isActive: boolean;
+    barcode?: string;
+  }>({ isActive: false });
   // Navigation object to pass to screens
   const navigation = {
     navigate: (screen: string, params?: any) => {
@@ -101,6 +107,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         setProgressTrendsSession({ isActive: true });
       } else if (screen === "Achievements") {
         setAchievementsSession({ isActive: true });
+      } else if (screen === 'ContributeFood') {
+        setContributeFoodSession({ isActive: true, barcode: params?.barcode });
       }
     },
     goBack: () => {
@@ -111,6 +119,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       setProgressSession({ isActive: false });
       setProgressTrendsSession({ isActive: false });
       setAchievementsSession({ isActive: false });
+      setContributeFoodSession({ isActive: false });
     },
   };
 
@@ -129,7 +138,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           onboardingEditSession.isActive ||
           progressSession.isActive ||
           progressTrendsSession.isActive ||
-          achievementsSession.isActive
+          achievementsSession.isActive ||
+          contributeFoodSession.isActive
         ) {
           navigation.goBack();
           return true; // Prevent default behavior
@@ -152,6 +162,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     onboardingEditSession.isActive,
     progressSession.isActive,
     progressTrendsSession.isActive,
+    contributeFoodSession.isActive,
   ]);
 
   const tabs = [
@@ -263,6 +274,16 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       return <AchievementsScreen navigation={navigation} />;
     }
 
+    // If contribute food session is active, show ContributeFood screen
+    if (contributeFoodSession.isActive) {
+      return (
+        <ContributeFood
+          route={{ params: { barcode: contributeFoodSession.barcode ?? '' } }}
+          navigation={navigation}
+        />
+      );
+    }
+
     // Otherwise show normal tab screens
     switch (activeTab) {
       case "home":
@@ -325,7 +346,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         !onboardingEditSession.isActive &&
         !progressSession.isActive &&
         !progressTrendsSession.isActive &&
-        !achievementsSession.isActive && (
+        !achievementsSession.isActive &&
+        !contributeFoodSession.isActive && (
           <TabBar tabs={tabs} activeTab={activeTab} onTabPress={setActiveTab} />
         )}
     </View>

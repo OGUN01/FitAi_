@@ -522,7 +522,7 @@ const FREE_TIER_DEFAULTS = {
 	current_period_end: null,
 	features: {
 		ai_generations_per_day: null as number | null,
-		ai_generations_per_month: 1,
+		ai_generations_per_month: 10,
 		scans_per_day: 10,
 		unlimited_scans: false,
 		unlimited_ai: false,

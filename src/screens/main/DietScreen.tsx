@@ -37,6 +37,7 @@ import { MealSuggestions } from "../../components/diet/MealSuggestions";
 import { DietModals } from "../../components/diet/DietModals";
 import { DietQuickActions } from "../../components/diet/DietQuickActions";
 import { ManualBarcodeEntry } from "../../components/diet/ManualBarcodeEntry";
+import DatabaseDownloadBanner from "../../components/DatabaseDownloadBanner";
 import { LogMealModal } from "../../components/diet/LogMealModal";
 import { MealDetailModal } from "../../components/diet/MealDetailModal";
 import { DayMeal } from "../../types/ai";
@@ -148,7 +149,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     handlePortionAdjustmentComplete,
     isProcessingBarcode,
     aiError,
-  } = useAIMealGeneration();
+  } = useAIMealGeneration({
+    onBarcodeNotFound: (barcode) => navigation?.navigate('ContributeFood', { barcode }),
+  });
 
   const { setSelectedDay } = useAppStateStore();
 
@@ -379,6 +382,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               onNextDay={onNextDay}
             />
 
+            <DatabaseDownloadBanner />
             {(foodsLoading || userMealsLoading || isGeneratingMeal) ? (
               <View style={styles.loadingContainer}>
                 <AuroraSpinner size="lg" theme="primary" />

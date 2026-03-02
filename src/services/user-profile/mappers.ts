@@ -95,19 +95,20 @@ export function mapDatabaseProfileToUserProfile(dbProfile: DatabaseProfile, work
 export function mapDatabaseGoalsToFitnessGoals(
   dbGoals: DatabaseFitnessGoals,
 ): FitnessGoals {
-  const goals = dbGoals as any;
+  const goals = dbGoals as DatabaseFitnessGoals & Record<string, unknown>;
   return {
-    primary_goals: goals.primary_goals || goals.primaryGoals || [],
+    primary_goals: (goals.primary_goals || (goals['primaryGoals'] as string[] | undefined) || []) as string[],
     time_commitment:
-      goals.time_commitment ||
-      goals.timeCommitment ||
+      (goals.time_commitment as string | undefined) ||
+      (goals['timeCommitment'] as string | undefined) ||
       "",
     experience:
-      goals.experience_level ||
-      goals.experienceLevel ||
+      (goals.experience_level as string | undefined) ||
+      (goals['experienceLevel'] as string | undefined) ||
       "",
     experience_level:
-      goals.experience_level ||
-      goals.experienceLevel ||
+      (goals.experience_level as string | undefined) ||
+      (goals['experienceLevel'] as string | undefined) ||
+      "",
   };
 }

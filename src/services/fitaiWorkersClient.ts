@@ -701,6 +701,43 @@ export class FitAIWorkersClient {
       };
     }
   }
+  /**
+   * Estimate nutrition for a named product via AI (Gemini via AI Gateway).
+   * Called by the barcode pipeline when OFF/UPCitemdb return a product name
+   * but no nutrition data. The raw barcode number is NEVER passed here.
+   *
+   * @param productName - Human-readable product name (e.g. "Maggi Masala Noodles")
+   * @param brand       - Brand name, empty string if unknown
+   * @param country     - Country of origin derived from GS1 barcode prefix
+   */
+  async estimateNutrition(
+    productName: string,
+    brand: string,
+    country: string,
+  ): Promise<
+    WorkersResponse<{
+      calories: number;
+      protein: number;
+      carbs: number;
+      fat: number;
+      fiber: number;
+      sugar: number;
+      sodium: number;
+      confidence: number;
+      isAIEstimated: boolean;
+    }>
+  > {
+    const token = await this.getAuthToken();
+    return this.makeRequest('/nutrition/barcode-estimate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ productName, brand, country }),
+    });
+  }
+
 }
 
 // ============================================================================

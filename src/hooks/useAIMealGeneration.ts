@@ -140,7 +140,7 @@ const generateHealthAssessment = (product: ScannedProduct) => {
   };
 };
 
-export const useAIMealGeneration = () => {
+export const useAIMealGeneration = (options?: { onBarcodeNotFound?: (barcode: string) => void }) => {
   const { user, isGuestMode } = useAuth();
   const { weeklyMealPlan, setWeeklyMealPlan } = useNutritionStore();
   const { profile } = useUserStore();
@@ -447,6 +447,7 @@ export const useAIMealGeneration = () => {
           "Product Not Found",
           lookupResult.error || "Product not in database.",
         );
+        options?.onBarcodeNotFound?.(barcode);
         return;
       }
 
