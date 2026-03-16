@@ -1,5 +1,8 @@
 // Jest setup file for React Native testing
 
+// React Native global required by many RN modules in test environment
+global.__DEV__ = false;
+
 // Mock nativewind CSS interop to prevent _ReactNativeCSSInterop errors
 jest.mock("nativewind", () => ({
   styled: (component) => component,
