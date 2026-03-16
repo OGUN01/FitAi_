@@ -123,7 +123,7 @@ class CompletionTrackingService {
         // Update workout progress to 100%, persisting calories in the store
         await fitnessStore.completeWorkout(workoutId, sessionData?.sessionId, actualCaloriesBurned || undefined);
 
-        // Sync workout completion to Supabase (like we do for meals)
+        // Sync workout completion to Supabase (only for logged-in users)
         if (userId) {
           try {
             const supabaseResult = await supabase
@@ -153,7 +153,6 @@ class CompletionTrackingService {
                 supabaseResult.error,
               );
             } else {
-
               // Save to analytics_metrics for Monthly Summary tracking
               try {
                 await analyticsDataService.updateTodaysMetrics(userId, {
@@ -163,31 +162,6 @@ class CompletionTrackingService {
               } catch (analyticsError) {
                 console.error('⚠️ Failed to update analytics metrics:', analyticsError);
               }
-
-              // Append a CompletedSession to the store — single source of truth
-              const fitnessStoreState = useFitnessStore.getState();
-              fitnessStoreState.addCompletedSession({
-                sessionId: sessionData?.sessionId || generateUUID(),
-                type: 'planned' as const,
-                workoutId: workoutId,
-                workoutSnapshot: {
-                  title: workout.title,
-                  category: workout.category || 'general',
-                  duration: workout.duration || 0,
-                  exercises: (workout.exercises || []).map((ex: any) => ({
-                    name: ex.exerciseName || ex.name || '',
-                    sets: typeof ex.sets === 'number' ? ex.sets : 0,
-                    reps: typeof ex.reps === 'number' ? ex.reps : 0,
-                    exerciseId: ex.exerciseId || ex.id,
-                    duration: ex.duration,
-                    restTime: ex.restTime,
-                  })),
-                },
-                caloriesBurned: actualCaloriesBurned,
-                durationMinutes: sessionData?.duration || workout.duration || 0,
-                completedAt: new Date().toISOString(),
-                weekStart: getCurrentWeekStart(),
-              });
 
               // CRITICAL: Trigger refresh so fitness hooks refetch data
               // This ensures UI updates immediately after workout completion
@@ -209,8 +183,32 @@ class CompletionTrackingService {
             );
             // Continue - local storage succeeded
           }
-        } else {
         }
+
+        // ALWAYS update store (Rule 6: store is the runtime source)
+        // Runs for both guests AND logged-in users, regardless of DB write outcome
+        useFitnessStore.getState().addCompletedSession({
+          sessionId: sessionData?.sessionId || generateUUID(),
+          type: 'planned' as const,
+          workoutId: workoutId,
+          workoutSnapshot: {
+            title: workout.title,
+            category: workout.category || 'general',
+            duration: workout.duration || 0,
+            exercises: (workout.exercises || []).map((ex: any) => ({
+              name: ex.exerciseName || ex.name || '',
+              sets: typeof ex.sets === 'number' ? ex.sets : 0,
+              reps: typeof ex.reps === 'number' ? ex.reps : 0,
+              exerciseId: ex.exerciseId || ex.id,
+              duration: ex.duration,
+              restTime: ex.restTime,
+            })),
+          },
+          caloriesBurned: actualCaloriesBurned,
+          durationMinutes: sessionData?.duration || workout.duration || 0,
+          completedAt: new Date().toISOString(),
+          weekStart: getCurrentWeekStart(),
+        });
 
         const event: CompletionEvent = {
           id: `workout_completion_${workoutId}_${Date.now()}`,

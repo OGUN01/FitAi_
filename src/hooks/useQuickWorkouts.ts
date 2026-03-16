@@ -42,7 +42,7 @@ export const useQuickWorkouts = (navigation: FitnessNavigation): QuickWorkoutsHo
       completedSessions.some(
         (s) =>
           s.type === 'planned' &&
-          s.workoutId === w.id &&
+          w.id && s.workoutId === w.id &&
           s.completedAt.split('T')[0] === todayStr,
       ),
     );
