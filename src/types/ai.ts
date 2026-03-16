@@ -165,6 +165,8 @@ export interface DayMeal {
     carbohydrates: number;
     fat: number;
     fiber: number;
+    sugar?: number;
+    sodium?: number;
   };
   // Backward compatibility aliases
   totalProtein?: number;
@@ -216,6 +218,7 @@ export interface DayWorkout extends Workout {
   progressionNotes: string[];
   safetyConsiderations: string[];
   expectedBenefits: string[];
+  isExtra?: boolean;
 }
 
 export interface WeeklyWorkoutPlan {
@@ -234,8 +237,10 @@ export interface WeeklyMealPlan {
   id: string;
   weekNumber: number;
   meals: DayMeal[];
-  // Additional properties used in DietScreen
+  // Additional properties used in DietScreen and nutrition stores
   planTitle?: string;
+  planDescription?: string;
+  totalEstimatedCalories?: number;
 }
 
 // ============================================================================

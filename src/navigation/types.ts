@@ -4,6 +4,8 @@
 export type RootStackParamList = {
   Onboarding: undefined;
   Main: undefined;
+  WorkoutSession: { workout: any; sessionId?: string; resumeExerciseIndex?: number; isExtra?: boolean };
+  CookingSession: { meal: any };
 };
 
 export type OnboardingStackParamList = {
@@ -48,8 +50,11 @@ export type DietStackParamList = {
 
 export type ProfileStackParamList = {
   ProfileMain: undefined;
-  Settings: undefined;
+  Settings: { screen?: string } | undefined;
   Progress: undefined;
   BodyAnalysisHistory: undefined;
   HealthKitSettings: undefined;
 };
+
+// Main tab names for type-safe navigation
+export type MainTabName = "Home" | "Workout" | "Analytics" | "Diet" | "Profile";

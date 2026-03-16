@@ -6,6 +6,9 @@ export interface WorkoutProgress {
   progress: number; // 0-100
   completedAt?: string;
   sessionId?: string;
+  // Persisted on partial exit to enable accurate resume
+  exerciseIndex?: number;   // last active exercise index when user exited
+  caloriesBurned?: number;  // actual calories burned up to exit point
 }
 
 // Completed workout stats computed from workoutProgress - SINGLE SOURCE OF TRUTH
@@ -50,8 +53,12 @@ export interface FitnessState {
   setPlanError: (error: string | null) => void;
 
   // Workout progress actions
-  updateWorkoutProgress: (workoutId: string, progress: number) => void;
-  completeWorkout: (workoutId: string, sessionId?: string) => Promise<void>;
+  updateWorkoutProgress: (
+    workoutId: string,
+    progress: number,
+    metadata?: { exerciseIndex?: number; caloriesBurned?: number },
+  ) => void;
+  completeWorkout: (workoutId: string, sessionId?: string, caloriesBurned?: number) => Promise<void>;
   getWorkoutProgress: (workoutId: string) => WorkoutProgress | null;
 
   // Computed selectors - SINGLE SOURCE OF TRUTH
@@ -89,3 +96,35 @@ export let workoutSessionsChannel: RealtimeChannel | null = null;
 export const setWorkoutSessionsChannel = (channel: RealtimeChannel | null) => {
   workoutSessionsChannel = channel;
 };
+
+export interface CompletedSession {
+  sessionId: string;           // UUID, unique per completion
+  type: 'planned' | 'extra';   // enum — extensible (e.g. 'recovery' later)
+  workoutId: string;           // plan workout ID ('planned') or generated UUID ('extra')
+  workoutSnapshot: {
+    title: string;
+    category: string;
+    duration: number;          // planned/estimated minutes
+    exercises: Array<{
+      name: string;
+      sets: number;
+      reps: number;
+      exerciseId?: string;
+      duration?: number;       // seconds, for time-based exercises
+      restTime?: number;       // seconds between sets
+    }>;
+  };
+  caloriesBurned: number;      // MET-calculated at completion; 0 if weight unavailable
+  durationMinutes: number;     // actual elapsed time
+  completedAt: string;         // ISO timestamp
+  weekStart: string;           // ISO date of Monday of that week (YYYY-MM-DD)
+}
+
+export interface ExtraWorkoutTemplate {
+  id: string;
+  title: string;
+  category: string;            // 'hiit' | 'cardio' | 'strength' | 'flexibility'
+  duration: number;            // minutes
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  estimatedCalories: number;   // display-only — never used in calculations
+}
