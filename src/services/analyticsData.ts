@@ -120,19 +120,110 @@ class AnalyticsDataService {
   }
 
   /**
-   * Get weight history for charts
+   * Get weight history for charts.
+   *
+   * Primary source : analytics_metrics  (fast, pre-aggregated).
+   * Fallback source: progress_entries   (source of truth).
+   *
+   * The fallback fires when:
+   *   - analytics_metrics has no weight rows for the period (first use, sync lag)
+   *   - updateTodaysMetrics() failed silently in a previous session
+   *
+   * After using the fallback, each entry is back-filled into analytics_metrics
+   * in the background so the fast path works on the very next chart load.
    */
   async getWeightHistory(
     userId: string,
     days: number = 30,
   ): Promise<Array<{ date: string; weight: number }>> {
+    if (!userId || userId.startsWith("guest") || userId === "local-user") {
+      return [];
+    }
+
+    // --- Fast path: analytics_metrics ---
     const metrics = await this.loadMetricsHistory(userId, days);
-    return metrics
+    const analyticsWeights = metrics
       .filter((m) => m.weightKg !== null)
-      .map((m) => ({
-        date: m.metricDate,
-        weight: m.weightKg!,
+      .map((m) => ({ date: m.metricDate, weight: m.weightKg! }));
+
+    if (analyticsWeights.length > 0) {
+      return analyticsWeights;
+    }
+
+    // --- Fallback path: progress_entries ---
+    // analytics_metrics has no weight data for this period. Read directly from
+    // the source-of-truth table so the chart is never empty after a failed sync.
+    console.warn(
+      "[getWeightHistory] analytics_metrics has no weight rows for",
+      days,
+      "days — falling back to progress_entries.",
+    );
+
+    try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      const startDateStr = startDate.toISOString().split("T")[0];
+
+      const { data, error } = await supabase
+        .from("progress_entries")
+        .select("entry_date, weight_kg")
+        .eq("user_id", userId)
+        .gte("entry_date", startDateStr)
+        .not("weight_kg", "is", null)
+        .order("entry_date", { ascending: true });
+
+      if (error || !data || data.length === 0) {
+        return [];
+      }
+
+      const fallbackWeights = data.map((row) => ({
+        date: row.entry_date as string,
+        weight: row.weight_kg as number,
       }));
+
+      // Back-fill analytics_metrics in the background — fast path works next time.
+      this.backFillWeightToAnalytics(userId, fallbackWeights).catch((err) =>
+        console.warn("[getWeightHistory] back-fill failed:", err),
+      );
+
+      return fallbackWeights;
+    } catch (err) {
+      console.error("[getWeightHistory] progress_entries fallback failed:", err);
+      return [];
+    }
+  }
+
+  /**
+   * Back-fill weight entries from progress_entries into analytics_metrics.
+   * Only sets weight_kg — leaves all other columns of existing rows intact
+   * (upsert with onConflict means: insert if missing, update weight_kg if exists).
+   */
+  private async backFillWeightToAnalytics(
+    userId: string,
+    entries: Array<{ date: string; weight: number }>,
+  ): Promise<void> {
+    for (const entry of entries) {
+      const rowId = `${userId}_${entry.date}`;
+      const { error } = await supabase
+        .from("analytics_metrics")
+        .upsert(
+          {
+            id: rowId,
+            user_id: userId,
+            metric_date: entry.date,
+            weight_kg: entry.weight,
+          },
+          { onConflict: "user_id,metric_date" },
+        );
+      if (error) {
+        console.warn(
+          "[backFillWeightToAnalytics] Failed for",
+          entry.date,
+          ":",
+          error.message,
+        );
+      }
+    }
   }
 
   /**
@@ -148,6 +239,49 @@ class AnalyticsDataService {
       consumed: m.caloriesConsumed || 0,
       burned: m.caloriesBurned || 0,
     }));
+  }
+
+  /**
+   * Returns calories burned split by session type for a given date (YYYY-MM-DD).
+   * Reads from workout_sessions table with is_extra filter.
+   * Returns { planned: 0, extra: 0 } on guest/error.
+   */
+  async getSessionCaloriesByType(
+    userId: string,
+    dateStr: string,
+  ): Promise<{ planned: number; extra: number }> {
+    if (!userId || userId.startsWith('guest') || userId === 'local-user') {
+      return { planned: 0, extra: 0 };
+    }
+    try {
+      const { data, error } = await supabase
+        .from('workout_sessions')
+        .select('calories_burned, is_extra')
+        .eq('user_id', userId)
+        .eq('is_completed', true)
+        .gte('completed_at', `${dateStr}T00:00:00.000Z`)
+        .lte('completed_at', `${dateStr}T23:59:59.999Z`);
+
+      if (error) {
+        console.error('[analyticsData] getSessionCaloriesByType error:', error);
+        return { planned: 0, extra: 0 };
+      }
+
+      let planned = 0;
+      let extra = 0;
+      for (const row of data || []) {
+        const cal = row.calories_burned || 0;
+        if (row.is_extra) {
+          extra += cal;
+        } else {
+          planned += cal;
+        }
+      }
+      return { planned, extra };
+    } catch (err) {
+      console.error('[analyticsData] getSessionCaloriesByType threw:', err);
+      return { planned: 0, extra: 0 };
+    }
   }
 
   /**
@@ -218,37 +352,84 @@ class AnalyticsDataService {
 
     try {
       const today = new Date().toISOString().split('T')[0];
+      const rowId = `${userId}_${today}`;
 
-      // Build the row to upsert — only include fields the caller provided,
-      // plus required identifiers. Supabase upsert (on_conflict) will
-      // create-or-update atomically, avoiding the read+increment race.
-      const row: Record<string, unknown> = {
-        id: `${userId}_${today}`,
-        user_id: userId,
-        metric_date: today,
-      };
+      // For ACCUMULATING fields (calories, meals, workouts), we must read first
+      // then add. A bare upsert would overwrite and lose prior data from the same day.
+      const incrementalFields = ['caloriesConsumed', 'caloriesBurned', 'workoutsCompleted', 'mealsLogged', 'waterIntakeMl'] as const;
+      const hasIncrementalUpdate = incrementalFields.some(
+        (f) => updates[f as keyof DailyMetrics] !== undefined,
+      );
 
-      if (updates.weightKg !== undefined) row.weight_kg = updates.weightKg;
-      if (updates.caloriesConsumed !== undefined) row.calories_consumed = updates.caloriesConsumed;
-      if (updates.caloriesBurned !== undefined) row.calories_burned = updates.caloriesBurned;
-      if (updates.workoutsCompleted !== undefined) row.workouts_completed = updates.workoutsCompleted;
-      if (updates.mealsLogged !== undefined) row.meals_logged = updates.mealsLogged;
-      if (updates.waterIntakeMl !== undefined) row.water_intake_ml = updates.waterIntakeMl;
-      if (updates.steps !== undefined) row.steps = updates.steps;
-      if (updates.sleepHours !== undefined) row.sleep_hours = updates.sleepHours;
+      if (hasIncrementalUpdate) {
+        // Fetch existing row to accumulate
+        const { data: existing } = await supabase
+          .from('analytics_metrics')
+          .select('calories_consumed, calories_burned, workouts_completed, meals_logged, water_intake_ml')
+          .eq('id', rowId)
+          .maybeSingle();
 
-      const { error } = await supabase
-        .from('analytics_metrics')
-        .upsert(row, { onConflict: 'user_id,metric_date' });
+        const row: Record<string, unknown> = {
+          id: rowId,
+          user_id: userId,
+          metric_date: today,
+        };
 
-      if (error) {
-        console.error('\u274c Metrics upsert error:', error);
-        return false;
+        // Accumulate incremental fields
+        if (updates.caloriesConsumed !== undefined) {
+          row.calories_consumed = (existing?.calories_consumed ?? 0) + updates.caloriesConsumed;
+        }
+        if (updates.caloriesBurned !== undefined) {
+          row.calories_burned = (existing?.calories_burned ?? 0) + updates.caloriesBurned;
+        }
+        if (updates.workoutsCompleted !== undefined) {
+          row.workouts_completed = (existing?.workouts_completed ?? 0) + updates.workoutsCompleted;
+        }
+        if (updates.mealsLogged !== undefined) {
+          row.meals_logged = (existing?.meals_logged ?? 0) + updates.mealsLogged;
+        }
+        if (updates.waterIntakeMl !== undefined) {
+          row.water_intake_ml = (existing?.water_intake_ml ?? 0) + updates.waterIntakeMl;
+        }
+
+        // Non-accumulating fields (overwrite is correct)
+        if (updates.weightKg !== undefined) row.weight_kg = updates.weightKg;
+        if (updates.steps !== undefined) row.steps = updates.steps;
+        if (updates.sleepHours !== undefined) row.sleep_hours = updates.sleepHours;
+
+        const { error } = await supabase
+          .from('analytics_metrics')
+          .upsert(row, { onConflict: 'user_id,metric_date' });
+
+        if (error) {
+          console.error('❌ Metrics accumulate-upsert error:', error);
+          return false;
+        }
+      } else {
+        // No incremental fields — safe to overwrite directly
+        const row: Record<string, unknown> = {
+          id: rowId,
+          user_id: userId,
+          metric_date: today,
+        };
+
+        if (updates.weightKg !== undefined) row.weight_kg = updates.weightKg;
+        if (updates.steps !== undefined) row.steps = updates.steps;
+        if (updates.sleepHours !== undefined) row.sleep_hours = updates.sleepHours;
+
+        const { error } = await supabase
+          .from('analytics_metrics')
+          .upsert(row, { onConflict: 'user_id,metric_date' });
+
+        if (error) {
+          console.error('❌ Metrics upsert error:', error);
+          return false;
+        }
       }
 
       return true;
     } catch (error) {
-      console.error('\u274c Error updating today\'s metrics:', error);
+      console.error('❌ Error updating today\'s metrics:', error);
       return false;
     }
   }

@@ -71,7 +71,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
   const { profile } = useUserStore();
   const { user } = useAuthStore();
   const { metrics: healthMetrics } = useHealthDataStore();
-  const { weeklyWorkoutPlan, workoutProgress } = useFitnessStore();
+  const completedSessions = useFitnessStore((state) => state.completedSessions);
   const { bodyAnalysis, personalInfo, workoutPreferences } = useProfileStore();
   const { metrics: calculatedMetrics } = useCalculatedMetrics();
   const {
@@ -139,25 +139,24 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     const targetWeight = calculatedMetrics?.targetWeightKg
       || (bodyAnalysis?.target_weight_kg && bodyAnalysis.target_weight_kg > 0 ? bodyAnalysis.target_weight_kg : undefined);
 
-    // Calculate completed workouts this period
-    const completedWorkouts = Object.values(workoutProgress).filter(
-      (p) => p.progress === 100,
+    // Calculate completed workouts WITHIN the selected period
+    // Filter by completedAt timestamp falling within periodDays window
+    const periodStart = new Date();
+    periodStart.setDate(periodStart.getDate() - periodDays);
+    const periodStartISO = periodStart.toISOString();
+
+    const completedWorkouts = completedSessions.filter((s) =>
+      s.completedAt >= periodStartISO
     ).length;
 
-    // Calculate calories burned from workouts
     // Calculate calories consumed from DataRetrievalService (same source as Progress screen)
     const todaysData = DataRetrievalService.getTodaysData();
     const caloriesConsumed = todaysData.progress.caloriesConsumed;
 
-    // Calculate calories burned from workouts
-    const totalCaloriesBurned =
-      weeklyWorkoutPlan?.workouts?.reduce((total, workout) => {
-        const progress = workoutProgress[workout.id];
-        if (progress && progress.progress === 100) {
-          return total + (workout.estimatedCalories || 0);
-        }
-        return total;
-      }, 0) || 0;
+    // Calculate calories burned from completed sessions this period (actual burned, not estimated)
+    const totalCaloriesBurned = completedSessions
+      .filter((s) => s.completedAt >= periodStartISO)
+      .reduce((sum, s) => sum + s.caloriesBurned, 0);
 
     // Use consumed calories as the primary display (what user ate today)
     // Fall back to burned if no consumed data
@@ -167,32 +166,45 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     const weeklyProgress = DataRetrievalService.getWeeklyProgress();
     const streak = weeklyProgress.streak;
 
-    // Calculate weight change toward goal
-    const weightChange =
-      currentWeight && targetWeight
-        ? Number((targetWeight - currentWeight).toFixed(1))
+    // Weight change: derive from Supabase history (oldest → newest in period)
+    // Positive = gained weight, negative = lost weight
+    // Fallback shows remaining to goal: target - current (negative = target lower than current = needs to lose)
+    const weightChange = weightHistory.length >= 2
+      ? Number((weightHistory[weightHistory.length - 1].weight - weightHistory[0].weight).toFixed(1))
+      : currentWeight && targetWeight
+        ? Number((targetWeight - currentWeight).toFixed(1)) // negative = still needs to lose, positive = already below (gained back)
         : undefined;
+
+    // Weight trend: negative change (losing weight / below goal) = "down" = green (good for weight-loss goals)
+    const weightTrend = weightChange !== undefined
+      ? weightChange < 0 ? ("down" as const)
+        : weightChange > 0 ? ("up" as const)
+        : ("stable" as const)
+      : ("stable" as const);
+
+    // Calorie change: percentage change from start to end of period
+    const calorieChange = calorieHistory.length >= 2
+      ? (() => {
+          const first = calorieHistory[0].consumed;
+          const last = calorieHistory[calorieHistory.length - 1].consumed;
+          if (first === 0) return undefined;
+          return Math.round(((last - first) / first) * 100);
+        })()
+      : undefined;
 
     return {
       weight: currentWeight
         ? {
             current: currentWeight,
             change: weightChange,
-            trend:
-              weightChange && weightChange < 0
-                ? ("down" as const)
-                : weightChange && weightChange > 0
-                  ? ("up" as const)
-                  : ("stable" as const),
+            trend: weightTrend,
             target: targetWeight,
           }
         : undefined,
       calories: {
         burned: displayCalories,
         target: calculatedMetrics?.dailyCalories || undefined,
-        change: calorieHistory.length >= 2
-          ? Math.round(calorieHistory[calorieHistory.length - 1].consumed - calorieHistory[0].consumed)
-          : undefined,
+        change: calorieChange,
         trend: displayCalories > 0 ? ("up" as const) : ("stable" as const),
       },
       workouts: {
@@ -240,53 +252,32 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     profile,
     bodyAnalysis,
     personalInfo,
-    weeklyWorkoutPlan,
-    workoutProgress,
+    completedSessions,
     calculatedMetrics,
     workoutPreferences,
+    weightHistory,
+    calorieHistory,
+    periodDays,
   ]);
+
+  // Calorie breakdown by session type — for breakdown display only, not part of MetricData
+  const calBreakdown = useMemo(() => {
+    const periodStart = new Date();
+    periodStart.setDate(periodStart.getDate() - periodDays);
+    const periodStartISO = periodStart.toISOString();
+    return {
+      extra: completedSessions
+        .filter((s) => s.completedAt >= periodStartISO && s.type === 'extra')
+        .reduce((sum, s) => sum + s.caloriesBurned, 0),
+      planned: completedSessions
+        .filter((s) => s.completedAt >= periodStartISO && s.type === 'planned')
+        .reduce((sum, s) => sum + s.caloriesBurned, 0),
+    };
+  }, [completedSessions, periodDays]);
 
   // Generate chart data based on period
   const chartData = useMemo(() => {
-    const labels =
-      selectedPeriod === "week"
-        ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-        : selectedPeriod === "month"
-          ? ["W1", "W2", "W3", "W4"]
-          : selectedPeriod === "quarter"
-            ? ["M1", "M2", "M3"]
-            : ["Jan", "Mar", "May", "Jul", "Sep", "Nov"];
-
-    // Calculate workout data per day/week
-    const workoutData = labels.map((label, index) => {
-      // Count workouts for this period
-      const count =
-        weeklyWorkoutPlan?.workouts?.filter((w, i) => {
-          if (selectedPeriod === "week") {
-            const dayMap: Record<string, number> = {
-              monday: 0,
-              tuesday: 1,
-              wednesday: 2,
-              thursday: 3,
-              friday: 4,
-              saturday: 5,
-              sunday: 6,
-            };
-            const dayOfWeek = w.dayOfWeek?.toLowerCase();
-            return (
-              dayOfWeek &&
-              dayMap[dayOfWeek] === index &&
-              workoutProgress[w.id]?.progress === 100
-            );
-          }
-          return false;
-        }).length || 0;
-
-      return { label, value: count };
-    });
-
-    // Use actual data from Supabase for weight and calorie history
-    // Transform weight history to chart format
+    // Weight chart: always from Supabase history
     const weightChartData =
       weightHistory.length > 0
         ? weightHistory.map((w) => ({
@@ -308,40 +299,103 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
             }] : undefined;
           })();
 
-    // Transform calorie history to chart format
+    // Calorie chart: filter out zero-value days to avoid misleading empty bars
     const calorieChartData =
       calorieHistory.length > 0
-        ? calorieHistory.map((c) => ({
-            label: new Date(c.date).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            }),
-            value: c.consumed,
-          }))
+        ? calorieHistory
+            .filter((c) => c.consumed > 0)
+            .map((c) => ({
+              label: new Date(c.date).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              }),
+              value: c.consumed,
+            }))
         : undefined;
+
+    // Workout chart: period-aware bucketing from completedSessions
+    let workoutData: Array<{ label: string; value: number }> = [];
+
+    if (selectedPeriod === "week") {
+      // Show each day of the current week (Mon-Sun)
+      const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      const weekDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      workoutData = dayLabels.map((label, index) => {
+        const dayName = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][index];
+        const count = completedSessions.filter((s) => {
+          const d = new Date(s.completedAt);
+          return weekDays[d.getDay()] === dayName;
+        }).length;
+        return { label, value: count };
+      });
+    } else if (selectedPeriod === "month") {
+      // Show completions grouped by week (W1-W4) within last 30 days
+      const now = new Date();
+      workoutData = ["W1", "W2", "W3", "W4"].map((label, weekIndex) => {
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - 28 + weekIndex * 7);
+        weekStart.setHours(0, 0, 0, 0);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 7);
+
+        const count = completedSessions.filter((s) => {
+          if (!s.completedAt) return false;
+          const d = new Date(s.completedAt);
+          return d >= weekStart && d < weekEnd;
+        }).length;
+        return { label, value: count };
+      });
+    } else if (selectedPeriod === "quarter") {
+      // Group by month (last 3 months)
+      const now = new Date();
+      const monthLabels = Array.from({ length: 3 }, (_, i) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - (2 - i), 1);
+        return d.toLocaleDateString("en-US", { month: "short" });
+      });
+      workoutData = monthLabels.map((label, i) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - (2 - i), 1);
+        const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
+        const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+        const count = completedSessions.filter((s) => {
+          if (!s.completedAt) return false;
+          const cd = new Date(s.completedAt);
+          return cd >= monthStart && cd < monthEnd;
+        }).length;
+        return { label, value: count };
+      });
+    } else {
+      // year: group by bi-month
+      const now = new Date();
+      const yearLabels = ["Jan", "Mar", "May", "Jul", "Sep", "Nov"];
+      workoutData = yearLabels.map((label, i) => {
+        const monthStart = new Date(now.getFullYear(), i * 2, 1);
+        const monthEnd = new Date(now.getFullYear(), i * 2 + 2, 1);
+        const count = completedSessions.filter((s) => {
+          if (!s.completedAt) return false;
+          const cd = new Date(s.completedAt);
+          return cd >= monthStart && cd < monthEnd;
+        }).length;
+        return { label, value: count };
+      });
+    }
 
     return {
       // Weight data - from Supabase analytics_metrics
       weightData: weightChartData,
 
-      // Calorie data - from Supabase analytics_metrics
-      calorieData: calorieChartData,
+      // Calorie data - from Supabase analytics_metrics (non-zero only)
+      calorieData: calorieChartData && calorieChartData.length > 0 ? calorieChartData : undefined,
 
-      // Workout data - shows actual completed workouts
-      workoutData: workoutData.some((d) => d.value > 0)
-        ? workoutData
-        : undefined,
+      // Workout data - period-aware bucketing
+      workoutData: workoutData.some((d) => d.value > 0) ? workoutData : undefined,
     };
   }, [
     selectedPeriod,
-    weeklyWorkoutPlan,
-    workoutProgress,
-    metricsData,
+    completedSessions,
     calculatedMetrics,
     bodyAnalysis,
     weightHistory,
     calorieHistory,
-    profile,
   ]);
 
   // Handlers
@@ -367,11 +421,27 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
 
   const handleMetricPress = useCallback((metric: string) => {
     haptics.light();
-  }, []);
+    // Navigate to the most relevant screen for each metric
+    if (metric === "weight" || metric === "streak" || metric === "bmi" || metric === "bmr" || metric === "tdee") {
+      navigation?.navigate("Progress");
+    } else if (metric === "workouts") {
+      // No direct navigate — fitness is a tab, not a session screen
+      // Just provide haptic feedback (user is already on analytics)
+    } else if (metric === "calories" || metric === "water") {
+      // Diet is a tab — no navigate needed, but we can give feedback
+    }
+  }, [navigation]);
 
   const handleChartPress = useCallback((chartType: string) => {
     haptics.light();
-  }, []);
+    if (chartType === "weight") {
+      navigation?.navigate("Progress");
+    } else if (chartType === "workouts") {
+      navigation?.navigate("ProgressTrends");
+    } else if (chartType === "calories") {
+      navigation?.navigate("ProgressTrends");
+    }
+  }, [navigation]);
 
   // Navigation handlers
   const handleProgressPress = useCallback(() => {
@@ -445,6 +515,23 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
                   />
                 </View>
 
+                {/* Calorie Breakdown: Planned + Extra */}
+                {calBreakdown.extra > 0 && (
+                  <View style={styles.sectionContainer}>
+                    <View style={styles.calorieBreakdown}>
+                      <Text style={styles.breakdownTitle}>Calorie Breakdown</Text>
+                      <View style={styles.breakdownRow}>
+                        <Text style={styles.breakdownLabel}>Plan workouts</Text>
+                        <Text style={styles.breakdownValue}>{calBreakdown.planned} kcal</Text>
+                      </View>
+                      <View style={styles.breakdownRow}>
+                        <Text style={styles.breakdownLabel}>Extra workouts</Text>
+                        <Text style={[styles.breakdownValue, styles.breakdownExtra]}>{calBreakdown.extra} kcal</Text>
+                      </View>
+                    </View>
+                  </View>
+                )}
+
                 {/* 3. Achievement Showcase */}
                 <View style={styles.sectionContainer}>
                   <AchievementShowcase />
@@ -511,6 +598,36 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.error,
     textAlign: "center",
+  },
+  calorieBreakdown: {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 16,
+  },
+  breakdownTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: ResponsiveTheme.colors.text,
+    marginBottom: 10,
+  },
+  breakdownRow: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    paddingVertical: 4,
+  },
+  breakdownLabel: {
+    fontSize: 13,
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+  breakdownValue: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: ResponsiveTheme.colors.text,
+  },
+  breakdownExtra: {
+    color: '#10b981',
   },
 });
 
