@@ -105,7 +105,7 @@ export async function completeExtraWorkout(
     const userStore = useUserStore.getState();
     const profileStore = useProfileStore.getState();
     const userWeight =
-      (userStore as any).profile?.bodyMetrics?.current_weight_kg ||
+      userStore.profile?.bodyMetrics?.current_weight_kg ||
       profileStore.bodyAnalysis?.current_weight_kg;
 
     let actualCaloriesBurned = 0;
@@ -166,11 +166,12 @@ export async function completeExtraWorkout(
     }
 
     // Always update store — Rule 6: store is runtime source
+    const workoutId = workout.id || generateUUID();
     const fitnessStore = useFitnessStore.getState();
     fitnessStore.addCompletedSession({
       sessionId: sessionData?.sessionId || generateUUID(),
       type: 'extra' as const,
-      workoutId: workout.id || generateUUID(),
+      workoutId,
       workoutSnapshot: {
         title: workout.title,
         category: workout.category || 'general',
@@ -193,7 +194,7 @@ export async function completeExtraWorkout(
     // Trigger UI refresh
     try {
       await fitnessRefreshService.refreshAfterWorkoutCompleted({
-        workoutId: workout.id || '',
+        workoutId,
         workoutName: workout.title,
         duration: workout.duration,
         caloriesBurned: actualCaloriesBurned,
