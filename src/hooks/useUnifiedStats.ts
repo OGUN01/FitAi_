@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useFitnessStore } from "../stores/fitnessStore";
 import { useNutritionStore } from "../stores/nutritionStore";
 import { useAchievementStore } from "../stores/achievementStore";
+import { useHealthDataStore } from "../stores/healthDataStore";
 import DataRetrievalService from "../services/dataRetrieval";
 
 export interface UnifiedStats {
@@ -14,58 +15,53 @@ export interface UnifiedStats {
 }
 
 export const useUnifiedStats = (): UnifiedStats => {
-  // Subscribe to reactive store state so the hook re-computes when data changes
-  const workoutProgress = useFitnessStore((state) => state.workoutProgress);
-  const weeklyWorkoutPlan = useFitnessStore((state) => state.weeklyWorkoutPlan);
+  const completedSessions = useFitnessStore((state) => state.completedSessions);
   const mealProgress = useNutritionStore((state) => state.mealProgress);
-  const weeklyMealPlan = useNutritionStore((state) => state.weeklyMealPlan);
-  const userAchievements = useAchievementStore(
-    (state) => state.userAchievements,
-  );
+  const userAchievements = useAchievementStore((state) => state.userAchievements);
+  const healthSteps = useHealthDataStore((state) => state.metrics.steps);
 
   return useMemo(() => {
-    // Use DataRetrievalService — same source as Analytics screen
-    const weeklyProgress = DataRetrievalService.getWeeklyProgress();
-    const todaysData = DataRetrievalService.getTodaysData();
+    const streak = DataRetrievalService.getWeeklyProgress().streak;
 
-    // Streak from DataRetrievalService (consecutive days with activity)
-    const streak = weeklyProgress.streak;
+    const totalWorkouts = completedSessions.length;
 
-    // Completed workouts count
-    const totalWorkouts = weeklyProgress.workoutsCompleted;
+    const totalCaloriesBurned = completedSessions.reduce((sum, s) => sum + s.caloriesBurned, 0);
 
-    // Calories: prefer consumed calories (what user ate today),
-    // fall back to burned calories from completed workouts
-    const caloriesConsumed = todaysData.progress.caloriesConsumed;
-    const totalCaloriesBurned =
-      weeklyWorkoutPlan?.workouts?.reduce((total, workout) => {
-        const progress = workoutProgress[workout.id];
-        if (progress && progress.progress === 100) {
-          return total + (workout.estimatedCalories || 0);
+    const completionDates = new Set<string>();
+    completedSessions
+      .filter((s) => s.completedAt)
+      .forEach((s) => completionDates.add(new Date(s.completedAt).toDateString()));
+    Object.values(mealProgress)
+      .filter((p) => p.completedAt)
+      .forEach((p) => completionDates.add(new Date(p.completedAt!).toDateString()));
+
+    let longestStreak = streak;
+    if (completionDates.size > 1) {
+      const sortedDates = Array.from(completionDates)
+        .map((d) => new Date(d))
+        .sort((a, b) => a.getTime() - b.getTime());
+
+      let currentRun = 1;
+      let best = 1;
+      for (let i = 1; i < sortedDates.length; i++) {
+        const diff = Math.round(
+          (sortedDates[i].getTime() - sortedDates[i - 1].getTime()) / (1000 * 60 * 60 * 24),
+        );
+        if (diff === 1) {
+          currentRun++;
+          if (currentRun > best) best = currentRun;
+        } else {
+          currentRun = 1;
         }
-        return total;
-      }, 0) || 0;
-    const displayCalories =
-      caloriesConsumed > 0 ? caloriesConsumed : totalCaloriesBurned;
+      }
+      longestStreak = Math.max(streak, best);
+    }
 
-    const longestStreak = streak; // best available approximation
     const achievementCount = userAchievements?.size || 0;
+    const steps = healthSteps || 0;
 
-    return {
-      totalWorkouts,
-      totalCaloriesBurned: displayCalories,
-      currentStreak: streak,
-      longestStreak,
-      achievements: achievementCount,
-      steps: 0,
-    };
-  }, [
-    workoutProgress,
-    weeklyWorkoutPlan,
-    mealProgress,
-    weeklyMealPlan,
-    userAchievements,
-  ]);
+    return { totalWorkouts, totalCaloriesBurned, currentStreak: streak, longestStreak, achievements: achievementCount, steps };
+  }, [completedSessions, mealProgress, userAchievements, healthSteps]);
 };
 
 export default useUnifiedStats;
