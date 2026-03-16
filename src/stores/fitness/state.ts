@@ -7,10 +7,16 @@ export const initialFitnessState: Pick<
   | "planError"
   | "workoutProgress"
   | "currentWorkoutSession"
+  | "completedSessions"
+  | "completedSessionsHydrated"
+  | "_hasHydrated"
 > = {
   weeklyWorkoutPlan: null,
   isGeneratingPlan: false,
   planError: null,
   workoutProgress: {},
   currentWorkoutSession: null,
+  completedSessions: [],
+  completedSessionsHydrated: false,
+  _hasHydrated: false,
 };

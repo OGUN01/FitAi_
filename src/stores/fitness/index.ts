@@ -20,7 +20,7 @@ export const useFitnessStore = create<FitnessState>()(
       ...createSessionActions(set, get),
       ...createDataActions(set, get),
       ...createRealtimeActions(set, get),
-      ...createSelectors(get),
+      ...createSelectors(get, set),
     }),
     {
       name: "fitness-storage",
@@ -28,7 +28,13 @@ export const useFitnessStore = create<FitnessState>()(
       partialize: (state) => ({
         weeklyWorkoutPlan: state.weeklyWorkoutPlan,
         workoutProgress: state.workoutProgress,
+        completedSessions: state.completedSessions,
+        // completedSessionsHydrated: intentionally excluded (resets on cold start)
+        // _hasHydrated: intentionally excluded (set by onRehydrateStorage)
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state) state.setHasHydrated();
+      },
     },
   ),
 );

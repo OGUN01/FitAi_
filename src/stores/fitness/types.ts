@@ -88,6 +88,19 @@ export interface FitnessState {
 
   // Reset store (for logout)
   reset: () => void;
+
+  // Completed sessions — single source of truth for all stats
+  completedSessions: CompletedSession[];
+  completedSessionsHydrated: boolean;   // NOT persisted — guards one-time backfill
+  _hasHydrated: boolean;                 // NOT persisted — set true by onRehydrateStorage
+
+  // New actions
+  addCompletedSession: (session: CompletedSession) => void;
+  markCompletedSessionsHydrated: () => void;
+  setHasHydrated: () => void;
+  getPlannedSessionStats: (weekStart: string) => { count: number; totalCalories: number; totalDuration: number };
+  getExtraSessionStats: (weekStart: string) => { count: number; totalCalories: number; totalDuration: number };
+  getAllSessionCalories: (dateStr: string) => number;
 }
 
 // Realtime subscription channel reference (outside store to persist across re-renders)

@@ -1,27 +1,20 @@
-import { FitnessState, CompletedWorkoutStats } from "./types";
+import { FitnessState, CompletedWorkoutStats, CompletedSession } from "./types";
+import { getCurrentWeekStart } from "../../utils/weekUtils";
 
-export const createSelectors = (get: () => FitnessState) => ({
+export const createSelectors = (
+  get: () => FitnessState,
+  set: (partial: Partial<FitnessState> | ((state: FitnessState) => Partial<FitnessState>)) => void,
+) => ({
   getCompletedWorkoutStats: (): CompletedWorkoutStats => {
     const state = get();
-
-    const completedWorkouts = Object.values(state.workoutProgress).filter(
-      (p) => p.progress === 100,
+    const weekStart = getCurrentWeekStart();
+    const planned = state.completedSessions.filter(
+      (s) => s.type === 'planned' && s.weekStart === weekStart
     );
-
     return {
-      count: completedWorkouts.length,
-      totalCalories: completedWorkouts.reduce((sum, p) => {
-        const workout = state.weeklyWorkoutPlan?.workouts.find(
-          (w) => w.id === p.workoutId,
-        );
-        return sum + (workout?.estimatedCalories || 0);
-      }, 0),
-      totalDuration: completedWorkouts.reduce((sum, p) => {
-        const workout = state.weeklyWorkoutPlan?.workouts.find(
-          (w) => w.id === p.workoutId,
-        );
-        return sum + (workout?.duration || 0);
-      }, 0),
+      count: planned.length,
+      totalCalories: planned.reduce((sum, s) => sum + s.caloriesBurned, 0),
+      totalDuration: planned.reduce((sum, s) => sum + s.durationMinutes, 0),
     };
   },
 
@@ -61,5 +54,46 @@ export const createSelectors = (get: () => FitnessState) => ({
         0,
       ),
     };
+  },
+
+  addCompletedSession: (session: CompletedSession) => {
+    set((state) => {
+      if (state.completedSessions.some((s) => s.sessionId === session.sessionId)) {
+        return state;
+      }
+      return { completedSessions: [...state.completedSessions, session] };
+    });
+  },
+
+  markCompletedSessionsHydrated: () => set({ completedSessionsHydrated: true }),
+
+  setHasHydrated: () => set({ _hasHydrated: true }),
+
+  getPlannedSessionStats: (weekStart: string) => {
+    const sessions = get().completedSessions.filter(
+      (s) => s.type === 'planned' && s.weekStart === weekStart
+    );
+    return {
+      count: sessions.length,
+      totalCalories: sessions.reduce((sum, s) => sum + s.caloriesBurned, 0),
+      totalDuration: sessions.reduce((sum, s) => sum + s.durationMinutes, 0),
+    };
+  },
+
+  getExtraSessionStats: (weekStart: string) => {
+    const sessions = get().completedSessions.filter(
+      (s) => s.type === 'extra' && s.weekStart === weekStart
+    );
+    return {
+      count: sessions.length,
+      totalCalories: sessions.reduce((sum, s) => sum + s.caloriesBurned, 0),
+      totalDuration: sessions.reduce((sum, s) => sum + s.durationMinutes, 0),
+    };
+  },
+
+  getAllSessionCalories: (dateStr: string) => {
+    return get().completedSessions
+      .filter((s) => s.completedAt.startsWith(dateStr))
+      .reduce((sum, s) => sum + s.caloriesBurned, 0);
   },
 });

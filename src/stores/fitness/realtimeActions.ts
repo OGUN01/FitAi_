@@ -52,6 +52,9 @@ export const createRealtimeActions = (
       planError: null,
       workoutProgress: {},
       currentWorkoutSession: null,
+      completedSessions: [],
+      completedSessionsHydrated: false,
+      // _hasHydrated intentionally NOT reset — stays true once hydrated
     });
   },
 });
