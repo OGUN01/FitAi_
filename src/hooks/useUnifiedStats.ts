@@ -3,7 +3,6 @@ import { useFitnessStore } from "../stores/fitnessStore";
 import { useNutritionStore } from "../stores/nutritionStore";
 import { useAchievementStore } from "../stores/achievementStore";
 import { useHealthDataStore } from "../stores/healthDataStore";
-import DataRetrievalService from "../services/dataRetrieval";
 
 export interface UnifiedStats {
   totalWorkouts: number;
@@ -21,7 +20,23 @@ export const useUnifiedStats = (): UnifiedStats => {
   const healthSteps = useHealthDataStore((state) => state.metrics.steps);
 
   return useMemo(() => {
-    const streak = DataRetrievalService.getWeeklyProgress().streak;
+    const streak = (() => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      let count = 0;
+      let checkDate = new Date(today);
+
+      while (true) {
+        const checkStr = checkDate.toDateString();
+        const hasActivity = completedSessions.some(
+          (s) => new Date(s.completedAt).toDateString() === checkStr,
+        );
+        if (!hasActivity) break;
+        count++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      }
+      return count;
+    })();
 
     const totalWorkouts = completedSessions.length;
 

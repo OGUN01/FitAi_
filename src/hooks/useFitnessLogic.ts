@@ -148,9 +148,10 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
   useEffect(() => {
     if (!user?.id || !weeklyWorkoutPlan?.workouts) return;
 
+    const currentWorkoutProgress = useFitnessStore.getState().workoutProgress;
     const toBackfill = weeklyWorkoutPlan.workouts.filter((w) => {
       if (backfilledWorkoutIds.current.has(w.id)) return false;
-      const p = workoutProgress[w.id];
+      const p = currentWorkoutProgress[w.id];
       return p?.progress === 100 && (p.caloriesBurned == null || p.caloriesBurned === 0);
     });
 
@@ -193,7 +194,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
           }
         });
       });
-  }, [user?.id, weeklyWorkoutPlan, workoutProgress, updateWorkoutProgress]);
+  }, [user?.id, weeklyWorkoutPlan, updateWorkoutProgress]);
 
   // Get selected day's workouts (array, since there might be multiple per day)
   const selectedDayWorkouts = useMemo(() => {
@@ -256,15 +257,14 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
   // Calculate week stats — delegates to store's single source of truth
   const weekStats = useMemo(() => {
     const totalWorkouts = weeklyWorkoutPlan?.workouts?.length || 0;
-    const completedCount = getCompletedWorkoutStats().count;
+    const completedCount = useFitnessStore.getState().getCompletedWorkoutStats().count;
     return { totalWorkouts, completedCount };
-  }, [weeklyWorkoutPlan, getCompletedWorkoutStats]);
+  }, [weeklyWorkoutPlan]);
 
   // Generate weekly workout plan
   const generateWeeklyWorkoutPlan = useCallback(async () => {
     // Allow guest users to generate plans (they have profile data)
     if (!user?.id && !isGuestMode) {
-      console.log("[AUTH] No user and not guest mode, showing sign up");
       setShowGuestSignUp(true);
       return;
     }
@@ -498,6 +498,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
           finalSessionId = await startStoreWorkoutSession(selectedWorkout);
         } catch (error) {
           // Keep the locally-generated UUID as fallback.
+          console.error('[useFitnessLogic] startStoreWorkoutSession failed:', error);
         }
       }
       // Resume: reuse the pending UUID — the existing session record in DB is
@@ -532,6 +533,9 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
   );
 
   const handleDeleteWorkout = useCallback(async (workout: CompletedWorkoutItem) => {
+    // Read sessionId BEFORE the optimistic deletion removes the key from workoutProgress
+    const sessionId = useFitnessStore.getState().workoutProgress?.[workout.workoutId]?.sessionId;
+
     // 1. Remove from local Zustand store immediately (optimistic UI)
     useFitnessStore.setState((state) => {
       const newProgress = { ...state.workoutProgress };
@@ -541,7 +545,6 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
 
     // 2. Persist deletion to Supabase so it doesn't reappear on next load
     try {
-      const sessionId = useFitnessStore.getState().workoutProgress?.[workout.workoutId]?.sessionId;
       if (sessionId) {
         // If we have the sessionId, delete from workout_sessions
         const { error } = await supabase
