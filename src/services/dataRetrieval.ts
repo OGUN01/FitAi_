@@ -4,10 +4,6 @@ import { useUserStore } from "../stores/userStore";
 import { useProfileStore } from "../stores/profileStore";
 import { crudOperations } from "./crudOperations";
 import { WeeklyWorkoutPlan, DayWorkout, WeeklyMealPlan, DayMeal } from "../ai";
-import {
-  calculateWorkoutCalories,
-  ExerciseCalorieInput,
-} from "./calorieCalculator";
 import { logger } from "../utils/logger";
 
 export interface TodaysData {

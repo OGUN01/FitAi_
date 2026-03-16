@@ -161,6 +161,7 @@ class CompletionTrackingService {
                   caloriesBurned: actualCaloriesBurned,
                 });
               } catch (analyticsError) {
+                console.error('⚠️ Failed to update analytics metrics:', analyticsError);
               }
 
               // Append a CompletedSession to the store — single source of truth
@@ -198,6 +199,7 @@ class CompletionTrackingService {
                   caloriesBurned: actualCaloriesBurned,
                 });
               } catch (refreshError) {
+                console.error('⚠️ Failed to trigger fitness refresh:', refreshError);
               }
             }
           } catch (supabaseError) {
