@@ -36,6 +36,7 @@ import { WeeklyCalendar } from "../../components/fitness/WeeklyCalendar";
 import { GuestSignUpScreen } from "./GuestSignUpScreen";
 
 import { FitnessNavigation } from "../../hooks/useFitnessLogic";
+import type { DayName } from "../../stores/appStateStore";
 
 interface FitnessScreenProps {
   navigation: FitnessNavigation;
@@ -100,7 +101,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
             {/* 1b. Weekly Calendar */}
             <WeeklyCalendar
               selectedDay={state.selectedDay}
-              onDaySelect={(day) => actions.setSelectedDay(day as import("../../stores/appStateStore").DayName)}
+              onDaySelect={(day) => actions.setSelectedDay(day as DayName)}
               workoutData={calendarWorkoutData}
             />
 

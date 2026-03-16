@@ -44,7 +44,7 @@ interface WorkoutSessionScreenProps {
       isExtra?: boolean;
     };
   };
-  navigation: any;
+  navigation: { navigate: (screen: string, params?: Record<string, unknown>) => void; goBack: () => void };
 }
 
 const safeString = (value: any, fallback: string = ""): string => {
@@ -149,7 +149,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       session.setCurrentTime(new Date());
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [session.setCurrentTime]);
 
   useEffect(() => {
     return () => {
@@ -200,24 +200,6 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     [session, achievements, workout.category],
   );
 
-  const goToNextExercise = useCallback(() => {
-    if (session.currentExerciseIndex < session.totalExercises - 1) {
-      animations.animateTransition(() => {
-        session.goToNextExercise();
-      });
-    } else {
-      completeWorkout();
-    }
-  }, [session, animations]);
-
-  const goToPreviousExercise = useCallback(() => {
-    if (session.currentExerciseIndex > 0) {
-      animations.animateTransition(() => {
-        session.goToPreviousExercise();
-      });
-    }
-  }, [session, animations]);
-
   const completeWorkout = useCallback(async () => {
     try {
       const elapsedSeconds = Math.floor(
@@ -240,7 +222,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             startedAt: session.workoutStartTime.toISOString(),
             stats: finalStats,
           },
-          getCurrentUserId(),
+          getCurrentUserId() || undefined,
         );
       } else {
         success = await completionTrackingService.completeWorkout(
@@ -293,6 +275,24 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       );
     }
   }, [workout, sessionId, isExtra, session, achievements, navigation]);
+
+  const goToNextExercise = useCallback(() => {
+    if (session.currentExerciseIndex < session.totalExercises - 1) {
+      animations.animateTransition(() => {
+        session.goToNextExercise();
+      });
+    } else {
+      completeWorkout();
+    }
+  }, [session, animations, completeWorkout]);
+
+  const goToPreviousExercise = useCallback(() => {
+    if (session.currentExerciseIndex > 0) {
+      animations.animateTransition(() => {
+        session.goToPreviousExercise();
+      });
+    }
+  }, [session, animations]);
 
   const exitWorkout = useCallback(async () => {
     const hasProgress =

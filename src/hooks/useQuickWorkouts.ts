@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useFitnessStore } from "../stores/fitnessStore";
 import { useUserStore } from "../stores/userStore";
 import { generateUUID } from "../utils/uuid";
@@ -53,7 +53,7 @@ export const useQuickWorkouts = (navigation: FitnessNavigation): QuickWorkoutsHo
     return getSuggestions(profile.fitnessGoals);
   }, [profile?.fitnessGoals]);
 
-  const startQuickWorkout = async (template: ExtraWorkoutTemplate): Promise<void> => {
+  const startQuickWorkout = useCallback(async (template: ExtraWorkoutTemplate): Promise<void> => {
     if (!profile?.personalInfo || !profile?.fitnessGoals) {
       crossPlatformAlert('Profile Incomplete', 'Please complete your profile to start a workout.');
       return;
@@ -72,10 +72,13 @@ export const useQuickWorkouts = (navigation: FitnessNavigation): QuickWorkoutsHo
         resumeExerciseIndex: 0,
         isExtra: true,
       });
+    } catch (err) {
+      console.error('[useQuickWorkouts] startQuickWorkout failed:', err);
+      crossPlatformAlert('Generation Failed', 'Could not generate workout. Please try again.');
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [profile, navigation]);
 
   return { isVisible, suggestions, isGenerating, startQuickWorkout };
 };
