@@ -14,6 +14,8 @@ import { ExerciseGifPlayer } from "../../components/fitness/ExerciseGifPlayer";
 import { ExerciseInstructionModal } from "../../components/fitness/ExerciseInstructionModal";
 import { ExerciseSessionModal } from "../../components/fitness/ExerciseSessionModal";
 import completionTrackingService from "../../services/completionTracking";
+import { completeExtraWorkout } from "../../services/extraWorkoutService";
+import { useFitnessStore } from "../../stores/fitnessStore";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { exerciseFilterService } from "../../services/exerciseFilterService";
 import { getCurrentUserId } from "../../services/authUtils";
@@ -28,16 +30,18 @@ import { AchievementNotifications } from "../../components/workout/AchievementNo
 import { WorkoutErrorState } from "../../components/workout/WorkoutErrorState";
 import { NextExercisePreview } from "../../components/workout/NextExercisePreview";
 import {
-  showWorkoutCompleteAlert,
   showWorkoutCompleteErrorAlert,
   showExitWorkoutAlert,
 } from "./workoutAlerts";
+import { WorkoutCompleteDialog } from "../../components/ui/CustomDialog";
 
 interface WorkoutSessionScreenProps {
   route: {
     params: {
       workout: DayWorkout;
       sessionId?: string;
+      resumeExerciseIndex?: number;
+      isExtra?: boolean;
     };
   };
   navigation: any;
@@ -102,30 +106,26 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   route,
   navigation,
 }) => {
-  const { workout, sessionId } = route.params;
+  const { workout, sessionId, resumeExerciseIndex, isExtra } = route.params;
   const insets = useSafeAreaInsets();
 
-  const session = useWorkoutSession((workout ?? { exercises: [] }) as DayWorkout, sessionId);
+  const session = useWorkoutSession((workout ?? { exercises: [] }) as DayWorkout, sessionId, resumeExerciseIndex ?? 0);
   const achievements = useWorkoutAchievements();
   const animations = useWorkoutAnimations();
 
-  if (!workout) {
-    return (
-      <WorkoutErrorState
-        errorType="no-data"
-        onGoBack={() => navigation.goBack()}
-      />
-    );
-  }
+  // Workout complete dialog state (replaces crossPlatformAlert on web)
+  const [completeDialog, setCompleteDialog] = useState<{
+    visible: boolean;
+    durationMins: number;
+    calories: number;
+    exercisesCompleted: number;
+    setsCompleted: number;
+    onViewProgress: () => void;
+    onDone: () => void;
+  } | null>(null);
 
-  if (!workout.exercises || workout.exercises.length === 0) {
-    return (
-      <WorkoutErrorState
-        errorType="no-exercises"
-        onGoBack={() => navigation.goBack()}
-      />
-    );
-  }
+  // All hooks must be declared before any early returns (Rules of Hooks).
+  // The guards below still run before the render JSX.
 
   const derivedExerciseDuration = useMemo(() => {
     const repsDuration = parseDurationFromReps(session.currentExercise.reps);
@@ -220,30 +220,47 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 
   const completeWorkout = useCallback(async () => {
     try {
+      const elapsedSeconds = Math.floor(
+        (new Date().getTime() - session.workoutStartTime.getTime()) / 1000,
+      );
       const finalStats = {
         ...session.workoutStats,
-        totalDuration: Math.round(
-          (new Date().getTime() - session.workoutStartTime.getTime()) / 60000,
-        ),
+        totalDuration: elapsedSeconds,
       };
+      // completionTrackingService expects duration in minutes
+      const durationMinutes = Math.max(1, Math.round(elapsedSeconds / 60));
 
-      const success = await completionTrackingService.completeWorkout(
-        workout.id || "unknown",
-        {
-          sessionId: sessionId || "unknown",
-          duration: finalStats.totalDuration,
-          exercisesCompleted: finalStats.exercisesCompleted,
-          totalExercises: session.totalExercises,
-          completedAt: new Date().toISOString(),
-          stats: finalStats,
-        },
-        getCurrentUserId() || undefined,
-      );
+      let success: boolean;
+      if (isExtra === true) {
+        success = await completeExtraWorkout(
+          workout,
+          {
+            sessionId: sessionId || "unknown",
+            duration: durationMinutes,
+            startedAt: session.workoutStartTime.toISOString(),
+            stats: finalStats,
+          },
+          getCurrentUserId(),
+        );
+      } else {
+        success = await completionTrackingService.completeWorkout(
+          workout.id || "unknown",
+          {
+            sessionId: sessionId || "unknown",
+            duration: durationMinutes,
+            exercisesCompleted: finalStats.exercisesCompleted,
+            totalExercises: session.totalExercises,
+            completedAt: new Date().toISOString(),
+            stats: finalStats,
+          },
+          getCurrentUserId() || undefined,
+        );
+      }
 
       if (success) {
         await achievements.trackWorkoutCompletion(
           workout.category || "General",
-          finalStats.totalDuration,
+          durationMinutes, // achievements expect minutes, not seconds
           finalStats.caloriesBurned,
           finalStats.exercisesCompleted,
           finalStats.setsCompleted,
@@ -251,15 +268,21 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           workout.title,
         );
 
-        showWorkoutCompleteAlert(
-          workout,
-          finalStats,
-          session.totalExercises,
-          achievements.recentAchievements,
-          () => navigation.navigate("Analytics"),
-          () => navigation.navigate("Progress"),
-          () => navigation.goBack(),
-        );
+        setCompleteDialog({
+          visible: true,
+          durationMins: durationMinutes,
+          calories: finalStats.caloriesBurned,
+          exercisesCompleted: finalStats.exercisesCompleted,
+          setsCompleted: finalStats.setsCompleted,
+          onViewProgress: () => {
+            setCompleteDialog(null);
+            navigation.goBack();
+          },
+          onDone: () => {
+            setCompleteDialog(null);
+            navigation.goBack();
+          },
+        });
       } else {
         throw new Error("Failed to save workout completion");
       }
@@ -269,7 +292,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         navigation.goBack(),
       );
     }
-  }, [workout, sessionId, session, achievements, navigation]);
+  }, [workout, sessionId, isExtra, session, achievements, navigation]);
 
   const exitWorkout = useCallback(async () => {
     const hasProgress =
@@ -278,17 +301,24 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 
     const saveProgress = async () => {
       try {
+        const totalSets = session.exerciseProgress.reduce(
+          (sum, ep) => sum + (ep?.completedSets?.length || 0),
+          0,
+        );
+        const completedSets = session.workoutStats.setsCompleted;
         const progressPercentage =
-          session.totalExercises > 0
-            ? Math.round(
-                (session.workoutStats.exercisesCompleted /
-                  session.totalExercises) *
-                  100,
-              )
-            : 0;
+          totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
+
+        // Never overwrite a higher prior progress with a lower value
+        // (e.g. user navigated but did no sets this session).
+        const savedPrior =
+          useFitnessStore.getState().getWorkoutProgress(workout.id || "unknown")?.progress ?? 0;
+        const progressToSave = Math.max(progressPercentage, savedPrior);
+
+        // 1. Emit event to subscribers (e.g. fitness screen refresh)
         await completionTrackingService.updateWorkoutProgress(
           workout.id || "unknown",
-          progressPercentage,
+          progressToSave,
           {
             sessionId: sessionId || "unknown",
             partialCompletion: true,
@@ -296,21 +326,67 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             stats: session.workoutStats,
           },
         );
+
+        // 2. Always persist exerciseIndex so resume lands on the correct exercise.
+        //    Use the first incomplete exercise (not currentExerciseIndex) so that
+        //    if the user finished all sets on Exercise N but never tapped "Next",
+        //    resume jumps to Exercise N+1 instead of replaying N from scratch.
+        const firstIncompleteIdx = session.exerciseProgress.findIndex(
+          (ep) => !ep.isCompleted,
+        );
+        const resumeAt =
+          firstIncompleteIdx !== -1
+            ? firstIncompleteIdx
+            : session.currentExerciseIndex;
+
+        useFitnessStore.getState().updateWorkoutProgress(
+          workout.id || "unknown",
+          progressToSave,
+          {
+            exerciseIndex: resumeAt,
+            caloriesBurned: session.workoutStats.caloriesBurned,
+          },
+        );
+
+        // 3. Clear the in-memory session so next "Continue" uses the
+        //    persisted exerciseIndex (single source of truth).
+        useFitnessStore.setState({ currentWorkoutSession: null });
       } catch (error) {
         console.error("❌ Failed to save progress:", error);
       }
       navigation.goBack();
     };
 
+    // Always pass saveProgress for both paths so exerciseIndex is persisted
+    // even when the user navigated forward but completed no sets yet.
     showExitWorkoutAlert(
       hasProgress,
       session.workoutStats.exercisesCompleted,
       session.totalExercises,
       session.workoutStats.setsCompleted,
       saveProgress,
-      () => navigation.goBack(),
+      saveProgress,
     );
   }, [session, workout.id, sessionId, navigation]);
+
+  // Guard returns are placed HERE — after all hooks — to satisfy Rules of Hooks.
+  if (!workout) {
+    return (
+      <WorkoutErrorState
+        errorType="no-data"
+        onGoBack={() => navigation.goBack()}
+      />
+    );
+  }
+
+  if (!workout.exercises || workout.exercises.length === 0) {
+    return (
+      <WorkoutErrorState
+        errorType="no-exercises"
+        onGoBack={() => navigation.goBack()}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -472,6 +548,19 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         miniToastText={achievements.miniToastText}
         miniToastAnim={achievements.miniToastAnim}
       />
+
+      {completeDialog && (
+        <WorkoutCompleteDialog
+          visible={completeDialog.visible}
+          workoutTitle={safeString(workout.title, "Workout")}
+          duration={completeDialog.durationMins}
+          calories={completeDialog.calories}
+          exercisesCompleted={completeDialog.exercisesCompleted}
+          totalExercises={session.totalExercises}
+          onViewProgress={completeDialog.onViewProgress}
+          onDone={completeDialog.onDone}
+        />
+      )}
     </SafeAreaView>
   );
 };

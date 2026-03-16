@@ -12,20 +12,12 @@ import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
-import { DayWorkout } from "../../types/ai";
-
-interface SuggestedWorkout {
-  id: string;
-  title: string;
-  category: "strength" | "cardio" | "hiit" | "flexibility" | "yoga" | string;
-  duration: number;
-  estimatedCalories: number;
-  difficulty: "beginner" | "intermediate" | "advanced";
-}
+import { ExtraWorkoutTemplate } from "../../stores/fitness/types";
 
 interface SuggestedWorkoutsProps {
-  workouts: SuggestedWorkout[];
-  onStartWorkout: (workout: SuggestedWorkout) => void;
+  workouts: ExtraWorkoutTemplate[];
+  onStartWorkout: (workout: ExtraWorkoutTemplate) => void;
+  isGenerating?: boolean;
 }
 
 const getCategoryConfig = (category: string) => {
@@ -80,6 +72,7 @@ const getDifficultyConfig = (difficulty: string) => {
 export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
   workouts,
   onStartWorkout,
+  isGenerating,
 }) => {
   if (workouts.length === 0) return null;
 
@@ -183,14 +176,18 @@ export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
                 </View>
 
                 {/* Start Button */}
-                <LinearGradient
-                  colors={categoryConfig.gradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.startButton}
-                >
-                  <Text style={styles.startButtonText}>START</Text>
-                </LinearGradient>
+                {isGenerating ? (
+                  <Text style={styles.generatingText}>Generating...</Text>
+                ) : (
+                  <LinearGradient
+                    colors={categoryConfig.gradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.startButton}
+                  >
+                    <Text style={styles.startButtonText}>START</Text>
+                  </LinearGradient>
+                )}
               </GlassCard>
             </AnimatedPressable>
           );
@@ -278,6 +275,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: ResponsiveTheme.colors.white,
     letterSpacing: 0.5,
+  },
+  generatingText: {
+    fontSize: rf(11),
+    fontWeight: "600",
+    color: ResponsiveTheme.colors.textSecondary,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    textAlign: "center",
   },
 });
 

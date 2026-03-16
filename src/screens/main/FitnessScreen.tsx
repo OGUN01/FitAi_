@@ -21,6 +21,7 @@ import { DayWorkout } from "../../types/ai";
 
 // Hook
 import { useFitnessLogic } from "../../hooks/useFitnessLogic";
+import { useQuickWorkouts } from "../../hooks/useQuickWorkouts";
 
 // Modular Components
 import {
@@ -44,6 +45,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { state, actions, setShowGuestSignUp } = useFitnessLogic(navigation);
   const planError = useFitnessStore((s) => s.planError);
+  const quickWorkouts = useQuickWorkouts(navigation);
 
   const calendarWorkoutData = useMemo(() => {
     const data: Record<string, { hasWorkout: boolean; isCompleted: boolean; isRestDay: boolean }> = {};
@@ -52,7 +54,10 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
     for (const dayKey of dayKeys) {
       const workout = state.weeklyWorkoutPlan?.workouts?.find((w) => w.dayOfWeek === dayKey);
       const dayIndex = dayKeys.indexOf(dayKey);
-      const isRestDay = restDayIndices.includes(dayIndex);
+      // Handle both number indices (Monday=0) and string day names from AI
+      const isRestDay = restDayIndices.some((d: number | string) =>
+        typeof d === "string" ? d === dayKey : d === dayIndex
+      );
       const progress = workout ? (state.workoutProgress[workout.id]?.progress ?? 0) : 0;
       data[dayKey] = {
         hasWorkout: !!workout && !isRestDay,
@@ -95,24 +100,47 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
             {/* 1b. Weekly Calendar */}
             <WeeklyCalendar
               selectedDay={state.selectedDay}
-              onDaySelect={actions.setSelectedDay}
+              onDaySelect={(day) => actions.setSelectedDay(day as import("../../stores/appStateStore").DayName)}
               workoutData={calendarWorkoutData}
             />
 
             {/* 2. Selected Day's Workout Card (syncs with calendar selection) */}
             {state.weeklyWorkoutPlan && (
               <View style={styles.section}>
-                <TodayWorkoutCard
-                  workout={state.selectedDayWorkout as DayWorkout | null}
-                  isRestDay={state.isSelectedDayRestDay || (!state.selectedDayWorkout && !!state.weeklyWorkoutPlan)}
-                  isCompleted={state.selectedDayProgress === 100}
-                  progress={state.selectedDayProgress || 0}
-                  onStartWorkout={actions.handleStartSelectedDayWorkout}
-                  onViewDetails={actions.handleViewWorkoutDetails}
-                  onRecoveryTips={actions.handleRecoveryTips}
-                  selectedDay={state.selectedDay}
-                  isToday={state.isSelectedDayToday}
-                />
+                {state.selectedDayWorkouts && state.selectedDayWorkouts.length > 0 ? (
+                  state.selectedDayWorkouts.map((workout: DayWorkout, index: number) => {
+                    const progress = state.workoutProgress[workout.id]?.progress || 0;
+                    const partialCalories = state.workoutProgress[workout.id]?.caloriesBurned;
+                    return (
+                      <View key={workout.id || index} style={{ marginBottom: index < state.selectedDayWorkouts.length - 1 ? 16 : 0 }}>
+                        <TodayWorkoutCard
+                          workout={workout}
+                          isRestDay={false}
+                          isCompleted={progress === 100}
+                          progress={progress}
+                          displayCalories={progress > 0 ? partialCalories : undefined}
+                          onStartWorkout={() => actions.handleStartSelectedDayWorkout(workout)}
+                          onViewDetails={() => actions.handleViewWorkoutDetails(workout)}
+                          onRecoveryTips={actions.handleRecoveryTips}
+                          selectedDay={state.selectedDay}
+                          isToday={state.isSelectedDayToday}
+                        />
+                      </View>
+                    );
+                  })
+                ) : (
+                  <TodayWorkoutCard
+                    workout={null}
+                    isRestDay={state.isSelectedDayRestDay || !!state.weeklyWorkoutPlan}
+                    isCompleted={false}
+                    progress={0}
+                    onStartWorkout={() => actions.handleStartSelectedDayWorkout()}
+                    onViewDetails={() => actions.handleViewWorkoutDetails()}
+                    onRecoveryTips={actions.handleRecoveryTips}
+                    selectedDay={state.selectedDay}
+                    isToday={state.isSelectedDayToday}
+                  />
+                )}
               </View>
             )}
 
@@ -147,12 +175,13 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
               />
             </View>
 
-            {/* 5. Suggested Workouts (if plan exists and has upcoming) */}
-            {state.suggestedWorkouts.length > 0 && (
+            {/* 5. Quick Workouts (shown only when today's planned workout is done) */}
+            {quickWorkouts.isVisible && (
               <View style={styles.sectionNoHorizontalPadding}>
                 <SuggestedWorkouts
-                  workouts={state.suggestedWorkouts}
-                  onStartWorkout={actions.handleStartSuggestedWorkout}
+                  workouts={quickWorkouts.suggestions}
+                  onStartWorkout={quickWorkouts.startQuickWorkout}
+                  isGenerating={quickWorkouts.isGenerating}
                 />
               </View>
             )}
@@ -175,6 +204,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
         <WorkoutStartDialog
           visible={state.showWorkoutStartDialog}
           workoutTitle={state.selectedWorkout?.title || ""}
+          isResuming={state.selectedWorkout?.isResuming ?? (state.selectedWorkout?.resumeExerciseIndex ?? 0) > 0}
           onCancel={actions.handleWorkoutStartCancel}
           onConfirm={actions.handleWorkoutStartConfirm}
         />
