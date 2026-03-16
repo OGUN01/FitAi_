@@ -13,6 +13,8 @@ import {
   ExerciseCalorieInput,
 } from "./calorieCalculator";
 import { analyticsDataService } from "./analyticsData";
+import { getCurrentWeekStart } from "../utils/weekUtils";
+import { generateUUID } from "../utils/uuid";
 
 export interface CompletionEvent {
   id: string;
@@ -106,10 +108,7 @@ class CompletionTrackingService {
     try {
       const fitnessStore = useFitnessStore.getState();
 
-      // Update workout progress to 100%
-      await fitnessStore.completeWorkout(workoutId, sessionData?.sessionId);
-
-      // Get workout details for the event
+      // Get workout details before completing so we can calculate calories
       const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find(
         (w) => w.id === workoutId,
       );
@@ -121,6 +120,9 @@ class CompletionTrackingService {
           sessionData,
         );
 
+        // Update workout progress to 100%, persisting calories in the store
+        await fitnessStore.completeWorkout(workoutId, sessionData?.sessionId, actualCaloriesBurned || undefined);
+
         // Sync workout completion to Supabase (like we do for meals)
         if (userId) {
           try {
@@ -131,15 +133,15 @@ class CompletionTrackingService {
                 workout_plan_id: null,
                 workout_name: workout.title,
                 workout_type: workout.category || "general",
+                // Prefer actual elapsed duration; fall back to planned workout duration
                 total_duration_minutes:
-                  workout.duration || sessionData?.duration || null,
+                  sessionData?.duration || workout.duration || null,
                 calories_burned: actualCaloriesBurned,
                 exercises_completed:
                   sessionData?.stats?.exercises || workout.exercises || [],
                 started_at: sessionData?.startedAt || new Date().toISOString(),
                 completed_at: new Date().toISOString(),
                 is_completed: true,
-                completion_percentage: 100,
                 enjoyment_rating: sessionData?.rating || null,
                 notes:
                   sessionData?.notes || `Weekly workout plan: ${workout.title}`,
@@ -160,6 +162,31 @@ class CompletionTrackingService {
                 });
               } catch (analyticsError) {
               }
+
+              // Append a CompletedSession to the store — single source of truth
+              const fitnessStoreState = useFitnessStore.getState();
+              fitnessStoreState.addCompletedSession({
+                sessionId: sessionData?.sessionId || generateUUID(),
+                type: 'planned' as const,
+                workoutId: workoutId,
+                workoutSnapshot: {
+                  title: workout.title,
+                  category: workout.category || 'general',
+                  duration: workout.duration || 0,
+                  exercises: (workout.exercises || []).map((ex: any) => ({
+                    name: ex.exerciseName || ex.name || '',
+                    sets: typeof ex.sets === 'number' ? ex.sets : 0,
+                    reps: typeof ex.reps === 'number' ? ex.reps : 0,
+                    exerciseId: ex.exerciseId || ex.id,
+                    duration: ex.duration,
+                    restTime: ex.restTime,
+                  })),
+                },
+                caloriesBurned: actualCaloriesBurned,
+                durationMinutes: sessionData?.duration || workout.duration || 0,
+                completedAt: new Date().toISOString(),
+                weekStart: getCurrentWeekStart(),
+              });
 
               // CRITICAL: Trigger refresh so fitness hooks refetch data
               // This ensures UI updates immediately after workout completion
@@ -268,10 +295,10 @@ class CompletionTrackingService {
                 meal_type: meal.type,
                 meal_name: meal.name,
                 food_items: meal.items || [],
-                total_calories: meal.totalCalories || 0,
-                total_protein: meal.totalMacros?.protein ?? 0,
-                total_carbohydrates: meal.totalMacros?.carbohydrates ?? 0,
-                total_fat: meal.totalMacros?.fat ?? 0,
+                calories: meal.totalCalories || 0,
+                protein_g: meal.totalMacros?.protein ?? 0,
+                carbs_g: meal.totalMacros?.carbohydrates ?? 0,
+                fat_g: meal.totalMacros?.fat ?? 0,
                 logged_at: new Date().toISOString(),
               });
 
@@ -455,29 +482,20 @@ class CompletionTrackingService {
     const fitnessStore = useFitnessStore.getState();
     const nutritionStore = useNutritionStore.getState();
 
-    // Calculate workout stats
+    // Calculate workout stats from completedSessions — single source of truth
+    const weekStart = getCurrentWeekStart();
+    const plannedStats = fitnessStore.getPlannedSessionStats(weekStart);
+    const extraStats = fitnessStore.getExtraSessionStats(weekStart);
+    const completedWorkouts = plannedStats.count;
+    const caloriesBurned = plannedStats.totalCalories + extraStats.totalCalories;
+
     const totalWorkouts = fitnessStore.weeklyWorkoutPlan?.workouts.length || 0;
-    const completedWorkouts = Object.values(
-      fitnessStore.workoutProgress,
-    ).filter((p) => p.progress === 100).length;
 
     // Calculate meal stats
     const totalMeals = nutritionStore.weeklyMealPlan?.meals.length || 0;
     const completedMeals = Object.values(nutritionStore.mealProgress).filter(
       (p) => p.progress === 100,
     ).length;
-
-    // Calculate calories using MET-based formula for completed workouts
-    const caloriesBurned = Object.values(fitnessStore.workoutProgress)
-      .filter((p) => p.progress === 100)
-      .reduce((total, progress) => {
-        const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find(
-          (w) => w.id === progress.workoutId,
-        );
-        if (!workout) return total;
-        // Use MET-based calculation for accurate calories
-        return total + this.calculateActualCalories(workout as any);
-      }, 0);
 
     const caloriesConsumed = Object.values(nutritionStore.mealProgress)
       .filter((p) => p.progress === 100)

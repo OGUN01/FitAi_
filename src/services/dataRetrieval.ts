@@ -137,11 +137,15 @@ class DataRetrievalService {
     const fitnessStore = useFitnessStore.getState();
     const nutritionStore = useNutritionStore.getState();
 
-    // Calculate workout progress
+    // Calculate workout progress — scope to current plan IDs so completed count
+    // cannot exceed totalWorkouts when workoutProgress accumulates across plan rotations
     const totalWorkouts = fitnessStore.weeklyWorkoutPlan?.workouts.length || 0;
+    const currentPlanIds = new Set(
+      fitnessStore.weeklyWorkoutPlan?.workouts?.map((w) => w.id) || [],
+    );
     const workoutsCompleted = Object.values(
       fitnessStore.workoutProgress,
-    ).filter((progress) => progress.progress === 100).length;
+    ).filter((progress) => progress.progress === 100 && currentPlanIds.has(progress.workoutId)).length;
 
     // Calculate meal progress
     const totalMeals = nutritionStore.weeklyMealPlan?.meals.length || 0;
@@ -254,6 +258,8 @@ class DataRetrievalService {
   }
 
   // Calculate streak (consecutive days with at least one completed activity)
+  // A streak is maintained if the user had activity on EITHER today OR yesterday.
+  // This avoids zeroing out streaks at midnight before the user has had time to act.
   private static calculateStreak(): number {
     const fitnessStore = useFitnessStore.getState();
     const nutritionStore = useNutritionStore.getState();
@@ -282,10 +288,26 @@ class DataRetrievalService {
 
     if (sortedDates.length === 0) return 0;
 
-    // Calculate consecutive days from today
+    // Calculate consecutive days from today or yesterday
+    // (grace period: if no activity yet today but had yesterday, streak is still live)
     let streak = 0;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Find the starting offset: 0 = today, 1 = yesterday (grace)
+    let startOffset = 0;
+    const mostRecent = new Date(sortedDates[0]);
+    mostRecent.setHours(0, 0, 0, 0);
+    const daysSinceMostRecent = Math.floor(
+      (today.getTime() - mostRecent.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
+    // Allow up to 1 day grace (today or yesterday counted as "current")
+    if (daysSinceMostRecent > 1) return 0;
+    startOffset = daysSinceMostRecent;
 
     for (let i = 0; i < sortedDates.length; i++) {
       const date = new Date(sortedDates[i]);
@@ -295,7 +317,7 @@ class DataRetrievalService {
         (today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
       );
 
-      if (daysDifference === streak) {
+      if (daysDifference === streak + startOffset) {
         streak++;
       } else {
         break;
@@ -305,57 +327,12 @@ class DataRetrievalService {
     return streak;
   }
 
-  // Get calories burned from completed workouts using MET-based calculation
-  // NO FALLBACK VALUES - returns 0 if weight not available
+  // Get calories burned from completedSessions — single source of truth
   static getTotalCaloriesBurned(): number {
     const fitnessStore = useFitnessStore.getState();
-    const userStore = useUserStore.getState();
-
-    // Get user's weight for personalized calculation - fallback to profileStore
-    const userWeight = userStore.profile?.bodyMetrics?.current_weight_kg
-      || useProfileStore.getState().bodyAnalysis?.current_weight_kg;
-
-    // If no weight, we cannot calculate calories accurately
-    if (!userWeight || userWeight <= 0) {
-      console.warn(
-        "[dataRetrieval] Cannot calculate total calories burned: user weight not available",
-      );
-      return 0;
-    }
-
-    return Object.values(fitnessStore.workoutProgress)
-      .filter((progress) => progress.progress === 100)
-      .reduce((total, progress) => {
-        const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find(
-          (w) => w.id === progress.workoutId,
-        );
-        if (!workout) return total;
-
-        // Use MET-based calculation if exercises available
-        if (workout.exercises && workout.exercises.length > 0) {
-          const exerciseInputs: ExerciseCalorieInput[] = workout.exercises.map(
-            (ex) => ({
-              exerciseId: ex.exerciseId || ex.id,
-              name: ex.exerciseName || ex.name,
-              sets: ex.sets,
-              reps: ex.reps,
-              duration: ex.duration,
-              restTime: ex.restTime,
-            }),
-          );
-
-          const result = calculateWorkoutCalories(exerciseInputs, userWeight);
-          if (result.totalCalories > 0) {
-            return total + result.totalCalories;
-          }
-        }
-
-        // No exercises - cannot calculate
-        console.warn(
-          `[dataRetrieval] Workout ${workout.id} has no exercises for calorie calculation`,
-        );
-        return total;
-      }, 0);
+    return fitnessStore.completedSessions.reduce(
+      (sum, s) => sum + s.caloriesBurned, 0
+    );
   }
 
   // Check if there's data to show in Home tab
@@ -398,9 +375,14 @@ class DataRetrievalService {
     const todayIndex = today.getDay();
 
     // Check if today is a rest day
+    // restDays uses Monday-based index [0=monday,...,6=sunday] or string names
+    // Convert JS getDay() (Sun=0) to Monday-based: Mon=0, ..., Sun=6
+    const todayMonIndex = todayIndex === 0 ? 6 : todayIndex - 1;
     const isRestDay =
       (hasWeeklyPlan &&
-        fitnessStore.weeklyWorkoutPlan?.restDays?.includes(todayIndex)) ||
+        fitnessStore.weeklyWorkoutPlan?.restDays?.some((d: number | string) =>
+          typeof d === "string" ? d === todayName : d === todayMonIndex
+        )) ||
       false;
 
     // Determine workout type and day status
