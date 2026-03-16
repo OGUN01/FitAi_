@@ -387,41 +387,14 @@ export const useFitnessStore = create<FitnessState>()(
       // Get completed workout stats for TODAY only
       getTodaysCompletedWorkoutStats: () => {
         const state = get();
-        const today = new Date();
-        const dayNames = [
-          "sunday",
-          "monday",
-          "tuesday",
-          "wednesday",
-          "thursday",
-          "friday",
-          "saturday",
-        ];
-        const todayName = dayNames[today.getDay()];
-
-        // Get all completed workout IDs
-        const completedWorkoutIds = Object.values(state.workoutProgress)
-          .filter((p) => p.progress === 100)
-          .map((p) => p.workoutId);
-
-        // Filter to only today's completed workouts
-        const todaysCompletedWorkouts =
-          state.weeklyWorkoutPlan?.workouts.filter(
-            (workout) =>
-              completedWorkoutIds.includes(workout.id) &&
-              workout.dayOfWeek === todayName,
-          ) || [];
-
+        const todayISO = new Date().toISOString();
+        const todaySessions = state.completedSessions.filter(
+          s => s.completedAt.split('T')[0] === todayISO.split('T')[0]
+        );
         return {
-          count: todaysCompletedWorkouts.length,
-          totalCalories: todaysCompletedWorkouts.reduce(
-            (sum, w) => sum + (w.estimatedCalories || 0),
-            0,
-          ),
-          totalDuration: todaysCompletedWorkouts.reduce(
-            (sum, w) => sum + (w.duration || 0),
-            0,
-          ),
+          count: todaySessions.length,
+          totalCalories: todaySessions.reduce((sum, s) => sum + s.caloriesBurned, 0),
+          totalDuration: todaySessions.reduce((sum, s) => sum + s.durationMinutes, 0),
         };
       },
 
