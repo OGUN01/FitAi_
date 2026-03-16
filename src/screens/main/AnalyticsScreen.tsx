@@ -319,12 +319,15 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     if (selectedPeriod === "week") {
       // Show each day of the current week (Mon-Sun)
       const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-      const weekDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const weekBoundary = new Date();
+      weekBoundary.setDate(weekBoundary.getDate() - 7);
+      weekBoundary.setHours(0, 0, 0, 0);
       workoutData = dayLabels.map((label, index) => {
         const dayName = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][index];
         const count = completedSessions.filter((s) => {
           const d = new Date(s.completedAt);
-          return weekDays[d.getDay()] === dayName;
+          const weekDayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+          return weekDayNames[d.getDay()] === dayName && d >= weekBoundary;
         }).length;
         return { label, value: count };
       });
@@ -627,7 +630,7 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.text,
   },
   breakdownExtra: {
-    color: '#10b981',
+    color: ResponsiveTheme.colors.successAlt,
   },
 });
 

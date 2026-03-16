@@ -59,6 +59,7 @@ class AnalyticsDataService {
       }, { onConflict: 'user_id,metric_date' });
 
       if (error) {
+        console.error('[analyticsData] saveDailyMetrics upsert error:', error);
         return false;
       }
 
@@ -254,13 +255,15 @@ class AnalyticsDataService {
       return { planned: 0, extra: 0 };
     }
     try {
+      const dayStart = new Date(`${dateStr}T00:00:00`);   // local midnight
+      const dayEnd = new Date(`${dateStr}T23:59:59.999`); // local end of day
       const { data, error } = await supabase
         .from('workout_sessions')
         .select('calories_burned, is_extra')
         .eq('user_id', userId)
         .eq('is_completed', true)
-        .gte('completed_at', `${dateStr}T00:00:00.000Z`)
-        .lte('completed_at', `${dateStr}T23:59:59.999Z`);
+        .gte('completed_at', dayStart.toISOString())
+        .lte('completed_at', dayEnd.toISOString());
 
       if (error) {
         console.error('[analyticsData] getSessionCaloriesByType error:', error);
