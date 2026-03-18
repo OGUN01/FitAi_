@@ -34,6 +34,24 @@ export const useWorkoutAnimations = () => {
       }),
     ]).start(() => {
       callback();
+      // Defer fade-in to next frame so the React re-render from callback()
+      // completes first — prevents the native-driver animation from being
+      // interrupted by the incoming render, which caused exercise 2+ to stay
+      // invisible (opacity stuck at 0).
+      requestAnimationFrame(() => {
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scaleAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      });
     });
   };
 

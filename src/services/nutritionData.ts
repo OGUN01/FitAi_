@@ -219,12 +219,13 @@ class NutritionDataService {
         data?.map((mealLog: any) => ({
           id: mealLog.id,
           type: mealLog.meal_type,
-          name: mealLog.meal_name,
-          total_calories: mealLog.total_calories || 0,
-          total_protein: mealLog.total_protein || 0,
-          total_carbohydrates: mealLog.total_carbohydrates || 0,
-          total_carbs: mealLog.total_carbohydrates || 0, // Alias for backward compatibility
-          total_fat: mealLog.total_fat || 0,
+          name: mealLog.meal_name || mealLog.custom_meal_name,
+          total_calories: mealLog.calories || 0,
+          total_protein: mealLog.protein_g || 0,
+          total_carbohydrates: mealLog.carbs_g || 0,
+          total_carbs: mealLog.carbs_g || 0,
+          total_fat: mealLog.fat_g || 0,
+          total_fiber: mealLog.fiber_g || 0,
           consumed_at: mealLog.logged_at,
           logged_at: mealLog.logged_at,
           food_items: mealLog.food_items || [],
@@ -464,7 +465,7 @@ class NutritionDataService {
         .insert({
           user_id: userId,
           name: mealData.name,
-          type: mealData.type,
+          meal_type: mealData.type,
           total_calories: nutritionTotals.calories,
           total_protein: nutritionTotals.protein,
           total_carbs: nutritionTotals.carbs,

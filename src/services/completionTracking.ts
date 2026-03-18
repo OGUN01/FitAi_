@@ -2,6 +2,7 @@ import { useFitnessStore } from "../stores/fitnessStore";
 import { useNutritionStore } from "../stores/nutritionStore";
 import { useUserStore } from "../stores/userStore";
 import { useProfileStore } from "../stores/profileStore";
+import { useAchievementStore } from "../stores/achievementStore";
 import { DayWorkout, DayMeal } from "../ai";
 import crudOperations from "./crudOperations";
 import { MealLog, SyncStatus } from "../types/localData";
@@ -64,8 +65,8 @@ class CompletionTrackingService {
 
     // Get user's weight from profile (single source of truth)
     const userStore = useUserStore.getState();
-    const userWeight = userStore.profile?.bodyMetrics?.current_weight_kg
-      || useProfileStore.getState().bodyAnalysis?.current_weight_kg;
+    const userWeight = useProfileStore.getState().bodyAnalysis?.current_weight_kg
+      || userStore.profile?.bodyMetrics?.current_weight_kg;
 
     // NO FALLBACK - if weight not available, return 0 and log warning
     if (!userWeight || userWeight <= 0) {
@@ -123,6 +124,11 @@ class CompletionTrackingService {
         // Update workout progress to 100%, persisting calories in the store
         await fitnessStore.completeWorkout(workoutId, sessionData?.sessionId, actualCaloriesBurned || undefined);
 
+        // Will be set to the Supabase-generated row ID after a successful insert.
+        // Using this as sessionId ensures loadData() dedup matches by ID and avoids
+        // double-counting when the realtime subscription re-fires loadData().
+        let supabaseSessionId: string | null = null;
+
         // Sync workout completion to Supabase (only for logged-in users)
         if (userId) {
           try {
@@ -130,9 +136,11 @@ class CompletionTrackingService {
               .from("workout_sessions")
               .insert({
                 user_id: userId,
+                workout_id: workoutId,
                 workout_plan_id: null,
                 workout_name: workout.title,
                 workout_type: workout.category || "general",
+                is_extra: false,
                 // Prefer actual elapsed duration; fall back to planned workout duration
                 total_duration_minutes:
                   sessionData?.duration || workout.duration || null,
@@ -145,7 +153,9 @@ class CompletionTrackingService {
                 enjoyment_rating: sessionData?.rating || null,
                 notes:
                   sessionData?.notes || `Weekly workout plan: ${workout.title}`,
-              });
+              })
+              .select("id")
+              .single();
 
             if (supabaseResult.error) {
               console.error(
@@ -153,6 +163,11 @@ class CompletionTrackingService {
                 supabaseResult.error,
               );
             } else {
+              // Use the Supabase-generated row ID as sessionId so loadData() dedup works
+              if (supabaseResult.data?.id) {
+                supabaseSessionId = supabaseResult.data.id;
+              }
+
               // Save to analytics_metrics for Monthly Summary tracking
               try {
                 await analyticsDataService.updateTodaysMetrics(userId, {
@@ -186,9 +201,10 @@ class CompletionTrackingService {
         }
 
         // ALWAYS update store (Rule 6: store is the runtime source)
-        // Runs for both guests AND logged-in users, regardless of DB write outcome
+        // Use supabaseSessionId when available so loadData() dedup can match by ID
+        // and avoid double-counting when the realtime subscription re-fires loadData()
         useFitnessStore.getState().addCompletedSession({
-          sessionId: sessionData?.sessionId || generateUUID(),
+          sessionId: supabaseSessionId || sessionData?.sessionId || generateUUID(),
           type: 'planned' as const,
           workoutId: workoutId,
           workoutSnapshot: {
@@ -210,6 +226,10 @@ class CompletionTrackingService {
           weekStart: getCurrentWeekStart(),
         });
 
+        // SSOT Fix 19: update achievementStore.currentStreak immediately
+        // so all readers always see the real live streak value.
+        useAchievementStore.getState().updateCurrentStreak();
+
         const event: CompletionEvent = {
           id: `workout_completion_${workoutId}_${Date.now()}`,
           type: "workout",
@@ -219,7 +239,7 @@ class CompletionTrackingService {
           data: {
             workout,
             sessionData,
-            calories: workout.estimatedCalories,
+            calories: actualCaloriesBurned,
             duration: workout.duration,
           },
         };
@@ -293,12 +313,15 @@ class CompletionTrackingService {
               const supabaseResult = await supabase.from("meal_logs").insert({
                 user_id: currentUserId,
                 meal_type: meal.type,
+                custom_meal_name: meal.name,
                 meal_name: meal.name,
-                food_items: meal.items || [],
+                plan_meal_id: mealId,
+                ingredients: meal.items || [],
                 calories: meal.totalCalories || 0,
                 protein_g: meal.totalMacros?.protein ?? 0,
                 carbs_g: meal.totalMacros?.carbohydrates ?? 0,
                 fat_g: meal.totalMacros?.fat ?? 0,
+                fiber_g: meal.totalMacros?.fiber ?? 0,
                 logged_at: new Date().toISOString(),
               });
 

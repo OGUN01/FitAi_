@@ -58,11 +58,11 @@ export const BodyMeasurementsEditModal: React.FC<
       // ✅ Get measurements from bodyMetrics (database: body_analysis table)
       const bodyMetrics = profile.bodyMetrics;
       const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
-      // Note: bodyMetrics may have 0 values (never populated by onboarding), so check > 0
-      setHeight((bodyMetrics?.height_cm && bodyMetrics.height_cm > 0) ? bodyMetrics.height_cm.toString() : (bodyAnalysisData?.height_cm?.toString() || ""));
-      setWeight((bodyMetrics?.current_weight_kg && bodyMetrics.current_weight_kg > 0) ? bodyMetrics.current_weight_kg.toString() : (bodyAnalysisData?.current_weight_kg?.toString() || ""));
-      setTargetWeight((bodyMetrics?.target_weight_kg && bodyMetrics.target_weight_kg > 0) ? bodyMetrics.target_weight_kg.toString() : ((bodyAnalysisData?.target_weight_kg && bodyAnalysisData.target_weight_kg > 0) ? bodyAnalysisData.target_weight_kg.toString() : ""));
-      setBodyFat((bodyMetrics?.body_fat_percentage && bodyMetrics.body_fat_percentage > 0) ? bodyMetrics.body_fat_percentage.toString() : ((bodyAnalysisData?.body_fat_percentage && bodyAnalysisData.body_fat_percentage > 0) ? bodyAnalysisData.body_fat_percentage.toString() : ""));
+      // ✅ SSOT: profileStore.bodyAnalysis is authoritative; profile.bodyMetrics is legacy fallback
+      setHeight((bodyAnalysisData?.height_cm && bodyAnalysisData.height_cm > 0) ? bodyAnalysisData.height_cm.toString() : (bodyMetrics?.height_cm?.toString() || ""));
+      setWeight((bodyAnalysisData?.current_weight_kg && bodyAnalysisData.current_weight_kg > 0) ? bodyAnalysisData.current_weight_kg.toString() : (bodyMetrics?.current_weight_kg?.toString() || ""));
+      setTargetWeight((bodyAnalysisData?.target_weight_kg && bodyAnalysisData.target_weight_kg > 0) ? bodyAnalysisData.target_weight_kg.toString() : ((bodyMetrics?.target_weight_kg && bodyMetrics.target_weight_kg > 0) ? bodyMetrics.target_weight_kg.toString() : ""));
+      setBodyFat((bodyAnalysisData?.body_fat_percentage && bodyAnalysisData.body_fat_percentage > 0) ? bodyAnalysisData.body_fat_percentage.toString() : ((bodyMetrics?.body_fat_percentage && bodyMetrics.body_fat_percentage > 0) ? bodyMetrics.body_fat_percentage.toString() : ""));
       setChest((bodyAnalysisData?.chest_cm && bodyAnalysisData.chest_cm > 0) ? bodyAnalysisData.chest_cm.toString() : "");
       setWaist((bodyAnalysisData?.waist_cm && bodyAnalysisData.waist_cm > 0) ? bodyAnalysisData.waist_cm.toString() : "");
       setHips((bodyAnalysisData?.hip_cm && bodyAnalysisData.hip_cm > 0) ? bodyAnalysisData.hip_cm.toString() : "");
@@ -182,13 +182,13 @@ export const BodyMeasurementsEditModal: React.FC<
         chest_cm: chest ? parseFloat(chest) : undefined,
         waist_cm: waist ? parseFloat(waist) : undefined,
         hip_cm: hips ? parseFloat(hips) : undefined,
-        // Preserve other fields from existing profile data
-        medical_conditions: profile.bodyMetrics?.medical_conditions || bodyAnalysisData?.medical_conditions || [],
-        medications: profile.bodyMetrics?.medications || bodyAnalysisData?.medications || [],
-        physical_limitations: profile.bodyMetrics?.physical_limitations || bodyAnalysisData?.physical_limitations || [],
-        pregnancy_status: profile.bodyMetrics?.pregnancy_status || bodyAnalysisData?.pregnancy_status || false,
+        // Preserve other fields — profileStore.bodyAnalysis is authoritative SSOT
+        medical_conditions: bodyAnalysisData?.medical_conditions || profile.bodyMetrics?.medical_conditions || [],
+        medications: bodyAnalysisData?.medications || profile.bodyMetrics?.medications || [],
+        physical_limitations: bodyAnalysisData?.physical_limitations || profile.bodyMetrics?.physical_limitations || [],
+        pregnancy_status: bodyAnalysisData?.pregnancy_status || profile.bodyMetrics?.pregnancy_status || false,
         breastfeeding_status:
-          profile.bodyMetrics?.breastfeeding_status || bodyAnalysisData?.breastfeeding_status || false,
+          bodyAnalysisData?.breastfeeding_status || profile.bodyMetrics?.breastfeeding_status || false,
       });
       console.log(
         "✅ BodyMeasurementsEditModal: Saved body metrics locally",
@@ -271,10 +271,10 @@ export const BodyMeasurementsEditModal: React.FC<
     }
     const bodyMetrics = profile.bodyMetrics;
     return (
-      height !== ((bodyMetrics.height_cm && bodyMetrics.height_cm > 0) ? bodyMetrics.height_cm.toString() : (bodyAnalysisData?.height_cm?.toString() || "")) ||
-      weight !== ((bodyMetrics.current_weight_kg && bodyMetrics.current_weight_kg > 0) ? bodyMetrics.current_weight_kg.toString() : (bodyAnalysisData?.current_weight_kg?.toString() || "")) ||
-      targetWeight !== ((bodyMetrics.target_weight_kg && bodyMetrics.target_weight_kg > 0) ? bodyMetrics.target_weight_kg.toString() : (bodyAnalysisData?.target_weight_kg?.toString() || "")) ||
-      bodyFat !== ((bodyMetrics.body_fat_percentage && bodyMetrics.body_fat_percentage > 0) ? bodyMetrics.body_fat_percentage.toString() : (bodyAnalysisData?.body_fat_percentage?.toString() || "")) ||
+      height !== ((bodyAnalysisData?.height_cm && bodyAnalysisData.height_cm > 0) ? bodyAnalysisData.height_cm.toString() : (bodyMetrics?.height_cm?.toString() || "")) ||
+      weight !== ((bodyAnalysisData?.current_weight_kg && bodyAnalysisData.current_weight_kg > 0) ? bodyAnalysisData.current_weight_kg.toString() : (bodyMetrics?.current_weight_kg?.toString() || "")) ||
+      targetWeight !== ((bodyAnalysisData?.target_weight_kg && bodyAnalysisData.target_weight_kg > 0) ? bodyAnalysisData.target_weight_kg.toString() : (bodyMetrics?.target_weight_kg?.toString() || "")) ||
+      bodyFat !== ((bodyAnalysisData?.body_fat_percentage && bodyAnalysisData.body_fat_percentage > 0) ? bodyAnalysisData.body_fat_percentage.toString() : (bodyMetrics?.body_fat_percentage?.toString() || "")) ||
       chest !== ((bodyAnalysisData?.chest_cm && bodyAnalysisData.chest_cm > 0) ? bodyAnalysisData.chest_cm.toString() : "") ||
       waist !== ((bodyAnalysisData?.waist_cm && bodyAnalysisData.waist_cm > 0) ? bodyAnalysisData.waist_cm.toString() : "") ||
       hips !== ((bodyAnalysisData?.hip_cm && bodyAnalysisData.hip_cm > 0) ? bodyAnalysisData.hip_cm.toString() : "")

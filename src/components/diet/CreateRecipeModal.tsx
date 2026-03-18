@@ -160,7 +160,7 @@ ${
 USER PROFILE:
 - Age: ${profile.personalInfo.age}
 - Gender: ${profile.personalInfo.gender}
-- Activity Level: ${profile.personalInfo.activityLevel}
+- Activity Level: ${profile.workoutPreferences?.activity_level || (profile.personalInfo as any).activityLevel}
 - Fitness Goals: ${profile.fitnessGoals?.primaryGoals?.join(", ") || "General health"}
 `
     : ""

@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import {
   progressDataService,
   ProgressEntry,
-  BodyAnalysis,
   ProgressStats,
   ProgressGoals,
 } from "../services/progressData";
@@ -16,12 +15,6 @@ interface UseProgressDataReturn {
   progressLoading: boolean;
   progressError: string | null;
   loadProgressEntries: (limit?: number) => Promise<void>;
-
-  // Body analysis
-  bodyAnalysis: BodyAnalysis | null;
-  analysisLoading: boolean;
-  analysisError: string | null;
-  loadBodyAnalysis: () => Promise<void>;
 
   // Progress statistics
   progressStats: ProgressStats | null;
@@ -63,6 +56,9 @@ interface UseProgressDataReturn {
   // Utility
   refreshAll: () => Promise<void>;
   clearErrors: () => void;
+
+  // Body analysis error (kept for API compatibility; AI analysis removed)
+  analysisError: string | null;
 }
 
 export const useProgressData = (): UseProgressDataReturn => {
@@ -73,11 +69,6 @@ export const useProgressData = (): UseProgressDataReturn => {
   const [progressEntries, setProgressEntries] = useState<ProgressEntry[]>([]);
   const [progressLoading, setProgressLoading] = useState(false);
   const [progressError, setProgressError] = useState<string | null>(null);
-
-  // Body analysis state
-  const [bodyAnalysis, setBodyAnalysis] = useState<BodyAnalysis | null>(null);
-  const [analysisLoading, setAnalysisLoading] = useState(false);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   // Progress statistics state
   const [progressStats, setProgressStats] = useState<ProgressStats | null>(
@@ -159,30 +150,6 @@ export const useProgressData = (): UseProgressDataReturn => {
     },
     [user?.id],
   );
-
-  // Load body analysis
-  const loadBodyAnalysis = useCallback(async () => {
-    if (!user?.id) return;
-
-    setAnalysisLoading(true);
-    setAnalysisError(null);
-
-    try {
-      const response = await progressDataService.getUserBodyAnalysis(user.id);
-
-      if (response.success && response.data) {
-        setBodyAnalysis(response.data);
-      } else {
-        setAnalysisError(response.error || "Failed to load body analysis");
-      }
-    } catch (error) {
-      setAnalysisError(
-        error instanceof Error ? error.message : "Failed to load body analysis",
-      );
-    } finally {
-      setAnalysisLoading(false);
-    }
-  }, [user?.id]);
 
   // Load progress statistics
   const loadProgressStats = useCallback(
@@ -293,7 +260,6 @@ export const useProgressData = (): UseProgressDataReturn => {
       // Authenticated: load all from Supabase
       await Promise.all([
         loadProgressEntries(),
-        loadBodyAnalysis(),
         loadProgressStats(),
         loadProgressGoals(),
       ]);
@@ -304,14 +270,12 @@ export const useProgressData = (): UseProgressDataReturn => {
   }, [
     user?.id,
     loadProgressEntries,
-    loadBodyAnalysis,
     loadProgressStats,
     loadProgressGoals,
   ]);
   // Clear all errors
   const clearErrors = useCallback(() => {
     setProgressError(null);
-    setAnalysisError(null);
     setStatsError(null);
     setGoalsError(null);
   }, []);
@@ -320,7 +284,10 @@ export const useProgressData = (): UseProgressDataReturn => {
   useEffect(() => {
     let isMounted = true;
 
-    if (user?.id && isAuthenticated && trackB.integration.isInitialized) {
+    if (user?.id && isAuthenticated) {
+      // Load immediately — do NOT gate on trackB.integration.isInitialized.
+      // Track B is supplementary sync; blocking all data load on it causes the
+      // "No progress data yet" banner to appear for users who have real data.
       refreshAll().catch((error) => {
         if (isMounted) {
           console.error("Failed to refresh progress data:", error);
@@ -338,7 +305,7 @@ export const useProgressData = (): UseProgressDataReturn => {
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated, user?.id, trackB.integration.isInitialized]);
+  }, [isAuthenticated, user?.id]);
 
   // Track B status
   const trackBStatus = {
@@ -354,12 +321,6 @@ export const useProgressData = (): UseProgressDataReturn => {
     progressLoading,
     progressError,
     loadProgressEntries,
-
-    // Body analysis
-    bodyAnalysis,
-    analysisLoading,
-    analysisError,
-    loadBodyAnalysis,
 
     // Progress statistics
     progressStats,
@@ -382,5 +343,8 @@ export const useProgressData = (): UseProgressDataReturn => {
     // Utility
     refreshAll,
     clearErrors,
+
+    // Body analysis error (SSOT: no longer separately tracked; always null)
+    analysisError: null,
   };
 };

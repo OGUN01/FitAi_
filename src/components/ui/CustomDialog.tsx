@@ -6,7 +6,7 @@ import {
   Modal,
   TouchableOpacity,
   Dimensions,
-
+  ScrollView,
   } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -287,6 +287,7 @@ const styles = StyleSheet.create({
 interface WorkoutStartDialogProps {
   visible: boolean;
   workoutTitle: string;
+  isResuming?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 }
@@ -294,14 +295,21 @@ interface WorkoutStartDialogProps {
 export const WorkoutStartDialog: React.FC<WorkoutStartDialogProps> = ({
   visible,
   workoutTitle,
+  isResuming = false,
   onCancel,
   onConfirm,
 }) => {
+  const title = isResuming ? "Resume Workout?" : "Ready to Start?";
+  const message = isResuming
+    ? `Resume "${workoutTitle}" from where you left off?`
+    : `Starting "${workoutTitle}". Ready to begin your workout session?`;
+  const confirmText = isResuming ? "Resume Workout" : "Begin Workout";
+
   return (
     <CustomDialog
       visible={visible}
-      title="Ready to Start?"
-      message={`Starting "${workoutTitle}". Ready to begin your workout session?`}
+      title={title}
+      message={message}
       type="info"
       actions={[
         {
@@ -310,7 +318,7 @@ export const WorkoutStartDialog: React.FC<WorkoutStartDialogProps> = ({
           style: "cancel",
         },
         {
-          text: "Begin Workout",
+          text: confirmText,
           onPress: onConfirm,
           style: "default",
         },
@@ -329,6 +337,160 @@ interface WorkoutCompleteDialogProps {
   onViewProgress: () => void;
   onDone: () => void;
 }
+
+interface WorkoutDetailsDialogProps {
+  visible: boolean;
+  title: string;
+  description?: string;
+  duration: number;
+  calories?: number;
+  exerciseCount: number;
+  onClose: () => void;
+}
+
+export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
+  visible,
+  title,
+  description,
+  duration,
+  calories,
+  exerciseCount,
+  onClose,
+}) => {
+  if (!visible) return null;
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.overlay}>
+        <View style={detailStyles.card}>
+          {/* Header */}
+          <View style={detailStyles.header}>
+            <View style={detailStyles.iconCircle}>
+              <Ionicons name="barbell" size={rf(22)} color={ResponsiveTheme.colors.primary} />
+            </View>
+            <Text style={detailStyles.title} numberOfLines={2}>{title}</Text>
+            <TouchableOpacity onPress={onClose} style={detailStyles.closeBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="close" size={rf(20)} color={ResponsiveTheme.colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Description */}
+          {!!description && (
+            <ScrollView style={detailStyles.descScroll} showsVerticalScrollIndicator={false}>
+              <Text style={detailStyles.description}>{description}</Text>
+            </ScrollView>
+          )}
+
+          {/* Stats Row */}
+          <View style={detailStyles.statsRow}>
+            <View style={detailStyles.statItem}>
+              <Ionicons name="time-outline" size={rf(18)} color={ResponsiveTheme.colors.primary} />
+              <Text style={detailStyles.statValue}>{duration} min</Text>
+              <Text style={detailStyles.statLabel}>Duration</Text>
+            </View>
+            <View style={detailStyles.divider} />
+            <View style={detailStyles.statItem}>
+              <Ionicons name="flame-outline" size={rf(18)} color="#FF6B35" />
+              <Text style={detailStyles.statValue}>{calories ?? "N/A"}</Text>
+              <Text style={detailStyles.statLabel}>Calories</Text>
+            </View>
+            <View style={detailStyles.divider} />
+            <View style={detailStyles.statItem}>
+              <Ionicons name="swap-horizontal-outline" size={rf(18)} color={ResponsiveTheme.colors.success} />
+              <Text style={detailStyles.statValue}>{exerciseCount}</Text>
+              <Text style={detailStyles.statLabel}>Exercises</Text>
+            </View>
+          </View>
+
+          {/* Close Button */}
+          <TouchableOpacity style={detailStyles.closeButton} onPress={onClose} activeOpacity={0.8}>
+            <Text style={detailStyles.closeButtonText}>Got it</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+const detailStyles = StyleSheet.create({
+  card: {
+    width: "85%",
+    maxWidth: 400,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: rbr(20),
+    padding: ResponsiveTheme.spacing.xl,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: ResponsiveTheme.spacing.lg,
+    gap: ResponsiveTheme.spacing.sm,
+  },
+  iconCircle: {
+    width: rs(36),
+    height: rs(36),
+    borderRadius: rbr(18),
+    backgroundColor: ResponsiveTheme.colors.primary + "20",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  title: {
+    flex: 1,
+    fontSize: rf(16),
+    fontWeight: "700",
+    color: ResponsiveTheme.colors.text,
+  },
+  closeBtn: {
+    padding: 4,
+  },
+  descScroll: {
+    maxHeight: 80,
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+  description: {
+    fontSize: rf(13),
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(19),
+  },
+  statsRow: {
+    flexDirection: "row",
+    backgroundColor: ResponsiveTheme.colors.background,
+    borderRadius: rbr(14),
+    paddingVertical: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.xl,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: "center",
+    gap: 4,
+  },
+  divider: {
+    width: 1,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    marginVertical: 4,
+  },
+  statValue: {
+    fontSize: rf(15),
+    fontWeight: "700",
+    color: ResponsiveTheme.colors.text,
+  },
+  statLabel: {
+    fontSize: rf(11),
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+  closeButton: {
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderRadius: rbr(12),
+    paddingVertical: ResponsiveTheme.spacing.md,
+    alignItems: "center",
+  },
+  closeButtonText: {
+    fontSize: rf(15),
+    fontWeight: "600",
+    color: "#fff",
+  },
+});
 
 export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
   visible,

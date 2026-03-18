@@ -324,7 +324,7 @@ export const DietResponseSchema = z.object({
 	totalNutrition: NutritionalInfoSchema,
 
 	// Meals
-	meals: z.array(MealSchema).min(1).max(6),
+	meals: z.array(MealSchema).min(1).max(42),
 
 	// AI notes
 	nutritionTips: z.array(z.string()).optional(),

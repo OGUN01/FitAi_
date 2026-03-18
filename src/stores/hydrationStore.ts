@@ -71,6 +71,7 @@ export const useHydrationStore = create<HydrationState>()(
 
         // Sync to Supabase in background (fire and forget)
         hydrationDataService.logWaterIntake(amountML).catch((err) => {
+          console.error("[HydrationStore] Failed to sync water intake to Supabase:", err);
         });
       },
 

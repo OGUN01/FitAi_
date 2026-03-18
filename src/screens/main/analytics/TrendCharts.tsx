@@ -62,10 +62,7 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
           iconColor={ResponsiveTheme.colors.warning}
           legend={
             calorieData && calorieData.length > 0
-              ? [
-                  { color: ResponsiveTheme.colors.success, label: "Consumed" },
-                  { color: ResponsiveTheme.colors.warning, label: "Burned" },
-                ]
+              ? [{ color: ResponsiveTheme.colors.success, label: "Consumed" }]
               : undefined
           }
           delay={100}

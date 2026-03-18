@@ -96,6 +96,7 @@ class FoodRecognitionService {
     imageUri: string,
     mealType: MealType,
     dietaryRestrictions?: string[],
+    portionGrams?: number,
   ): Promise<FoodRecognitionResult> {
     const startTime = Date.now();
 
@@ -116,12 +117,13 @@ class FoodRecognitionService {
 
       // Call Workers backend
       console.log("🌐 Calling Cloudflare Workers backend...");
+      const userContext: any = {};
+      if (dietaryRestrictions?.length) userContext.dietaryRestrictions = dietaryRestrictions;
+      if (portionGrams && portionGrams > 0) userContext.portionGrams = portionGrams;
       const response = await fitaiWorkersClient.recognizeFood({
         imageBase64,
         mealType,
-        userContext: dietaryRestrictions?.length
-          ? { dietaryRestrictions }
-          : undefined,
+        userContext: Object.keys(userContext).length > 0 ? userContext : undefined,
       });
 
       if (!response.success || !response.data) {

@@ -9,7 +9,7 @@ export const useDashboardIntegration = () => {
   const { user: authUser } = useAuth();
   const { profile } = useUser();
   const { isOnline } = useOffline();
-  const { bodyAnalysis, personalInfo: profilePersonalInfo } = useProfileStore();
+  const { bodyAnalysis, personalInfo: profilePersonalInfo, workoutPreferences: profileWorkoutPreferences } = useProfileStore();
 
   const getUserStats = () => {
     return profile?.stats;
@@ -20,8 +20,8 @@ export const useDashboardIntegration = () => {
   };
 
   const getHealthMetrics = (): HealthMetrics | null => {
-    const heightCm = profile?.bodyMetrics?.height_cm || bodyAnalysis?.height_cm;
-    const weightKg = profile?.bodyMetrics?.current_weight_kg || bodyAnalysis?.current_weight_kg;
+    const heightCm = bodyAnalysis?.height_cm || profile?.bodyMetrics?.height_cm;
+    const weightKg = bodyAnalysis?.current_weight_kg || profile?.bodyMetrics?.current_weight_kg;
 
     if (!heightCm || !weightKg) {
       return null;
@@ -43,11 +43,13 @@ export const useDashboardIntegration = () => {
       return null;
     }
 
-    const heightCm = profile?.bodyMetrics?.height_cm || bodyAnalysis?.height_cm;
-    const weightKg = profile?.bodyMetrics?.current_weight_kg || bodyAnalysis?.current_weight_kg;
-    const age = profile.personalInfo?.age || profilePersonalInfo?.age;
-    const gender = profile.personalInfo?.gender || profilePersonalInfo?.gender;
-    const activityLevelValue = (profile.personalInfo as any)?.activityLevel;
+    const heightCm = bodyAnalysis?.height_cm || profile?.bodyMetrics?.height_cm;
+    const weightKg = bodyAnalysis?.current_weight_kg || profile?.bodyMetrics?.current_weight_kg;
+    // SSOT: profileStore.personalInfo is authoritative (onboarding_data table); profile.personalInfo (userStore) is legacy fallback
+    const age = profilePersonalInfo?.age || profile.personalInfo?.age;
+    const gender = profilePersonalInfo?.gender || profile.personalInfo?.gender;
+    // SSOT: profileStore.workoutPreferences is authoritative (onboarding_data table); profile.workoutPreferences (userStore) is legacy fallback
+    const activityLevelValue = profileWorkoutPreferences?.activity_level || profile.workoutPreferences?.activity_level || (profile.personalInfo as any)?.activityLevel;
 
     if (!heightCm || !weightKg || !age || !gender || !activityLevelValue) {
       return null;

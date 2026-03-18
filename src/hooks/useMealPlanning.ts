@@ -13,6 +13,7 @@ import { aiService } from "../ai";
 import { completionTrackingService } from "../services/completionTracking";
 import { supabase } from "../services/supabase";
 import { WeeklyMealPlan, DayMeal } from "../types/ai";
+import { crudOperations } from "../services/crudOperations";
 import { useCalculatedMetrics } from "./useCalculatedMetrics";
 import { useNutritionData } from "./useNutritionData";
 import { useAuth } from "./useAuth";
@@ -30,7 +31,6 @@ export const useMealPlanning = (navigation: any) => {
     generationTimeMs?: number;
   } | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [forceUpdate, setForceUpdate] = useState(0);
   const asyncJobPollingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [showMealPreparationModal, setShowMealPreparationModal] =
@@ -53,24 +53,43 @@ export const useMealPlanning = (navigation: any) => {
   const { selectedDay } = useAppStateStore();
   const { profile } = useUserStore();
   const { user } = useAuth();
-  const { bodyAnalysis } = useProfileStore();
+  // SSOT: profileStore is authoritative for all onboarding data
+  const { bodyAnalysis, personalInfo: profilePersonalInfo, workoutPreferences: profileWorkoutPreferences, dietPreferences: profileDietPreferences } = useProfileStore();
   const { currentStreak: achievementStreak } = useAchievementStore();
+
+  // SSOT: Build merged fitnessGoals — profileStore.workoutPreferences is authoritative
+  const mergedFitnessGoals = profileWorkoutPreferences
+    ? {
+        primary_goals: profileWorkoutPreferences.primary_goals || profile?.fitnessGoals?.primary_goals || [],
+        primaryGoals: profileWorkoutPreferences.primary_goals || profile?.fitnessGoals?.primaryGoals || [],
+        experience: profileWorkoutPreferences.intensity || profile?.fitnessGoals?.experience || 'beginner',
+        experience_level: profileWorkoutPreferences.intensity || profile?.fitnessGoals?.experience_level || 'beginner',
+        time_commitment: String(profileWorkoutPreferences.time_preference || profile?.fitnessGoals?.time_commitment || 45),
+        timeCommitment: String(profileWorkoutPreferences.time_preference || profile?.fitnessGoals?.timeCommitment || 45),
+        preferred_equipment: profileWorkoutPreferences.equipment || profile?.fitnessGoals?.preferred_equipment,
+        target_areas: profile?.fitnessGoals?.target_areas,
+      }
+    : profile?.fitnessGoals;
+
+  // SSOT: Build merged dietPreferences — profileStore.dietPreferences is authoritative
+  const mergedDietPreferences = profileDietPreferences
+    ? {
+        allergies: profileDietPreferences.allergies || profile?.dietPreferences?.allergies || [],
+        dietType: profileDietPreferences.diet_type || (profile?.dietPreferences as any)?.dietType || 'non-veg',
+        diet_type: profileDietPreferences.diet_type || (profile?.dietPreferences as any)?.diet_type,
+        restrictions: profileDietPreferences.restrictions || profile?.dietPreferences?.restrictions || [],
+        dislikes: (profile?.dietPreferences as any)?.dislikes || [],
+      }
+    : profile?.dietPreferences;
 
   const { getCalorieTarget } = useCalculatedMetrics();
   const { canUseFeature, incrementUsage, triggerPaywall } = useSubscriptionStore();
 
   const { dietPreferences, loadDailyNutrition } = useNutritionData();
 
-  const forceRefresh = useCallback(() => {
-    setForceUpdate((prev) => prev + 1);
-  }, []);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      forceRefresh();
-    }, 50);
-    return () => clearTimeout(timeout);
-  }, [mealProgress, forceRefresh]);
+  const forceRefresh = useCallback(async () => {
+    await loadNutritionStoreData();
+  }, [loadNutritionStoreData]);
 
   useEffect(() => {
     let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -113,16 +132,14 @@ export const useMealPlanning = (navigation: any) => {
   const refreshMealData = useCallback(async () => {
     try {
       await loadNutritionStoreData();
-      forceRefresh();
     } catch (error) {
       console.error("[ERROR] Error refreshing meal data:", error);
     }
-  }, [loadNutritionStoreData, forceRefresh]);
+  }, [loadNutritionStoreData]);
 
   const handleMealPlanResult = async (weeklyPlan: WeeklyMealPlan) => {
     await saveWeeklyMealPlan(weeklyPlan);
     setWeeklyMealPlan(weeklyPlan);
-    forceRefresh();
 
     crossPlatformAlert(
       "Meal Plan Generated!",
@@ -237,9 +254,10 @@ export const useMealPlanning = (navigation: any) => {
     }
 
     const missingItems = [];
-    if (!profile?.personalInfo) missingItems.push("Personal Information");
-    if (!profile?.fitnessGoals) missingItems.push("Fitness Goals");
-    if (!profile?.dietPreferences && !dietPreferences)
+    // SSOT: check profileStore fields first; profile (userStore) is legacy fallback
+    if (!profilePersonalInfo && !profile?.personalInfo) missingItems.push("Personal Information");
+    if (!mergedFitnessGoals?.primary_goals?.length && !mergedFitnessGoals?.primaryGoals?.length) missingItems.push("Fitness Goals");
+    if (!mergedDietPreferences && !dietPreferences)
       missingItems.push("Diet Preferences");
 
     if (missingItems.length > 0) {
@@ -260,12 +278,13 @@ export const useMealPlanning = (navigation: any) => {
       if (!userCalorieTarget) throw new Error("Calorie target not calculated");
 
       const response = await aiService.generateWeeklyMealPlanAsync(
-        profile!.personalInfo,
-        profile!.fitnessGoals,
+        profilePersonalInfo || profile!.personalInfo,
+        mergedFitnessGoals || profile!.fitnessGoals,
         1,
         {
-          bodyMetrics: profile?.bodyMetrics || bodyAnalysis || undefined,
-          dietPreferences: (profile!.dietPreferences ||
+          bodyMetrics: bodyAnalysis || profile?.bodyMetrics || undefined,
+          dietPreferences: (mergedDietPreferences ||
+            profile!.dietPreferences ||
             dietPreferences ||
             undefined) as any,
           calorieTarget: userCalorieTarget,
@@ -336,8 +355,8 @@ export const useMealPlanning = (navigation: any) => {
       }
 
       const mealProgressData = getMealProgress(meal.id);
-      if (mealProgressData?.logId && user?.id) {
-        await supabase.from("meals").delete().eq("id", mealProgressData.logId);
+      if (mealProgressData?.logId) {
+        await crudOperations.deleteMealLog(mealProgressData.logId);
       }
 
       const currentProgress = { ...mealProgress };
@@ -416,8 +435,8 @@ export const useMealPlanning = (navigation: any) => {
     ).length;
 
     const motivationConfig = {
-      personalInfo: profile?.personalInfo,
-      fitnessGoals: profile?.fitnessGoals,
+      personalInfo: profilePersonalInfo || profile?.personalInfo,
+      fitnessGoals: mergedFitnessGoals || profile?.fitnessGoals,
       currentStreak: achievementStreak,
       completedMealsToday,
     };

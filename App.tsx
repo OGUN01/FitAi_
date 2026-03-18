@@ -1,7 +1,18 @@
 import "./global.css";
 import React, { useState, useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, View, ActivityIndicator, Text } from "react-native";
+import { StyleSheet, View, ActivityIndicator, Text, Platform } from "react-native";
+
+// react-native-reanimated's web renderer injects `transform-origin` (kebab-case)
+// as an inline DOM style, which React warns about. React passes the property name
+// as a format argument ('%s'), not in the format string itself — check all args.
+if (Platform.OS === "web") {
+  const originalError = console.error.bind(console);
+  console.error = (...args: unknown[]) => {
+    if (args.some((a) => typeof a === "string" && a.includes("transform-origin"))) return;
+    originalError(...args);
+  };
+}
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GluestackUIProvider } from "@gluestack-ui/themed";
@@ -31,6 +42,7 @@ import {
   AdvancedReviewService,
 } from "./src/services/onboardingService";
 import { invalidateMetricsCache } from "./src/hooks/useCalculatedMetrics";
+import { useAppConfig } from "./src/hooks/useAppConfig";
 // validateProductionEnvironment removed - AI moved to Cloudflare Workers
 
 // Enhanced Expo Go detection with bulletproof methods and debugging
@@ -80,6 +92,7 @@ export default function App() {
   const [showWelcome, setShowWelcome] = useState(true);
 
   const { user, isLoading, isInitialized, isGuestMode, guestId } = useAuth();
+  const { config: appConfig } = useAppConfig();
 
 
   const { setProfile, profile } = useUserStore();
@@ -1081,10 +1094,26 @@ export default function App() {
   if (isLoadingOnboarding) {
     return (
       <View style={styles.loadingContainer}>
-        <StatusBar style="light" backgroundColor={colors.background.DEFAULT} />
+        <StatusBar style="light" translucent backgroundColor="transparent" />
         <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
         <Text style={styles.loadingText}>Loading your profile...</Text>
       </View>
+    );
+  }
+
+  // Maintenance mode — block the entire app
+  if (appConfig.maintenanceMode) {
+    return (
+      <GestureHandlerRootView style={styles.container}>
+        <SafeAreaProvider>
+          <View style={styles.maintenanceContainer}>
+            <StatusBar style="light" translucent backgroundColor="transparent" />
+            <Text style={styles.maintenanceIcon}>🔧</Text>
+            <Text style={styles.maintenanceTitle}>Down for Maintenance</Text>
+            <Text style={styles.maintenanceMessage}>{appConfig.maintenanceMessage}</Text>
+          </View>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
     );
   }
 
@@ -1097,7 +1126,8 @@ export default function App() {
             <View style={styles.container}>
               <StatusBar
                 style="light"
-                backgroundColor={colors.background.DEFAULT}
+                translucent
+                backgroundColor="transparent"
               />
 
               {isOnboardingComplete ? (
@@ -1144,5 +1174,29 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.body,
     marginTop: spacing.md,
     fontWeight: "500" as const,
+  },
+  maintenanceContainer: {
+    flex: 1,
+    backgroundColor: colors.background.DEFAULT,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.xl,
+  },
+  maintenanceIcon: {
+    fontSize: 56,
+    marginBottom: spacing.md,
+  },
+  maintenanceTitle: {
+    color: colors.text.primary,
+    fontSize: typography.fontSize.h1,
+    fontWeight: "700" as const,
+    marginBottom: spacing.sm,
+    textAlign: "center",
+  },
+  maintenanceMessage: {
+    color: colors.text.secondary,
+    fontSize: typography.fontSize.body,
+    textAlign: "center",
+    lineHeight: 24,
   },
 });

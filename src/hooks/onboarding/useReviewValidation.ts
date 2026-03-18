@@ -66,11 +66,16 @@ export const useReviewValidation = ({
       return;
     }
 
-    // Body analysis is optional — check if the user actually entered weight/height
+    // Body analysis is optional — check if the user actually entered valid weight/height.
+    // IMPORTANT: Use >= 30 (not just > 0) to match the valid range of calculateBMR/calculateBMI.
+    // Partial values typed mid-input (e.g. "9" before completing "93") would otherwise
+    // pass the > 0 check and cause calculateBMR to throw an error (it requires weight >= 30 kg).
     const hasBodyData =
       !!bodyAnalysis &&
-      bodyAnalysis.current_weight_kg > 0 &&
-      bodyAnalysis.height_cm > 0;
+      bodyAnalysis.current_weight_kg >= 30 &&
+      bodyAnalysis.current_weight_kg <= 300 &&
+      bodyAnalysis.height_cm >= 100 &&
+      bodyAnalysis.height_cm <= 250;
 
     setIsCalculating(true);
     setCalculationError(null);

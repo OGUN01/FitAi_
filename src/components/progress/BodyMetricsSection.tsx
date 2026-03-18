@@ -57,7 +57,7 @@ export const BodyMetricsSection: React.FC<BodyMetricsSectionProps> = ({
   const renderChangeText = (change: number | null, unit: string) => {
     if (change === null) return "--";
     const sign = change > 0 ? "+" : "";
-    return `${sign}${change} ${unit}`;
+    return `${sign}${change.toFixed(1)} ${unit}`;
   };
 
   // Helper to render manual entry label

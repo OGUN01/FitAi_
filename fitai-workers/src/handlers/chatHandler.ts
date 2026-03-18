@@ -9,6 +9,7 @@
 
 import { Context } from 'hono';
 import { streamText, generateText, createGateway } from 'ai';
+import { getAIConfig } from '../utils/appConfig';
 import { Env } from '../utils/types';
 import { AuthContext } from '../middleware/auth';
 import {
@@ -159,8 +160,9 @@ export async function handleChat(
       })),
     ];
 
-    // 4. Get AI model
-    const model = createAIProvider(c.env, request.model);
+    // 4. Get AI model — sourced from app_config (admin-controlled)
+    const aiConfig = await getAIConfig(c.env);
+    const model = createAIProvider(c.env, aiConfig.model);
 
     // 5. Handle streaming vs non-streaming
     if (request.stream) {

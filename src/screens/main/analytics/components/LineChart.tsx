@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, useWindowDimensions } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
@@ -43,6 +43,7 @@ interface LineChartProps {
   color: string;
   unit?: string;
   showValues?: boolean;
+  showHeader?: boolean;
 }
 
 export const LineChart: React.FC<LineChartProps> = ({
@@ -50,13 +51,15 @@ export const LineChart: React.FC<LineChartProps> = ({
   color,
   unit = "",
   showValues = true,
+  showHeader = true,
 }) => {
   const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
   const animationProgress = useSharedValue(0);
   const glowIntensity = useSharedValue(0);
+  const { width: screenWidth } = useWindowDimensions();
 
-  // Chart dimensions
-  const CHART_WIDTH = rw(280);
+  // Chart dimensions — dynamic width based on screen size
+  const CHART_WIDTH = screenWidth - rw(60); // 30px padding each side
   const CHART_HEIGHT = rh(180);
   const PADDING_LEFT = rw(45);
   const PADDING_RIGHT = rw(15);
@@ -161,7 +164,7 @@ export const LineChart: React.FC<LineChartProps> = ({
   return (
     <View style={styles.premiumChartContainer}>
       {/* Stats Header */}
-      <View style={styles.chartStatsHeader}>
+      {showHeader && <View style={styles.chartStatsHeader}>
         <View style={styles.currentValueContainer}>
           <Text style={styles.currentValueLabel}>Current</Text>
           <Text style={[styles.currentValue, { color }]}>
@@ -196,7 +199,7 @@ export const LineChart: React.FC<LineChartProps> = ({
           </View>
           <Text style={styles.trendPeriod}>vs start</Text>
         </View>
-      </View>
+      </View>}
 
       {/* SVG Chart */}
       <Svg width={CHART_WIDTH} height={CHART_HEIGHT}>

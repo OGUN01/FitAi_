@@ -17,6 +17,8 @@ import { ExtraWorkoutTemplate } from "../../stores/fitness/types";
 interface SuggestedWorkoutsProps {
   workouts: ExtraWorkoutTemplate[];
   onStartWorkout: (workout: ExtraWorkoutTemplate) => void;
+  onResumeWorkout: (workout: ExtraWorkoutTemplate) => void;
+  getTemplateStatus: (workout: ExtraWorkoutTemplate) => 'idle' | 'in_progress' | 'completed';
   isGenerating?: boolean;
 }
 
@@ -72,6 +74,8 @@ const getDifficultyConfig = (difficulty: string) => {
 export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
   workouts,
   onStartWorkout,
+  onResumeWorkout,
+  getTemplateStatus,
   isGenerating,
 }) => {
   if (workouts.length === 0) return null;
@@ -101,13 +105,19 @@ export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
         {workouts.map((workout, index) => {
           const categoryConfig = getCategoryConfig(workout.category);
           const difficultyConfig = getDifficultyConfig(workout.difficulty);
+          const status = getTemplateStatus(workout);
+
+          const handlePress = () => {
+            if (status === 'in_progress') onResumeWorkout(workout);
+            else if (status === 'idle') onStartWorkout(workout);
+          };
 
           return (
             <AnimatedPressable
               key={workout.id}
-              onPress={() => onStartWorkout(workout)}
-              scaleValue={0.95}
-              hapticFeedback={true}
+              onPress={handlePress}
+              scaleValue={status === 'completed' ? 1 : 0.95}
+              hapticFeedback={status !== 'completed'}
               hapticType="medium"
             >
               <GlassCard
@@ -175,9 +185,24 @@ export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
                   </Text>
                 </View>
 
-                {/* Start Button */}
-                {isGenerating ? (
+                {/* Action Button — START / RESUME / COMPLETED */}
+                {isGenerating && status === 'idle' ? (
                   <Text style={styles.generatingText}>Generating...</Text>
+                ) : status === 'completed' ? (
+                  <View style={styles.completedButton}>
+                    <Ionicons name="checkmark-circle" size={rf(13)} color="#10b981" />
+                    <Text style={styles.completedButtonText}>COMPLETED</Text>
+                  </View>
+                ) : status === 'in_progress' ? (
+                  <LinearGradient
+                    colors={["#f59e0b", "#d97706"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={[styles.startButton, styles.resumeButton]}
+                  >
+                    <Ionicons name="play-circle-outline" size={rf(12)} color="#fff" />
+                    <Text style={styles.startButtonText}>RESUME</Text>
+                  </LinearGradient>
                 ) : (
                   <LinearGradient
                     colors={categoryConfig.gradient}
@@ -269,11 +294,33 @@ const styles = StyleSheet.create({
     paddingVertical: ResponsiveTheme.spacing.sm,
     borderRadius: ResponsiveTheme.borderRadius.md,
     alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: rp(4),
   },
+  resumeButton: {},
   startButtonText: {
     fontSize: rf(11),
     fontWeight: "700",
     color: ResponsiveTheme.colors.white,
+    letterSpacing: 0.5,
+  },
+  completedButton: {
+    width: "100%",
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: rp(4),
+    backgroundColor: "rgba(16, 185, 129, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(16, 185, 129, 0.3)",
+  },
+  completedButtonText: {
+    fontSize: rf(11),
+    fontWeight: "700",
+    color: "#10b981",
     letterSpacing: 0.5,
   },
   generatingText: {

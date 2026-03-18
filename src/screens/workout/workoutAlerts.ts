@@ -20,8 +20,9 @@ export const showWorkoutCompleteAlert = (
   onViewProgress: () => void,
   onDone: () => void,
 ) => {
+  const durationMins = Math.max(1, Math.round(finalStats.totalDuration / 60));
   let completionMessage =
-    `Outstanding performance! You completed "${safeString(workout.title, "Workout")}" in ${safeString(finalStats.totalDuration)} minutes.\n\n` +
+    `Outstanding performance! You completed "${safeString(workout.title, "Workout")}" in ${safeString(durationMins)} minute${durationMins !== 1 ? "s" : ""}.\n\n` +
     `📊 Stats:\n` +
     `• Exercises: ${safeString(finalStats.exercisesCompleted)}/${safeString(totalExercises)}\n` +
     `• Sets: ${safeString(finalStats.setsCompleted)}\n` +
@@ -59,7 +60,7 @@ export const showWorkoutCompleteErrorAlert = (
 ) => {
   crossPlatformAlert(
     "Workout Complete!",
-    `Great job! You completed "${safeString(workout.title, "Workout")}" in ${safeString(stats.totalDuration)} minutes.\n\nNote: Progress may not have been saved.`,
+    `Great job! You completed "${safeString(workout.title, "Workout")}" in ${safeString(Math.max(1, Math.round(stats.totalDuration / 60)))} minutes.\n\nNote: Progress may not have been saved.`,
     [{ text: "Done", onPress: onDone }],
   );
 };

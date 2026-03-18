@@ -1,7 +1,9 @@
-import { googleAuthService, GoogleSignInResult } from "../googleAuth";
+import { googleAuthService } from "../google-auth/service";
+import { GoogleSignInResult } from "../google-auth/types";
 
 /**
  * Initialize Google Authentication
+ * Uses the newer google-auth service module (refactored from googleAuth.ts)
  */
 export async function initializeGoogleAuth(): Promise<void> {
   try {

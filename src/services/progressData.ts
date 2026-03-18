@@ -142,9 +142,23 @@ class ProgressDataService {
 
       if (localMeasurements.length > 0) {
         // Convert Track B's BodyMeasurement format to our ProgressEntry format
-        const entries = localMeasurements.map((measurement) =>
+        const allEntries = localMeasurements.map((measurement) =>
           this.convertBodyMeasurementToProgressEntry(measurement),
         );
+
+        // Track B uses unshift (newest first) and has no per-day deduplication,
+        // while Supabase upserts with onConflict="user_id,entry_date" (one per day).
+        // Without dedup, logging twice on the same day leaves [89.9, 89.7] in Track B.
+        // fetchWeightHistory sorts ascending by date → same-date stable order stays
+        // [89.9, 89.7] → last element = 89.7 (stale). Fix: keep only the most recent
+        // entry per day (Track B is newest-first, so first occurrence = most recent).
+        const seen = new Set<string>();
+        const entries = allEntries.filter((e) => {
+          if (seen.has(e.entry_date)) return false;
+          seen.add(e.entry_date);
+          return true;
+        });
+
         return {
           success: true,
           data: entries,
@@ -228,10 +242,10 @@ class ProgressDataService {
       // Store using Track B's CRUD operations
       await crudOperations.createBodyMeasurement(bodyMeasurement);
 
-      // Also create in Supabase for immediate access
+      // Upsert to Supabase — handles logging weight multiple times on the same day
       const { data, error } = await supabase
         .from("progress_entries")
-        .insert({
+        .upsert({
           user_id: userId,
           entry_date: entryDate,
           weight_kg: entryData.weight_kg,
@@ -240,7 +254,7 @@ class ProgressDataService {
           measurements: entryData.measurements || {},
           progress_photos: entryData.progress_photos || [],
           notes: entryData.notes,
-        })
+        }, { onConflict: "user_id,entry_date" })
         .select()
         .single();
 
@@ -259,6 +273,7 @@ class ProgressDataService {
         });
       } catch (analyticsError) {
       }
+
 
       return {
         success: true,
@@ -328,25 +343,29 @@ class ProgressDataService {
       if (
         !entriesResponse.success ||
         !entriesResponse.data ||
-        entriesResponse.data.length < 2
+        entriesResponse.data.length === 0
       ) {
         return {
           success: false,
-          error: "Not enough data to calculate progress statistics",
+          error: "No progress entries found",
         };
       }
 
       const entries = entriesResponse.data;
       const latest = entries[0];
-      const previous = entries[1];
+      // If only one entry exists, compare against itself (change = 0)
+      const previous = entries.length >= 2 ? entries[1] : entries[0];
 
-      // Calculate weight change
+      // Calculate weight change — round to 2 dp to avoid IEEE 754 artifacts
+      // e.g. 89.9 - 89.7 = 0.20000000000000284 without rounding
+      const rawWeightChange = latest.weight_kg - previous.weight_kg;
       const weightChange = {
         current: latest.weight_kg,
         previous: previous.weight_kg,
-        change: latest.weight_kg - previous.weight_kg,
-        changePercentage:
-          ((latest.weight_kg - previous.weight_kg) / previous.weight_kg) * 100,
+        change: Math.round(rawWeightChange * 100) / 100,
+        changePercentage: previous.weight_kg > 0
+          ? Math.round((rawWeightChange / previous.weight_kg) * 10000) / 100
+          : 0,
       };
 
       // Calculate body fat change

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useUserStore } from "../stores/userStore";
 import { useAuthStore } from "../stores/authStore";
 import { useCalculatedMetrics } from "./useCalculatedMetrics";
+import { useAnalyticsStore } from "../stores/analyticsStore";
 import { analyticsDataService, DailyMetrics } from "../services/analyticsData";
 import { haptics } from "../utils/haptics";
 
@@ -18,49 +18,59 @@ export interface TrendData {
 }
 
 export const useProgressTrendsLogic = () => {
-  // State
   const [selectedPeriod, setSelectedPeriod] = useState<TrendPeriod>("month");
   const [refreshing, setRefreshing] = useState(false);
-  const [metricsHistory, setMetricsHistory] = useState<DailyMetrics[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  // Stores
-  const { profile } = useUserStore();
   const { user } = useAuthStore();
   const { metrics: calculatedMetrics } = useCalculatedMetrics();
 
-  // Load metrics history
-  const loadMetrics = useCallback(async () => {
-    if (!user?.id) return;
+  // SSOT Fix 21: DailyMetrics lives in analyticsStore, not local state.
+  // All consumers share the same cache. Supabase is only hit when the cache
+  // is empty or the requested period is wider than what was last fetched.
+  const metricsHistory = useAnalyticsStore((s) => s.dailyMetricsHistory);
+  const cachedPeriod = useAnalyticsStore((s) => s.dailyMetricsHistoryPeriod);
+  const setDailyMetricsHistory = useAnalyticsStore(
+    (s) => s.setDailyMetricsHistory,
+  );
 
-    setLoading(true);
-    try {
-      const periodDays =
-        selectedPeriod === "week"
-          ? 7
-          : selectedPeriod === "month"
-            ? 30
-            : selectedPeriod === "quarter"
-              ? 90
-              : 365;
+  const periodDays =
+    selectedPeriod === "week"
+      ? 7
+      : selectedPeriod === "month"
+        ? 30
+        : selectedPeriod === "quarter"
+          ? 90
+          : 365;
 
-      const data = await analyticsDataService.loadMetricsHistory(
-        user.id,
-        periodDays,
-      );
-      setMetricsHistory(data);
-    } catch (error) {
-      console.error("Failed to load metrics history:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.id, selectedPeriod]);
+  const loadMetrics = useCallback(
+    async (force = false) => {
+      if (!user?.id) return;
+      // Skip the round-trip if we already have enough data cached
+      if (!force && metricsHistory.length > 0 && cachedPeriod >= periodDays)
+        return;
+
+      setLoading(true);
+      try {
+        const data = await analyticsDataService.loadMetricsHistory(
+          user.id,
+          periodDays,
+        );
+        setDailyMetricsHistory(data, periodDays);
+      } catch (error) {
+        console.error("Failed to load metrics history:", error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user?.id, periodDays, metricsHistory.length, cachedPeriod, setDailyMetricsHistory],
+  );
 
   useEffect(() => {
     loadMetrics();
   }, [loadMetrics]);
 
-  // Calculate trend data
+  // Derived trend calculations — all read from the SSOT metricsHistory
   const weightTrend = useMemo((): TrendData | null => {
     const weightData = metricsHistory.filter((m) => m.weightKg !== null);
     if (weightData.length < 2) return null;
@@ -119,7 +129,7 @@ export const useProgressTrendsLogic = () => {
   const handleRefresh = async () => {
     setRefreshing(true);
     haptics.light();
-    await loadMetrics();
+    await loadMetrics(true);
     setRefreshing(false);
   };
 
@@ -133,7 +143,8 @@ export const useProgressTrendsLogic = () => {
     refreshing,
     loading,
     metricsHistory,
-    profile,
+    // SSOT: callers should use profileStore.personalInfo/bodyAnalysis directly;
+    // calculatedMetrics provides the authoritative computed health stats (BMI/BMR/TDEE)
     calculatedMetrics,
     weightTrend,
     calorieTrend,

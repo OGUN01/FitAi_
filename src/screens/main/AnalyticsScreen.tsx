@@ -26,12 +26,12 @@ import { haptics } from "../../utils/haptics";
 import { useAnalyticsStore } from "../../stores/analyticsStore";
 import { useHealthDataStore } from "../../stores/healthDataStore";
 import { useFitnessStore } from "../../stores/fitnessStore";
-import { useUserStore } from "../../stores/userStore";
+import { useNutritionStore } from "../../stores/nutritionStore";
 import { useAuthStore } from "../../stores/authStore";
 import { useProfileStore } from "../../stores/profileStore";
 import { useCalculatedMetrics } from "../../hooks/useCalculatedMetrics";
 import { analyticsDataService } from "../../services/analyticsData";
-import DataRetrievalService from "../../services/dataRetrieval";
+import { useAchievementStore } from "../../stores/achievementStore";
 
 // Modular Components
 import {
@@ -56,30 +56,39 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
   const insets = useSafeAreaInsets();
 
   // State
-  const [selectedPeriod, setSelectedPeriod] = useState<Period>("month");
+  // NOTE: selectedPeriod is intentionally NOT local state — we read it from
+  // analyticsStore so the user's choice persists across tab switches.
   const [refreshing, setRefreshing] = useState(false);
-  const [isDataLoading, setIsDataLoading] = useState(true);
+  const [isDataLoading, setIsDataLoading] = useState(false);
   const [dataError, setDataError] = useState<string | null>(null);
-  const [weightHistory, setWeightHistory] = useState<
-    Array<{ date: string; weight: number }>
-  >([]);
-  const [calorieHistory, setCalorieHistory] = useState<
-    Array<{ date: string; consumed: number; burned: number }>
-  >([]);
 
   // Stores
-  const { profile } = useUserStore();
+  // SSOT: weight/target come from profileStore.bodyAnalysis — userStore.profile is NOT used here
   const { user } = useAuthStore();
   const { metrics: healthMetrics } = useHealthDataStore();
   const completedSessions = useFitnessStore((state) => state.completedSessions);
   const { bodyAnalysis, personalInfo, workoutPreferences } = useProfileStore();
   const { metrics: calculatedMetrics } = useCalculatedMetrics();
+  // SSOT fix: read getTodaysConsumedNutrition from nutritionStore — it aggregates
+  // BOTH weekly plan completions AND manually logged daily meals.
+  const getTodaysConsumedNutrition = useNutritionStore((s) => s.getTodaysConsumedNutrition);
   const {
     initialize: initializeAnalytics,
     refreshAnalytics,
     isInitialized,
     isLoading: isAnalyticsLoading,
+    // SSOT fix: selectedPeriod persisted in store — survives tab switches
+    selectedPeriod,
+    setPeriod: setSelectedPeriod,
+    // SSOT fix: history cached in store — survives tab switches
+    weightHistory,
+    calorieHistory,
+    setHistoryData,
   } = useAnalyticsStore();
+  // SSOT fix: streak comes from achievementStore.currentStreak which is computed
+  // from completedSessions via updateCurrentStreak(). DataRetrievalService.getWeeklyProgress()
+  // returned a stale value derived from workoutProgress (can lag after plan regeneration).
+  const currentStreak = useAchievementStore((s) => s.currentStreak);
 
   // Initialize analytics on mount
   useEffect(() => {
@@ -112,15 +121,16 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
         analyticsDataService.getCalorieHistory(user.id, periodDays),
       ]);
 
-      setWeightHistory(weightData);
-      setCalorieHistory(calorieData);
+      // SSOT fix: write fetched history into the store instead of local state
+      // so the Analytics tab shows cached data immediately on the next mount.
+      setHistoryData(weightData, calorieData);
     } catch (error) {
       console.error('Failed to load analytics history:', error);
       setDataError('Failed to load analytics data. Pull to refresh.');
     } finally {
       setIsDataLoading(false);
     }
-  }, [user?.id, periodDays]);
+  }, [user?.id, periodDays, setHistoryData]);
 
   // Load weight and calorie history from Supabase
   useEffect(() => {
@@ -149,9 +159,12 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
       s.completedAt >= periodStartISO
     ).length;
 
-    // Calculate calories consumed from DataRetrievalService (same source as Progress screen)
-    const todaysData = DataRetrievalService.getTodaysData();
-    const caloriesConsumed = todaysData.progress.caloriesConsumed;
+    // SSOT fix: calories consumed comes from nutritionStore which aggregates
+    // both completed weekly-plan meals AND manually logged daily meals.
+    // Previously DataRetrievalService.getTodaysData() was used but it only
+    // counted weekly-plan completions, ignoring meal_logs / barcode scans.
+    const todaysNutrition = getTodaysConsumedNutrition();
+    const caloriesConsumed = todaysNutrition.calories;
 
     // Calculate calories burned from completed sessions this period (actual burned, not estimated)
     const totalCaloriesBurned = completedSessions
@@ -159,12 +172,12 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
       .reduce((sum, s) => sum + s.caloriesBurned, 0);
 
     // Use consumed calories as the primary display (what user ate today)
-    // Fall back to burned if no consumed data
+    // Fall back to burned calories from workouts if no food logged yet
     const displayCalories = caloriesConsumed > 0 ? caloriesConsumed : totalCaloriesBurned;
 
-    // Get streak from DataRetrievalService (same source as Progress screen)
-    const weeklyProgress = DataRetrievalService.getWeeklyProgress();
-    const streak = weeklyProgress.streak;
+    // SSOT fix: streak derived from achievementStore.currentStreak which counts
+    // consecutive workout days from completedSessions. DataRetrievalService was stale.
+    const streak = currentStreak;
 
     // Weight change: derive from Supabase history (oldest → newest in period)
     // Positive = gained weight, negative = lost weight
@@ -216,48 +229,31 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
         days: streak,
         isActive: streak > 0,
       },
-      // Add onboarding calculated metrics for display
-      // BMI/BMR/TDEE: prefer calculatedMetrics, fallback to local calculation from profileStore
+      // SSOT fix: BMI/BMR/TDEE come ONLY from useCalculatedMetrics (which reads
+      // advanced_review from Supabase). We do NOT recompute them inline here —
+      // that would duplicate the Mifflin–St Jeor formula and risk divergence.
+      // If calculatedMetrics is null (not loaded yet), show undefined in the UI.
       bmi: (calculatedMetrics?.calculatedBMI && calculatedMetrics.calculatedBMI > 0)
         ? calculatedMetrics.calculatedBMI
-        : (currentWeight && bodyAnalysis?.height_cm && bodyAnalysis.height_cm > 0)
-          ? Number((currentWeight / ((bodyAnalysis.height_cm / 100) ** 2)).toFixed(1))
-          : undefined,
+        : undefined,
       bmr: (calculatedMetrics?.calculatedBMR && calculatedMetrics.calculatedBMR > 0)
         ? calculatedMetrics.calculatedBMR
-        : (currentWeight && bodyAnalysis?.height_cm && bodyAnalysis.height_cm > 0 && personalInfo?.age && personalInfo?.gender)
-          ? Math.round(personalInfo.gender === 'male'
-            ? (10 * currentWeight + 6.25 * bodyAnalysis.height_cm - 5 * personalInfo.age + 5)
-            : (10 * currentWeight + 6.25 * bodyAnalysis.height_cm - 5 * personalInfo.age - 161))
-          : undefined,
+        : undefined,
       tdee: (calculatedMetrics?.calculatedTDEE && calculatedMetrics.calculatedTDEE > 0)
         ? calculatedMetrics.calculatedTDEE
-        : (currentWeight && bodyAnalysis?.height_cm && bodyAnalysis.height_cm > 0 && personalInfo?.age && personalInfo?.gender)
-          ? Math.round((personalInfo.gender === 'male'
-            ? (10 * currentWeight + 6.25 * bodyAnalysis.height_cm - 5 * personalInfo.age + 5)
-            : (10 * currentWeight + 6.25 * bodyAnalysis.height_cm - 5 * personalInfo.age - 161)) * (() => {
-              const level = workoutPreferences?.activity_level;
-              if (level === 'sedentary') return 1.2;
-              if (level === 'light') return 1.375;
-              if (level === 'moderate') return 1.55;
-              if (level === 'active') return 1.725;
-              if (level === 'extreme') return 1.9;
-              return 1.55; // default moderate if unknown
-            })())
-          : undefined,
+        : undefined,
       dailyWater: calculatedMetrics?.dailyWaterML,
     };
   }, [
     healthMetrics,
-    profile,
     bodyAnalysis,
-    personalInfo,
     completedSessions,
     calculatedMetrics,
-    workoutPreferences,
     weightHistory,
     calorieHistory,
     periodDays,
+    getTodaysConsumedNutrition,
+    currentStreak,
   ]);
 
   // Calorie breakdown by session type — for breakdown display only, not part of MetricData
@@ -338,8 +334,10 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
         const weekStart = new Date(now);
         weekStart.setDate(now.getDate() - 28 + weekIndex * 7);
         weekStart.setHours(0, 0, 0, 0);
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 7);
+        // Last bucket must include today — extend to start of tomorrow
+        const weekEnd = weekIndex === 3
+          ? new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+          : (() => { const d = new Date(weekStart); d.setDate(weekStart.getDate() + 7); return d; })();
 
         const count = completedSessions.filter((s) => {
           if (!s.completedAt) return false;
@@ -404,8 +402,9 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
   // Handlers
   const handlePeriodChange = useCallback((period: Period) => {
     haptics.light();
+    // SSOT: setPeriod writes to analyticsStore which persists across tab switches
     setSelectedPeriod(period);
-  }, []);
+  }, [setSelectedPeriod]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -452,11 +451,6 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     navigation?.navigate("Progress");
   }, [navigation]);
 
-  const handleTrendsPress = useCallback(() => {
-    haptics.light();
-    navigation?.navigate("ProgressTrends");
-  }, [navigation]);
-
   // Show loading state for initial load
   const showLoading = (isDataLoading || isAnalyticsLoading) && !refreshing;
 
@@ -485,7 +479,6 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
               selectedPeriod={selectedPeriod}
               onPeriodChange={handlePeriodChange}
               onProgressPress={navigation ? handleProgressPress : undefined}
-              onTrendsPress={navigation ? handleTrendsPress : undefined}
             />
 
             {/* Loading State */}

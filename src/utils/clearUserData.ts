@@ -10,14 +10,18 @@
 
 import { useFitnessStore } from "../stores/fitnessStore";
 import { useNutritionStore } from "../stores/nutritionStore";
+import { useUserStore } from "../stores/userStore";
 import { useHydrationStore } from "../stores/hydrationStore";
 import { useAnalyticsStore } from "../stores/analyticsStore";
 import { useAchievementStore } from "../stores/achievementStore";
 import { useHealthDataStore } from "../stores/healthDataStore";
 import { useAppStateStore } from "../stores/appStateStore";
 import { useSubscriptionStore } from "../stores/subscriptionStore";
+import { useProfileStore } from "../stores/profileStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { clearNutritionCache } from "../stores/nutrition/selectors";
+import { invalidateMetricsCache } from "../hooks/useCalculatedMetrics";
+import { userMetricsService } from "../services/userMetricsService";
 
 /**
  * Clears all user data from all stores.
@@ -50,6 +54,10 @@ export const clearAllUserData = async (): Promise<void> => {
   // Clear module-level nutrition selector caches (prevents stale data across user sessions)
   clearNutritionCache();
 
+  // Clear singleton service caches (user-specific data keyed without userId)
+  try { userMetricsService.clearCache(); } catch (e) {}
+  try { invalidateMetricsCache(); } catch (e) {}
+
   // Hydration store
   const hydrationState = useHydrationStore.getState();
   safeReset("Hydration store", hydrationState.reset || hydrationState.resetDaily || (() => {}));
@@ -74,6 +82,14 @@ export const clearAllUserData = async (): Promise<void> => {
   const appState = useAppStateStore.getState();
   safeReset("App state store", appState.reset || appState.resetToToday || (() => {}));
 
+  // Profile store
+  const profileState = useProfileStore.getState();
+  safeReset("Profile store", profileState.reset || (() => {}));
+
+  // User store (profile + isProfileComplete — must clear to prevent cross-user data leak)
+  const userState = useUserStore.getState();
+  safeReset("User store", userState.reset);
+
   // Also clear persisted storage for these stores
   const storageKeysToRemove = [
     "fitness-storage",
@@ -85,6 +101,13 @@ export const clearAllUserData = async (): Promise<void> => {
     "fitai-app-state-storage",
     "subscription-storage",
     "auth-storage",
+    "profile-storage-v2",
+    "user-storage",
+    "enhanced-offline-storage",
+    // DataBridge CRUD cache — must clear to prevent stale data leaking across user sessions
+    "workout_sessions",
+    "meal_logs",
+    "body_measurements",
   ];
 
   await Promise.all(

@@ -5,16 +5,21 @@ import { Ionicons } from "@expo/vector-icons";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { rf, rw, rh, rbr } from "../../../utils/responsive";
 import { CalculatedMetrics } from "../../../hooks/useCalculatedMetrics";
-import { UserProfile } from "../../../types/user";
+// SSOT: use onboarding types (the actual data format used by profileStore)
+import type { PersonalInfoData, BodyAnalysisData } from "../../../types/onboarding";
 
 interface GoalProgressCardProps {
   calculatedMetrics: CalculatedMetrics | null;
-  profile: UserProfile | null;
+  /** SSOT: from profileStore.personalInfo (onboarding_data table) */
+  profilePersonalInfo?: PersonalInfoData | null;
+  /** SSOT: from profileStore.bodyAnalysis (body_analysis table) */
+  bodyAnalysis?: BodyAnalysisData | null;
 }
 
 export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
   calculatedMetrics,
-  profile,
+  profilePersonalInfo: _profilePersonalInfo,
+  bodyAnalysis: _bodyAnalysis,
 }) => {
   return (
     <Animated.View

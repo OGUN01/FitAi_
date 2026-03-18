@@ -21,6 +21,9 @@ interface QuickActionsConfigProps {
   onScanFood?: () => void;
   onLogMeal?: () => void;
   onLogWater?: () => void;
+  onBarcodeScan?: () => void;
+  onScanLabel?: () => void;
+  onRecipes?: () => void;
 }
 
 export const createQuickActions = ({
@@ -32,6 +35,9 @@ export const createQuickActions = ({
   onScanFood,
   onLogMeal,
   onLogWater,
+  onBarcodeScan,
+  onScanLabel,
+  onRecipes,
 }: QuickActionsConfigProps): QuickAction[] => [
   {
     id: "log-weight",
@@ -70,6 +76,39 @@ export const createQuickActions = ({
           icon: "water-outline" as keyof typeof Ionicons.glyphMap,
           color: ResponsiveTheme.colors.info,
           onPress: onLogWater,
+        },
+      ]
+    : []),
+  ...(onBarcodeScan
+    ? [
+        {
+          id: "barcode-scan",
+          label: "Barcode",
+          icon: "barcode-outline" as keyof typeof Ionicons.glyphMap,
+          color: ResponsiveTheme.colors.teal,
+          onPress: onBarcodeScan,
+        },
+      ]
+    : []),
+  ...(onScanLabel
+    ? [
+        {
+          id: "scan-label",
+          label: "Scan Label",
+          icon: "scan-outline" as keyof typeof Ionicons.glyphMap,
+          color: ResponsiveTheme.colors.purple,
+          onPress: onScanLabel,
+        },
+      ]
+    : []),
+  ...(onRecipes
+    ? [
+        {
+          id: "recipes",
+          label: "Recipes",
+          icon: "book-outline" as keyof typeof Ionicons.glyphMap,
+          color: ResponsiveTheme.colors.warning,
+          onPress: onRecipes,
         },
       ]
     : []),

@@ -13,7 +13,7 @@ import {
 } from "react-native-safe-area-context";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
-import { WorkoutStartDialog } from "../../components/ui/CustomDialog";
+import { WorkoutStartDialog, WorkoutDetailsDialog } from "../../components/ui/CustomDialog";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rh, rf, rp, rbr } from "../../utils/responsive";
 import { useFitnessStore } from "../../stores/fitnessStore";
@@ -32,7 +32,6 @@ import {
   RecoveryTipsModal,
 } from "./fitness";
 import { PlanSection } from "../../components/fitness/PlanSection";
-import { WeeklyCalendar } from "../../components/fitness/WeeklyCalendar";
 import { GuestSignUpScreen } from "./GuestSignUpScreen";
 
 import { FitnessNavigation } from "../../hooks/useFitnessLogic";
@@ -96,13 +95,6 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
               totalWorkouts={state.weekStats.totalWorkouts}
               completedWorkouts={state.weekStats.completedCount}
               onCalendarPress={actions.handleCalendarPress}
-            />
-
-            {/* 1b. Weekly Calendar */}
-            <WeeklyCalendar
-              selectedDay={state.selectedDay}
-              onDaySelect={(day) => actions.setSelectedDay(day as DayName)}
-              workoutData={calendarWorkoutData}
             />
 
             {/* 2. Selected Day's Workout Card (syncs with calendar selection) */}
@@ -182,6 +174,8 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
                 <SuggestedWorkouts
                   workouts={quickWorkouts.suggestions}
                   onStartWorkout={quickWorkouts.startQuickWorkout}
+                  onResumeWorkout={quickWorkouts.resumeQuickWorkout}
+                  getTemplateStatus={quickWorkouts.getTemplateStatus}
                   isGenerating={quickWorkouts.isGenerating}
                 />
               </View>
@@ -214,6 +208,21 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
         <RecoveryTipsModal
           visible={state.showRecoveryTipsModal}
           onClose={actions.handleCloseRecoveryTips}
+        />
+
+        {/* Workout Details Modal */}
+        <WorkoutDetailsDialog
+          visible={!!state.workoutDetailsWorkout}
+          title={state.workoutDetailsWorkout?.title ?? ""}
+          description={state.workoutDetailsWorkout?.description}
+          duration={state.workoutDetailsWorkout?.duration ?? 0}
+          calories={
+            state.workoutDetailsWorkout
+              ? (state.workoutProgress[state.workoutDetailsWorkout.id]?.caloriesBurned ?? state.workoutDetailsWorkout.estimatedCalories)
+              : undefined
+          }
+          exerciseCount={state.workoutDetailsWorkout?.exercises?.length ?? 0}
+          onClose={actions.handleCloseWorkoutDetails}
         />
       </SafeAreaView>
     </AuroraBackground>

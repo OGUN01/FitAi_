@@ -12,6 +12,14 @@ interface WorkoutHeaderProps {
   paddingTop?: number;
 }
 
+/** Format elapsed seconds as M:SS (e.g. 0:05, 1:30, 10:04) */
+const formatSeconds = (totalSeconds: number): string => {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m}:${sec.toString().padStart(2, "0")}`;
+};
+
 const safeString = (value: any, fallback: string = ""): string => {
   if (value === null || value === undefined) return fallback;
   if (typeof value === "number" && Number.isNaN(value)) return fallback;
@@ -53,7 +61,7 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
       </View>
 
       <View style={[styles.headerRight, { pointerEvents: "none" }]}>
-        <Text style={styles.timerText}>{safeString(duration)}m</Text>
+        <Text style={styles.timerText}>{formatSeconds(duration)}</Text>
         <Text style={styles.caloriesText}>{safeString(calories)} cal</Text>
       </View>
     </View>

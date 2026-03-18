@@ -37,6 +37,14 @@ const safeNumber = (value: any, fallback: number = 0): number => {
   return isNaN(num) ? fallback : num;
 };
 
+/** Format elapsed seconds as M:SS (e.g. 0:05, 1:30, 10:04) */
+const formatDuration = (totalSeconds: number): string => {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m}:${sec.toString().padStart(2, "0")}`;
+};
+
 export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   exerciseName,
   sets,
@@ -143,7 +151,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           <Text style={styles.statLabel}>Sets Done</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>{safeString(totalDuration)}m</Text>
+          <Text style={styles.statValue}>{formatDuration(totalDuration)}</Text>
           <Text style={styles.statLabel}>Duration</Text>
         </View>
         <View style={styles.statItem}>

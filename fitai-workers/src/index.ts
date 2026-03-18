@@ -19,6 +19,7 @@ import { handleDebugTest } from './handlers/debugTest';
 import { handleAnalytics } from './handlers/analytics';
 import { handleFoodRecognition } from './handlers/foodRecognition';
 import { handleNutritionEstimate } from './handlers/nutritionEstimate';
+import { handleNutritionLabelScan } from './handlers/nutritionLabelScan';
 import { handleHealthSync, handleHealthLatest, handleWorkoutSession } from './handlers/healthSync';
 import {
 	handleCreateSubscription,
@@ -29,7 +30,27 @@ import {
 	handlePauseSubscription,
 	handleResumeSubscription,
 } from './handlers/subscription';
-import { authMiddleware, optionalAuthMiddleware, AuthContext } from './middleware/auth';
+import { authMiddleware, optionalAuthMiddleware, requireRole, AuthContext } from './middleware/auth';
+import {
+	handleAdminDashboard,
+	handleGetConfig,
+	handleSetConfig,
+	handleGetPlans,
+	handleUpdatePlan,
+	handleListUsers,
+	handleGetUser,
+	handleOverrideSubscription,
+	handleAdminAnalytics,
+	handleCacheStats,
+	handleClearCache,
+	handleListContributions,
+	handleApproveContribution,
+	handleRejectContribution,
+	handleWebhookLogs,
+	handleListAdmins,
+	handleCreateAdmin,
+	handleRemoveAdmin,
+} from './handlers/admin';
 import { rateLimitMiddleware, RATE_LIMITS } from './middleware/rateLimit';
 import { loggingMiddleware } from './middleware/logging';
 import { subscriptionGateMiddleware } from './middleware/subscriptionGate';
@@ -59,33 +80,72 @@ app.use('*', async (c, next) => {
 	const allowedOrigins = env.ALLOWED_ORIGINS?.split(',').map((o: string) => o.trim()) || ['*'];
 
 	// Determine if request origin is allowed
-	let allowOrigin = '*';
-	if (!allowedOrigins.includes('*')) {
-		if (origin && allowedOrigins.includes(origin)) {
-			allowOrigin = origin;
-		} else {
-			// Origin not allowed - return first allowed origin (more secure than denying completely)
-			allowOrigin = allowedOrigins[0];
-		}
-	} else if (origin) {
+	// IMPORTANT: Access-Control-Allow-Credentials:true requires a specific origin (not *)
+	// So we always echo back the request origin when one is present.
+	let allowOrigin: string;
+	if (allowedOrigins.includes('*')) {
+		// Open — echo back the request origin, or fallback to * if no origin header
+		allowOrigin = origin || '*';
+	} else if (origin && allowedOrigins.includes(origin)) {
 		allowOrigin = origin;
+	} else {
+		// Origin not in explicit allowlist — use first entry (browser will reject)
+		allowOrigin = allowedOrigins[0];
 	}
 
 	// Set CORS headers
 	c.header('Access-Control-Allow-Origin', allowOrigin);
-	c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+	c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
 	c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 	c.header('Access-Control-Expose-Headers', 'X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset');
 	c.header('Access-Control-Max-Age', '86400');
-	c.header('Access-Control-Allow-Credentials', 'true');
+	// Only set Allow-Credentials when we have a specific origin (credentials + * is invalid per CORS spec)
+	if (allowOrigin !== '*') {
+		c.header('Access-Control-Allow-Credentials', 'true');
+	}
 
-	// Handle preflight
+	// Handle preflight — build Response manually so CORS headers are included
+	// (new Response(null,{status:204}) bypasses c.header() and strips them)
 	if (c.req.method === 'OPTIONS') {
-		return c.text('', 204);
+		const preflightHeaders: Record<string, string> = {
+			'Access-Control-Allow-Origin': allowOrigin,
+			'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+			'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+			'Access-Control-Max-Age': '86400',
+		};
+		if (allowOrigin !== '*') {
+			preflightHeaders['Access-Control-Allow-Credentials'] = 'true';
+		}
+		return new Response(null, { status: 204, headers: preflightHeaders });
 	}
 
 	await next();
 });
+
+// Helper — add CORS headers to any Response so browsers don't block error responses
+function addCorsHeaders(c: Parameters<Parameters<typeof app.onError>[0]>[1], response: Response): Response {
+	const origin = c.req.header('Origin');
+	const env = c.env as { ALLOWED_ORIGINS?: string };
+	const allowedOrigins = env.ALLOWED_ORIGINS?.split(',').map((o) => o.trim()) || ['*'];
+
+	let allowOrigin: string;
+	if (allowedOrigins.includes('*')) {
+		allowOrigin = origin || '*';
+	} else if (origin && allowedOrigins.includes(origin)) {
+		allowOrigin = origin;
+	} else {
+		allowOrigin = allowedOrigins[0];
+	}
+
+	const headers = new Headers(response.headers);
+	headers.set('Access-Control-Allow-Origin', allowOrigin);
+	headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+	headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+	if (allowOrigin !== '*') {
+		headers.set('Access-Control-Allow-Credentials', 'true');
+	}
+	return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
 
 // Global error handling middleware
 app.onError((err, c) => {
@@ -95,12 +155,13 @@ app.onError((err, c) => {
 		url: c.req.url,
 	});
 
-	return createErrorResponse(err);
+	const errorResponse = createErrorResponse(err);
+	return addCorsHeaders(c, errorResponse);
 });
 
 // 404 handler
 app.notFound((c) => {
-	return c.json(
+	const response = c.json(
 		{
 			success: false,
 			error: {
@@ -110,6 +171,8 @@ app.notFound((c) => {
 		},
 		404,
 	);
+	return addCorsHeaders(c, response);
+
 });
 
 // ============================================================================
@@ -333,6 +396,21 @@ app.post(
 );
 
 /**
+ * POST /food/label-scan - Extract nutrition data from a packaged food label photo
+ * - Requires authentication
+ * - Rate limit: 50 requests per hour (AI_GENERATION tier)
+ * - Accepts base64 image of nutrition facts table, returns structured nutrition data
+ * - Uses Gemini Vision to read values verbatim from the label — no estimation
+ */
+app.post(
+	'/food/label-scan',
+	authMiddleware,
+	rateLimitMiddleware(RATE_LIMITS.AI_GENERATION),
+	subscriptionGateMiddleware('barcode_scan'),
+	handleNutritionLabelScan,
+);
+
+/**
  * POST /nutrition/barcode-estimate - Estimate nutrition for a named product via AI
  * - Requires authentication
  * - Rate limit: 50 requests per hour (AI_GENERATION tier)
@@ -458,6 +536,31 @@ app.post('/api/subscription/cancel', authMiddleware, rateLimitMiddleware(RATE_LI
 app.post('/api/subscription/pause', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handlePauseSubscription);
 
 app.post('/api/subscription/resume', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleResumeSubscription);
+
+// ============================================================================
+// ADMIN ROUTES — requireRole('admin') guard
+// ============================================================================
+
+const adminMW = [authMiddleware, requireRole('admin')] as const;
+
+app.get('/api/admin/dashboard',                   ...adminMW, handleAdminDashboard);
+app.get('/api/admin/config',                      ...adminMW, handleGetConfig);
+app.post('/api/admin/config',                     ...adminMW, handleSetConfig);
+app.get('/api/admin/plans',                       ...adminMW, handleGetPlans);
+app.patch('/api/admin/plans/:tier',               ...adminMW, handleUpdatePlan);
+app.get('/api/admin/users',                       ...adminMW, handleListUsers);
+app.get('/api/admin/users/:userId',               ...adminMW, handleGetUser);
+app.post('/api/admin/users/:userId/subscription', ...adminMW, handleOverrideSubscription);
+app.get('/api/admin/analytics',                   ...adminMW, handleAdminAnalytics);
+app.get('/api/admin/cache/stats',                 ...adminMW, handleCacheStats);
+app.post('/api/admin/cache/clear',                ...adminMW, handleClearCache);
+app.get('/api/admin/contributions',               ...adminMW, handleListContributions);
+app.post('/api/admin/contributions/:id/approve',  ...adminMW, handleApproveContribution);
+app.post('/api/admin/contributions/:id/reject',   ...adminMW, handleRejectContribution);
+app.get('/api/admin/webhooks',                    ...adminMW, handleWebhookLogs);
+app.get('/api/admin/admins',                      ...adminMW, handleListAdmins);
+app.post('/api/admin/admins',                     ...adminMW, handleCreateAdmin);
+app.delete('/api/admin/admins/:userId',           ...adminMW, handleRemoveAdmin);
 
 // ============================================================================
 // EXPORT WORKER

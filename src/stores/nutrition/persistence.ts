@@ -11,11 +11,8 @@ export const createPersistenceActions = (
 ) => ({
   loadWeeklyMealPlan: async () => {
     try {
-      const currentPlan = get().weeklyMealPlan;
-      if (currentPlan) {
-        return currentPlan;
-      }
-
+      // Do NOT return early if a plan already exists in the store.
+      // A guest-generated plan must not block loading the real Supabase plan after login.
       try {
         const userId = getCurrentUserId();
         if (userId) {

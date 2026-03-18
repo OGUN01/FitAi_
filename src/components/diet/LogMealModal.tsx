@@ -1,14 +1,15 @@
 /**
- * LogMealModal - Manually log a meal with macros
+ * LogMealModal - Custom meal logging with ingredient-level entry
  *
  * Features:
- * - Enter meal name, calories, protein, carbs, fat
- * - Select meal type (breakfast/lunch/dinner/snack)
- * - Saves to nutritionStore (weekly plan + marks complete)
- * - Validation: meal name + calories required
+ * - Enter meal name and select meal type
+ * - Add individual ingredients (name + grams + protein/carbs/fat)
+ * - Macros auto-sum from all ingredients
+ * - Or use "Simple" mode: directly enter totals
+ * - Saves to nutritionStore (weeklyMealPlan + marks complete → shows in daily macros)
  */
 
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -27,11 +28,33 @@ import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rh, rw, rp, rbr } from "../../utils/responsive";
 import { useNutritionStore } from "../../stores/nutritionStore";
 import { haptics } from "../../utils/haptics";
-
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
+import { completionTrackingService } from "../../services/completionTracking";
+import { useAuth } from "../../hooks/useAuth";
+
+export interface LogMealScanResult {
+  type: 'food' | 'label' | 'barcode';
+  mealName: string;
+  suggestedMealType?: MealType;
+  ingredients?: Array<{
+    name: string; grams: string;
+    protein: string; carbs: string; fat: string; fiber: string;
+  }>;
+  directEntry?: {
+    calories: string; protein: string;
+    carbs: string; fat: string; fiber: string;
+  };
+  confidence?: number;
+}
+
 interface LogMealModalProps {
   visible: boolean;
   onClose: () => void;
+  onRequestFoodScan?: () => void;
+  onRequestLabelScan?: () => void;
+  onRequestBarcodeScan?: () => void;
+  pendingScanResult?: LogMealScanResult | null;
+  onScanResultConsumed?: () => void;
 }
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
@@ -44,28 +67,98 @@ const MEAL_ICONS: Record<MealType, string> = {
   snack: "cafe-outline",
 };
 
+interface Ingredient {
+  id: string;
+  name: string;
+  grams: string;
+  protein: string;
+  carbs: string;
+  fat: string;
+  fiber: string;
+}
+
+const makeIngredient = (): Ingredient => ({
+  id: `ing_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+  name: "",
+  grams: "",
+  protein: "",
+  carbs: "",
+  fat: "",
+  fiber: "",
+});
+
+const parseNum = (v: string) => parseFloat(v) || 0;
+
 export const LogMealModal: React.FC<LogMealModalProps> = ({
   visible,
   onClose,
+  onRequestFoodScan,
+  onRequestLabelScan,
+  onRequestBarcodeScan,
+  pendingScanResult,
+  onScanResultConsumed,
 }) => {
   const [mealName, setMealName] = useState("");
-  const [calories, setCalories] = useState("");
-  const [protein, setProtein] = useState("");
-  const [carbs, setCarbs] = useState("");
-  const [fat, setFat] = useState("");
   const [mealType, setMealType] = useState<MealType>("lunch");
+  const [mode, setMode] = useState<"ingredients" | "simple">("ingredients");
+  const [ingredients, setIngredients] = useState<Ingredient[]>([makeIngredient()]);
+
+  // Simple mode fields
+  const [simpleCalories, setSimpleCalories] = useState("");
+  const [simpleProtein, setSimpleProtein] = useState("");
+  const [simpleCarbs, setSimpleCarbs] = useState("");
+  const [simpleFat, setSimpleFat] = useState("");
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { weeklyMealPlan, setWeeklyMealPlan, completeMeal } =
-    useNutritionStore();
+  const { weeklyMealPlan, setWeeklyMealPlan, saveWeeklyMealPlan } = useNutritionStore();
+  const { user } = useAuth();
+
+  // Derived totals from ingredient mode
+  const totalProtein = ingredients.reduce((s, i) => s + parseNum(i.protein), 0);
+  const totalCarbs = ingredients.reduce((s, i) => s + parseNum(i.carbs), 0);
+  const totalFat = ingredients.reduce((s, i) => s + parseNum(i.fat), 0);
+  const totalFiber = ingredients.reduce((s, i) => s + parseNum(i.fiber), 0);
+  // Approx calories: 4 cal/g protein+carbs, 9 cal/g fat
+  const totalCalories = Math.round(totalProtein * 4 + totalCarbs * 4 + totalFat * 9);
+
+  useEffect(() => {
+    if (!pendingScanResult) return;
+
+    if (pendingScanResult.mealName) setMealName(pendingScanResult.mealName);
+    if (pendingScanResult.suggestedMealType) setMealType(pendingScanResult.suggestedMealType);
+
+    if (pendingScanResult.ingredients?.length) {
+      setMode('ingredients');
+      setIngredients(pendingScanResult.ingredients.map((ing) => ({
+        ...makeIngredient(),
+        name: ing.name,
+        grams: ing.grams,
+        protein: ing.protein,
+        carbs: ing.carbs,
+        fat: ing.fat,
+        fiber: ing.fiber,
+      })));
+    } else if (pendingScanResult.directEntry) {
+      setMode('simple');
+      setSimpleCalories(pendingScanResult.directEntry.calories);
+      setSimpleProtein(pendingScanResult.directEntry.protein);
+      setSimpleCarbs(pendingScanResult.directEntry.carbs);
+      setSimpleFat(pendingScanResult.directEntry.fat);
+    }
+
+    onScanResultConsumed?.();
+  }, [pendingScanResult]);
 
   const resetForm = () => {
     setMealName("");
-    setCalories("");
-    setProtein("");
-    setCarbs("");
-    setFat("");
     setMealType("lunch");
+    setMode("ingredients");
+    setIngredients([makeIngredient()]);
+    setSimpleCalories("");
+    setSimpleProtein("");
+    setSimpleCarbs("");
+    setSimpleFat("");
     setIsSubmitting(false);
   };
 
@@ -73,6 +166,30 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
     resetForm();
     onClose();
   };
+
+  const addIngredient = () => {
+    if (ingredients.length >= 10) {
+      crossPlatformAlert("Limit Reached", "Maximum 10 ingredients per meal.");
+      return;
+    }
+    setIngredients((prev) => [...prev, makeIngredient()]);
+    haptics.light();
+  };
+
+  const removeIngredient = (id: string) => {
+    if (ingredients.length === 1) return; // keep at least one
+    setIngredients((prev) => prev.filter((i) => i.id !== id));
+    haptics.light();
+  };
+
+  const updateIngredient = useCallback(
+    (id: string, field: keyof Omit<Ingredient, "id">, value: string) => {
+      setIngredients((prev) =>
+        prev.map((i) => (i.id === id ? { ...i, [field]: value } : i)),
+      );
+    },
+    [],
+  );
 
   const handleSave = async () => {
     if (isSubmitting) return;
@@ -83,46 +200,79 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
       return;
     }
 
-    const parsedCalories = parseFloat(calories);
-    if (!calories || isNaN(parsedCalories) || parsedCalories <= 0) {
-      crossPlatformAlert("Missing Info", "Please enter a valid calorie amount.");
-      return;
+    let finalProtein = 0;
+    let finalCarbs = 0;
+    let finalFat = 0;
+    let finalCalories = 0;
+
+    if (mode === "ingredients") {
+      const hasAnyIngredient = ingredients.some((i) => i.name.trim());
+      if (!hasAnyIngredient) {
+        crossPlatformAlert(
+          "No Ingredients",
+          "Please add at least one ingredient name.",
+        );
+        return;
+      }
+      finalProtein = totalProtein;
+      finalCarbs = totalCarbs;
+      finalFat = totalFat;
+      finalCalories = totalCalories;
+    } else {
+      finalCalories = parseNum(simpleCalories);
+      if (finalCalories <= 0) {
+        crossPlatformAlert("Missing Info", "Please enter a valid calorie amount.");
+        return;
+      }
+      finalProtein = parseNum(simpleProtein);
+      finalCarbs = parseNum(simpleCarbs);
+      finalFat = parseNum(simpleFat);
     }
 
     setIsSubmitting(true);
-
-    const parsedProtein = parseFloat(protein) || 0;
-    const parsedCarbs = parseFloat(carbs) || 0;
-    const parsedFat = parseFloat(fat) || 0;
-
     haptics.light();
 
     const today = new Date();
     const dayNames = [
-      "sunday",
-      "monday",
-      "tuesday",
-      "wednesday",
-      "thursday",
-      "friday",
-      "saturday",
+      "sunday", "monday", "tuesday", "wednesday",
+      "thursday", "friday", "saturday",
     ];
     const todayName = dayNames[today.getDay()];
     const mealId = `manual_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
-    // Build a DayMeal-compatible object for the weekly plan
+    // Build items list from ingredients (ingredient mode) for display
+    const items = mode === "ingredients"
+      ? ingredients
+          .filter((i) => i.name.trim())
+          .map((i, idx) => ({
+            id: `item_${mealId}_${idx}`,
+            name: i.name.trim(),
+            quantity: parseNum(i.grams) || 1,
+            unit: parseNum(i.grams) > 0 ? "g" : "serving",
+            calories: Math.round(parseNum(i.protein) * 4 + parseNum(i.carbs) * 4 + parseNum(i.fat) * 9),
+            macros: {
+              protein: parseNum(i.protein),
+              carbohydrates: parseNum(i.carbs),
+              fat: parseNum(i.fat),
+              fiber: parseNum(i.fiber),
+            },
+          }))
+      : [];
+
     const newMeal = {
       id: mealId,
       type: mealType,
       name: trimmedName,
-      description: `Manually logged ${mealType}`,
-      items: [],
-      totalCalories: parsedCalories,
+      description: mode === "ingredients"
+        ? `Custom meal with ${items.length} ingredient${items.length !== 1 ? "s" : ""}`
+        : `Manually logged ${mealType}`,
+      items,
+      totalCalories: finalCalories,
       totalMacros: {
-        protein: parsedProtein,
-        carbohydrates: parsedCarbs,
-        fat: parsedFat,
-        fiber: 0,
+        protein: finalProtein,
+        carbohydrates: finalCarbs,
+        fat: finalFat,
+        fiber: mode === "ingredients" ? totalFiber : 0,
       },
       preparationTime: 0,
       difficulty: "easy" as const,
@@ -136,7 +286,6 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
     };
 
     try {
-      // Add meal to weekly plan so it appears in the meal list
       const currentPlan = weeklyMealPlan || {
         id: `plan_${Date.now()}`,
         weekNumber: 1,
@@ -144,15 +293,13 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
         planTitle: "Manual Meals",
       };
 
-      const updatedPlan = {
-        ...currentPlan,
-        meals: [...currentPlan.meals, newMeal],
-      };
-
+      const updatedPlan = { ...currentPlan, meals: [...currentPlan.meals, newMeal as any] };
+      // Update local store first so completionTrackingService can find the meal
       setWeeklyMealPlan(updatedPlan);
-
-      // Mark meal as complete so it counts in getTodaysConsumedNutrition
-      await completeMeal(mealId);
+      // Persist plan to DB
+      await saveWeeklyMealPlan(updatedPlan);
+      // completionTrackingService handles: mealProgress update + Supabase meal_logs insert + analytics + refresh
+      await completionTrackingService.completeMeal(mealId, undefined, user?.id || undefined);
 
       haptics.success();
       resetForm();
@@ -181,10 +328,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
             {/* Header */}
             <View style={styles.header}>
               <Text style={styles.title}>Log Meal</Text>
-              <TouchableOpacity
-                onPress={handleClose}
-                style={styles.closeButton}
-              >
+              <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
                 <Ionicons
                   name="close"
                   size={rf(24)}
@@ -205,7 +349,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                   style={styles.input}
                   value={mealName}
                   onChangeText={setMealName}
-                  placeholder="e.g. Grilled Chicken Salad"
+                  placeholder="e.g. Dal Rice, Chicken Salad"
                   placeholderTextColor={ResponsiveTheme.colors.textSecondary}
                   autoFocus
                 />
@@ -228,9 +372,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                       }}
                     >
                       <Ionicons
-                        name={
-                          MEAL_ICONS[type] as keyof typeof Ionicons.glyphMap
-                        }
+                        name={MEAL_ICONS[type] as keyof typeof Ionicons.glyphMap}
                         size={rf(14)}
                         color={
                           mealType === type
@@ -251,66 +393,278 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                 </View>
               </View>
 
-              {/* Calories */}
-              <View style={styles.section}>
-                <Text style={styles.label}>
-                  Calories <Text style={styles.required}>*</Text>
-                </Text>
-                <TextInput
-                  style={styles.input}
-                  value={calories}
-                  onChangeText={setCalories}
-                  placeholder="0"
-                  placeholderTextColor={ResponsiveTheme.colors.textSecondary}
-                  keyboardType="numeric"
-                />
+              {/* Mode Toggle */}
+              <View style={styles.modeToggleRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.modeToggleBtn,
+                    mode === "ingredients" && styles.modeToggleBtnActive,
+                  ]}
+                  onPress={() => setMode("ingredients")}
+                >
+                  <Ionicons
+                    name="list-outline"
+                    size={rf(14)}
+                    color={
+                      mode === "ingredients"
+                        ? ResponsiveTheme.colors.white
+                        : ResponsiveTheme.colors.textSecondary
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.modeToggleText,
+                      mode === "ingredients" && styles.modeToggleTextActive,
+                    ]}
+                  >
+                    By Ingredients
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.modeToggleBtn,
+                    mode === "simple" && styles.modeToggleBtnActive,
+                  ]}
+                  onPress={() => setMode("simple")}
+                >
+                  <Ionicons
+                    name="calculator-outline"
+                    size={rf(14)}
+                    color={
+                      mode === "simple"
+                        ? ResponsiveTheme.colors.white
+                        : ResponsiveTheme.colors.textSecondary
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.modeToggleText,
+                      mode === "simple" && styles.modeToggleTextActive,
+                    ]}
+                  >
+                    Direct Entry
+                  </Text>
+                </TouchableOpacity>
               </View>
 
-              {/* Macros Row */}
-              <View style={styles.section}>
-                <Text style={styles.label}>Macros (optional)</Text>
-                <View style={styles.macroRow}>
-                  <View style={styles.macroField}>
-                    <Text style={styles.macroLabel}>Protein (g)</Text>
-                    <TextInput
-                      style={styles.macroInput}
-                      value={protein}
-                      onChangeText={setProtein}
-                      placeholder="0"
-                      placeholderTextColor={
-                        ResponsiveTheme.colors.textSecondary
-                      }
-                      keyboardType="numeric"
-                    />
+              {/* Scan auto-fill row */}
+              {(onRequestFoodScan || onRequestLabelScan || onRequestBarcodeScan) && (
+                <View style={styles.scanRow}>
+                  <Text style={styles.scanRowLabel}>Auto-fill via:</Text>
+                  {onRequestFoodScan && (
+                    <TouchableOpacity style={styles.scanChip} onPress={onRequestFoodScan}>
+                      <Ionicons name="camera-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+                      <Text style={styles.scanChipText}>Scan Dish</Text>
+                    </TouchableOpacity>
+                  )}
+                  {onRequestLabelScan && (
+                    <TouchableOpacity style={styles.scanChip} onPress={onRequestLabelScan}>
+                      <Ionicons name="document-text-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+                      <Text style={styles.scanChipText}>Label</Text>
+                    </TouchableOpacity>
+                  )}
+                  {onRequestBarcodeScan && (
+                    <TouchableOpacity style={styles.scanChip} onPress={onRequestBarcodeScan}>
+                      <Ionicons name="barcode-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+                      <Text style={styles.scanChipText}>Barcode</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+
+              {/* INGREDIENT MODE */}
+              {mode === "ingredients" && (
+                <View style={styles.section}>
+                  <View style={styles.ingredientsHeader}>
+                    <Text style={styles.label}>Ingredients</Text>
+                    <TouchableOpacity
+                      onPress={addIngredient}
+                      style={styles.addIngredientBtn}
+                    >
+                      <Ionicons
+                        name="add-circle"
+                        size={rf(20)}
+                        color={ResponsiveTheme.colors.primary}
+                      />
+                      <Text style={styles.addIngredientText}>Add</Text>
+                    </TouchableOpacity>
                   </View>
-                  <View style={styles.macroField}>
-                    <Text style={styles.macroLabel}>Carbs (g)</Text>
-                    <TextInput
-                      style={styles.macroInput}
-                      value={carbs}
-                      onChangeText={setCarbs}
-                      placeholder="0"
-                      placeholderTextColor={
-                        ResponsiveTheme.colors.textSecondary
-                      }
-                      keyboardType="numeric"
-                    />
-                  </View>
-                  <View style={styles.macroField}>
-                    <Text style={styles.macroLabel}>Fat (g)</Text>
-                    <TextInput
-                      style={styles.macroInput}
-                      value={fat}
-                      onChangeText={setFat}
-                      placeholder="0"
-                      placeholderTextColor={
-                        ResponsiveTheme.colors.textSecondary
-                      }
-                      keyboardType="numeric"
-                    />
+
+                  {/* Horizontally scrollable ingredient table */}
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                  >
+                    <View>
+                      {/* Column headers */}
+                      <View style={styles.ingredientColumnHeaders}>
+                        <Text style={[styles.colHeader, { width: rw(108) }]}>Ingredient</Text>
+                        <Text style={[styles.colHeader, styles.colFixed]}>g</Text>
+                        <Text style={[styles.colHeader, styles.colFixed]}>Pro</Text>
+                        <Text style={[styles.colHeader, styles.colFixed]}>Carb</Text>
+                        <Text style={[styles.colHeader, styles.colFixed]}>Fat</Text>
+                        <Text style={[styles.colHeader, styles.colFixed]}>Fiber</Text>
+                        <View style={{ width: rw(26) }} />
+                      </View>
+
+                      {ingredients.map((ing, idx) => (
+                        <View key={ing.id} style={styles.ingredientRow}>
+                          <TextInput
+                            style={[styles.ingredientInput, { width: rw(108), textAlign: "left" as const, paddingHorizontal: rp(8) }]}
+                            value={ing.name}
+                            onChangeText={(v) => updateIngredient(ing.id, "name", v)}
+                            placeholder={`Item ${idx + 1}`}
+                            placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                          />
+                          <TextInput
+                            style={[styles.ingredientInput, styles.colFixed]}
+                            value={ing.grams}
+                            onChangeText={(v) => updateIngredient(ing.id, "grams", v)}
+                            placeholder="0"
+                            placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                            keyboardType="numeric"
+                          />
+                          <TextInput
+                            style={[styles.ingredientInput, styles.colFixed]}
+                            value={ing.protein}
+                            onChangeText={(v) => updateIngredient(ing.id, "protein", v)}
+                            placeholder="0"
+                            placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                            keyboardType="numeric"
+                          />
+                          <TextInput
+                            style={[styles.ingredientInput, styles.colFixed]}
+                            value={ing.carbs}
+                            onChangeText={(v) => updateIngredient(ing.id, "carbs", v)}
+                            placeholder="0"
+                            placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                            keyboardType="numeric"
+                          />
+                          <TextInput
+                            style={[styles.ingredientInput, styles.colFixed]}
+                            value={ing.fat}
+                            onChangeText={(v) => updateIngredient(ing.id, "fat", v)}
+                            placeholder="0"
+                            placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                            keyboardType="numeric"
+                          />
+                          <TextInput
+                            style={[styles.ingredientInput, styles.colFixed]}
+                            value={ing.fiber}
+                            onChangeText={(v) => updateIngredient(ing.id, "fiber", v)}
+                            placeholder="0"
+                            placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                            keyboardType="numeric"
+                          />
+                          <TouchableOpacity
+                            onPress={() => removeIngredient(ing.id)}
+                            style={styles.removeBtn}
+                            disabled={ingredients.length === 1}
+                          >
+                        <Ionicons
+                          name="remove-circle-outline"
+                          size={rf(18)}
+                          color={
+                            ingredients.length === 1
+                              ? ResponsiveTheme.colors.textSecondary
+                              : ResponsiveTheme.colors.error
+                          }
+                        />
+                      </TouchableOpacity>
+                    </View>
+                      ))}
+                    </View>
+                  </ScrollView>
+
+                  {/* Totals summary */}
+                  <View style={styles.totalsSummary}>
+                    <View style={styles.totalItem}>
+                      <Text style={styles.totalValue}>{totalCalories}</Text>
+                      <Text style={styles.totalLabel}>cal</Text>
+                    </View>
+                    <View style={styles.totalItem}>
+                      <Text style={[styles.totalValue, { color: ResponsiveTheme.colors.errorLight }]}>
+                        {totalProtein.toFixed(1)}g
+                      </Text>
+                      <Text style={styles.totalLabel}>protein</Text>
+                    </View>
+                    <View style={styles.totalItem}>
+                      <Text style={[styles.totalValue, { color: ResponsiveTheme.colors.teal }]}>
+                        {totalCarbs.toFixed(1)}g
+                      </Text>
+                      <Text style={styles.totalLabel}>carbs</Text>
+                    </View>
+                    <View style={styles.totalItem}>
+                      <Text style={[styles.totalValue, { color: ResponsiveTheme.colors.amber }]}>
+                        {totalFat.toFixed(1)}g
+                      </Text>
+                      <Text style={styles.totalLabel}>fat</Text>
+                    </View>
+                    <View style={styles.totalItem}>
+                      <Text style={[styles.totalValue, { color: ResponsiveTheme.colors.textSecondary }]}>
+                        {totalFiber.toFixed(1)}g
+                      </Text>
+                      <Text style={styles.totalLabel}>fiber</Text>
+                    </View>
                   </View>
                 </View>
-              </View>
+              )}
+
+              {/* SIMPLE MODE */}
+              {mode === "simple" && (
+                <View style={styles.section}>
+                  <Text style={styles.label}>
+                    Calories <Text style={styles.required}>*</Text>
+                  </Text>
+                  <TextInput
+                    style={styles.input}
+                    value={simpleCalories}
+                    onChangeText={setSimpleCalories}
+                    placeholder="0"
+                    placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                    keyboardType="numeric"
+                  />
+                  <Text style={[styles.label, { marginTop: rh(12) }]}>
+                    Macros (optional)
+                  </Text>
+                  <View style={styles.macroRow}>
+                    <View style={styles.macroField}>
+                      <Text style={styles.macroLabel}>Protein (g)</Text>
+                      <TextInput
+                        style={styles.macroInput}
+                        value={simpleProtein}
+                        onChangeText={setSimpleProtein}
+                        placeholder="0"
+                        placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                        keyboardType="numeric"
+                      />
+                    </View>
+                    <View style={styles.macroField}>
+                      <Text style={styles.macroLabel}>Carbs (g)</Text>
+                      <TextInput
+                        style={styles.macroInput}
+                        value={simpleCarbs}
+                        onChangeText={setSimpleCarbs}
+                        placeholder="0"
+                        placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                        keyboardType="numeric"
+                      />
+                    </View>
+                    <View style={styles.macroField}>
+                      <Text style={styles.macroLabel}>Fat (g)</Text>
+                      <TextInput
+                        style={styles.macroInput}
+                        value={simpleFat}
+                        onChangeText={setSimpleFat}
+                        placeholder="0"
+                        placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                        keyboardType="numeric"
+                      />
+                    </View>
+                  </View>
+                </View>
+              )}
             </ScrollView>
 
             {/* Action Buttons */}
@@ -326,8 +680,14 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                 onPress={handleSave}
                 disabled={isSubmitting}
               >
-                <Ionicons name="checkmark" size={rf(18)} color={ResponsiveTheme.colors.white} />
-                <Text style={styles.saveButtonText}>{isSubmitting ? "Logging..." : "Log Meal"}</Text>
+                <Ionicons
+                  name="checkmark"
+                  size={rf(18)}
+                  color={ResponsiveTheme.colors.white}
+                />
+                <Text style={styles.saveButtonText}>
+                  {isSubmitting ? "Logging..." : "Log Meal"}
+                </Text>
               </AnimatedPressable>
             </View>
           </GlassCard>
@@ -345,8 +705,8 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
   },
   container: {
-    width: "90%",
-    maxHeight: "85%",
+    width: "93%",
+    maxHeight: "90%",
   },
   content: {
     borderRadius: rbr(20),
@@ -360,7 +720,7 @@ const styles = StyleSheet.create({
     marginBottom: rh(16),
   },
   title: {
-    fontSize: rf(24),
+    fontSize: rf(22),
     fontWeight: "bold",
     color: ResponsiveTheme.colors.text,
   },
@@ -368,16 +728,16 @@ const styles = StyleSheet.create({
     padding: rp(8),
   },
   scrollView: {
-    maxHeight: rh(420),
+    maxHeight: rh(500),
   },
   section: {
-    marginBottom: rh(18),
+    marginBottom: rh(16),
   },
   label: {
-    fontSize: rf(14),
+    fontSize: rf(13),
     fontWeight: "600",
     color: ResponsiveTheme.colors.text,
-    marginBottom: rh(8),
+    marginBottom: rh(6),
   },
   required: {
     color: ResponsiveTheme.colors.error,
@@ -386,25 +746,25 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.surface,
     borderRadius: rbr(12),
     paddingHorizontal: rp(12),
-    paddingVertical: rh(12),
-    fontSize: rf(16),
+    paddingVertical: rh(11),
+    fontSize: rf(15),
     color: ResponsiveTheme.colors.text,
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
   },
   typeSelector: {
     flexDirection: "row",
-    gap: rw(8),
+    gap: rw(6),
   },
   typeChip: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    gap: rw(4),
-    paddingVertical: rh(10),
-    paddingHorizontal: rw(8),
-    borderRadius: rbr(12),
+    gap: rw(3),
+    paddingVertical: rh(8),
+    paddingHorizontal: rw(4),
+    borderRadius: rbr(10),
     backgroundColor: ResponsiveTheme.colors.surface,
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
@@ -414,12 +774,115 @@ const styles = StyleSheet.create({
     borderColor: ResponsiveTheme.colors.primary,
   },
   typeChipText: {
-    fontSize: rf(12),
+    fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: ResponsiveTheme.colors.textSecondary,
   },
   typeChipTextActive: {
     color: ResponsiveTheme.colors.white,
+  },
+  modeToggleRow: {
+    flexDirection: "row",
+    gap: rw(8),
+    marginBottom: rh(14),
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: rbr(12),
+    padding: rp(4),
+  },
+  modeToggleBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    gap: rw(5),
+    paddingVertical: rh(8),
+    borderRadius: rbr(10),
+  },
+  modeToggleBtnActive: {
+    backgroundColor: ResponsiveTheme.colors.primary,
+  },
+  modeToggleText: {
+    fontSize: rf(12),
+    fontWeight: "600",
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+  modeToggleTextActive: {
+    color: ResponsiveTheme.colors.white,
+  },
+  ingredientsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+    marginBottom: rh(6),
+  },
+  addIngredientBtn: {
+    flexDirection: "row",
+    alignItems: "center" as const,
+    gap: rw(4),
+  },
+  addIngredientText: {
+    fontSize: rf(13),
+    fontWeight: "600",
+    color: ResponsiveTheme.colors.primary,
+  },
+  colFixed: {
+    width: rw(46),
+  },
+  ingredientColumnHeaders: {
+    flexDirection: "row",
+    alignItems: "center" as const,
+    marginBottom: rh(4),
+    gap: rw(3),
+  },
+  colHeader: {
+    fontSize: rf(10),
+    fontWeight: "600",
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: "center" as const,
+  },
+  ingredientRow: {
+    flexDirection: "row",
+    alignItems: "center" as const,
+    gap: rw(3),
+    marginBottom: rh(6),
+  },
+  ingredientInput: {
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: rbr(8),
+    paddingHorizontal: rp(6),
+    paddingVertical: rh(8),
+    fontSize: rf(12),
+    color: ResponsiveTheme.colors.text,
+    borderWidth: 1,
+    borderColor: ResponsiveTheme.colors.border,
+    textAlign: "center" as const,
+  },
+  removeBtn: {
+    width: rw(22),
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+  totalsSummary: {
+    flexDirection: "row",
+    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    borderRadius: rbr(12),
+    paddingVertical: rh(10),
+    paddingHorizontal: rp(8),
+    marginTop: rh(8),
+    justifyContent: "space-around" as const,
+  },
+  totalItem: {
+    alignItems: "center" as const,
+  },
+  totalValue: {
+    fontSize: rf(15),
+    fontWeight: "700",
+    color: ResponsiveTheme.colors.primary,
+  },
+  totalLabel: {
+    fontSize: rf(10),
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: rh(2),
   },
   macroRow: {
     flexDirection: "row",
@@ -444,10 +907,37 @@ const styles = StyleSheet.create({
     borderColor: ResponsiveTheme.colors.border,
     textAlign: "center" as const,
   },
+  scanRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: rw(8),
+    marginBottom: rh(12),
+    flexWrap: 'wrap' as const,
+  },
+  scanRowLabel: {
+    fontSize: rf(11),
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+  scanChip: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: rw(4),
+    paddingVertical: rh(6),
+    paddingHorizontal: rw(10),
+    borderRadius: rbr(20),
+    borderWidth: 1,
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: `${ResponsiveTheme.colors.primary}12`,
+  },
+  scanChipText: {
+    fontSize: rf(11),
+    fontWeight: '600' as const,
+    color: ResponsiveTheme.colors.primary,
+  },
   footer: {
     flexDirection: "row",
     gap: rw(12),
-    marginTop: rh(16),
+    marginTop: rh(14),
   },
   button: {
     flex: 1,
@@ -455,7 +945,7 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
     justifyContent: "center" as const,
     gap: rw(6),
-    paddingVertical: rh(14),
+    paddingVertical: rh(13),
     borderRadius: rbr(12),
   },
   cancelButton: {
@@ -464,7 +954,7 @@ const styles = StyleSheet.create({
     borderColor: ResponsiveTheme.colors.border,
   },
   cancelButtonText: {
-    fontSize: rf(16),
+    fontSize: rf(15),
     fontWeight: "600",
     color: ResponsiveTheme.colors.text,
   },
@@ -472,7 +962,7 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.primary,
   },
   saveButtonText: {
-    fontSize: rf(16),
+    fontSize: rf(15),
     fontWeight: "600",
     color: ResponsiveTheme.colors.white,
   },

@@ -10,6 +10,7 @@ import { profileValidator } from '../services/profileValidator';
 import { debounce } from '../utils/performance';
 import { useAuth } from '../hooks/useAuth';
 import { useUserStore } from '../stores/userStore';
+import { useProfileStore } from '../stores/profileStore';
 import { useOnboardingIntegration } from '../utils/integration';
 import {
   EditContextData,
@@ -134,31 +135,36 @@ export const EditProvider: React.FC<EditProviderProps> = ({
           switch (section) {
             case 'personalInfo':
               // PersonalInfo matches database schema - NO height/weight/activityLevel
+              // SSOT: profileStore.personalInfo is authoritative (onboarding_data table); userStore.profile is legacy fallback
+              const profilePI = useProfileStore.getState().personalInfo;
+              const piName = `${profilePI?.first_name || ''} ${profilePI?.last_name || ''}`.trim();
               sectionData = {
-                first_name: profile?.personalInfo?.first_name || '',
-                last_name: profile?.personalInfo?.last_name || '',
-                name: profile?.personalInfo?.name || '',
-                email: user?.email || profile?.personalInfo?.email || '',
-                age: profile?.personalInfo?.age || 0,
-                gender: profile?.personalInfo?.gender || 'prefer_not_to_say',
-                country: profile?.personalInfo?.country || '',
-                state: profile?.personalInfo?.state || '',
-                region: profile?.personalInfo?.region,
-                wake_time: profile?.personalInfo?.wake_time || '',
-                sleep_time: profile?.personalInfo?.sleep_time || '',
-                occupation_type: profile?.personalInfo?.occupation_type || 'desk_job',
-                profile_picture: profile?.personalInfo?.profile_picture,
-                dark_mode: profile?.personalInfo?.dark_mode,
-                units: profile?.personalInfo?.units,
-                notifications_enabled: profile?.personalInfo?.notifications_enabled,
+                first_name: profilePI?.first_name || profile?.personalInfo?.first_name || '',
+                last_name: profilePI?.last_name || profile?.personalInfo?.last_name || '',
+                name: piName || profilePI?.name || profile?.personalInfo?.name || '',
+                email: user?.email || profilePI?.email || profile?.personalInfo?.email || '',
+                age: profilePI?.age || profile?.personalInfo?.age || 0,
+                gender: profilePI?.gender || profile?.personalInfo?.gender || 'prefer_not_to_say',
+                country: profilePI?.country || profile?.personalInfo?.country || '',
+                state: profilePI?.state || profile?.personalInfo?.state || '',
+                region: profilePI?.region ?? profile?.personalInfo?.region,
+                wake_time: profilePI?.wake_time || profile?.personalInfo?.wake_time || '',
+                sleep_time: profilePI?.sleep_time || profile?.personalInfo?.sleep_time || '',
+                occupation_type: profilePI?.occupation_type || profile?.personalInfo?.occupation_type || 'desk_job',
+                profile_picture: profilePI?.profile_picture ?? profile?.personalInfo?.profile_picture,
+                dark_mode: profilePI?.dark_mode ?? profile?.personalInfo?.dark_mode,
+                units: profilePI?.units || profile?.personalInfo?.units,
+                notifications_enabled: profilePI?.notifications_enabled ?? profile?.personalInfo?.notifications_enabled,
               };
               break;
-            case 'fitnessGoals':
+            case 'fitnessGoals': {
+              // SSOT: profileStore.workoutPreferences is authoritative; profile.fitnessGoals (userStore) is legacy fallback
+              const profileStoreWP = useProfileStore.getState().workoutPreferences;
               sectionData = {
-                primary_goals: profile?.fitnessGoals?.primary_goals || profile?.fitnessGoals?.primaryGoals || [],
-                time_commitment: profile?.fitnessGoals?.time_commitment || profile?.fitnessGoals?.timeCommitment || '',
-                experience: profile?.fitnessGoals?.experience || '',
-                experience_level: profile?.fitnessGoals?.experience_level || profile?.fitnessGoals?.experience || '',
+                primary_goals: profileStoreWP?.primary_goals || profile?.fitnessGoals?.primary_goals || profile?.fitnessGoals?.primaryGoals || [],
+                time_commitment: String(profileStoreWP?.time_preference || '') || profile?.fitnessGoals?.time_commitment || profile?.fitnessGoals?.timeCommitment || '',
+                experience: profileStoreWP?.intensity || profile?.fitnessGoals?.experience || '',
+                experience_level: profileStoreWP?.intensity || profile?.fitnessGoals?.experience_level || profile?.fitnessGoals?.experience || '',
                 id: `fitnessGoals_${user?.id || 'guest'}_${Date.now()}`,
                 version: 1,
                 updatedAt: new Date().toISOString(),
@@ -166,9 +172,11 @@ export const EditProvider: React.FC<EditProviderProps> = ({
                 source: 'local' as const,
               };
               break;
-            case 'dietPreferences':
-              // Use new DietPreferences type with all required fields
-              const dp = profile?.dietPreferences as any;
+            }
+            case 'dietPreferences': {
+              // SSOT: profileStore.dietPreferences is authoritative; profile.dietPreferences (userStore) is legacy fallback
+              const profileStoreDP = useProfileStore.getState().dietPreferences;
+              const dp = (profileStoreDP || profile?.dietPreferences) as any;
               sectionData = {
                 // Basic diet info
                 diet_type: dp?.diet_type || dp?.dietType || 'non-veg',
@@ -211,6 +219,7 @@ export const EditProvider: React.FC<EditProviderProps> = ({
                 takes_supplements: dp?.takes_supplements || false,
               };
               break;
+            }
             case 'workoutPreferences':
               sectionData = {
                 workoutTypes: profile?.workoutPreferences?.workoutTypes || [],
@@ -219,7 +228,8 @@ export const EditProvider: React.FC<EditProviderProps> = ({
                 intensity: profile?.workoutPreferences?.intensity || 'beginner' as const,
                 timePreference: profile?.workoutPreferences?.timePreference || 30,
                 primaryGoals: profile?.workoutPreferences?.primaryGoals || [],
-                activityLevel: profile?.workoutPreferences?.activityLevel || 'moderate',
+                // SSOT: profileStore.workoutPreferences.activity_level is authoritative (onboarding_data table); activityLevel (camelCase) is always undefined
+                activityLevel: useProfileStore.getState().workoutPreferences?.activity_level || profile?.workoutPreferences?.activity_level || 'moderate',
                 id: `workoutPreferences_${user?.id || 'guest'}_${Date.now()}`,
                 version: 1,
                 updatedAt: new Date().toISOString(),

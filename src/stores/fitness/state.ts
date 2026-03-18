@@ -1,4 +1,4 @@
-import { FitnessState } from "./types";
+import { FitnessState, ActiveExtraSession } from "./types";
 
 export const initialFitnessState: Pick<
   FitnessState,
@@ -10,6 +10,7 @@ export const initialFitnessState: Pick<
   | "completedSessions"
   | "completedSessionsHydrated"
   | "_hasHydrated"
+  | "activeExtraSession"
 > = {
   weeklyWorkoutPlan: null,
   isGeneratingPlan: false,
@@ -19,4 +20,6 @@ export const initialFitnessState: Pick<
   completedSessions: [],
   completedSessionsHydrated: false,
   _hasHydrated: false,
+  // SSOT: active quick workout session (persists resume state)
+  activeExtraSession: null,
 };

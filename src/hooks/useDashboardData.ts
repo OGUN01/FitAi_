@@ -19,6 +19,7 @@ import { useHydrationStore } from "../stores/hydrationStore";
 import { useAchievementStore } from "../stores/achievementStore";
 import { useUserStore } from "../stores/userStore";
 import { useAnalyticsStore } from "../stores/analyticsStore";
+import { useProfileStore } from "../stores/profileStore";
 
 // Types for dashboard data
 export interface DashboardUser {
@@ -72,6 +73,8 @@ export const useDashboardData = (): DashboardData => {
 
   // User profile
   const profile = useUserStore((s) => s.profile);
+  // SSOT: profileStore.personalInfo is authoritative for name/age (onboarding_data table)
+  const profilePersonalInfo = useProfileStore((s) => s.personalInfo);
 
   // Nutrition - individual selectors
   const weeklyMealPlan = useNutritionStore((s) => s.weeklyMealPlan);
@@ -103,12 +106,16 @@ export const useDashboardData = (): DashboardData => {
 
   // Memoize the user object
   const user = useMemo<DashboardUser>(
-    () => ({
-      id: authUser?.id ?? null,
-      name: profile?.personalInfo?.name ?? null,
-      isAuthenticated: !!authUser,
-    }),
-    [authUser, profile?.personalInfo?.name],
+    () => {
+      // SSOT: profileStore.personalInfo is authoritative; compute name from first+last, fallback to userStore
+      const profileName = `${profilePersonalInfo?.first_name || ''} ${profilePersonalInfo?.last_name || ''}`.trim();
+      return {
+        id: authUser?.id ?? null,
+        name: profileName || profilePersonalInfo?.name || profile?.personalInfo?.name || null,
+        isAuthenticated: !!authUser,
+      };
+    },
+    [authUser, profilePersonalInfo, profile?.personalInfo?.name],
   );
 
   // Memoize nutrition object

@@ -15,20 +15,16 @@ import { rh } from "../../utils/responsive";
 // Hooks
 import { useProgressScreen } from "../../hooks/useProgressScreen";
 
-// Components
+// Kept components
 import { ProgressHeader } from "../../components/progress/ProgressHeader";
 import { ProgressErrorStates } from "../../components/progress/ProgressErrorStates";
-import { TodaysProgressCard } from "../../components/progress/TodaysProgressCard";
-import { WearableActivityCard } from "../../components/progress/WearableActivityCard";
-import { ProgressAnalytics } from "../../components/progress/ProgressAnalytics";
-import { PeriodSelector } from "../../components/progress/PeriodSelector";
-import { BodyMetricsSection } from "../../components/progress/BodyMetricsSection";
-import { WeeklyChartSection } from "../../components/progress/WeeklyChartSection";
-import { RecentActivitiesSection } from "../../components/progress/RecentActivitiesSection";
-import { AchievementsSection } from "../../components/progress/AchievementsSection";
-import { SummaryStatsSection } from "../../components/progress/SummaryStatsSection";
-import { ActivitiesModal } from "../../components/progress/ActivitiesModal";
 import { WeightEntryModal } from "../../components/progress/WeightEntryModal";
+import { AchievementsSection } from "../../components/progress/AchievementsSection";
+
+// New focused sections
+import { WeightJourneySection } from "../../components/progress/WeightJourneySection";
+import { GoalProgressSection } from "../../components/progress/GoalProgressSection";
+import { WorkoutConsistencySection } from "../../components/progress/WorkoutConsistencySection";
 
 interface ProgressScreenProps {
   navigation?: {
@@ -44,59 +40,39 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({
   const { state, computed, actions } = useProgressScreen(navigation);
 
   const {
-    selectedPeriod,
     refreshing,
     isLoading,
     showWeightModal,
-    showAnalytics,
-    showAllActivities,
-    weeklyProgress,
-    recentActivities,
-    realWeeklyData,
-    allActivities,
-    loadingMoreActivities,
-    hasMoreActivities,
-    todaysData,
-    isAuthenticated,
-    healthMetrics,
-    syncError,
-    isWearableConnected,
     progressLoading,
     progressError,
     analysisError,
     statsError,
-    statsLoading,
-    progressStats,
-    calculatedMetrics,
+    isAuthenticated,
     hasCalculatedMetrics,
     fadeAnim,
     slideAnim,
     trackBStatus,
     progressEntries,
+    progressStats,
+    calculatedMetrics,
+    weeklyProgress,
+    weightHistory,
   } = state;
 
-  const { periods, stats, achievements, weeklyData } = computed;
+  const { achievements } = computed;
 
   const {
-    setSelectedPeriod,
-    setShowAnalytics,
-    setShowAllActivities,
     onRefresh,
-    handleAddProgressEntry,
-    handleShareProgress,
-    loadMoreActivities,
     setShowWeightModal,
+    handleShareProgress,
   } = actions;
 
-  const combinedError =
-    progressError || analysisError || statsError || syncError;
+  const combinedError = progressError || analysisError || statsError;
 
   if (isLoading) {
     return (
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
           <AuroraSpinner size="lg" />
         </View>
       </AuroraBackground>
@@ -127,90 +103,55 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({
                 />
               }
             >
-              <View>
-                <ProgressHeader
-                  navigation={navigation}
-                  trackBStatus={trackBStatus}
-                  showAnalytics={showAnalytics}
-                  setShowAnalytics={setShowAnalytics}
-                  onAddEntry={handleAddProgressEntry}
-                  onShare={handleShareProgress}
-                />
+              <ProgressHeader
+                navigation={navigation}
+                trackBStatus={trackBStatus}
+                showAnalytics={false}
+                setShowAnalytics={() => {}}
+                onAddEntry={() => setShowWeightModal(true)}
+                onShare={handleShareProgress}
+              />
 
-                <ProgressErrorStates
-                  isLoading={isLoading}
-                  progressLoading={progressLoading}
-                  statsLoading={statsLoading}
-                  error={combinedError || null}
-                  isAuthenticated={isAuthenticated}
-                  hasCalculatedMetrics={hasCalculatedMetrics}
-                  progressEntriesLength={progressEntries.length}
-                  onRefresh={onRefresh}
-                  onAddEntry={handleAddProgressEntry}
-                />
+              <ProgressErrorStates
+                isLoading={isLoading}
+                progressLoading={progressLoading}
+                statsLoading={false}
+                error={combinedError || null}
+                isAuthenticated={isAuthenticated}
+                hasCalculatedMetrics={hasCalculatedMetrics}
+                progressEntriesLength={progressEntries.length}
+                onRefresh={onRefresh}
+                onAddEntry={() => setShowWeightModal(true)}
+              />
 
-                {(isAuthenticated || hasCalculatedMetrics) &&
-                  !progressError && (
-                    <>
-                      {!showAnalytics && todaysData && (
-                        <TodaysProgressCard
-                          todaysData={todaysData}
-                          calculatedMetrics={calculatedMetrics}
-                        />
-                      )}
+              {(isAuthenticated || hasCalculatedMetrics) && !progressError && (
+                <>
+                  {/* 1. Hero: Weight Journey with interactive chart */}
+                  <WeightJourneySection
+                    weightHistory={weightHistory}
+                    progressEntries={progressEntries}
+                    calculatedMetrics={calculatedMetrics}
+                    onLogWeight={() => setShowWeightModal(true)}
+                  />
 
-                      {isWearableConnected && !showAnalytics && (
-                        <WearableActivityCard healthMetrics={healthMetrics} />
-                      )}
+                  {/* 2. Goal Progress — am I getting closer? */}
+                  <GoalProgressSection
+                    progressStats={progressStats}
+                    calculatedMetrics={calculatedMetrics}
+                    weeklyProgress={weeklyProgress}
+                  />
 
-                      {showAnalytics && <ProgressAnalytics />}
+                  {/* 3. Workout Consistency calendar heatmap */}
+                  <WorkoutConsistencySection
+                    streak={weeklyProgress?.streak ?? 0}
+                  />
 
-                      {!showAnalytics && (
-                        <PeriodSelector
-                          periods={periods}
-                          selectedPeriod={selectedPeriod}
-                          onSelect={setSelectedPeriod}
-                        />
-                      )}
-
-                      <BodyMetricsSection
-                        stats={stats}
-                        progressEntries={progressEntries}
-                      />
-
-                      <WeeklyChartSection weeklyData={weeklyData} />
-
-                      <RecentActivitiesSection
-                        recentActivities={recentActivities}
-                        onViewAll={() => {
-                          actions.loadMoreActivities();
-                          setShowAllActivities(true);
-                        }}
-                      />
-
-                      <AchievementsSection achievements={achievements} />
-
-                      <SummaryStatsSection
-                        weeklyProgress={weeklyProgress}
-                        realWeeklyData={realWeeklyData}
-                        progressStats={progressStats}
-                      />
-                    </>
-                  )}
-
-                <View style={[styles.bottomSpacing, { height: insets.bottom + rh(100) }]} />
-              </View>
+                  {/* 4. Achievements & milestones */}
+                  <AchievementsSection achievements={achievements} />
+                </>
+              )}
             </ScrollView>
           </Animated.View>
-
-          <ActivitiesModal
-            visible={showAllActivities}
-            onClose={() => setShowAllActivities(false)}
-            activities={allActivities}
-            onLoadMore={loadMoreActivities}
-            loadingMore={loadingMoreActivities}
-            hasMore={hasMoreActivities}
-          />
         </View>
       </AuroraBackground>
 
@@ -219,9 +160,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({
         onClose={() => setShowWeightModal(false)}
         currentWeight={progressStats?.weightChange?.current}
         unit="kg"
-        onSuccess={() => {
-          onRefresh();
-        }}
+        onSuccess={onRefresh}
       />
     </>
   );
@@ -234,8 +173,5 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-  },
-  bottomSpacing: {
-    height: ResponsiveTheme.spacing.xl,
   },
 });

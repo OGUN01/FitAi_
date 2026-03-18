@@ -36,22 +36,25 @@ export class HealthCalculationEngine {
     let heightCm = bodyAnalysis.height_cm;
     let usedFallbackDefaults = false;
 
-    if (weightKg <= 0 || heightCm <= 0) {
+    // Use fallback defaults if measurements are missing OR out of the valid range for
+    // calculateBMR/calculateBMI (both throw for weight < 30 or height < 100).
+    // Partial mid-typing values (e.g. "9" before "93") fall through to here.
+    if (weightKg <= 0 || weightKg < 30 || weightKg > 300 || heightCm <= 0 || heightCm < 100 || heightCm > 250) {
       const genderKey =
         personalInfo.gender === 'male' || personalInfo.gender === 'female'
           ? personalInfo.gender
           : 'default';
       const defaults = this.FALLBACK_DEFAULTS[genderKey];
 
-      if (weightKg <= 0) {
+      if (weightKg <= 0 || weightKg < 30 || weightKg > 300) {
         console.warn(
-          `⚠️ [HealthCalculationEngine] current_weight_kg is ${weightKg}. Using fallback: ${defaults.weight_kg}kg (${genderKey})`,
+          `⚠️ [HealthCalculationEngine] current_weight_kg is ${weightKg} (out of valid range 30-300). Using fallback: ${defaults.weight_kg}kg (${genderKey})`,
         );
         weightKg = defaults.weight_kg;
       }
-      if (heightCm <= 0) {
+      if (heightCm <= 0 || heightCm < 100 || heightCm > 250) {
         console.warn(
-          `⚠️ [HealthCalculationEngine] height_cm is ${heightCm}. Using fallback: ${defaults.height_cm}cm (${genderKey})`,
+          `⚠️ [HealthCalculationEngine] height_cm is ${heightCm} (out of valid range 100-250). Using fallback: ${defaults.height_cm}cm (${genderKey})`,
         );
         heightCm = defaults.height_cm;
       }

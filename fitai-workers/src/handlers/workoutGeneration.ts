@@ -28,6 +28,7 @@ import { ErrorCode } from '../utils/errorCodes';
 import { withDeduplication } from '../utils/deduplication';
 import { loadUserMetrics, loadBodyMeasurements } from '../services/userMetricsService';
 import { generateRuleBasedWorkout } from './workoutGenerationRuleBased';
+import { getAIConfig } from '../utils/appConfig';
 
 // ============================================================================
 // FEATURE FLAG: RULE-BASED GENERATION
@@ -593,9 +594,10 @@ async function generateFreshWorkout(
 
     // 5. Generate workout using AI with calculated metrics
     const prompt = buildWorkoutPrompt(request, exercisesForAI, calculatedMetrics);
-    const model = createAIProvider(env, request.model);
+    const aiConfig = await getAIConfig(env);
+    const model = createAIProvider(env, aiConfig.model);
 
-    console.log('[Workout Generation] Calling AI model:', request.model);
+    console.log('[Workout Generation] Calling AI model:', aiConfig.model);
 
     const aiStartTime = Date.now();
     const result = await generateObject({

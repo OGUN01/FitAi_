@@ -11,6 +11,7 @@ interface NutritionSummaryCardProps {
     protein: { current: number; target: number };
     carbs: { current: number; target: number };
     fat: { current: number; target: number };
+    fiber?: { current: number; target: number };
   };
 }
 
@@ -44,6 +45,14 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
   const fatOverflow = resolvedTargets.fat.target > 0 && resolvedTargets.fat.current > resolvedTargets.fat.target;
   return (
     <View style={styles.section}>
+      {showDefaultsNotice && (
+        <View style={styles.defaultsNotice}>
+          <Text style={styles.defaultsNoticeIcon}>📋</Text>
+          <Text style={styles.defaultsNoticeText}>
+            Using estimated targets — complete your profile for personalized goals
+          </Text>
+        </View>
+      )}
       <GlassCard
         elevation={2}
         blurIntensity="light"
@@ -152,6 +161,32 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
               />
             </View>
           </View>
+          {/* Fiber */}
+          {nutritionTargets.fiber && (
+            <View style={styles.macroRow}>
+              <View style={styles.macroRowHeader}>
+                <View style={styles.macroLabelRow}>
+                  <View style={[styles.macroDot, { backgroundColor: "#9B59B6" }]} />
+                  <Text style={styles.macroLabel}>Fiber</Text>
+                </View>
+                <Text style={styles.macroAmount}>
+                  <Text style={styles.macroValue}>{Math.round(nutritionTargets.fiber.current)}g</Text>
+                  <Text style={styles.macroTarget}> / {nutritionTargets.fiber.target}g</Text>
+                </Text>
+              </View>
+              <View style={styles.progressTrack}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      backgroundColor: "#9B59B6",
+                      width: `${Math.min(100, nutritionTargets.fiber.target > 0 ? (nutritionTargets.fiber.current / nutritionTargets.fiber.target) * 100 : 0)}%` as any,
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+          )}
         </View>
       </GlassCard>
     </View>
@@ -162,6 +197,27 @@ const styles = StyleSheet.create({
   section: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     marginBottom: ResponsiveTheme.spacing.xl,
+  },
+  defaultsNotice: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: ResponsiveTheme.spacing.xs,
+    backgroundColor: `${ResponsiveTheme.colors.warning}18`,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.sm,
+    borderWidth: 1,
+    borderColor: `${ResponsiveTheme.colors.warning}30`,
+  },
+  defaultsNoticeIcon: {
+    fontSize: rf(12),
+  },
+  defaultsNoticeText: {
+    flex: 1,
+    fontSize: rf(10),
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(14),
   },
   calorieOverviewCenter: {
     alignItems: "center",

@@ -11,110 +11,13 @@ import { supabase } from "../services/supabase";
 import { generateUUID, isValidUUID } from "../utils/uuid";
 import { getCurrentUserId, getUserIdOrGuest } from "../services/authUtils";
 import { RealtimeChannel } from "@supabase/supabase-js";
-import { CompletedSession } from "./fitness/types";
+// SSOT: import canonical type definitions from ./fitness/types — do NOT redeclare locally
+import { CompletedSession, FitnessState, WorkoutProgress } from "./fitness/types";
 import { getCurrentWeekStart } from "../utils/weekUtils";
 
 // Realtime subscription channel reference (outside store to persist across re-renders)
 let workoutSessionsChannel: RealtimeChannel | null = null;
 
-interface WorkoutProgress {
-  workoutId: string;
-  progress: number; // 0-100
-  completedAt?: string;
-  sessionId?: string;
-  exerciseIndex?: number;   // first incomplete exercise index on partial exit
-  caloriesBurned?: number;  // actual calories burned up to exit point
-}
-
-// Completed workout stats computed from workoutProgress - SINGLE SOURCE OF TRUTH
-interface CompletedWorkoutStats {
-  count: number;
-  totalCalories: number;
-  totalDuration: number;
-}
-
-interface FitnessState {
-  // Weekly workout plan state
-  weeklyWorkoutPlan: WeeklyWorkoutPlan | null;
-  isGeneratingPlan: boolean;
-  planError: string | null;
-
-  // Workout progress tracking
-  workoutProgress: Record<string, WorkoutProgress>;
-
-  // Current workout session
-  currentWorkoutSession: {
-    workoutId: string;
-    sessionId: string;
-    startedAt: string;
-    exercises: Array<{
-      exerciseId: string;
-      completed: boolean;
-      sets: Array<{
-        reps: number;
-        weight: number;
-        completed: boolean;
-      }>;
-    }>;
-  } | null;
-
-  // Actions
-  setWeeklyWorkoutPlan: (plan: WeeklyWorkoutPlan | null) => void;
-  saveWeeklyWorkoutPlan: (plan: WeeklyWorkoutPlan) => Promise<void>;
-  loadWeeklyWorkoutPlan: () => Promise<WeeklyWorkoutPlan | null>;
-  setGeneratingPlan: (isGenerating: boolean) => void;
-  setPlanError: (error: string | null) => void;
-
-  // Workout progress actions
-  updateWorkoutProgress: (
-    workoutId: string,
-    progress: number,
-    metadata?: { exerciseIndex?: number; caloriesBurned?: number },
-  ) => void;
-  completeWorkout: (workoutId: string, sessionId?: string, caloriesBurned?: number) => Promise<void>;
-  getWorkoutProgress: (workoutId: string) => WorkoutProgress | null;
-
-  // Computed selectors - SINGLE SOURCE OF TRUTH
-  getCompletedWorkoutStats: () => CompletedWorkoutStats;
-  getTodaysCompletedWorkoutStats: () => CompletedWorkoutStats;
-
-  // Workout session actions
-  startWorkoutSession: (workout: DayWorkout) => Promise<string>;
-  endWorkoutSession: (sessionId: string) => Promise<void>;
-  updateExerciseProgress: (
-    exerciseId: string,
-    setIndex: number,
-    reps: number,
-    weight: number,
-  ) => void;
-
-  // Data persistence
-  persistData: () => Promise<void>;
-  loadData: () => Promise<void>;
-  clearData: () => void;
-  clearOldWorkoutData: () => Promise<void>;
-  forceWorkoutRegeneration: () => void;
-
-  // Realtime subscriptions
-  setupRealtimeSubscription: (userId: string) => void;
-  cleanupRealtimeSubscription: () => void;
-
-  // Reset store (for logout)
-  reset: () => void;
-
-  // Completed sessions — single source of truth for all stats
-  completedSessions: CompletedSession[];
-  completedSessionsHydrated: boolean;
-  _hasHydrated: boolean;
-
-  // New actions
-  addCompletedSession: (session: CompletedSession) => void;
-  markCompletedSessionsHydrated: () => void;
-  setHasHydrated: () => void;
-  getPlannedSessionStats: (weekStart: string) => { count: number; totalCalories: number; totalDuration: number };
-  getExtraSessionStats: (weekStart: string) => { count: number; totalCalories: number; totalDuration: number };
-  getAllSessionCalories: (dateStr: string) => number;
-}
 
 export const useFitnessStore = create<FitnessState>()(
   persist(
@@ -128,6 +31,7 @@ export const useFitnessStore = create<FitnessState>()(
       completedSessions: [],
       completedSessionsHydrated: false,
       _hasHydrated: false,
+      activeExtraSession: null,
 
       // Weekly workout plan actions
       setWeeklyWorkoutPlan: (plan) => {
@@ -232,11 +136,8 @@ export const useFitnessStore = create<FitnessState>()(
 
       loadWeeklyWorkoutPlan: async () => {
         try {
-          // First check local storage
-          const currentPlan = get().weeklyWorkoutPlan;
-          if (currentPlan) {
-            return currentPlan;
-          }
+          // Do NOT return early if a plan already exists in the store.
+          // A guest-generated plan must not block loading the real Supabase plan after login.
 
           // Try to load complete weekly plan from database
           try {
@@ -400,6 +301,7 @@ export const useFitnessStore = create<FitnessState>()(
 
       // New completedSessions actions
       addCompletedSession: (session) => {
+        if (!session?.sessionId) return;
         set((state) => {
           // Idempotent: skip if sessionId already exists
           if (state.completedSessions.some((s) => s.sessionId === session.sessionId)) {
@@ -412,6 +314,17 @@ export const useFitnessStore = create<FitnessState>()(
       markCompletedSessionsHydrated: () => set({ completedSessionsHydrated: true }),
 
       setHasHydrated: () => set({ _hasHydrated: true }),
+
+      setActiveExtraSession: (session) => set({ activeExtraSession: session }),
+
+      updateActiveExtraProgress: (exerciseIndex) =>
+        set((state) =>
+          state.activeExtraSession
+            ? { activeExtraSession: { ...state.activeExtraSession, exerciseIndex } }
+            : state,
+        ),
+
+      clearActiveExtraSession: () => set({ activeExtraSession: null }),
 
       getPlannedSessionStats: (weekStart) => {
         const sessions = get().completedSessions.filter(
@@ -617,6 +530,90 @@ export const useFitnessStore = create<FitnessState>()(
           if (plan) {
             set({ weeklyWorkoutPlan: plan });
           }
+
+          // Hydrate workoutProgress + completedSessions from Supabase on login
+          try {
+            const { data: user } = await supabase.auth.getUser();
+            if (user?.user?.id) {
+              const { data: sessions, error } = await supabase
+                .from("workout_sessions")
+                .select("id, workout_id, workout_name, workout_type, total_duration_minutes, calories_burned, completed_at, started_at, is_extra, exercises_completed, is_completed")
+                .eq("user_id", user.user.id)
+                .eq("is_completed", true)
+                .order("completed_at", { ascending: false })
+                .limit(200);
+
+              if (error) {
+                console.error("❌ Failed to fetch workout_sessions:", error);
+              } else if (sessions && sessions.length > 0) {
+                // Restore workoutProgress (for plan completion checkmarks)
+                const restoredProgress: Record<string, WorkoutProgress> = {};
+                sessions.forEach((s) => {
+                  if (s.workout_id) {
+                    restoredProgress[s.workout_id] = {
+                      workoutId: s.workout_id,
+                      progress: 100,
+                      completedAt: s.completed_at,
+                      sessionId: s.id,
+                      caloriesBurned: s.calories_burned || 0,
+                    };
+                  }
+                });
+                set((state) => ({
+                  workoutProgress: { ...state.workoutProgress, ...restoredProgress },
+                }));
+
+                // Rebuild completedSessions — skip IDs already in the store
+                const existingIds = new Set(get().completedSessions.map((c) => c.sessionId));
+                const hydrated: CompletedSession[] = sessions
+                  .filter((s) => !existingIds.has(s.id))
+                  .map((s) => {
+                    // Compute Monday of the week for completed_at
+                    const d = new Date(s.completed_at);
+                    const day = d.getDay();
+                    const diff = day === 0 ? -6 : 1 - day;
+                    d.setDate(d.getDate() + diff);
+                    const weekStart = d.toISOString().split("T")[0];
+
+                    const exercises = Array.isArray(s.exercises_completed)
+                      ? s.exercises_completed.map((ex: any) => ({
+                          name: ex.exerciseName || ex.name || "",
+                          sets: Number(ex.sets) || 0,
+                          reps: Number(ex.reps) || 0,
+                          exerciseId: ex.exerciseId || ex.id,
+                          duration: ex.duration,
+                          restTime: ex.restTime,
+                        }))
+                      : [];
+
+                    return {
+                      sessionId: s.id,
+                      type: s.is_extra ? ("extra" as const) : ("planned" as const),
+                      workoutId: s.workout_id || s.id,
+                      workoutSnapshot: {
+                        title: s.workout_name || "Workout",
+                        category: s.workout_type || "general",
+                        duration: s.total_duration_minutes || 0,
+                        exercises,
+                      },
+                      caloriesBurned: s.calories_burned || 0,
+                      durationMinutes: s.total_duration_minutes || 0,
+                      completedAt: s.completed_at,
+                      weekStart,
+                    };
+                  });
+
+                if (hydrated.length > 0) {
+                  set((state) => ({
+                    completedSessions: [...hydrated, ...state.completedSessions],
+                  }));
+                }
+              }
+            }
+          } catch (supabaseError) {
+            console.error("❌ Failed to hydrate completed sessions:", supabaseError);
+          }
+
         } catch (error) {
           console.error("❌ Failed to load fitness data:", error);
         }
@@ -660,6 +657,7 @@ export const useFitnessStore = create<FitnessState>()(
           weeklyWorkoutPlan: null,
           planError: null,
           isGeneratingPlan: false,
+          activeExtraSession: null,
         });
       },
 
@@ -702,6 +700,7 @@ export const useFitnessStore = create<FitnessState>()(
           currentWorkoutSession: null,
           completedSessions: [],
           completedSessionsHydrated: false,
+          activeExtraSession: null,
           // _hasHydrated intentionally NOT reset — stays true once hydrated
         });
       },
@@ -713,6 +712,7 @@ export const useFitnessStore = create<FitnessState>()(
         weeklyWorkoutPlan: state.weeklyWorkoutPlan,
         workoutProgress: state.workoutProgress,
         completedSessions: state.completedSessions,
+        activeExtraSession: state.activeExtraSession,
         // completedSessionsHydrated: intentionally excluded (resets on cold start)
         // _hasHydrated: intentionally excluded (set by onRehydrateStorage)
       }),

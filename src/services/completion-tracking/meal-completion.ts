@@ -59,12 +59,12 @@ export async function completeMeal(
             const supabaseResult = await supabase.from("meal_logs").insert({
               user_id: currentUserId,
               meal_type: meal.type,
-              meal_name: meal.name,
-              food_items: meal.items || [],
-              total_calories: meal.totalCalories || 0,
-              total_protein: meal.totalMacros?.protein ?? 0,
-              total_carbohydrates: meal.totalMacros?.carbohydrates ?? 0,
-              total_fat: meal.totalMacros?.fat ?? 0,
+              custom_meal_name: meal.name,
+              ingredients: meal.items || [],
+              calories: meal.totalCalories || 0,
+              protein_g: meal.totalMacros?.protein ?? 0,
+              carbs_g: meal.totalMacros?.carbohydrates ?? 0,
+              fat_g: meal.totalMacros?.fat ?? 0,
               logged_at: new Date().toISOString(),
             });
 

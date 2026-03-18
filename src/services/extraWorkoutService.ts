@@ -6,6 +6,7 @@ import { fitnessRefreshService } from './fitnessRefreshService';
 import { useFitnessStore } from '../stores/fitnessStore';
 import { useUserStore } from '../stores/userStore';
 import { useProfileStore } from '../stores/profileStore';
+import { useAchievementStore } from '../stores/achievementStore';
 import { calculateWorkoutCalories, ExerciseCalorieInput } from './calorieCalculator';
 import { generateUUID } from '../utils/uuid';
 import { getCurrentWeekStart, getCurrentDayName } from '../utils/weekUtils';
@@ -75,10 +76,11 @@ export async function generateWorkout(
     const dayWorkout: DayWorkout = {
       ...(result.data as any),
       id: generateUUID(),
+      // Use engine's personalized title/calories; fall back to template only if absent
       title: result.data.title || template.title,
       category: template.category,
       duration: template.duration,
-      estimatedCalories: template.estimatedCalories,
+      // result.data.estimatedCalories is MET-based (user weight + duration) — don't override
       dayOfWeek: getCurrentDayName(),
       isExtra: true,
     };
@@ -105,8 +107,8 @@ export async function completeExtraWorkout(
     const userStore = useUserStore.getState();
     const profileStore = useProfileStore.getState();
     const userWeight =
-      userStore.profile?.bodyMetrics?.current_weight_kg ||
-      profileStore.bodyAnalysis?.current_weight_kg;
+      profileStore.bodyAnalysis?.current_weight_kg ||
+      userStore.profile?.bodyMetrics?.current_weight_kg;
 
     let actualCaloriesBurned = 0;
 
@@ -128,9 +130,12 @@ export async function completeExtraWorkout(
     const isGuest = !userId || userId.startsWith('guest');
 
     // Non-guest: sync to Supabase
+    // Will be set to the Supabase-generated row ID after a successful insert
+    let supabaseSessionId: string | null = null;
+
     if (!isGuest) {
       try {
-        const { error: supabaseError } = await supabase
+        const supabaseResult = await supabase
           .from('workout_sessions')
           .insert({
             user_id: userId,
@@ -145,10 +150,14 @@ export async function completeExtraWorkout(
             is_extra: true,
             enjoyment_rating: sessionData?.rating || null,
             notes: sessionData?.notes || `Extra workout: ${workout.title}`,
-          });
+          })
+          .select("id")
+          .single();
 
-        if (supabaseError) {
-          console.error('⚠️ Supabase extra workout insert error:', supabaseError);
+        if (supabaseResult.error) {
+          console.error('⚠️ Supabase extra workout insert error:', supabaseResult.error);
+        } else if (supabaseResult.data?.id) {
+          supabaseSessionId = supabaseResult.data.id;
         }
       } catch (supabaseErr) {
         console.error('❌ Failed to sync extra workout to Supabase:', supabaseErr);
@@ -168,8 +177,12 @@ export async function completeExtraWorkout(
     // Always update store — Rule 6: store is runtime source
     const workoutId = workout.id || generateUUID();
     const fitnessStore = useFitnessStore.getState();
+
+    // Mark the active session as done — card will now show COMPLETED
+    fitnessStore.clearActiveExtraSession();
+
     fitnessStore.addCompletedSession({
-      sessionId: sessionData?.sessionId || generateUUID(),
+      sessionId: supabaseSessionId || sessionData?.sessionId || generateUUID(),
       type: 'extra' as const,
       workoutId,
       workoutSnapshot: {
@@ -190,6 +203,10 @@ export async function completeExtraWorkout(
       completedAt: new Date().toISOString(),
       weekStart: getCurrentWeekStart(),
     } satisfies CompletedSession);
+
+    // SSOT Fix 19: update achievementStore.currentStreak so all consumers
+    // reading the store see the real streak immediately after extra workout.
+    useAchievementStore.getState().updateCurrentStreak();
 
     // Trigger UI refresh
     try {

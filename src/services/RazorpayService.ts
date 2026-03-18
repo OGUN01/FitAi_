@@ -1,9 +1,37 @@
-import RazorpayCheckout, {
-  RazorpayCheckoutOptions,
-  RazorpaySuccessResponse,
-} from "react-native-razorpay";
+import { Platform } from "react-native";
 import { API_CONFIG, getWorkersUrl } from "../config/api";
 import { supabase } from "./supabase";
+
+// Types — declared locally to avoid importing from native module on web
+export interface RazorpayCheckoutOptions {
+  key: string;
+  subscription_id: string;
+  name?: string;
+  description?: string;
+  image?: string;
+  prefill?: {
+    email?: string;
+    contact?: string;
+    name?: string;
+  };
+  notes?: Record<string, string>;
+  theme?: { color?: string };
+}
+
+export interface RazorpaySuccessResponse {
+  razorpay_payment_id: string;
+  razorpay_subscription_id: string;
+  razorpay_signature: string;
+}
+
+// Native SDK — only imported/used on native platforms
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let RazorpayCheckout: any = null;
+if (Platform.OS !== "web") {
+  // Dynamic require so Metro/webpack doesn't bundle the native module on web
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  RazorpayCheckout = require("react-native-razorpay").default;
+}
 
 // ============================================================================
 // Types
@@ -56,26 +84,47 @@ export class RazorpayServiceError extends Error {
 
 class RazorpayService {
   private async getAuthToken(): Promise<string> {
+    // Try getSession() first — it's fast (reads from cache/localStorage)
     const {
       data: { session },
-      error,
+      error: sessionError,
     } = await supabase.auth.getSession();
 
-    if (error) {
+    if (session?.access_token) {
+      return session.access_token;
+    }
+
+    // getSession() can return null on web if the session hasn't been restored
+    // yet from localStorage/cookie. Fall back to getUser() which makes a
+    // network request to Supabase and returns a fresh, validated token.
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
       throw new RazorpayServiceError(
-        `Failed to get session: ${error.message}`,
+        sessionError?.message
+          ? `Auth failed: ${sessionError.message}`
+          : "No active session — please sign in and try again",
         "AUTH_ERROR",
       );
     }
 
-    if (!session?.access_token) {
+    // Re-fetch session after getUser() confirms the user is valid
+    // (getUser() refreshes the session internally on web)
+    const {
+      data: { session: refreshedSession },
+    } = await supabase.auth.getSession();
+
+    if (!refreshedSession?.access_token) {
       throw new RazorpayServiceError(
-        "No active session — sign in required",
+        "Session token unavailable. Please sign out and sign in again.",
         "AUTH_ERROR",
       );
     }
 
-    return session.access_token;
+    return refreshedSession.access_token;
   }
 
   private async request<T>(
@@ -161,6 +210,12 @@ class RazorpayService {
     };
 
     try {
+      if (Platform.OS === "web") {
+        // On web, use the Razorpay checkout.js shim
+        const { openRazorpayWebCheckout } = await import("./RazorpayWebCheckout");
+        return await openRazorpayWebCheckout(options);
+      }
+      // Native platforms: use react-native-razorpay SDK
       return await RazorpayCheckout.open(options);
     } catch (err: unknown) {
       const errorObj = err as Record<string, unknown> | undefined;

@@ -35,18 +35,25 @@ function validateSupabaseResponse(
 
 // Map LocalWorkoutSession camelCase fields to Supabase snake_case columns
 function mapSessionToDb(data: Record<string, unknown>) {
+  // Coerce all numerics to avoid NOT NULL constraint failures
+  const caloriesBurned = typeof data.caloriesBurned === 'number' ? data.caloriesBurned : 0;
+  const duration = typeof data.duration === 'number' ? data.duration : 0;
+  // rating: use null instead of 0 to satisfy check constraint (1-5 or null)
+  const rawRating = data.rating;
+  const rating = (typeof rawRating === 'number' && rawRating > 0) ? rawRating : null;
+
   return {
     id: data.id,
     user_id: data.userId,
     workout_id: data.workoutId || null,
     started_at: data.startedAt,
-    completed_at: data.completedAt,
-    duration: data.duration,
-    calories_burned: data.caloriesBurned,
-    exercises: data.exercises,
+    completed_at: data.completedAt || null,
+    duration,
+    calories_burned: caloriesBurned,
+    exercises: data.exercises || [],
     notes: data.notes || '',
-    rating: data.rating || 0,
-    is_completed: data.isCompleted,
+    rating,
+    is_completed: data.isCompleted || false,
   };
 }
 
@@ -61,7 +68,11 @@ export async function executeAction(action: OfflineAction): Promise<void> {
       switch (type) {
         case "CREATE":
           const insertData = table === 'workout_sessions' ? mapSessionToDb(data as Record<string, unknown>) : data;
-          const createResponse = await supabase.from(table).insert([insertData]);
+          // progress_entries has a unique (user_id, entry_date) constraint — upsert to avoid
+          // duplicate key errors when replaying queued offline actions.
+          const createResponse = table === 'progress_entries'
+            ? await supabase.from(table).upsert([insertData], { onConflict: 'user_id,entry_date' })
+            : await supabase.from(table).insert([insertData]);
           const createValidation = validateSupabaseResponse(
             createResponse,
             "CREATE",

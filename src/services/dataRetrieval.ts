@@ -1,5 +1,6 @@
 import { useFitnessStore } from "../stores/fitnessStore";
 import { useNutritionStore } from "../stores/nutritionStore";
+import { useHydrationStore } from "../stores/hydrationStore";
 import { useUserStore } from "../stores/userStore";
 import { useProfileStore } from "../stores/profileStore";
 import { crudOperations } from "./crudOperations";
@@ -133,15 +134,21 @@ class DataRetrievalService {
     const fitnessStore = useFitnessStore.getState();
     const nutritionStore = useNutritionStore.getState();
 
-    // Calculate workout progress — scope to current plan IDs so completed count
-    // cannot exceed totalWorkouts when workoutProgress accumulates across plan rotations
+    // SSOT fix: derive workoutsCompleted from completedSessions — the same
+    // source AnalyticsScreen and FitnessHeader use. workoutProgress can be
+    // stale after forceWorkoutRegeneration() clears the record map.
     const totalWorkouts = fitnessStore.weeklyWorkoutPlan?.workouts.length || 0;
-    const currentPlanIds = new Set(
-      fitnessStore.weeklyWorkoutPlan?.workouts?.map((w) => w.id) || [],
-    );
-    const workoutsCompleted = Object.values(
-      fitnessStore.workoutProgress,
-    ).filter((progress) => progress.progress === 100 && currentPlanIds.has(progress.workoutId)).length;
+    const currentWeekStart = (() => {
+      const d = new Date();
+      const day = d.getDay();
+      const diff = day === 0 ? -6 : 1 - day; // Monday-based week start
+      d.setDate(d.getDate() + diff);
+      d.setHours(0, 0, 0, 0);
+      return d.toISOString().split('T')[0];
+    })();
+    const workoutsCompleted = fitnessStore.completedSessions.filter(
+      (s) => s.type === 'planned' && s.weekStart === currentWeekStart,
+    ).length;
 
     // Calculate meal progress
     const totalMeals = nutritionStore.weeklyMealPlan?.meals.length || 0;
@@ -164,13 +171,13 @@ class DataRetrievalService {
         ? Math.round(totalCalories / completedMealProgresses.length)
         : 0;
 
-    // Calculate streak (simplified - consecutive days with completed activities)
+    // Calculate streak (consecutive days with completed activities)
     const streak = this.calculateStreak();
 
-    // Get last activity dates
-    const workoutDates = Object.values(fitnessStore.workoutProgress)
-      .filter((p) => p.completedAt)
-      .map((p) => p.completedAt!)
+    // SSOT fix: lastWorkoutDate from completedSessions, not workoutProgress
+    const workoutDates = fitnessStore.completedSessions
+      .filter((s) => s.completedAt)
+      .map((s) => s.completedAt)
       .sort()
       .reverse();
 
@@ -432,8 +439,13 @@ class DataRetrievalService {
       try {
         const fitnessStore = useFitnessStore.getState();
         const nutritionStore = useNutritionStore.getState();
+        const hydrationStore = useHydrationStore.getState();
 
-        await Promise.all([fitnessStore.loadData(), nutritionStore.loadData()]);
+        await Promise.all([
+          fitnessStore.loadData(),
+          nutritionStore.loadData(),
+          hydrationStore.syncWithSupabase(),
+        ]);
 
         logger.debug("💠 All data loaded from stores");
       } catch (error) {

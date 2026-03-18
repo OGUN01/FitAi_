@@ -54,6 +54,7 @@ export const createRealtimeActions = (
       currentWorkoutSession: null,
       completedSessions: [],
       completedSessionsHydrated: false,
+      activeExtraSession: null,  // clear stale resume state on logout
       // _hasHydrated intentionally NOT reset — stays true once hydrated
     });
   },

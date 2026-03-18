@@ -6,9 +6,12 @@ import { refreshProgressData, loadAllActivities } from "./data";
 import {
   getPeriods,
   computeStats,
-  computeAchievements,
   getWeeklyData,
 } from "./computed";
+// SSOT fix: computeAchievements was removed from computed.ts — achievements
+// now come from achievementStore. Import it from there.
+import { useAchievementStore } from "../../stores/achievementStore";
+import { useAnalyticsStore } from "../../stores/analyticsStore";
 import { createActions } from "./actions";
 import { UseProgressScreenReturn } from "./types";
 
@@ -124,7 +127,22 @@ export const useProgressScreen = (navigation: any): UseProgressScreenReturn => {
 
   const periods = getPeriods();
   const stats = computeStats(progressStats, calculatedMetrics, progressGoals);
-  const achievements = computeAchievements(weeklyProgress);
+  // SSOT fix: computeAchievements() was deleted from computed.ts.
+  // achievementStore is the single source of truth for all achievements.
+  const rawAchievements = useAchievementStore.getState().getRecentAchievements(20);
+  const achievements = rawAchievements.map((a: any) => ({
+    id: a.id,
+    title: a.title,
+    description: a.description,
+    iconName: a.icon || 'trophy',
+    date: a.earnedAt || new Date().toISOString(),
+    completed: !!a.isEarned,
+    category: a.category || 'general',
+    points: a.points || 0,
+    rarity: a.rarity || 'common',
+    progress: a.currentProgress,
+    target: a.targetValue,
+  }));
   const weeklyData = getWeeklyData(realWeeklyData);
 
   const actions = createActions(
@@ -181,6 +199,8 @@ export const useProgressScreen = (navigation: any): UseProgressScreenReturn => {
       trackBStatus,
       progressEntries,
       progressStats,
+      // SSOT: weight history is cached in analyticsStore by Fix 6
+      weightHistory: useAnalyticsStore.getState().weightHistory,
     },
     computed: {
       periods,

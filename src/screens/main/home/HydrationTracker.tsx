@@ -165,12 +165,21 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
   const dropSize = rw(90);
 
   return (
-    <View>
-      <GlassCard
-        elevation={2}
-        blurIntensity="light"
-        padding="md"
-        borderRadius="lg"
+    <GlassCard
+      elevation={2}
+      blurIntensity="light"
+      padding="md"
+      borderRadius="lg"
+    >
+      {/* Tappable top section — navigates to hydration details */}
+      <AnimatedPressable
+        onPress={onPress}
+        scaleValue={0.98}
+        hapticFeedback={true}
+        hapticType="light"
+        accessibilityRole="button"
+        accessibilityLabel="Hydration details"
+        disableAnimation={!onPress}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -240,22 +249,6 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
           </View>
         </View>
 
-        {/* Quick Add Section */}
-        <View style={styles.quickAddSection}>
-          <Text style={styles.quickAddTitle}>Quick Add</Text>
-          <View style={styles.quickAddButtons}>
-            {QUICK_ADD_OPTIONS.map((option) => (
-              <QuickAddButton
-                key={option.amount}
-                amount={option.amount}
-                label={option.label}
-                icon={option.icon}
-                onPress={() => onAddWater(option.amount)}
-              />
-            ))}
-          </View>
-        </View>
-
         {/* Reminder Message */}
         <View style={styles.reminderContainer}>
           <Ionicons
@@ -265,8 +258,24 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
           />
           <Text style={styles.reminderText}>{hydrationStatus.message}</Text>
         </View>
-      </GlassCard>
-    </View>
+      </AnimatedPressable>
+
+      {/* Quick Add Section — outside the pressable to avoid nested <button> */}
+      <View style={styles.quickAddSection}>
+        <Text style={styles.quickAddTitle}>Quick Add</Text>
+        <View style={styles.quickAddButtons}>
+          {QUICK_ADD_OPTIONS.map((option) => (
+            <QuickAddButton
+              key={option.amount}
+              amount={option.amount}
+              label={option.label}
+              icon={option.icon}
+              onPress={() => onAddWater(option.amount)}
+            />
+          ))}
+        </View>
+      </View>
+    </GlassCard>
   );
 };
 

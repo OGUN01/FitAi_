@@ -279,6 +279,7 @@ export const GoalsPreferencesEditModal: React.FC<
               "Saved Locally",
               "Your goals were saved locally but failed to sync to the server. They will sync automatically when connection is restored.",
             );
+          } else {
             console.log("✅ Fitness goals synced to database");
           }
         } catch (syncError) {

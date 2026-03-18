@@ -172,6 +172,18 @@ export const usePaywall = () => {
       const billingCycle = plan?.billing_cycle ?? "monthly";
       const originalPlanId = planId.replace(/_monthly$|_yearly$/, "");
 
+      // Guard: fallback plan IDs (used when DB fetch failed) are not real UUIDs.
+      // The worker will reject them with a 404. Show a clear error instead.
+      if (originalPlanId.startsWith("fallback-")) {
+        crossPlatformAlert(
+          "Plans Unavailable",
+          "We couldn't load the subscription plans from the server. Please check your connection and try again.",
+          [{ text: "OK" }],
+        );
+        setIsLoading(false);
+        return false;
+      }
+
       // Step 1: Create subscription on backend
       const { subscription_id, key_id } =
         await razorpayService.createSubscription(originalPlanId, billingCycle);
@@ -229,6 +241,9 @@ export const usePaywall = () => {
       return true;
     } catch (error) {
       setIsLoading(false);
+
+      // Always log the real error for debugging
+      console.error("[usePaywall] subscribe error:", error);
 
       // Handle Razorpay-specific errors
       if (error instanceof RazorpayServiceError) {

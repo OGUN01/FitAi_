@@ -115,7 +115,21 @@ export const usePersonalInfo = (): PersonalInfo | null => {
  * Returns fitness goals or null
  */
 export const useFitnessGoals = (): FitnessGoals | null => {
+  // SSOT: profileStore.workoutPreferences is authoritative for fitness goals (onboarding_data table)
+  const workoutPreferences = useProfileStore((state) => state.workoutPreferences);
   const profile = useUserStore((state) => state.profile);
+
+  // Return profileStore data first (SSOT), fall back to userStore for legacy users
+  if (workoutPreferences?.primary_goals?.length) {
+    // Map WorkoutPreferencesData (onboarding schema) → legacy FitnessGoals shape
+    return {
+      primary_goals: workoutPreferences.primary_goals,
+      experience_level: workoutPreferences.intensity,    // intensity maps to experience_level
+      preferred_equipment: workoutPreferences.equipment, // equipment = preferred_equipment
+      workout_location: workoutPreferences.location,     // location = workout_location
+      time_preference: workoutPreferences.time_preference,
+    } as unknown as FitnessGoals;
+  }
   return profile?.fitnessGoals || null;
 };
 

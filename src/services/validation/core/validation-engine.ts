@@ -60,6 +60,31 @@ export class ValidationEngine {
     const errors: ValidationResult[] = [];
     const warnings: ValidationResult[] = [];
 
+    // Guard: Bail out early if body measurements are out of valid range.
+    // calculateBMR and calculateBMI both throw for weight < 30 or height < 100.
+    // This can happen when the user is mid-typing a value (e.g. "9" before "93").
+    if (
+      bodyAnalysis.current_weight_kg < 30 ||
+      bodyAnalysis.current_weight_kg > 300 ||
+      bodyAnalysis.height_cm < 100 ||
+      bodyAnalysis.height_cm > 250
+    ) {
+      return {
+        hasErrors: false,
+        hasWarnings: false,
+        errors: [],
+        warnings: [],
+        canProceed: false,
+        calculatedMetrics: {
+          bmr: 0, tdee: 0, targetCalories: 0,
+          protein: 0, carbs: 0, fat: 0,
+          weeklyRate: 0, originalWeeklyRate: 0,
+          wasRateCapped: false, timeline: 0,
+        },
+        adjustments: undefined,
+      } as ValidationResults;
+    }
+
     const bmr = MetabolicCalculations.calculateBMR(
       bodyAnalysis.current_weight_kg,
       bodyAnalysis.height_cm,

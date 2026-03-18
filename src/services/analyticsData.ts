@@ -228,18 +228,73 @@ class AnalyticsDataService {
   }
 
   /**
-   * Get calorie history for charts
+   * Get calorie history for charts.
+   *
+   * Primary source: analytics_metrics (fast, pre-aggregated).
+   * Fallback source: meals table (source of truth for all logged meals).
+   *
+   * The fallback fires when analytics_metrics has no calorie rows (e.g. the
+   * meal_logs insert was broken in older app versions, or a manual meal was
+   * logged through food recognition which writes to meals, not analytics_metrics).
    */
   async getCalorieHistory(
     userId: string,
     days: number = 30,
   ): Promise<Array<{ date: string; consumed: number; burned: number }>> {
+    if (!userId || userId.startsWith('guest') || userId === 'local-user') {
+      return [];
+    }
+
+    // --- Fast path: analytics_metrics ---
     const metrics = await this.loadMetricsHistory(userId, days);
-    return metrics.map((m) => ({
-      date: m.metricDate,
-      consumed: m.caloriesConsumed || 0,
-      burned: m.caloriesBurned || 0,
-    }));
+    const hasCalorieData = metrics.some((m) => (m.caloriesConsumed || 0) > 0);
+
+    if (hasCalorieData) {
+      return metrics.map((m) => ({
+        date: m.metricDate,
+        consumed: m.caloriesConsumed || 0,
+        burned: m.caloriesBurned || 0,
+      }));
+    }
+
+    // --- Fallback: meals table ---
+    console.warn(
+      '[getCalorieHistory] analytics_metrics has no calorie rows for',
+      days,
+      'days — falling back to meals table.',
+    );
+
+    try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      const startDateStr = startDate.toISOString().split('T')[0];
+
+      const { data, error } = await supabase
+        .from('meals')
+        .select('consumed_at, total_calories')
+        .eq('user_id', userId)
+        .gte('consumed_at', startDateStr)
+        .order('consumed_at', { ascending: true });
+
+      if (error || !data || data.length === 0) {
+        return [];
+      }
+
+      // Group by date and sum calories
+      const grouped: Record<string, number> = {};
+      for (const row of data) {
+        if (!row.consumed_at) continue;
+        const dateKey = row.consumed_at.split('T')[0];
+        grouped[dateKey] = (grouped[dateKey] || 0) + (Number(row.total_calories) || 0);
+      }
+
+      return Object.entries(grouped)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([date, consumed]) => ({ date, consumed: Math.round(consumed), burned: 0 }));
+    } catch (err) {
+      console.error('[getCalorieHistory] meals fallback failed:', err);
+      return [];
+    }
   }
 
   /**

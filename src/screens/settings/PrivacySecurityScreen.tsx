@@ -10,7 +10,7 @@
  */
 
 import React from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
@@ -175,9 +175,8 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
               title="Privacy Policy"
               description="Read our complete privacy policy"
               onPress={() =>
-                crossPlatformAlert(
-                  "Privacy Policy",
-                  "Privacy policy will be displayed here.",
+                Linking.openURL('https://fitai.app/privacy').catch(() =>
+                  crossPlatformAlert('Privacy Policy', 'Could not open the page. Please visit fitai.app/privacy in your browser.')
                 )
               }
               animationDelay={450}
@@ -189,9 +188,8 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
               title="Terms of Service"
               description="Review our terms and conditions"
               onPress={() =>
-                crossPlatformAlert(
-                  "Terms of Service",
-                  "Terms of service will be displayed here.",
+                Linking.openURL('https://fitai.app/terms').catch(() =>
+                  crossPlatformAlert('Terms of Service', 'Could not open the page. Please visit fitai.app/terms in your browser.')
                 )
               }
               animationDelay={500}

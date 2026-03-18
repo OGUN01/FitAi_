@@ -9,8 +9,6 @@ import { haptics } from "../utils/haptics";
 import { useDashboardIntegration } from "../utils/integration";
 import { useAuth } from "./useAuth";
 import { useCalculatedMetrics } from "./useCalculatedMetrics";
-import DataRetrievalService from "../services/dataRetrieval";
-import { progressDataService } from "../services/progressData";
 import {
   useFitnessStore,
   useNutritionStore,
@@ -21,6 +19,7 @@ import {
   useUserStore,
   useHydrationStore,
 } from "../stores";
+import { buildTodaysData } from "./progress-screen/data";
 import { useProfileStore } from "../stores/profileStore";
 import { completionTrackingService } from "../services/completionTracking";
 
@@ -74,58 +73,45 @@ export const useHomeLogic = () => {
     refreshMetrics,
   } = useCalculatedMetrics();
 
-  // Animation
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const completedSessions = useFitnessStore((s) => s.completedSessions);
+  const workoutProgress = useFitnessStore((s) => s.workoutProgress);
+  const mealProgress = useNutritionStore((s) => s.mealProgress);
 
-  // State
-  const [todaysData, setTodaysData] = useState<any>(null);
-  const [weeklyProgress, setWeeklyProgress] = useState<any>(null);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
   const [isLoading, setIsLoading] = useState(true);
   const [showGuestSignUp, setShowGuestSignUp] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [historicalWeightEntries, setHistoricalWeightEntries] = useState<{ date: string; weight: number }[]>([]);
+  const weightHistory = useAnalyticsStore((s) => s.weightHistory);
 
-  // Refresh data on mount
+  // SSOT Fix 17: todaysData computed reactively from stores, not snapshotted
+  const todaysData = useMemo(() => buildTodaysData(), [
+    weeklyWorkoutPlan, workoutProgress, weeklyMealPlan, mealProgress,
+  ]);
+  // SSOT Fix 17: weeklyProgress derived from completedSessions + mealProgress
+  const weeklyProgress = useMemo(() => {
+    const d = new Date();
+    const diff = d.getDay() === 0 ? -6 : 1 - d.getDay();
+    d.setDate(d.getDate() + diff); d.setHours(0, 0, 0, 0);
+    const weekStart = d.toISOString().split("T")[0];
+    return {
+      workoutsCompleted: completedSessions.filter((s) => s.type === "planned" && s.weekStart === weekStart).length,
+      totalWorkouts: weeklyWorkoutPlan?.workouts.length ?? 0,
+      mealsCompleted: Object.values(mealProgress).filter((p) => p.progress === 100).length,
+      totalMeals: weeklyMealPlan?.meals.length ?? 0,
+      streak: achievementStreak,
+    };
+  }, [completedSessions, mealProgress, weeklyWorkoutPlan, weeklyMealPlan, achievementStreak]);
+
+  // Refresh calculated metrics on mount (does not trigger duplicate loadAllData)
   useEffect(() => {
-
     refreshMetrics().catch((err) => {
       console.warn("[HomeScreen] Failed to refresh metrics on mount:", err);
     });
-
-    DataRetrievalService.loadAllData()
-      .then(() => {
-        setTodaysData(DataRetrievalService.getTodaysData());
-        setWeeklyProgress(DataRetrievalService.getWeeklyProgress());
-      })
-      .catch((err) => {
-        console.warn("[HomeScreen] Failed to load data on mount:", err);
-      });
+    // NOTE: DataRetrievalService.loadAllData() is called in the main loading
+    // useEffect below. We do NOT call it here again to avoid a double-fetch on mount.
   }, [refreshMetrics]);
-
-  // Fetch historical weight entries
-  useEffect(() => {
-    const fetchWeightHistory = async () => {
-      try {
-        const userId = user?.id;
-        if (!userId) return;
-        const response = await progressDataService.getUserProgressEntries(userId, 30);
-        if (response.success && response.data && response.data.length > 0) {
-          const entries = response.data.map((entry) => ({
-            date: entry.entry_date,
-            weight: entry.weight_kg,
-          }));
-          // Sort ascending by date for chart display
-          entries.sort((a, b) => a.date.localeCompare(b.date));
-          setHistoricalWeightEntries(entries);
-        }
-      } catch (err) {
-        console.warn("[HomeScreen] Failed to fetch weight history:", err);
-      }
-    };
-    fetchWeightHistory();
-  }, [user?.id]);
 
   // Sync hydration goal
   useEffect(() => {
@@ -139,75 +125,39 @@ export const useHomeLogic = () => {
     });
   }, [calculatedMetrics?.dailyWaterML]);
 
-  // Load data
   useEffect(() => {
     const loadData = async () => {
       try {
-        setIsLoading(true);
-        setError(null);
-        await DataRetrievalService.loadAllData();
-        setTodaysData(DataRetrievalService.getTodaysData());
-        setWeeklyProgress(DataRetrievalService.getWeeklyProgress());
-
-        // Auto-sync health data
+        setIsLoading(true); setError(null);
+        await Promise.all([useFitnessStore.getState().loadData(), useNutritionStore.getState().loadData()]);
         if (Platform.OS === "ios" && healthSettings.healthKitEnabled) {
-          if (isHealthKitAuthorized) {
-            console.log("[HEALTH] Auto-syncing from HealthKit...");
-            syncHealthData();
-          } else {
-            console.log("[HEALTH] Initializing HealthKit...");
-            initializeHealthKit();
-          }
-        } else if (
-          Platform.OS === "android" &&
-          healthSettings.healthConnectEnabled
-        ) {
-          if (isHealthConnectAuthorized) {
-            console.log(
-              "[HEALTH] Auto-syncing from Health Connect (7 days)...",
-            );
-            syncFromHealthConnect(7);
-          } else {
-            console.log("[HEALTH] Initializing Health Connect...");
-            initializeHealthConnect();
-          }
+          isHealthKitAuthorized ? syncHealthData() : initializeHealthKit();
+        } else if (Platform.OS === "android" && healthSettings.healthConnectEnabled) {
+          isHealthConnectAuthorized ? syncFromHealthConnect(7) : initializeHealthConnect();
         }
-
         analyticsInitialized ? refreshAnalytics() : initializeAnalytics();
         initializeSubscription();
       } catch (err) {
         console.error("Load error:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to load dashboard data",
-        );
-      } finally {
-        setIsLoading(false);
-      }
+        setError(err instanceof Error ? err.message : "Failed to load dashboard data");
+      } finally { setIsLoading(false); }
     };
-
     loadData();
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 250,
-      useNativeDriver: true,
-    }).start();
-
-    const unsubscribe = completionTrackingService.subscribe((event) => {
-      setTodaysData(DataRetrievalService.getTodaysData());
-      setWeeklyProgress(DataRetrievalService.getWeeklyProgress());
+    Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }).start();
+    // Completion events update the stores; useMemo consumers re-render automatically.
+    const unsubscribe = completionTrackingService.subscribe(() => {
+      useFitnessStore.getState().loadData();
+      useNutritionStore.getState().loadData();
     });
-
-    return () => {
-      unsubscribe();
-    };
+    return () => { unsubscribe(); };
   }, []);
 
   // Memoized values
   const userStats = useMemo(() => getUserStats() || {}, [getUserStats]);
 
   const appCaloriesBurned = useMemo(
-    () => DataRetrievalService.getTotalCaloriesBurned(),
-    [todaysData],
+    () => completedSessions.reduce((sum, s) => sum + (s.caloriesBurned ?? 0), 0),
+    [completedSessions]
   );
 
   const wearableConnected = isHealthKitAuthorized || isHealthConnectAuthorized;
@@ -254,41 +204,68 @@ export const useHomeLogic = () => {
 
   const realStreak = achievementStreak;
 
-  const todaysWorkoutInfo = useMemo(
-    () => DataRetrievalService.getTodaysWorkoutForHome(),
-    [todaysData],
-  );
+  const todaysWorkoutInfo = useMemo(() => {
+    const fs = useFitnessStore.getState();
+    const w = todaysData?.workout ?? null;
+    const hasPlan = !!weeklyWorkoutPlan;
+    const tidx = new Date().getDay();
+    const days = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
+    const todayMon = tidx === 0 ? 6 : tidx - 1;
+    const isRest = (hasPlan && fs.weeklyWorkoutPlan?.restDays?.some(
+      (d: number|string) => typeof d === "string" ? d === days[tidx] : d === todayMon)) || false;
+    const wType = !hasPlan ? "none" : isRest ? "rest" : (w?.category ?? "workout");
+    const dStatus = !hasPlan ? "No Plan" : isRest ? "Rest Day" : w?.category ? `${w.category[0].toUpperCase()}${w.category.slice(1)} Day` : "Workout Day";
+    return { workout: w, hasWorkout: !!w, isCompleted: (todaysData?.progress?.workoutProgress ?? 0) === 100, hasWeeklyPlan: hasPlan, isRestDay: isRest, workoutType: wType, dayStatus: dStatus };
+  }, [todaysData, weeklyWorkoutPlan]);
 
   const userAge = useMemo(() => {
-    return profile?.personalInfo?.age;
-  }, [profile]);
+    // SSOT: profileStore.personalInfo is authoritative (onboarding_data); userStore profile is legacy fallback
+    return personalInfo?.age || profile?.personalInfo?.age;
+  }, [personalInfo, profile]);
+
+  const userName = useMemo(() => {
+    // SSOT: profileStore.personalInfo is authoritative; compute from first+last, fallback to userStore
+    const profileName = `${personalInfo?.first_name || ''} ${personalInfo?.last_name || ''}`.trim();
+    return profileName || personalInfo?.name || profile?.personalInfo?.name || '';
+  }, [personalInfo, profile]);
 
   const weightData = useMemo(() => {
-    const currentWeight = bodyAnalysis?.current_weight_kg ?? profile?.bodyMetrics?.current_weight_kg;
+    const profileWeight = bodyAnalysis?.current_weight_kg ?? profile?.bodyMetrics?.current_weight_kg;
     const goalWeight = bodyAnalysis?.target_weight_kg ?? profile?.bodyMetrics?.target_weight_kg;
-    const startingWeight =
-      currentWeight && currentWeight > 0 ? currentWeight : undefined;
 
-    // Use historical entries if available, otherwise fall back to today's entry
-    let weightHistory: { date: string; weight: number }[] = [];
-    if (historicalWeightEntries.length > 0) {
-      weightHistory = historicalWeightEntries;
-    } else if (currentWeight && currentWeight > 0) {
-      weightHistory = [
+    // SSOT fix: use analyticsStore.weightHistory (cached, persisted) instead of
+    // a parallel Supabase fetch via progressDataService. Both serve the same data.
+    // Falls back to a synthetic single-point entry from profile weight when empty.
+    let chartHistory: { date: string; weight: number }[] = [];
+    if (weightHistory.length > 0) {
+      chartHistory = weightHistory;
+    } else if (profileWeight && profileWeight > 0) {
+      chartHistory = [
         {
           date: new Date().toISOString().split("T")[0],
-          weight: currentWeight,
+          weight: profileWeight,
         },
       ];
     }
+
+    // Current weight = most recently logged entry (sorted ascending → last = newest).
+    const currentWeight =
+      chartHistory.length > 0
+        ? chartHistory[chartHistory.length - 1].weight
+        : (profileWeight && profileWeight > 0 ? profileWeight : undefined);
+
+    const startingWeight =
+      chartHistory.length >= 2
+        ? chartHistory[0].weight
+        : (profileWeight && profileWeight > 0 ? profileWeight : currentWeight);
 
     return {
       currentWeight: currentWeight && currentWeight > 0 ? currentWeight : undefined,
       goalWeight: goalWeight && goalWeight > 0 ? goalWeight : undefined,
       startingWeight,
-      weightHistory,
+      weightHistory: chartHistory,
     };
-  }, [healthMetrics, userProfile, calculatedMetrics, bodyAnalysis, historicalWeightEntries]);
+  }, [healthMetrics, userProfile, calculatedMetrics, bodyAnalysis, weightHistory]);
 
   const caloriesConsumed = useMemo(() => {
     const consumedNutrition = useNutritionStore
@@ -298,8 +275,13 @@ export const useHomeLogic = () => {
   }, [weeklyMealPlan, dailyMeals]);
 
   const workoutMinutes = useMemo(() => {
-    return todaysWorkoutInfo.workout?.duration || 0;
-  }, [todaysWorkoutInfo]);
+    const workout = todaysWorkoutInfo.workout;
+    if (!workout) return 0;
+    const progress = todaysData?.progress?.workoutProgress ?? 0;
+    // Only count actual completed/in-progress minutes
+    // If 100% done → full duration; if in progress → proportional; if 0% → 0
+    return Math.round((workout.duration || 0) * (progress / 100));
+  }, [todaysWorkoutInfo, todaysData]);
 
   const weekCalendarData = useMemo(() => {
     const today = new Date();
@@ -332,8 +314,7 @@ export const useHomeLogic = () => {
     setError(null);
     try {
       await Promise.all([loadFitnessData(), loadNutritionData()]);
-      setTodaysData(DataRetrievalService.getTodaysData());
-      setWeeklyProgress(DataRetrievalService.getWeeklyProgress());
+      // todaysData and weeklyProgress update reactively via useMemo
 
       if (Platform.OS === "ios" && isHealthKitAuthorized) {
         await syncHealthData(true);
@@ -380,6 +361,7 @@ export const useHomeLogic = () => {
     isGuestMode,
     realStreak,
     userAge,
+    userName,
 
     // Health metrics
     healthMetrics,

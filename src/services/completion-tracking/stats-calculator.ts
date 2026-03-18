@@ -11,8 +11,11 @@ export function getCompletionStats(): CompletionStats {
   const nutritionStore = useNutritionStore.getState();
 
   const totalWorkouts = fitnessStore.weeklyWorkoutPlan?.workouts.length || 0;
+  const currentPlanIds = new Set(
+    fitnessStore.weeklyWorkoutPlan?.workouts?.map((w) => w.id) || [],
+  );
   const completedWorkouts = Object.values(fitnessStore.workoutProgress).filter(
-    (p) => p.progress === 100,
+    (p) => p.progress === 100 && currentPlanIds.has(p.workoutId),
   ).length;
 
   const totalMeals = nutritionStore.weeklyMealPlan?.meals.length || 0;

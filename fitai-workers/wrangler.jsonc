@@ -41,6 +41,7 @@
 		"CLOUDFLARE_AI_GATEWAY_SLUG": "fitai-production",
 		"CLOUDFLARE_AI_GATEWAY_URL": "https://gateway.ai.cloudflare.com/v1/914022281183abb7ca6a5590fec4b994/fitai-production",
 		"RULE_BASED_ROLLOUT_PERCENTAGE": "100",
+		"ALLOWED_ORIGINS": "https://fitai-admin.pages.dev,https://admin.fitai.health,http://localhost:3001",
 	},
 	"#queues_comment": "Queues require paid plan. When you upgrade, uncomment this section",
 	"#queues": {

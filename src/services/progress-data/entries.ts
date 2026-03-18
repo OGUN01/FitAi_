@@ -4,6 +4,7 @@ import * as crypto from "expo-crypto";
 import { supabase } from "../supabase";
 import { crudOperations } from "../crudOperations";
 import { analyticsDataService } from "../analyticsData";
+import { offlineService } from "../offline/OfflineService";
 import { BodyMeasurement } from "../../types/localData";
 import {
   ProgressEntry,
@@ -85,34 +86,66 @@ export async function createProgressEntry(
 
     await crudOperations.createBodyMeasurement(bodyMeasurement);
 
+    const upsertPayload = {
+      user_id: userId,
+      entry_date: entryDate,
+      weight_kg: entryData.weight_kg,
+      body_fat_percentage: entryData.body_fat_percentage,
+      muscle_mass_kg: entryData.muscle_mass_kg,
+      measurements: entryData.measurements || {},
+      progress_photos: entryData.progress_photos || [],
+      notes: entryData.notes,
+    };
+
+    // If offline, queue for sync and return success based on locally-saved data
+    if (!offlineService.isDeviceOnline()) {
+      await offlineService.queueAction({
+        type: "CREATE",
+        table: "progress_entries",
+        data: upsertPayload,
+        userId,
+        maxRetries: 3,
+      });
+      return {
+        success: true,
+        data: { ...upsertPayload, id: bodyMeasurement.id } as any,
+      };
+    }
+
     const { data, error } = await supabase
       .from("progress_entries")
-      .insert({
-        user_id: userId,
-        entry_date: entryDate,
-        weight_kg: entryData.weight_kg,
-        body_fat_percentage: entryData.body_fat_percentage,
-        muscle_mass_kg: entryData.muscle_mass_kg,
-        measurements: entryData.measurements || {},
-        progress_photos: entryData.progress_photos || [],
-        notes: entryData.notes,
-      })
+      .upsert(upsertPayload, { onConflict: "user_id,entry_date" })
       .select()
       .single();
 
     if (error) {
-      console.error("Error creating progress entry:", error);
+      // Data is saved locally — queue for retry rather than surfacing an error
+      console.warn("[createProgressEntry] Remote upsert failed, queued for sync:", error.message);
+      await offlineService.queueAction({
+        type: "CREATE",
+        table: "progress_entries",
+        data: upsertPayload,
+        userId,
+        maxRetries: 3,
+      });
       return {
-        success: false,
-        error: error.message,
+        success: true,
+        data: { ...upsertPayload, id: bodyMeasurement.id } as any,
       };
     }
 
-    try {
-      await analyticsDataService.updateTodaysMetrics(userId, {
-        weightKg: entryData.weight_kg,
-      });
-    } catch (analyticsError) {
+    // Sync weight to analytics_metrics so charts reflect the new entry immediately.
+    const analyticsSynced = await analyticsDataService.updateTodaysMetrics(userId, {
+      weightKg: entryData.weight_kg,
+    });
+    if (!analyticsSynced) {
+      console.warn(
+        "[createProgressEntry] analytics_metrics sync failed for weight",
+        entryData.weight_kg,
+        "kg on",
+        entryDate,
+        "— charts will fall back to progress_entries until next sync.",
+      );
     }
 
     return {

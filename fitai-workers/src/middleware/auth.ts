@@ -16,6 +16,7 @@ export interface AuthUser {
   id: string;
   email?: string;
   role?: string;
+  appRole?: string;
   aud?: string;
   exp?: number;
 }
@@ -68,6 +69,7 @@ async function verifyToken(token: string, env: Env): Promise<AuthUser> {
       id: data.user.id,
       email: data.user.email,
       role: data.user.role,
+      appRole: data.user.app_metadata?.role,
       aud: data.user.aud,
     };
   } catch (error) {
@@ -174,10 +176,11 @@ export function requireRole(...allowedRoles: string[]) {
       throw new UnauthorizedError('Authentication required');
     }
 
-    if (!user.role || !allowedRoles.includes(user.role)) {
+    const effectiveRole = user.appRole || user.role;
+    if (!effectiveRole || !allowedRoles.includes(effectiveRole)) {
       throw new UnauthorizedError('Insufficient permissions', {
         required: allowedRoles,
-        actual: user.role,
+        actual: effectiveRole,
       });
     }
 

@@ -18,8 +18,8 @@ export function calculateActualCalories(
   }
 
   const userStore = useUserStore.getState();
-  const userWeight = userStore.profile?.bodyMetrics?.current_weight_kg
-    || useProfileStore.getState().bodyAnalysis?.current_weight_kg;
+  const userWeight = useProfileStore.getState().bodyAnalysis?.current_weight_kg
+    || userStore.profile?.bodyMetrics?.current_weight_kg;
 
   if (!userWeight || userWeight <= 0) {
     return 0;

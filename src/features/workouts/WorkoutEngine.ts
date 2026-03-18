@@ -94,25 +94,185 @@ class WorkoutEngineService {
   }
 
   /**
-   * Generate a quick workout for immediate use
+   * Generate a quick workout entirely from the local exercise database — no network call.
+   * Sets, reps, rest times, and exercise selection are all derived from user data.
    */
   async generateQuickWorkout(
     personalInfo: PersonalInfo,
     fitnessGoals: FitnessGoals,
     timeAvailable: number,
   ): Promise<AIResponse<Workout>> {
-    const preferences = {
-      duration: timeAvailable,
-      equipment: ["bodyweight"],
-      workoutType:
-        timeAvailable <= 20 ? ("hiit" as const) : ("strength" as const),
-      difficulty: fitnessGoals.experience as
-        | "beginner"
-        | "intermediate"
-        | "advanced",
-    };
+    try {
+      const workout = this._buildLocalQuickWorkout(personalInfo, fitnessGoals, timeAvailable);
+      return { success: true, data: workout };
+    } catch (error) {
+      console.error("❌ [WorkoutEngine] generateQuickWorkout failed:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to build workout",
+      };
+    }
+  }
 
-    return this.generateSmartWorkout(personalInfo, fitnessGoals, preferences);
+  /**
+   * Builds a complete workout from the local EXERCISES database without any network request.
+   * All parameters (sets, reps, rest, exercise count) are derived from the user's profile.
+   */
+  private _buildLocalQuickWorkout(
+    personalInfo: PersonalInfo,
+    fitnessGoals: FitnessGoals,
+    timeAvailable: number,
+  ): Workout {
+    const experience = (fitnessGoals.experience || fitnessGoals.experience_level || "beginner") as
+      | "beginner"
+      | "intermediate"
+      | "advanced";
+    const goals = fitnessGoals.primary_goals || fitnessGoals.primaryGoals || [];
+    const age = personalInfo.age || 30;
+    const workoutType: "hiit" | "strength" = timeAvailable <= 20 ? "hiit" : "strength";
+
+    // --- Per-user training parameters ---
+    const sets = experience === "beginner" ? 2 : experience === "intermediate" ? 3 : 4;
+
+    // Rep ranges: muscle_gain/strength = lower reps heavier focus; weight_loss = higher reps
+    const wantsHypertrophy = goals.some((g) => ["muscle_gain", "strength"].includes(g));
+    const wantsWeightLoss = goals.some((g) => ["weight_loss", "fat_loss"].includes(g));
+    let repRange: string;
+    if (workoutType === "hiit") {
+      repRange = experience === "beginner" ? "8-10" : experience === "intermediate" ? "10-15" : "15-20";
+    } else if (wantsHypertrophy) {
+      repRange = experience === "beginner" ? "8-10" : experience === "intermediate" ? "8-12" : "6-10";
+    } else if (wantsWeightLoss) {
+      repRange = experience === "beginner" ? "12-15" : experience === "intermediate" ? "15-20" : "20-25";
+    } else {
+      repRange = experience === "beginner" ? "10-12" : experience === "intermediate" ? "12-15" : "15-20";
+    }
+
+    // Older users and beginners need more recovery time
+    const ageModifier = age > 50 ? 15 : age > 40 ? 10 : 0;
+    let restTime: number;
+    if (workoutType === "hiit") {
+      restTime = (experience === "beginner" ? 45 : experience === "intermediate" ? 30 : 20) + ageModifier;
+    } else {
+      restTime = (experience === "beginner" ? 90 : experience === "intermediate" ? 60 : 45) + ageModifier;
+    }
+
+    // Exercise duration for time-based movements (planks, mountain climbers, etc.)
+    const holdDuration = experience === "beginner" ? 20 : experience === "intermediate" ? 30 : 45;
+
+    // --- Exercise count: fit within the available time ---
+    // Time per exercise: (sets * (work_time + rest)) + transition_buffer
+    const workSecondsPerSet = workoutType === "hiit" ? 30 : 40;
+    const timePerExerciseSec = sets * (workSecondsPerSet + restTime) + 15;
+    const warmupCooldownSec = 120; // ~2 min buffer
+    const usableTime = timeAvailable * 60 - warmupCooldownSec;
+    const exerciseCount = Math.max(4, Math.min(8, Math.floor(usableTime / timePerExerciseSec)));
+
+    // --- Exercise pool: bodyweight only, filtered by difficulty ---
+    const difficultyPool: Array<"beginner" | "intermediate" | "advanced"> =
+      experience === "beginner"
+        ? ["beginner"]
+        : experience === "intermediate"
+          ? ["beginner", "intermediate"]
+          : ["intermediate", "advanced"];
+
+    let pool = EXERCISES.filter(
+      (ex) =>
+        ex.equipment.includes("bodyweight") &&
+        difficultyPool.includes(ex.difficulty),
+    );
+
+    // Exclude flexibility/yoga exercises for hiit and strength quick workouts
+    pool = pool.filter(
+      (ex) =>
+        !["downward_dog", "child_pose", "sun_salutation", "warrior_pose"].includes(ex.id),
+    );
+
+    // Goal-aware prioritisation: sort so goal-matching exercises come first
+    const goalMuscleMap: Record<string, string[]> = {
+      weight_loss: ["cardiovascular", "full_body"],
+      fat_loss: ["cardiovascular", "full_body"],
+      muscle_gain: ["chest", "back", "shoulders", "quadriceps", "glutes"],
+      strength: ["chest", "back", "shoulders", "quadriceps", "core"],
+      endurance: ["cardiovascular", "legs", "core"],
+      general_fitness: ["full_body", "core"],
+    };
+    const priorityMuscles = goals.flatMap((g) => goalMuscleMap[g] || []);
+    pool.sort((a, b) => {
+      const aMatch = a.muscleGroups.some((mg) => priorityMuscles.includes(mg)) ? -1 : 0;
+      const bMatch = b.muscleGroups.some((mg) => priorityMuscles.includes(mg)) ? -1 : 0;
+      return aMatch - bMatch;
+    });
+
+    // For HIIT: prefer high-calorie / cardiovascular exercises
+    if (workoutType === "hiit") {
+      pool.sort((a, b) => (b.calories || 0) - (a.calories || 0));
+    }
+
+    // Deduplicate by muscle group — pick exercises that together cover the full body
+    const selected: typeof pool = [];
+    const coveredMuscles = new Set<string>();
+    // First pass: prioritised exercises
+    for (const ex of pool) {
+      if (selected.length >= exerciseCount) break;
+      const isNewMuscle = ex.muscleGroups.some((mg) => !coveredMuscles.has(mg));
+      if (isNewMuscle) {
+        selected.push(ex);
+        ex.muscleGroups.forEach((mg) => coveredMuscles.add(mg));
+      }
+    }
+    // Second pass: fill remaining slots without muscle coverage requirement
+    for (const ex of pool) {
+      if (selected.length >= exerciseCount) break;
+      if (!selected.includes(ex)) selected.push(ex);
+    }
+
+    // --- Build WorkoutSet list ---
+    const exercises: WorkoutSet[] = selected.map((ex) => {
+      const isTimeBased = !!ex.duration && !ex.reps;
+      return {
+        exerciseId: ex.id,
+        exerciseName: ex.name,
+        name: ex.name,
+        sets,
+        reps: isTimeBased ? `${holdDuration}s` : repRange,
+        duration: isTimeBased ? holdDuration : undefined,
+        restTime,
+        rpe: experience === "beginner" ? 6 : experience === "intermediate" ? 7 : 8,
+      };
+    });
+
+    // --- Calorie estimate (MET-based approximation) ---
+    const weight = personalInfo.weight || 70;
+    const metValue = workoutType === "hiit" ? 10 : 6;
+    const estimatedCalories = Math.round(metValue * weight * (timeAvailable / 60));
+
+    const category = workoutType === "hiit" ? "hiit" : "strength";
+    const difficultyLabel: "beginner" | "intermediate" | "advanced" = experience;
+
+    const allEquipment = [...new Set(selected.flatMap((ex) => ex.equipment))];
+    const allMuscles = [...new Set(selected.flatMap((ex) => ex.muscleGroups))];
+
+    const goalLabel = wantsHypertrophy ? "Strength" : wantsWeightLoss ? "Fat Burn" : "Fitness";
+    const title = `${timeAvailable}-min ${workoutType === "hiit" ? "HIIT" : goalLabel} Workout`;
+
+    return {
+      id: this.generateWorkoutId(),
+      title,
+      description: `A personalised ${timeAvailable}-minute ${workoutType} session based on your ${experience} level and ${goals[0] || "fitness"} goals.`,
+      category,
+      difficulty: difficultyLabel,
+      duration: timeAvailable,
+      estimatedCalories,
+      exercises,
+      equipment: allEquipment,
+      targetMuscleGroups: allMuscles,
+      icon: workoutType === "hiit" ? "🔥" : "💪",
+      tags: ["quick", workoutType, experience],
+      isPersonalized: true,
+      aiGenerated: false,
+      createdAt: new Date().toISOString(),
+    };
   }
 
   /**

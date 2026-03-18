@@ -8,12 +8,44 @@ import { GoogleSignInResult } from "./types";
 
 const OAUTH_STATE_KEY = "google_oauth_state";
 
+/**
+ * Maps Supabase/Google auth errors to user-friendly messages
+ */
+function mapAuthError(error: any): string {
+  const msg: string = error?.message || error?.code || "";
+
+  if (
+    msg.includes("identity_already_exists") ||
+    msg.includes("Identity is already linked") ||
+    msg.includes("already linked")
+  ) {
+    return "This Google account is already linked to a different account. Please sign out and use the correct account.";
+  }
+
+  if (
+    msg.includes("email_exists") ||
+    msg.includes("User already registered") ||
+    msg.includes("already registered")
+  ) {
+    return "An account with this email already exists. If you previously signed up with email and password, please sign in with email instead. You can then link your Google account from Profile settings.";
+  }
+
+  if (
+    msg.includes("account_exists_with_different_credential") ||
+    msg.includes("different_credential")
+  ) {
+    return "This email is already registered with a different sign-in method. Please use email and password to sign in, then link Google from your Profile settings.";
+  }
+
+  return error?.message || "Google Sign-In failed. Please try again.";
+}
+
 export async function signInWithGoogleWeb(): Promise<GoogleSignInResult> {
   try {
-    // BUG 5 FIX: Use cryptographically secure random UUID instead of Math.random()
+    // Use cryptographically secure random UUID for CSRF protection
     const state = Crypto.randomUUID();
 
-    // BUG 4 FIX: Store the state in AsyncStorage for CSRF verification in the callback
+    // Store state in AsyncStorage for CSRF verification in the callback
     await AsyncStorage.setItem(OAUTH_STATE_KEY, state);
 
     const { data, error } = await supabase.auth.signInWithOAuth({
@@ -37,7 +69,7 @@ export async function signInWithGoogleWeb(): Promise<GoogleSignInResult> {
       console.error("❌ Web Google Sign-In error:", error);
       return {
         success: false,
-        error: error.message,
+        error: mapAuthError(error),
       };
     }
 
@@ -57,17 +89,16 @@ export async function handleGoogleCallback(
   url: string,
 ): Promise<GoogleSignInResult> {
   try {
-
     const parsedUrl = new URL(url);
     const code = parsedUrl.searchParams.get("code") || "";
     const callbackState = parsedUrl.searchParams.get("state");
 
-    // BUG 4 FIX: Verify the state parameter matches what we stored before redirect
+    // Verify the state parameter to prevent CSRF attacks
     const storedState = await AsyncStorage.getItem(OAUTH_STATE_KEY);
     await AsyncStorage.removeItem(OAUTH_STATE_KEY); // Clean up regardless
 
     if (!callbackState || callbackState !== storedState) {
-      console.error("\u274c OAuth state mismatch - possible CSRF attack");
+      console.error("❌ OAuth state mismatch - possible CSRF attack");
       return {
         success: false,
         error: "OAuth state verification failed. Please try signing in again.",
@@ -80,7 +111,7 @@ export async function handleGoogleCallback(
       console.error("❌ OAuth callback error:", error);
       return {
         success: false,
-        error: error.message,
+        error: mapAuthError(error),
       };
     }
 
@@ -99,25 +130,44 @@ export async function handleGoogleCallback(
       lastLoginAt: new Date().toISOString(),
     };
 
-    const { data: profile } = await supabase
+    // Check if profile already exists for this user
+    const { data: existingProfile } = await supabase
       .from("profiles")
       .select("id")
       .eq("id", user.id)
       .single();
 
-    const isNewUser = !profile;
+    const isNewUser = !existingProfile;
 
     if (isNewUser) {
-      const { error: profileError } = await supabase.from("profiles").insert({
-        id: user.id,
-        email: user.email!,
-        name: user.user_metadata?.full_name || user.user_metadata?.name || "",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
+      // Use upsert to handle the case where Link Identities causes Supabase to
+      // reuse an existing email/password user's ID for the Google identity.
+      const { error: profileError } = await supabase.from("profiles").upsert(
+        {
+          id: user.id,
+          email: user.email!,
+          name:
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            "Google User",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "id", ignoreDuplicates: true },
+      );
 
       if (profileError) {
+        console.warn(
+          "⚠️ Failed to upsert profile for Google user:",
+          profileError.message,
+        );
       }
+    } else {
+      // Update last activity for existing user
+      await supabase
+        .from("profiles")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", user.id);
     }
 
     return {

@@ -70,6 +70,7 @@ interface ConsumedNutrition {
   protein: number;
   carbs: number;
   fat: number;
+  fiber: number;
 }
 
 // PERF-005 FIX: Cache for consumed nutrition to avoid O(n²) recalculation
@@ -317,11 +318,8 @@ export const useNutritionStore = create<NutritionState>()(
 
       loadWeeklyMealPlan: async () => {
         try {
-          // First check local storage
-          const currentPlan = get().weeklyMealPlan;
-          if (currentPlan) {
-            return currentPlan;
-          }
+          // Do NOT return early if a plan already exists in the store.
+          // A guest-generated plan must not block loading the real Supabase plan after login.
 
           // Try to load complete weekly meal plan from database
           try {
@@ -516,8 +514,9 @@ export const useNutritionStore = create<NutritionState>()(
             protein: acc.protein + (meal.totalMacros?.protein || 0),
             carbs: acc.carbs + (meal.totalMacros?.carbohydrates || 0),
             fat: acc.fat + (meal.totalMacros?.fat || 0),
+            fiber: acc.fiber + (meal.totalMacros?.fiber || 0),
           }),
-          { calories: 0, protein: 0, carbs: 0, fat: 0 },
+          { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
         );
 
         // Also include daily meals (added from suggestions) to match selector behavior
@@ -527,8 +526,9 @@ export const useNutritionStore = create<NutritionState>()(
             protein: acc.protein + (meal.totalMacros?.protein || 0),
             carbs: acc.carbs + (meal.totalMacros?.carbohydrates || 0),
             fat: acc.fat + (meal.totalMacros?.fat || 0),
+            fiber: acc.fiber + (meal.totalMacros?.fiber || 0),
           }),
-          { calories: 0, protein: 0, carbs: 0, fat: 0 },
+          { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
         );
 
         const result = {
@@ -536,6 +536,7 @@ export const useNutritionStore = create<NutritionState>()(
           protein: weeklyResult.protein + dailyMealsTotal.protein,
           carbs: weeklyResult.carbs + dailyMealsTotal.carbs,
           fat: weeklyResult.fat + dailyMealsTotal.fat,
+          fiber: weeklyResult.fiber + dailyMealsTotal.fiber,
         };
 
         // Cache the result
@@ -592,8 +593,9 @@ export const useNutritionStore = create<NutritionState>()(
             protein: acc.protein + (meal.totalMacros?.protein || 0),
             carbs: acc.carbs + (meal.totalMacros?.carbohydrates || 0),
             fat: acc.fat + (meal.totalMacros?.fat || 0),
+            fiber: acc.fiber + (meal.totalMacros?.fiber || 0),
           }),
-          { calories: 0, protein: 0, carbs: 0, fat: 0 },
+          { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
         );
 
         // Also include nutrition from dailyMeals (e.g. meal suggestions added)
@@ -606,8 +608,9 @@ export const useNutritionStore = create<NutritionState>()(
               protein: acc.protein + (meal.totalMacros?.protein || 0),
               carbs: acc.carbs + (meal.totalMacros?.carbohydrates || 0),
               fat: acc.fat + (meal.totalMacros?.fat || 0),
+              fiber: acc.fiber + (meal.totalMacros?.fiber || 0),
             }),
-            { calories: 0, protein: 0, carbs: 0, fat: 0 },
+            { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
           );
 
         const result = {
@@ -615,6 +618,7 @@ export const useNutritionStore = create<NutritionState>()(
           protein: weeklyResult.protein + dailyMealsResult.protein,
           carbs: weeklyResult.carbs + dailyMealsResult.carbs,
           fat: weeklyResult.fat + dailyMealsResult.fat,
+          fiber: weeklyResult.fiber + dailyMealsResult.fiber,
         };
 
         // Cache the result
@@ -805,23 +809,79 @@ export const useNutritionStore = create<NutritionState>()(
 
       loadData: async () => {
         try {
-
-          // Preserve existing meal progress before loading
-          const currentMealProgress = get().mealProgress;
-
           const plan = await get().loadWeeklyMealPlan();
           if (plan) {
-            // Set the plan while preserving meal progress
-            set((state) => ({
-              weeklyMealPlan: plan,
-              mealProgress: { ...currentMealProgress }, // Preserve meal progress
-            }));
+            set({ weeklyMealPlan: plan });
           }
 
-          // Load recent meal logs
-          const mealLogs = await crudOperations.readMealLogs(
-            new Date().toISOString().split("T")[0],
-          );
+          // Hydrate mealProgress + dailyMeals from Supabase on login
+          try {
+            const { data: authData } = await supabase.auth.getUser();
+            if (authData?.user?.id) {
+              const todayISO = new Date().toISOString().split("T")[0];
+              const { data: logs } = await supabase
+                .from("meal_logs")
+                .select("id, meal_type, meal_name, custom_meal_name, plan_meal_id, calories, protein_g, carbs_g, fat_g, logged_at, ingredients")
+                .eq("user_id", authData.user.id)
+                .gte("logged_at", `${todayISO}T00:00:00.000Z`)
+                .lte("logged_at", `${todayISO}T23:59:59.999Z`)
+                .order("logged_at", { ascending: false });
+
+              if (logs && logs.length > 0) {
+                // Rebuild mealProgress — skip IDs already tracked (from this session)
+                const existingProgress = get().mealProgress;
+                const restoredProgress: Record<string, any> = {};
+                (logs as any[]).forEach((log) => {
+                  if (log.plan_meal_id && !existingProgress[log.plan_meal_id]) {
+                    restoredProgress[log.plan_meal_id] = {
+                      mealId: log.plan_meal_id,
+                      progress: 100,
+                      completedAt: log.logged_at,
+                      logId: log.id,
+                    };
+                  }
+                });
+                if (Object.keys(restoredProgress).length > 0) {
+                  set((state) => ({
+                    mealProgress: { ...restoredProgress, ...state.mealProgress },
+                  }));
+                }
+
+                // Rebuild dailyMeals (extra logged meals — those without plan_meal_id)
+                const existingMealIds = new Set((get().dailyMeals || []).map((m) => m.id));
+                const hydratedMeals: import("../types/ai").Meal[] = (logs as any[])
+                  .filter((log) => !log.plan_meal_id && !existingMealIds.has(log.id))
+                  .map((log) => ({
+                    id: log.id,
+                    type: log.meal_type || "snack",
+                    name: log.meal_name || log.custom_meal_name || "Meal",
+                    totalCalories: log.calories || 0,
+                    totalMacros: {
+                      protein: log.protein_g || 0,
+                      carbohydrates: log.carbs_g || 0,
+                      fat: log.fat_g || 0,
+                      fiber: 0, // meal_logs table doesn't store fiber separately
+                    },
+                    items: Array.isArray(log.ingredients) ? log.ingredients : [],
+                    loggedAt: log.logged_at,
+                    // Required Meal fields with safe defaults for Supabase-hydrated entries
+                    tags: [] as string[],
+                    isPersonalized: false,
+                    aiGenerated: false,
+                    createdAt: log.logged_at || new Date().toISOString(),
+                    updatedAt: log.logged_at || new Date().toISOString(),
+                  }));
+                if (hydratedMeals.length > 0) {
+                  set((state) => ({
+                    dailyMeals: [...hydratedMeals, ...(state.dailyMeals || [])],
+                  }));
+                }
+
+              }
+            }
+          } catch (supabaseError) {
+            console.error("❌ Failed to hydrate meal data from Supabase:", supabaseError);
+          }
 
         } catch (error) {
           console.error("❌ Failed to load nutrition data:", error);
@@ -870,6 +930,11 @@ export const useNutritionStore = create<NutritionState>()(
 
       reset: () => {
         get().cleanupRealtimeSubscription();
+        // Clear module-level caches to prevent stale data leaking across user sessions
+        consumedNutritionCache = null;
+        consumedNutritionCacheKey = "";
+        todaysConsumedNutritionCache = null;
+        todaysConsumedNutritionCacheKey = "";
         set({
           weeklyMealPlan: null,
           isGeneratingPlan: false,

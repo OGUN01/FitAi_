@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import { useUserStore, useNutritionStore } from "../stores";
+import { useProfileStore } from "../stores/profileStore";
 import { aiService } from "../ai";
 import {
   foodRecognitionService,
@@ -9,12 +10,14 @@ import {
 import { recognizedFoodLogger } from "../services/recognizedFoodLogger";
 import { foodRecognitionFeedbackService } from "../services/foodRecognitionFeedbackService";
 import { barcodeService, ScannedProduct } from "../services/barcodeService";
+import { fitaiWorkersClient } from "../services/fitaiWorkersClient";
 import { useAuth } from "./useAuth";
 import { useNutritionData } from "./useNutritionData";
 import { useCalculatedMetrics } from "./useCalculatedMetrics";
 import { Meal, DayMeal, WeeklyMealPlan } from "../types/ai";
 import { useSubscriptionStore } from "../stores/subscriptionStore";
 // usePaywall import removed — triggerPaywall now via subscriptionStore
+import { LogMealScanResult } from "../components/diet/LogMealModal";
 
 const generateHealthAssessment = (product: ScannedProduct) => {
   const { nutrition, healthScore } = product;
@@ -142,15 +145,39 @@ const generateHealthAssessment = (product: ScannedProduct) => {
 
 export const useAIMealGeneration = (options?: { onBarcodeNotFound?: (barcode: string) => void }) => {
   const { user, isGuestMode } = useAuth();
-  const { weeklyMealPlan, setWeeklyMealPlan } = useNutritionStore();
+  const { weeklyMealPlan, setWeeklyMealPlan, completeMeal } = useNutritionStore();
   const { profile } = useUserStore();
+  // SSOT: profileStore is authoritative for all onboarding data
+  const { personalInfo: profilePersonalInfo, workoutPreferences: profileWorkoutPreferences, dietPreferences: profileDietPreferencesStore } = useProfileStore();
   const { foods, loadDailyNutrition, refreshAll, dietPreferences } =
     useNutritionData();
   const { getCalorieTarget } = useCalculatedMetrics();
   const { canUseFeature, incrementUsage, triggerPaywall } = useSubscriptionStore();
 
+  // SSOT: Build merged fitnessGoals — profileStore.workoutPreferences is authoritative
+  const mergedFitnessGoals = profileWorkoutPreferences
+    ? {
+        primary_goals: profileWorkoutPreferences.primary_goals || profile?.fitnessGoals?.primary_goals || [],
+        primaryGoals: profileWorkoutPreferences.primary_goals || profile?.fitnessGoals?.primaryGoals || [],
+        experience: profileWorkoutPreferences.intensity || profile?.fitnessGoals?.experience || 'beginner',
+        experience_level: profileWorkoutPreferences.intensity || profile?.fitnessGoals?.experience_level || 'beginner',
+        time_commitment: String(profileWorkoutPreferences.time_preference || profile?.fitnessGoals?.time_commitment || 45),
+        preferred_equipment: profileWorkoutPreferences.equipment || profile?.fitnessGoals?.preferred_equipment,
+        target_areas: profile?.fitnessGoals?.target_areas,
+      }
+    : profile?.fitnessGoals;
 
-  const [aiMeals, setAiMeals] = useState<DayMeal[]>([]);
+  // SSOT: Build merged dietPreferences — profileStore.dietPreferences is authoritative
+  const mergedDietPrefs = profileDietPreferencesStore
+    ? {
+        allergies: profileDietPreferencesStore.allergies || profile?.dietPreferences?.allergies || [],
+        diet_type: profileDietPreferencesStore.diet_type || profile?.dietPreferences?.diet_type,
+        restrictions: profileDietPreferencesStore.restrictions || profile?.dietPreferences?.restrictions || [],
+        dislikes: (profile?.dietPreferences as any)?.dislikes || [],
+      }
+    : profile?.dietPreferences;
+
+
   const [isGeneratingMeal, setIsGeneratingMeal] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
@@ -183,7 +210,18 @@ export const useAIMealGeneration = (options?: { onBarcodeNotFound?: (barcode: st
   } | null>(null);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
+  // Optional pre-scan portion hint (grams) to pass to AI for better estimation
+  const [portionGrams, setPortionGrams] = useState<number | null>(null);
+
   const cameraTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const logMealCallbackRef = useRef<((result: LogMealScanResult) => void) | null>(null);
+
+  const setLogMealScanCallback = useCallback(
+    (cb: ((result: LogMealScanResult) => void) | null) => {
+      logMealCallbackRef.current = cb;
+    },
+    [],
+  );
 
   useEffect(() => {
     return () => {
@@ -192,6 +230,79 @@ export const useAIMealGeneration = (options?: { onBarcodeNotFound?: (barcode: st
       }
     };
   }, []);
+
+  /**
+   * Build a DayMeal-compatible object from recognized foods so it can be
+   * added to weeklyMealPlan and immediately counted in getTodaysConsumedNutrition.
+   */
+  const buildScannedMeal = (
+    recognizedFoods: any[],
+    mealType: MealType,
+    mealId: string,
+  ) => {
+    const today = new Date();
+    const dayNames = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
+    const todayName = dayNames[today.getDay()];
+
+    const totalCalories = recognizedFoods.reduce((s: number, f: any) => s + (f.nutrition?.calories || 0), 0);
+    const totalProtein = recognizedFoods.reduce((s: number, f: any) => s + (f.nutrition?.protein || 0), 0);
+    const totalCarbs = recognizedFoods.reduce((s: number, f: any) => s + (f.nutrition?.carbs || 0), 0);
+    const totalFat = recognizedFoods.reduce((s: number, f: any) => s + (f.nutrition?.fat || 0), 0);
+
+    return {
+      id: mealId,
+      type: mealType,
+      name: recognizedFoods.length === 1
+        ? recognizedFoods[0].name
+        : `${recognizedFoods[0]?.name || mealType} + ${recognizedFoods.length - 1} more`,
+      description: `Scanned ${mealType} - ${recognizedFoods.length} item(s)`,
+      items: recognizedFoods.map((f: any, idx: number) => ({
+        id: `${mealId}_item_${idx}`,
+        name: f.name,
+        quantity: f.userGrams ?? f.estimatedGrams ?? 100,
+        unit: "g",
+        calories: f.nutrition?.calories || 0,
+        macros: {
+          protein: f.nutrition?.protein || 0,
+          carbohydrates: f.nutrition?.carbs || 0,
+          fat: f.nutrition?.fat || 0,
+          fiber: f.nutrition?.fiber || 0,
+        },
+      })),
+      totalCalories: Math.round(totalCalories),
+      totalMacros: {
+        protein: Math.round(totalProtein * 10) / 10,
+        carbohydrates: Math.round(totalCarbs * 10) / 10,
+        fat: Math.round(totalFat * 10) / 10,
+        fiber: 0,
+      },
+      preparationTime: 0,
+      difficulty: "easy" as const,
+      tags: ["scanned"],
+      dayOfWeek: todayName,
+      isPersonalized: false,
+      aiGenerated: false,
+      createdAt: today.toISOString(),
+      isCompleted: true,
+      completedAt: today.toISOString(),
+    };
+  };
+
+  /**
+   * Update nutritionStore after a successful scan log so daily macro bars reflect instantly.
+   */
+  const addScannedMealToStore = async (recognizedFoods: any[], mealType: MealType) => {
+    const mealId = `scanned_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const scannedMeal = buildScannedMeal(recognizedFoods, mealType, mealId);
+    const currentPlan = weeklyMealPlan || {
+      id: `plan_${Date.now()}`,
+      weekNumber: Math.ceil(new Date().getDate() / 7),
+      meals: [],
+      planTitle: "Scanned Meals",
+    };
+    setWeeklyMealPlan({ ...currentPlan, meals: [...currentPlan.meals, scannedMeal as any] });
+    await completeMeal(mealId);
+  };
 
   const handleMealTypeSelected = (mealType: MealType) => {
     setSelectedMealType(mealType);
@@ -240,17 +351,27 @@ export const useAIMealGeneration = (options?: { onBarcodeNotFound?: (barcode: st
       return;
     }
 
+    // Subscription gate — same quota as barcode scan
+    if (!canUseFeature('barcode_scan')) {
+      triggerPaywall("You've reached your free AI scan limit. Upgrade to Pro for unlimited food recognition.");
+      return;
+    }
+
     try {
       setIsGeneratingMeal(true);
       setAiError(null);
 
       const dietaryRestrictions =
-        profile?.dietPreferences?.allergies || undefined;
+        // SSOT: profileStore.dietPreferences.allergies is authoritative
+        mergedDietPrefs?.allergies || profile?.dietPreferences?.allergies || undefined;
       const result = await foodRecognitionService.recognizeFood(
         imageUri,
         selectedMealType,
         dietaryRestrictions,
+        portionGrams ?? undefined,
       );
+      // Reset portion grams after use
+      setPortionGrams(null);
 
       if (result.success && result.foods) {
         const recognizedFoods = result.foods;
@@ -258,6 +379,13 @@ export const useAIMealGeneration = (options?: { onBarcodeNotFound?: (barcode: st
           (sum: number, food: any) => sum + food.nutrition.calories,
           0,
         );
+
+        if (logMealCallbackRef.current) {
+          logMealCallbackRef.current(mapRecognizedFoodsToScanResult(recognizedFoods, selectedMealType, result.overallConfidence));
+          logMealCallbackRef.current = null;
+          setIsGeneratingMeal(false);
+          return;
+        }
 
         crossPlatformAlert(
           "Food Recognition Complete!",
@@ -304,6 +432,9 @@ export const useAIMealGeneration = (options?: { onBarcodeNotFound?: (barcode: st
                     );
 
                   if (logResult.success) {
+                    // Update nutritionStore so daily macro bars update immediately
+                    await addScannedMealToStore(recognizedFoods, selectedMealType);
+
                     crossPlatformAlert(
                       "Meal Logged Successfully!",
                       `${recognizedFoods.length} food item(s) logged`,
@@ -409,12 +540,14 @@ export const useAIMealGeneration = (options?: { onBarcodeNotFound?: (barcode: st
               );
 
               if (logResult.success) {
+                // Update nutritionStore so daily macro bars update immediately
+                await addScannedMealToStore(adjustedFoods, selectedMealType);
+
                 crossPlatformAlert(
                   "Meal Logged Successfully!",
                   `${adjustedFoods.length} food item${adjustedFoods.length !== 1 ? "s" : ""} logged\n` +
                     `Total: ${logResult.totalCalories} calories\n` +
-                    `Meal Type: ${selectedMealType.charAt(0).toUpperCase() + selectedMealType.slice(1)}\n` +
-                    `Meal ID: ${logResult.mealId?.slice(-8)}\n\n` +
+                    `Meal Type: ${selectedMealType.charAt(0).toUpperCase() + selectedMealType.slice(1)}\n\n` +
                     `Your nutrition tracking has been updated!`,
                   [{ text: "Awesome!" }],
                 );
@@ -453,6 +586,12 @@ export const useAIMealGeneration = (options?: { onBarcodeNotFound?: (barcode: st
 
       const product = lookupResult.product;
       const healthAssessment = generateHealthAssessment(product);
+
+      if (logMealCallbackRef.current) {
+        logMealCallbackRef.current(mapScannedProductToScanResult(product, 'barcode'));
+        logMealCallbackRef.current = null;
+        return;
+      }
 
       setScannedProduct(product);
       setProductHealthAssessment(healthAssessment);
@@ -524,6 +663,9 @@ export const useAIMealGeneration = (options?: { onBarcodeNotFound?: (barcode: st
             );
 
             if (logResult.success) {
+              // Update nutritionStore so daily macro bars update immediately
+              await addScannedMealToStore([foodEntry], selectedMealType);
+
               crossPlatformAlert(
                 "Added to Meal",
                 `${product.name} added to ${selectedMealType}.`,
@@ -563,7 +705,8 @@ export const useAIMealGeneration = (options?: { onBarcodeNotFound?: (barcode: st
       return;
     }
 
-    if (!profile?.personalInfo || !profile?.fitnessGoals) {
+    // SSOT: check profileStore first; profile (userStore) is legacy fallback
+    if ((!profilePersonalInfo && !profile?.personalInfo) || !mergedFitnessGoals?.primary_goals?.length) {
       crossPlatformAlert("Profile Incomplete", "Please complete your profile.");
       return;
     }
@@ -606,14 +749,13 @@ export const useAIMealGeneration = (options?: { onBarcodeNotFound?: (barcode: st
       }
 
       const response = await aiService.generateMeal(
-        profile.personalInfo,
-        profile.fitnessGoals,
+        profilePersonalInfo || profile!.personalInfo,
+        (mergedFitnessGoals || profile!.fitnessGoals) as any,
         actualMealType as "breakfast" | "lunch" | "dinner" | "snack",
         preferences as any,
       );
 
       if (response.success && response.data) {
-        setAiMeals((prev) => [response.data!, ...prev]);
         // Push generated meal to Zustand nutrition store so DietScreen renders it
         const currentMeals = weeklyMealPlan?.meals || [];
         const updatedPlan: WeeklyMealPlan = {
@@ -667,7 +809,8 @@ export const useAIMealGeneration = (options?: { onBarcodeNotFound?: (barcode: st
       return;
     }
 
-    if (!profile?.personalInfo || !profile?.fitnessGoals) {
+    // SSOT: check profileStore first; profile (userStore) is legacy fallback
+    if ((!profilePersonalInfo && !profile?.personalInfo) || !mergedFitnessGoals?.primary_goals?.length) {
       crossPlatformAlert("Profile Incomplete", "Please complete your profile.");
       return;
     }
@@ -691,13 +834,28 @@ export const useAIMealGeneration = (options?: { onBarcodeNotFound?: (barcode: st
       };
 
       const response = await aiService.generateDailyMealPlan(
-        profile.personalInfo,
-        profile.fitnessGoals,
+        profilePersonalInfo || profile!.personalInfo,
+        (mergedFitnessGoals || profile!.fitnessGoals) as any,
         preferences as any,
       );
 
       if (response.success && response.data) {
-        setAiMeals((prev) => [...(response.data!.meals as unknown as DayMeal[]), ...prev]);
+        const generatedMeals = response.data.meals as unknown as DayMeal[];
+
+        // Push to weeklyMealPlan store so MealPlanView renders the new meals immediately
+        const currentPlan = weeklyMealPlan || {
+          id: `plan_${Date.now()}`,
+          weekNumber: Math.ceil(new Date().getDate() / 7),
+          meals: [],
+          planTitle: "Daily Meal Plan",
+        };
+        const updatedPlan: WeeklyMealPlan = {
+          ...currentPlan,
+          meals: [...currentPlan.meals, ...generatedMeals],
+          planTitle: currentPlan.planTitle || "Daily Meal Plan",
+        };
+        setWeeklyMealPlan(updatedPlan);
+
         crossPlatformAlert("Daily Meal Plan Generated!", "Your plan is ready!");
         incrementUsage('ai_generation');
       } else {
@@ -722,8 +880,177 @@ export const useAIMealGeneration = (options?: { onBarcodeNotFound?: (barcode: st
     }
   };
 
+  /**
+   * Let the user pick a photo of a nutrition facts table.
+   * Gemini Vision reads the values verbatim and we display the result in
+   * the same ProductDetailsModal used by the barcode scanner.
+   */
+  const handleLabelScanned = async (setShowGuestSignUp: (show: boolean) => void, portionGrams?: number | null) => {
+    if (isGuestMode || !user?.id) {
+      crossPlatformAlert(
+        "Sign Up for Label Scan",
+        "Create a free account to use AI nutrition label scanning.",
+        [
+          { text: "Maybe Later", style: "cancel" },
+          { text: "Sign Up Free", onPress: () => setShowGuestSignUp(true), style: "default" },
+        ],
+      );
+      return;
+    }
+
+    if (!canUseFeature('barcode_scan')) {
+      triggerPaywall("You've reached your scan limit. Upgrade to Pro for unlimited label scanning.");
+      return;
+    }
+
+    try {
+      // Dynamically import expo-image-picker to avoid loading it at startup.
+      // expo-image-picker is a first-party Expo module that ships with Expo SDK.
+      const ImagePicker = await import('expo-image-picker');
+
+      await ImagePicker.requestCameraPermissionsAsync();
+
+      // Open camera first so user can capture the label directly.
+      // If they cancel the camera, fall back to gallery upload.
+      const camResult = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions?.Images ?? 'images' as any,
+        allowsEditing: true,
+        quality: 0.85,
+        base64: true,
+      });
+
+      if (camResult.canceled || !camResult.assets?.[0]) {
+        // Camera cancelled — let user pick from gallery instead
+        const galleryResult = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions?.Images ?? 'images' as any,
+          allowsEditing: false,
+          quality: 0.85,
+          base64: true,
+        });
+
+        if (galleryResult.canceled || !galleryResult.assets?.[0]) {
+          return; // User cancelled both
+        }
+
+        const asset = galleryResult.assets[0];
+        const mimeType = asset.mimeType || 'image/jpeg';
+        const imageBase64 = `data:${mimeType};base64,${asset.base64}`;
+        await _processLabelImage(imageBase64, portionGrams);
+      } else {
+        const asset = camResult.assets[0];
+        const mimeType = asset.mimeType || 'image/jpeg';
+        const imageBase64 = `data:${mimeType};base64,${asset.base64}`;
+        await _processLabelImage(imageBase64, portionGrams);
+      }
+    } catch (err) {
+      crossPlatformAlert("Label Scan Failed", String(err));
+    }
+  };
+
+  /**
+   * Helper: send image to the Worker, map response → ScannedProduct, show modal.
+   */
+  const _processLabelImage = async (imageBase64: string, portionGrams?: number | null) => {
+    setIsProcessingBarcode(true);
+    try {
+      const response = await fitaiWorkersClient.scanNutritionLabel(imageBase64);
+
+      if (!response.success || !response.data) {
+        crossPlatformAlert(
+          "Label Not Read",
+          "Could not extract nutrition data. Ensure the label is well-lit and the entire nutrition facts table is visible.",
+        );
+        return;
+      }
+
+      const d = response.data;
+
+      // Map Worker response → ScannedProduct (same shape as barcode lookup result)
+      const product: ScannedProduct = {
+        barcode: `label_${Date.now()}`, // synthetic barcode for this scan
+        name: d.productName || 'Scanned Product',
+        brand: d.brand,
+        nutrition: {
+          // Prefer per-100g values for consistency with the rest of the app
+          calories: d.per100g.calories,
+          protein:  d.per100g.protein,
+          carbs:    d.per100g.carbs,
+          fat:      d.per100g.fat,
+          fiber:    d.per100g.fiber ?? 0,
+          sugar:    d.per100g.sugar,
+          sodium:   d.per100g.sodium,
+          // If user provided portion grams, use that as the serving size for accurate scaling
+          servingSize: portionGrams != null && portionGrams > 0 ? portionGrams : d.servingSize,
+          servingUnit: portionGrams != null && portionGrams > 0 ? 'g' : d.servingUnit,
+        },
+        additionalInfo: {
+          ingredients: d.ingredients ? d.ingredients.split(',').map((s) => s.trim()) : undefined,
+          allergens:   d.allergens,
+        },
+        healthScore: undefined, // will be generated by generateHealthAssessment below
+        confidence: d.confidence,
+        source: 'vision-label',
+        lastScanned: new Date().toISOString(),
+        isAIEstimated: false,
+      };
+
+      product.healthScore = generateHealthAssessment(product).overallScore;
+
+      const healthAssessment = generateHealthAssessment(product);
+      incrementUsage('barcode_scan');
+
+      if (logMealCallbackRef.current) {
+        logMealCallbackRef.current(mapScannedProductToScanResult(product, 'label'));
+        logMealCallbackRef.current = null;
+        return;
+      }
+
+      setScannedProduct(product);
+      setProductHealthAssessment(healthAssessment);
+      setShowProductModal(true);
+    } catch (err) {
+      crossPlatformAlert("Label Scan Error", String(err));
+    } finally {
+      setIsProcessingBarcode(false);
+    }
+  };
+
+  const mapRecognizedFoodsToScanResult = (
+    foods: any[],
+    mealType?: MealType,
+    confidence?: number,
+  ): LogMealScanResult => ({
+    type: 'food',
+    mealName: foods.map((f: any) => f.localName || f.name).join(', '),
+    suggestedMealType: mealType,
+    ingredients: foods.map((f: any) => ({
+      name: f.localName || f.name,
+      grams: (f.userGrams ?? f.estimatedGrams ?? 100).toFixed(0),
+      protein: (f.nutrition?.protein ?? 0).toFixed(1),
+      carbs: (f.nutrition?.carbs ?? 0).toFixed(1),
+      fat: (f.nutrition?.fat ?? 0).toFixed(1),
+      fiber: (f.nutrition?.fiber ?? 0).toFixed(1),
+    })),
+    confidence,
+  });
+
+  const mapScannedProductToScanResult = (
+    product: ScannedProduct,
+    type: 'label' | 'barcode',
+  ): LogMealScanResult => ({
+    type,
+    mealName: product.brand ? `${product.name} (${product.brand})` : product.name,
+    directEntry: {
+      calories: Math.round(product.nutrition.calories).toString(),
+      protein: (product.nutrition.protein ?? 0).toFixed(1),
+      carbs: (product.nutrition.carbs ?? 0).toFixed(1),
+      fat: (product.nutrition.fat ?? 0).toFixed(1),
+      fiber: (product.nutrition.fiber ?? 0).toFixed(1),
+    },
+    confidence: product.confidence,
+  });
+
   return {
-    aiMeals,
     isGeneratingMeal,
     aiError,
 
@@ -758,10 +1085,15 @@ export const useAIMealGeneration = (options?: { onBarcodeNotFound?: (barcode: st
     handleScanProduct,
     handleCameraCapture,
     handleBarcodeScanned,
+    handleLabelScanned,
     handleAddProductToMeal,
     generateAIMeal,
     generateDailyMealPlan,
     handleFeedbackSubmit,
     handlePortionAdjustmentComplete,
+
+    portionGrams,
+    setPortionGrams,
+    setLogMealScanCallback,
   };
 };

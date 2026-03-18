@@ -33,6 +33,7 @@ export interface ProgressScreenState {
   trackBStatus: any;
   progressEntries: any[];
   progressStats: any;
+  weightHistory: Array<{ date: string; weight: number }>;
 }
 
 // Computed types

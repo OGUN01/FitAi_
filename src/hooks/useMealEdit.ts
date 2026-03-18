@@ -168,8 +168,7 @@ export const useMealEdit = (
           .from("meals")
           .update({
             name: mealName.trim(),
-            type: mealType,
-            timing: mealTime,
+            meal_type: mealType,
             total_calories: nutrition.calories,
             total_protein: nutrition.protein,
             total_carbs: nutrition.carbs,

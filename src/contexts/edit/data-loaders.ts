@@ -4,6 +4,7 @@ import {
   DietPreferences,
   WorkoutPreferences,
 } from "./types";
+import { useProfileStore } from "../../stores/profileStore";
 
 interface LoadDataParams {
   section: string;
@@ -61,38 +62,47 @@ export function createDefaultSectionData(
 ): any {
 
   switch (section) {
-    case "personalInfo":
+    case "personalInfo": {
+      // SSOT: profileStore.personalInfo is authoritative (onboarding_data table); userStore.profile is legacy fallback
+      const profileStorePI = useProfileStore.getState().personalInfo;
+      const piName = `${profileStorePI?.first_name || ''} ${profileStorePI?.last_name || ''}`.trim();
       return {
-        first_name: profile?.personalInfo?.first_name || "",
-        last_name: profile?.personalInfo?.last_name || "",
-        name: profile?.personalInfo?.name || "",
-        email: user?.email || profile?.personalInfo?.email || "",
-        age: profile?.personalInfo?.age || 0,
-        gender: profile?.personalInfo?.gender || "prefer_not_to_say",
-        country: profile?.personalInfo?.country || "",
-        state: profile?.personalInfo?.state || "",
-        region: profile?.personalInfo?.region,
-        wake_time: profile?.personalInfo?.wake_time || "",
-        sleep_time: profile?.personalInfo?.sleep_time || "",
-        occupation_type: profile?.personalInfo?.occupation_type || "desk_job",
-        profile_picture: profile?.personalInfo?.profile_picture,
-        dark_mode: profile?.personalInfo?.dark_mode,
-        units: profile?.personalInfo?.units,
-        notifications_enabled: profile?.personalInfo?.notifications_enabled,
+        first_name: profileStorePI?.first_name || profile?.personalInfo?.first_name || "",
+        last_name: profileStorePI?.last_name || profile?.personalInfo?.last_name || "",
+        name: piName || profileStorePI?.name || profile?.personalInfo?.name || "",
+        email: user?.email || profileStorePI?.email || profile?.personalInfo?.email || "",
+        age: profileStorePI?.age || profile?.personalInfo?.age || 0,
+        gender: profileStorePI?.gender || profile?.personalInfo?.gender || "prefer_not_to_say",
+        country: profileStorePI?.country || profile?.personalInfo?.country || "",
+        state: profileStorePI?.state || profile?.personalInfo?.state || "",
+        region: profileStorePI?.region ?? profile?.personalInfo?.region,
+        wake_time: profileStorePI?.wake_time || profile?.personalInfo?.wake_time || "",
+        sleep_time: profileStorePI?.sleep_time || profile?.personalInfo?.sleep_time || "",
+        occupation_type: profileStorePI?.occupation_type || profile?.personalInfo?.occupation_type || "desk_job",
+        profile_picture: profileStorePI?.profile_picture ?? profile?.personalInfo?.profile_picture,
+        dark_mode: profileStorePI?.dark_mode ?? profile?.personalInfo?.dark_mode,
+        units: profileStorePI?.units || profile?.personalInfo?.units,
+        notifications_enabled: profileStorePI?.notifications_enabled ?? profile?.personalInfo?.notifications_enabled,
       };
+    }
 
-    case "fitnessGoals":
+    case "fitnessGoals": {
+      // SSOT: profileStore.workoutPreferences is authoritative for fitness goals (onboarding_data table)
+      const profileStoreWP = useProfileStore.getState().workoutPreferences;
       return {
         primary_goals:
+          profileStoreWP?.primary_goals ||
           profile?.fitnessGoals?.primary_goals ||
           profile?.fitnessGoals?.primaryGoals ||
           [],
         time_commitment:
+          String(profileStoreWP?.time_preference || '') ||
           profile?.fitnessGoals?.time_commitment ||
           profile?.fitnessGoals?.timeCommitment ||
           "",
-        experience: profile?.fitnessGoals?.experience || "",
+        experience: profileStoreWP?.intensity || profile?.fitnessGoals?.experience || "",
         experience_level:
+          profileStoreWP?.intensity ||
           profile?.fitnessGoals?.experience_level ||
           profile?.fitnessGoals?.experience ||
           "",
@@ -102,9 +112,12 @@ export function createDefaultSectionData(
         syncStatus: "pending" as const,
         source: "local" as const,
       };
+    }
 
-    case "dietPreferences":
-      const dp = profile?.dietPreferences as any;
+    case "dietPreferences": {
+      // SSOT: profileStore.dietPreferences is authoritative (onboarding_data table); userStore.profile is legacy fallback
+      const profileStoreDP = useProfileStore.getState().dietPreferences;
+      const dp = (profileStoreDP || profile?.dietPreferences) as any;
       return {
         diet_type: dp?.diet_type || dp?.dietType || "non-veg",
         allergies: dp?.allergies || [],
@@ -139,23 +152,27 @@ export function createDefaultSectionData(
         drinks_coffee: dp?.drinks_coffee || false,
         takes_supplements: dp?.takes_supplements || false,
       };
+    }
 
-    case "workoutPreferences":
+    case "workoutPreferences": {
+      // SSOT: profileStore.workoutPreferences is authoritative for all workout pref fields
+      const profileStoreWP = useProfileStore.getState().workoutPreferences;
       return {
-        workoutTypes: profile?.workoutPreferences?.workoutTypes || [],
-        equipment: profile?.workoutPreferences?.equipment || [],
-        location: profile?.workoutPreferences?.location || ("both" as const),
+        workoutTypes: profileStoreWP?.workout_types || profile?.workoutPreferences?.workoutTypes || [],
+        equipment: profileStoreWP?.equipment || profile?.workoutPreferences?.equipment || [],
+        location: profileStoreWP?.location || profile?.workoutPreferences?.location || ("both" as const),
         intensity:
-          profile?.workoutPreferences?.intensity || ("beginner" as const),
-        timePreference: profile?.workoutPreferences?.timePreference || 30,
-        primaryGoals: profile?.workoutPreferences?.primaryGoals || [],
-        activityLevel: profile?.workoutPreferences?.activityLevel || "moderate",
+          profileStoreWP?.intensity || profile?.workoutPreferences?.intensity || ("beginner" as const),
+        timePreference: profileStoreWP?.time_preference || profile?.workoutPreferences?.timePreference || 30,
+        primaryGoals: profileStoreWP?.primary_goals || profile?.workoutPreferences?.primaryGoals || [],
+        activityLevel: profileStoreWP?.activity_level || profile?.workoutPreferences?.activity_level || "moderate",
         id: `workoutPreferences_${user?.id || "guest"}_${Date.now()}`,
         version: 1,
         updatedAt: new Date().toISOString(),
         syncStatus: "pending" as const,
         source: "local" as const,
       };
+    }
 
     default:
       throw new Error(`Unknown section: ${section}`);

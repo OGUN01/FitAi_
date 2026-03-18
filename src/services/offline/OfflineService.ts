@@ -36,12 +36,17 @@ class OfflineService {
 
   private async initializeService(): Promise<void> {
     await this.storage.loadData();
-    // Purge stale workout_sessions actions that use old camelCase field names
+    // Purge stale workout_sessions actions that use old/invalid field shapes
     const queue = this.storage.getSyncQueue();
     const cleaned = queue.filter((action) => {
       if (action.table === 'workout_sessions' && action.type === 'CREATE') {
         const d = action.data as Record<string, unknown>;
-        return !('caloriesBurned' in d || 'userId' in d || 'workoutId' in d);
+        // Purge: old camelCase fields (will fail column mapping)
+        if ('caloriesBurned' in d || 'userId' in d || 'workoutId' in d) return false;
+        // Purge: null/undefined calories_burned (will fail NOT NULL constraint)
+        if (d.calories_burned == null) return false;
+        // Purge: rating=0 (will fail check constraint — must be 1-5 or null)
+        if (d.rating === 0) return false;
       }
       return true;
     });

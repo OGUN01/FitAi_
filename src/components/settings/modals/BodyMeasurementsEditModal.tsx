@@ -34,7 +34,7 @@ export const BodyMeasurementsEditModal: React.FC<
   BodyMeasurementsEditModalProps
 > = ({ visible, onClose }) => {
   const { profile } = useUser();
-  const { updateBodyAnalysis } = useProfileStore();
+  const { updateBodyAnalysis, bodyAnalysis } = useProfileStore();
 
   // Form state
   const [weight, setWeight] = useState("");
@@ -43,14 +43,16 @@ export const BodyMeasurementsEditModal: React.FC<
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Load current values when modal opens
+  // SSOT: profileStore.bodyAnalysis is authoritative; profile.personalInfo.weight/height are deprecated
   useEffect(() => {
-    if (visible && profile?.personalInfo) {
-      const info = profile.personalInfo;
-      setWeight(String(info.weight || ""));
-      setHeight(String(info.height || ""));
+    if (visible) {
+      const w = bodyAnalysis?.current_weight_kg || profile?.bodyMetrics?.current_weight_kg || (profile?.personalInfo as any)?.weight;
+      const h = bodyAnalysis?.height_cm || profile?.bodyMetrics?.height_cm || (profile?.personalInfo as any)?.height;
+      setWeight(w ? String(w) : "");
+      setHeight(h ? String(h) : "");
       setErrors({});
     }
-  }, [visible, profile]);
+  }, [visible, bodyAnalysis, profile]);
 
   // Calculate BMI
   const bmi = useMemo(() => {
@@ -123,13 +125,15 @@ export const BodyMeasurementsEditModal: React.FC<
   }, [height, weight, profile, updateBodyAnalysis, onClose, validate]);
 
   const hasChanges = useCallback(() => {
-    if (!profile?.personalInfo) return true;
-    const info = profile.personalInfo;
+    // SSOT: profileStore.bodyAnalysis is authoritative for weight/height
+    const origW = bodyAnalysis?.current_weight_kg || profile?.bodyMetrics?.current_weight_kg || (profile?.personalInfo as any)?.weight;
+    const origH = bodyAnalysis?.height_cm || profile?.bodyMetrics?.height_cm || (profile?.personalInfo as any)?.height;
+    if (!origW && !origH) return true;
     return (
-      height !== String(info.height || "") ||
-      weight !== String(info.weight || "")
+      height !== (origH ? String(origH) : "") ||
+      weight !== (origW ? String(origW) : "")
     );
-  }, [height, weight, profile]);
+  }, [height, weight, bodyAnalysis, profile]);
 
   return (
     <SettingsModalWrapper

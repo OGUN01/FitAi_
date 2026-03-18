@@ -44,7 +44,7 @@ export const WearableActivityCard: React.FC<WearableActivityCardProps> = ({
             <View style={styles.todaysStatContent}>
               <Text style={styles.todaysStatLabel}>Steps</Text>
               <Text style={styles.todaysStatValue}>
-                {healthMetrics.steps.toLocaleString()}
+                {(healthMetrics?.steps ?? 0).toLocaleString()}
               </Text>
             </View>
           </View>
@@ -62,7 +62,7 @@ export const WearableActivityCard: React.FC<WearableActivityCardProps> = ({
             <View style={styles.todaysStatContent}>
               <Text style={styles.todaysStatLabel}>Burned</Text>
               <Text style={styles.todaysStatValue}>
-                {healthMetrics.activeCalories} cal
+                {healthMetrics?.activeCalories ?? 0} cal
               </Text>
             </View>
           </View>

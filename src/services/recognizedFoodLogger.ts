@@ -205,14 +205,23 @@ export class RecognizedFoodLogger {
    */
   private async createFoodFromRecognized(recognizedFood: RecognizedFood): Promise<Food | null> {
     try {
-      // Use nutritionPer100g if available, otherwise calculate from portion
+      // Prefer nutritionPer100g already provided by the Worker.
+      // If missing (legacy / edge case), scale from per-serving values.
+      // Guard: estimatedGrams must be > 0 to avoid Infinity / NaN.
+      const safeGrams = Math.max(recognizedFood.estimatedGrams, 1);
       const per100g = recognizedFood.nutritionPer100g ?? {
-        calories: Math.round((recognizedFood.nutrition.calories / recognizedFood.estimatedGrams) * 100),
-        protein: Math.round(((recognizedFood.nutrition.protein / recognizedFood.estimatedGrams) * 100) * 10) / 10,
-        carbs: Math.round(((recognizedFood.nutrition.carbs / recognizedFood.estimatedGrams) * 100) * 10) / 10,
-        fat: Math.round(((recognizedFood.nutrition.fat / recognizedFood.estimatedGrams) * 100) * 10) / 10,
-        fiber: Math.round(((recognizedFood.nutrition.fiber / recognizedFood.estimatedGrams) * 100) * 10) / 10,
+        calories: Math.round((recognizedFood.nutrition.calories / safeGrams) * 100),
+        protein:  Math.round(((recognizedFood.nutrition.protein  / safeGrams) * 100) * 10) / 10,
+        carbs:    Math.round(((recognizedFood.nutrition.carbs    / safeGrams) * 100) * 10) / 10,
+        fat:      Math.round(((recognizedFood.nutrition.fat      / safeGrams) * 100) * 10) / 10,
+        fiber:    Math.round(((recognizedFood.nutrition.fiber    / safeGrams) * 100) * 10) / 10,
       };
+
+      // Sanity-check: if per100g contains Infinity/NaN (guard failed somehow), zero them out
+      for (const key of Object.keys(per100g) as Array<keyof typeof per100g>) {
+        const val = per100g[key];
+        if (val === undefined || !isFinite(val)) per100g[key] = 0;
+      }
 
       const foodData = {
         name: recognizedFood.name,

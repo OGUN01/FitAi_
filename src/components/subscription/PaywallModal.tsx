@@ -338,10 +338,14 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: rbr(24),
     borderTopRightRadius: rbr(24),
     maxHeight: "92%",
+    minHeight: 420,
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderColor: ResponsiveTheme.colors.glassBorder,
+    // Ensure flex column so ScrollView stretches between header and actions
+    display: "flex",
+    flexDirection: "column",
   },
 
   header: {
@@ -393,7 +397,10 @@ const styles = StyleSheet.create({
 
   scrollArea: {
     flex: 1,
+    // On web, flex:1 inside a modal can collapse — provide a minimum so cards are always visible
+    minHeight: 200,
   },
+
   scrollContent: {
     paddingHorizontal: rp(16),
     paddingBottom: rp(8),

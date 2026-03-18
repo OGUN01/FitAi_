@@ -27,10 +27,10 @@ export const createSessionActions = (
         completedAt: null,
         duration: workout.duration
           ? Math.max(5, Math.min(300, workout.duration))
-          : null,
+          : 0,
         caloriesBurned: workout.estimatedCalories
           ? Math.max(0, Math.min(10000, workout.estimatedCalories))
-          : null,
+          : 0,
         exercises: workout.exercises.map((exercise) => ({
           exerciseId: exercise.exerciseId,
           sets: Array.from({ length: exercise.sets }, (_, index) => ({
@@ -79,8 +79,6 @@ export const createSessionActions = (
           })),
         },
       });
-
-      get().updateWorkoutProgress(workout.id, 0);
 
       return sessionId;
     } catch (error) {

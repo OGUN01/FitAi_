@@ -397,6 +397,17 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           // isInitialized intentionally excluded — must always start false on app restart
         }),
         version: 3, // bump to clear stale persisted state from v1/v2
+        migrate: (_persistedState: unknown, _version: number) => {
+          // v1/v2 state shapes are incompatible — discard and start fresh.
+          // The store will re-fetch from the server on next initializeSubscription().
+          return {
+            currentPlan: null,
+            subscriptionStatus: null,
+            currentPeriodEnd: null,
+            usage: EMPTY_USAGE,
+            usageResetMonth: null,
+          };
+        },
       },
     ),
   ),

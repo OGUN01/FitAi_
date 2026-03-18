@@ -112,8 +112,9 @@ const getSpringConfig = (config: string) => {
   return animations.spring[springKey] || animations.spring.default;
 };
 
-// Created at module level so it is not recreated on every render
-const AnimatedPressableComponent = Animated.createAnimatedComponent(Pressable);
+// Use Animated.View wrapping a Pressable — avoids injecting CSS property names
+// (like `transform-origin`) directly onto the <button> DOM element on web,
+// which would cause React's `Invalid DOM property` warning.
 
 export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
   scaleValue = animations.scale.press,
@@ -208,21 +209,22 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
   }));
 
   return (
-    <AnimatedPressableComponent
-      {...pressableProps}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      disabled={disabled}
-      accessibilityLabel={accessibilityLabel}
-      accessibilityHint={accessibilityHint}
-      accessibilityRole={accessibilityRole}
-      accessibilityState={{ disabled: !!disabled }}
-      testID={testID}
-      accessible={true}
-      style={[animatedStyle, style] as any}
-    >
-      {children}
-    </AnimatedPressableComponent>
+    <Animated.View style={[animatedStyle, style]}>
+      <Pressable
+        {...pressableProps}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint={accessibilityHint}
+        accessibilityRole={accessibilityRole}
+        accessibilityState={{ disabled: !!disabled }}
+        testID={testID}
+        accessible={true}
+      >
+        {children}
+      </Pressable>
+    </Animated.View>
   );
 };
 

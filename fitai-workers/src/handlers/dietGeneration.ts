@@ -37,6 +37,7 @@ import { ErrorCode } from '../utils/errorCodes';
 import { withDeduplication } from '../utils/deduplication';
 import { loadUserMetrics, loadUserProfile, loadUserPreferences, UserHealthMetrics } from '../services/userMetricsService';
 import { adjustForProteinTarget } from '../utils/portionAdjustment';
+import { getAIConfig } from '../utils/appConfig';
 
 // Import the new specialized diet prompt system
 import { buildDietPrompt } from '../prompts/diet';
@@ -845,10 +846,11 @@ async function generateFreshDiet(request: DietGenerationRequest, env: Env, userI
 		state: profile?.state,
 	});
 
-	// 3. Generate with AI - use gemini-2.5-flash which is confirmed working
-	const model = createAIProvider(env, request.model || 'google/gemini-2.5-flash');
+	// 3. Generate with AI — model comes from app_config (admin-controlled)
+	const aiConfig = await getAIConfig(env);
+	const model = createAIProvider(env, aiConfig.model);
 
-	console.log('[Diet Generation] Calling AI model:', request.model || 'google/gemini-2.5-flash');
+	console.log('[Diet Generation] Calling AI model:', aiConfig.model);
 
 	const aiStartTime = Date.now();
 	const result = await generateObject({

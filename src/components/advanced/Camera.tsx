@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-
+  TextInput,
   Dimensions,
   ActivityIndicator,
   Modal,
@@ -67,6 +67,8 @@ interface CameraProps {
   onClose: () => void;
   visible?: boolean;
   style?: StyleProp<ViewStyle>;
+  portionGrams?: number | null;
+  onPortionGramsChange?: (grams: number | null) => void;
 }
 
 const CameraComponent: React.FC<CameraProps> = ({
@@ -76,6 +78,8 @@ const CameraComponent: React.FC<CameraProps> = ({
   onBarcodeScanned,
   onClose,
   style,
+  portionGrams,
+  onPortionGramsChange,
 }) => {
   const [permission, requestPermission] = useCameraPermissions();
   const [cameraType, setCameraType] = useState<CameraType>("back");
@@ -83,6 +87,9 @@ const CameraComponent: React.FC<CameraProps> = ({
   const [isCapturing, setIsCapturing] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+  const [gramsText, setGramsText] = useState(() =>
+    portionGrams != null ? String(portionGrams) : "",
+  );
   const cameraRef = useRef<CameraView>(null);
 
   const mountedRef = useRef(true);
@@ -345,6 +352,51 @@ const CameraComponent: React.FC<CameraProps> = ({
         <View style={styles.placeholder} />
       </View>
 
+      {/* Portion size hint for food mode */}
+      {mode === "food" && onPortionGramsChange && (
+        <View style={styles.portionHintContainer}>
+          <Text style={styles.portionHintLabel}>⚖️ Portion size hint (optional)</Text>
+          <View style={styles.portionHintRow}>
+            <TextInput
+              style={styles.portionHintInput}
+              value={gramsText}
+              onChangeText={setGramsText}
+              onBlur={() => {
+                const val = parseFloat(gramsText);
+                onPortionGramsChange(!isNaN(val) && val > 0 ? val : null);
+              }}
+              onSubmitEditing={() => {
+                const val = parseFloat(gramsText);
+                onPortionGramsChange(!isNaN(val) && val > 0 ? val : null);
+              }}
+              placeholder="grams"
+              placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+              keyboardType="numeric"
+              maxLength={4}
+              returnKeyType="done"
+            />
+            <Text style={styles.portionHintUnit}>g</Text>
+            {gramsText.length > 0 && (
+              <TouchableOpacity
+                onPress={() => {
+                  setGramsText("");
+                  onPortionGramsChange(null);
+                }}
+                style={styles.portionClearBtn}
+              >
+                <Text style={styles.portionClearText}>✕</Text>
+              </TouchableOpacity>
+            )}
+            {portionGrams != null && portionGrams > 0 && (
+              <Text style={styles.portionActiveText}>✓ {portionGrams}g set</Text>
+            )}
+          </View>
+          <Text style={styles.portionHintSubtext}>
+            Helps AI estimate nutrients more accurately
+          </Text>
+        </View>
+      )}
+
       {/* Tips */}
       <View style={styles.tipsContainer}>
         {mode === "food" && (
@@ -588,6 +640,59 @@ const styles = StyleSheet.create({
     height: rs(50),
   },
 
+  portionHintContainer: {
+    marginHorizontal: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.sm,
+    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    padding: ResponsiveTheme.spacing.sm,
+    borderWidth: 1,
+    borderColor: `${ResponsiveTheme.colors.primary}30`,
+  },
+  portionHintLabel: {
+    fontSize: rf(11),
+    fontWeight: "600" as const,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: 4,
+  },
+  portionHintRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 6,
+    marginBottom: 2,
+  },
+  portionHintInput: {
+    width: 72,
+    height: 32,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
+    paddingHorizontal: 8,
+    fontSize: rf(13),
+    fontWeight: "600" as const,
+    color: ResponsiveTheme.colors.text,
+    borderWidth: 1,
+    borderColor: ResponsiveTheme.colors.border,
+    textAlign: "center" as const,
+  },
+  portionHintUnit: {
+    fontSize: rf(12),
+    color: ResponsiveTheme.colors.textSecondary,
+    fontWeight: "600" as const,
+  },
+  portionClearBtn: { padding: 4 },
+  portionClearText: {
+    fontSize: rf(11),
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+  portionActiveText: {
+    fontSize: rf(11),
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: "600" as const,
+  },
+  portionHintSubtext: {
+    fontSize: rf(9),
+    color: ResponsiveTheme.colors.textSecondary,
+  },
   tipsContainer: {
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingBottom: ResponsiveTheme.spacing.lg,

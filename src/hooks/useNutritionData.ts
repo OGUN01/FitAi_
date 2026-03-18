@@ -9,6 +9,7 @@ import {
 import { useAuth } from "./useAuth";
 import useTrackBIntegration from "./useTrackBIntegration";
 import { nutritionRefreshService } from "../services/nutritionRefreshService";
+import { useNutritionStore } from "../stores/nutritionStore";
 
 interface UseNutritionDataReturn {
   // Foods
@@ -101,16 +102,17 @@ export const useNutritionData = (): UseNutritionDataReturn => {
   const [goalsLoading, setGoalsLoading] = useState(false);
   const [goalsError, setGoalsError] = useState<string | null>(null);
 
-  // Daily nutrition stats state
-  const [dailyNutrition, setDailyNutrition] = useState<{
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-    mealsCount: number;
-  } | null>(null);
-  const [statsLoading, setStatsLoading] = useState(false);
-  const [statsError, setStatsError] = useState<string | null>(null);
+  // SSOT fix: dailyNutrition derived from nutritionStore.getTodaysConsumedNutrition()
+  // instead of getUserMeals() which reads meal_templates (recipe catalogue), not meal_logs.
+  const getTodaysConsumedNutrition = useNutritionStore((s) => s.getTodaysConsumedNutrition);
+  const storeDailyMeals = useNutritionStore((s) => s.dailyMeals);
+  const dailyNutrition = (() => {
+    const n = getTodaysConsumedNutrition();
+    return { calories: n.calories, protein: n.protein, carbs: n.carbs, fat: n.fat, mealsCount: storeDailyMeals.length };
+  })();
+  // statsLoading and statsError are always false/null — dailyNutrition is derived synchronously from the store.
+  const statsLoading = false;
+  const statsError: string | null = null;
 
   // Initialize Track B integration
   useEffect(() => {
@@ -237,56 +239,8 @@ export const useNutritionData = (): UseNutritionDataReturn => {
     }
   }, [user?.id]);
 
-  // Load daily nutrition stats
-  const loadDailyNutrition = useCallback(
-    async (date?: string) => {
-      if (!user?.id) return;
+  // loadDailyNutrition removed — dailyNutrition now auto-derived (Fix 14).
 
-      setStatsLoading(true);
-      setStatsError(null);
-
-      try {
-        const targetDate = date || new Date().toISOString().split("T")[0];
-        const response = await nutritionDataService.getUserMeals(
-          user.id,
-          targetDate,
-        );
-
-        if (response.success && response.data) {
-          const meals = response.data;
-          const stats = meals.reduce(
-            (acc, meal) => ({
-              calories: acc.calories + (meal.total_calories || 0),
-              protein: acc.protein + (meal.total_protein || 0),
-              carbs: acc.carbs + (meal.total_carbs || 0),
-              fat: acc.fat + (meal.total_fat || 0),
-              mealsCount: acc.mealsCount + 1,
-            }),
-            {
-              calories: 0,
-              protein: 0,
-              carbs: 0,
-              fat: 0,
-              mealsCount: 0,
-            },
-          );
-
-          setDailyNutrition(stats);
-        } else {
-          setStatsError(response.error || "Failed to load daily nutrition");
-        }
-      } catch (error) {
-        setStatsError(
-          error instanceof Error
-            ? error.message
-            : "Failed to load daily nutrition",
-        );
-      } finally {
-        setStatsLoading(false);
-      }
-    },
-    [user?.id],
-  );
 
   // Log meal
   const logMeal = useCallback(
@@ -304,8 +258,7 @@ export const useNutritionData = (): UseNutritionDataReturn => {
         const response = await nutritionDataService.logMeal(user.id, mealData);
 
         if (response.success) {
-          // Refresh meals and daily nutrition
-          await Promise.all([loadUserMeals(), loadDailyNutrition()]);
+          await loadUserMeals();
           return true;
         } else {
           setUserMealsError(response.error || "Failed to log meal");
@@ -318,29 +271,15 @@ export const useNutritionData = (): UseNutritionDataReturn => {
         return false;
       }
     },
-    [user?.id, loadUserMeals, loadDailyNutrition],
+    [user?.id, loadUserMeals],
   );
 
   // Refresh all data
   const refreshAll = useCallback(async () => {
     if (!isAuthenticated || !user?.id) return;
 
-    await Promise.all([
-      loadFoods(),
-      loadUserMeals(),
-      loadDietPreferences(),
-      loadNutritionGoals(),
-      loadDailyNutrition(),
-    ]);
-  }, [
-    isAuthenticated,
-    user?.id,
-    loadFoods,
-    loadUserMeals,
-    loadDietPreferences,
-    loadNutritionGoals,
-    loadDailyNutrition,
-  ]);
+    await Promise.all([loadFoods(), loadUserMeals(), loadDietPreferences(), loadNutritionGoals()]);
+  }, [isAuthenticated, user?.id, loadFoods, loadUserMeals, loadDietPreferences, loadNutritionGoals]);
 
   // Clear all errors
   const clearErrors = useCallback(() => {
@@ -348,7 +287,6 @@ export const useNutritionData = (): UseNutritionDataReturn => {
     setUserMealsError(null);
     setPreferencesError(null);
     setGoalsError(null);
-    setStatsError(null);
   }, []);
 
   // PERF-004 FIX: Use ref to prevent infinite re-fetch loop
@@ -412,11 +350,10 @@ export const useNutritionData = (): UseNutritionDataReturn => {
     goalsError,
     loadNutritionGoals,
 
-    // Daily nutrition stats
     dailyNutrition,
     statsLoading,
     statsError,
-    loadDailyNutrition,
+    loadDailyNutrition: async (_date?: string) => {},
 
     // Actions
     logMeal,

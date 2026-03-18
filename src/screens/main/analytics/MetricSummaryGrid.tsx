@@ -172,12 +172,14 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
   onMetricPress,
 }) => {
   const formatWeight = (weight?: number) => {
-    if (!weight) return "--";
+    if (weight === undefined || weight === null) return "--";
+    if (weight === 0) return "--"; // 0 kg is invalid weight, treat as no data
     return weight.toFixed(1);
   };
 
   const formatCalories = (calories?: number) => {
-    if (!calories) return "--";
+    if (calories === undefined || calories === null) return "--";
+    // 0 calories is valid (nothing logged yet today), but show as "0" not "--"
     return calories >= 1000
       ? `${(calories / 1000).toFixed(1)}K`
       : calories.toString();
@@ -196,9 +198,9 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
   };
 
   // Only show sparklines if we have real data
-  const hasWeightHistory = data.weight?.current !== undefined;
+  const hasWeightHistory = data.weight?.current !== undefined && data.weight.current > 0;
   const hasCaloriesData =
-    data.calories?.burned !== undefined && data.calories.burned > 0;
+    data.calories?.burned !== undefined;
   const hasWorkoutsData =
     data.workouts?.count !== undefined && data.workouts.count > 0;
 
@@ -220,7 +222,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           color={ResponsiveTheme.colors.primary}
           trend={hasWeightHistory ? data.weight?.trend : undefined}
           trendValue={
-            hasWeightHistory && data.weight?.change
+            hasWeightHistory && data.weight?.change !== undefined && data.weight.change !== 0
               ? `${data.weight.change > 0 ? "+" : ""}${data.weight.change.toFixed(1)} kg`
               : undefined
           }
@@ -231,12 +233,12 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
         <MetricCard
           title="Calories"
           value={formatCalories(data.calories?.burned)}
-          subtitle={!hasCaloriesData ? "Log meals to track" : undefined}
+          subtitle={!hasCaloriesData ? "Log meals to track" : "today"}
           icon="flame-outline"
           color={ResponsiveTheme.colors.warning}
-          trend={hasCaloriesData ? data.calories?.trend : undefined}
+          trend={hasCaloriesData && data.calories?.change !== undefined ? data.calories?.trend : undefined}
           trendValue={
-            hasCaloriesData && data.calories?.change
+            hasCaloriesData && data.calories?.change !== undefined
               ? `${data.calories.change > 0 ? "+" : ""}${data.calories.change}%`
               : undefined
           }

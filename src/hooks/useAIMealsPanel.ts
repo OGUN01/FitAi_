@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
+import { useProfileStore } from "../stores/profileStore";
+import { useUserStore } from "../stores/userStore";
 
 export interface MealGenerationOption {
   id: string;
@@ -123,9 +125,13 @@ export const quickActions: QuickActionOption[] = [
 
 export const useAIMealsPanel = (
   onGenerateMeal: (mealType: string, options?: any) => Promise<void>,
-  profile?: any,
+  _profile?: any, // @deprecated — ignored; hook reads from stores directly
 ) => {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+
+  // SSOT: read directly from stores rather than relying on a prop
+  const { personalInfo, workoutPreferences, dietPreferences } = useProfileStore();
+  const { profile } = useUserStore();
 
   const handleMealGeneration = async (
     option: MealGenerationOption,
@@ -174,13 +180,19 @@ export const useAIMealsPanel = (
   };
 
   const getProfileStatus = () => {
-    if (!profile)
+    // SSOT: profileStore is authoritative for all onboarding data
+    const hasPersonalInfo = !!(personalInfo || profile?.personalInfo);
+    const hasFitnessGoals = !!(workoutPreferences?.primary_goals?.length || profile?.fitnessGoals);
+    const hasDietPreferences = !!(dietPreferences || profile?.dietPreferences);
+
+    if (!hasPersonalInfo && !hasFitnessGoals && !hasDietPreferences) {
       return { status: "incomplete", message: "Profile not available" };
+    }
 
     const missingItems = [];
-    if (!profile.personalInfo) missingItems.push("Personal Info");
-    if (!profile.fitnessGoals) missingItems.push("Fitness Goals");
-    if (!profile.dietPreferences) missingItems.push("Diet Preferences");
+    if (!hasPersonalInfo) missingItems.push("Personal Info");
+    if (!hasFitnessGoals) missingItems.push("Fitness Goals");
+    if (!hasDietPreferences) missingItems.push("Diet Preferences");
 
     if (missingItems.length === 0) {
       return {
@@ -203,3 +215,4 @@ export const useAIMealsPanel = (
     getProfileStatus,
   };
 };
+

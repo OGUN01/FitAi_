@@ -11,12 +11,14 @@ export interface WorkoutProgress {
   caloriesBurned?: number;  // actual calories burned up to exit point
 }
 
-// Completed workout stats computed from workoutProgress - SINGLE SOURCE OF TRUTH
+// Computed workout stats — SSOT returned by getCompletedWorkoutStats selectors
 export interface CompletedWorkoutStats {
   count: number;
   totalCalories: number;
   totalDuration: number;
 }
+
+
 
 export interface CurrentWorkoutSession {
   workoutId: string;
@@ -94,6 +96,12 @@ export interface FitnessState {
   completedSessionsHydrated: boolean;   // NOT persisted — guards one-time backfill
   _hasHydrated: boolean;                 // NOT persisted — set true by onRehydrateStorage
 
+  // Active extra (quick) workout session — null when idle or completed
+  activeExtraSession: ActiveExtraSession | null;
+  setActiveExtraSession: (session: ActiveExtraSession) => void;
+  updateActiveExtraProgress: (exerciseIndex: number) => void;
+  clearActiveExtraSession: () => void;
+
   // New actions
   addCompletedSession: (session: CompletedSession) => void;
   markCompletedSessionsHydrated: () => void;
@@ -131,6 +139,16 @@ export interface CompletedSession {
   durationMinutes: number;     // actual elapsed time
   completedAt: string;         // ISO timestamp
   weekStart: string;           // ISO date of Monday of that week (YYYY-MM-DD)
+}
+
+// Persisted when a quick workout is started but not yet completed.
+// Enables RESUME: navigate back to the exact exercise with the same workout.
+export interface ActiveExtraSession {
+  templateId: string;      // matches ExtraWorkoutTemplate.id — links card to session
+  workout: DayWorkout;     // full generated workout (needed to reconstruct navigation)
+  sessionId: string;       // UUID for this session
+  exerciseIndex: number;   // last saved exercise position (updated on exit)
+  startedAt: string;       // ISO timestamp
 }
 
 export interface ExtraWorkoutTemplate {

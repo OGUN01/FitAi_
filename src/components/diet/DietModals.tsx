@@ -43,6 +43,8 @@ interface DietModalsProps {
   setShowProductModal: (show: boolean) => void;
   productHealthAssessment: any;
   onHandleAddProductToMeal: (product: any) => Promise<void> | void;
+  portionGrams?: number | null;
+  setPortionGrams?: (grams: number | null) => void;
 }
 
 export const DietModals: React.FC<DietModalsProps> = (props) => {
@@ -65,6 +67,8 @@ export const DietModals: React.FC<DietModalsProps> = (props) => {
         setShowFeedbackModal={props.setShowFeedbackModal}
         setFeedbackData={props.setFeedbackData}
         handleFeedbackSubmit={props.handleFeedbackSubmit}
+        portionGrams={props.portionGrams}
+        setPortionGrams={props.setPortionGrams}
       />
 
       <MealTypeSelector

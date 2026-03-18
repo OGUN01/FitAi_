@@ -51,6 +51,8 @@ import {
   MotivationalContent,
   AIResponse,
   WorkoutSet,
+  WeeklyWorkoutPlan,
+  WeeklyMealPlan,
 } from "../types/ai";
 
 // Backend client and transformers

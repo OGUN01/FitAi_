@@ -1,6 +1,7 @@
 import * as crypto from "expo-crypto";
 import { supabase } from "../supabase";
 import { crudOperations } from "../crudOperations";
+import { analyticsDataService } from "../analyticsData";
 import { MealLog, SyncStatus } from "../../types/localData";
 import { Meal, NutritionDataResponse } from "./types";
 import { FoodService } from "./food-service";
@@ -132,7 +133,7 @@ export class MealService {
         .insert({
           user_id: userId,
           name: mealData.name,
-          type: mealData.type,
+          meal_type: mealData.type,
           total_calories: nutritionTotals.calories,
           total_protein: nutritionTotals.protein,
           total_carbs: nutritionTotals.carbs,
@@ -149,6 +150,12 @@ export class MealService {
           error: error.message,
         };
       }
+
+      // Populate analytics_metrics so the calorie chart always has data
+      analyticsDataService.updateTodaysMetrics(userId, {
+        caloriesConsumed: nutritionTotals.calories,
+        mealsLogged: 1,
+      }).catch((err) => console.error('[logMeal] analytics sync failed:', err));
 
       if (data && mealData.foods.length > 0) {
         const mealFoodsData = await Promise.all(

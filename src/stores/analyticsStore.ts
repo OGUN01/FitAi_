@@ -64,6 +64,15 @@ interface AnalyticsStore {
     performanceScore: Array<{ date: string; score: number }>;
   };
 
+  // SSOT fix: Supabase-fetched history lives in the store so Analytics tab
+  // shows cached data immediately on re-mount instead of showing a loading spinner.
+  weightHistory: Array<{ date: string; weight: number }>;
+  calorieHistory: Array<{ date: string; consumed: number; burned: number }>;
+
+  // Fix 21: DailyMetrics[] from analytics_metrics Supabase table.
+  dailyMetricsHistory: import('../services/analyticsData').DailyMetrics[];
+  dailyMetricsHistoryPeriod: number;
+
   // Actions
   initialize: () => Promise<void>;
   addDailyMetrics: (metrics: FitnessMetrics) => Promise<void>;
@@ -100,6 +109,16 @@ interface AnalyticsStore {
   getNegativeTrends: () => string[];
   getAchievements: () => string[];
 
+  // SSOT: Store history data fetched from Supabase so re-mounts show cached values
+  setHistoryData: (
+    weightHistory: Array<{ date: string; weight: number }>,
+    calorieHistory: Array<{ date: string; consumed: number; burned: number }>,
+  ) => void;
+  setDailyMetricsHistory: (
+    data: import('../services/analyticsData').DailyMetrics[],
+    periodDays: number,
+  ) => void;
+
   // Reset store (for logout)
   reset: () => void;
 }
@@ -119,6 +138,10 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
       },
       selectedPeriod: "month",
       metricsHistory: [],
+      weightHistory: [],
+      calorieHistory: [],
+      dailyMetricsHistory: [],
+      dailyMetricsHistoryPeriod: 0,
 
       chartData: {
         workoutFrequency: [],
@@ -490,6 +513,11 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
           },
           selectedPeriod: "month",
           metricsHistory: [],
+          weightHistory: [],
+          calorieHistory: [],
+          // Fix 21: clear Supabase-fetched daily metrics cache on logout
+          dailyMetricsHistory: [],
+          dailyMetricsHistoryPeriod: 0,
           chartData: {
             workoutFrequency: [],
             weightProgress: [],
@@ -499,6 +527,18 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
             performanceScore: [],
           },
         });
+      },
+
+      setHistoryData: (
+        weightHistory: Array<{ date: string; weight: number }>,
+        calorieHistory: Array<{ date: string; consumed: number; burned: number }>,
+      ) => {
+        set({ weightHistory, calorieHistory });
+      },
+
+      // Fix 21: Cache DailyMetrics fetched from analytics_metrics Supabase table
+      setDailyMetricsHistory: (data, periodDays) => {
+        set({ dailyMetricsHistory: data, dailyMetricsHistoryPeriod: periodDays });
       },
     })),
     {
@@ -511,6 +551,12 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
         chartData: state.chartData,
         selectedPeriod: state.selectedPeriod,
         isInitialized: state.isInitialized,
+        // Cache history to survive tab switches
+        weightHistory: state.weightHistory,
+        calorieHistory: state.calorieHistory,
+        // Fix 21: Persist daily metrics so trends screen shows data on re-mount
+        dailyMetricsHistory: state.dailyMetricsHistory,
+        dailyMetricsHistoryPeriod: state.dailyMetricsHistoryPeriod,
       }),
     },
   ),

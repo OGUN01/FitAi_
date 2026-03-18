@@ -197,25 +197,33 @@ export async function handleFoodRecognition(c: Context<{ Bindings: Env }>) {
 		console.log(`[Food Recognition] Completed in ${processingTime}ms with ${result.object.foods.length} foods detected`);
 
 		// Return successful response
-		return c.json({
-			success: true,
-			data: {
-				foods: result.object.foods.map((food, index) => ({
-					id: `food_${Date.now()}_${index}`,
-					...food,
-					// Nutrition per 100g for easy scaling when user adjusts portion
-					nutritionPer100g: {
-						calories: Math.round((food.calories / food.estimatedGrams) * 100),
-						protein: Math.round((food.protein / food.estimatedGrams) * 100 * 10) / 10,
-						carbs: Math.round((food.carbs / food.estimatedGrams) * 100 * 10) / 10,
-						fat: Math.round((food.fat / food.estimatedGrams) * 100 * 10) / 10,
-						fiber: Math.round((food.fiber / food.estimatedGrams) * 100 * 10) / 10,
-					},
-				})),
-				overallConfidence: result.object.overallConfidence,
-				totalCalories: result.object.totalCalories,
-				mealType: result.object.mealType,
-			},
+			return c.json({
+				success: true,
+				data: {
+					foods: result.object.foods.map((food, index) => {
+						// Guard against div-by-zero: if estimatedGrams is 0 or missing,
+						// fall back to the AI-provided per-serving values as the per-100g baseline.
+						const grams = food.estimatedGrams > 0 ? food.estimatedGrams : 100;
+						const scale = 100 / grams;
+						return {
+							id: `food_${Date.now()}_${index}`,
+							...food,
+							// Ensure estimatedGrams is never 0 in the response
+							estimatedGrams: grams,
+							// Nutrition per 100g for easy scaling when user adjusts portion
+							nutritionPer100g: {
+								calories: Math.round(food.calories * scale),
+								protein:  Math.round(food.protein  * scale * 10) / 10,
+								carbs:    Math.round(food.carbs    * scale * 10) / 10,
+								fat:      Math.round(food.fat      * scale * 10) / 10,
+								fiber:    Math.round(food.fiber    * scale * 10) / 10,
+							},
+						};
+					}),
+					overallConfidence: result.object.overallConfidence,
+					totalCalories: result.object.totalCalories,
+					mealType: result.object.mealType,
+				},
 			metadata: {
 				processingTime,
 				model: 'google/gemini-2.5-flash',
@@ -231,7 +239,7 @@ export async function handleFoodRecognition(c: Context<{ Bindings: Env }>) {
 				{
 					success: false,
 					error: error.message,
-					code: error.code,
+					code: error.errorCode,
 				},
 				error.statusCode as any,
 			);

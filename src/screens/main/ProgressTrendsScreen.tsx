@@ -7,6 +7,7 @@ import { rh, rw } from "../../utils/responsive";
 
 // Hook
 import { useProgressTrendsLogic } from "../../hooks/useProgressTrendsLogic";
+import { useProfileStore } from "../../stores/profileStore";
 
 // Components
 import { PeriodSelector } from "./analytics/PeriodSelector";
@@ -30,7 +31,6 @@ export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
     selectedPeriod,
     refreshing,
     metricsHistory,
-    profile,
     calculatedMetrics,
     weightTrend,
     calorieTrend,
@@ -38,6 +38,8 @@ export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
     handleRefresh,
     handlePeriodChange,
   } = useProgressTrendsLogic();
+  // SSOT: read profile data directly from profileStore
+  const { personalInfo: profilePersonalInfo, bodyAnalysis } = useProfileStore();
 
   return (
     <AuroraBackground style={styles.container}>
@@ -92,7 +94,8 @@ export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
 
           <GoalProgressCard
             calculatedMetrics={calculatedMetrics}
-            profile={profile}
+            profilePersonalInfo={profilePersonalInfo}
+            bodyAnalysis={bodyAnalysis}
           />
         </ScrollView>
       </View>

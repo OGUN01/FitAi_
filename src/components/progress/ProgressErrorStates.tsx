@@ -95,9 +95,13 @@ export const ProgressErrorStates: React.FC<ProgressErrorStatesProps> = ({
     );
   }
 
-  // No Data State
+  // No Body Measurements State
+  // Only shown when user has no manual weight entries AND no onboarding metrics.
+  // hasCalculatedMetrics = user completed onboarding → body data already exists,
+  // so we don't block the page just because they haven't added extra measurements.
   if (
-    (isAuthenticated || hasCalculatedMetrics) &&
+    isAuthenticated &&
+    !hasCalculatedMetrics &&
     progressEntriesLength === 0 &&
     !progressLoading
   ) {
@@ -115,7 +119,7 @@ export const ProgressErrorStates: React.FC<ProgressErrorStatesProps> = ({
             size={rf(24)}
             color={ResponsiveTheme.colors.textSecondary}
           />
-          <Text style={styles.errorText}>No progress data yet</Text>
+          <Text style={styles.noDataText}>No body measurements yet</Text>
         </View>
         <Text style={styles.errorSubtext}>
           Add your first measurement to start tracking!
@@ -179,5 +183,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: rp(8),
     marginBottom: ResponsiveTheme.spacing.md,
+  },
+  noDataText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: "center",
+    flex: 1,
   },
 });

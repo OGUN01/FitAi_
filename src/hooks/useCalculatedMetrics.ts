@@ -31,6 +31,7 @@ import {
   DietPreferencesData,
 } from "../types/onboarding";
 import { weightTrackingService } from "../services/WeightTrackingService";
+import { supabase } from "../services/supabase";
 
 // ============================================================================
 // TYPES
@@ -71,6 +72,7 @@ export interface CalculatedMetrics {
   healthyWeightMax: number | null;
   weeklyWeightLossRate: number | null;
   estimatedTimelineWeeks: number | null;
+  targetTimelineWeeks: number | null; // User's original chosen timeline (body_analysis)
 
   // === Body Metrics (from body_analysis) ===
   heightCm: number | null;
@@ -204,12 +206,23 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
           personalInfo,
           workoutPreferences,
           dietPreferences,
+          latestProgressEntry,
         ] = await Promise.all([
           AdvancedReviewService.load(userId),
           BodyAnalysisService.load(userId),
           PersonalInfoService.load(userId),
           WorkoutPreferencesService.load(userId),
           DietPreferencesService.load(userId),
+          // Fetch the most recently logged weight from progress_entries
+          supabase
+            .from("progress_entries")
+            .select("weight_kg")
+            .eq("user_id", userId)
+            .not("weight_kg", "is", null)
+            .order("entry_date", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+            .then((res) => res.data),
         ]);
 
         // If no advanced_review data, user hasn't completed onboarding calculations
@@ -217,15 +230,21 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
           return null;
         }
 
-        if (bodyAnalysis?.current_weight_kg) {
+        // Merge latest logged weight into bodyAnalysis so currentWeightKg
+        // reflects actual tracked weight rather than the static onboarding value.
+        const effectiveBodyAnalysis: BodyAnalysisData | null = latestProgressEntry?.weight_kg
+          ? ({ ...bodyAnalysis, current_weight_kg: latestProgressEntry.weight_kg } as BodyAnalysisData)
+          : bodyAnalysis;
+
+        if (effectiveBodyAnalysis?.current_weight_kg) {
           weightTrackingService.initializeFromBodyAnalysis({
-            current_weight_kg: bodyAnalysis.current_weight_kg,
+            current_weight_kg: effectiveBodyAnalysis.current_weight_kg,
           });
         }
 
         return mapToCalculatedMetrics(
           advancedReview,
-          bodyAnalysis,
+          effectiveBodyAnalysis,
           personalInfo,
           workoutPreferences,
           dietPreferences,
@@ -392,8 +411,9 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
       protein: metrics?.dailyProteinG ?? null,
       carbs: metrics?.dailyCarbsG ?? null,
       fat: metrics?.dailyFatG ?? null,
+      fiber: metrics?.dailyFiberG ?? null,
     }),
-    [metrics?.dailyProteinG, metrics?.dailyCarbsG, metrics?.dailyFatG],
+    [metrics?.dailyProteinG, metrics?.dailyCarbsG, metrics?.dailyFatG, metrics?.dailyFiberG],
   );
 
   return {
@@ -509,6 +529,7 @@ function mapToCalculatedMetrics(
     healthyWeightMax: advancedReview?.healthy_weight_max ?? null,
     weeklyWeightLossRate: advancedReview?.weekly_weight_loss_rate ?? null,
     estimatedTimelineWeeks: advancedReview?.estimated_timeline_weeks ?? null,
+    targetTimelineWeeks: bodyAnalysis?.target_timeline_weeks ?? null,
 
     // Body Metrics - NO FALLBACKS
     heightCm: bodyAnalysis?.height_cm ?? null,

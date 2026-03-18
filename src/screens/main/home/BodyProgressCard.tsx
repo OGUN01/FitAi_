@@ -106,9 +106,11 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
                   data={
                     chartData.length >= 2
                       ? chartData
-                      : currentWeight
-                        ? [currentWeight, currentWeight]
-                        : []
+                      : startingWeight && currentWeight && startingWeight !== currentWeight
+                        ? [startingWeight, currentWeight]
+                        : currentWeight
+                          ? [currentWeight, currentWeight]
+                          : []
                   }
                   width={rw(120)}
                   height={rh(50)}

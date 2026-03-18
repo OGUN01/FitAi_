@@ -53,8 +53,9 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
   // Calculate stats
   const stats = useMemo(() => {
     const totalWorkouts = plan.workouts?.length || 0;
+    const currentPlanIds = new Set((plan.workouts || []).map((w) => w.id));
     const completedWorkouts = Object.values(workoutProgress).filter(
-      (p) => p.progress === 100,
+      (p) => p.progress === 100 && currentPlanIds.has(p.workoutId),
     ).length;
     const totalCalories = (plan.workouts || []).reduce((sum, w) => sum + (w.estimatedCalories || 0), 0);
     const restDays = plan.restDays?.length || 0;
@@ -75,8 +76,11 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
   const getDayStatus = (dayKey: string) => {
     const workout = plan.workouts?.find((w) => w.dayOfWeek === dayKey);
     const restDayIndices = plan.restDays || [];
-    const dayIndex = DAY_KEYS.indexOf(dayKey);
-    const isRestDay = restDayIndices.indexOf(dayIndex) !== -1;
+    const dayIndex = DAY_KEYS.indexOf(dayKey as DayName);
+    // Handle both number indices (Monday=0) and string day names from AI
+    const isRestDay = restDayIndices.some((d: number | string) =>
+      typeof d === "string" ? d === dayKey : d === dayIndex
+    );
     const progress = workout ? (workoutProgress[workout.id]?.progress ?? 0) : 0;
     const isSelected = selectedDay === dayKey;
     const isToday =
@@ -110,7 +114,22 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
             <Text style={styles.planSubtitle}>
               {plan.duration
                 ? String(plan.duration)
-                : `Week ${plan.weekNumber || 1}`}
+                : `Week ${plan.weekNumber ?? (() => {
+                    // Compute real ISO week number when plan.weekNumber is missing
+                    const d = new Date();
+                    d.setHours(0, 0, 0, 0);
+                    d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+                    const week1 = new Date(d.getFullYear(), 0, 4);
+                    return (
+                      1 +
+                      Math.round(
+                        ((d.getTime() - week1.getTime()) / 86400000 -
+                          3 +
+                          ((week1.getDay() + 6) % 7)) /
+                          7,
+                      )
+                    );
+                  })()}`}
             </Text>
           </View>
           <View style={styles.headerActions}>

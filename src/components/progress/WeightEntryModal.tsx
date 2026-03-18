@@ -34,6 +34,7 @@ import { progressDataService } from "../../services/progressData";
 import { useProfileStore } from "../../stores/profileStore";
 import { useHealthDataStore } from "../../stores/healthDataStore";
 import { useAuth } from "../../hooks/useAuth";
+import { invalidateMetricsCache } from "../../hooks/useCalculatedMetrics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface WeightEntryModalProps {
@@ -161,6 +162,10 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
       useHealthDataStore.getState().updateHealthMetrics({
         weight: weightKg,
       });
+
+      // Bust the metrics cache so the next call to refreshMetrics() re-fetches
+      // from Supabase and picks up the new body_analysis.current_weight_kg.
+      invalidateMetricsCache();
 
       console.log("Weight entry saved successfully:", weightKg, "kg");
 

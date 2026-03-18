@@ -5,6 +5,45 @@ import { AuthResponse, AuthSession } from "./types";
 import { dataBridge } from "../DataBridge";
 import { migrationManager } from "../migrationManager";
 
+const SYNC_QUEUE_KEY = "offline_sync_queue";
+
+/**
+ * Maps login errors to user-friendly messages
+ */
+function mapLoginError(error: any, email?: string): string {
+  const msg: string = error?.message || "";
+
+  // Email not confirmed
+  if (
+    msg.includes("email") && msg.includes("confirm") ||
+    msg.includes("not confirmed") ||
+    msg.includes("Email not confirmed")
+  ) {
+    return "Please verify your email address before signing in. Check your inbox for a verification link.";
+  }
+
+  // Invalid credentials — could be wrong password OR could be Google-only account (no password set)
+  if (
+    msg.includes("Invalid login credentials") ||
+    msg.includes("invalid_credentials") ||
+    msg.includes("Invalid email or password")
+  ) {
+    return "Invalid email or password. If you signed up with Google, please use the \"Continue with Google\" button instead.";
+  }
+
+  // Too many attempts
+  if (msg.includes("too many") || msg.includes("rate limit")) {
+    return "Too many login attempts. Please wait a few minutes and try again.";
+  }
+
+  // Account disabled
+  if (msg.includes("banned") || msg.includes("blocked") || msg.includes("disabled")) {
+    return "This account has been disabled. Please contact support.";
+  }
+
+  return msg || "Sign in failed. Please try again.";
+}
+
 /**
  * Sign in with email and password
  */
@@ -21,36 +60,9 @@ export async function login(
     });
 
     if (error) {
-
-      // Check if error is related to email verification
-      if (
-        error.message.includes("email") ||
-        error.message.includes("confirm") ||
-        error.message.includes("verify") ||
-        error.message.includes("not confirmed")
-      ) {
-        return {
-          success: false,
-          error:
-            "Please verify your email address before logging in. Check your email for the verification link.",
-        };
-      }
-
-      // Check for invalid login credentials
-      if (
-        error.message.includes("Invalid login credentials") ||
-        error.message.includes("invalid_credentials")
-      ) {
-        return {
-          success: false,
-          error:
-            "Invalid email or password. Please check your credentials and try again.",
-        };
-      }
-
       return {
         success: false,
-        error: error.message,
+        error: mapLoginError(error, email),
       };
     }
 
@@ -59,7 +71,7 @@ export async function login(
       return {
         success: false,
         error:
-          "Please verify your email address before logging in. Check your email for the verification link.",
+          "Please verify your email address before signing in. Check your inbox for the verification link.",
       };
     }
 
@@ -103,12 +115,12 @@ export async function login(
 
     return {
       success: false,
-      error: "Login failed",
+      error: "Sign in failed. Please try again.",
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Login failed",
+      error: error instanceof Error ? error.message : "Sign in failed",
     };
   }
 }
@@ -151,7 +163,6 @@ export async function logout(
  */
 async function checkAndTriggerMigration(userId: string): Promise<void> {
   try {
-
     // Check if there's guest data to migrate
     const hasGuestData = await dataBridge.hasGuestDataForMigration();
 
@@ -168,16 +179,11 @@ async function checkAndTriggerMigration(userId: string): Promise<void> {
             const pending = result.localSyncKeys.filter(
               (k: string) => !result.remoteSyncKeys!.includes(k),
             );
-            if (pending.length > 0) {
-            }
           }
-        } else {
-          // Errors are queued for retry - no user action needed
         }
       })
       .catch((error) => {
         console.error("❌ [AUTO-MIGRATION] Failed:", error);
-        // Data is still in local storage - will retry on next app open
       });
   } catch (error) {
     console.error("❌ [AUTO-MIGRATION] Error in migration check:", error);

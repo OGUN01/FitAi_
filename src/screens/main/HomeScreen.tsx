@@ -78,6 +78,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     setShowWeightModal,
     fadeAnim,
     profile,
+    userName,
     isGuestMode,
     realStreak,
     userAge,
@@ -138,6 +139,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         onScanFood: () => onNavigateToTab?.("diet"),
         onLogMeal: () => onNavigateToTab?.("diet"),
         onLogWater: () => onNavigateToTab?.("diet"),
+        onBarcodeScan: () => onNavigateToTab?.("diet"),
+        onScanLabel: () => onNavigateToTab?.("diet"),
+        onRecipes: () => onNavigateToTab?.("diet"),
       }),
     [healthMetrics, setShowWeightModal, onNavigateToTab, syncHealthData, syncFromHealthConnect],
   );
@@ -185,8 +189,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
             >
               {/* 1. Header */}
               <HomeHeader
-                userName={profile?.personalInfo?.name ?? ""} // NO FALLBACK - single source
-                userInitial={profile?.personalInfo?.name?.charAt(0) ?? ""} // NO FALLBACK
+                userName={userName} // SSOT: from profileStore via useHomeLogic
+                userInitial={userName.charAt(0)}
                 streak={realStreak}
                 onProfilePress={() => onNavigateToTab?.("profile")}
                 onNotificationPress={() => crossPlatformAlert("Notifications", "No new notifications")}
@@ -200,7 +204,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
 
               {/* 2. Motivation Banner */}
               <View style={styles.section}>
-                <MotivationBanner />
+                <MotivationBanner onPress={() => onNavigateToTab?.("analytics")} />
               </View>
 
 
@@ -235,6 +239,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                       crossPlatformAlert("Heart Rate", "Detailed heart rate data");
                     else if (metric === "sleep")
                       crossPlatformAlert("Sleep", "Detailed sleep analysis");
+                    else if (metric === "quality")
+                      crossPlatformAlert("Sleep Quality", "Sleep quality reflects your recovery readiness");
                   }}
                 />
               </View>
@@ -246,10 +252,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   caloriesGoal={calculatedMetrics?.calculatedTDEE ?? actualCaloriesGoal} // TDEE for burn goal
                   workoutMinutes={workoutMinutes}
                   workoutGoal={
-                    calculatedMetrics?.workoutDurationMinutes ??
-                    calculatedMetrics?.recommendedCardioMinutes ??
+                    // Single source of truth: today's actual scheduled workout duration.
+                    // Falls back to onboarding preference, then AI recommendation, then 30 min.
+                    todaysWorkoutInfo.workout?.duration ||
+                    calculatedMetrics?.workoutDurationMinutes ||
+                    calculatedMetrics?.recommendedCardioMinutes ||
                     30
-                  } // User's preferred workout duration from onboarding
+                  }
                   mealsLogged={caloriesConsumed}
                   mealsGoal={calculatedMetrics?.dailyCalories ?? actualCaloriesGoal} // Intake target for nutrition goal
                   steps={healthMetrics?.steps ?? 0} // From Health Connect/HealthKit - TODAY only
@@ -343,13 +352,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
 
               <View style={styles.section}>
                 <EmptyCalendarMessage weekCalendarData={weekCalendarData} onPlanWorkout={() => onNavigateToTab?.("fitness")} />
-                {weekCalendarData &&
-                  !weekCalendarData.every((d) => !d.hasWorkout) && (
-                    <WeeklyMiniCalendar
-                      weekData={weekCalendarData}
-                      onViewFullCalendar={() => onNavigateToTab?.("fitness")}
-                    />
-                  )}
+                  {weekCalendarData &&
+                    !weekCalendarData.every((d) => !d.hasWorkout) && (
+                      <WeeklyMiniCalendar
+                        weekData={weekCalendarData}
+                        onDayPress={() => onNavigateToTab?.("fitness")}
+                        onViewFullCalendar={() => onNavigateToTab?.("fitness")}
+                      />
+                    )}
               </View>
 
               {/* Bottom Spacing */}

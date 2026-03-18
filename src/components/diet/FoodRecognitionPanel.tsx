@@ -3,7 +3,6 @@ import { StyleSheet } from "react-native";
 import { Camera } from "../advanced/Camera";
 import PortionAdjustment from "./PortionAdjustment";
 import FoodRecognitionFeedback from "./FoodRecognitionFeedback";
-import { ResponsiveTheme } from "../../utils/constants";
 
 interface FoodRecognitionPanelProps {
   showCamera: boolean;
@@ -22,6 +21,9 @@ interface FoodRecognitionPanelProps {
   setShowFeedbackModal: (show: boolean) => void;
   setFeedbackData: (data: any) => void;
   handleFeedbackSubmit: (feedback: any) => Promise<void>;
+  // Optional pre-scan grams hint for AI accuracy
+  portionGrams?: number | null;
+  setPortionGrams?: (grams: number | null) => void;
 }
 
 export const FoodRecognitionPanel: React.FC<FoodRecognitionPanelProps> = ({
@@ -41,6 +43,8 @@ export const FoodRecognitionPanel: React.FC<FoodRecognitionPanelProps> = ({
   setShowFeedbackModal,
   setFeedbackData,
   handleFeedbackSubmit,
+  portionGrams,
+  setPortionGrams,
 }) => {
   return (
     <>
@@ -54,8 +58,11 @@ export const FoodRecognitionPanel: React.FC<FoodRecognitionPanelProps> = ({
           onClose={() => {
             setShowCamera(false);
             setCameraMode("food");
+            if (setPortionGrams) setPortionGrams(null);
           }}
           style={styles.cameraModal}
+          portionGrams={cameraMode === "food" ? portionGrams : undefined}
+          onPortionGramsChange={cameraMode === "food" ? setPortionGrams : undefined}
         />
       )}
 

@@ -5,7 +5,7 @@
  */
 
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import Animated from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
@@ -25,6 +25,7 @@ interface QuickAction {
 interface DietQuickActionsProps {
   onScanFood: () => void;
   onScanBarcode: () => void;
+  onScanLabel: () => void;
   onLogMeal: () => void;
   onLogWater: () => void;
   onGenerateMeal: () => void;
@@ -35,6 +36,7 @@ interface DietQuickActionsProps {
 export const DietQuickActions: React.FC<DietQuickActionsProps> = ({
   onScanFood,
   onScanBarcode,
+  onScanLabel,
   onLogMeal,
   onLogWater,
   onGenerateMeal,
@@ -55,6 +57,13 @@ export const DietQuickActions: React.FC<DietQuickActionsProps> = ({
       icon: "barcode-outline",
       color: ResponsiveTheme.colors.teal,
       onPress: onScanBarcode,
+    },
+    {
+      id: "scan-label",
+      label: "Scan Label",
+      icon: "document-text-outline",
+      color: "#8B5CF6",
+      onPress: onScanLabel,
     },
     {
       id: "log-meal",
@@ -89,11 +98,13 @@ export const DietQuickActions: React.FC<DietQuickActionsProps> = ({
 
 
   return (
-    <Animated.View
-      style={styles.container}
-    >
-      <View style={styles.gridContainer}>
-        {actions.map((action, index) => (
+    <Animated.View style={styles.container}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {actions.map((action) => (
           <AnimatedPressable
             key={action.id}
             onPress={action.onPress}
@@ -135,7 +146,7 @@ export const DietQuickActions: React.FC<DietQuickActionsProps> = ({
             </Text>
           </AnimatedPressable>
         ))}
-      </View>
+      </ScrollView>
     </Animated.View>
   );
 };
@@ -143,17 +154,14 @@ export const DietQuickActions: React.FC<DietQuickActionsProps> = ({
 const styles = StyleSheet.create({
   container: {
     marginBottom: ResponsiveTheme.spacing.lg,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
-  gridContainer: {
-    flexDirection: "row" as const,
-    flexWrap: "wrap" as const,
-    justifyContent: "space-evenly" as const,
-    rowGap: rp(12),
+  scrollContent: {
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    gap: rp(4),
   },
   actionItem: {
     alignItems: "center" as const,
-    width: rw(105),
+    width: rw(72),
     marginBottom: rp(4),
   },
   actionItemDisabled: {

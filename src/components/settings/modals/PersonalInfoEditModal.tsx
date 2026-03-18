@@ -77,6 +77,10 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
 }) => {
   const { profile } = useUser();
   const { updatePersonalInfo, updateBodyAnalysis, updateWorkoutPreferences } = useProfileStore();
+  // SSOT: profileStore is authoritative for all onboarding data (onboarding_data table)
+  const profileWorkoutPreferences = useProfileStore((s) => s.workoutPreferences);
+  const profilePersonalInfo = useProfileStore((s) => s.personalInfo);
+  const profileBodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
 
   // Form state
   const [name, setName] = useState("");
@@ -89,18 +93,21 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Load current values when modal opens
+  // SSOT: profileStore.personalInfo/bodyAnalysis are authoritative; userStore profile is legacy fallback
   useEffect(() => {
-    if (visible && profile?.personalInfo) {
-      const info = profile.personalInfo;
-      setName(info.name || "");
-      setAge(String(info.age || ""));
-      setGender(info.gender || "");
-      setHeight(String(info.height || ""));
-      setWeight(String(info.weight || ""));
-      setActivityLevel(info.activityLevel || "");
+    if (visible && (profilePersonalInfo || profile?.personalInfo)) {
+      const profileName = `${profilePersonalInfo?.first_name || ''} ${profilePersonalInfo?.last_name || ''}`.trim();
+      setName(profileName || profilePersonalInfo?.name || profile?.personalInfo?.name || "");
+      setAge(String(profilePersonalInfo?.age || profile?.personalInfo?.age || ""));
+      setGender(profilePersonalInfo?.gender || profile?.personalInfo?.gender || "");
+      const h = profileBodyAnalysis?.height_cm || profile?.bodyMetrics?.height_cm || (profile?.personalInfo as any)?.height;
+      const w = profileBodyAnalysis?.current_weight_kg || profile?.bodyMetrics?.current_weight_kg || (profile?.personalInfo as any)?.weight;
+      setHeight(h ? String(h) : "");
+      setWeight(w ? String(w) : "");
+      setActivityLevel(profileWorkoutPreferences?.activity_level || profile?.workoutPreferences?.activity_level || "");
       setErrors({});
     }
-  }, [visible, profile]);
+  }, [visible, profilePersonalInfo, profileBodyAnalysis, profileWorkoutPreferences, profile]);
 
   // Validation
   const validate = useCallback((): boolean => {
@@ -183,7 +190,9 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       }
 
       // ✅ Update activity level in workoutPreferences if changed
-      if (activityLevel && activityLevel !== profile?.personalInfo?.activityLevel) {
+      // SSOT: activity_level lives in workoutPreferences, not personalInfo
+      // ✅ SSOT: profileStore.workoutPreferences is authoritative for activity_level
+      if (activityLevel && activityLevel !== (profileWorkoutPreferences?.activity_level || profile?.workoutPreferences?.activity_level)) {
         updateWorkoutPreferences({
           activity_level: activityLevel as WorkoutPreferencesData['activity_level'],
         });
@@ -212,17 +221,22 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
   ]);
 
   const hasChanges = useCallback(() => {
-    if (!profile?.personalInfo) return true;
-    const info = profile.personalInfo;
+    if (!profilePersonalInfo && !profile?.personalInfo) return true;
+    // SSOT: compare against profileStore values (authoritative)
+    const origName = `${profilePersonalInfo?.first_name || ''} ${profilePersonalInfo?.last_name || ''}`.trim() || profilePersonalInfo?.name || profile?.personalInfo?.name || "";
+    const origAge = String(profilePersonalInfo?.age || profile?.personalInfo?.age || "");
+    const origGender = profilePersonalInfo?.gender || profile?.personalInfo?.gender || "";
+    const origH = profileBodyAnalysis?.height_cm || profile?.bodyMetrics?.height_cm || (profile?.personalInfo as any)?.height;
+    const origW = profileBodyAnalysis?.current_weight_kg || profile?.bodyMetrics?.current_weight_kg || (profile?.personalInfo as any)?.weight;
     return (
-      name !== (info.name || "") ||
-      age !== String(info.age || "") ||
-      gender !== (info.gender || "") ||
-      height !== String(info.height || "") ||
-      weight !== String(info.weight || "") ||
-      activityLevel !== (info.activityLevel || "")
+      name !== origName ||
+      age !== origAge ||
+      gender !== origGender ||
+      height !== (origH ? String(origH) : "") ||
+      weight !== (origW ? String(origW) : "") ||
+      activityLevel !== (profileWorkoutPreferences?.activity_level || profile?.workoutPreferences?.activity_level || "")
     );
-  }, [name, age, gender, height, weight, activityLevel, profile]);
+  }, [name, age, gender, height, weight, activityLevel, profilePersonalInfo, profileBodyAnalysis, profileWorkoutPreferences, profile]);
 
   return (
     <SettingsModalWrapper

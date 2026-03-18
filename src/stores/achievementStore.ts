@@ -17,6 +17,7 @@ import {
   AchievementTier,
 } from "../services/achievementEngine";
 import { achievementDataService } from "../services/achievementData";
+import { CompletedSession } from "./fitness/types";
 
 // PERF-006 FIX: Track listener to prevent memory leaks
 let achievementListenerAttached = false;
@@ -88,6 +89,11 @@ interface AchievementStore {
   syncWithSupabase: (userId: string) => Promise<void>;
   loadFromSupabase: (userId: string) => Promise<void>;
 
+  // SSOT Fix 19: streak updater — called after every session completion
+  // and on hydration so currentStreak is always the real live value.
+  updateCurrentStreak: () => void;
+  updateCurrentStreakFromCount: (count: number) => void;
+
   // Reset store (for logout)
   reset: () => void;
 }
@@ -119,10 +125,10 @@ const achievementStorage = {
       return null;
     }
   },
-  setItem: async (name: string, value: string): Promise<void> => {
+  setItem: async (name: string, value: string | any): Promise<void> => {
     try {
-      // Parse and convert Map to array for storage
-      const parsed = JSON.parse(value);
+      // Zustand persist may call setItem with the state object directly (not a string)
+      const parsed = typeof value === 'string' ? JSON.parse(value) : value;
       // Bug 9 fix: after JSON round-trip, Map becomes a plain object.
       // Check for object with entries instead of instanceof Map.
       const userAchievements = parsed.state?.userAchievements;
@@ -242,6 +248,9 @@ export const useAchievementStore = create<AchievementStore>()(
             completionRate: stats.completionRate,
             isLoading: false,
           });
+
+          // SSOT Fix 19: seed currentStreak immediately from live completedSessions
+          get().updateCurrentStreak();
 
           console.log(
             `✅ Achievement store initialized with ${achievements.length} achievements`,
@@ -446,6 +455,57 @@ export const useAchievementStore = create<AchievementStore>()(
           .sort(([, a], [, b]) => b - a)
           .slice(0, 3)
           .map(([category, count]) => ({ category, count }));
+      },
+
+      // SSOT Fix 19: compute currentStreak reactively from fitnessStore.completedSessions.
+      // This is the ONLY place streak is written so there is exactly one source of truth.
+      // The streak counts consecutive calendar days (from today backward) that have at
+      // least one completed session (planned OR extra).
+      updateCurrentStreak: () => {
+        // Lazy import avoids circular dependency (achievementStore ↔ fitnessStore)
+        const fitnessModule = require("./fitnessStore");
+        const sessions: CompletedSession[] =
+          fitnessModule.useFitnessStore.getState().completedSessions;
+
+        if (!sessions || sessions.length === 0) {
+          set({ currentStreak: 0 });
+          return;
+        }
+
+        // Build a set of unique date strings (YYYY-MM-DD) for all completed sessions
+        const completedDates = new Set<string>();
+        sessions
+          .filter((s) => s.completedAt)
+          .forEach((s) => {
+            completedDates.add(new Date(s.completedAt!).toISOString().split('T')[0]);
+          });
+
+        // Walk backward from today counting consecutive days
+        let streak = 0;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const checkDate = new Date(today);
+
+        while (true) {
+          const dateStr = checkDate.toISOString().split('T')[0];
+          if (completedDates.has(dateStr)) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+          } else {
+            break;
+          }
+        }
+
+        set({ currentStreak: streak });
+      },
+
+      // Convenience setter — used to bootstrap from analyticsStore summary on first launch
+      updateCurrentStreakFromCount: (count: number) => {
+        // Only apply if our computed streak is still 0 (not yet computed from sessions)
+        const current = useAchievementStore.getState().currentStreak;
+        if (current === 0 && count > 0) {
+          set({ currentStreak: count });
+        }
       },
 
       // Sync achievements to Supabase for cloud persistence

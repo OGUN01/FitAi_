@@ -19,6 +19,9 @@ interface TodayWorkoutCardProps {
   isRestDay: boolean;
   isCompleted: boolean;
   progress: number;
+  /** When provided, overrides workout.estimatedCalories for the calories display.
+   *  Pass actual burned calories when the workout is partially or fully complete. */
+  displayCalories?: number;
   onStartWorkout: () => void;
   onViewDetails: () => void;
   onRecoveryTips?: () => void;
@@ -36,6 +39,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
   isRestDay,
   isCompleted,
   progress,
+  displayCalories,
   onStartWorkout,
   onViewDetails,
   onRecoveryTips,
@@ -168,7 +172,9 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                         color={ResponsiveTheme.colors.textSecondary}
                       />
                       <Text style={styles.metaText}>
-                        {workout.estimatedCalories || 0} cal
+                        {displayCalories !== undefined
+                          ? displayCalories
+                          : (workout.estimatedCalories || 0)} cal
                       </Text>
                     </View>
                     <View style={styles.metaItem}>
@@ -212,7 +218,11 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
             <View style={styles.bottomSection}>
               <AnimatedPressable
                 onPress={
-                  isRestDay && onRecoveryTips ? onRecoveryTips : onStartWorkout
+                  isRestDay && onRecoveryTips
+                    ? onRecoveryTips
+                    : isCompleted
+                      ? onViewDetails
+                      : onStartWorkout
                 }
                 scaleValue={0.96}
                 hapticFeedback={true}

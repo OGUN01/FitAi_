@@ -5,7 +5,7 @@ import {
   StyleSheet,
   PanResponder,
   Animated,
-  Dimensions,
+  Platform,
   StyleProp,
   ViewStyle,
 } from "react-native";
@@ -28,7 +28,130 @@ interface SliderProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export const Slider: React.FC<SliderProps> = ({
+// ─── Web-native HTML range input ────────────────────────────────────────────
+// PanResponder does not work reliably on web. We render a styled <input
+// type="range"> instead, which works perfectly with mouse/trackpad and touch.
+const WebSlider: React.FC<SliderProps> = ({
+  min,
+  max,
+  step = 1,
+  value,
+  onValueChange,
+  label,
+  unit = "",
+  showValue = true,
+  disabled = false,
+  trackColor = ResponsiveTheme.colors.surface,
+  thumbColor = ResponsiveTheme.colors.primary,
+  activeTrackColor = ResponsiveTheme.colors.primary,
+  style,
+}) => {
+  const percentage = ((value - min) / (max - min)) * 100;
+
+  const getDisplayValue = () => `${value}${unit}`;
+
+  // Inline style string for the range input — injected once into the document
+  const styleId = "fitai-slider-style";
+  if (typeof document !== "undefined" && !document.getElementById(styleId)) {
+    const styleEl = document.createElement("style");
+    styleEl.id = styleId;
+    styleEl.textContent = `
+      .fitai-range {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 8px;
+        border-radius: 4px;
+        outline: none;
+        cursor: pointer;
+        border: none;
+        padding: 0;
+        margin: 8px 0;
+      }
+      .fitai-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: ${thumbColor};
+        cursor: pointer;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        transition: transform 0.1s ease;
+      }
+      .fitai-range::-webkit-slider-thumb:hover {
+        transform: scale(1.15);
+      }
+      .fitai-range::-webkit-slider-thumb:active {
+        transform: scale(1.2);
+      }
+      .fitai-range::-moz-range-thumb {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: ${thumbColor};
+        cursor: pointer;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      }
+      .fitai-range:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    `;
+    document.head.appendChild(styleEl);
+  }
+
+  return (
+    <View style={[styles.container, style]}>
+      {/* Label and Value */}
+      {(label || showValue) && (
+        <View style={styles.header}>
+          {label && <Text style={styles.label}>{label}</Text>}
+          {showValue && (
+            <View style={styles.valueContainer}>
+              <Text style={styles.value}>{getDisplayValue()}</Text>
+              <Text style={styles.percentage}>({percentage.toFixed(0)}%)</Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Native HTML range input — fully draggable on web */}
+      {/* @ts-ignore — web-only props are fine here */}
+      <input
+        type="range"
+        className="fitai-range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        disabled={disabled}
+        onChange={(e: any) => {
+          const newValue = parseFloat(e.target.value);
+          const steppedValue = Math.round(newValue / step) * step;
+          onValueChange(Math.max(min, Math.min(max, steppedValue)));
+        }}
+        style={{
+          // Gradient background shows fill progress
+          background: `linear-gradient(to right, ${activeTrackColor} 0%, ${activeTrackColor} ${percentage}%, ${trackColor} ${percentage}%, ${trackColor} 100%)`,
+          width: "100%",
+          margin: "8px 0",
+        } as any}
+      />
+
+      {/* Min/Max Labels */}
+      <View style={styles.minMaxContainer}>
+        <Text style={styles.minMaxText}>{min}{unit}</Text>
+        <Text style={styles.minMaxText}>{max}{unit}</Text>
+      </View>
+    </View>
+  );
+};
+
+// ─── Native PanResponder slider (unchanged, works on iOS/Android) ────────────
+const NativeSlider: React.FC<SliderProps> = ({
   min,
   max,
   step = 1,
@@ -48,13 +171,10 @@ export const Slider: React.FC<SliderProps> = ({
   const thumbPosition = useRef(new Animated.Value(0)).current;
   const thumbScale = useRef(new Animated.Value(1)).current;
 
-  // Calculate thumb position based on value
   React.useEffect(() => {
     if (sliderWidth > 24) {
-      // Ensure slider is wide enough
       const percentage = (value - min) / (max - min);
-      const position = percentage * (sliderWidth - 24); // 24 is thumb width
-
+      const position = percentage * (sliderWidth - 24);
       Animated.timing(thumbPosition, {
         toValue: position,
         duration: isDragging ? 0 : 200,
@@ -69,54 +189,32 @@ export const Slider: React.FC<SliderProps> = ({
 
     onPanResponderGrant: () => {
       setIsDragging(true);
-      Animated.spring(thumbScale, {
-        toValue: 1.2,
-        useNativeDriver: false,
-      }).start();
+      Animated.spring(thumbScale, { toValue: 1.2, useNativeDriver: false }).start();
     },
 
     onPanResponderMove: (event, gestureState) => {
-      if (sliderWidth <= 24) return; // Prevent calculation with invalid slider width
-
+      if (sliderWidth <= 24) return;
       const { dx } = gestureState;
-      const currentPosition =
-        ((value - min) / (max - min)) * (sliderWidth - 24);
-      const newPosition = Math.max(
-        0,
-        Math.min(sliderWidth - 24, currentPosition + dx),
-      );
-
+      const currentPosition = ((value - min) / (max - min)) * (sliderWidth - 24);
+      const newPosition = Math.max(0, Math.min(sliderWidth - 24, currentPosition + dx));
       thumbPosition.setValue(newPosition);
-
-      // Calculate new value
       const percentage = newPosition / (sliderWidth - 24);
       const newValue = min + percentage * (max - min);
       const steppedValue = Math.round(newValue / step) * step;
-      const clampedValue = Math.max(min, Math.min(max, steppedValue));
-
-      onValueChange(clampedValue);
+      onValueChange(Math.max(min, Math.min(max, steppedValue)));
     },
 
     onPanResponderRelease: () => {
       setIsDragging(false);
-      Animated.spring(thumbScale, {
-        toValue: 1,
-        useNativeDriver: false,
-      }).start();
+      Animated.spring(thumbScale, { toValue: 1, useNativeDriver: false }).start();
     },
   });
 
-  const getDisplayValue = () => {
-    return `${value}${unit}`;
-  };
-
-  const getValuePercentage = () => {
-    return ((value - min) / (max - min)) * 100;
-  };
+  const getDisplayValue = () => `${value}${unit}`;
+  const getValuePercentage = () => ((value - min) / (max - min)) * 100;
 
   return (
     <View style={[styles.container, style]}>
-      {/* Label and Value */}
       {(label || showValue) && (
         <View style={styles.header}>
           {label && <Text style={styles.label}>{label}</Text>}
@@ -131,14 +229,10 @@ export const Slider: React.FC<SliderProps> = ({
         </View>
       )}
 
-      {/* Slider Track */}
       <View
         style={[styles.track, { backgroundColor: trackColor }]}
-        onLayout={(event) => {
-          setSliderWidth(event.nativeEvent.layout.width);
-        }}
+        onLayout={(event) => setSliderWidth(event.nativeEvent.layout.width)}
       >
-        {/* Active Track */}
         <Animated.View
           style={[
             styles.activeTrack,
@@ -155,8 +249,6 @@ export const Slider: React.FC<SliderProps> = ({
             },
           ]}
         />
-
-        {/* Thumb */}
         <Animated.View
           style={[
             styles.thumb,
@@ -172,19 +264,11 @@ export const Slider: React.FC<SliderProps> = ({
         </Animated.View>
       </View>
 
-      {/* Min/Max Labels */}
       <View style={styles.minMaxContainer}>
-        <Text style={styles.minMaxText}>
-          {min}
-          {unit}
-        </Text>
-        <Text style={styles.minMaxText}>
-          {max}
-          {unit}
-        </Text>
+        <Text style={styles.minMaxText}>{min}{unit}</Text>
+        <Text style={styles.minMaxText}>{max}{unit}</Text>
       </View>
 
-      {/* Step Indicators */}
       {step > 1 && (
         <View style={styles.stepsContainer}>
           {Array.from(
@@ -192,7 +276,6 @@ export const Slider: React.FC<SliderProps> = ({
             (_, index) => {
               const stepValue = min + index * step;
               const stepPercentage = ((stepValue - min) / (max - min)) * 100;
-
               return (
                 <View
                   key={index}
@@ -200,8 +283,7 @@ export const Slider: React.FC<SliderProps> = ({
                     styles.stepIndicator,
                     {
                       left: `${stepPercentage}%`,
-                      backgroundColor:
-                        stepValue <= value ? activeTrackColor : trackColor,
+                      backgroundColor: stepValue <= value ? activeTrackColor : trackColor,
                     },
                   ]}
                 />
@@ -212,6 +294,14 @@ export const Slider: React.FC<SliderProps> = ({
       )}
     </View>
   );
+};
+
+// ─── Exported Slider — auto-selects web vs native renderer ──────────────────
+export const Slider: React.FC<SliderProps> = (props) => {
+  if (Platform.OS === 'web') {
+    return <WebSlider {...props} />;
+  }
+  return <NativeSlider {...props} />;
 };
 
 const styles = StyleSheet.create({

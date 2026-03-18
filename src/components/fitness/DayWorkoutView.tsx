@@ -95,7 +95,7 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>🔥 Warmup</Text>
             {warmupExercises.map((exercise, index) => (
-              <GlassCard key={exercise.exerciseId} style={styles.exerciseCard}>
+              <GlassCard key={`warmup-${exercise.exerciseId}-${index}`} style={styles.exerciseCard}>
                 <View style={styles.exerciseContent}>
                   <View style={styles.exerciseNumberContainer}>
                     <Text style={styles.exerciseNumber}>{index + 1}</Text>
@@ -123,7 +123,7 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>💪 Main Workout</Text>
             {mainExercises.map((exercise, index) => (
-              <GlassCard key={exercise.exerciseId} style={styles.exerciseCard}>
+              <GlassCard key={`main-${exercise.exerciseId}-${index}`} style={styles.exerciseCard}>
                 <View style={styles.exerciseContent}>
                   <View style={styles.exerciseNumberContainer}>
                     <Text style={styles.exerciseNumber}>{index + 1}</Text>
@@ -156,7 +156,7 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>🧘 Cooldown</Text>
             {cooldownExercises.map((exercise, index) => (
-              <GlassCard key={exercise.exerciseId} style={styles.exerciseCard}>
+              <GlassCard key={`cooldown-${exercise.exerciseId}-${index}`} style={styles.exerciseCard}>
                 <View style={styles.exerciseContent}>
                   <View style={styles.exerciseNumberContainer}>
                     <Text style={styles.exerciseNumber}>{index + 1}</Text>

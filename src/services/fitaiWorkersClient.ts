@@ -537,15 +537,11 @@ export class FitAIWorkersClient {
       foods: Array<{
         id: string;
         name: string;
-        hindiName?: string;
+        localName?: string;
         category: string;
         cuisine: string;
-        region?: string;
-        spiceLevel?: string;
-        cookingMethod?: string;
         estimatedGrams: number;
-        portionConfidence: number;
-        servingType: string;
+        servingDescription: string;
         calories: number;
         protein: number;
         carbs: number;
@@ -553,13 +549,18 @@ export class FitAIWorkersClient {
         fiber: number;
         sugar?: number;
         sodium?: number;
-        ingredients?: string[];
         confidence: number;
-        enhancementSource: string;
+        /** Per-100g values computed by the Worker (per-serving / estimatedGrams * 100) */
+        nutritionPer100g: {
+          calories: number;
+          protein: number;
+          carbs: number;
+          fat: number;
+          fiber: number;
+        };
       }>;
       overallConfidence: number;
       totalCalories: number;
-      analysisNotes?: string;
       mealType: string;
     }>
   > {
@@ -735,6 +736,58 @@ export class FitAIWorkersClient {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ productName, brand, country }),
+    });
+  }
+  /**
+   * Scan a nutrition label photo using Gemini Vision.
+   * Sends a base64 image of the nutrition facts table; the Worker extracts
+   * all values verbatim and returns them shaped for ScannedProduct use.
+   *
+   * @param imageBase64  - Base64 data URL (data:image/jpeg;base64,...)
+   * @param productName  - Optional hint shown on the packaging to improve accuracy
+   */
+  async scanNutritionLabel(
+    imageBase64: string,
+    productName?: string,
+  ): Promise<
+    WorkersResponse<{
+      productName: string;
+      brand?: string;
+      servingSize: number;
+      servingUnit: string;
+      perServing: {
+        calories: number;
+        protein: number;
+        carbs: number;
+        fat: number;
+        fiber?: number;
+        sugar?: number;
+        sodium?: number;
+      };
+      per100g: {
+        calories: number;
+        protein: number;
+        carbs: number;
+        fat: number;
+        fiber?: number;
+        sugar?: number;
+        sodium?: number;
+      };
+      ingredients?: string;
+      allergens?: string[];
+      confidence: number;
+      extractionNotes?: string;
+      source: 'vision-label';
+    }>
+  > {
+    const token = await this.getAuthToken();
+    return this.makeRequest('/food/label-scan', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ imageBase64, productName }),
     });
   }
 

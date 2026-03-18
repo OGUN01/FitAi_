@@ -15,6 +15,10 @@ import { ExerciseInstructionModal } from "../../components/fitness/ExerciseInstr
 import { ExerciseSessionModal } from "../../components/fitness/ExerciseSessionModal";
 import completionTrackingService from "../../services/completionTracking";
 import { completeExtraWorkout } from "../../services/extraWorkoutService";
+import { analyticsHelpers } from "../../stores/analyticsStore";
+// analyticsDataService removed: updateTodaysMetrics is already called inside
+// completionTrackingService.completeWorkout() and completeExtraWorkout().
+// Calling it again here would double-count calories/workouts in analytics_metrics.
 import { useFitnessStore } from "../../stores/fitnessStore";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { exerciseFilterService } from "../../services/exerciseFilterService";
@@ -109,7 +113,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   const { workout, sessionId, resumeExerciseIndex, isExtra } = route.params;
   const insets = useSafeAreaInsets();
 
-  const session = useWorkoutSession((workout ?? { exercises: [] }) as DayWorkout, sessionId, resumeExerciseIndex ?? 0);
+  const parsedResumeIndex = safeNumber(resumeExerciseIndex, 0);
+  const session = useWorkoutSession((workout ?? { exercises: [] }) as DayWorkout, sessionId, parsedResumeIndex);
   const achievements = useWorkoutAchievements();
   const animations = useWorkoutAnimations();
 
@@ -213,7 +218,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       const durationMinutes = Math.max(1, Math.round(elapsedSeconds / 60));
 
       let success: boolean;
-      if (isExtra === true) {
+      if (isExtra === true || (isExtra as any) === 'true') {
         success = await completeExtraWorkout(
           workout,
           {
@@ -249,6 +254,20 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           session.totalExercises,
           workout.title,
         );
+
+        // SSOT fix: feed analyticsStore so its metricsHistory and currentAnalytics
+        // are based on real completion data (analyticsEngine was previously never
+        // called on workout completion, leaving analyticsStore always empty).
+        analyticsHelpers.trackWorkoutCompleted({
+          date: new Date().toISOString().split('T')[0],
+          duration: durationMinutes,
+          caloriesBurned: finalStats.caloriesBurned,
+          type: workout.category || 'general',
+        });
+
+        // NOTE: analyticsDataService.updateTodaysMetrics() is already called by
+        // completionTrackingService.completeWorkout() and completeExtraWorkout().
+        // Do NOT call it again here — that would double-count calories/workoutsCompleted.
 
         setCompleteDialog({
           visible: true,
@@ -348,7 +367,20 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           },
         );
 
-        // 3. Clear the in-memory session so next "Continue" uses the
+        // 3. For extra workouts: update the persisted active session so the card
+        //    shows RESUME at the correct exercise index.
+        //    Use currentExerciseIndex (where user is now), not firstIncompleteIdx
+        //    — if no sets were completed, firstIncompleteIdx would be 0 regardless.
+        if (isExtra === true || (isExtra as any) === 'true') {
+          // updateActiveExtraProgress is an optional method — guard call in case
+          // the fitnessStore version in use hasn't implemented it yet.
+          const storeState = useFitnessStore.getState() as any;
+          if (typeof storeState.updateActiveExtraProgress === 'function') {
+            storeState.updateActiveExtraProgress(session.currentExerciseIndex);
+          }
+        }
+
+        // 4. Clear the in-memory session so next "Continue" uses the
         //    persisted exerciseIndex (single source of truth).
         useFitnessStore.setState({ currentWorkoutSession: null });
       } catch (error) {

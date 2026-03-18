@@ -1,4 +1,4 @@
-import { FitnessState, CompletedWorkoutStats, CompletedSession } from "./types";
+import { FitnessState, CompletedWorkoutStats, CompletedSession, ActiveExtraSession } from "./types";
 import { getCurrentWeekStart } from "../../utils/weekUtils";
 
 export const createSelectors = (
@@ -44,6 +44,18 @@ export const createSelectors = (
 
   setHasHydrated: () => set({ _hasHydrated: true }),
 
+  // SSOT: Active extra (quick) workout session actions
+  setActiveExtraSession: (session: ActiveExtraSession) => set({ activeExtraSession: session }),
+
+  updateActiveExtraProgress: (exerciseIndex: number) =>
+    set((state) =>
+      state.activeExtraSession
+        ? { activeExtraSession: { ...state.activeExtraSession, exerciseIndex } }
+        : state,
+    ),
+
+  clearActiveExtraSession: () => set({ activeExtraSession: null }),
+
   getPlannedSessionStats: (weekStart: string) => {
     const sessions = get().completedSessions.filter(
       (s) => s.type === 'planned' && s.weekStart === weekStart
@@ -72,3 +84,4 @@ export const createSelectors = (
       .reduce((sum, s) => sum + s.caloriesBurned, 0);
   },
 });
+

@@ -39,7 +39,10 @@ export const DietScreenHeader: React.FC<DietScreenHeaderProps> = ({
   const dateSubLabel = selectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   return (
     <View style={styles.header}>
+      {/* Title row */}
       <Text style={styles.title}>Nutrition Plan</Text>
+
+      {/* Date navigator row */}
       <View style={styles.dateSelector}>
         <AnimatedPressable
           style={styles.dateNavButton}
@@ -70,36 +73,11 @@ export const DietScreenHeader: React.FC<DietScreenHeaderProps> = ({
           <Text style={styles.dateNavIcon}>›</Text>
         </AnimatedPressable>
       </View>
+
+      {/* Action buttons row */}
       <View style={styles.headerButtons}>
-        <View
-          style={styles.statusButton}
-          accessibilityRole="none"
-          accessibilityLabel={
-            trackBStatus.isConnected ? "Tracker connected" : "Tracker disconnected"
-          }
-        >
-          <Text style={styles.statusTitle}>Tracker</Text>
-          <View style={styles.statusIndicatorRow}>
-            <Ionicons
-              name={
-                trackBStatus.isConnected ? "ellipse" : "ellipse-outline"
-              }
-              size={rf(8)}
-              color={trackBStatus.isConnected ? ResponsiveTheme.colors.successAlt : ResponsiveTheme.colors.errorAlt}
-            />
-            <Text style={[styles.statusLabel, { color: trackBStatus.isConnected ? ResponsiveTheme.colors.successAlt : ResponsiveTheme.colors.errorAlt }]}>
-              {trackBStatus.isConnected ? "On" : "Off"}
-            </Text>
-          </View>
-        </View>
         <AnimatedPressable
-          style={
-            [
-              styles.aiButton,
-              styles.aiButtonSecondary,
-              isGeneratingPlan ? styles.aiButtonDisabled : undefined,
-            ] as any
-          }
+          style={[styles.aiButton, styles.aiButtonSecondary, isGeneratingPlan ? styles.aiButtonDisabled : undefined] as any}
           onPress={onGenerateWeeklyPlan}
           disabled={isGeneratingPlan}
           scaleValue={0.95}
@@ -109,23 +87,14 @@ export const DietScreenHeader: React.FC<DietScreenHeaderProps> = ({
           {isGeneratingPlan ? (
             <AuroraSpinner size="sm" theme="white" />
           ) : (
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Ionicons
-                name="calendar-outline"
-                size={rf(12)}
-                color={ResponsiveTheme.colors.primary}
-              />
-              <Text style={[styles.aiButtonText, styles.aiButtonTextSecondary, { marginLeft: 4 }]}>Week</Text>
+            <View style={styles.buttonInner}>
+              <Ionicons name="calendar-outline" size={rf(13)} color={ResponsiveTheme.colors.primary} />
+              <Text style={[styles.aiButtonText, styles.aiButtonTextSecondary]}>Week</Text>
             </View>
           )}
         </AnimatedPressable>
         <AnimatedPressable
-          style={
-            [
-              styles.aiButton,
-              isGeneratingMeal ? styles.aiButtonDisabled : undefined,
-            ] as any
-          }
+          style={[styles.aiButton, isGeneratingMeal ? styles.aiButtonDisabled : undefined] as any}
           onPress={onGenerateDailyPlan}
           disabled={isGeneratingMeal}
           scaleValue={0.95}
@@ -135,13 +104,9 @@ export const DietScreenHeader: React.FC<DietScreenHeaderProps> = ({
           {isGeneratingMeal ? (
             <AuroraSpinner size="sm" theme="white" />
           ) : (
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Ionicons
-                name="today-outline"
-                size={rf(12)}
-                color={ResponsiveTheme.colors.white}
-              />
-              <Text style={[styles.aiButtonText, { marginLeft: 4 }]}>Day</Text>
+            <View style={styles.buttonInner}>
+              <Ionicons name="today-outline" size={rf(13)} color={ResponsiveTheme.colors.white} />
+              <Text style={styles.aiButtonText}>Day</Text>
             </View>
           )}
         </AnimatedPressable>
@@ -152,11 +117,7 @@ export const DietScreenHeader: React.FC<DietScreenHeaderProps> = ({
           accessibilityRole="button"
           accessibilityLabel="Log Meal"
         >
-          <Ionicons
-            name="add-circle-outline"
-            size={rf(20)}
-            color={ResponsiveTheme.colors.white}
-          />
+          <Ionicons name="add-circle-outline" size={rf(20)} color={ResponsiveTheme.colors.white} />
         </AnimatedPressable>
       </View>
     </View>
@@ -165,61 +126,28 @@ export const DietScreenHeader: React.FC<DietScreenHeaderProps> = ({
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
+    flexDirection: "column",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingTop: ResponsiveTheme.spacing.lg,
-    paddingBottom: ResponsiveTheme.spacing.md,
-    gap: rp(6),
+    paddingBottom: ResponsiveTheme.spacing.sm,
+    gap: rp(10),
   },
   title: {
     fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: "bold",
     color: ResponsiveTheme.colors.text,
-  },
-  headerButtons: { flexDirection: "row", alignItems: "center", gap: rp(6), flexShrink: 1 },
-  aiButton: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    paddingHorizontal: rp(10),
-    paddingVertical: rp(7),
-    borderRadius: rs(20),
-    minWidth: rw(58),
-    alignItems: "center",
-  },
-  aiButtonSecondary: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primary,
-  },
-  aiButtonDisabled: { backgroundColor: ResponsiveTheme.colors.textMuted },
-  aiButtonText: {
-    color: ResponsiveTheme.colors.white,
-    fontSize: rf(11),
-    fontWeight: "600",
-  },
-  aiButtonTextSecondary: {
-    color: ResponsiveTheme.colors.primary,
-  },
-  addButton: {
-    width: rw(40),
-    height: rh(40),
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    backgroundColor: ResponsiveTheme.colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
+    alignSelf: "flex-start",
   },
   dateSelector: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    marginTop: ResponsiveTheme.spacing.md,
-    gap: ResponsiveTheme.spacing.md,
+    justifyContent: "space-between",
+    alignSelf: "stretch",
   },
   dateNavButton: {
-    width: rw(40),
-    height: rh(40),
+    width: rw(36),
+    height: rh(36),
     borderRadius: ResponsiveTheme.borderRadius.full,
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: "center",
@@ -231,7 +159,8 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   dateBadge: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    flex: 1,
+    marginHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.sm,
     alignItems: "center",
   },
@@ -245,31 +174,46 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: rp(2),
   },
-  statusButton: {
-    minWidth: rw(52),
+  headerButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "stretch",
+    gap: rp(8),
+  },
+  buttonInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(4),
+  },
+  aiButton: {
+    flex: 1,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    paddingHorizontal: rp(14),
+    paddingVertical: rp(8),
+    borderRadius: rs(20),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  aiButtonSecondary: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: ResponsiveTheme.colors.primary,
+  },
+  aiButtonDisabled: { backgroundColor: ResponsiveTheme.colors.textMuted },
+  aiButtonText: {
+    color: ResponsiveTheme.colors.white,
+    fontSize: rf(12),
+    fontWeight: "600",
+  },
+  aiButtonTextSecondary: {
+    color: ResponsiveTheme.colors.primary,
+  },
+  addButton: {
+    width: rw(38),
+    height: rh(38),
     borderRadius: ResponsiveTheme.borderRadius.lg,
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: ResponsiveTheme.colors.primary,
     justifyContent: "center",
     alignItems: "center",
-    flexDirection: "column",
-    paddingHorizontal: rp(8),
-    paddingVertical: rp(4),
-  },
-  statusTitle: {
-    fontSize: rf(8),
-    fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
-    textTransform: "uppercase" as const,
-    letterSpacing: 0.5,
-    marginBottom: rp(1),
-  },
-  statusIndicatorRow: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: rp(3),
-  },
-  statusLabel: {
-    fontSize: rf(9),
-    fontWeight: "700",
   },
 });

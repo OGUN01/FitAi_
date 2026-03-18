@@ -52,7 +52,7 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
     const completedWorkouts = Object.values(workoutProgress).filter(
       (p) => p.progress === 100,
     ).length;
-    const totalCalories = plan.totalEstimatedCalories || 0;
+    const totalCalories = (plan.workouts || []).reduce((sum, w) => sum + (w.estimatedCalories || 0), 0);
     const restDays = plan.restDays?.length || 0;
 
     return {
@@ -70,8 +70,11 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
   // Get day status for mini calendar
   const getDayStatus = (dayKey: string) => {
     const workout = plan.workouts?.find((w) => w.dayOfWeek === dayKey);
-    const dayIndex = DAY_KEYS.indexOf(dayKey);
-    const isRestDay = plan.restDays?.includes(dayIndex);
+    const dayIndex = DAY_KEYS.indexOf(dayKey as DayName);
+    // Handle both number indices (Monday=0) and string day names from AI
+    const isRestDay = plan.restDays?.some((d: number | string) =>
+      typeof d === "string" ? d === dayKey : d === dayIndex
+    );
     const progress = workout ? workoutProgress[workout.id]?.progress || 0 : 0;
     const isSelected = selectedDay === dayKey;
     const isToday =

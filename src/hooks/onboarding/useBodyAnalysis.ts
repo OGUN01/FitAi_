@@ -165,7 +165,9 @@ export const useBodyAnalysis = ({
 
   // Calculate BMI, BMR, and ideal weight when height/weight or personalInfo changes
   useEffect(() => {
-    if (formData.height_cm > 0 && formData.current_weight_kg > 0) {
+    // Guard: skip calculation while user is still typing (partial values like "9" would
+    // cause calculateBMR to throw since it requires weight >= 30 kg)
+    if (formData.height_cm > 0 && formData.current_weight_kg >= 30 && formData.current_weight_kg <= 300) {
       const bmi = calculateBMI(formData.current_weight_kg, formData.height_cm);
       const bmr = calculateBMRMemo(
         formData.current_weight_kg,

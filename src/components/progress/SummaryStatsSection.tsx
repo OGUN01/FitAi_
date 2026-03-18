@@ -1,24 +1,27 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { ResponsiveTheme } from "../../utils/constants";
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
-import DataRetrievalService from "../../services/dataRetrieval";
 
 interface SummaryStatsSectionProps {
   weeklyProgress: any;
   realWeeklyData: any[];
   progressStats: any;
+  totalCaloriesBurned: number;
 }
 
 export const SummaryStatsSection: React.FC<SummaryStatsSectionProps> = ({
   weeklyProgress,
   realWeeklyData,
   progressStats,
+  totalCaloriesBurned,
 }) => {
-  const totalCaloriesBurned = useMemo(
-    () => DataRetrievalService.getTotalCaloriesBurned(),
-    [],
-  );
+  const totalDurationMinutes = realWeeklyData.reduce((total, day) => total + day.duration, 0);
+  const displayDuration = totalDurationMinutes > 0
+    ? `${Math.round(totalDurationMinutes / 60)}h`
+    : progressStats?.totalDuration
+      ? `${Math.round(progressStats.totalDuration / 60)}h`
+      : "0h";
 
   return (
     <View style={styles.section}>
@@ -39,27 +42,15 @@ export const SummaryStatsSection: React.FC<SummaryStatsSectionProps> = ({
           </View>
 
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryValue}>
-              {realWeeklyData.reduce((total, day) => total + day.duration, 0) >
-              0
-                ? `${Math.round(
-                    realWeeklyData.reduce(
-                      (total, day) => total + day.duration,
-                      0,
-                    ) / 60,
-                  )}h`
-                : progressStats?.totalDuration
-                  ? `${Math.round(progressStats.totalDuration / 60)}h`
-                  : "0h"}
-            </Text>
+            <Text style={styles.summaryValue}>{displayDuration}</Text>
             <Text style={styles.summaryLabel}>Time Exercised</Text>
           </View>
 
           <View style={styles.summaryItem}>
             <Text style={styles.summaryValue}>
-              {totalCaloriesBurned
+              {totalCaloriesBurned > 0
                 ? totalCaloriesBurned.toLocaleString()
-                : progressStats?.totalCalories?.toLocaleString() || "0"}
+                : progressStats?.totalCalories?.toLocaleString() ?? "0"}
             </Text>
             <Text style={styles.summaryLabel}>Calories Burned</Text>
           </View>

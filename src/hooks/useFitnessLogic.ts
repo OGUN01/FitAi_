@@ -4,6 +4,7 @@ import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 
 // Stores
 import { useUserStore, useFitnessStore, useAppStateStore, useProfileStore } from "../stores";
+import { useAchievementStore } from "../stores/achievementStore";
 import { useAuth } from "./useAuth";
 import { supabase } from "../services/supabase";
 
@@ -37,7 +38,22 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
   // Auth & User
   const { user, isGuestMode } = useAuth();
   const { profile } = useUserStore();
-  const { bodyAnalysis, workoutPreferences: profileWorkoutPreferences } = useProfileStore();
+  const { bodyAnalysis, workoutPreferences: profileWorkoutPreferences, personalInfo: profilePersonalInfo } = useProfileStore();
+
+  // SSOT: Build merged fitnessGoals — profileStore.workoutPreferences is authoritative
+  // profile.fitnessGoals (userStore) is legacy fallback only
+  const mergedFitnessGoals = profileWorkoutPreferences
+    ? {
+        primary_goals: profileWorkoutPreferences.primary_goals || profile?.fitnessGoals?.primary_goals || [],
+        primaryGoals: profileWorkoutPreferences.primary_goals || profile?.fitnessGoals?.primaryGoals || [],
+        experience: profileWorkoutPreferences.intensity || profile?.fitnessGoals?.experience || 'beginner',
+        experience_level: profileWorkoutPreferences.intensity || profile?.fitnessGoals?.experience_level || 'beginner',
+        time_commitment: String(profileWorkoutPreferences.time_preference || profile?.fitnessGoals?.time_commitment || 45),
+        timeCommitment: String(profileWorkoutPreferences.time_preference || profile?.fitnessGoals?.timeCommitment || 45),
+        preferred_equipment: profileWorkoutPreferences.equipment || profile?.fitnessGoals?.preferred_equipment,
+        target_areas: profile?.fitnessGoals?.target_areas,
+      }
+    : profile?.fitnessGoals;
 
   // Fitness Store
   const {
@@ -55,13 +71,9 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
   } = useFitnessStore();
   const completedSessions = useFitnessStore((state) => state.completedSessions);
 
-  const { _hasHydrated, completedSessionsHydrated, markCompletedSessionsHydrated } = useFitnessStore(
-    (state) => ({
-      _hasHydrated: state._hasHydrated,
-      completedSessionsHydrated: state.completedSessionsHydrated,
-      markCompletedSessionsHydrated: state.markCompletedSessionsHydrated,
-    }),
-  );
+  const _hasHydrated = useFitnessStore((state) => state._hasHydrated);
+  const completedSessionsHydrated = useFitnessStore((state) => state.completedSessionsHydrated);
+  const markCompletedSessionsHydrated = useFitnessStore((state) => state.markCompletedSessionsHydrated);
 
 
   // SHARED UI STATE - Single Source of Truth from appStateStore
@@ -80,6 +92,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
   );
   const [showWorkoutStartDialog, setShowWorkoutStartDialog] = useState(false);
   const [showRecoveryTipsModal, setShowRecoveryTipsModal] = useState(false);
+  const [workoutDetailsWorkout, setWorkoutDetailsWorkout] = useState<DayWorkout | null>(null);
   const [showGuestSignUp, setShowGuestSignUp] = useState(false);
 
   // Load data on mount and subscribe to completion events
@@ -139,6 +152,8 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     });
 
     markCompletedSessionsHydrated();
+    // SSOT Fix 19: recompute streak after backfill
+    useAchievementStore.getState().updateCurrentStreak();
   }, [_hasHydrated, completedSessionsHydrated, markCompletedSessionsHydrated]);
 
   // Backfill caloriesBurned for completed workouts that are missing it.
@@ -161,8 +176,8 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     toBackfill.forEach((w) => backfilledWorkoutIds.current.add(w.id));
 
     const userWeight =
-      profile?.bodyMetrics?.current_weight_kg ||
-      bodyAnalysis?.current_weight_kg;
+      bodyAnalysis?.current_weight_kg ||
+      profile?.bodyMetrics?.current_weight_kg;
 
     supabase
       .from("workout_sessions")
@@ -257,9 +272,9 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
   // Calculate week stats — delegates to store's single source of truth
   const weekStats = useMemo(() => {
     const totalWorkouts = weeklyWorkoutPlan?.workouts?.length || 0;
-    const completedCount = useFitnessStore.getState().getCompletedWorkoutStats().count;
+    const completedCount = getCompletedWorkoutStats().count;
     return { totalWorkouts, completedCount };
-  }, [weeklyWorkoutPlan]);
+  }, [weeklyWorkoutPlan, completedSessions, getCompletedWorkoutStats]);
 
   // Generate weekly workout plan
   const generateWeeklyWorkoutPlan = useCallback(async () => {
@@ -269,7 +284,8 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
       return;
     }
 
-    if (!profile?.personalInfo || !profile?.fitnessGoals) {
+    // SSOT: check profileStore first; profile (userStore) is legacy fallback
+    if ((!profilePersonalInfo && !profile?.personalInfo) || !mergedFitnessGoals?.primary_goals?.length) {
       crossPlatformAlert(
         "Profile Incomplete",
         "Please complete your profile to generate a personalized workout plan.",
@@ -288,8 +304,8 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
 
     try {
       const response = await aiService.generateWeeklyWorkoutPlan(
-        profile.personalInfo,
-        profile.fitnessGoals,
+        profilePersonalInfo || profile?.personalInfo!,
+        (mergedFitnessGoals || profile?.fitnessGoals)!,
         1,
         {
           bodyMetrics: bodyAnalysis ?? undefined,
@@ -465,15 +481,13 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
   const handleViewWorkoutDetails = useCallback((workoutArg?: DayWorkout) => {
     const targetWorkout = workoutArg || selectedDayWorkout;
     if (targetWorkout) {
-      const storedProgress = workoutProgress[targetWorkout.id];
-      const calories = storedProgress?.caloriesBurned ?? targetWorkout.estimatedCalories;
-      crossPlatformAlert(
-        targetWorkout.title,
-        `${targetWorkout.description ?? ""}\n\nDuration: ${targetWorkout.duration} min\nCalories: ${calories || "N/A"}\nExercises: ${targetWorkout.exercises?.length ?? 0}`.trimStart(),
-        [{ text: "OK" }],
-      );
+      setWorkoutDetailsWorkout(targetWorkout);
     }
-  }, [selectedDayWorkout, workoutProgress]);
+  }, [selectedDayWorkout]);
+
+  const handleCloseWorkoutDetails = useCallback(() => {
+    setWorkoutDetailsWorkout(null);
+  }, []);
 
   const handleRecoveryTips = useCallback(() => {
     haptics.light();
@@ -616,7 +630,15 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     );
   }, [generateWeeklyWorkoutPlan]);
 
-  const userName = profile?.personalInfo?.name;
+  // SSOT: profileStore.personalInfo is authoritative; userStore profile is legacy fallback
+  const profileFitnessName = `${profilePersonalInfo?.first_name || ''} ${profilePersonalInfo?.last_name || ''}`.trim();
+  const userName = profileFitnessName || profilePersonalInfo?.name || profile?.personalInfo?.name;
+
+  // Build a mergedProfile with SSOT fitnessGoals injected so downstream
+  // consumers (PlanSection → EmptyPlanState) see the correct data.
+  const mergedProfile = mergedFitnessGoals
+    ? { ...profile, fitnessGoals: mergedFitnessGoals }
+    : profile;
 
   return {
     state: {
@@ -635,8 +657,9 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
       selectedWorkout,
       showWorkoutStartDialog,
       showRecoveryTipsModal,
+      workoutDetailsWorkout,
       userName,
-      profile,
+      profile: mergedProfile,  // SSOT: mergedProfile has profileStore fitnessGoals injected
       showGuestSignUp,
     },
     actions: {
@@ -649,6 +672,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
       handleViewWorkoutDetails,
       handleRecoveryTips,
       handleCloseRecoveryTips,
+      handleCloseWorkoutDetails,
       handleWorkoutStartConfirm,
       handleWorkoutStartCancel,
       handleRepeatWorkout,

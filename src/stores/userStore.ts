@@ -85,6 +85,7 @@ interface UserState {
   updatePersonalInfo: (personalInfo: PersonalInfo) => void;
   checkProfileComplete: (profile: UserProfile) => boolean;
   updateFitnessGoalsLocal: (fitnessGoals: FitnessGoals) => void;
+  reset: () => void;
 }
 
 export const useUserStore = create<UserState>()(
@@ -521,7 +522,6 @@ export const useUserStore = create<UserState>()(
       checkProfileComplete: (profile: UserProfile): boolean => {
         // Guard: Check if profile exists
         if (!profile) {
-          console.log("⚠️ checkProfileComplete: Profile is null/undefined");
           return false;
         }
 
@@ -529,12 +529,10 @@ export const useUserStore = create<UserState>()(
 
         // Guard: Check if required nested objects exist
         if (!personalInfo) {
-          console.log("⚠️ checkProfileComplete: personalInfo is missing");
           return false;
         }
 
         if (!fitnessGoals) {
-          console.log("⚠️ checkProfileComplete: fitnessGoals is missing");
           return false;
         }
 
@@ -565,11 +563,12 @@ export const useUserStore = create<UserState>()(
         const hasSufficientGoalData = hasFitnessGoals || hasWorkoutPrefs;
 
         const isComplete = hasPersonalInfo && hasSufficientGoalData;
-        console.log(
-          `✅ checkProfileComplete: hasPersonalInfo=${hasPersonalInfo}, hasFitnessGoals=${hasFitnessGoals}, hasWorkoutPrefs=${hasWorkoutPrefs}, isComplete=${isComplete}`,
-        );
 
         return isComplete;
+      },
+
+      reset: () => {
+        set({ profile: null, isProfileComplete: false, isLoading: false, error: null });
       },
     }),
     {

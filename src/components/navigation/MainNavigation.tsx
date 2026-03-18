@@ -39,6 +39,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     isActive: boolean;
     workout?: DayWorkout;
     sessionId?: string;
+    resumeExerciseIndex?: number;
+    isExtra?: boolean;
   }>({ isActive: false });
 
   const [mealSession, setMealSession] = useState<{
@@ -88,6 +90,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           isActive: true,
           workout: params.workout,
           sessionId: params.sessionId,
+          resumeExerciseIndex: params.resumeExerciseIndex,
+          isExtra: params.isExtra,
         });
       } else if (screen === "MealSession") {
         setMealSession({ isActive: true, meal: params.meal });
@@ -112,7 +116,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       }
     },
     goBack: () => {
-      setWorkoutSession({ isActive: false });
+      setWorkoutSession({ isActive: false, resumeExerciseIndex: undefined });
       setMealSession({ isActive: false });
       setCookingSession({ isActive: false });
       setOnboardingEditSession({ isActive: false });
@@ -228,6 +232,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
             params: {
               workout: workoutSession.workout,
               sessionId: workoutSession.sessionId,
+              resumeExerciseIndex: workoutSession.resumeExerciseIndex,
+              isExtra: workoutSession.isExtra,
             },
           }}
           navigation={navigation}

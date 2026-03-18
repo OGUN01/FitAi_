@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Linking, Share } from "react-native";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "./useAuth";
@@ -7,6 +8,8 @@ import { useProfileStore } from "../stores/profileStore";
 import { useUnifiedStats } from "./useUnifiedStats";
 import { clearAllUserData } from "../utils/clearUserData";
 import { useSubscriptionStore } from "../stores/subscriptionStore";
+import { useHealthDataStore } from "../stores/healthDataStore";
+import { crudOperations } from "../services/crudOperations";
 import type { SettingItem } from "../screens/main/profile";
 
 // AsyncStorage keys for settings preferences
@@ -186,7 +189,7 @@ export const useProfileLogic = () => {
     setShowClearCacheModal(false);
   }, []);
 
-  const handleSettingItemPress = (item: SettingItem) => {
+  const handleSettingItemPress = async (item: SettingItem) => {
     console.log("[ProfileScreen] Setting item pressed:", item.id);
 
     switch (item.id) {
@@ -230,14 +233,54 @@ export const useProfileLogic = () => {
         setCurrentSettingsScreen("about");
         break;
       case "terms":
-        crossPlatformAlert("Terms & Privacy", "Opening legal documents...");
+        Linking.openURL('https://fitai.app/privacy').catch(() =>
+          crossPlatformAlert(
+            'Terms & Privacy',
+            'Could not open the document. Please visit fitai.app/privacy in your browser.'
+          )
+        );
         break;
-      case "export":
-        crossPlatformAlert('Export Data', 'Export feature coming soon!');
+      case "export": {
+        // Export all user data as JSON and share via native share sheet
+        try {
+          const data = await crudOperations.exportAllData();
+          if (data) {
+            const json = JSON.stringify(data, null, 2);
+            await Share.share({
+              message: json,
+              title: 'FitAI Data Export',
+            });
+          } else {
+            crossPlatformAlert('Export Data', 'No data found to export.');
+          }
+        } catch (exportError) {
+          console.error('[useProfileLogic] Export failed:', exportError);
+          crossPlatformAlert('Export Failed', 'Could not export data. Please try again.');
+        }
         break;
-      case "sync":
-        crossPlatformAlert('Sync', 'Sync settings coming soon!');
+      }
+      case "sync": {
+        // Trigger a real sync from connected health provider
+        const { isHealthConnectAuthorized, isHealthKitAuthorized, syncFromHealthConnect, syncHealthData } =
+          useHealthDataStore.getState();
+        if (isHealthConnectAuthorized) {
+          crossPlatformAlert('Syncing…', 'Fetching latest data from Health Connect.');
+          syncFromHealthConnect(7).catch((e: any) =>
+            console.warn('[useProfileLogic] Health sync failed:', e),
+          );
+        } else if (isHealthKitAuthorized) {
+          crossPlatformAlert('Syncing…', 'Fetching latest data from HealthKit.');
+          syncHealthData(true).catch((e: any) =>
+            console.warn('[useProfileLogic] HealthKit sync failed:', e),
+          );
+        } else {
+          crossPlatformAlert(
+            'No Health App Connected',
+            'Connect a wearable or health app in Settings → Connect Wearables to enable sync.',
+          );
+        }
         break;
+      }
       case "wearables":
         setCurrentSettingsScreen("wearables");
         break;
@@ -287,18 +330,23 @@ export const useProfileLogic = () => {
 
   // Check profile completion
   const isProfileIncomplete = (section: string): boolean => {
-    if (!profile) return true;
     switch (section) {
       case "personal-info":
-        return !profile.personalInfo?.name || !profile.personalInfo?.age;
+        // SSOT: profileStore.personalInfo is authoritative (onboarding_data table)
+        // Compute name from first+last fields first, then fall back to name field, then userStore
+        const profileName = `${profileStorePersonalInfo?.first_name || ''} ${profileStorePersonalInfo?.last_name || ''}`.trim();
+        const resolvedName = profileName || profileStorePersonalInfo?.name || profile?.personalInfo?.name;
+        // SSOT: age from profileStore.personalInfo first, then userStore
+        const resolvedAge = profileStorePersonalInfo?.age || profile?.personalInfo?.age;
+        return !resolvedName || !resolvedAge;
       case "goals":
-        return (
-          !profile.fitnessGoals?.primary_goals ||
-          profile.fitnessGoals.primary_goals.length === 0
-        );
+        // SSOT: profileStore.workoutPreferences.primary_goals is authoritative; profile.fitnessGoals is legacy fallback
+        const resolvedGoals = useProfileStore.getState().workoutPreferences?.primary_goals
+          || profile?.fitnessGoals?.primary_goals;
+        return !resolvedGoals || resolvedGoals.length === 0;
       case "measurements":
-        const height = profile.bodyMetrics?.height_cm || bodyAnalysis?.height_cm;
-        const weight = profile.bodyMetrics?.current_weight_kg || bodyAnalysis?.current_weight_kg;
+        const height = bodyAnalysis?.height_cm || profile?.bodyMetrics?.height_cm;
+        const weight = bodyAnalysis?.current_weight_kg || profile?.bodyMetrics?.current_weight_kg;
         return !height || !weight;
       default:
         return false;
@@ -442,7 +490,9 @@ export const useProfileLogic = () => {
   ];
 
   // Get user display info
-  const userName = profile?.personalInfo?.name || profileStorePersonalInfo?.name || `${profileStorePersonalInfo?.first_name || ''} ${profileStorePersonalInfo?.last_name || ''}`.trim() || undefined;
+  // SSOT: profileStore.personalInfo is authoritative; prefer first_name+last_name (DB fields) then name (computed), then userStore fallback
+  const profileStoreName = `${profileStorePersonalInfo?.first_name || ''} ${profileStorePersonalInfo?.last_name || ''}`.trim();
+  const userName = profileStoreName || profileStorePersonalInfo?.name || profile?.personalInfo?.name || undefined;
   const memberSince = (() => {
     if (!user?.createdAt) return null; // null = show 'Just joined today' fallback
     const created = new Date(user.createdAt);

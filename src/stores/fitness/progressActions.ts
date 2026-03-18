@@ -11,7 +11,11 @@ export const createProgressActions = (
   ) => void,
   get: () => FitnessState,
 ) => ({
-  updateWorkoutProgress: (workoutId: string, progress: number) => {
+  updateWorkoutProgress: (
+    workoutId: string,
+    progress: number,
+    metadata?: { exerciseIndex?: number; caloriesBurned?: number },
+  ) => {
     set((state) => ({
       workoutProgress: {
         ...state.workoutProgress,
@@ -19,12 +23,14 @@ export const createProgressActions = (
           ...state.workoutProgress[workoutId],
           workoutId,
           progress,
+          ...(metadata?.exerciseIndex !== undefined && { exerciseIndex: metadata.exerciseIndex }),
+          ...(metadata?.caloriesBurned !== undefined && { caloriesBurned: metadata.caloriesBurned }),
         },
       },
     }));
   },
 
-  completeWorkout: async (workoutId: string, sessionId?: string) => {
+  completeWorkout: async (workoutId: string, sessionId?: string, caloriesBurned?: number) => {
     const completedAt = new Date().toISOString();
 
     try {
@@ -48,6 +54,7 @@ export const createProgressActions = (
             progress: 100,
             completedAt,
             sessionId,
+            ...(caloriesBurned !== undefined && { caloriesBurned }),
           },
         },
       }));
@@ -74,6 +81,7 @@ export const createProgressActions = (
             progress: 100,
             completedAt,
             sessionId,
+            ...(caloriesBurned !== undefined && { caloriesBurned }),
           },
         },
       }));

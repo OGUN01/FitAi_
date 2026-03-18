@@ -151,13 +151,14 @@ export class CrudOperationsService {
         user_id: userId,
         workout_id: session.workoutId || null,
         started_at: session.startedAt,
-        completed_at: session.completedAt,
-        duration: session.duration,
-        calories_burned: session.caloriesBurned,
-        exercises: session.exercises,
+        completed_at: session.completedAt || null,
+        duration: session.duration ?? 0,
+        calories_burned: session.caloriesBurned ?? 0,
+        exercises: session.exercises || [],
         notes: session.notes || "",
-        rating: session.rating || 0,
-        is_completed: session.isCompleted,
+        // rating: null unless user explicitly rated (1-5); 0 violates check constraint
+        rating: (typeof session.rating === 'number' && session.rating > 0) ? session.rating : null,
+        is_completed: session.isCompleted || false,
       }, { onConflict: 'id', ignoreDuplicates: false });
 
       if (error) {
@@ -173,6 +174,9 @@ export class CrudOperationsService {
           userId: userId,
           maxRetries: 3,
         });
+      } else {
+        // ✅ Success: purge any stale queued workout_sessions entries that would fail
+        await offlineService.clearFailedActionsForTable("workout_sessions");
       }
     } catch (syncError) {
       console.warn("⚠️ Supabase sync error (will retry later):", syncError);

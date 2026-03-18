@@ -265,6 +265,16 @@ export const MealSuggestions: React.FC = () => {
             const panResponder = createSuggestionPanResponder(suggestion.id);
             const swipeState = getSuggestionSwipeState(suggestion.id);
             const isAdded = addedToPlan.has(suggestion.id);
+            // Ensure flip state is created/retrieved before render
+            const flipValue = getCardFlipState(suggestion.id);
+            const addBtnBg = flipValue.interpolate({
+              inputRange: [0, 0.5, 1],
+              outputRange: [
+                colors.primary.DEFAULT,
+                "#22c55e",
+                colors.primary.DEFAULT,
+              ],
+            });
             return (
               <Animated.View
                 key={suggestion.id}
@@ -286,14 +296,21 @@ export const MealSuggestions: React.FC = () => {
                       {suggestion.calories} cal | {suggestion.protein}g P | {suggestion.carbs}g C | {suggestion.fat}g F
                     </Text>
                     <AnimatedPressable
-                      style={styles.addToPlanButton}
+                      style={[
+                        styles.addToPlanButton,
+                        isAdded ? styles.addToPlanButtonAdded : undefined,
+                      ] as any}
                       onPress={() =>
                         handleAddToPlan(suggestion.id, suggestion)
                       }
                       disabled={isAdded}
                     >
+                      <Animated.View style={[
+                        StyleSheet.absoluteFill,
+                        { backgroundColor: addBtnBg, borderRadius: ResponsiveTheme.borderRadius.md },
+                      ]} />
                       <Text style={styles.addToPlanButtonText}>
-                        {isAdded ? "Added" : "Add"}
+                        {isAdded ? "✓ Added" : "Add"}
                       </Text>
                     </AnimatedPressable>
                   </View>
@@ -337,11 +354,17 @@ const styles = StyleSheet.create({
     borderRadius: ResponsiveTheme.borderRadius.md,
     paddingVertical: ResponsiveTheme.spacing.xs,
     alignItems: "center",
+    overflow: "hidden",
+    position: "relative",
+  },
+  addToPlanButtonAdded: {
+    backgroundColor: "#16a34a",
   },
   addToPlanButtonText: {
     color: colors.text.primary,
     fontSize: ResponsiveTheme.fontSize.xs,
     fontWeight: "600",
+    zIndex: 1,
   },
   emptyState: {
     paddingVertical: ResponsiveTheme.spacing.xl,

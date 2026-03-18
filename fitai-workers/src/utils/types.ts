@@ -57,6 +57,9 @@ export interface Env {
 	CLOUDFLARE_AI_GATEWAY_SLUG: string;
 	CLOUDFLARE_AI_GATEWAY_URL: string;
 
+	// CORS allowlist (comma-separated origins, optional — defaults to *)
+	ALLOWED_ORIGINS?: string;
+
 	// Razorpay Subscription Secrets & Plan IDs
 	RAZORPAY_KEY_ID: string;
 	RAZORPAY_KEY_SECRET: string;

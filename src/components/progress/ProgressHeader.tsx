@@ -55,27 +55,6 @@ export const ProgressHeader: React.FC<ProgressHeaderProps> = ({
           </View>
         )}
         <AnimatedPressable
-          style={
-            showAnalytics
-              ? [styles.analyticsButton, styles.analyticsButtonActive]
-              : styles.analyticsButton
-          }
-          onPress={() => setShowAnalytics(!showAnalytics)}
-          scaleValue={0.95}
-          accessibilityRole="button"
-          accessibilityLabel="Toggle analytics"
-        >
-          <Ionicons
-            name="stats-chart-outline"
-            size={rf(16)}
-            color={
-              showAnalytics
-                ? ResponsiveTheme.colors.white
-                : ResponsiveTheme.colors.text
-            }
-          />
-        </AnimatedPressable>
-        <AnimatedPressable
           style={styles.addButton}
           onPress={onAddEntry}
           scaleValue={0.95}

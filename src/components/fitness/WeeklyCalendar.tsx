@@ -67,7 +67,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       const dayData = workoutData[dayName] || {
         hasWorkout: false,
         isCompleted: false,
-        isRestDay: true,
+        isRestDay: false, // Default to false — don't show rest icon when plan hasn't loaded yet
       };
 
       const isToday =

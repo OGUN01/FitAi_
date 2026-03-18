@@ -26,14 +26,12 @@ interface AnalyticsHeaderProps {
   selectedPeriod: Period;
   onPeriodChange: (period: Period) => void;
   onProgressPress?: () => void;
-  onTrendsPress?: () => void;
 }
 
 export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
   selectedPeriod,
   onPeriodChange,
   onProgressPress,
-  onTrendsPress,
 }) => {
   const insets = useSafeAreaInsets();
 
@@ -101,27 +99,8 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
             </TouchableOpacity>
           )}
 
-          {/* Trends Screen Button */}
-          {onTrendsPress && (
-            <TouchableOpacity
-              style={styles.navButton}
-              onPress={() => {
-                haptics.light();
-                onTrendsPress();
-              }}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="Trends"
-            >
-              <Ionicons
-                name="trending-up-outline"
-                size={rf(18)}
-                color={ResponsiveTheme.colors.secondary}
-              />
-            </TouchableOpacity>
-          )}
 
- 
+
           {/* AI Badge */}
           <TouchableOpacity
             style={styles.badge}

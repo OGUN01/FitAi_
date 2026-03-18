@@ -4,6 +4,40 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthResponse, AuthSession } from "./types";
 
 /**
+ * Maps registration errors to user-friendly messages
+ */
+function mapRegisterError(error: any): string {
+  const msg: string = error?.message || "";
+
+  // User already exists
+  if (
+    msg.includes("User already registered") ||
+    msg.includes("already registered") ||
+    msg.includes("email_exists") ||
+    msg.includes("already been registered")
+  ) {
+    return "An account with this email already exists. If you previously signed up with Google, please use the \"Continue with Google\" button instead.";
+  }
+
+  // Weak password
+  if (msg.includes("Password should be") || msg.includes("weak_password")) {
+    return "Your password is too weak. Please use at least 8 characters including letters and numbers.";
+  }
+
+  // Invalid email
+  if (msg.includes("invalid email") || msg.includes("Unable to validate")) {
+    return "Please enter a valid email address.";
+  }
+
+  // Rate limiting
+  if (msg.includes("too many") || msg.includes("rate limit")) {
+    return "Too many sign-up attempts. Please wait a few minutes and try again.";
+  }
+
+  return msg || "Account creation failed. Please try again.";
+}
+
+/**
  * Register a new user with email and password
  */
 export async function register(
@@ -33,10 +67,9 @@ export async function register(
       email,
       password,
       options: {
-        // Enable email confirmation for production security
-        emailRedirectTo: undefined, // React Native doesn't need redirect URL
+        // React Native doesn't need a web redirect URL
+        emailRedirectTo: undefined,
         data: {
-          // Add user metadata for better tracking
           signup_source: "fitai_app",
           signup_timestamp: new Date().toISOString(),
         },
@@ -46,7 +79,18 @@ export async function register(
     if (error) {
       return {
         success: false,
-        error: error.message,
+        error: mapRegisterError(error),
+      };
+    }
+
+    // Supabase may return a user with identities=[] when the email is already registered
+    // (this is a Supabase security behavior to prevent user enumeration).
+    // We detect this by checking if the user has no identities.
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      return {
+        success: false,
+        error:
+          "An account with this email already exists. If you signed up with Google, please use the \"Continue with Google\" button instead.",
       };
     }
 
@@ -58,8 +102,7 @@ export async function register(
         lastLoginAt: new Date().toISOString(),
       };
 
-      // Only save session if email is verified OR if no session exists (email confirmation required)
-      // For unverified users, we don't want to auto-authenticate them
+      // Only save session if email is already verified (not typical for email sign-up)
       if (data.session && data.user.email_confirmed_at) {
         const session: AuthSession = {
           user: authUser,
@@ -70,9 +113,8 @@ export async function register(
 
         setSession(session);
         await AsyncStorage.setItem("auth_session", JSON.stringify(session));
-      } else {
-        // Don't save session for unverified users - they need to verify email first
       }
+      // For unverified users: don't auto-authenticate — they must verify email first
 
       return {
         success: true,
@@ -82,12 +124,12 @@ export async function register(
 
     return {
       success: false,
-      error: "Registration failed",
+      error: "Account creation failed. Please try again.",
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Registration failed",
+      error: error instanceof Error ? error.message : "Account creation failed",
     };
   }
 }
