@@ -14,6 +14,7 @@ import {
 import { api, supabase } from "../services/api";
 import { dataBridge } from "../services/DataBridge";
 import { logger } from "../utils/logger";
+import { buildLegacyProfileAdapter } from "./profileLegacyAdapter";
 
 /**
  * Integration utilities for connecting existing UI components with the new backend
@@ -513,15 +514,30 @@ export const useDashboardIntegration = () => {
   const { user: authUser } = useAuth();
   const { profile } = useUser();
   const { isOnline } = useOffline();
-  const { bodyAnalysis, personalInfo: profilePersonalInfo, workoutPreferences: profileWorkoutPreferences } = useProfileStore();
+  const {
+    bodyAnalysis,
+    personalInfo: profilePersonalInfo,
+    workoutPreferences: profileWorkoutPreferences,
+  } = useProfileStore();
+  const adaptedProfile = buildLegacyProfileAdapter({
+    personalInfo: profilePersonalInfo,
+    bodyAnalysis,
+    workoutPreferences: profileWorkoutPreferences,
+    legacyProfile: profile,
+  });
+  const dashboardProfile = {
+    ...profile,
+    personalInfo: adaptedProfile.personalInfo,
+    fitnessGoals: adaptedProfile.fitnessGoals,
+    dietPreferences: adaptedProfile.dietPreferences,
+  };
 
   /**
    * Get user stats for dashboard
    * NO FALLBACKS - returns undefined values if profile is missing
    */
   const getUserStats = () => {
-    // NO FALLBACKS - return actual profile stats or undefined
-    return profile?.stats;
+    return dashboardProfile?.stats;
   };
 
   /**
@@ -529,8 +545,7 @@ export const useDashboardIntegration = () => {
    * NO FALLBACKS - returns undefined if profile is missing
    */
   const getUserPreferences = () => {
-    // NO FALLBACKS - return actual preferences or undefined
-    return profile?.preferences;
+    return dashboardProfile?.preferences;
   };
 
   /**
@@ -561,18 +576,18 @@ export const useDashboardIntegration = () => {
    * Get daily calorie needs
    */
   const getDailyCalorieNeeds = () => {
-    if (!profile?.personalInfo) {
+    if (!adaptedProfile.personalInfo) {
       return null;
     }
 
     // SSOT: profileStore.bodyAnalysis is authoritative for body metrics here.
     const heightCm = bodyAnalysis?.height_cm;
     const weightKg = bodyAnalysis?.current_weight_kg;
-    // SSOT: profileStore.personalInfo is authoritative (onboarding_data table); profile.personalInfo (userStore) is legacy fallback
-    const age = profilePersonalInfo?.age || profile.personalInfo?.age;
-    const gender = profilePersonalInfo?.gender || profile.personalInfo?.gender;
-    // SSOT: profileStore.workoutPreferences is authoritative (onboarding_data table); profile.workoutPreferences (userStore) is legacy fallback
-    const activityLevelValue = profileWorkoutPreferences?.activity_level || profile.workoutPreferences?.activity_level || (profile.personalInfo as any)?.activityLevel;
+    const age = adaptedProfile.personalInfo.age;
+    const gender = adaptedProfile.personalInfo.gender;
+    const activityLevelValue =
+      profileWorkoutPreferences?.activity_level ||
+      adaptedProfile.personalInfo.activityLevel;
 
     if (!heightCm || !weightKg || !age || !gender || !activityLevelValue) {
       return null;
@@ -600,7 +615,7 @@ export const useDashboardIntegration = () => {
     getDailyCalorieNeeds,
     isOnline,
     isAuthenticated: !!authUser,
-    profile,
+    profile: dashboardProfile,
   };
 };
 

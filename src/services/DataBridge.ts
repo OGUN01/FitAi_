@@ -280,19 +280,6 @@ class DataBridge {
         };
       }
 
-      // Also check userStore for backward compatibility
-      const userStore = useUserStore.getState();
-      if (userStore.profile?.personalInfo) {
-        return {
-          personalInfo: userStore.profile.personalInfo,
-          dietPreferences: null,
-          bodyAnalysis: null,
-          workoutPreferences: null,
-          advancedReview: null,
-          source: "local",
-        };
-      }
-
       return {
         personalInfo: null,
         dietPreferences: null,

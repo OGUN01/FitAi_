@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useUserStore } from "../stores/userStore";
 import {
   useProfileStore,
@@ -5,9 +6,14 @@ import {
 } from "../stores/profileStore";
 import { useUnifiedStats } from "./useUnifiedStats";
 import {
-  UserProfile,
+  AdaptedUserProfile,
+  buildLegacyFitnessGoals,
+  buildLegacyProfileAdapter,
+} from "../utils/profileLegacyAdapter";
+import {
   PersonalInfo,
   FitnessGoals,
+  UserProfile,
   CreateProfileRequest,
   UpdateProfileRequest,
   CreateFitnessGoalsRequest,
@@ -20,7 +26,7 @@ import {
 
 export interface UseUserReturn {
   // State
-  profile: UserProfile | null;
+  profile: AdaptedUserProfile | null;
   isLoading: boolean;
   error: string | null;
   isProfileComplete: boolean;
@@ -59,7 +65,7 @@ export interface UseUserReturn {
  */
 export const useUser = (): UseUserReturn => {
   const {
-    profile,
+    profile: rawProfile,
     isLoading,
     error,
     isProfileComplete,
@@ -77,6 +83,36 @@ export const useUser = (): UseUserReturn => {
     updatePersonalInfo,
     updateFitnessGoalsLocal,
   } = useUserStore();
+  const personalInfo = useProfileStore((state) => state.personalInfo);
+  const bodyAnalysis = useProfileStore((state) => state.bodyAnalysis);
+  const workoutPreferences = useProfileStore(
+    (state) => state.workoutPreferences,
+  );
+  const dietPreferences = useProfileStore((state) => state.dietPreferences);
+
+  const profile = useMemo(
+    () =>
+      rawProfile
+        ? ({
+            ...rawProfile,
+            bodyMetrics: bodyAnalysis ?? rawProfile.bodyMetrics,
+            ...buildLegacyProfileAdapter({
+              personalInfo,
+              bodyAnalysis,
+              workoutPreferences,
+              dietPreferences,
+              legacyProfile: rawProfile,
+            }),
+          } as AdaptedUserProfile)
+        : null,
+    [
+      rawProfile,
+      personalInfo,
+      bodyAnalysis,
+      workoutPreferences,
+      dietPreferences,
+    ],
+  );
 
   return {
     profile,
@@ -103,8 +139,8 @@ export const useUser = (): UseUserReturn => {
  * Hook to get current user profile
  * Returns current profile or null
  */
-export const useUserProfile = (): UserProfile | null => {
-  const profile = useUserStore((state) => state.profile);
+export const useUserProfile = (): AdaptedUserProfile | null => {
+  const { profile } = useUser();
   return profile;
 };
 
@@ -138,20 +174,8 @@ export const useFitnessGoals = (): FitnessGoals | null => {
   const workoutPreferences = useProfileStore(
     (state) => state.workoutPreferences,
   );
-  const profile = useUserStore((state) => state.profile);
 
-  // Return profileStore data first (SSOT), fall back to userStore for legacy users
-  if (workoutPreferences?.primary_goals?.length) {
-    // Map WorkoutPreferencesData (onboarding schema) → legacy FitnessGoals shape
-    return {
-      primary_goals: workoutPreferences.primary_goals,
-      experience_level: workoutPreferences.intensity, // intensity maps to experience_level
-      preferred_equipment: workoutPreferences.equipment, // equipment = preferred_equipment
-      workout_location: workoutPreferences.location, // location = workout_location
-      time_preference: workoutPreferences.time_preference,
-    } as unknown as FitnessGoals;
-  }
-  return profile?.fitnessGoals || null;
+  return buildLegacyFitnessGoals(workoutPreferences) || null;
 };
 
 /**

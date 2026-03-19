@@ -59,19 +59,6 @@ export async function loadFromLocal(): Promise<AllDataResult> {
       };
     }
 
-    // Also check userStore for backward compatibility
-    const userStore = useUserStore.getState();
-    if (userStore.profile?.personalInfo) {
-      return {
-        personalInfo: userStore.profile.personalInfo,
-        dietPreferences: null,
-        bodyAnalysis: null,
-        workoutPreferences: null,
-        advancedReview: null,
-        source: "new_system",
-      };
-    }
-
     return {
       personalInfo: null,
       dietPreferences: null,
@@ -190,12 +177,6 @@ export async function hasLocalData(): Promise<boolean> {
     if (dataStr) {
       const data = JSON.parse(dataStr);
       return !!(data.personalInfo || data.dietPreferences || data.bodyAnalysis);
-    }
-
-    // Check userStore
-    const userStore = useUserStore.getState();
-    if (userStore.profile?.personalInfo) {
-      return true;
     }
 
     return false;

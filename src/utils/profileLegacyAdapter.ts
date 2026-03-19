@@ -4,7 +4,12 @@ import {
   PersonalInfoData,
   WorkoutPreferencesData,
 } from "../types/onboarding";
-import { FitnessGoals, PersonalInfo, UserProfile } from "../types/user";
+import {
+  BodyMetrics,
+  FitnessGoals,
+  PersonalInfo,
+  UserProfile,
+} from "../types/user";
 
 export interface LegacyDietPreferencesAdapter {
   allergies: string[];
@@ -19,6 +24,21 @@ export interface LegacyProfileAdapter {
   fitnessGoals: FitnessGoals | null;
   dietPreferences: LegacyDietPreferencesAdapter | null;
 }
+
+type LegacyProfileCompatibilitySource = Pick<
+  UserProfile,
+  "fitnessGoals" | "dietPreferences"
+>;
+
+export type AdaptedUserProfile = Omit<
+  UserProfile,
+  "personalInfo" | "fitnessGoals" | "dietPreferences" | "bodyMetrics"
+> & {
+  personalInfo: PersonalInfo | null;
+  fitnessGoals: FitnessGoals | null;
+  dietPreferences: LegacyDietPreferencesAdapter | null;
+  bodyMetrics?: BodyMetrics;
+};
 
 export const buildLegacyPersonalInfo = ({
   personalInfo,
@@ -46,7 +66,7 @@ export const buildLegacyPersonalInfo = ({
 
 export const buildLegacyFitnessGoals = (
   workoutPreferences?: WorkoutPreferencesData | null,
-  legacyProfile?: UserProfile | null,
+  legacyProfile?: LegacyProfileCompatibilitySource | null,
 ): FitnessGoals | null => {
   if (!workoutPreferences) {
     return null;
@@ -72,7 +92,7 @@ export const buildLegacyFitnessGoals = (
 
 export const buildLegacyDietPreferences = (
   dietPreferences?: DietPreferencesData | null,
-  legacyProfile?: UserProfile | null,
+  legacyProfile?: LegacyProfileCompatibilitySource | null,
 ): LegacyDietPreferencesAdapter | null => {
   if (!dietPreferences) {
     return null;
@@ -98,7 +118,7 @@ export const buildLegacyProfileAdapter = ({
   bodyAnalysis?: BodyAnalysisData | null;
   workoutPreferences?: WorkoutPreferencesData | null;
   dietPreferences?: DietPreferencesData | null;
-  legacyProfile?: UserProfile | null;
+  legacyProfile?: LegacyProfileCompatibilitySource | null;
 }): LegacyProfileAdapter => ({
   personalInfo: buildLegacyPersonalInfo({
     personalInfo,
