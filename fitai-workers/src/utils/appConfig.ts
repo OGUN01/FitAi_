@@ -142,9 +142,9 @@ export async function getPublicAppConfig(env: Env): Promise<PublicAppConfig> {
         maintenanceMessage: parseStringValue(m['maintenance_message'], 'Back soon!'),
         minAppVersion: parseStringValue(m['min_app_version'], '1.0.0'),
         forceUpdateVersion: parseStringValue(m['force_update_version'], '0.0.0'),
-        featureAiChat: parseBooleanValue(m['feature_ai_chat'], true),
-        featureFoodContributions: parseBooleanValue(m['feature_food_contributions'], true),
-        featureAnalytics: parseBooleanValue(m['feature_analytics'], true),
+        featureAiChat: parseBooleanValue(m['feature_ai_chat'], false),
+        featureFoodContributions: parseBooleanValue(m['feature_food_contributions'], false),
+        featureAnalytics: parseBooleanValue(m['feature_analytics'], false),
       };
 
       try {
@@ -168,9 +168,9 @@ export async function getPublicAppConfig(env: Env): Promise<PublicAppConfig> {
     maintenanceMessage: 'Back soon!',
     minAppVersion: '1.0.0',
     forceUpdateVersion: '0.0.0',
-    featureAiChat: true,
-    featureFoodContributions: true,
-    featureAnalytics: true,
+    featureAiChat: false,
+    featureFoodContributions: false,
+    featureAnalytics: false,
   };
 }
 

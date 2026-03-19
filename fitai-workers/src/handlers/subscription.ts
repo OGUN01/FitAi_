@@ -68,6 +68,102 @@ interface SubscriptionRow {
 	updated_at: string;
 }
 
+function getCurrentPeriodStart(periodType: 'daily' | 'monthly'): string {
+	const now = new Date();
+	const year = now.getUTCFullYear();
+	const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+	const day = String(now.getUTCDate()).padStart(2, '0');
+	return periodType === 'daily' ? `${year}-${month}-${day}` : `${year}-${month}-01`;
+}
+
+async function getUsageCount(
+	supabase: ReturnType<typeof getSupabaseClient>,
+	userId: string,
+	featureKey: 'ai_generation' | 'barcode_scan',
+	periodType: 'daily' | 'monthly',
+): Promise<number | null> {
+	try {
+		const rpc = (supabase as { rpc?: (...args: unknown[]) => Promise<{ data: unknown; error: unknown }> }).rpc;
+		if (typeof rpc !== 'function') {
+			return null;
+		}
+
+		const { data, error } = await rpc('get_feature_usage', {
+			p_user_id: userId,
+			p_feature_key: featureKey,
+			p_period_type: periodType,
+			p_period_start: getCurrentPeriodStart(periodType),
+		});
+
+		if (error) {
+			console.warn('[Subscription] Failed to read feature usage:', error);
+			return null;
+		}
+
+		return typeof data === 'number' ? data : 0;
+	} catch (error) {
+		console.warn('[Subscription] Usage RPC unavailable during status read:', error);
+		return null;
+	}
+}
+
+async function buildUsageSummary(
+	supabase: ReturnType<typeof getSupabaseClient>,
+	userId: string,
+	features: {
+		ai_generations_per_day: number | null;
+		ai_generations_per_month: number | null;
+		scans_per_day: number | null;
+		unlimited_scans: boolean;
+		unlimited_ai: boolean;
+	},
+) {
+	const [aiDailyCurrent, aiMonthlyCurrent, scanDailyCurrent] = await Promise.all([
+		getUsageCount(supabase, userId, 'ai_generation', 'daily'),
+		getUsageCount(supabase, userId, 'ai_generation', 'monthly'),
+		getUsageCount(supabase, userId, 'barcode_scan', 'daily'),
+	]);
+
+	if (
+		aiDailyCurrent === null ||
+		aiMonthlyCurrent === null ||
+		scanDailyCurrent === null
+	) {
+		return null;
+	}
+
+	return {
+		ai_generation: {
+			daily: {
+				current: aiDailyCurrent,
+				limit: features.unlimited_ai ? null : features.ai_generations_per_day,
+				remaining:
+					features.unlimited_ai || features.ai_generations_per_day == null
+						? null
+						: Math.max(0, features.ai_generations_per_day - aiDailyCurrent),
+			},
+			monthly: {
+				current: aiMonthlyCurrent,
+				limit: features.unlimited_ai ? null : features.ai_generations_per_month,
+				remaining:
+					features.unlimited_ai || features.ai_generations_per_month == null
+						? null
+						: Math.max(0, features.ai_generations_per_month - aiMonthlyCurrent),
+			},
+		},
+		barcode_scan: {
+			daily: {
+				current: scanDailyCurrent,
+				limit: features.unlimited_scans ? null : features.scans_per_day,
+				remaining:
+					features.unlimited_scans || features.scans_per_day == null
+						? null
+						: Math.max(0, features.scans_per_day - scanDailyCurrent),
+			},
+		},
+	};
+}
+
 // ============================================================================
 // HELPERS
 // ============================================================================
@@ -818,6 +914,16 @@ export async function handleGetSubscriptionStatus(c: Context<{ Bindings: Env; Va
 		}
 
 		if (freePlan) {
+			const features = {
+				ai_generations_per_day: freePlan.ai_generations_per_day,
+				ai_generations_per_month: freePlan.ai_generations_per_month,
+				scans_per_day: freePlan.scans_per_day,
+				unlimited_scans: freePlan.unlimited_scans,
+				unlimited_ai: freePlan.unlimited_ai,
+				analytics: freePlan.analytics,
+				coaching: freePlan.coaching,
+			};
+			const usage = await buildUsageSummary(supabase, userId, features);
 			return c.json(
 				{
 					success: true,
@@ -829,21 +935,15 @@ export async function handleGetSubscriptionStatus(c: Context<{ Bindings: Env; Va
 						billing_cycle: null,
 						current_period_end: null,
 						razorpay_subscription_id: null,
-						features: {
-							ai_generations_per_day: freePlan.ai_generations_per_day,
-							ai_generations_per_month: freePlan.ai_generations_per_month,
-							scans_per_day: freePlan.scans_per_day,
-							unlimited_scans: freePlan.unlimited_scans,
-							unlimited_ai: freePlan.unlimited_ai,
-							analytics: freePlan.analytics,
-							coaching: freePlan.coaching,
-						},
+						features,
+						...(usage ? { usage } : {}),
 					},
 				},
 				200,
 			);
 		}
 
+		const usage = await buildUsageSummary(supabase, userId, FREE_TIER_DEFAULTS.features);
 		return c.json(
 			{
 				success: true,
@@ -851,6 +951,7 @@ export async function handleGetSubscriptionStatus(c: Context<{ Bindings: Env; Va
 					...FREE_TIER_DEFAULTS,
 					is_active: true,
 					razorpay_subscription_id: null,
+					...(usage ? { usage } : {}),
 				},
 			},
 			200,
@@ -870,6 +971,16 @@ export async function handleGetSubscriptionStatus(c: Context<{ Bindings: Env; Va
 	}
 
 	const isActive = isAccessGrantingStatus(subscription.status);
+	const features = {
+		ai_generations_per_day: plan.ai_generations_per_day,
+		ai_generations_per_month: plan.ai_generations_per_month,
+		scans_per_day: plan.scans_per_day,
+		unlimited_scans: plan.unlimited_scans,
+		unlimited_ai: plan.unlimited_ai,
+		analytics: plan.analytics,
+		coaching: plan.coaching,
+	};
+	const usage = await buildUsageSummary(supabase, userId, features);
 
 	return c.json(
 		{
@@ -882,15 +993,8 @@ export async function handleGetSubscriptionStatus(c: Context<{ Bindings: Env; Va
 				billing_cycle: subscription.billing_cycle,
 				current_period_end: subscription.current_period_end,
 				razorpay_subscription_id: subscription.razorpay_subscription_id,
-				features: {
-					ai_generations_per_day: plan.ai_generations_per_day,
-					ai_generations_per_month: plan.ai_generations_per_month,
-					scans_per_day: plan.scans_per_day,
-					unlimited_scans: plan.unlimited_scans,
-					unlimited_ai: plan.unlimited_ai,
-					analytics: plan.analytics,
-					coaching: plan.coaching,
-				},
+				features,
+				...(usage ? { usage } : {}),
 			},
 		},
 		200,

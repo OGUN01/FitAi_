@@ -4,24 +4,40 @@ import { useProfileStore } from "../../stores/profileStore";
 import { useOffline } from "../../hooks/useOffline";
 import { api } from "../../services/api";
 import { HealthMetrics } from "./types";
+import { buildLegacyProfileAdapter } from "../profileLegacyAdapter";
 
 export const useDashboardIntegration = () => {
   const { user: authUser } = useAuth();
   const { profile } = useUser();
   const { isOnline } = useOffline();
-  const { bodyAnalysis, personalInfo: profilePersonalInfo, workoutPreferences: profileWorkoutPreferences } = useProfileStore();
+  const {
+    bodyAnalysis,
+    personalInfo: profilePersonalInfo,
+    workoutPreferences: profileWorkoutPreferences,
+  } = useProfileStore();
+  const adaptedProfile = buildLegacyProfileAdapter({
+    personalInfo: profilePersonalInfo,
+    bodyAnalysis,
+    workoutPreferences: profileWorkoutPreferences,
+  });
+  const dashboardProfile = {
+    ...profile,
+    personalInfo: adaptedProfile.personalInfo,
+    fitnessGoals: adaptedProfile.fitnessGoals,
+    dietPreferences: adaptedProfile.dietPreferences,
+  };
 
   const getUserStats = () => {
-    return profile?.stats;
+    return dashboardProfile?.stats;
   };
 
   const getUserPreferences = () => {
-    return profile?.preferences;
+    return dashboardProfile?.preferences;
   };
 
   const getHealthMetrics = (): HealthMetrics | null => {
-    const heightCm = bodyAnalysis?.height_cm || profile?.bodyMetrics?.height_cm;
-    const weightKg = bodyAnalysis?.current_weight_kg || profile?.bodyMetrics?.current_weight_kg;
+    const heightCm = bodyAnalysis?.height_cm;
+    const weightKg = bodyAnalysis?.current_weight_kg;
 
     if (!heightCm || !weightKg) {
       return null;
@@ -39,17 +55,17 @@ export const useDashboardIntegration = () => {
   };
 
   const getDailyCalorieNeeds = () => {
-    if (!profile?.personalInfo) {
+    if (!adaptedProfile.personalInfo) {
       return null;
     }
 
-    const heightCm = bodyAnalysis?.height_cm || profile?.bodyMetrics?.height_cm;
-    const weightKg = bodyAnalysis?.current_weight_kg || profile?.bodyMetrics?.current_weight_kg;
-    // SSOT: profileStore.personalInfo is authoritative (onboarding_data table); profile.personalInfo (userStore) is legacy fallback
-    const age = profilePersonalInfo?.age || profile.personalInfo?.age;
-    const gender = profilePersonalInfo?.gender || profile.personalInfo?.gender;
-    // SSOT: profileStore.workoutPreferences is authoritative (onboarding_data table); profile.workoutPreferences (userStore) is legacy fallback
-    const activityLevelValue = profileWorkoutPreferences?.activity_level || profile.workoutPreferences?.activity_level || (profile.personalInfo as any)?.activityLevel;
+    const heightCm = bodyAnalysis?.height_cm;
+    const weightKg = bodyAnalysis?.current_weight_kg;
+    const age = adaptedProfile.personalInfo.age;
+    const gender = adaptedProfile.personalInfo.gender;
+    const activityLevelValue =
+      profileWorkoutPreferences?.activity_level ||
+      adaptedProfile.personalInfo.activityLevel;
 
     if (!heightCm || !weightKg || !age || !gender || !activityLevelValue) {
       return null;
@@ -77,6 +93,6 @@ export const useDashboardIntegration = () => {
     getDailyCalorieNeeds,
     isOnline,
     isAuthenticated: !!authUser,
-    profile,
+    profile: dashboardProfile,
   };
 };

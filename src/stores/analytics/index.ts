@@ -1,4 +1,4 @@
-export { useAnalyticsStore } from "./storeDefinition";
+export { useAnalyticsStore } from "../analyticsStore";
 export * from "./types";
 export {
   createTrackWorkoutCompleted,
@@ -13,7 +13,7 @@ export type {
   TrackBodyData,
 } from "./analyticsHelpers";
 
-import { useAnalyticsStore } from "./storeDefinition";
+import { useAnalyticsStore } from "../analyticsStore";
 import {
   createTrackWorkoutCompleted,
   createTrackWellnessMetrics,

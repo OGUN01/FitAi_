@@ -21,7 +21,7 @@ export interface MetricData {
     target?: number;
   };
   calories?: {
-    burned: number;
+    consumed: number;
     target?: number;
     change?: number;
     trend?: "up" | "down" | "stable";
@@ -101,7 +101,9 @@ const MetricCard: React.FC<{
 
   return (
     <Animated.View
-      entering={Platform.OS !== 'web' ? FadeInUp.delay(delay).duration(400) : undefined}
+      entering={
+        Platform.OS !== "web" ? FadeInUp.delay(delay).duration(400) : undefined
+      }
       style={styles.cardWrapper}
     >
       <AnimatedPressable
@@ -198,9 +200,9 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
   };
 
   // Only show sparklines if we have real data
-  const hasWeightHistory = data.weight?.current !== undefined && data.weight.current > 0;
-  const hasCaloriesData =
-    data.calories?.burned !== undefined;
+  const hasWeightHistory =
+    data.weight?.current !== undefined && data.weight.current > 0;
+  const hasCaloriesData = data.calories?.consumed !== undefined;
   const hasWorkoutsData =
     data.workouts?.count !== undefined && data.workouts.count > 0;
 
@@ -222,7 +224,9 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           color={ResponsiveTheme.colors.primary}
           trend={hasWeightHistory ? data.weight?.trend : undefined}
           trendValue={
-            hasWeightHistory && data.weight?.change !== undefined && data.weight.change !== 0
+            hasWeightHistory &&
+            data.weight?.change !== undefined &&
+            data.weight.change !== 0
               ? `${data.weight.change > 0 ? "+" : ""}${data.weight.change.toFixed(1)} kg`
               : undefined
           }
@@ -232,11 +236,15 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
 
         <MetricCard
           title="Calories"
-          value={formatCalories(data.calories?.burned)}
+          value={formatCalories(data.calories?.consumed)}
           subtitle={!hasCaloriesData ? "Log meals to track" : "today"}
           icon="flame-outline"
           color={ResponsiveTheme.colors.warning}
-          trend={hasCaloriesData && data.calories?.change !== undefined ? data.calories?.trend : undefined}
+          trend={
+            hasCaloriesData && data.calories?.change !== undefined
+              ? data.calories?.trend
+              : undefined
+          }
           trendValue={
             hasCaloriesData && data.calories?.change !== undefined
               ? `${data.calories.change > 0 ? "+" : ""}${data.calories.change}%`

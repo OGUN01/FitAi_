@@ -6,6 +6,7 @@ import { AuthUser } from "../types/user";
 import { BodyMeasurement } from "../types/localData";
 import { analyticsDataService } from "./analyticsData";
 import { FALLBACK_DAILY_CALORIES } from "../constants/diet";
+import { getLocalDateString } from "../utils/weekUtils";
 
 // Types for progress data
 export interface ProgressEntry {
@@ -225,7 +226,7 @@ class ProgressDataService {
   ): Promise<ProgressDataResponse<ProgressEntry>> {
     try {
       const now = new Date();
-      const entryDate = now.toISOString().split("T")[0];
+      const entryDate = getLocalDateString(now);
 
       // Create body measurement for Track B
       const bodyMeasurement: BodyMeasurement = {

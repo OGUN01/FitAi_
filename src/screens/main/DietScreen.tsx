@@ -51,8 +51,11 @@ import { useNutritionTracking } from "../../hooks/useNutritionTracking";
 import { useAIMealGeneration } from "../../hooks/useAIMealGeneration";
 import { ScannedProduct } from "../../services/barcodeService";
 import { calculateMealSchedule } from "../../utils/mealSchedule";
+import { getLocalDateString } from "../../utils/weekUtils";
 import PaywallModal from "../../components/subscription/PaywallModal";
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
+import { useUserStore } from "../../stores/userStore";
+import { buildLegacyProfileAdapter } from "../../utils/profileLegacyAdapter";
 
 interface DietScreenProps {
   navigation?: any;
@@ -91,7 +94,6 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   const {
     weeklyMealPlan,
     isGeneratingPlan,
-    selectedDay,
     asyncJob,
     getTodaysMeals,
     generateWeeklyMealPlan,
@@ -114,10 +116,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     getMacroTargets,
     dailyNutrition,
     foodsLoading,
-    userMealsLoading,
-    userMeals,
     foodsError,
-    userMealsError,
     refreshAll,
     clearErrors,
     trackBStatus,
@@ -171,67 +170,60 @@ export const DietScreen: React.FC<DietScreenProps> = ({
       navigation?.navigate("ContributeFood", { barcode }),
   });
 
-  const { setSelectedDay } = useAppStateStore();
+  const {
+    selectedDay,
+    selectedDate: selectedDateKey,
+    shiftSelectedDate,
+    setSelectedDay,
+  } = useAppStateStore();
 
   // Day name → index mapping for date navigation
-  const DAY_NAME_TO_INDEX: Record<string, number> = {
-    sunday: 0,
-    monday: 1,
-    tuesday: 2,
-    wednesday: 3,
-    thursday: 4,
-    friday: 5,
-    saturday: 6,
-  };
-  const INDEX_TO_DAY_NAME = [
-    "sunday",
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-  ];
-
-  // Compute the actual Date for the currently selected day
-  const selectedDate = React.useMemo(() => {
-    const today = new Date();
-    const todayIndex = today.getDay(); // 0=sun
-    const targetIndex = DAY_NAME_TO_INDEX[selectedDay] ?? todayIndex;
-    const diff = targetIndex - todayIndex;
-    const d = new Date(today);
-    d.setDate(today.getDate() + diff);
-    return d;
-  }, [selectedDay]);
+  const selectedDate = React.useMemo(
+    () => new Date(`${selectedDateKey}T12:00:00`),
+    [selectedDateKey],
+  );
 
   const onPrevDay = useCallback(() => {
-    const prev = new Date(selectedDate);
-    prev.setDate(selectedDate.getDate() - 1);
-    setSelectedDay(INDEX_TO_DAY_NAME[prev.getDay()] as any);
-  }, [selectedDate, setSelectedDay]);
+    shiftSelectedDate(-1);
+  }, [shiftSelectedDate]);
 
   const onNextDay = useCallback(() => {
-    const next = new Date(selectedDate);
-    next.setDate(selectedDate.getDate() + 1);
-    setSelectedDay(INDEX_TO_DAY_NAME[next.getDay()] as any);
-  }, [selectedDate, setSelectedDay]);
+    shiftSelectedDate(1);
+  }, [shiftSelectedDate]);
 
   const { getMealProgress: storeGetMealProgress, dailyMeals } =
     useNutritionStore();
-  const {
-    personalInfo,
-    bodyAnalysis,
-    dietPreferences,
-    workoutPreferences,
-    advancedReview,
-  } = useProfileStore();
-  const userProfile = {
-    personalInfo,
-    bodyMetrics: bodyAnalysis,
-    fitnessGoals: advancedReview,
-    dietPreferences,
-    workoutPreferences,
-  };
+  const todaysAddedMeals = React.useMemo(() => {
+    const todayDate = getLocalDateString();
+    return dailyMeals.filter(
+      (meal) =>
+        !!meal.createdAt && getLocalDateString(meal.createdAt) === todayDate,
+    );
+  }, [dailyMeals]);
+  const { personalInfo, bodyAnalysis, dietPreferences, workoutPreferences } =
+    useProfileStore();
+  const rawProfile = useUserStore((state) => state.profile);
+  const userProfile = React.useMemo(
+    () => ({
+      ...rawProfile,
+      bodyMetrics: bodyAnalysis,
+      workoutPreferences,
+      ...buildLegacyProfileAdapter({
+        personalInfo,
+        bodyAnalysis,
+        workoutPreferences,
+        dietPreferences,
+        legacyProfile: rawProfile,
+      }),
+    }),
+    [
+      rawProfile,
+      personalInfo,
+      bodyAnalysis,
+      dietPreferences,
+      workoutPreferences,
+    ],
+  );
 
   const canAccessMealFeatures = isAuthenticated || isGuestMode;
 
@@ -253,6 +245,40 @@ export const DietScreen: React.FC<DietScreenProps> = ({
       }
     }
   }, [route?.params, navigation, forceRefresh]);
+
+  useEffect(() => {
+    if (!route?.params || !navigation?.setParams) return;
+
+    if (route.params.openLogMeal) {
+      setShowLogMealModal(true);
+      navigation.setParams({ openLogMeal: undefined });
+    }
+
+    if (route.params.openWaterModal) {
+      setShowWaterIntakeModal(true);
+      navigation.setParams({ openWaterModal: undefined });
+    }
+
+    if (route.params.openBarcodeOptions) {
+      setShowBarcodeOptions(true);
+      navigation.setParams({ openBarcodeOptions: undefined });
+    }
+
+    if (route.params.openLabelScanPrep) {
+      setShowLabelScanPrep(true);
+      navigation.setParams({ openLabelScanPrep: undefined });
+    }
+
+    if (route.params.openCreateRecipe) {
+      setShowCreateRecipe(true);
+      navigation.setParams({ openCreateRecipe: undefined });
+    }
+
+    if (route.params.openScanFood) {
+      handleScanFood();
+      navigation.setParams({ openScanFood: undefined });
+    }
+  }, [handleScanFood, navigation, route?.params, setShowWaterIntakeModal]);
 
   useEffect(() => {
     if (!isActive || Platform.OS === "web") return;
@@ -350,16 +376,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     carbs: storeNutrition.carbs,
     fat: storeNutrition.fat,
     fiber: storeNutrition.fiber,
-    // mealsCount: count unique meals from store dailyMeals + userMeals not yet
-    // hydrated into the store (new logs that arrived after the last loadData call).
-    // Use a Set to avoid double-counting by meal id.
-    mealsCount: (() => {
-      const storeMealIds = new Set(dailyMeals.map((m) => m.id));
-      const extraFromSupabase = (userMeals || []).filter(
-        (m) => !storeMealIds.has(m.id),
-      );
-      return dailyMeals.length + extraFromSupabase.length;
-    })(),
+    mealsCount: dailyNutrition?.mealsCount ?? todaysAddedMeals.length,
   };
 
   const macroTargets = getMacroTargets();
@@ -512,7 +529,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             />
 
             <DatabaseDownloadBanner />
-            {foodsLoading || userMealsLoading || isGeneratingMeal ? (
+            {foodsLoading || isGeneratingMeal ? (
               <View style={styles.loadingContainer}>
                 <AuroraSpinner size="lg" theme="primary" />
                 <Text style={styles.loadingText}>
@@ -521,11 +538,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                     : "Loading nutrition data..."}
                 </Text>
               </View>
-            ) : foodsError || userMealsError || aiError ? (
+            ) : foodsError || aiError ? (
               <GlassCard style={styles.errorCard} elevation={1} padding="md">
-                <Text style={styles.errorText}>
-                  {foodsError || userMealsError || aiError}
-                </Text>
+                <Text style={styles.errorText}>{foodsError || aiError}</Text>
                 <Button
                   title="Retry"
                   onPress={() => {
@@ -557,12 +572,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             />
 
             {!weeklyMealPlan?.meals || weeklyMealPlan.meals.length === 0 ? (
-              userMeals && userMeals.length > 0 ? (
+              todaysAddedMeals.length > 0 ? (
                 <View style={styles.dailyMealsSection}>
                   <Text style={styles.dailyMealsSectionTitle}>
                     Today's Meals
                   </Text>
-                  {userMeals.map((meal) => (
+                  {todaysAddedMeals.map((meal) => (
                     <GlassCard
                       key={meal.id}
                       elevation={1}
@@ -575,10 +590,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                             {meal.name || meal.type}
                           </Text>
                           <Text style={styles.dailyMealMacros}>
-                            {meal.total_calories} cal |{" "}
-                            {Math.round(meal.total_protein || 0)}g P |{" "}
-                            {Math.round(meal.total_carbs || 0)}g C |{" "}
-                            {Math.round(meal.total_fat || 0)}g F
+                            {meal.totalCalories || 0} cal |{" "}
+                            {Math.round(meal.totalMacros?.protein || 0)}g P |{" "}
+                            {Math.round(meal.totalMacros?.carbohydrates || 0)}g
+                            C | {Math.round(meal.totalMacros?.fat || 0)}g F
                           </Text>
                         </View>
                         <View style={styles.dailyMealBadge}>
@@ -650,62 +665,41 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               />
             )}
 
-            {(() => {
-              // D3: Deduplicate dailyMeals against userMeals.
-              // userMeals come from Supabase meal_logs (manually logged).
-              // dailyMeals come from nutritionStore (AI plan completions).
-              // They use different ID spaces, but a user could log the same meal
-              // via both paths. Deduplicate by lowercased name + today's date.
-              const userMealNames = new Set(
-                (userMeals || []).map(
-                  (m) =>
-                    `${(m.name || m.type || "").toLowerCase()}_${new Date().toISOString().split("T")[0]}`,
-                ),
-              );
-              const todayStr = new Date().toISOString().split("T")[0];
-              const uniqueDailyMeals = dailyMeals.filter((meal) => {
-                const mealDate = meal.createdAt
-                  ? meal.createdAt.split("T")[0]
-                  : "";
-                if (mealDate !== todayStr) return false; // Only today's meals
-                const key = `${(meal.name || "").toLowerCase()}_${todayStr}`;
-                return !userMealNames.has(key);
-              });
-              return uniqueDailyMeals.length > 0 ? (
-                <View style={styles.dailyMealsSection}>
-                  <Text style={styles.dailyMealsSectionTitle}>
-                    Today's Added Meals
-                  </Text>
-                  {uniqueDailyMeals.map((meal) => (
-                    <GlassCard
-                      key={meal.id}
-                      elevation={1}
-                      padding="md"
-                      style={styles.dailyMealCard}
-                    >
-                      <View style={styles.dailyMealRow}>
-                        <View style={styles.dailyMealInfo}>
-                          <Text style={styles.dailyMealName}>{meal.name}</Text>
-                          <Text style={styles.dailyMealMacros}>
-                            {meal.totalCalories} cal |{" "}
-                            {meal.totalMacros?.protein || 0}g P |{" "}
-                            {meal.totalMacros?.carbohydrates || 0}g C |{" "}
-                            {meal.totalMacros?.fat || 0}g F
-                          </Text>
-                        </View>
-                        <View style={styles.dailyMealBadge}>
-                          <Ionicons
-                            name="checkmark-circle"
-                            size={rf(20)}
-                            color={ResponsiveTheme.colors.primary}
-                          />
-                        </View>
+            {Boolean(weeklyMealPlan?.meals?.length) &&
+            todaysAddedMeals.length > 0 ? (
+              <View style={styles.dailyMealsSection}>
+                <Text style={styles.dailyMealsSectionTitle}>
+                  Today's Added Meals
+                </Text>
+                {todaysAddedMeals.map((meal) => (
+                  <GlassCard
+                    key={meal.id}
+                    elevation={1}
+                    padding="md"
+                    style={styles.dailyMealCard}
+                  >
+                    <View style={styles.dailyMealRow}>
+                      <View style={styles.dailyMealInfo}>
+                        <Text style={styles.dailyMealName}>{meal.name}</Text>
+                        <Text style={styles.dailyMealMacros}>
+                          {meal.totalCalories} cal |{" "}
+                          {meal.totalMacros?.protein || 0}g P |{" "}
+                          {meal.totalMacros?.carbohydrates || 0}g C |{" "}
+                          {meal.totalMacros?.fat || 0}g F
+                        </Text>
                       </View>
-                    </GlassCard>
-                  ))}
-                </View>
-              ) : null;
-            })()}
+                      <View style={styles.dailyMealBadge}>
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={rf(20)}
+                          color={ResponsiveTheme.colors.primary}
+                        />
+                      </View>
+                    </View>
+                  </GlassCard>
+                ))}
+              </View>
+            ) : null}
             <MealSuggestions />
 
             <View style={styles.bottomSpacing} />

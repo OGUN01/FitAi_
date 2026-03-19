@@ -4,11 +4,11 @@ import {
   WorkersAPIError,
   NetworkError,
 } from "../services/fitaiWorkersClient";
-import { generateUUID } from "../utils/uuid";
 
 export function transformWorkoutData(
   workoutPlan: any,
   dayOfWeek: string,
+  slotIndex: number = 0,
 ): Workout {
   const difficultyMap: Record<
     string,
@@ -57,7 +57,7 @@ export function transformWorkoutData(
   );
 
   return {
-    id: `${dayOfWeek}_workout_${generateUUID()}`,
+    id: `${dayOfWeek}_workout_${slotIndex}`,
     title: workoutPlan.title || "AI Generated Workout",
     description: workoutPlan.description || "",
     category: "strength",

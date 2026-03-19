@@ -15,6 +15,7 @@ import { SimpleTrendCard } from "./analytics/SimpleTrendCard";
 import { SummaryCard } from "./analytics/SummaryCard";
 import { GoalProgressCard } from "./analytics/GoalProgressCard";
 import { ProgressTrendsHeader } from "./analytics/ProgressTrendsHeader";
+import { toDisplayWeight, type WeightUnit } from "../../utils/units";
 
 interface ProgressTrendsScreenProps {
   navigation?: {
@@ -40,6 +41,26 @@ export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
   } = useProgressTrendsLogic();
   // SSOT: read profile data directly from profileStore
   const { personalInfo: profilePersonalInfo, bodyAnalysis } = useProfileStore();
+  const weightUnit: WeightUnit =
+    profilePersonalInfo?.units === "imperial" ? "lbs" : "kg";
+  const displayWeightTrend = React.useMemo(() => {
+    if (!weightTrend) return null;
+
+    return {
+      ...weightTrend,
+      data: weightTrend.data.map(
+        (value) => toDisplayWeight(value, weightUnit) ?? value,
+      ),
+      min: toDisplayWeight(weightTrend.min, weightUnit) ?? weightTrend.min,
+      max: toDisplayWeight(weightTrend.max, weightUnit) ?? weightTrend.max,
+      avg: toDisplayWeight(weightTrend.avg, weightUnit) ?? weightTrend.avg,
+      change:
+        weightUnit === "lbs"
+          ? (toDisplayWeight(weightTrend.change, weightUnit) ??
+            weightTrend.change)
+          : weightTrend.change,
+    };
+  }, [weightTrend, weightUnit]);
 
   return (
     <AuroraBackground style={styles.container}>
@@ -77,8 +98,8 @@ export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
           <SimpleTrendCard
             title="Weight Trend"
             icon="scale-outline"
-            trend={weightTrend}
-            unit="kg"
+            trend={displayWeightTrend}
+            unit={weightUnit}
             color={ResponsiveTheme.colors.success}
             ctaLabel="Log Weight"
           />

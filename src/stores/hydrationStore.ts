@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { safeAsyncStorage } from "../utils/safeAsyncStorage";
 import { hydrationDataService } from "../services/hydrationData";
+import { getLocalDateString } from "../utils/weekUtils";
 
 /**
  * HYDRATION STORE - SINGLE SOURCE OF TRUTH
@@ -42,8 +43,7 @@ interface HydrationState {
 }
 
 const getTodayDateString = (): string => {
-  const now = new Date();
-  return now.toISOString().split("T")[0]; // YYYY-MM-DD
+  return getLocalDateString();
 };
 
 export const useHydrationStore = create<HydrationState>()(

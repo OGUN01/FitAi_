@@ -11,6 +11,7 @@ import { Workout, Meal } from "../types/ai";
  */
 export interface WeeklyWorkoutPlan {
   id: string;
+  databaseId?: string;
   weekNumber: number;
   workouts: Workout[];
   planTitle?: string;
@@ -25,6 +26,7 @@ export interface WeeklyWorkoutPlan {
  */
 export interface WeeklyMealPlan {
   id: string;
+  databaseId?: string;
   weekNumber: number;
   meals: any[];
   planTitle?: string;

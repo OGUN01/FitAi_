@@ -78,9 +78,9 @@ describe('useAppConfig', () => {
 			maintenanceMessage: 'Back soon!',
 			minAppVersion: '1.0.0',
 			forceUpdateVersion: '0.0.0',
-			featureAiChat: true,
-			featureFoodContributions: true,
-			featureAnalytics: true,
+			featureAiChat: false,
+			featureFoodContributions: false,
+			featureAnalytics: false,
 		});
 	});
 });

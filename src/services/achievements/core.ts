@@ -45,7 +45,6 @@ class AchievementEngine extends EventEmitter {
   }
 
   private async initializeAchievements(): Promise<void> {
-
     this.achievements = [
       ...createFitnessAchievements(),
       ...createNutritionAchievements(),
@@ -103,6 +102,7 @@ class AchievementEngine extends EventEmitter {
     }
 
     const newlyUnlocked: UserAchievement[] = [];
+    let didUpdateProgress = false;
 
     for (const achievement of this.achievements) {
       const userAchievement = this.getUserAchievement(userId, achievement.id);
@@ -120,6 +120,7 @@ class AchievementEngine extends EventEmitter {
           userAchievement,
         );
         newlyUnlocked.push(userAchievement);
+        didUpdateProgress = true;
         this.emit("achievementUnlocked", achievement, userAchievement);
       } else if (progress > userAchievement.progress) {
         userAchievement.progress = progress;
@@ -127,10 +128,11 @@ class AchievementEngine extends EventEmitter {
           `${userId}-${achievement.id}`,
           userAchievement,
         );
+        didUpdateProgress = true;
       }
     }
 
-    if (newlyUnlocked.length > 0) {
+    if (didUpdateProgress) {
       await this.saveUserAchievements();
     }
 
@@ -168,17 +170,123 @@ class AchievementEngine extends EventEmitter {
   ): number {
     const requirement = achievement.requirements?.[0];
     if (!requirement) return 0;
+
+    const metadata = requirement.metadata || {};
+
     switch (requirement.type) {
       case "workout_count":
         return activityData.totalWorkouts || 0;
+      case "workout_streak":
+        return (
+          activityData.workoutStreak ||
+          activityData.currentStreak ||
+          activityData.consistentDays ||
+          0
+        );
       case "calories_burned":
         return activityData.totalCalories || 0;
+      case "weight_goal":
+        return activityData.weightGoalAchieved ? 1 : 0;
       case "nutrition_log":
         return activityData.nutritionLogs || 0;
       case "water_intake":
         return activityData.waterGoalsHit || 0;
+      case "sleep_hours":
+        return (
+          activityData.sleepGoalDays ||
+          activityData.sleepHoursQualifiedDays ||
+          activityData.sleepHours ||
+          0
+        );
+      case "steps":
+        return (
+          activityData.stepGoalDays ||
+          activityData.stepsQualifiedDays ||
+          activityData.steps ||
+          0
+        );
+      case "friend_count":
+        return activityData.friendsCount || 0;
+      case "challenge_wins":
+        return activityData.challengesWon || 0;
       case "consistency_days":
         return activityData.consistentDays || 0;
+      case "custom":
+        if (metadata.workout_type) {
+          return activityData.workoutTypeCounts?.[metadata.workout_type] || 0;
+        }
+        if (metadata.time_range === "before_8am") {
+          return activityData.workoutsBefore8am || 0;
+        }
+        if (metadata.time === "before_6am") {
+          return activityData.workoutsBefore6am || 0;
+        }
+        if (metadata.time === "after_10pm") {
+          return activityData.workoutsAfter10pm || 0;
+        }
+        if (metadata.day_type === "weekend") {
+          return activityData.weekendWorkouts || 0;
+        }
+        if (metadata.duration === "under_20min") {
+          return activityData.quickWorkouts || 0;
+        }
+        if (metadata.duration === "over_60min") {
+          return activityData.longWorkouts || 0;
+        }
+        if (metadata.completion === "100%") {
+          return activityData.perfectWorkouts || 0;
+        }
+        if (metadata.variety === "all_types") {
+          return activityData.uniqueWorkoutTypes || 0;
+        }
+        if (metadata.milestone === "days_active") {
+          return activityData.activeDays || 0;
+        }
+        if (metadata.streak_type) {
+          return activityData.streaks?.[metadata.streak_type] || 0;
+        }
+        if (metadata.equipment) {
+          return activityData.equipmentCounts?.[metadata.equipment] || 0;
+        }
+        if (metadata.challenge_type) {
+          return (
+            activityData.challengeTypeCounts?.[metadata.challenge_type] || 0
+          );
+        }
+        if (metadata.exploration) {
+          return activityData.explorationCounts?.[metadata.exploration] || 0;
+        }
+        if (metadata.activity) {
+          return activityData.activityCounts?.[metadata.activity] || 0;
+        }
+        if (metadata.exercise_type) {
+          return activityData.exerciseTypeCounts?.[metadata.exercise_type] || 0;
+        }
+        if (metadata.food_type) {
+          return activityData.foodTypeCounts?.[metadata.food_type] || 0;
+        }
+        if (metadata.diet_type) {
+          return activityData.dietTypeCounts?.[metadata.diet_type] || 0;
+        }
+        if (metadata.meal_type) {
+          return activityData.mealTypeCounts?.[metadata.meal_type] || 0;
+        }
+        if (metadata.meal_source) {
+          return activityData.mealSourceCounts?.[metadata.meal_source] || 0;
+        }
+        if (metadata.eating_style) {
+          return activityData.eatingStyleCounts?.[metadata.eating_style] || 0;
+        }
+        if (metadata.macro) {
+          return activityData.macroCounts?.[metadata.macro] || 0;
+        }
+        if (metadata.date) {
+          return activityData.dateCounts?.[metadata.date] || 0;
+        }
+        if (metadata.location) {
+          return activityData.locationCounts?.[metadata.location] || 0;
+        }
+        return 0;
       default:
         return 0;
     }

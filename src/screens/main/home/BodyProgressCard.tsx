@@ -9,23 +9,24 @@
  * - Trend analysis
  */
 
-import React from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../../../components/ui/aurora/GlassCard";
-import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh } from "../../../utils/responsive";
-import { useBodyProgressLogic, WeightEntry } from "./useBodyProgressLogic";
-import { TrendChart } from "./components/TrendChart";
-import { GoalProgressBar } from "./components/GoalProgressBar";
+import React from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { GlassCard } from '../../../components/ui/aurora/GlassCard';
+import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
+import { ResponsiveTheme } from '../../../utils/constants';
+import { rf, rw, rh } from '../../../utils/responsive';
+import { useBodyProgressLogic, WeightEntry } from './useBodyProgressLogic';
+import { TrendChart } from './components/TrendChart';
+import { GoalProgressBar } from './components/GoalProgressBar';
+import { toDisplayWeight } from '../../../utils/units';
 
 interface BodyProgressCardProps {
   currentWeight?: number; // in kg or lbs
   goalWeight?: number;
   startingWeight?: number;
   weightHistory?: WeightEntry[];
-  unit?: "kg" | "lbs";
+  unit?: 'kg' | 'lbs';
   onPress?: () => void;
   onPhotoPress?: () => void;
   onLogWeight?: () => void;
@@ -36,7 +37,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
   goalWeight,
   startingWeight,
   weightHistory = [],
-  unit = "kg",
+  unit = 'kg',
   onPress,
   onPhotoPress,
   onLogWeight,
@@ -49,16 +50,15 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
       weightHistory,
     });
 
+  const displayCurrentWeight = toDisplayWeight(currentWeight, unit);
+  const displayGoalWeight = toDisplayWeight(goalWeight, unit);
+  const displayRemaining = toDisplayWeight(remaining, unit);
+
   return (
     <View>
-      <GlassCard
-        elevation={2}
-        blurIntensity="light"
-        padding="md"
-        borderRadius="lg"
-      >
+      <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
         {/* Header */}
-      <Pressable
+        <Pressable
           onPress={onPress}
           accessibilityRole="button"
           accessibilityLabel="View Progress"
@@ -70,20 +70,9 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
             <Text style={styles.headerTitle}>Body Progress</Text>
           </View>
           {hasData && (
-            <View
-              style={[
-                styles.trendBadge,
-                { backgroundColor: `${trendInfo.color}20` },
-              ]}
-            >
-              <Ionicons
-                name={trendInfo.icon}
-                size={rf(12)}
-                color={trendInfo.color}
-              />
-              <Text style={[styles.trendText, { color: trendInfo.color }]}>
-                {trendInfo.label}
-              </Text>
+            <View style={[styles.trendBadge, { backgroundColor: `${trendInfo.color}20` }]}>
+              <Ionicons name={trendInfo.icon} size={rf(12)} color={trendInfo.color} />
+              <Text style={[styles.trendText, { color: trendInfo.color }]}>{trendInfo.label}</Text>
             </View>
           )}
         </Pressable>
@@ -94,7 +83,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
             <View style={styles.mainStats}>
               <View style={styles.currentWeight}>
                 <Text style={styles.weightValue}>
-                  {currentWeight?.toFixed(1)}
+                  {displayCurrentWeight?.toFixed(1)}
                   <Text style={styles.weightUnit}> {unit}</Text>
                 </Text>
                 <Text style={styles.weightLabel}>Current</Text>
@@ -120,7 +109,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
 
               <View style={styles.goalWeight}>
                 <Text style={styles.goalValue}>
-                  {goalWeight ? goalWeight.toFixed(1) : "—"}
+                  {displayGoalWeight != null ? displayGoalWeight.toFixed(1) : '—'}
                   <Text style={styles.goalUnit}> {unit}</Text>
                 </Text>
                 <Text style={styles.goalLabel}>Goal</Text>
@@ -131,21 +120,19 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
             <View style={styles.progressSection}>
               <View style={styles.progressHeader}>
                 <Text style={styles.progressLabel}>
-                  {goalWeight ? "Goal Progress" : "Body Progress"}
+                  {goalWeight ? 'Goal Progress' : 'Body Progress'}
                 </Text>
-                <Text
-                  style={[styles.progressPercent, { color: progressColor }]}
-                >
-                  {goalWeight ? `${progress.toFixed(0)}%` : ""}
+                <Text style={[styles.progressPercent, { color: progressColor }]}>
+                  {goalWeight ? `${progress.toFixed(0)}%` : ''}
                 </Text>
               </View>
               <GoalProgressBar progress={progress} color={progressColor} />
               <Text style={styles.remainingText}>
                 {!goalWeight
-                  ? "Set a goal weight"
-                  : remaining > 0
-                  ? `${remaining.toFixed(1)} ${unit} to go`
-                  : "🎉 Goal reached!"}
+                  ? 'Set a goal weight'
+                  : remaining > 0 && displayRemaining != null
+                    ? `${displayRemaining.toFixed(1)} ${unit} to go`
+                    : '🎉 Goal reached!'}
               </Text>
             </View>
 
@@ -178,7 +165,11 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel="Progress photo"
               >
-                <Ionicons name="camera-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} />
+                <Ionicons
+                  name="camera-outline"
+                  size={rf(16)}
+                  color={ResponsiveTheme.colors.primary}
+                />
                 <Text style={styles.actionButtonText}>Progress Photo</Text>
               </AnimatedPressable>
             </View>
@@ -214,25 +205,25 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
 
 const styles = StyleSheet.create({
   headerPressable: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: ResponsiveTheme.spacing.md,
   },
   headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: ResponsiveTheme.spacing.xs,
   },
   headerTitle: {
     fontSize: rf(14),
-    fontWeight: "700",
+    fontWeight: '700',
     color: ResponsiveTheme.colors.text,
     letterSpacing: 0.3,
   },
   trendBadge: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.full,
@@ -240,95 +231,95 @@ const styles = StyleSheet.create({
   },
   trendText: {
     fontSize: rf(11),
-    fontWeight: "600",
+    fontWeight: '600',
   },
   mainStats: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: ResponsiveTheme.spacing.md,
   },
   currentWeight: {
-    alignItems: "flex-start",
+    alignItems: 'flex-start',
   },
   weightValue: {
     fontSize: rf(24),
-    fontWeight: "800",
+    fontWeight: '800',
     color: ResponsiveTheme.colors.text,
   },
   weightUnit: {
     fontSize: rf(14),
-    fontWeight: "600",
+    fontWeight: '600',
     color: ResponsiveTheme.colors.textSecondary,
   },
   weightLabel: {
     fontSize: rf(10),
-    fontWeight: "500",
+    fontWeight: '500',
     color: ResponsiveTheme.colors.textSecondary,
   },
   chartContainer: {
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
   },
   goalWeight: {
-    alignItems: "flex-end",
+    alignItems: 'flex-end',
   },
   goalValue: {
     fontSize: rf(18),
-    fontWeight: "700",
+    fontWeight: '700',
     color: ResponsiveTheme.colors.textSecondary,
   },
   goalUnit: {
     fontSize: rf(12),
-    fontWeight: "500",
+    fontWeight: '500',
   },
   goalLabel: {
     fontSize: rf(10),
-    fontWeight: "500",
+    fontWeight: '500',
     color: ResponsiveTheme.colors.textSecondary,
   },
   progressSection: {
     marginBottom: ResponsiveTheme.spacing.md,
   },
   progressHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: ResponsiveTheme.spacing.xs,
   },
   progressLabel: {
     fontSize: rf(11),
-    fontWeight: "600",
+    fontWeight: '600',
     color: ResponsiveTheme.colors.textSecondary,
   },
   progressPercent: {
     fontSize: rf(12),
-    fontWeight: "700",
+    fontWeight: '700',
   },
   remainingText: {
     fontSize: rf(11),
-    fontWeight: "500",
+    fontWeight: '500',
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: "center",
+    textAlign: 'center',
   },
   actionButtons: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingTop: ResponsiveTheme.spacing.sm,
     borderTopWidth: 1,
     borderTopColor: ResponsiveTheme.colors.glassBorder,
   },
   actionButton: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: ResponsiveTheme.spacing.xs,
     paddingVertical: ResponsiveTheme.spacing.xs,
   },
   actionButtonText: {
     fontSize: rf(12),
-    fontWeight: "600",
+    fontWeight: '600',
     color: ResponsiveTheme.colors.primary,
   },
   actionDivider: {
@@ -337,35 +328,35 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.glassHighlight,
   },
   emptyState: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingVertical: ResponsiveTheme.spacing.md,
   },
   emptyIconContainer: {
     width: rw(60),
     height: rw(60),
     borderRadius: rw(30),
-    backgroundColor: "rgba(156, 39, 176, 0.1)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: 'rgba(156, 39, 176, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: ResponsiveTheme.spacing.md,
   },
   emptyTitle: {
     fontSize: rf(14),
-    fontWeight: "700",
+    fontWeight: '700',
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
   emptyDescription: {
     fontSize: rf(12),
-    fontWeight: "500",
+    fontWeight: '500',
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: "center",
+    textAlign: 'center',
     marginBottom: ResponsiveTheme.spacing.md,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
   startButton: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: ResponsiveTheme.spacing.xs,
     backgroundColor: ResponsiveTheme.colors.primary,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
@@ -374,7 +365,7 @@ const styles = StyleSheet.create({
   },
   startButtonText: {
     fontSize: rf(13),
-    fontWeight: "700",
+    fontWeight: '700',
     color: ResponsiveTheme.colors.white,
   },
 });

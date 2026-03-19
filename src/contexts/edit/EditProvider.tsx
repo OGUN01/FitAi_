@@ -10,7 +10,12 @@ import { debounce } from "../../utils/performance";
 import { useAuth } from "../../hooks/useAuth";
 import { useUserStore } from "../../stores/userStore";
 import { useProfileStore } from "../../stores/profileStore";
-import type { WorkoutPreferencesData, DietPreferencesData, PersonalInfoData } from "../../types/onboarding";
+import { buildLegacyProfileAdapter } from "../../utils/profileLegacyAdapter";
+import type {
+  WorkoutPreferencesData,
+  DietPreferencesData,
+  PersonalInfoData,
+} from "../../types/onboarding";
 import { useOnboardingIntegration } from "../../utils/integration";
 import { validateEditData } from "./validation";
 import { loadSectionData, createDefaultSectionData } from "./data-loaders";
@@ -32,8 +37,12 @@ export const EditProvider: React.FC<EditProviderProps> = ({
   onEditCancel,
 }) => {
   const { user, isGuestMode } = useAuth();
-  const { getCompleteProfile, profile } = useUserStore();
+  const { getCompleteProfile, profile: rawProfile } = useUserStore();
   const {
+    personalInfo,
+    bodyAnalysis,
+    workoutPreferences,
+    dietPreferences,
     updatePersonalInfo: updateProfilePersonalInfo,
     updateWorkoutPreferences: updateProfileWorkoutPreferences,
     updateDietPreferences: updateProfileDietPreferences,
@@ -55,6 +64,26 @@ export const EditProvider: React.FC<EditProviderProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
+
+  const profile = useMemo(
+    () => ({
+      ...rawProfile,
+      ...buildLegacyProfileAdapter({
+        personalInfo,
+        bodyAnalysis,
+        workoutPreferences,
+        dietPreferences,
+        legacyProfile: rawProfile,
+      }),
+    }),
+    [
+      rawProfile,
+      personalInfo,
+      bodyAnalysis,
+      workoutPreferences,
+      dietPreferences,
+    ],
+  );
 
   const validateData = useCallback(
     (data?: any) => {
@@ -100,7 +129,6 @@ export const EditProvider: React.FC<EditProviderProps> = ({
           sectionData = createDefaultSectionData(section, user, profile);
         }
 
-
         setEditSection(section as EditContextData["editSection"]);
         setOriginalData(sectionData);
         setCurrentData(sectionData ? { ...sectionData } : {});
@@ -108,7 +136,6 @@ export const EditProvider: React.FC<EditProviderProps> = ({
         setHasChanges(false);
         setValidationErrors([]);
         setShowOverlay(true);
-
       } catch (error) {
         console.error("Failed to start edit:", error);
         crossPlatformAlert("Error", "Failed to load data for editing");
@@ -193,16 +220,24 @@ export const EditProvider: React.FC<EditProviderProps> = ({
         if (isGuestMode) {
           switch (editSection) {
             case "personalInfo":
-              updateProfilePersonalInfo(currentData as Partial<PersonalInfoData>);
+              updateProfilePersonalInfo(
+                currentData as Partial<PersonalInfoData>,
+              );
               break;
             case "fitnessGoals":
-              updateProfileWorkoutPreferences(currentData as Partial<WorkoutPreferencesData>);
+              updateProfileWorkoutPreferences(
+                currentData as Partial<WorkoutPreferencesData>,
+              );
               break;
             case "dietPreferences":
-              updateProfileDietPreferences(currentData as Partial<DietPreferencesData>);
+              updateProfileDietPreferences(
+                currentData as Partial<DietPreferencesData>,
+              );
               break;
             case "workoutPreferences":
-              updateProfileWorkoutPreferences(currentData as Partial<WorkoutPreferencesData>);
+              updateProfileWorkoutPreferences(
+                currentData as Partial<WorkoutPreferencesData>,
+              );
               break;
           }
         }
@@ -217,7 +252,10 @@ export const EditProvider: React.FC<EditProviderProps> = ({
 
         onEditComplete?.();
 
-        crossPlatformAlert("Success", "Your changes have been saved successfully!");
+        crossPlatformAlert(
+          "Success",
+          "Your changes have been saved successfully!",
+        );
         return true;
       } else {
         const errorMessage = saveResult.error || "Failed to save data";

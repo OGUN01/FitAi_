@@ -22,6 +22,7 @@ import { ResponsiveTheme } from "../../../../utils/constants";
 import { rf } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
 import { crossPlatformAlert } from "../../../../utils/crossPlatformAlert";
+import { buildLegacyProfileAdapter } from "../../../../utils/profileLegacyAdapter";
 import type { FitnessGoals } from "../../../../types/user";
 import { userProfileService } from "../../../../services/userProfile";
 
@@ -120,9 +121,36 @@ const TIME_COMMITMENT_OPTIONS = [
 export const GoalsPreferencesEditModal: React.FC<
   GoalsPreferencesEditModalProps
 > = ({ visible, onClose }) => {
-  const { profile } = useUser();
+  const { profile: rawProfile } = useUser();
   const { user } = useAuth();
-  const { updateWorkoutPreferences, workoutPreferences } = useProfileStore();
+  const {
+    updateWorkoutPreferences,
+    workoutPreferences,
+    personalInfo,
+    bodyAnalysis,
+    dietPreferences,
+  } = useProfileStore();
+  const profile = React.useMemo(
+    () => ({
+      ...rawProfile,
+      bodyMetrics: bodyAnalysis,
+      workoutPreferences,
+      ...buildLegacyProfileAdapter({
+        personalInfo,
+        bodyAnalysis,
+        workoutPreferences,
+        dietPreferences,
+        legacyProfile: rawProfile,
+      }),
+    }),
+    [
+      rawProfile,
+      personalInfo,
+      bodyAnalysis,
+      workoutPreferences,
+      dietPreferences,
+    ],
+  );
 
   // Form state
   const [primaryGoals, setPrimaryGoals] = useState<string[]>([]);
@@ -141,8 +169,15 @@ export const GoalsPreferencesEditModal: React.FC<
       // The modal saves experience/time_commitment (FitnessGoals fields) into workoutPreferences
       // These are stored alongside native WorkoutPreferencesData fields
       const wp = workoutPreferences as Record<string, unknown> | null;
-      const wpExperience = (wp?.experience as string) || (wp?.experience_level as string) || workoutPreferences?.intensity;
-      const wpTime = (wp?.time_commitment as string) || (workoutPreferences?.time_preference ? String(workoutPreferences.time_preference) : undefined);
+      const wpExperience =
+        (wp?.experience as string) ||
+        (wp?.experience_level as string) ||
+        workoutPreferences?.intensity;
+      const wpTime =
+        (wp?.time_commitment as string) ||
+        (workoutPreferences?.time_preference
+          ? String(workoutPreferences.time_preference)
+          : undefined);
       const profileGoals = profile?.fitnessGoals;
 
       // Goals: prefer profileStore, fall back to userStore
@@ -150,7 +185,8 @@ export const GoalsPreferencesEditModal: React.FC<
       if (wpGoals && wpGoals.length > 0) {
         loadedGoals = wpGoals.map((goal: string) => goal.replace(/-/g, "_"));
       } else if (profileGoals) {
-        const rawGoals = profileGoals.primaryGoals || profileGoals.primary_goals || [];
+        const rawGoals =
+          profileGoals.primaryGoals || profileGoals.primary_goals || [];
         loadedGoals = rawGoals.map((goal: string) => goal.replace(/-/g, "_"));
       }
 
@@ -159,7 +195,8 @@ export const GoalsPreferencesEditModal: React.FC<
       if (wpExperience) {
         loadedExperience = wpExperience;
       } else if (profileGoals) {
-        loadedExperience = profileGoals.experience || profileGoals.experience_level || "";
+        loadedExperience =
+          profileGoals.experience || profileGoals.experience_level || "";
       }
 
       // Time: prefer profileStore, fall back to userStore
@@ -173,13 +210,21 @@ export const GoalsPreferencesEditModal: React.FC<
           // Numeric minutes format - convert to range
           const minutes = parseInt(wpTime);
           if (!isNaN(minutes)) {
-            loadedTime = minutes <= 30 ? "15-30" : minutes <= 45 ? "30-45" : minutes <= 60 ? "45-60" : "60+";
+            loadedTime =
+              minutes <= 30
+                ? "15-30"
+                : minutes <= 45
+                  ? "30-45"
+                  : minutes <= 60
+                    ? "45-60"
+                    : "60+";
           } else {
             loadedTime = wpTime;
           }
         }
       } else if (profileGoals) {
-        const rawTime = profileGoals.timeCommitment || profileGoals.time_commitment || "";
+        const rawTime =
+          profileGoals.timeCommitment || profileGoals.time_commitment || "";
         loadedTime = /^\d+$/.test(rawTime)
           ? parseInt(rawTime) <= 30
             ? "15-30"
@@ -321,25 +366,43 @@ export const GoalsPreferencesEditModal: React.FC<
 
     if (wpGoals && wpGoals.length > 0) {
       currentGoals = wpGoals.map((g: string) => g.replace(/-/g, "_"));
-      currentExperience = (wp?.experience as string) || (wp?.experience_level as string) || workoutPreferences?.intensity || "";
-      const wpTime = (wp?.time_commitment as string) || (workoutPreferences?.time_preference ? String(workoutPreferences.time_preference) : "");
+      currentExperience =
+        (wp?.experience as string) ||
+        (wp?.experience_level as string) ||
+        workoutPreferences?.intensity ||
+        "";
+      const wpTime =
+        (wp?.time_commitment as string) ||
+        (workoutPreferences?.time_preference
+          ? String(workoutPreferences.time_preference)
+          : "");
       if (wpTime) {
         if (/^\d+-/.test(wpTime) || wpTime === "60+") {
           currentTime = wpTime;
         } else {
           const minutes = parseInt(wpTime);
           if (!isNaN(minutes)) {
-            currentTime = minutes <= 30 ? "15-30" : minutes <= 45 ? "30-45" : minutes <= 60 ? "45-60" : "60+";
+            currentTime =
+              minutes <= 30
+                ? "15-30"
+                : minutes <= 45
+                  ? "30-45"
+                  : minutes <= 60
+                    ? "45-60"
+                    : "60+";
           } else {
             currentTime = wpTime;
           }
         }
       }
     } else if (profileGoals) {
-      const rawGoals = profileGoals.primaryGoals || profileGoals.primary_goals || [];
+      const rawGoals =
+        profileGoals.primaryGoals || profileGoals.primary_goals || [];
       currentGoals = rawGoals.map((g: string) => g.replace(/-/g, "_"));
-      currentExperience = profileGoals.experience || profileGoals.experience_level || "";
-      currentTime = profileGoals.timeCommitment || profileGoals.time_commitment || "";
+      currentExperience =
+        profileGoals.experience || profileGoals.experience_level || "";
+      currentTime =
+        profileGoals.timeCommitment || profileGoals.time_commitment || "";
     } else {
       return true; // No saved data yet, always allow save
     }

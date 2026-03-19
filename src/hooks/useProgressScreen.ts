@@ -1,17 +1,22 @@
-import { useState, useEffect, useRef, useMemo } from "react";
-import { Animated, Platform, Share } from "react-native";
-import { useAuth } from "./useAuth";
-import { useProgressData } from "./useProgressData";
-import { useCalculatedMetrics } from "./useCalculatedMetrics";
-import { completionTrackingService } from "../services/completionTracking";
-import { crossPlatformAlert } from "../utils/crossPlatformAlert";
-import { useAnalyticsStore } from "../stores/analyticsStore";
-import { useAchievementStore } from "../stores/achievementStore";
-import { useFitnessStore } from "../stores/fitnessStore";
-import { useNutritionStore } from "../stores/nutritionStore";
-import { analyticsDataService } from "../services/analyticsData";
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Animated, Platform, Share } from 'react-native';
+import { useAuth } from './useAuth';
+import { useProgressData } from './useProgressData';
+import { useCalculatedMetrics } from './useCalculatedMetrics';
+import { completionTrackingService } from '../services/completionTracking';
+import { crossPlatformAlert } from '../utils/crossPlatformAlert';
+import { useAnalyticsStore } from '../stores/analyticsStore';
+import { useAchievementStore } from '../stores/achievementStore';
+import { useFitnessStore } from '../stores/fitnessStore';
+import { useNutritionStore } from '../stores/nutritionStore';
+import { analyticsDataService } from '../services/analyticsData';
+import { getCurrentWeekStart, getWeekStartForDate } from '../utils/weekUtils';
+import { buildAchievementViewModels } from '../utils/achievementViewModel';
+import { useProfileStore } from '../stores/profileStore';
+import { type WeightUnit, toDisplayWeight } from '../utils/units';
 
-export const useProgressScreen = (navigation: any) => {
+export const useProgressScreen = (navigation: unknown) => {
+  void navigation;
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showWeightModal, setShowWeightModal] = useState(false);
@@ -24,49 +29,58 @@ export const useProgressScreen = (navigation: any) => {
 
   // Streak — achievementStore is authoritative (updated after every workout/meal)
   const currentStreak = useAchievementStore((s) => s.currentStreak);
+  const initializeAchievements = useAchievementStore((s) => s.initialize);
+  const areAchievementsInitialized = useAchievementStore((s) => s.isInitialized);
+  const achievementDefinitions = useAchievementStore((s) => s.achievements);
+  const userAchievements = useAchievementStore((s) => s.userAchievements);
 
   // Workouts this week — fitnessStore.completedSessions (SSOT)
   const completedSessions = useFitnessStore((s) => s.completedSessions);
   const workoutsCompleted = useMemo(() => {
-    const d = new Date();
-    const day = d.getDay();
-    const diff = day === 0 ? -6 : 1 - day;
-    d.setDate(d.getDate() + diff);
-    d.setHours(0, 0, 0, 0);
-    const weekStart = d.toISOString().split("T")[0];
-    return completedSessions.filter(
-      (s) => s.type === "planned" && s.weekStart === weekStart,
-    ).length;
+    const weekStart = getCurrentWeekStart();
+    return completedSessions.filter((s) => s.type === 'planned' && s.weekStart === weekStart)
+      .length;
   }, [completedSessions]);
 
   // Meals completed this week — nutritionStore.mealProgress (SSOT)
   const mealProgress = useNutritionStore((s) => s.mealProgress);
-  const mealsCompleted = useMemo(
-    () => Object.values(mealProgress).filter((p) => p.progress === 100).length,
-    [mealProgress],
-  );
+  const mealsCompleted = useMemo(() => {
+    const weekStart = getCurrentWeekStart();
+    return Object.values(mealProgress).filter(
+      (p) => p.progress === 100 && p.completedAt && getWeekStartForDate(p.completedAt) === weekStart
+    ).length;
+  }, [mealProgress]);
 
   // Weight history — analyticsStore (SSOT)
-  const weightHistory = useAnalyticsStore((s) => s.weightHistory);
-  const setHistoryData = useAnalyticsStore((s) => s.setHistoryData);
+  const [weightHistory, setWeightHistory] = useState<
+    Array<{ date: string; weight: number }>
+  >([]);
 
   const { user, isAuthenticated } = useAuth();
+  const personalInfo = useProfileStore((s) => s.personalInfo);
+  const weightUnit: WeightUnit = personalInfo?.units === 'imperial' ? 'lbs' : 'kg';
 
   useEffect(() => {
-    if (!user?.id || user.id.startsWith("guest") || user.id === "local-user")
-      return;
+    if (!user?.id || user.id.startsWith('guest') || user.id === 'local-user') return;
     analyticsDataService
       .getWeightHistory(user.id, 90)
       .then((weightData) => {
-        if (weightData.length > 0) {
-          const analyticsState = useAnalyticsStore.getState();
-          setHistoryData(weightData, analyticsState.calorieHistory);
-        }
+        setWeightHistory(weightData);
       })
       .catch((err) => {
-        console.warn("[ProgressScreen] Failed to fetch weight history:", err);
+        console.warn('[ProgressScreen] Failed to fetch weight history:', err);
       });
   }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id || areAchievementsInitialized) {
+      return;
+    }
+
+    initializeAchievements(user.id).catch((error) => {
+      console.warn('[ProgressScreen] Failed to initialize achievements:', error);
+    });
+  }, [user?.id, areAchievementsInitialized, initializeAchievements]);
 
   const {
     progressEntries,
@@ -79,8 +93,7 @@ export const useProgressScreen = (navigation: any) => {
     refreshAll,
   } = useProgressData();
 
-  const { metrics: calculatedMetrics, hasCalculatedMetrics } =
-    useCalculatedMetrics();
+  const { metrics: calculatedMetrics, hasCalculatedMetrics } = useCalculatedMetrics();
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -96,8 +109,11 @@ export const useProgressScreen = (navigation: any) => {
       // fitnessStore.loadData() + nutritionStore.loadData() which are already
       // triggered by the completion tracking subscriber in useFitnessLogic.
       await refreshAll();
+      if (user?.id) {
+        await useAchievementStore.getState().reconcileWithCurrentData(user.id);
+      }
     } catch (error) {
-      console.error("Failed to load progress data:", error);
+      console.error('Failed to load progress data:', error);
     }
   };
 
@@ -111,7 +127,7 @@ export const useProgressScreen = (navigation: any) => {
       try {
         await refreshProgressData();
       } catch (e) {
-        console.error("Progress init error:", e);
+        console.error('Progress init error:', e);
       } finally {
         setIsLoading(false);
       }
@@ -119,7 +135,7 @@ export const useProgressScreen = (navigation: any) => {
     init();
 
     const unsubscribe = completionTrackingService.subscribe((event) => {
-      if (event.type === "meal" || event.type === "workout") {
+      if (event.type === 'meal' || event.type === 'workout') {
         refreshRef.current();
       }
     });
@@ -146,8 +162,8 @@ export const useProgressScreen = (navigation: any) => {
     setRefreshing(true);
     try {
       await refreshAll();
-    } catch (error) {
-      crossPlatformAlert("Error", "Failed to refresh progress data");
+    } catch {
+      crossPlatformAlert('Error', 'Failed to refresh progress data');
     } finally {
       setRefreshing(false);
     }
@@ -159,108 +175,56 @@ export const useProgressScreen = (navigation: any) => {
 
   const handleShareProgress = async () => {
     const currentWeight = progressStats?.weightChange?.current;
-    const weightDisplay = currentWeight
-      ? `${currentWeight.toFixed(1)} kg`
-      : "Not recorded";
+    const displayWeight = toDisplayWeight(currentWeight, weightUnit);
+    const weightDisplay =
+      displayWeight != null ? `${displayWeight.toFixed(1)} ${weightUnit}` : 'Not recorded';
     const bmi = calculatedMetrics?.calculatedBMI
       ? calculatedMetrics.calculatedBMI.toFixed(1)
-      : "Not calculated";
+      : 'Not calculated';
     const message = `My FitAI Progress Update!\n\nCurrent Weight: ${weightDisplay}\nBMI: ${bmi}\n\nTrack your fitness journey with FitAI!`;
 
     try {
-      await Share.share({ message, title: "My FitAI Progress" });
+      await Share.share({ message, title: 'My FitAI Progress' });
     } catch {
       if (
-        Platform.OS === "web" &&
-        typeof navigator !== "undefined" &&
-        navigator.clipboard
+        Platform.OS === 'web' &&
+        typeof globalThis !== 'undefined' &&
+        'navigator' in globalThis &&
+        globalThis.navigator?.clipboard
       ) {
-        await navigator.clipboard.writeText(message).catch((err) => {
-          console.error("[ProgressScreen] Clipboard write failed:", err);
+        await globalThis.navigator.clipboard.writeText(message).catch((err) => {
+          console.error('[ProgressScreen] Clipboard write failed:', err);
         });
       }
     }
   };
 
-  // SSOT fix: achievements are derived from the same store-based values used
-  // above instead of a stale `weeklyProgress` local state shadow.
-  const achievements = useMemo(
-    () => [
-      {
-        id: "first-workout",
-        title: "First Workout",
-        description: "Complete your first workout",
-        iconName: "barbell-outline",
-        date: workoutsCompleted > 0 ? "Completed" : "Not yet",
-        completed: workoutsCompleted > 0,
-        category: "Milestone",
-        points: 25,
-        rarity: "common",
-      },
-      {
-        id: "first-meal",
-        title: "First Meal",
-        description: "Complete your first meal",
-        iconName: "restaurant-outline",
-        date: mealsCompleted > 0 ? "Completed" : "Not yet",
-        completed: mealsCompleted > 0,
-        category: "Nutrition",
-        points: 15,
-        rarity: "common",
-      },
-      {
-        id: "meal-streak",
-        title: "Meal Master",
-        description: "Complete 5 meals in a row",
-        iconName: "nutrition-outline",
-        date: mealsCompleted >= 5 ? "Completed" : "Not yet",
-        completed: mealsCompleted >= 5,
-        category: "Nutrition",
-        points: 50,
-        rarity: "uncommon",
-        progress: mealsCompleted,
-        target: 5,
-      },
-      {
-        id: "week-streak",
-        title: "Week Warrior",
-        description: "Maintain a 7-day streak",
-        iconName: "flame-outline",
-        date: currentStreak >= 7 ? "Completed" : "Not yet",
-        completed: currentStreak >= 7,
-        category: "Consistency",
-        points: 100,
-        rarity: "uncommon",
-        progress: currentStreak,
-        target: 7,
-      },
-      {
-        id: "weight-logged",
-        title: "Weight Tracker",
-        description: "Log your first weight entry",
-        iconName: "scale-outline",
-        date: progressEntries.length > 0 ? "Completed" : "Not yet",
-        completed: progressEntries.length > 0,
-        category: "Milestone",
-        points: 20,
-        rarity: "common",
-      },
-      {
-        id: "weight-5-entries",
-        title: "Consistent Tracker",
-        description: "Log weight 5 times",
-        iconName: "analytics-outline",
-        date: progressEntries.length >= 5 ? "Completed" : "Not yet",
-        completed: progressEntries.length >= 5,
-        category: "Milestone",
-        points: 75,
-        rarity: "uncommon",
-        progress: progressEntries.length,
-        target: 5,
-      },
-    ],
-    [workoutsCompleted, mealsCompleted, currentStreak, progressEntries.length],
+  const achievementItems = useMemo(
+    () => buildAchievementViewModels(achievementDefinitions, userAchievements),
+    [achievementDefinitions, userAchievements]
   );
+  const achievements = useMemo(
+    () =>
+      achievementItems.slice(0, 6).map((achievement) => ({
+        id: achievement.id,
+        title: achievement.title,
+        description: achievement.description,
+        iconName: achievement.iconName,
+        date: achievement.unlockedAt || '',
+        completed: achievement.completed,
+        category: achievement.categoryLabel,
+        points: achievement.points,
+        rarity: achievement.tier,
+        progress: achievement.progress,
+        target: achievement.target,
+      })),
+    [achievementItems]
+  );
+  const completedAchievementCount = useMemo(
+    () => achievementItems.filter((achievement) => achievement.completed).length,
+    [achievementItems]
+  );
+  const totalAchievementCount = achievementItems.length;
 
   return {
     state: {
@@ -289,9 +253,12 @@ export const useProgressScreen = (navigation: any) => {
       progressEntries,
       progressStats,
       weightHistory,
+      weightUnit,
     },
     computed: {
       achievements,
+      completedAchievementCount,
+      totalAchievementCount,
     },
     actions: {
       setShowWeightModal,

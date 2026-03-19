@@ -1,17 +1,16 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Platform } from "react-native";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import {
   useNutritionStore,
   useAppStateStore,
-  useUserStore,
   useAchievementStore,
   DayName,
 } from "../stores";
 import { useProfileStore } from "../stores/profileStore";
+import { useUserStore } from "../stores/userStore";
 import { aiService } from "../ai";
 import { completionTrackingService } from "../services/completionTracking";
-import { supabase } from "../services/supabase";
 import { WeeklyMealPlan, DayMeal } from "../types/ai";
 import { crudOperations } from "../services/crudOperations";
 import { useCalculatedMetrics } from "./useCalculatedMetrics";
@@ -20,6 +19,11 @@ import { useAuth } from "./useAuth";
 import { useSubscriptionStore } from "../stores/subscriptionStore";
 // usePaywall import removed — triggerPaywall now via subscriptionStore
 import { mealMotivationService } from "../features/nutrition/MealMotivation";
+import {
+  buildLegacyDietPreferences,
+  buildLegacyFitnessGoals,
+  buildLegacyPersonalInfo,
+} from "../utils/profileLegacyAdapter";
 
 export const useMealPlanning = (navigation: any) => {
   const [asyncJob, setAsyncJob] = useState<{
@@ -49,41 +53,40 @@ export const useMealPlanning = (navigation: any) => {
     loadWeeklyMealPlan,
     loadData: loadNutritionStoreData,
   } = useNutritionStore();
+  const profile = useUserStore((state) => state.profile);
 
   const { selectedDay } = useAppStateStore();
-  const { profile } = useUserStore();
   const { user } = useAuth();
   // SSOT: profileStore is authoritative for all onboarding data
-  const { bodyAnalysis, personalInfo: profilePersonalInfo, workoutPreferences: profileWorkoutPreferences, dietPreferences: profileDietPreferences } = useProfileStore();
+  const {
+    bodyAnalysis,
+    personalInfo: profilePersonalInfo,
+    workoutPreferences: profileWorkoutPreferences,
+    dietPreferences: profileDietPreferences,
+  } = useProfileStore();
   const { currentStreak: achievementStreak } = useAchievementStore();
 
-  // SSOT: Build merged fitnessGoals — profileStore.workoutPreferences is authoritative
-  const mergedFitnessGoals = profileWorkoutPreferences
-    ? {
-        primary_goals: profileWorkoutPreferences.primary_goals || profile?.fitnessGoals?.primary_goals || [],
-        primaryGoals: profileWorkoutPreferences.primary_goals || profile?.fitnessGoals?.primaryGoals || [],
-        experience: profileWorkoutPreferences.intensity || profile?.fitnessGoals?.experience || 'beginner',
-        experience_level: profileWorkoutPreferences.intensity || profile?.fitnessGoals?.experience_level || 'beginner',
-        time_commitment: String(profileWorkoutPreferences.time_preference || profile?.fitnessGoals?.time_commitment || 45),
-        timeCommitment: String(profileWorkoutPreferences.time_preference || profile?.fitnessGoals?.timeCommitment || 45),
-        preferred_equipment: profileWorkoutPreferences.equipment || profile?.fitnessGoals?.preferred_equipment,
-        target_areas: profile?.fitnessGoals?.target_areas,
-      }
-    : profile?.fitnessGoals;
-
-  // SSOT: Build merged dietPreferences — profileStore.dietPreferences is authoritative
-  const mergedDietPreferences = profileDietPreferences
-    ? {
-        allergies: profileDietPreferences.allergies || profile?.dietPreferences?.allergies || [],
-        dietType: profileDietPreferences.diet_type || (profile?.dietPreferences as any)?.dietType || 'non-veg',
-        diet_type: profileDietPreferences.diet_type || (profile?.dietPreferences as any)?.diet_type,
-        restrictions: profileDietPreferences.restrictions || profile?.dietPreferences?.restrictions || [],
-        dislikes: (profile?.dietPreferences as any)?.dislikes || [],
-      }
-    : profile?.dietPreferences;
+  const legacyPersonalInfo = useMemo(
+    () =>
+      buildLegacyPersonalInfo({
+        personalInfo: profilePersonalInfo,
+        bodyAnalysis,
+        workoutPreferences: profileWorkoutPreferences,
+      }),
+    [profilePersonalInfo, bodyAnalysis, profileWorkoutPreferences],
+  );
+  const mergedFitnessGoals = useMemo(
+    () => buildLegacyFitnessGoals(profileWorkoutPreferences, profile),
+    [profileWorkoutPreferences, profile],
+  );
+  const mergedDietPreferences = useMemo(
+    () => buildLegacyDietPreferences(profileDietPreferences, profile),
+    [profileDietPreferences, profile],
+  );
 
   const { getCalorieTarget } = useCalculatedMetrics();
-  const { canUseFeature, incrementUsage, triggerPaywall } = useSubscriptionStore();
+  const { canUseFeature, incrementUsage, triggerPaywall } =
+    useSubscriptionStore();
 
   const { dietPreferences, loadDailyNutrition } = useNutritionData();
 
@@ -146,7 +149,7 @@ export const useMealPlanning = (navigation: any) => {
       `Your personalized 7-day meal plan "${weeklyPlan.planTitle}" is ready!`,
       [{ text: "View Plan", onPress: () => {} }],
     );
-    incrementUsage('ai_generation');
+    incrementUsage("ai_generation");
   };
 
   const startJobPolling = (jobId: string) => {
@@ -188,10 +191,10 @@ export const useMealPlanning = (navigation: any) => {
 
         if (status === "failed") {
           setAiError(error || "Meal plan generation failed");
-        crossPlatformAlert(
-          "Generation Failed",
-          error || "Failed to generate meal plan.",
-        );
+          crossPlatformAlert(
+            "Generation Failed",
+            error || "Failed to generate meal plan.",
+          );
           cleanupPolling();
           return;
         }
@@ -203,7 +206,7 @@ export const useMealPlanning = (navigation: any) => {
 
         if (pollAttempt < maxAttempts) scheduleNextPoll();
         else handlePollTimeout();
-      } catch (err) {
+      } catch {
         if (pollAttempt < maxAttempts) scheduleNextPoll();
         else handlePollTimeout();
       }
@@ -235,6 +238,7 @@ export const useMealPlanning = (navigation: any) => {
     asyncJobPollingRef.current = setTimeout(poll, initialInterval);
   };
 
+  // eslint-disable-next-line no-unused-vars
   const generateWeeklyMealPlan = async (
     setShowGuestSignUp: (show: boolean) => void,
   ) => {
@@ -254,9 +258,12 @@ export const useMealPlanning = (navigation: any) => {
     }
 
     const missingItems = [];
-    // SSOT: check profileStore fields first; profile (userStore) is legacy fallback
-    if (!profilePersonalInfo && !profile?.personalInfo) missingItems.push("Personal Information");
-    if (!mergedFitnessGoals?.primary_goals?.length && !mergedFitnessGoals?.primaryGoals?.length) missingItems.push("Fitness Goals");
+    if (!legacyPersonalInfo) missingItems.push("Personal Information");
+    if (
+      !mergedFitnessGoals?.primary_goals?.length &&
+      !mergedFitnessGoals?.primaryGoals?.length
+    )
+      missingItems.push("Fitness Goals");
     if (!mergedDietPreferences && !dietPreferences)
       missingItems.push("Diet Preferences");
 
@@ -265,8 +272,10 @@ export const useMealPlanning = (navigation: any) => {
       return;
     }
 
-    if (!canUseFeature('ai_generation')) {
-      triggerPaywall("You've used your free AI generation for this month. Upgrade to Pro for unlimited meal plans.");
+    if (!canUseFeature("ai_generation")) {
+      triggerPaywall(
+        "You've used your free AI generation for this month. Upgrade to Pro for unlimited meal plans.",
+      );
       return;
     }
 
@@ -278,13 +287,12 @@ export const useMealPlanning = (navigation: any) => {
       if (!userCalorieTarget) throw new Error("Calorie target not calculated");
 
       const response = await aiService.generateWeeklyMealPlanAsync(
-        profilePersonalInfo || profile!.personalInfo,
-        mergedFitnessGoals || profile!.fitnessGoals,
+        legacyPersonalInfo!,
+        mergedFitnessGoals!,
         1,
         {
-          bodyMetrics: bodyAnalysis || profile?.bodyMetrics || undefined,
+          bodyMetrics: bodyAnalysis || undefined,
           dietPreferences: (mergedDietPreferences ||
-            profile!.dietPreferences ||
             dietPreferences ||
             undefined) as any,
           calorieTarget: userCalorieTarget,
@@ -313,8 +321,13 @@ export const useMealPlanning = (navigation: any) => {
       }
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error);
-      if (errMsg.toLowerCase().includes('feature limit exceeded') || errMsg.toLowerCase().includes('limit exceeded')) {
-        triggerPaywall("You've reached your AI generation limit. Upgrade to Pro for unlimited access.");
+      if (
+        errMsg.toLowerCase().includes("feature limit exceeded") ||
+        errMsg.toLowerCase().includes("limit exceeded")
+      ) {
+        triggerPaywall(
+          "You've reached your AI generation limit. Upgrade to Pro for unlimited access.",
+        );
       } else {
         setAiError(errMsg);
         crossPlatformAlert("Error", "Failed to start meal plan generation.");
@@ -435,8 +448,8 @@ export const useMealPlanning = (navigation: any) => {
     ).length;
 
     const motivationConfig = {
-      personalInfo: profilePersonalInfo || profile?.personalInfo,
-      fitnessGoals: mergedFitnessGoals || profile?.fitnessGoals,
+      personalInfo: legacyPersonalInfo || undefined,
+      fitnessGoals: mergedFitnessGoals || undefined,
       currentStreak: achievementStreak,
       completedMealsToday,
     };
@@ -491,7 +504,7 @@ export const useMealPlanning = (navigation: any) => {
       } else {
         crossPlatformAlert("Error", "Failed to mark meal as complete.");
       }
-    } catch (error) {
+    } catch {
       crossPlatformAlert("Error", "Failed to mark meal as complete.");
     }
   };

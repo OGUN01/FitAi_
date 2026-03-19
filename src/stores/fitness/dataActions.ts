@@ -37,7 +37,7 @@ export const createDataActions = (
         if (user?.user?.id) {
           const { data: sessions } = await supabase
             .from("workout_sessions")
-            .select("id, workout_id, workout_name, workout_type, total_duration_minutes, calories_burned, completed_at, started_at, is_extra, exercises_completed, is_completed")
+            .select("id, workout_id, planned_day_key, plan_slot_key, workout_name, workout_type, total_duration_minutes, calories_burned, completed_at, started_at, is_extra, exercises_completed, is_completed")
             .eq("user_id", user.user.id)
             .eq("is_completed", true)
             .order("completed_at", { ascending: false })
@@ -47,9 +47,16 @@ export const createDataActions = (
             // Restore workoutProgress (for plan completion checkmarks)
             const restoredProgress: Record<string, WorkoutProgress> = {};
             sessions.forEach((s) => {
-              if (s.workout_id) {
-                restoredProgress[s.workout_id] = {
-                  workoutId: s.workout_id,
+              const planWorkout = get().weeklyWorkoutPlan?.workouts?.find(
+                (workout) =>
+                  workout.id === s.workout_id ||
+                  workout.dayOfWeek === s.planned_day_key,
+              );
+              const resolvedWorkoutId =
+                planWorkout?.id || s.workout_id || (s.is_extra ? s.id : null);
+              if (resolvedWorkoutId) {
+                restoredProgress[resolvedWorkoutId] = {
+                  workoutId: resolvedWorkoutId,
                   progress: 100,
                   completedAt: s.completed_at,
                   sessionId: s.id,
@@ -65,6 +72,11 @@ export const createDataActions = (
             const hydrated: CompletedSession[] = sessions
               .filter((s) => !existingIds.has(s.id))
               .map((s) => {
+                const planWorkout = get().weeklyWorkoutPlan?.workouts?.find(
+                  (workout) =>
+                    workout.id === s.workout_id ||
+                    workout.dayOfWeek === s.planned_day_key,
+                );
                 // Compute Monday of the week for completed_at
                 const d = new Date(s.completed_at);
                 const day = d.getDay();
@@ -86,7 +98,9 @@ export const createDataActions = (
                 return {
                   sessionId: s.id,
                   type: s.is_extra ? ('extra' as const) : ('planned' as const),
-                  workoutId: s.workout_id || s.id,
+                  workoutId: planWorkout?.id || s.workout_id || s.id,
+                  plannedDayKey: s.is_extra ? undefined : s.planned_day_key || planWorkout?.dayOfWeek || undefined,
+                  planSlotKey: s.is_extra ? undefined : s.plan_slot_key || undefined,
                   workoutSnapshot: {
                     title: s.workout_name || 'Workout',
                     category: s.workout_type || 'general',
@@ -101,9 +115,30 @@ export const createDataActions = (
               });
 
             if (hydrated.length > 0) {
-              set((state) => ({
-                completedSessions: [...hydrated, ...state.completedSessions],
-              }));
+              set((state) => {
+                const hydratedById = new Set(
+                  hydrated.map((session) => session.sessionId),
+                );
+                const hydratedPlannedKeys = new Set(
+                  hydrated
+                    .filter((session) => session.type === "planned")
+                    .map(
+                      (session) =>
+                        `${session.weekStart}:${session.planSlotKey || session.workoutId}`,
+                    ),
+                );
+                const preservedLocalSessions = state.completedSessions.filter(
+                  (session) => {
+                    if (hydratedById.has(session.sessionId)) return false;
+                    if (session.type === "extra") return true;
+                    const localKey = `${session.weekStart}:${session.planSlotKey || session.workoutId}`;
+                    return !hydratedPlannedKeys.has(localKey);
+                  },
+                );
+                return {
+                  completedSessions: [...hydrated, ...preservedLocalSessions],
+                };
+              });
             }
           }
         }

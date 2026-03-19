@@ -2,8 +2,10 @@ import { useState, useCallback, useMemo, useRef } from "react";
 import { Platform, Vibration } from "react-native";
 import { DayWorkout } from "../types/ai";
 import completionTrackingService from "../services/completionTracking";
-import { calculateWorkoutCalories, ExerciseCalorieInput } from "../services/calorieCalculator";
-import { useUserStore } from "../stores/userStore"; // legacy fallback for weight — profileStore.bodyAnalysis is checked first
+import {
+  calculateWorkoutCalories,
+  ExerciseCalorieInput,
+} from "../services/calorieCalculator";
 import { useProfileStore } from "../stores/profileStore";
 
 interface ExerciseProgress {
@@ -26,13 +28,17 @@ const safeNumber = (value: any, fallback: number = 0): number => {
   return isNaN(num) ? fallback : num;
 };
 
-export const useWorkoutSession = (workout: DayWorkout, sessionId?: string, initialExerciseIndex: number = 0) => {
-  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(initialExerciseIndex);
+export const useWorkoutSession = (
+  workout: DayWorkout,
+  sessionId?: string,
+  initialExerciseIndex: number = 0,
+) => {
+  const [currentExerciseIndex, setCurrentExerciseIndex] =
+    useState(initialExerciseIndex);
   const [exerciseProgress, setExerciseProgress] = useState<ExerciseProgress[]>(
     workout.exercises.map((exercise, index) => ({
       exerciseIndex: index,
       completedSets: new Array(safeNumber(exercise?.sets, 3)).fill(
-        // Pre-mark sets as completed for exercises before the resume point
         index < initialExerciseIndex,
       ),
       isCompleted: index < initialExerciseIndex,
@@ -85,11 +91,6 @@ export const useWorkoutSession = (workout: DayWorkout, sessionId?: string, initi
       0,
     );
 
-    // MET-based calories from actually completed sets — single source of truth.
-    // We use the same calculateWorkoutCalories used at workout completion so
-    // in-session and final calories are always consistent.
-    // estimatedCalories is intentionally 0 in AI-generated plans, so we cannot
-    // use it as a base. MET + user weight is the only accurate source.
     const completedInputs: ExerciseCalorieInput[] = [];
     exerciseProgress.forEach((ep, idx) => {
       const completedSets = ep?.completedSets?.filter(Boolean).length || 0;
@@ -110,10 +111,12 @@ export const useWorkoutSession = (workout: DayWorkout, sessionId?: string, initi
     let caloriesBurned = 0;
     if (completedInputs.length > 0) {
       const userWeight =
-        useProfileStore.getState().bodyAnalysis?.current_weight_kg ||
-        useUserStore.getState().profile?.bodyMetrics?.current_weight_kg;
+        useProfileStore.getState().bodyAnalysis?.current_weight_kg;
       if (userWeight && userWeight > 0) {
-        caloriesBurned = calculateWorkoutCalories(completedInputs, userWeight).totalCalories;
+        caloriesBurned = calculateWorkoutCalories(
+          completedInputs,
+          userWeight,
+        ).totalCalories;
       }
     }
 
@@ -123,12 +126,7 @@ export const useWorkoutSession = (workout: DayWorkout, sessionId?: string, initi
       setsCompleted: Math.max(0, setsCompleted),
       caloriesBurned: Math.max(0, caloriesBurned),
     };
-  }, [
-    currentTime,
-    workoutStartTime,
-    exerciseProgress,
-    workout.exercises,
-  ]);
+  }, [currentTime, workoutStartTime, exerciseProgress, workout.exercises]);
 
   const nextExercise = useMemo(() => {
     if (currentExerciseIndex < totalExercises - 1) {
@@ -137,8 +135,6 @@ export const useWorkoutSession = (workout: DayWorkout, sessionId?: string, initi
     return null;
   }, [currentExerciseIndex, totalExercises, workout.exercises]);
 
-  // Keep a ref to the latest workoutStats so handleSetComplete can read it
-  // without being recreated every second when currentTime ticks.
   const workoutStatsRef = useRef(workoutStats);
   workoutStatsRef.current = workoutStats;
 
@@ -156,11 +152,9 @@ export const useWorkoutSession = (workout: DayWorkout, sessionId?: string, initi
           ...newProgress[currentExerciseIndex],
           completedSets: [...newProgress[currentExerciseIndex].completedSets],
         };
-        updated.completedSets[setIndex] =
-          !updated.completedSets[setIndex];
+        updated.completedSets[setIndex] = !updated.completedSets[setIndex];
 
-        const allSetsCompleted =
-          updated.completedSets.every(Boolean);
+        const allSetsCompleted = updated.completedSets.every(Boolean);
         updated.isCompleted = allSetsCompleted;
 
         if (allSetsCompleted && !updated.endTime) {
@@ -193,10 +187,7 @@ export const useWorkoutSession = (workout: DayWorkout, sessionId?: string, initi
         );
 
         const currentSets = safeNumber(currentExercise.sets, 3);
-        if (
-          updated.completedSets[setIndex] &&
-          setIndex < currentSets - 1
-        ) {
+        if (updated.completedSets[setIndex] && setIndex < currentSets - 1) {
           const restTime = safeNumber(currentExercise.restTime, 60);
           setIsRestTime(true);
           setRestTimeRemaining(restTime);
@@ -222,7 +213,6 @@ export const useWorkoutSession = (workout: DayWorkout, sessionId?: string, initi
         }
       } catch (error) {
         console.error("Failed to update workout progress:", error);
-        // Silently handle - user sees stale progress but workout continues
       }
     },
     [
@@ -231,8 +221,6 @@ export const useWorkoutSession = (workout: DayWorkout, sessionId?: string, initi
       currentExercise,
       sessionId,
       workout.id,
-      // workoutStatsRef is a ref — intentionally omitted from deps so this
-      // callback is NOT recreated every second when currentTime ticks.
       totalExercises,
     ],
   );
@@ -283,7 +271,6 @@ export const useWorkoutSession = (workout: DayWorkout, sessionId?: string, initi
   }, [exerciseProgress, currentExerciseIndex, handleSetComplete]);
 
   return {
-    // State
     currentExerciseIndex,
     exerciseProgress,
     isRestTime,
@@ -294,16 +281,12 @@ export const useWorkoutSession = (workout: DayWorkout, sessionId?: string, initi
     showNextExercisePreview,
     showExerciseSession,
     showExerciseTimer,
-
-    // Computed
     currentExercise,
     currentProgress,
     totalExercises,
     overallProgress,
     workoutStats,
     nextExercise,
-
-    // Actions
     setCurrentTime,
     setIsRestTime,
     setShowInstructionModal,
@@ -314,8 +297,6 @@ export const useWorkoutSession = (workout: DayWorkout, sessionId?: string, initi
     goToPreviousExercise,
     completeSetAfterTimer,
     completeSetFromSession,
-
-    // Refs
     nextExercisePreviewTimeoutRef,
   };
 };

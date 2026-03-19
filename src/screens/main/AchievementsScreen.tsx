@@ -6,6 +6,7 @@ import {
   Text,
   TouchableOpacity,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeIn } from "react-native-reanimated";
@@ -130,19 +131,29 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
           onSelectCategory={setSelectedCategory}
         />
 
-        <Animated.FlatList
-          data={sortedAchievements}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          entering={Platform.OS !== 'web' ? FadeIn.duration(300) : undefined}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No achievements found</Text>
-            </View>
-          }
-        />
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator
+              size="large"
+              color={ResponsiveTheme.colors.primary}
+            />
+            <Text style={styles.loadingText}>Loading achievements...</Text>
+          </View>
+        ) : (
+          <Animated.FlatList
+            data={sortedAchievements}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            entering={Platform.OS !== 'web' ? FadeIn.duration(300) : undefined}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No achievements found</Text>
+              </View>
+            }
+          />
+        )}
 
         <AchievementDetailModal
           visible={modalVisible}
@@ -188,6 +199,17 @@ const styles = StyleSheet.create({
   emptyContainer: {
     alignItems: "center",
     marginTop: rh(10),
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: rh(10),
+  },
+  loadingText: {
+    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: rf(1.6),
+    marginTop: rh(2),
   },
   emptyText: {
     color: ResponsiveTheme.colors.textSecondary,

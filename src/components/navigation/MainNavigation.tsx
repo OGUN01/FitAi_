@@ -28,6 +28,8 @@ import { ResponsiveTheme } from "../../utils/constants";
 import { DayWorkout, DayMeal } from "../../types/ai";
 import { useAppConfig } from "../../hooks/useAppConfig";
 
+type MainTabKey = "home" | "fitness" | "diet" | "profile" | "analytics";
+
 interface MainNavigationProps {
   initialTab?: string;
 }
@@ -37,6 +39,9 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
 }) => {
   const { config: appConfig } = useAppConfig();
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [tabParams, setTabParams] = useState<Partial<Record<MainTabKey, any>>>(
+    {},
+  );
   const [workoutSession, setWorkoutSession] = useState<{
     isActive: boolean;
     workout?: DayWorkout;
@@ -84,9 +89,50 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     isActive: boolean;
     barcode?: string;
   }>({ isActive: false });
+  const clearTransientScreens = () => {
+    setWorkoutSession({ isActive: false, resumeExerciseIndex: undefined });
+    setMealSession({ isActive: false });
+    setCookingSession({ isActive: false });
+    setOnboardingEditSession({ isActive: false });
+    setProgressSession({ isActive: false });
+    setProgressTrendsSession({ isActive: false });
+    setAchievementsSession({ isActive: false });
+    setContributeFoodSession({ isActive: false });
+  };
+  const resolveTabKey = (screen: string): MainTabKey | null => {
+    switch (screen) {
+      case "Home":
+        return "home";
+      case "Workout":
+      case "Fitness":
+        return "fitness";
+      case "Diet":
+        return "diet";
+      case "Profile":
+        return "profile";
+      case "Analytics":
+        return appConfig.featureAnalytics ? "analytics" : "home";
+      default:
+        return null;
+    }
+  };
+  const normalizeSettingsScreen = (screen?: string) => {
+    if (!screen) return undefined;
+    return screen.trim().toLowerCase();
+  };
   // Navigation object to pass to screens
   const navigation = {
     navigate: (screen: string, params?: any) => {
+      const tabKey = resolveTabKey(screen);
+      if (tabKey) {
+        clearTransientScreens();
+        setActiveTab(tabKey);
+        setTabParams((prev) => ({
+          ...prev,
+          [tabKey]: params,
+        }));
+        return;
+      }
       if (screen === "WorkoutSession") {
         setWorkoutSession({
           isActive: true,
@@ -113,6 +159,16 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         setProgressTrendsSession({ isActive: true });
       } else if (screen === "Achievements") {
         setAchievementsSession({ isActive: true });
+      } else if (screen === "Settings") {
+        clearTransientScreens();
+        setActiveTab("profile");
+        setTabParams((prev) => ({
+          ...prev,
+          profile: {
+            ...(prev.profile || {}),
+            settingsScreen: normalizeSettingsScreen(params?.screen),
+          },
+        }));
       } else if (screen === 'ContributeFood') {
         if (!appConfig.featureFoodContributions) {
           crossPlatformAlert(
@@ -126,14 +182,17 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       }
     },
     goBack: () => {
-      setWorkoutSession({ isActive: false, resumeExerciseIndex: undefined });
-      setMealSession({ isActive: false });
-      setCookingSession({ isActive: false });
-      setOnboardingEditSession({ isActive: false });
-      setProgressSession({ isActive: false });
-      setProgressTrendsSession({ isActive: false });
-      setAchievementsSession({ isActive: false });
-      setContributeFoodSession({ isActive: false });
+      clearTransientScreens();
+    },
+    setParams: (params: any) => {
+      const currentTab = activeTab as MainTabKey;
+      setTabParams((prev) => ({
+        ...prev,
+        [currentTab]: {
+          ...(prev[currentTab] || {}),
+          ...params,
+        },
+      }));
     },
   };
 
@@ -176,6 +235,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     onboardingEditSession.isActive,
     progressSession.isActive,
     progressTrendsSession.isActive,
+    achievementsSession.isActive,
     contributeFoodSession.isActive,
   ]);
 
@@ -184,6 +244,54 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       setActiveTab("home");
     }
   }, [activeTab, appConfig.featureAnalytics]);
+
+  useEffect(() => {
+    if (!contributeFoodSession.isActive || appConfig.featureFoodContributions) {
+      return;
+    }
+
+    crossPlatformAlert(
+      "Feature Unavailable",
+      "Food contributions were disabled while this screen was open. Returning to the previous screen.",
+      [{ text: "OK" }],
+    );
+    setContributeFoodSession({ isActive: false });
+  }, [appConfig.featureFoodContributions, contributeFoodSession.isActive]);
+
+  const handleHomeNavigation = (
+    tab: string,
+    params?: Record<string, unknown>,
+  ) => {
+    if (tab === "achievements") {
+      setAchievementsSession({ isActive: true });
+      return;
+    }
+
+    if (tab === "progress") {
+      setProgressSession({ isActive: true });
+      return;
+    }
+
+    if (tab === "progressTrends") {
+      setProgressTrendsSession({ isActive: true });
+      return;
+    }
+
+    if (tab === "analytics" && !appConfig.featureAnalytics) {
+      crossPlatformAlert(
+        "Feature Unavailable",
+        "Analytics are currently disabled.",
+        [{ text: "OK" }],
+      );
+      return;
+    }
+
+    setActiveTab(tab);
+    setTabParams((prev) => ({
+      ...prev,
+      [tab as MainTabKey]: params,
+    }));
+  };
 
   const tabs = [
     {
@@ -323,19 +431,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     switch (activeTab) {
       case "home":
         return (
-          <HomeScreen
-            onNavigateToTab={(tab) => {
-              if (tab === "achievements") {
-                setAchievementsSession({ isActive: true });
-              } else if (tab === "progress") {
-                setProgressSession({ isActive: true });
-              } else if (tab === "progressTrends") {
-                setProgressTrendsSession({ isActive: true });
-              } else {
-                setActiveTab(tab);
-              }
-            }}
-          />
+          <HomeScreen onNavigateToTab={handleHomeNavigation} />
         );
       case "fitness":
         return <FitnessScreen navigation={navigation} />;
@@ -353,25 +449,22 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         return <AnalyticsScreen navigation={navigation} />;
       case "diet":
         return (
-          <DietScreen navigation={navigation} isActive={activeTab === "diet"} />
+          <DietScreen
+            navigation={navigation}
+            route={{ params: tabParams.diet }}
+            isActive={activeTab === "diet"}
+          />
         );
       case "profile":
-        return <ProfileScreen navigation={navigation} />;
+        return (
+          <ProfileScreen
+            navigation={navigation}
+            route={{ params: tabParams.profile }}
+          />
+        );
       default:
         return (
-          <HomeScreen
-            onNavigateToTab={(tab) => {
-              if (tab === "achievements") {
-                setAchievementsSession({ isActive: true });
-              } else if (tab === "progress") {
-                setProgressSession({ isActive: true });
-              } else if (tab === "progressTrends") {
-                setProgressTrendsSession({ isActive: true });
-              } else {
-                setActiveTab(tab);
-              }
-            }}
-          />
+          <HomeScreen onNavigateToTab={handleHomeNavigation} />
         );
     }
   };

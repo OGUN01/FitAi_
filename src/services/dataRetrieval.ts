@@ -6,6 +6,15 @@ import { useProfileStore } from "../stores/profileStore";
 import { crudOperations } from "./crudOperations";
 import { WeeklyWorkoutPlan, DayWorkout, WeeklyMealPlan, DayMeal } from "../ai";
 import { logger } from "../utils/logger";
+import {
+  findCompletedSessionForWorkout,
+  getCompletedSessionsForDate,
+} from "../utils/workoutIdentity";
+import {
+  getCurrentDayName,
+  getCurrentWeekStart,
+  getWeekStartForDate,
+} from "../utils/weekUtils";
 
 export interface TodaysData {
   workout: DayWorkout | null;
@@ -45,25 +54,24 @@ class DataRetrievalService {
     const fitnessStore = useFitnessStore.getState();
     const nutritionStore = useNutritionStore.getState();
 
-    const today = new Date();
-    const dayNames = [
-      "sunday",
-      "monday",
-      "tuesday",
-      "wednesday",
-      "thursday",
-      "friday",
-      "saturday",
-    ];
-    const todayName = dayNames[today.getDay()];
+    const todayName = getCurrentDayName();
 
     logger.debug("📊 getTodaysData - Today is:", { todayName });
 
-    // Get today's workout
-    const todaysWorkout =
-      fitnessStore.weeklyWorkoutPlan?.workouts.find(
+    const todaysWorkouts =
+      fitnessStore.weeklyWorkoutPlan?.workouts.filter(
         (workout) => workout.dayOfWeek === todayName,
-      ) || null;
+      ) || [];
+    const todaysWorkout =
+      todaysWorkouts.find(
+        (workout) =>
+          !findCompletedSessionForWorkout({
+            completedSessions: fitnessStore.completedSessions,
+            workout,
+            plan: fitnessStore.weeklyWorkoutPlan,
+            weekStart: getCurrentWeekStart(),
+          }),
+      ) || todaysWorkouts[0] || null;
 
     // Get today's meals
     const todaysMeals =
@@ -83,8 +91,23 @@ class DataRetrievalService {
     });
 
     // Calculate progress
-    const workoutProgress = todaysWorkout
-      ? fitnessStore.getWorkoutProgress(todaysWorkout.id)?.progress || 0
+    const workoutProgress = todaysWorkouts.length
+      ? Math.round(
+          todaysWorkouts.reduce((total, workout) => {
+            const completedSession = findCompletedSessionForWorkout({
+              completedSessions: fitnessStore.completedSessions,
+              workout,
+              plan: fitnessStore.weeklyWorkoutPlan,
+              weekStart: getCurrentWeekStart(),
+            });
+            return (
+              total +
+              (completedSession
+                ? 100
+                : fitnessStore.getWorkoutProgress(workout.id)?.progress || 0)
+            );
+          }, 0) / todaysWorkouts.length,
+        )
       : 0;
 
     const mealsCompleted = todaysMeals.filter((meal) => {
@@ -138,14 +161,7 @@ class DataRetrievalService {
     // source AnalyticsScreen and FitnessHeader use. workoutProgress can be
     // stale after forceWorkoutRegeneration() clears the record map.
     const totalWorkouts = fitnessStore.weeklyWorkoutPlan?.workouts.length || 0;
-    const currentWeekStart = (() => {
-      const d = new Date();
-      const day = d.getDay();
-      const diff = day === 0 ? -6 : 1 - day; // Monday-based week start
-      d.setDate(d.getDate() + diff);
-      d.setHours(0, 0, 0, 0);
-      return d.toISOString().split('T')[0];
-    })();
+    const currentWeekStart = getCurrentWeekStart();
     const workoutsCompleted = fitnessStore.completedSessions.filter(
       (s) => s.type === 'planned' && s.weekStart === currentWeekStart,
     ).length;
@@ -265,10 +281,10 @@ class DataRetrievalService {
     // Get all completion dates
     const completionDates = new Set<string>();
 
-    Object.values(fitnessStore.workoutProgress)
-      .filter((p) => p.completedAt)
-      .forEach((p) => {
-        const date = new Date(p.completedAt!).toDateString();
+    fitnessStore.completedSessions
+      .filter((session) => session.completedAt)
+      .forEach((session) => {
+        const date = new Date(session.completedAt).toDateString();
         completionDates.add(date);
       });
 

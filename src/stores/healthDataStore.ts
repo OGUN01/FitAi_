@@ -23,6 +23,31 @@ import {
   DataSource,
 } from "../services/healthConnect";
 import { weightTrackingService } from "../services/WeightTrackingService";
+import { useProfileStore } from "./profileStore";
+
+function mergeRecentWorkouts(
+  existing: HealthMetrics["recentWorkouts"],
+  incoming: HealthMetrics["recentWorkouts"],
+): HealthMetrics["recentWorkouts"] {
+  const seen = new Set<string>();
+  return [...incoming, ...existing]
+    .filter((workout) => {
+      const key = `${workout.source}:${workout.id}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 20);
+}
+
+function syncWeightToProfile(weight?: number) {
+  if (!weight || weight <= 0) return;
+  useProfileStore.getState().updateBodyAnalysis({
+    current_weight_kg: weight,
+  });
+  weightTrackingService.setWeight(weight);
+}
 
 // Re-export MetricSource for UI components
 export type { MetricSource, DataSource };
@@ -61,7 +86,7 @@ export interface HealthMetrics {
     duration: number;
     calories: number;
     date: string;
-    source: "FitAI" | "HealthKit" | "Manual" | "GoogleFit";
+    source: "FitAI" | "HealthKit" | "HealthConnect" | "Manual" | "GoogleFit";
   }>;
 
   // Timing
@@ -427,7 +452,7 @@ export const useHealthDataStore = create<HealthDataState>()(
                 activeCalories:
                   healthData.data?.activeCalories ??
                   state.metrics.activeCalories,
-                totalCalories:
+              totalCalories:
                   healthData.data?.totalCalories ?? state.metrics.totalCalories,
                 distance: healthData.data?.distance
                   ? healthData.data.distance / 1000
@@ -439,6 +464,17 @@ export const useHealthDataStore = create<HealthDataState>()(
                       0,
                     ) / 60
                   : state.metrics.sleepHours,
+                recentWorkouts: mergeRecentWorkouts(
+                  state.metrics.recentWorkouts,
+                  (healthData.data?.exerciseSessions || []).map((workout) => ({
+                    id: workout.id,
+                    type: workout.exerciseType,
+                    duration: workout.duration,
+                    calories: workout.calories || 0,
+                    date: workout.startTime,
+                    source: "HealthConnect" as const,
+                  })),
+                ),
                 lastUpdated: new Date().toISOString(),
                 sources: healthData.data?.sources ?? state.metrics.sources,
                 dataOrigins:
@@ -448,9 +484,7 @@ export const useHealthDataStore = create<HealthDataState>()(
               syncStatus: "success",
             }));
 
-            if (healthData.data?.weight) {
-              weightTrackingService.setWeight(healthData.data.weight);
-            }
+            syncWeightToProfile(healthData.data?.weight);
 
             // Log sources for debugging
 
@@ -492,32 +526,43 @@ export const useHealthDataStore = create<HealthDataState>()(
 
           set({ syncStatus: "syncing", syncError: undefined });
 
-          // Sync health data from HealthKit (using available method)
-          const syncResult: HealthSyncResult = {
-            success: true,
-            data: {} as HealthKitData,
-          };
+          const syncResult = await healthKitService.syncHealthDataFromHealthKit(
+            force ? 7 : 1,
+          );
 
-          if (syncResult.success && syncResult.data) {
+          const hasMeaningfulData =
+            !!syncResult.data &&
+            ((syncResult.data.steps ?? 0) > 0 ||
+              (syncResult.data.activeEnergy ?? 0) > 0 ||
+              !!syncResult.data.bodyWeight ||
+              !!syncResult.data.heartRate ||
+              !!syncResult.data.sleepHours ||
+              (syncResult.data.workouts?.length ?? 0) > 0);
+
+          if (syncResult.success && syncResult.data && hasMeaningfulData) {
             // Update metrics from HealthKit data
             const newMetrics: HealthMetrics = {
               ...get().metrics,
-              steps: syncResult.data.steps || 0,
-              activeCalories: syncResult.data.activeEnergy || 0,
-              weight: syncResult.data.bodyWeight,
-              heartRate: syncResult.data.heartRate,
-              sleepHours: syncResult.data.sleepHours,
-              recentWorkouts: [
-                ...get().metrics.recentWorkouts,
-                ...(syncResult.data.workouts?.map((workout: any) => ({
-                  id: workout.id || `workout_${Date.now()}`,
-                  type: workout.type || "unknown",
+              steps: syncResult.data.steps ?? get().metrics.steps,
+              activeCalories:
+                syncResult.data.activeEnergy ?? get().metrics.activeCalories,
+              weight: syncResult.data.bodyWeight ?? get().metrics.weight,
+              heartRate: syncResult.data.heartRate ?? get().metrics.heartRate,
+              sleepHours:
+                syncResult.data.sleepHours ?? get().metrics.sleepHours,
+              recentWorkouts: mergeRecentWorkouts(
+                get().metrics.recentWorkouts,
+                syncResult.data.workouts?.map((workout: any) => ({
+                  id:
+                    workout.id ||
+                    `${workout.activityType || "unknown"}_${workout.startDate || "unknown"}`,
+                  type: workout.activityType || "unknown",
                   duration: workout.duration || 0,
-                  calories: workout.caloriesBurned || 0,
+                  calories: workout.energyBurned || 0,
                   date: workout.startDate || new Date().toISOString(),
                   source: "HealthKit" as const,
-                })) || []),
-              ].slice(-20), // Keep only last 20 workouts
+                })) || [],
+              ),
               lastUpdated: new Date().toISOString(),
             };
 
@@ -528,9 +573,7 @@ export const useHealthDataStore = create<HealthDataState>()(
               syncError: undefined,
             });
 
-            if (syncResult.data.bodyWeight) {
-              weightTrackingService.setWeight(syncResult.data.bodyWeight);
-            }
+            syncWeightToProfile(syncResult.data.bodyWeight);
 
 
             // Generate health tip based on new data
@@ -539,7 +582,7 @@ export const useHealthDataStore = create<HealthDataState>()(
               set({ healthTipOfDay: insights[0] });
             }
           } else {
-            throw new Error(syncResult.error || "Sync failed");
+            throw new Error(syncResult.error || "No HealthKit data returned");
           }
         } catch (error) {
           console.error("❌ HealthKit sync failed:", error);
@@ -551,6 +594,7 @@ export const useHealthDataStore = create<HealthDataState>()(
       },
 
       updateHealthMetrics: (newMetrics: Partial<HealthMetrics>): void => {
+        syncWeightToProfile(newMetrics.weight);
         set((state) => ({
           metrics: {
             ...state.metrics,
@@ -1117,19 +1161,19 @@ export const useHealthDataStore = create<HealthDataState>()(
 
             // Add Google Fit workouts to recent workouts
             if (result.data.workouts) {
-              updatedMetrics.recentWorkouts = [
-                ...result.data.workouts.map((workout) => ({
-                  id: workout.id,
+              updatedMetrics.recentWorkouts = mergeRecentWorkouts(
+                currentMetrics.recentWorkouts,
+                result.data.workouts.map((workout) => ({
+                  id:
+                    workout.id ||
+                    `${workout.type || "unknown"}_${workout.startDate || "unknown"}`,
                   type: workout.type,
                   duration: workout.duration,
                   calories: workout.calories,
                   date: workout.startDate,
                   source: "GoogleFit" as const,
                 })),
-                ...currentMetrics.recentWorkouts
-                  .filter((w) => w.source !== "GoogleFit")
-                  .slice(0, 5),
-              ].slice(0, 10);
+              );
             }
 
             set({
@@ -1139,9 +1183,7 @@ export const useHealthDataStore = create<HealthDataState>()(
               syncError: undefined,
             });
 
-            if (result.data.weight) {
-              weightTrackingService.setWeight(result.data.weight);
-            }
+            syncWeightToProfile(result.data.weight);
 
           } else {
             set({

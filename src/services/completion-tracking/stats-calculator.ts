@@ -1,10 +1,14 @@
 import { useFitnessStore } from "../../stores/fitnessStore";
 import { useNutritionStore } from "../../stores/nutritionStore";
 import { CompletionStats, TodaysCompletions } from "./types";
-import { calculateActualCalories } from "./calorie-calculator";
 import { completeWorkout } from "./workout-completion";
 import { completeMeal } from "./meal-completion";
 import { EventEmitter } from "./event-emitter";
+import {
+  findCompletedSessionForWorkout,
+  getCompletedSessionsForDate,
+} from "../../utils/workoutIdentity";
+import { getCurrentDayName, getCurrentWeekStart } from "../../utils/weekUtils";
 
 export function getCompletionStats(): CompletionStats {
   const fitnessStore = useFitnessStore.getState();
@@ -14,24 +18,26 @@ export function getCompletionStats(): CompletionStats {
   const currentPlanIds = new Set(
     fitnessStore.weeklyWorkoutPlan?.workouts?.map((w) => w.id) || [],
   );
-  const completedWorkouts = Object.values(fitnessStore.workoutProgress).filter(
-    (p) => p.progress === 100 && currentPlanIds.has(p.workoutId),
-  ).length;
+  const currentWeekStart = getCurrentWeekStart();
+  const completedPlannedSessions = fitnessStore.completedSessions.filter(
+    (session) =>
+      session.type === "planned" &&
+      session.weekStart === currentWeekStart &&
+      currentPlanIds.has(session.workoutId),
+  );
+  const completedWorkouts = new Set(
+    completedPlannedSessions.map((session) => session.workoutId),
+  ).size;
 
   const totalMeals = nutritionStore.weeklyMealPlan?.meals.length || 0;
   const completedMeals = Object.values(nutritionStore.mealProgress).filter(
     (p) => p.progress === 100,
   ).length;
 
-  const caloriesBurned = Object.values(fitnessStore.workoutProgress)
-    .filter((p) => p.progress === 100)
-    .reduce((total, progress) => {
-      const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find(
-        (w) => w.id === progress.workoutId,
-      );
-      if (!workout) return total;
-      return total + calculateActualCalories(workout as any);
-    }, 0);
+  const caloriesBurned = completedPlannedSessions.reduce(
+    (total, session) => total + (session.caloriesBurned || 0),
+    0,
+  );
 
   const caloriesConsumed = Object.values(nutritionStore.mealProgress)
     .filter((p) => p.progress === 100)
@@ -63,27 +69,43 @@ export function getCompletionStats(): CompletionStats {
 }
 
 export function getTodaysCompletions(): TodaysCompletions {
-  const today = new Date();
-  const dayNames = [
-    "sunday",
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-  ];
-  const todayName = dayNames[today.getDay()];
+  const todayName = getCurrentDayName();
 
   const fitnessStore = useFitnessStore.getState();
   const nutritionStore = useNutritionStore.getState();
 
-  const todaysWorkout = fitnessStore.weeklyWorkoutPlan?.workouts.find(
-    (w) => w.dayOfWeek === todayName,
-  );
-  const workoutProgress = todaysWorkout
-    ? fitnessStore.getWorkoutProgress(todaysWorkout.id)
-    : null;
+  const todaysWorkouts =
+    fitnessStore.weeklyWorkoutPlan?.workouts.filter(
+      (w) => w.dayOfWeek === todayName,
+    ) || [];
+  const todaysWorkout =
+    todaysWorkouts.find(
+      (workout) =>
+        !findCompletedSessionForWorkout({
+          completedSessions: fitnessStore.completedSessions,
+          workout,
+          plan: fitnessStore.weeklyWorkoutPlan,
+          weekStart: getCurrentWeekStart(),
+        }),
+    ) || todaysWorkouts[0];
+  const workoutProgress = todaysWorkouts.length
+    ? Math.round(
+        todaysWorkouts.reduce((total, workout) => {
+          const completedSession = findCompletedSessionForWorkout({
+            completedSessions: fitnessStore.completedSessions,
+            workout,
+            plan: fitnessStore.weeklyWorkoutPlan,
+            weekStart: getCurrentWeekStart(),
+          });
+          return (
+            total +
+            (completedSession
+              ? 100
+              : fitnessStore.getWorkoutProgress(workout.id)?.progress || 0)
+          );
+        }, 0) / todaysWorkouts.length,
+      )
+    : 0;
 
   const todaysMeals =
     nutritionStore.weeklyMealPlan?.meals.filter(
@@ -95,10 +117,19 @@ export function getTodaysCompletions(): TodaysCompletions {
   }).length;
 
   return {
-    workout: todaysWorkout
-      ? {
-          completed: workoutProgress?.progress === 100,
-          progress: workoutProgress?.progress || 0,
+      workout: todaysWorkout
+        ? {
+          completed:
+            todaysWorkouts.length > 0 &&
+            todaysWorkouts.every((workout) =>
+              !!findCompletedSessionForWorkout({
+                completedSessions: fitnessStore.completedSessions,
+                workout,
+                plan: fitnessStore.weeklyWorkoutPlan,
+                weekStart: getCurrentWeekStart(),
+              }),
+            ),
+          progress: workoutProgress,
         }
       : null,
     meals: {

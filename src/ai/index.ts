@@ -71,7 +71,7 @@ import {
   transformDietResponseToWeeklyPlan,
   transformWorkoutResponseToWeeklyPlan,
 } from "../services/aiRequestTransformers";
-import { generateUUID } from "../utils/uuid";
+import { getLocalDateString } from "../utils/weekUtils";
 
 // ============================================================================
 // TYPES
@@ -279,7 +279,7 @@ class UnifiedAIService {
       }
 
       const dailyPlan: DailyMealPlan = {
-        date: new Date().toISOString().split("T")[0],
+        date: getLocalDateString(),
         meals: response.data.meals || [],
         totalCalories: response.data.dailyTotals?.calories || 0,
         totalMacros: {
@@ -402,12 +402,15 @@ class UnifiedAIService {
       const weeklyPlanData = response.data as any;
 
       // Transform each workout in the weekly plan
-      const workouts = weeklyPlanData.workouts.map((w: any) =>
-        transformWorkoutData(w.workout, w.dayOfWeek),
-      );
+      const daySlotCounts = new Map<string, number>();
+      const workouts = weeklyPlanData.workouts.map((w: any) => {
+        const currentSlot = daySlotCounts.get(w.dayOfWeek) ?? 0;
+        daySlotCounts.set(w.dayOfWeek, currentSlot + 1);
+        return transformWorkoutData(w.workout, w.dayOfWeek, currentSlot);
+      });
 
       const weeklyPlan: WeeklyWorkoutPlan = {
-        id: weeklyPlanData.id || `weekly_workout_${Date.now()}`,
+        id: weeklyPlanData.id || `weekly_workout_week_${weekNumber}`,
         weekNumber,
         workouts: workouts,
         planTitle: weeklyPlanData.planTitle || "Your Personalized Workout Plan",
@@ -736,7 +739,11 @@ class UnifiedAIService {
 /**
  * ✅ NEW: Transform workout data from backend to frontend Workout format
  */
-function transformWorkoutData(workoutPlan: any, dayOfWeek: string): Workout {
+function transformWorkoutData(
+  workoutPlan: any,
+  dayOfWeek: string,
+  slotIndex: number = 0,
+): Workout {
   // Map difficulty
   const difficultyMap: Record<
     string,
@@ -788,7 +795,7 @@ function transformWorkoutData(workoutPlan: any, dayOfWeek: string): Workout {
   );
 
   return {
-    id: `${dayOfWeek}_workout_${generateUUID()}`,
+    id: `${dayOfWeek}_workout_${slotIndex}`,
     title: workoutPlan.title || "AI Generated Workout",
     description: workoutPlan.description || "",
     category: "strength", // Default category

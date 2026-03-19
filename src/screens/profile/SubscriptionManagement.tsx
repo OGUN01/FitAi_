@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -111,9 +111,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
     usage,
     features,
     currentPeriodEnd,
-    initializeSubscription,
     applyLifecycleUpdate,
-    isInitialized,
   } = useSubscriptionStore();
 
   const { triggerPaywall, showPaywall, dismiss, paywallReason } = usePaywall();
@@ -123,12 +121,6 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
   const planName = currentPlan?.name ?? "Free Plan";
   const tierColors = TIER_COLORS[tier] ?? TIER_COLORS.free;
   const statusInfo = (tier !== "free" && subscriptionStatus) ? (STATUS_CONFIG[subscriptionStatus] ?? null) : null;
-
-  useEffect(() => {
-    if (!isInitialized) {
-      void initializeSubscription();
-    }
-  }, [initializeSubscription, isInitialized]);
 
   // ---- Usage calculations ----
   const aiMonthly = usage.ai_generation.monthly;

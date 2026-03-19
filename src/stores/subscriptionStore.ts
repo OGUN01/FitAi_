@@ -10,6 +10,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { safeAsyncStorage } from "../utils/safeAsyncStorage";
 import razorpayService from "../services/RazorpayService";
+import { getLocalDateString } from "../utils/weekUtils";
 
 // ============================================================================
 // Types - aligned with backend GET /api/subscription/status response
@@ -71,6 +72,7 @@ interface BackendStatusData {
   current_period_end: number | string | null;
   razorpay_subscription_id: string | null;
   features: FeatureLimits;
+  usage?: UsageSummary;
 }
 
 // ============================================================================
@@ -164,21 +166,16 @@ const FREE_FEATURES: FeatureLimits = {
 };
 
 const EMPTY_USAGE: UsageSummary = deriveUsageFromFeatures(FREE_FEATURES);
+let subscriptionInitializationPromise: Promise<void> | null = null;
 
 // Track the calendar month in which usage was last reset ("YYYY-MM" format)
 // so we can auto-reset counts at the start of each new billing month.
 function getCurrentMonthKey(): string {
-  const d = new Date();
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+  return getLocalDateString(new Date()).slice(0, 7);
 }
 
 function getCurrentDayKey(): string {
-  const d = new Date();
-  return [
-    d.getUTCFullYear(),
-    String(d.getUTCMonth() + 1).padStart(2, "0"),
-    String(d.getUTCDate()).padStart(2, "0"),
-  ].join("-");
+  return getLocalDateString(new Date());
 }
 
 // ============================================================================
@@ -195,6 +192,7 @@ interface SubscriptionState {
   subscriptionStatus: SubscriptionStatusType;
   features: FeatureLimits;
   usage: UsageSummary;
+  usageIsFresh: boolean;
   currentPeriodEnd: string | null;
 
   // Usage reset tracking — persisted to detect a new billing month on restart
@@ -244,6 +242,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         subscriptionStatus: null,
         features: FREE_FEATURES,
         usage: EMPTY_USAGE,
+        usageIsFresh: false,
         currentPeriodEnd: null,
         showPaywall: false,
         paywallReason: null,
@@ -281,8 +280,12 @@ export const useSubscriptionStore = create<SubscriptionState>()(
               shouldResetMonthly || tierChanged || dayChanged || usageResetDay === null;
 
             let usage: UsageSummary;
-            if (shouldResetMonthly) {
-              usage = deriveUsageFromFeatures(features);
+            let usageIsFresh = false;
+            if (data.usage) {
+              usage = data.usage;
+              usageIsFresh = true;
+            } else if (shouldResetMonthly) {
+              usage = get().usage;
             } else {
               // Preserve persisted counts, update limits from server
               usage = {
@@ -342,6 +345,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
               subscriptionStatus: status,
               features,
               usage,
+              usageIsFresh,
               currentPeriodEnd: normalizePeriodEnd(data.current_period_end),
               isLoading: false,
               usageResetMonth: shouldResetMonthly
@@ -353,8 +357,10 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             });
           } catch (error) {
             console.warn("[subscriptionStore] Failed to fetch status:", error);
-            if (preserveExistingOnError) {
-              set({ isLoading: false });
+            const shouldPreserveExisting = preserveExistingOnError;
+
+            if (shouldPreserveExisting) {
+              set({ isLoading: false, usageIsFresh: false });
               return;
             }
 
@@ -364,6 +370,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
               subscriptionStatus: null,
               features: FREE_FEATURES,
               usage: EMPTY_USAGE,
+              usageIsFresh: false,
               currentPeriodEnd: null,
               usageResetMonth: null,
               usageResetDay: null,
@@ -373,8 +380,19 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
         initializeSubscription: async () => {
           if (get().isInitialized) return;
-          await get().fetchSubscriptionStatus();
-          set({ isInitialized: true });
+          if (subscriptionInitializationPromise) {
+            await subscriptionInitializationPromise;
+            return;
+          }
+
+          subscriptionInitializationPromise = (async () => {
+            await get().fetchSubscriptionStatus();
+            set({ isInitialized: true });
+          })().finally(() => {
+            subscriptionInitializationPromise = null;
+          });
+
+          await subscriptionInitializationPromise;
         },
 
         refreshUsage: async () => {
@@ -401,6 +419,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           }
 
           if (featureKey === "ai_generation") {
+            if (!get().usageIsFresh && !features.unlimited_ai) return false;
             if (features.unlimited_ai) return true;
             const dailyRemaining = usage.ai_generation.daily.remaining;
             const monthlyRemaining = usage.ai_generation.monthly.remaining;
@@ -410,6 +429,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           }
 
           if (featureKey === "barcode_scan") {
+            if (!get().usageIsFresh && !features.unlimited_scans) return false;
             if (features.unlimited_scans) return true;
             const dailyRemaining = usage.barcode_scan.daily.remaining;
             return dailyRemaining === null || dailyRemaining > 0;
@@ -480,11 +500,13 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           set({ showPaywall: false, paywallReason: null });
         },
         clearSubscription: () => {
+          subscriptionInitializationPromise = null;
           set({
             currentPlan: null,
             subscriptionStatus: null,
             features: FREE_FEATURES,
             usage: EMPTY_USAGE,
+            usageIsFresh: false,
             currentPeriodEnd: null,
             isInitialized: false,
             isLoading: false,
@@ -505,6 +527,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             subscriptionStatus: snapshot.status ?? "authenticated",
             features: snapshot.features,
             usage: deriveUsageFromFeatures(snapshot.features),
+            usageIsFresh: false,
             currentPeriodEnd: normalizePeriodEnd(snapshot.current_period_end),
             usageResetMonth: currentMonth,
             usageResetDay: currentDay,
@@ -515,6 +538,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             currentPlan: state.currentPlan,
             features: state.features,
             subscriptionStatus: status,
+            usageIsFresh: false,
             currentPeriodEnd: normalizePeriodEnd(current_period_end),
           }));
         },

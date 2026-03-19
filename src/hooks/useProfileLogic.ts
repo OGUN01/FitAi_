@@ -1,15 +1,19 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Linking, Share } from "react-native";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "./useAuth";
 import { useUser } from "./useUser";
 import { useProfileStore } from "../stores/profileStore";
+import { useUserStore } from "../stores/userStore";
 import { useUnifiedStats } from "./useUnifiedStats";
 import { clearAllUserData } from "../utils/clearUserData";
 import { useSubscriptionStore } from "../stores/subscriptionStore";
 import { useHealthDataStore } from "../stores/healthDataStore";
 import { crudOperations } from "../services/crudOperations";
+import { userProfileService } from "../services/userProfile";
+import { getSubscriptionSubtitle as getSubscriptionSubtitleText } from "../utils/subscriptionUi";
+import { buildLegacyProfileAdapter } from "../utils/profileLegacyAdapter";
 import type { SettingItem } from "../screens/main/profile";
 
 // AsyncStorage keys for settings preferences
@@ -19,12 +23,42 @@ const STORAGE_KEY_UNITS = "@fitai_units_preference";
 export type ThemePreference = "dark" | "light" | "system";
 export type UnitsPreference = "metric" | "imperial";
 
+function getSubscriptionSubtitle(
+  tier: string | undefined,
+  status: string | null | undefined,
+): string {
+  if (!tier || tier === "free") {
+    return "Free tier — view plans and premium benefits";
+  }
+
+  if (status === "cancelled") {
+    return "Cancellation scheduled — review billing and access";
+  }
+
+  if (status === "paused") {
+    return "Paused — resume or adjust your subscription";
+  }
+
+  if (status === "authenticated" || status === "pending") {
+    return "Payment received — premium access is still being confirmed";
+  }
+
+  return `Current tier: ${tier.charAt(0).toUpperCase() + tier.slice(1)} — manage billing and premium access`;
+}
+
 export const useProfileLogic = () => {
   const { user, isAuthenticated, isGuestMode, logout, guestId } = useAuth();
-  const { profile, clearProfile } = useUser();
+  const { profile: rawProfile, clearProfile } = useUser();
   const userStats = useUnifiedStats();
-  const { bodyAnalysis, personalInfo: profileStorePersonalInfo } = useProfileStore();
-  const { currentPlan: subscriptionPlan } = useSubscriptionStore();
+  const {
+    bodyAnalysis,
+    personalInfo: profileStorePersonalInfo,
+    workoutPreferences,
+    dietPreferences,
+    updatePersonalInfo,
+  } = useProfileStore();
+  const { currentPlan: subscriptionPlan, subscriptionStatus } =
+    useSubscriptionStore();
 
   // State
   const [currentSettingsScreen, setCurrentSettingsScreen] = useState<
@@ -39,13 +73,33 @@ export const useProfileLogic = () => {
   const [showUnitsModal, setShowUnitsModal] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showClearCacheModal, setShowClearCacheModal] = useState(false);
-  const [showPaywallModal, setShowPaywallModal] = useState(false);
 
   // Persisted preferences
   const [themePreference, setThemePreference] =
     useState<ThemePreference>("system");
   const [unitsPreference, setUnitsPreference] =
     useState<UnitsPreference>("metric");
+
+  const profile = useMemo(
+    () => ({
+      ...rawProfile,
+      bodyMetrics: bodyAnalysis,
+      ...buildLegacyProfileAdapter({
+        personalInfo: profileStorePersonalInfo,
+        bodyAnalysis,
+        workoutPreferences,
+        dietPreferences,
+        legacyProfile: rawProfile,
+      }),
+    }),
+    [
+      rawProfile,
+      profileStorePersonalInfo,
+      bodyAnalysis,
+      workoutPreferences,
+      dietPreferences,
+    ],
+  );
 
   // Load persisted preferences on mount
   useEffect(() => {
@@ -71,6 +125,21 @@ export const useProfileLogic = () => {
     };
     loadPreferences();
   }, []);
+
+  useEffect(() => {
+    const profileUnits = profileStorePersonalInfo?.units;
+    if (profileUnits !== "metric" && profileUnits !== "imperial") {
+      return;
+    }
+
+    setUnitsPreference((currentUnits) =>
+      currentUnits === profileUnits ? currentUnits : profileUnits,
+    );
+
+    AsyncStorage.setItem(STORAGE_KEY_UNITS, profileUnits).catch((error) => {
+      console.error("[useProfileLogic] Error syncing units preference:", error);
+    });
+  }, [profileStorePersonalInfo?.units]);
 
   // Check for profile edit intent on mount
   useEffect(() => {
@@ -148,17 +217,49 @@ export const useProfileLogic = () => {
   }, []);
 
   // Units handler — persist choice
-  const handleUnitsSelect = useCallback(async (value: string) => {
-    const units = value as UnitsPreference;
-    setUnitsPreference(units);
-    try {
-      await AsyncStorage.setItem(STORAGE_KEY_UNITS, units);
-      console.log("[useProfileLogic] Units preference saved:", units);
-    } catch (error) {
-      console.error("[useProfileLogic] Error saving units:", error);
-    }
-    setShowUnitsModal(false);
-  }, []);
+  const handleUnitsSelect = useCallback(
+    async (value: string) => {
+      const units = value as UnitsPreference;
+      setUnitsPreference(units);
+      try {
+        await AsyncStorage.setItem(STORAGE_KEY_UNITS, units);
+        updatePersonalInfo({ units });
+
+        const currentProfile = useUserStore.getState().profile;
+        if (currentProfile) {
+          useUserStore.getState().setProfile({
+            ...currentProfile,
+            personalInfo: {
+              ...currentProfile.personalInfo,
+              units,
+            },
+            preferences: {
+              ...currentProfile.preferences,
+              units,
+            },
+          });
+        }
+
+        if (user?.id) {
+          const result = await userProfileService.updateProfile(user.id, {
+            units,
+          });
+          if (!result.success) {
+            console.error(
+              "[useProfileLogic] Failed to sync units preference:",
+              result.error,
+            );
+          }
+        }
+
+        console.log("[useProfileLogic] Units preference saved:", units);
+      } catch (error) {
+        console.error("[useProfileLogic] Error saving units:", error);
+      }
+      setShowUnitsModal(false);
+    },
+    [updatePersonalInfo, user?.id],
+  );
 
   // Language handler — currently single-language, just close
   const handleLanguageSelect = useCallback((_value: string) => {
@@ -206,15 +307,20 @@ export const useProfileLogic = () => {
         setShowEditModal("measurements");
         break;
       case "subscription":
-        setShowPaywallModal(true);
+        if (!isAuthenticated) {
+          setShowGuestSignUp(true);
+          break;
+        }
+        setCurrentSettingsScreen("subscription");
         break;
       case "notifications":
         setCurrentSettingsScreen("notifications");
         break;
       case "theme": {
-        // Toggle dark mode directly instead of opening modal
-        const nextTheme: ThemePreference = themePreference === "dark" ? "light" : "dark";
-        handleThemeSelect(nextTheme);
+        crossPlatformAlert(
+          "Theme",
+          "FitAI currently uses a fixed dark theme. Additional theme options are coming soon.",
+        );
         break;
       }
       case "units":
@@ -233,11 +339,11 @@ export const useProfileLogic = () => {
         setCurrentSettingsScreen("about");
         break;
       case "terms":
-        Linking.openURL('https://fitai.app/privacy').catch(() =>
+        Linking.openURL("https://fitai.app/privacy").catch(() =>
           crossPlatformAlert(
-            'Terms & Privacy',
-            'Could not open the document. Please visit fitai.app/privacy in your browser.'
-          )
+            "Terms & Privacy",
+            "Could not open the document. Please visit fitai.app/privacy in your browser.",
+          ),
         );
         break;
       case "export": {
@@ -248,35 +354,48 @@ export const useProfileLogic = () => {
             const json = JSON.stringify(data, null, 2);
             await Share.share({
               message: json,
-              title: 'FitAI Data Export',
+              title: "FitAI Data Export",
             });
           } else {
-            crossPlatformAlert('Export Data', 'No data found to export.');
+            crossPlatformAlert("Export Data", "No data found to export.");
           }
         } catch (exportError) {
-          console.error('[useProfileLogic] Export failed:', exportError);
-          crossPlatformAlert('Export Failed', 'Could not export data. Please try again.');
+          console.error("[useProfileLogic] Export failed:", exportError);
+          crossPlatformAlert(
+            "Export Failed",
+            "Could not export data. Please try again.",
+          );
         }
         break;
       }
       case "sync": {
         // Trigger a real sync from connected health provider
-        const { isHealthConnectAuthorized, isHealthKitAuthorized, syncFromHealthConnect, syncHealthData } =
-          useHealthDataStore.getState();
+        const {
+          isHealthConnectAuthorized,
+          isHealthKitAuthorized,
+          syncFromHealthConnect,
+          syncHealthData,
+        } = useHealthDataStore.getState();
         if (isHealthConnectAuthorized) {
-          crossPlatformAlert('Syncing…', 'Fetching latest data from Health Connect.');
+          crossPlatformAlert(
+            "Syncing…",
+            "Fetching latest data from Health Connect.",
+          );
           syncFromHealthConnect(7).catch((e: any) =>
-            console.warn('[useProfileLogic] Health sync failed:', e),
+            console.warn("[useProfileLogic] Health sync failed:", e),
           );
         } else if (isHealthKitAuthorized) {
-          crossPlatformAlert('Syncing…', 'Fetching latest data from HealthKit.');
+          crossPlatformAlert(
+            "Syncing…",
+            "Fetching latest data from HealthKit.",
+          );
           syncHealthData(true).catch((e: any) =>
-            console.warn('[useProfileLogic] HealthKit sync failed:', e),
+            console.warn("[useProfileLogic] HealthKit sync failed:", e),
           );
         } else {
           crossPlatformAlert(
-            'No Health App Connected',
-            'Connect a wearable or health app in Settings → Connect Wearables to enable sync.',
+            "No Health App Connected",
+            "Connect a wearable or health app in Settings → Connect Wearables to enable sync.",
           );
         }
         break;
@@ -293,40 +412,58 @@ export const useProfileLogic = () => {
   };
 
   // Stat card press handlers
-  const handleStatPress = useCallback((statId: string) => {
-    const showAlert = (title: string, message: string) => {
-      crossPlatformAlert(title, message);
-    };
-    switch (statId) {
-      case 'current-streak': {
-        const streak = userStats?.currentStreak || 0;
-        showAlert('🔥 Day Streak', `You're on a ${streak} day streak! Keep it up!`);
-        break;
+  const handleStatPress = useCallback(
+    (statId: string) => {
+      const showAlert = (title: string, message: string) => {
+        crossPlatformAlert(title, message);
+      };
+      switch (statId) {
+        case "current-streak": {
+          const streak = userStats?.currentStreak || 0;
+          showAlert(
+            "🔥 Day Streak",
+            `You're on a ${streak} day streak! Keep it up!`,
+          );
+          break;
+        }
+        case "workouts": {
+          const workouts = userStats?.totalWorkouts || 0;
+          showAlert(
+            "💪 Workouts",
+            `You've completed ${workouts} workout${workouts === 1 ? "" : "s"}. ${workouts === 0 ? "Start your first workout!" : "Amazing progress!"}`,
+          );
+          break;
+        }
+        case "calories": {
+          const cals = userStats?.totalCaloriesBurned || 0;
+          showAlert(
+            "🔥 Calories Burned",
+            `${cals} calories burned. Great progress!`,
+          );
+          break;
+        }
+        case "best-streak": {
+          const best = userStats?.longestStreak || 0;
+          showAlert(
+            "🏆 Best Streak",
+            `Your best streak is ${best} day${best === 1 ? "" : "s"}. Can you beat it?`,
+          );
+          break;
+        }
+        case "achievements": {
+          const count = userStats?.achievements || 0;
+          showAlert(
+            "🎖️ Achievements",
+            `${count} achievement${count === 1 ? "" : "s"} earned. ${count === 0 ? "Complete workouts to unlock achievements!" : "Keep going!"}`,
+          );
+          break;
+        }
+        default:
+          break;
       }
-      case 'workouts': {
-        const workouts = userStats?.totalWorkouts || 0;
-        showAlert('💪 Workouts', `You've completed ${workouts} workout${workouts === 1 ? '' : 's'}. ${workouts === 0 ? 'Start your first workout!' : 'Amazing progress!'}`);
-        break;
-      }
-      case 'calories': {
-        const cals = userStats?.totalCaloriesBurned || 0;
-        showAlert('🔥 Calories Burned', `${cals} calories burned. Great progress!`);
-        break;
-      }
-      case 'best-streak': {
-        const best = userStats?.longestStreak || 0;
-        showAlert('🏆 Best Streak', `Your best streak is ${best} day${best === 1 ? '' : 's'}. Can you beat it?`);
-        break;
-      }
-      case 'achievements': {
-        const count = userStats?.achievements || 0;
-        showAlert('🎖️ Achievements', `${count} achievement${count === 1 ? '' : 's'} earned. ${count === 0 ? 'Complete workouts to unlock achievements!' : 'Keep going!'}`);
-        break;
-      }
-      default:
-        break;
-    }
-  }, [userStats]);
+    },
+    [userStats],
+  );
 
   // Check profile completion
   const isProfileIncomplete = (section: string): boolean => {
@@ -334,19 +471,25 @@ export const useProfileLogic = () => {
       case "personal-info":
         // SSOT: profileStore.personalInfo is authoritative (onboarding_data table)
         // Compute name from first+last fields first, then fall back to name field, then userStore
-        const profileName = `${profileStorePersonalInfo?.first_name || ''} ${profileStorePersonalInfo?.last_name || ''}`.trim();
-        const resolvedName = profileName || profileStorePersonalInfo?.name || profile?.personalInfo?.name;
+        const profileName =
+          `${profileStorePersonalInfo?.first_name || ""} ${profileStorePersonalInfo?.last_name || ""}`.trim();
+        const resolvedName =
+          profileName ||
+          profileStorePersonalInfo?.name ||
+          profile?.personalInfo?.name;
         // SSOT: age from profileStore.personalInfo first, then userStore
-        const resolvedAge = profileStorePersonalInfo?.age || profile?.personalInfo?.age;
+        const resolvedAge =
+          profileStorePersonalInfo?.age || profile?.personalInfo?.age;
         return !resolvedName || !resolvedAge;
       case "goals":
         // SSOT: profileStore.workoutPreferences.primary_goals is authoritative; profile.fitnessGoals is legacy fallback
-        const resolvedGoals = useProfileStore.getState().workoutPreferences?.primary_goals
-          || profile?.fitnessGoals?.primary_goals;
+        const resolvedGoals =
+          useProfileStore.getState().workoutPreferences?.primary_goals ||
+          profile?.fitnessGoals?.primary_goals;
         return !resolvedGoals || resolvedGoals.length === 0;
       case "measurements":
-        const height = bodyAnalysis?.height_cm || profile?.bodyMetrics?.height_cm;
-        const weight = bodyAnalysis?.current_weight_kg || profile?.bodyMetrics?.current_weight_kg;
+        const height = bodyAnalysis?.height_cm;
+        const weight = bodyAnalysis?.current_weight_kg;
         return !height || !weight;
       default:
         return false;
@@ -358,7 +501,7 @@ export const useProfileLogic = () => {
     {
       id: "personal-info",
       title: "Personal Information",
-      subtitle: "Name, age, height, weight",
+      subtitle: "Name, age, gender, activity level",
       icon: "person-outline",
       iconColor: "#4CAF50",
       isIncomplete: isProfileIncomplete("personal-info"),
@@ -382,19 +525,15 @@ export const useProfileLogic = () => {
     {
       id: "subscription",
       title: "Manage Subscription",
-      subtitle: `Current tier: ${subscriptionPlan?.tier ? subscriptionPlan.tier.charAt(0).toUpperCase() + subscriptionPlan.tier.slice(1) : "Free"} — Tap to upgrade`,
+      subtitle: getSubscriptionSubtitleText(
+        subscriptionPlan?.tier,
+        subscriptionStatus,
+      ),
       icon: "diamond-outline",
       iconColor: "#FF8A5C",
       isPremium: true,
     },
   ];
-
-  // Derive theme subtitle from current preference
-  const themeSubtitleMap: Record<ThemePreference, string> = {
-    dark: "Dark mode",
-    light: "Light mode",
-    system: "System default",
-  };
 
   // Derive units subtitle from current preference
   const unitsSubtitleMap: Record<UnitsPreference, string> = {
@@ -412,8 +551,8 @@ export const useProfileLogic = () => {
     },
     {
       id: "theme",
-      title: "Dark Mode / Theme",
-      subtitle: themeSubtitleMap[themePreference],
+      title: "Theme",
+      subtitle: "Fixed dark theme",
       icon: "color-palette-outline",
       iconColor: "#FF6B35",
     },
@@ -491,8 +630,13 @@ export const useProfileLogic = () => {
 
   // Get user display info
   // SSOT: profileStore.personalInfo is authoritative; prefer first_name+last_name (DB fields) then name (computed), then userStore fallback
-  const profileStoreName = `${profileStorePersonalInfo?.first_name || ''} ${profileStorePersonalInfo?.last_name || ''}`.trim();
-  const userName = profileStoreName || profileStorePersonalInfo?.name || profile?.personalInfo?.name || undefined;
+  const profileStoreName =
+    `${profileStorePersonalInfo?.first_name || ""} ${profileStorePersonalInfo?.last_name || ""}`.trim();
+  const userName =
+    profileStoreName ||
+    profileStorePersonalInfo?.name ||
+    profile?.personalInfo?.name ||
+    undefined;
   const memberSince = (() => {
     if (!user?.createdAt) return null; // null = show 'Just joined today' fallback
     const created = new Date(user.createdAt);
@@ -500,12 +644,15 @@ export const useProfileLogic = () => {
     const diffMs = now.getTime() - created.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     if (diffDays === 0) return null; // today
-    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'}`;
+    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? "" : "s"}`;
     if (diffDays < 30) {
       const weeks = Math.floor(diffDays / 7);
-      return `${weeks} week${weeks === 1 ? '' : 's'}`;
+      return `${weeks} week${weeks === 1 ? "" : "s"}`;
     }
-    return created.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    return created.toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
+    });
   })();
 
   return {
@@ -534,8 +681,6 @@ export const useProfileLogic = () => {
     setShowLanguageModal,
     showClearCacheModal,
     setShowClearCacheModal,
-    showPaywallModal,
-    setShowPaywallModal,
 
     // Persisted preferences
     themePreference,

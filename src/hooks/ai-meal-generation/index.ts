@@ -18,32 +18,31 @@ import {
   HealthAssessment,
   UseAIMealGenerationReturn,
 } from "./types";
+import { buildLegacyProfileAdapter } from "../../utils/profileLegacyAdapter";
 
 export const useAIMealGeneration = (): UseAIMealGenerationReturn => {
   const { user, isGuestMode } = useAuth();
   const { profile } = useUserStore();
   // SSOT: profileStore is authoritative for workoutPreferences (primary_goals = fitnessGoals)
-  const { workoutPreferences: profileWorkoutPreferences, dietPreferences: profileDietPrefs } = useProfileStore();
+  const {
+    personalInfo: profilePersonalInfo,
+    bodyAnalysis,
+    workoutPreferences: profileWorkoutPreferences,
+    dietPreferences: profileDietPrefs,
+  } = useProfileStore();
   const { foods, loadDailyNutrition, refreshAll, dietPreferences } =
     useNutritionData();
   const { getCalorieTarget } = useCalculatedMetrics();
-  const { canUseFeature, incrementUsage, triggerPaywall } = useSubscriptionStore();
+  const { canUseFeature, incrementUsage, triggerPaywall } =
+    useSubscriptionStore();
 
-  // SSOT: Build mergedFitnessGoals — profileStore.workoutPreferences is authoritative
-  const mergedFitnessGoals = profileWorkoutPreferences
-    ? {
-        primary_goals: profileWorkoutPreferences.primary_goals || profile?.fitnessGoals?.primary_goals || [],
-        primaryGoals: profileWorkoutPreferences.primary_goals || profile?.fitnessGoals?.primaryGoals || [],
-        experience: profileWorkoutPreferences.intensity || profile?.fitnessGoals?.experience || 'beginner',
-        experience_level: profileWorkoutPreferences.intensity || profile?.fitnessGoals?.experience_level || 'beginner',
-        time_commitment: String(profileWorkoutPreferences.time_preference || 45),
-      }
-    : profile?.fitnessGoals;
-
-  // Build a merged profile with SSOT fitnessGoals injected for handler consumption
-  const mergedProfile = mergedFitnessGoals
-    ? { ...profile, fitnessGoals: mergedFitnessGoals }
-    : profile;
+  const mergedProfile = buildLegacyProfileAdapter({
+    personalInfo: profilePersonalInfo,
+    bodyAnalysis,
+    workoutPreferences: profileWorkoutPreferences,
+    dietPreferences: profileDietPrefs,
+    legacyProfile: profile,
+  });
 
   const [aiMeals, setAiMeals] = useState<Meal[]>([]);
   const [isGeneratingMeal, setIsGeneratingMeal] = useState(false);
@@ -103,7 +102,7 @@ export const useAIMealGeneration = (): UseAIMealGenerationReturn => {
     isGuestMode,
     user?.id,
     selectedMealType,
-    profileDietPrefs?.allergies || profile?.dietPreferences?.allergies,
+    profileDietPrefs?.allergies || mergedProfile.dietPreferences?.allergies,
     setIsGeneratingMeal,
     setAiError,
     setPortionData,
@@ -131,7 +130,7 @@ export const useAIMealGeneration = (): UseAIMealGenerationReturn => {
 
   const mealGenerationHandlers = createMealGenerationHandlers(
     user?.id,
-    mergedProfile, // SSOT: merged profile with fitnessGoals from profileStore
+    mergedProfile,
     foods,
     dietPreferences || undefined,
     getCalorieTarget,

@@ -1,50 +1,57 @@
-import { DayWorkout } from '../types/ai';
-import { workoutEngine } from '../features/workouts/WorkoutEngine';
-import { supabase } from './supabase';
-import { analyticsDataService } from './analyticsData';
-import { fitnessRefreshService } from './fitnessRefreshService';
-import { useFitnessStore } from '../stores/fitnessStore';
-import { useUserStore } from '../stores/userStore';
-import { useProfileStore } from '../stores/profileStore';
-import { useAchievementStore } from '../stores/achievementStore';
-import { calculateWorkoutCalories, ExerciseCalorieInput } from './calorieCalculator';
-import { generateUUID } from '../utils/uuid';
-import { getCurrentWeekStart, getCurrentDayName } from '../utils/weekUtils';
-import type { ExtraWorkoutTemplate, CompletedSession } from '../stores/fitness/types';
-import type { PersonalInfo, FitnessGoals } from '../types/user';
+import { DayWorkout } from "../types/ai";
+import { workoutEngine } from "../features/workouts/WorkoutEngine";
+import { supabase } from "./supabase";
+import { analyticsDataService } from "./analyticsData";
+import { fitnessRefreshService } from "./fitnessRefreshService";
+import { useFitnessStore } from "../stores/fitnessStore";
+import { useUserStore } from "../stores/userStore";
+import { useProfileStore } from "../stores/profileStore";
+import { useAchievementStore } from "../stores/achievementStore";
+import {
+  calculateWorkoutCalories,
+  ExerciseCalorieInput,
+} from "./calorieCalculator";
+import { generateUUID } from "../utils/uuid";
+import { getCurrentWeekStart, getCurrentDayName } from "../utils/weekUtils";
+import type {
+  ExtraWorkoutTemplate,
+  CompletedSession,
+} from "../stores/fitness/types";
+import type { PersonalInfo, FitnessGoals } from "../types/user";
 
 /**
  * Returns 2-3 quick workout suggestion templates based on user goals/experience.
  * No AI call — instant. estimatedCalories is display-only.
  */
-export function getSuggestions(
-  goals: FitnessGoals,
-): ExtraWorkoutTemplate[] {
-  const experience = (goals?.experience || 'beginner') as 'beginner' | 'intermediate' | 'advanced';
+export function getSuggestions(goals: FitnessGoals): ExtraWorkoutTemplate[] {
+  const experience = (goals?.experience || "beginner") as
+    | "beginner"
+    | "intermediate"
+    | "advanced";
 
   const templates: ExtraWorkoutTemplate[] = [
     {
-      id: 'extra-hiit-20',
-      title: '20-min HIIT Blast',
-      category: 'hiit',
+      id: "extra-hiit-20",
+      title: "20-min HIIT Blast",
+      category: "hiit",
       duration: 20,
-      difficulty: experience === 'beginner' ? 'beginner' : 'intermediate',
+      difficulty: experience === "beginner" ? "beginner" : "intermediate",
       estimatedCalories: 180,
     },
     {
-      id: 'extra-strength-30',
-      title: '30-min Strength Focus',
-      category: 'strength',
+      id: "extra-strength-30",
+      title: "30-min Strength Focus",
+      category: "strength",
       duration: 30,
       difficulty: experience,
       estimatedCalories: 220,
     },
     {
-      id: 'extra-cardio-25',
-      title: '25-min Cardio Endurance',
-      category: 'cardio',
+      id: "extra-cardio-25",
+      title: "25-min Cardio Endurance",
+      category: "cardio",
       duration: 25,
-      difficulty: experience === 'advanced' ? 'intermediate' : 'beginner',
+      difficulty: experience === "advanced" ? "intermediate" : "beginner",
       estimatedCalories: 200,
     },
   ];
@@ -69,7 +76,10 @@ export async function generateWorkout(
     );
 
     if (!result.success || !result.data) {
-      console.error('[extraWorkoutService] generateWorkout failed:', result.error);
+      console.error(
+        "[extraWorkoutService] generateWorkout failed:",
+        result.error,
+      );
       return null;
     }
 
@@ -87,7 +97,7 @@ export async function generateWorkout(
 
     return dayWorkout;
   } catch (err) {
-    console.error('[extraWorkoutService] generateWorkout threw:', err);
+    console.error("[extraWorkoutService] generateWorkout threw:", err);
     return null;
   }
 }
@@ -104,30 +114,32 @@ export async function completeExtraWorkout(
 ): Promise<boolean> {
   try {
     // Calculate actual calories burned via MET — 0 if weight unavailable (Rule 8)
-    const userStore = useUserStore.getState();
     const profileStore = useProfileStore.getState();
-    const userWeight =
-      profileStore.bodyAnalysis?.current_weight_kg ||
-      userStore.profile?.bodyMetrics?.current_weight_kg;
+    const userWeight = profileStore.bodyAnalysis?.current_weight_kg;
 
     let actualCaloriesBurned = 0;
 
-    if (sessionData?.stats?.caloriesBurned && sessionData.stats.caloriesBurned > 0) {
+    if (
+      sessionData?.stats?.caloriesBurned &&
+      sessionData.stats.caloriesBurned > 0
+    ) {
       actualCaloriesBurned = sessionData.stats.caloriesBurned;
     } else if (userWeight && userWeight > 0 && workout.exercises?.length) {
-      const inputs: ExerciseCalorieInput[] = workout.exercises.map((ex: any) => ({
-        exerciseId: ex.exerciseId || ex.id,
-        name: ex.exerciseName || ex.name,
-        sets: ex.sets,
-        reps: ex.reps,
-        duration: ex.duration,
-        restTime: ex.restTime,
-      }));
+      const inputs: ExerciseCalorieInput[] = workout.exercises.map(
+        (ex: any) => ({
+          exerciseId: ex.exerciseId || ex.id,
+          name: ex.exerciseName || ex.name,
+          sets: ex.sets,
+          reps: ex.reps,
+          duration: ex.duration,
+          restTime: ex.restTime,
+        }),
+      );
       const result = calculateWorkoutCalories(inputs, userWeight);
       actualCaloriesBurned = result.totalCalories;
     }
 
-    const isGuest = !userId || userId.startsWith('guest');
+    const isGuest = !userId || userId.startsWith("guest");
 
     // Non-guest: sync to Supabase
     // Will be set to the Supabase-generated row ID after a successful insert
@@ -136,14 +148,16 @@ export async function completeExtraWorkout(
     if (!isGuest) {
       try {
         const supabaseResult = await supabase
-          .from('workout_sessions')
+          .from("workout_sessions")
           .insert({
             user_id: userId,
             workout_name: workout.title,
-            workout_type: workout.category || 'general',
-            total_duration_minutes: sessionData?.duration || workout.duration || null,
+            workout_type: workout.category || "general",
+            total_duration_minutes:
+              sessionData?.duration || workout.duration || null,
             calories_burned: actualCaloriesBurned,
-            exercises_completed: sessionData?.stats?.exercises || workout.exercises || [],
+            exercises_completed:
+              sessionData?.stats?.exercises || workout.exercises || [],
             started_at: sessionData?.startedAt || new Date().toISOString(),
             completed_at: new Date().toISOString(),
             is_completed: true,
@@ -155,12 +169,18 @@ export async function completeExtraWorkout(
           .single();
 
         if (supabaseResult.error) {
-          console.error('⚠️ Supabase extra workout insert error:', supabaseResult.error);
+          console.error(
+            "⚠️ Supabase extra workout insert error:",
+            supabaseResult.error,
+          );
         } else if (supabaseResult.data?.id) {
           supabaseSessionId = supabaseResult.data.id;
         }
       } catch (supabaseErr) {
-        console.error('❌ Failed to sync extra workout to Supabase:', supabaseErr);
+        console.error(
+          "❌ Failed to sync extra workout to Supabase:",
+          supabaseErr,
+        );
       }
 
       // Update analytics_metrics (fire-and-forget, eventual consistency)
@@ -170,7 +190,10 @@ export async function completeExtraWorkout(
           caloriesBurned: actualCaloriesBurned,
         });
       } catch (analyticsErr) {
-        console.error('⚠️ Failed to update analytics for extra workout:', analyticsErr);
+        console.error(
+          "⚠️ Failed to update analytics for extra workout:",
+          analyticsErr,
+        );
       }
     }
 
@@ -183,16 +206,16 @@ export async function completeExtraWorkout(
 
     fitnessStore.addCompletedSession({
       sessionId: supabaseSessionId || sessionData?.sessionId || generateUUID(),
-      type: 'extra' as const,
+      type: "extra" as const,
       workoutId,
       workoutSnapshot: {
         title: workout.title,
-        category: workout.category || 'general',
+        category: workout.category || "general",
         duration: workout.duration || 0,
         exercises: (workout.exercises || []).map((ex: any) => ({
-          name: ex.exerciseName || ex.name || '',
-          sets: typeof ex.sets === 'number' ? ex.sets : 0,
-          reps: typeof ex.reps === 'number' ? ex.reps : 0,
+          name: ex.exerciseName || ex.name || "",
+          sets: typeof ex.sets === "number" ? ex.sets : 0,
+          reps: typeof ex.reps === "number" ? ex.reps : 0,
           exerciseId: ex.exerciseId || ex.id,
           duration: ex.duration,
           restTime: ex.restTime,
@@ -207,6 +230,9 @@ export async function completeExtraWorkout(
     // SSOT Fix 19: update achievementStore.currentStreak so all consumers
     // reading the store see the real streak immediately after extra workout.
     useAchievementStore.getState().updateCurrentStreak();
+    if (userId) {
+      await useAchievementStore.getState().reconcileWithCurrentData(userId);
+    }
 
     // Trigger UI refresh
     try {
@@ -217,12 +243,15 @@ export async function completeExtraWorkout(
         caloriesBurned: actualCaloriesBurned,
       });
     } catch (refreshErr) {
-      console.error('⚠️ Failed to trigger fitness refresh after extra workout:', refreshErr);
+      console.error(
+        "⚠️ Failed to trigger fitness refresh after extra workout:",
+        refreshErr,
+      );
     }
 
     return true;
   } catch (err) {
-    console.error('❌ completeExtraWorkout failed:', err);
+    console.error("❌ completeExtraWorkout failed:", err);
     return false;
   }
 }

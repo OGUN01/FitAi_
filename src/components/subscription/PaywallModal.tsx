@@ -11,6 +11,7 @@ import {
 import { usePaywall } from "../../hooks/usePaywall";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rp, rbr } from "../../utils/responsive";
+import { useAuthStore } from "../../stores/authStore";
 
 interface PaywallModalProps {
   visible: boolean;
@@ -44,8 +45,17 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
   onClose,
   reason,
 }) => {
-  const { plans, currentPlan, isLoading, paywallReason, subscribe, dismiss } =
-    usePaywall();
+  const {
+    plans,
+    currentPlan,
+    isLoading,
+    paywallReason,
+    subscribe,
+    dismiss,
+    plansSource,
+    planLoadError,
+  } = usePaywall();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
@@ -79,6 +89,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
   const selectedPlanData = plans.find((p) => p.id === effectiveSelectedId);
   const displayReason = reason ?? paywallReason;
   const isCurrentTier = (tier: string) => currentPlan?.tier === tier;
+  const plansUnavailable = plansSource !== "server";
 
   const handleDismiss = () => {
     dismiss();
@@ -151,6 +162,25 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
             contentContainerStyle={styles.scrollContent}
           >
             {/* ── Billing Toggle (Monthly / Yearly) ───────── */}
+            {plansUnavailable && (
+              <View style={styles.warningBanner}>
+                <Text style={styles.warningBannerTitle}>Plans unavailable</Text>
+                <Text style={styles.warningBannerText}>
+                  {planLoadError ??
+                    "We couldn't load live pricing right now. Please try again in a moment."}
+                </Text>
+              </View>
+            )}
+
+            {!isAuthenticated && (
+              <View style={styles.authBanner}>
+                <Text style={styles.authBannerTitle}>Sign in required</Text>
+                <Text style={styles.authBannerText}>
+                  You can compare plans here, but you need to sign in before starting a subscription.
+                </Text>
+              </View>
+            )}
+
             <View style={styles.toggleRow}>
               <Pressable
                 onPress={() => { setBillingCycle("monthly"); setSelectedPlanId(null); }}
@@ -296,10 +326,10 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
           <View style={styles.actions}>
             <Pressable
               onPress={handleSubscribe}
-              disabled={isLoading || !effectiveSelectedId}
+              disabled={isLoading || !effectiveSelectedId || plansUnavailable}
               style={[
                 styles.subscribeBtn,
-                (isLoading || !effectiveSelectedId) &&
+                (isLoading || !effectiveSelectedId || plansUnavailable) &&
                   styles.subscribeBtnDisabled,
               ]}
             >
@@ -307,7 +337,11 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                 <ActivityIndicator color={ResponsiveTheme.colors.text} />
               ) : (
                 <Text style={styles.subscribeBtnText}>
-                  {selectedPlanData
+                  {plansUnavailable
+                    ? "Plans unavailable"
+                    : !isAuthenticated
+                      ? "Sign in to subscribe"
+                      : selectedPlanData
                     ? `Subscribe — ${formatPrice(selectedPlanData.price_monthly, selectedPlanData.billing_cycle)}`
                     : "Select a Plan"}
                 </Text>
@@ -404,6 +438,45 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: rp(16),
     paddingBottom: rp(8),
+  },
+  warningBanner: {
+    marginTop: rp(16),
+    marginBottom: rp(8),
+    padding: rp(12),
+    borderRadius: rbr(12),
+    backgroundColor: "rgba(239,68,68,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(239,68,68,0.30)",
+  },
+  warningBannerTitle: {
+    fontSize: rf(13),
+    fontWeight: "700",
+    color: ResponsiveTheme.colors.errorLight,
+    marginBottom: rp(4),
+  },
+  warningBannerText: {
+    fontSize: rf(12),
+    lineHeight: rf(18),
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+  authBanner: {
+    marginBottom: rp(8),
+    padding: rp(12),
+    borderRadius: rbr(12),
+    backgroundColor: "rgba(59,130,246,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(59,130,246,0.25)",
+  },
+  authBannerTitle: {
+    fontSize: rf(13),
+    fontWeight: "700",
+    color: ResponsiveTheme.colors.primaryLight,
+    marginBottom: rp(4),
+  },
+  authBannerText: {
+    fontSize: rf(12),
+    lineHeight: rf(18),
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   toggleRow: {

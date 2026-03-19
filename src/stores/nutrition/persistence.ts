@@ -31,7 +31,12 @@ export const createPersistenceActions = (
 
             const planData = latestPlan.plan_data;
             if (planData && planData.meals) {
-              set({ weeklyMealPlan: planData });
+              set({
+                weeklyMealPlan: {
+                  ...planData,
+                  databaseId: latestPlan.id,
+                },
+              });
             }
           } else {
             console.log("📋 No weekly meal plan found in database");

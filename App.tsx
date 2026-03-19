@@ -29,6 +29,7 @@ import { useAuth } from "./src/hooks/useAuth";
 import { ErrorBoundary } from "./src/components/ErrorBoundary";
 import { useUserStore } from "./src/stores/userStore";
 import { useAuthStore } from "./src/stores/authStore";
+import { useSubscriptionStore } from "./src/stores/subscriptionStore";
 import { UserProfile, PersonalInfo, FitnessGoals } from "./src/types/user";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
@@ -112,6 +113,11 @@ export default function App() {
 
   const { user, isLoading, isInitialized, isGuestMode, guestId } = useAuth();
   const { config: appConfig, loading: appConfigLoading } = useAppConfig();
+  const {
+    initializeSubscription,
+    clearSubscription,
+    isInitialized: isSubscriptionInitialized,
+  } = useSubscriptionStore();
   const appVersion = Constants.expoConfig?.version || "1.0.1";
   const updateRequired =
     compareVersions(appVersion, appConfig.forceUpdateVersion) < 0 ||
@@ -159,6 +165,25 @@ export default function App() {
       setIsOnboardingComplete(false);
     }
   }, [user, isInitialized, isLoading]);
+
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    if (user?.id && !isGuestMode) {
+      initializeSubscription().catch((error) => {
+        console.error("❌ App: Failed to initialize subscription:", error);
+      });
+      return;
+    }
+
+    clearSubscription();
+  }, [
+    clearSubscription,
+    initializeSubscription,
+    isGuestMode,
+    isInitialized,
+    user?.id,
+  ]);
 
   // Only use notification store if not in Expo Go
   const notificationStore = useNotificationStore
@@ -1114,12 +1139,21 @@ export default function App() {
 
   // Show loading while authentication, config, or onboarding data are initializing.
   // This keeps maintenance and version gates from flashing open before config loads.
-  if (isLoadingOnboarding || appConfigLoading) {
+  const isSubscriptionBootstrapping =
+    !!user && !isGuestMode && !isSubscriptionInitialized;
+  const shouldResumeAuthenticatedOnboarding =
+    !!user && !isGuestMode && !isOnboardingComplete;
+
+  if (isLoadingOnboarding || appConfigLoading || isSubscriptionBootstrapping) {
     return (
       <View style={styles.loadingContainer}>
         <StatusBar style="light" translucent backgroundColor="transparent" />
         <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
-        <Text style={styles.loadingText}>Loading your profile...</Text>
+        <Text style={styles.loadingText}>
+          {isSubscriptionBootstrapping
+            ? "Checking your subscription..."
+            : "Loading your profile..."}
+        </Text>
       </View>
     );
   }
@@ -1177,6 +1211,11 @@ export default function App() {
 
               {isOnboardingComplete ? (
                 <MainNavigation />
+              ) : shouldResumeAuthenticatedOnboarding ? (
+                <OnboardingContainer
+                  onComplete={handleOnboardingComplete}
+                  showProgressIndicator={true}
+                />
               ) : showWelcome ? (
                 <WelcomeScreen
                   onGetStarted={() => setShowWelcome(false)}

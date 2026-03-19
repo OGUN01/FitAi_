@@ -133,8 +133,40 @@ export const createPlanActions = (
         throw new Error("Invalid plan UUID format");
       }
 
+      let activePlanRowId = (plan as any).databaseId || null;
+      if (!activePlanRowId) {
+        try {
+          const { data: activePlans } = await supabase
+            .from("weekly_workout_plans")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("is_active", true)
+            .order("created_at", { ascending: false })
+            .limit(1);
+          activePlanRowId = activePlans?.[0]?.id || null;
+        } catch (activePlanLookupError) {
+          console.warn(
+            "Failed to look up active weekly workout plan before queueing save; falling back to queued create:",
+            activePlanLookupError,
+          );
+        }
+      }
+
+      const planRowId = activePlanRowId || planId;
+      const hasConfirmedDatabaseId = Boolean(
+        activePlanRowId || (plan as any).databaseId,
+      );
+      const planDataWithDbId = hasConfirmedDatabaseId
+        ? {
+            ...plan,
+            databaseId: activePlanRowId || (plan as any).databaseId,
+          }
+        : plan;
+
+      set({ weeklyWorkoutPlan: planDataWithDbId });
+
       const weeklyPlanData = {
-        id: planId,
+        id: planRowId,
         user_id: userId,
         plan_title: plan.planTitle || `Week ${plan.weekNumber} Plan`,
         plan_description:
@@ -143,22 +175,12 @@ export const createPlanActions = (
         week_number: plan.weekNumber || 1,
         total_workouts: plan.workouts.length,
         duration_range: plan.duration ? String(plan.duration) : "1 week",
-        plan_data: plan,
+        plan_data: planDataWithDbId,
         is_active: true,
       };
 
-      const { error: deactivateError } = await supabase
-        .from("weekly_workout_plans")
-        .update({ is_active: false })
-        .eq("user_id", userId)
-        .eq("is_active", true);
-
-      if (deactivateError) {
-        throw deactivateError;
-      }
-
       await offlineService.queueAction({
-        type: "CREATE",
+        type: activePlanRowId ? "UPDATE" : "CREATE",
         table: "weekly_workout_plans",
         data: weeklyPlanData,
         userId: getUserIdOrGuest(),
@@ -197,8 +219,12 @@ export const createPlanActions = (
 
             const planData = latestPlan.plan_data;
             if (planData && planData.workouts) {
-              set({ weeklyWorkoutPlan: planData });
-              return planData;
+              const planWithDbId = {
+                ...planData,
+                databaseId: latestPlan.id,
+              };
+              set({ weeklyWorkoutPlan: planWithDbId });
+              return planWithDbId;
             }
           } else {
           }

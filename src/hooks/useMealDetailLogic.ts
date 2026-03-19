@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useNutritionStore } from "../stores/nutritionStore";
+import { getLocalDateString } from "../utils/weekUtils";
 
 export interface FoodItem {
   id: string;
@@ -84,9 +85,7 @@ export const useMealDetailLogic = (mealId: string) => {
           id: m.id,
           name: m.name || m.type || "Meal",
           time: m.timing || "",
-          date:
-            m.createdAt?.split("T")[0] ||
-            new Date().toISOString().split("T")[0],
+          date: m.createdAt ? getLocalDateString(m.createdAt) : getLocalDateString(),
           totalCalories: Math.round(totalCalories),
           totalProtein: Math.round(totalProtein),
           totalCarbs: Math.round(totalCarbs),

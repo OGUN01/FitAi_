@@ -25,6 +25,42 @@ export function getLocalDateString(value?: string | Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
+export function getLocalDayBounds(value?: string | Date): {
+  date: string;
+  startIso: string;
+  endIso: string;
+} {
+  const date = toDate(value);
+  const start = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    0,
+    0,
+    0,
+    0,
+  );
+  const end = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    23,
+    59,
+    59,
+    999,
+  );
+
+  return {
+    date: getLocalDateString(date),
+    startIso: start.toISOString(),
+    endIso: end.toISOString(),
+  };
+}
+
+export function getLocalDayName(value?: string | Date): string {
+  return getDayNameForDate(value);
+}
+
 export function getWeekStartForDate(value?: string | Date): string {
   const date = toDate(value);
   date.setHours(0, 0, 0, 0);
@@ -40,6 +76,10 @@ export function getWeekStartForDate(value?: string | Date): string {
  */
 export function getCurrentWeekStart(): string {
   return getWeekStartForDate(new Date());
+}
+
+export function isInCurrentLocalWeek(value?: string | Date): boolean {
+  return getWeekStartForDate(value) === getCurrentWeekStart();
 }
 
 /**

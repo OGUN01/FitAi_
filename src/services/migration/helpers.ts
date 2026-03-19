@@ -2,6 +2,8 @@ import * as crypto from "expo-crypto";
 import { enhancedLocalStorage } from "../localStorage";
 import { MigrationContext } from "./types";
 
+export const REMOTE_MIGRATION_SUPPORTED = false;
+
 export function generateMigrationId(): string {
   return `migration_${Date.now()}_${crypto.randomUUID().replace(/-/g, "").substring(0, 9)}`;
 }

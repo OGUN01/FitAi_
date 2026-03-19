@@ -9,6 +9,7 @@ import { WeeklyMealPlan, AIServiceMetadata } from "./types";
 import { handleError } from "./utils";
 import { fitaiWorkersClient } from "../services/fitaiWorkersClient";
 import { transformForDietRequest } from "../services/aiRequestTransformers";
+import { getLocalDateString } from "../utils/weekUtils";
 
 import { transformDietResponseToWeeklyPlan } from "../services/aiRequestTransformers";
 
@@ -98,7 +99,7 @@ export async function generateDailyMealPlan(
     }
 
     const dailyPlan: DailyMealPlan = {
-      date: new Date().toISOString().split("T")[0],
+      date: getLocalDateString(),
       meals: response.data.meals || [],
       totalCalories: response.data.dailyTotals?.calories || 0,
       totalMacros: {

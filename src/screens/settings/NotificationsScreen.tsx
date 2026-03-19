@@ -175,12 +175,32 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
 export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
   onBack,
 }) => {
-  if (isExpoGo) {
+  const notificationsUnavailable =
+    isExpoGo ||
+    !useNotificationStore ||
+    !WaterReminderEditModal ||
+    !NotificationEditModal;
+
+  if (notificationsUnavailable) {
     return (
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
         <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
           <NotificationsHeader onBack={onBack} />
-          <ExpoGoMessage />
+          {isExpoGo ? (
+            <ExpoGoMessage />
+          ) : (
+            <View style={styles.unavailableContainer}>
+              <GlassCard elevation={1} padding="lg" blurIntensity="light">
+                <Text style={styles.unavailableTitle}>
+                  Notifications Unavailable
+                </Text>
+                <Text style={styles.unavailableText}>
+                  Reminder settings could not be loaded on this build, so the
+                  controls are hidden instead of showing broken toggles.
+                </Text>
+              </GlassCard>
+            </View>
+          )}
         </SafeAreaView>
       </AuroraBackground>
     );
@@ -329,6 +349,23 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingTop: ResponsiveTheme.spacing.sm,
+  },
+  unavailableContainer: {
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingTop: ResponsiveTheme.spacing.lg,
+  },
+  unavailableTitle: {
+    fontSize: rf(16),
+    fontWeight: "700",
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rp(8),
+    textAlign: "center" as const,
+  },
+  unavailableText: {
+    fontSize: rf(13),
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(18),
+    textAlign: "center" as const,
   },
   section: {
     marginBottom: ResponsiveTheme.spacing.lg,

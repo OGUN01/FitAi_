@@ -7,6 +7,7 @@ import { rp, rw, rh } from "../../utils/responsive";
 interface WorkoutNavigationProps {
   currentExercise: number;
   totalExercises: number;
+  canAdvance: boolean;
   onPrevious: () => void;
   onNext: () => void;
 }
@@ -14,6 +15,7 @@ interface WorkoutNavigationProps {
 export const WorkoutNavigation: React.FC<WorkoutNavigationProps> = ({
   currentExercise,
   totalExercises,
+  canAdvance,
   onPrevious,
   onNext,
 }) => {
@@ -35,6 +37,7 @@ export const WorkoutNavigation: React.FC<WorkoutNavigationProps> = ({
         }
         onPress={onNext}
         variant="primary"
+        disabled={!canAdvance}
         style={StyleSheet.flatten([styles.navButton, styles.primaryNavButton])}
       />
     </View>

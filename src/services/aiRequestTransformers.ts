@@ -375,10 +375,13 @@ export function transformWorkoutResponseToWeeklyPlan(
     workoutsPerWeek,
   );
 
+  const daySlotCounts = new Map<string, number>();
   for (let i = 0; i < workoutDays.length; i++) {
     const day = workoutDays[i];
+    const slotIndex = daySlotCounts.get(day) ?? 0;
+    daySlotCounts.set(day, slotIndex + 1);
     workouts.push({
-      id: `${day}_workout_${Date.now()}_${i}`,
+      id: `${day}_workout_${slotIndex}`,
       title: workoutPlan.title || "AI Generated Workout",
       description: workoutPlan.description || "",
       category: mapWorkoutCategory(workoutPlan) as
@@ -407,7 +410,7 @@ export function transformWorkoutResponseToWeeklyPlan(
   }
 
   return {
-    id: workoutPlan.id || `weekly_workout_${Date.now()}`,
+    id: workoutPlan.id || `weekly_workout_week_${weekNumber}`,
     weekNumber,
     workouts: workouts as any,
     planTitle: workoutPlan.title || "Your Personalized Workout Plan",

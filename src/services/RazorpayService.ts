@@ -135,12 +135,41 @@ class RazorpayService {
     return refreshedSession.access_token;
   }
 
+  private async getValidatedAuthToken(): Promise<string> {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      throw new RazorpayServiceError(
+        "No active session - please sign in and try again",
+        "AUTH_ERROR",
+      );
+    }
+
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      throw new RazorpayServiceError(
+        sessionError?.message ||
+          "Session token unavailable. Please sign out and sign in again.",
+        "AUTH_ERROR",
+      );
+    }
+
+    return session.access_token;
+  }
+
   private async request<T>(
     endpoint: string,
     method: "GET" | "POST",
     body?: Record<string, unknown>,
   ): Promise<T> {
-    const token = await this.getAuthToken();
+    const token = await this.getValidatedAuthToken();
     const url = getWorkersUrl(endpoint);
 
     let response: Response;

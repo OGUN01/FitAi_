@@ -11,7 +11,14 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, Text, StyleSheet, RefreshControl, ActivityIndicator, Platform } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  RefreshControl,
+  ActivityIndicator,
+  Platform,
+} from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -26,12 +33,16 @@ import { haptics } from "../../utils/haptics";
 import { useAnalyticsStore } from "../../stores/analyticsStore";
 import { useHealthDataStore } from "../../stores/healthDataStore";
 import { useFitnessStore } from "../../stores/fitnessStore";
-import { useNutritionStore } from "../../stores/nutritionStore";
 import { useAuthStore } from "../../stores/authStore";
 import { useProfileStore } from "../../stores/profileStore";
 import { useCalculatedMetrics } from "../../hooks/useCalculatedMetrics";
 import { analyticsDataService } from "../../services/analyticsData";
 import { useAchievementStore } from "../../stores/achievementStore";
+import {
+  getCurrentWeekStart,
+  getLocalDateString,
+  getWeekStartForDate,
+} from "../../utils/weekUtils";
 
 // Modular Components
 import {
@@ -69,9 +80,6 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
   const completedSessions = useFitnessStore((state) => state.completedSessions);
   const { bodyAnalysis, personalInfo, workoutPreferences } = useProfileStore();
   const { metrics: calculatedMetrics } = useCalculatedMetrics();
-  // SSOT fix: read getTodaysConsumedNutrition from nutritionStore — it aggregates
-  // BOTH weekly plan completions AND manually logged daily meals.
-  const getTodaysConsumedNutrition = useNutritionStore((s) => s.getTodaysConsumedNutrition);
   const {
     initialize: initializeAnalytics,
     refreshAnalytics,
@@ -85,6 +93,10 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     calorieHistory,
     setHistoryData,
   } = useAnalyticsStore();
+  const initializeAchievements = useAchievementStore((s) => s.initialize);
+  const areAchievementsInitialized = useAchievementStore(
+    (s) => s.isInitialized,
+  );
   // SSOT fix: streak comes from achievementStore.currentStreak which is computed
   // from completedSessions via updateCurrentStreak(). DataRetrievalService.getWeeklyProgress()
   // returned a stale value derived from workoutProgress (can lag after plan regeneration).
@@ -97,13 +109,30 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     }
   }, [isInitialized, initializeAnalytics]);
 
+  useEffect(() => {
+    if (!user?.id || areAchievementsInitialized) {
+      return;
+    }
+
+    initializeAchievements(user.id).catch((error) => {
+      console.warn(
+        "[AnalyticsScreen] Failed to initialize achievements:",
+        error,
+      );
+    });
+  }, [user?.id, areAchievementsInitialized, initializeAchievements]);
+
   // Compute period days from selected period
   const periodDays = useMemo(() => {
     switch (selectedPeriod) {
-      case 'week': return 7;
-      case 'month': return 30;
-      case 'quarter': return 90;
-      default: return 365;
+      case "week":
+        return 7;
+      case "month":
+        return 30;
+      case "quarter":
+        return 90;
+      default:
+        return 365;
     }
   }, [selectedPeriod]);
 
@@ -115,6 +144,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     }
 
     try {
+      setIsDataLoading(true);
       setDataError(null);
       const [weightData, calorieData] = await Promise.all([
         analyticsDataService.getWeightHistory(user.id, periodDays),
@@ -125,8 +155,8 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
       // so the Analytics tab shows cached data immediately on the next mount.
       setHistoryData(weightData, calorieData);
     } catch (error) {
-      console.error('Failed to load analytics history:', error);
-      setDataError('Failed to load analytics data. Pull to refresh.');
+      console.error("Failed to load analytics history:", error);
+      setDataError("Failed to load analytics data. Pull to refresh.");
     } finally {
       setIsDataLoading(false);
     }
@@ -137,43 +167,82 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     loadHistoryData();
   }, [loadHistoryData]);
 
+  const periodBoundaries = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const weekStart = new Date(`${getCurrentWeekStart()}T00:00:00`);
+
+    const monthStart = new Date(today);
+    monthStart.setDate(today.getDate() - 29);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const quarterStart = new Date(today.getFullYear(), today.getMonth() - 2, 1);
+    quarterStart.setHours(0, 0, 0, 0);
+
+    const yearStart = new Date(today.getFullYear(), today.getMonth() - 11, 1);
+    yearStart.setHours(0, 0, 0, 0);
+
+    return {
+      today,
+      weekStart,
+      monthStart,
+      quarterStart,
+      yearStart,
+    };
+  }, []);
+
+  const isInSelectedPeriod = useCallback(
+    (dateValue: string) => {
+      const dateKey = getLocalDateString(dateValue);
+      switch (selectedPeriod) {
+        case "week":
+          return getWeekStartForDate(dateValue) === getCurrentWeekStart();
+        case "month":
+          return dateKey >= getLocalDateString(periodBoundaries.monthStart);
+        case "quarter":
+          return dateKey >= getLocalDateString(periodBoundaries.quarterStart);
+        default:
+          return dateKey >= getLocalDateString(periodBoundaries.yearStart);
+      }
+    },
+    [periodBoundaries, selectedPeriod],
+  );
+
   // Calculate metrics data - prioritize calculatedMetrics from onboarding
   const metricsData = useMemo((): MetricData => {
     // Weight data - prefer calculated metrics from onboarding, fallback to health metrics or profile
     // Weight: prefer calculatedMetrics, then profileStore.bodyAnalysis (source of truth from onboarding)
-    const currentWeight = (calculatedMetrics?.currentWeightKg && calculatedMetrics.currentWeightKg > 0)
-      ? calculatedMetrics.currentWeightKg
-      : (bodyAnalysis?.current_weight_kg && bodyAnalysis.current_weight_kg > 0)
-        ? bodyAnalysis.current_weight_kg
-        : undefined;
-    const targetWeight = calculatedMetrics?.targetWeightKg
-      || (bodyAnalysis?.target_weight_kg && bodyAnalysis.target_weight_kg > 0 ? bodyAnalysis.target_weight_kg : undefined);
+    const currentWeight =
+      calculatedMetrics?.currentWeightKg &&
+      calculatedMetrics.currentWeightKg > 0
+        ? calculatedMetrics.currentWeightKg
+        : bodyAnalysis?.current_weight_kg && bodyAnalysis.current_weight_kg > 0
+          ? bodyAnalysis.current_weight_kg
+          : undefined;
+    const targetWeight =
+      calculatedMetrics?.targetWeightKg ||
+      (bodyAnalysis?.target_weight_kg && bodyAnalysis.target_weight_kg > 0
+        ? bodyAnalysis.target_weight_kg
+        : undefined);
 
     // Calculate completed workouts WITHIN the selected period
     // Filter by completedAt timestamp falling within periodDays window
-    const periodStart = new Date();
-    periodStart.setDate(periodStart.getDate() - periodDays);
-    const periodStartISO = periodStart.toISOString();
-
     const completedWorkouts = completedSessions.filter((s) =>
-      s.completedAt >= periodStartISO
+      isInSelectedPeriod(s.completedAt),
     ).length;
 
     // SSOT fix: calories consumed comes from nutritionStore which aggregates
     // both completed weekly-plan meals AND manually logged daily meals.
     // Previously DataRetrievalService.getTodaysData() was used but it only
     // counted weekly-plan completions, ignoring meal_logs / barcode scans.
-    const todaysNutrition = getTodaysConsumedNutrition();
-    const caloriesConsumed = todaysNutrition.calories;
+    const caloriesConsumed = calorieHistory
+      .filter((entry) => isInSelectedPeriod(entry.date))
+      .reduce((sum, entry) => sum + (entry.consumed || 0), 0);
 
-    // Calculate calories burned from completed sessions this period (actual burned, not estimated)
-    const totalCaloriesBurned = completedSessions
-      .filter((s) => s.completedAt >= periodStartISO)
-      .reduce((sum, s) => sum + s.caloriesBurned, 0);
-
-    // Use consumed calories as the primary display (what user ate today)
-    // Fall back to burned calories from workouts if no food logged yet
-    const displayCalories = caloriesConsumed > 0 ? caloriesConsumed : totalCaloriesBurned;
+    // SSOT: this card is intake-only because its trend/history/target all use
+    // calorie consumption semantics. Burned calories belong in a separate fact.
+    const displayCalories = caloriesConsumed;
 
     // SSOT fix: streak derived from achievementStore.currentStreak which counts
     // consecutive workout days from completedSessions. DataRetrievalService was stale.
@@ -182,28 +251,42 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     // Weight change: derive from Supabase history (oldest → newest in period)
     // Positive = gained weight, negative = lost weight
     // Fallback shows remaining to goal: target - current (negative = target lower than current = needs to lose)
-    const weightChange = weightHistory.length >= 2
-      ? Number((weightHistory[weightHistory.length - 1].weight - weightHistory[0].weight).toFixed(1))
-      : currentWeight && targetWeight
-        ? Number((targetWeight - currentWeight).toFixed(1)) // negative = still needs to lose, positive = already below (gained back)
-        : undefined;
+    const weightChange =
+      weightHistory.length >= 2
+        ? Number(
+            (
+              weightHistory[weightHistory.length - 1].weight -
+              weightHistory[0].weight
+            ).toFixed(1),
+          )
+        : currentWeight && targetWeight
+          ? Number((targetWeight - currentWeight).toFixed(1)) // negative = still needs to lose, positive = already below (gained back)
+          : undefined;
 
     // Weight trend: negative change (losing weight / below goal) = "down" = green (good for weight-loss goals)
-    const weightTrend = weightChange !== undefined
-      ? weightChange < 0 ? ("down" as const)
-        : weightChange > 0 ? ("up" as const)
-        : ("stable" as const)
-      : ("stable" as const);
+    const weightTrend =
+      weightChange !== undefined
+        ? weightChange < 0
+          ? ("down" as const)
+          : weightChange > 0
+            ? ("up" as const)
+            : ("stable" as const)
+        : ("stable" as const);
 
     // Calorie change: percentage change from start to end of period
-    const calorieChange = calorieHistory.length >= 2
-      ? (() => {
-          const first = calorieHistory[0].consumed;
-          const last = calorieHistory[calorieHistory.length - 1].consumed;
-          if (first === 0) return undefined;
-          return Math.round(((last - first) / first) * 100);
-        })()
-      : undefined;
+    const periodCalorieHistory = calorieHistory.filter((entry) =>
+      isInSelectedPeriod(entry.date),
+    );
+    const calorieChange =
+      periodCalorieHistory.length >= 2
+        ? (() => {
+            const first = periodCalorieHistory[0].consumed;
+            const last =
+              periodCalorieHistory[periodCalorieHistory.length - 1].consumed;
+            if (first === 0) return undefined;
+            return Math.round(((last - first) / first) * 100);
+          })()
+        : undefined;
 
     return {
       weight: currentWeight
@@ -215,7 +298,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
           }
         : undefined,
       calories: {
-        burned: displayCalories,
+        consumed: displayCalories,
         target: calculatedMetrics?.dailyCalories || undefined,
         change: calorieChange,
         trend: displayCalories > 0 ? ("up" as const) : ("stable" as const),
@@ -233,15 +316,19 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
       // advanced_review from Supabase). We do NOT recompute them inline here —
       // that would duplicate the Mifflin–St Jeor formula and risk divergence.
       // If calculatedMetrics is null (not loaded yet), show undefined in the UI.
-      bmi: (calculatedMetrics?.calculatedBMI && calculatedMetrics.calculatedBMI > 0)
-        ? calculatedMetrics.calculatedBMI
-        : undefined,
-      bmr: (calculatedMetrics?.calculatedBMR && calculatedMetrics.calculatedBMR > 0)
-        ? calculatedMetrics.calculatedBMR
-        : undefined,
-      tdee: (calculatedMetrics?.calculatedTDEE && calculatedMetrics.calculatedTDEE > 0)
-        ? calculatedMetrics.calculatedTDEE
-        : undefined,
+      bmi:
+        calculatedMetrics?.calculatedBMI && calculatedMetrics.calculatedBMI > 0
+          ? calculatedMetrics.calculatedBMI
+          : undefined,
+      bmr:
+        calculatedMetrics?.calculatedBMR && calculatedMetrics.calculatedBMR > 0
+          ? calculatedMetrics.calculatedBMR
+          : undefined,
+      tdee:
+        calculatedMetrics?.calculatedTDEE &&
+        calculatedMetrics.calculatedTDEE > 0
+          ? calculatedMetrics.calculatedTDEE
+          : undefined,
       dailyWater: calculatedMetrics?.dailyWaterML,
     };
   }, [
@@ -252,24 +339,23 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     weightHistory,
     calorieHistory,
     periodDays,
-    getTodaysConsumedNutrition,
+    isInSelectedPeriod,
     currentStreak,
   ]);
 
   // Calorie breakdown by session type — for breakdown display only, not part of MetricData
   const calBreakdown = useMemo(() => {
-    const periodStart = new Date();
-    periodStart.setDate(periodStart.getDate() - periodDays);
-    const periodStartISO = periodStart.toISOString();
     return {
       extra: completedSessions
-        .filter((s) => s.completedAt >= periodStartISO && s.type === 'extra')
+        .filter((s) => s.type === "extra" && isInSelectedPeriod(s.completedAt))
         .reduce((sum, s) => sum + s.caloriesBurned, 0),
       planned: completedSessions
-        .filter((s) => s.completedAt >= periodStartISO && s.type === 'planned')
+        .filter(
+          (s) => s.type === "planned" && isInSelectedPeriod(s.completedAt),
+        )
         .reduce((sum, s) => sum + s.caloriesBurned, 0),
     };
-  }, [completedSessions, periodDays]);
+  }, [completedSessions, isInSelectedPeriod]);
 
   // Generate chart data based on period
   const chartData = useMemo(() => {
@@ -284,15 +370,25 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
             value: w.weight,
           }))
         : (() => {
-            const fallbackWeight = (calculatedMetrics?.currentWeightKg && calculatedMetrics.currentWeightKg > 0)
-              ? calculatedMetrics.currentWeightKg
-              : (bodyAnalysis?.current_weight_kg && bodyAnalysis.current_weight_kg > 0)
-                ? bodyAnalysis.current_weight_kg
-                : undefined;
-            return fallbackWeight ? [{
-              label: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-              value: fallbackWeight,
-            }] : undefined;
+            const fallbackWeight =
+              calculatedMetrics?.currentWeightKg &&
+              calculatedMetrics.currentWeightKg > 0
+                ? calculatedMetrics.currentWeightKg
+                : bodyAnalysis?.current_weight_kg &&
+                    bodyAnalysis.current_weight_kg > 0
+                  ? bodyAnalysis.current_weight_kg
+                  : undefined;
+            return fallbackWeight
+              ? [
+                  {
+                    label: new Date().toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    }),
+                    value: fallbackWeight,
+                  },
+                ]
+              : undefined;
           })();
 
     // Calorie chart: filter out zero-value days to avoid misleading empty bars
@@ -315,19 +411,42 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     if (selectedPeriod === "week") {
       // Show each day of the current week (Mon-Sun)
       const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-      const weekBoundary = new Date();
-      weekBoundary.setDate(weekBoundary.getDate() - 7);
-      weekBoundary.setHours(0, 0, 0, 0);
+      const startOfWeek = new Date(`${getCurrentWeekStart()}T00:00:00`);
       workoutData = dayLabels.map((label, index) => {
-        const dayName = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][index];
+        const bucketDate = new Date(startOfWeek);
+        bucketDate.setDate(startOfWeek.getDate() + index);
+        const bucketDateKey = getLocalDateString(bucketDate);
         const count = completedSessions.filter((s) => {
-          const d = new Date(s.completedAt);
-          const weekDayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-          return weekDayNames[d.getDay()] === dayName && d >= weekBoundary;
+          return getLocalDateString(s.completedAt) === bucketDateKey;
         }).length;
         return { label, value: count };
       });
     } else if (selectedPeriod === "month") {
+      workoutData = Array.from({ length: 5 }, (_, index) => {
+        const bucketStart = new Date(periodBoundaries.monthStart);
+        bucketStart.setDate(periodBoundaries.monthStart.getDate() + index * 6);
+        const bucketEnd = new Date(bucketStart);
+        bucketEnd.setDate(bucketStart.getDate() + 6);
+        if (index === 4) {
+          bucketEnd.setTime(
+            periodBoundaries.today.getTime() + 24 * 60 * 60 * 1000,
+          );
+        }
+
+        const count = completedSessions.filter((s) => {
+          if (!s.completedAt) return false;
+          const d = new Date(s.completedAt);
+          return d >= bucketStart && d < bucketEnd;
+        }).length;
+        return {
+          label: bucketStart.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          }),
+          value: count,
+        };
+      });
+    } else if ((selectedPeriod as string) === "__month_legacy__") {
       // Show completions grouped by week (W1-W4) within last 30 days
       const now = new Date();
       workoutData = ["W1", "W2", "W3", "W4"].map((label, weekIndex) => {
@@ -335,9 +454,14 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
         weekStart.setDate(now.getDate() - 28 + weekIndex * 7);
         weekStart.setHours(0, 0, 0, 0);
         // Last bucket must include today — extend to start of tomorrow
-        const weekEnd = weekIndex === 3
-          ? new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
-          : (() => { const d = new Date(weekStart); d.setDate(weekStart.getDate() + 7); return d; })();
+        const weekEnd =
+          weekIndex === 3
+            ? new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+            : (() => {
+                const d = new Date(weekStart);
+                d.setDate(weekStart.getDate() + 7);
+                return d;
+              })();
 
         const count = completedSessions.filter((s) => {
           if (!s.completedAt) return false;
@@ -347,6 +471,30 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
         return { label, value: count };
       });
     } else if (selectedPeriod === "quarter") {
+      const monthLabels = Array.from({ length: 3 }, (_, i) => {
+        const d = new Date(
+          periodBoundaries.quarterStart.getFullYear(),
+          periodBoundaries.quarterStart.getMonth() + i,
+          1,
+        );
+        return d.toLocaleDateString("en-US", { month: "short" });
+      });
+      workoutData = monthLabels.map((label, i) => {
+        const d = new Date(
+          periodBoundaries.quarterStart.getFullYear(),
+          periodBoundaries.quarterStart.getMonth() + i,
+          1,
+        );
+        const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
+        const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+        const count = completedSessions.filter((s) => {
+          if (!s.completedAt) return false;
+          const cd = new Date(s.completedAt);
+          return cd >= monthStart && cd < monthEnd;
+        }).length;
+        return { label, value: count };
+      });
+    } else if ((selectedPeriod as string) === "__quarter_legacy__") {
       // Group by month (last 3 months)
       const now = new Date();
       const monthLabels = Array.from({ length: 3 }, (_, i) => {
@@ -357,6 +505,33 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
         const d = new Date(now.getFullYear(), now.getMonth() - (2 - i), 1);
         const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
         const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+        const count = completedSessions.filter((s) => {
+          if (!s.completedAt) return false;
+          const cd = new Date(s.completedAt);
+          return cd >= monthStart && cd < monthEnd;
+        }).length;
+        return { label, value: count };
+      });
+    } else if (selectedPeriod === "year") {
+      const yearLabels = Array.from({ length: 6 }, (_, i) => {
+        const d = new Date(
+          periodBoundaries.yearStart.getFullYear(),
+          periodBoundaries.yearStart.getMonth() + i * 2,
+          1,
+        );
+        return d.toLocaleDateString("en-US", { month: "short" });
+      });
+      workoutData = yearLabels.map((label, i) => {
+        const monthStart = new Date(
+          periodBoundaries.yearStart.getFullYear(),
+          periodBoundaries.yearStart.getMonth() + i * 2,
+          1,
+        );
+        const monthEnd = new Date(
+          periodBoundaries.yearStart.getFullYear(),
+          periodBoundaries.yearStart.getMonth() + i * 2 + 2,
+          1,
+        );
         const count = completedSessions.filter((s) => {
           if (!s.completedAt) return false;
           const cd = new Date(s.completedAt);
@@ -385,10 +560,15 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
       weightData: weightChartData,
 
       // Calorie data - from Supabase analytics_metrics (non-zero only)
-      calorieData: calorieChartData && calorieChartData.length > 0 ? calorieChartData : undefined,
+      calorieData:
+        calorieChartData && calorieChartData.length > 0
+          ? calorieChartData
+          : undefined,
 
       // Workout data - period-aware bucketing
-      workoutData: workoutData.some((d) => d.value > 0) ? workoutData : undefined,
+      workoutData: workoutData.some((d) => d.value > 0)
+        ? workoutData
+        : undefined,
     };
   }, [
     selectedPeriod,
@@ -397,14 +577,18 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     bodyAnalysis,
     weightHistory,
     calorieHistory,
+    periodBoundaries,
   ]);
 
   // Handlers
-  const handlePeriodChange = useCallback((period: Period) => {
-    haptics.light();
-    // SSOT: setPeriod writes to analyticsStore which persists across tab switches
-    setSelectedPeriod(period);
-  }, [setSelectedPeriod]);
+  const handlePeriodChange = useCallback(
+    (period: Period) => {
+      haptics.light();
+      // SSOT: setPeriod writes to analyticsStore which persists across tab switches
+      setSelectedPeriod(period);
+    },
+    [setSelectedPeriod],
+  );
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -414,36 +598,50 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
       await refreshAnalytics();
       await loadHistoryData();
     } catch (error) {
-      console.error('Refresh error:', error);
-      setDataError('Failed to refresh data. Please try again.');
+      console.error("Refresh error:", error);
+      setDataError("Failed to refresh data. Please try again.");
     } finally {
       setRefreshing(false);
     }
   }, [refreshAnalytics, loadHistoryData]);
 
-  const handleMetricPress = useCallback((metric: string) => {
-    haptics.light();
-    // Navigate to the most relevant screen for each metric
-    if (metric === "weight" || metric === "streak" || metric === "bmi" || metric === "bmr" || metric === "tdee") {
-      navigation?.navigate("Progress");
-    } else if (metric === "workouts") {
-      // No direct navigate — fitness is a tab, not a session screen
-      // Just provide haptic feedback (user is already on analytics)
-    } else if (metric === "calories" || metric === "water") {
-      // Diet is a tab — no navigate needed, but we can give feedback
-    }
-  }, [navigation]);
+  const handleMetricPress = useCallback(
+    (metric: string) => {
+      haptics.light();
+      // Navigate to the most relevant screen for each metric
+      if (
+        metric === "weight" ||
+        metric === "streak" ||
+        metric === "bmi" ||
+        metric === "bmr" ||
+        metric === "tdee"
+      ) {
+        navigation?.navigate("Progress");
+      } else if (metric === "workouts") {
+        navigation?.navigate("Workout");
+      } else if (metric === "calories" || metric === "water") {
+        navigation?.navigate(
+          "Diet",
+          metric === "water" ? { openWaterModal: true } : { openLogMeal: true },
+        );
+      }
+    },
+    [navigation],
+  );
 
-  const handleChartPress = useCallback((chartType: string) => {
-    haptics.light();
-    if (chartType === "weight") {
-      navigation?.navigate("Progress");
-    } else if (chartType === "workouts") {
-      navigation?.navigate("ProgressTrends");
-    } else if (chartType === "calories") {
-      navigation?.navigate("ProgressTrends");
-    }
-  }, [navigation]);
+  const handleChartPress = useCallback(
+    (chartType: string) => {
+      haptics.light();
+      if (chartType === "weight") {
+        navigation?.navigate("Progress");
+      } else if (chartType === "workouts") {
+        navigation?.navigate("ProgressTrends");
+      } else if (chartType === "calories") {
+        navigation?.navigate("ProgressTrends");
+      }
+    },
+    [navigation],
+  );
 
   // Navigation handlers
   const handleProgressPress = useCallback(() => {
@@ -458,7 +656,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top"]}>
         <Animated.View
-          entering={Platform.OS !== 'web' ? FadeIn.duration(300) : undefined}
+          entering={Platform.OS !== "web" ? FadeIn.duration(300) : undefined}
           style={styles.animatedContainer}
         >
           <Animated.ScrollView
@@ -515,14 +713,24 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
                 {calBreakdown.extra > 0 && (
                   <View style={styles.sectionContainer}>
                     <View style={styles.calorieBreakdown}>
-                      <Text style={styles.breakdownTitle}>Calorie Breakdown</Text>
+                      <Text style={styles.breakdownTitle}>
+                        Calorie Breakdown
+                      </Text>
                       <View style={styles.breakdownRow}>
                         <Text style={styles.breakdownLabel}>Plan workouts</Text>
-                        <Text style={styles.breakdownValue}>{calBreakdown.planned} kcal</Text>
+                        <Text style={styles.breakdownValue}>
+                          {calBreakdown.planned} kcal
+                        </Text>
                       </View>
                       <View style={styles.breakdownRow}>
-                        <Text style={styles.breakdownLabel}>Extra workouts</Text>
-                        <Text style={[styles.breakdownValue, styles.breakdownExtra]}>{calBreakdown.extra} kcal</Text>
+                        <Text style={styles.breakdownLabel}>
+                          Extra workouts
+                        </Text>
+                        <Text
+                          style={[styles.breakdownValue, styles.breakdownExtra]}
+                        >
+                          {calBreakdown.extra} kcal
+                        </Text>
                       </View>
                     </View>
                   </View>
@@ -596,21 +804,21 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   calorieBreakdown: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
     borderRadius: 12,
     padding: 16,
     marginHorizontal: 16,
   },
   breakdownTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.text,
     marginBottom: 10,
   },
   breakdownRow: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     paddingVertical: 4,
   },
   breakdownLabel: {
@@ -619,7 +827,7 @@ const styles = StyleSheet.create({
   },
   breakdownValue: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.text,
   },
   breakdownExtra: {

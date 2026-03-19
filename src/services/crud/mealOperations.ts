@@ -68,7 +68,10 @@ export async function updateMealLog(
       syncStatus: SyncStatus.PENDING,
     };
 
-    await dataBridge.storeMealLog(updated);
+    const stored = await dataBridge.updateMealLog(logId, updated);
+    if (!stored) {
+      throw new Error(`Meal log ${logId} could not be updated in local storage`);
+    }
   } catch (error) {
     console.error("Failed to update meal log:", error);
     throw error;

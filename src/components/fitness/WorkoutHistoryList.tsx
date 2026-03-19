@@ -22,6 +22,7 @@ import { haptics } from "../../utils/haptics";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 interface CompletedWorkout {
   id: string;
+  sessionId: string;
   workoutId: string;
   title: string;
   category: string;
@@ -29,6 +30,19 @@ interface CompletedWorkout {
   caloriesBurned: number;
   completedAt: string;
   progress: number;
+  workoutSnapshot: {
+    title: string;
+    category: string;
+    duration: number;
+    exercises: Array<{
+      name: string;
+      sets: number;
+      reps: number | string;
+      exerciseId?: string;
+      duration?: number;
+      restTime?: number;
+    }>;
+  };
 }
 
 interface WorkoutHistoryListProps {

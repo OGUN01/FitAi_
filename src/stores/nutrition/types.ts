@@ -16,6 +16,7 @@ export interface MealProgress {
   progress: number; // 0-100
   completedAt?: string;
   logId?: string;
+  planMealId?: string;
 }
 
 // Consumed nutrition computed from completed meals - SINGLE SOURCE OF TRUTH

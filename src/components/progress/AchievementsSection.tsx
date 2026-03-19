@@ -21,6 +21,8 @@ interface Achievement {
 
 interface AchievementsSectionProps {
   achievements: Achievement[];
+  completedCount: number;
+  totalCount: number;
 }
 
 const ITEM_HEIGHT = 68;
@@ -36,6 +38,8 @@ const rarityColor: Record<string, string> = {
 
 export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
   achievements,
+  completedCount,
+  totalCount,
 }) => {
   const sorted = [...achievements].sort((a, b) => {
     if (a.completed && !b.completed) return -1;
@@ -43,8 +47,8 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
     return 0;
   });
 
-  const completedCount = achievements.filter((a) => a.completed).length;
-  const containerHeight = ITEM_HEIGHT * VISIBLE_COUNT + rp(8) * (VISIBLE_COUNT - 1);
+  const containerHeight =
+    ITEM_HEIGHT * VISIBLE_COUNT + rp(8) * (VISIBLE_COUNT - 1);
 
   return (
     <View style={styles.section}>
@@ -58,11 +62,16 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
           <Text style={styles.sectionTitle}>Achievements</Text>
         </View>
         <Text style={styles.countBadge}>
-          {completedCount}/{achievements.length}
+          {completedCount}/{totalCount}
         </Text>
       </View>
 
-      <GlassCard elevation={1} blurIntensity="light" padding="sm" borderRadius="lg">
+      <GlassCard
+        elevation={1}
+        blurIntensity="light"
+        padding="sm"
+        borderRadius="lg"
+      >
         <ScrollView
           style={{ maxHeight: containerHeight }}
           showsVerticalScrollIndicator={true}
@@ -73,13 +82,17 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
             const rarity = achievement.rarity ?? "common";
             const accentColor = achievement.completed
               ? ResponsiveTheme.colors.success
-              : rarityColor[rarity] ?? "#9CA3AF";
+              : (rarityColor[rarity] ?? "#9CA3AF");
             const hasProgress =
               !achievement.completed &&
               (achievement.progress ?? 0) > 0 &&
               (achievement.target ?? 0) > 0;
             const pct = hasProgress
-              ? Math.min(100, ((achievement.progress ?? 0) / (achievement.target ?? 1)) * 100)
+              ? Math.min(
+                  100,
+                  ((achievement.progress ?? 0) / (achievement.target ?? 1)) *
+                    100,
+                )
               : 0;
 
             return (
@@ -91,9 +104,16 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
                 ]}
               >
                 {/* Icon */}
-                <View style={[styles.iconWrap, { backgroundColor: `${accentColor}20` }]}>
+                <View
+                  style={[
+                    styles.iconWrap,
+                    { backgroundColor: `${accentColor}20` },
+                  ]}
+                >
                   <Ionicons
-                    name={achievement.iconName as any}
+                    name={
+                      achievement.iconName as keyof typeof Ionicons.glyphMap
+                    }
                     size={rf(18)}
                     color={accentColor}
                   />
@@ -105,8 +125,15 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
                     <Text style={styles.title} numberOfLines={1}>
                       {achievement.title}
                     </Text>
-                    <View style={[styles.categoryTag, { backgroundColor: `${accentColor}18` }]}>
-                      <Text style={[styles.categoryText, { color: accentColor }]}>
+                    <View
+                      style={[
+                        styles.categoryTag,
+                        { backgroundColor: `${accentColor}18` },
+                      ]}
+                    >
+                      <Text
+                        style={[styles.categoryText, { color: accentColor }]}
+                      >
                         {achievement.category.toUpperCase()}
                       </Text>
                     </View>
@@ -117,7 +144,12 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
                   {hasProgress && (
                     <View style={styles.progressRow}>
                       <View style={styles.progressTrack}>
-                        <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: accentColor }]} />
+                        <View
+                          style={[
+                            styles.progressFill,
+                            { width: `${pct}%`, backgroundColor: accentColor },
+                          ]}
+                        />
                       </View>
                       <Text style={styles.progressLabel}>
                         {achievement.progress}/{achievement.target}

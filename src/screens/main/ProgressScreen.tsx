@@ -1,41 +1,34 @@
-import React from "react";
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
-  Animated,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
-import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
-import { ResponsiveTheme } from "../../utils/constants";
-import { rh } from "../../utils/responsive";
+import React from 'react';
+import { View, StyleSheet, ScrollView, RefreshControl, Animated } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
+import { AuroraSpinner } from '../../components/ui/aurora/AuroraSpinner';
+import { ResponsiveTheme } from '../../utils/constants';
+import { rh } from '../../utils/responsive';
 
 // Hooks
-import { useProgressScreen } from "../../hooks/useProgressScreen";
+import { useProgressScreen } from '../../hooks/useProgressScreen';
 
 // Kept components
-import { ProgressHeader } from "../../components/progress/ProgressHeader";
-import { ProgressErrorStates } from "../../components/progress/ProgressErrorStates";
-import { WeightEntryModal } from "../../components/progress/WeightEntryModal";
-import { AchievementsSection } from "../../components/progress/AchievementsSection";
+import { ProgressHeader } from '../../components/progress/ProgressHeader';
+import { ProgressErrorStates } from '../../components/progress/ProgressErrorStates';
+import { WeightEntryModal } from '../../components/progress/WeightEntryModal';
+import { AchievementsSection } from '../../components/progress/AchievementsSection';
 
 // New focused sections
-import { WeightJourneySection } from "../../components/progress/WeightJourneySection";
-import { GoalProgressSection } from "../../components/progress/GoalProgressSection";
-import { WorkoutConsistencySection } from "../../components/progress/WorkoutConsistencySection";
+import { WeightJourneySection } from '../../components/progress/WeightJourneySection';
+import { GoalProgressSection } from '../../components/progress/GoalProgressSection';
+import { WorkoutConsistencySection } from '../../components/progress/WorkoutConsistencySection';
 
 interface ProgressScreenProps {
   navigation?: {
-    navigate: (screen: string, params?: any) => void;
+    // eslint-disable-next-line no-unused-vars
+    navigate: (screen: string, params?: unknown) => void;
     goBack: () => void;
   };
 }
 
-export const ProgressScreen: React.FC<ProgressScreenProps> = ({
-  navigation,
-}) => {
+export const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { state, computed, actions } = useProgressScreen(navigation);
 
@@ -57,22 +50,19 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({
     calculatedMetrics,
     weeklyProgress,
     weightHistory,
+    weightUnit,
   } = state;
 
-  const { achievements } = computed;
+  const { achievements, completedAchievementCount, totalAchievementCount } = computed;
 
-  const {
-    onRefresh,
-    setShowWeightModal,
-    handleShareProgress,
-  } = actions;
+  const { onRefresh, setShowWeightModal, handleShareProgress } = actions;
 
   const combinedError = progressError || analysisError || statsError;
 
   if (isLoading) {
     return (
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <AuroraSpinner size="lg" />
         </View>
       </AuroraBackground>
@@ -132,6 +122,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({
                     progressEntries={progressEntries}
                     calculatedMetrics={calculatedMetrics}
                     onLogWeight={() => setShowWeightModal(true)}
+                    unit={weightUnit}
                   />
 
                   {/* 2. Goal Progress — am I getting closer? */}
@@ -139,15 +130,19 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({
                     progressStats={progressStats}
                     calculatedMetrics={calculatedMetrics}
                     weeklyProgress={weeklyProgress}
+                    weightHistory={weightHistory}
+                    unit={weightUnit}
                   />
 
                   {/* 3. Workout Consistency calendar heatmap */}
-                  <WorkoutConsistencySection
-                    streak={weeklyProgress?.streak ?? 0}
-                  />
+                  <WorkoutConsistencySection streak={weeklyProgress?.streak ?? 0} />
 
                   {/* 4. Achievements & milestones */}
-                  <AchievementsSection achievements={achievements} />
+                  <AchievementsSection
+                    achievements={achievements}
+                    completedCount={completedAchievementCount}
+                    totalCount={totalAchievementCount}
+                  />
                 </>
               )}
             </ScrollView>
@@ -159,7 +154,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({
         visible={showWeightModal}
         onClose={() => setShowWeightModal(false)}
         currentWeight={progressStats?.weightChange?.current}
-        unit="kg"
+        unit={weightUnit}
         onSuccess={onRefresh}
       />
     </>

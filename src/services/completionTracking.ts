@@ -271,6 +271,9 @@ class CompletionTrackingService {
         // SSOT Fix 19: update achievementStore.currentStreak immediately
         // so all readers always see the real live streak value.
         useAchievementStore.getState().updateCurrentStreak();
+        if (userId) {
+          await useAchievementStore.getState().reconcileWithCurrentData(userId);
+        }
 
         const event: CompletionEvent = {
           id: `workout_completion_${workoutId}_${Date.now()}`,
@@ -287,6 +290,10 @@ class CompletionTrackingService {
         };
 
         this.emit(event);
+
+        if (userId) {
+          await useAchievementStore.getState().reconcileWithCurrentData(userId);
+        }
         return true;
       }
 
@@ -329,11 +336,31 @@ class CompletionTrackingService {
         try {
           // Use provided userId - NO FALLBACK to fake user IDs
           const currentUserId = userId;
+          const completedAt = new Date().toISOString();
+          const planMealId = meal.id;
+          const mealLogId = generateUUID();
 
           if (currentUserId) {
             // Create meal log directly using CRUD operations
+            useNutritionStore.setState((state) => ({
+              mealProgress: {
+                ...state.mealProgress,
+                [mealId]: {
+                  ...state.mealProgress[mealId],
+                  mealId,
+                  planMealId,
+                  logId: mealLogId,
+                  progress: 100,
+                  completedAt,
+                },
+              },
+            }));
+
             const mealLog: MealLog = {
-              id: `weekly_meal_log_${mealId}_${Date.now()}`,
+              id: mealLogId,
+              planMealId,
+              fromPlan: true,
+              portionMultiplier: 1,
               mealType: meal.type as "breakfast" | "lunch" | "dinner" | "snack",
               foods: [],
               totalCalories: meal.totalCalories || 0,
@@ -345,7 +372,7 @@ class CompletionTrackingService {
                 sugar: meal.totalMacros?.sugar ?? 0,
                 sodium: meal.totalMacros?.sodium ?? 0,
               },
-              loggedAt: new Date().toISOString(),
+              loggedAt: completedAt,
               notes: `Weekly meal plan: ${meal.name}`,
               provenance,
               syncStatus: SyncStatus.PENDING,
@@ -362,28 +389,36 @@ class CompletionTrackingService {
             // CRITICAL: Also insert into Supabase meal_logs table for stats sync
             // This ensures loadDailyNutrition can read the data from Supabase
             try {
-              const supabaseResult = await supabase.from("meal_logs").insert({
-                user_id: currentUserId,
-                meal_type: meal.type,
-                meal_name: meal.name,
-                food_items: meal.items || [],
-                total_calories: meal.totalCalories || 0,
-                total_protein: meal.totalMacros?.protein ?? 0,
-                total_carbohydrates: meal.totalMacros?.carbohydrates ?? 0,
-                total_fat: meal.totalMacros?.fat ?? 0,
-                logging_mode: provenance.mode,
-                truth_level: provenance.truthLevel,
-                confidence: provenance.confidence ?? null,
-                country_context: provenance.countryContext ?? null,
-                requires_review: provenance.requiresReview,
-                source_metadata: {
-                  source: provenance.source ?? null,
-                  productIdentity: provenance.productIdentity ?? null,
-                  conflict: provenance.conflict ?? null,
-                },
-                notes: logData?.reviewNote || null,
-                logged_at: new Date().toISOString(),
-              });
+              const supabaseResult = await supabase
+                .from("meal_logs")
+                .insert({
+                  id: mealLogId,
+                  user_id: currentUserId,
+                  meal_type: meal.type,
+                  meal_name: meal.name,
+                  from_plan: true,
+                  plan_meal_id: planMealId,
+                  portion_multiplier: 1,
+                  food_items: meal.items || [],
+                  total_calories: meal.totalCalories || 0,
+                  total_protein: meal.totalMacros?.protein ?? 0,
+                  total_carbohydrates: meal.totalMacros?.carbohydrates ?? 0,
+                  total_fat: meal.totalMacros?.fat ?? 0,
+                  logging_mode: provenance.mode,
+                  truth_level: provenance.truthLevel,
+                  confidence: provenance.confidence ?? null,
+                  country_context: provenance.countryContext ?? null,
+                  requires_review: provenance.requiresReview,
+                  source_metadata: {
+                    source: provenance.source ?? null,
+                    productIdentity: provenance.productIdentity ?? null,
+                    conflict: provenance.conflict ?? null,
+                  },
+                  notes: logData?.reviewNote || null,
+                  logged_at: completedAt,
+                })
+                .select("id")
+                .single();
 
               if (supabaseResult.error) {
                 console.error(
@@ -391,6 +426,22 @@ class CompletionTrackingService {
                   supabaseResult.error,
                 );
               } else {
+                if (supabaseResult.data?.id) {
+                  useNutritionStore.setState((state) => ({
+                    mealProgress: {
+                      ...state.mealProgress,
+                      [mealId]: {
+                        ...state.mealProgress[mealId],
+                        mealId,
+                        planMealId,
+                        logId: mealLogId,
+                        progress: 100,
+                        completedAt,
+                      },
+                    },
+                  }));
+                }
+
                 // Save to analytics_metrics for Monthly Summary tracking
                 try {
                   await analyticsDataService.updateTodaysMetrics(

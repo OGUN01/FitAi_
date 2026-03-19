@@ -11,6 +11,7 @@ import {
 } from "./state";
 import { useFitnessStore } from "@/stores/fitness";
 import { useNutritionStore } from "@/stores/nutritionStore";
+import { getLocalDateString } from "@/utils/weekUtils";
 
 export const createActions = (set: any, get: any) => ({
   initialize: async (userId: string) => {
@@ -148,22 +149,20 @@ export const createActions = (set: any, get: any) => ({
 
     const completionDates = new Set<string>();
 
-    Object.values(fitnessStore.workoutProgress).forEach((progress) => {
-      if (progress.completedAt) {
-        const date = new Date(progress.completedAt).toISOString().split("T")[0];
-        completionDates.add(date);
+    fitnessStore.completedSessions.forEach((session) => {
+      if (session.completedAt) {
+        completionDates.add(getLocalDateString(session.completedAt));
       }
     });
 
     Object.values(nutritionStore.mealProgress).forEach((progress) => {
       if (progress.completedAt) {
-        const date = new Date(progress.completedAt).toISOString().split("T")[0];
-        completionDates.add(date);
+        completionDates.add(getLocalDateString(progress.completedAt));
       }
     });
 
     const sortedDates = Array.from(completionDates).sort().reverse();
-    const today = new Date().toISOString().split("T")[0];
+    const today = getLocalDateString();
 
     let streak = 0;
     let expectedDate = today;
@@ -171,9 +170,9 @@ export const createActions = (set: any, get: any) => ({
     for (const date of sortedDates) {
       if (date === expectedDate) {
         streak++;
-        const prevDate = new Date(expectedDate);
+        const prevDate = new Date(`${expectedDate}T12:00:00`);
         prevDate.setDate(prevDate.getDate() - 1);
-        expectedDate = prevDate.toISOString().split("T")[0];
+        expectedDate = getLocalDateString(prevDate);
       } else if (date < expectedDate) {
         break;
       }

@@ -13,6 +13,7 @@ export interface OfflineAction {
   userId: string;
   retryCount: number;
   maxRetries: number;
+  lastError?: string;
 }
 
 export interface OfflineData {
@@ -34,25 +35,96 @@ interface SupabaseResponse {
   } | null;
 }
 
-// Map LocalWorkoutSession camelCase fields to Supabase snake_case columns
-function mapSessionToDb(data: Record<string, unknown>) {
-  if ("caloriesBurned" in data || "userId" in data || "workoutId" in data) {
+function normalizeWorkoutSessionPayload(data: Record<string, unknown>) {
+  const duration =
+    (data.total_duration_minutes as number | null | undefined) ??
+    (data.duration as number | null | undefined) ??
+    null;
+  const exercises =
+    (data.exercises_completed as unknown[] | undefined) ??
+    (data.exercises as unknown[] | undefined) ??
+    [];
+  const rating =
+    typeof data.rating === "number" && data.rating > 0 ? data.rating : null;
+
+  return {
+    ...data,
+    id: data.id,
+    user_id: data.user_id ?? data.userId,
+    workout_id: data.workout_id ?? data.workoutId ?? null,
+    workout_name: data.workout_name ?? data.workoutName ?? null,
+    workout_type: data.workout_type ?? data.workoutType ?? null,
+    planned_day_key: data.planned_day_key ?? data.plannedDayKey ?? null,
+    plan_slot_key: data.plan_slot_key ?? data.planSlotKey ?? null,
+    started_at: data.started_at ?? data.startedAt,
+    completed_at: data.completed_at ?? data.completedAt ?? null,
+    duration,
+    total_duration_minutes: duration,
+    calories_burned: data.calories_burned ?? data.caloriesBurned ?? null,
+    exercises,
+    exercises_completed: exercises,
+    notes: data.notes || "",
+    rating,
+    is_completed: data.is_completed ?? data.isCompleted ?? false,
+    is_extra: data.is_extra ?? data.isExtra ?? false,
+  };
+}
+
+function normalizeMealLogPayload(data: Record<string, unknown>) {
+  const provenance = (data.provenance as Record<string, unknown> | undefined) || {};
+  const totalMacros =
+    (data.totalMacros as Record<string, number | undefined> | undefined) || {};
+
+  return {
+    ...data,
+    id: data.id,
+    user_id: data.user_id ?? data.userId,
+    meal_plan_id: data.meal_plan_id ?? data.mealPlanId ?? null,
+    meal_type: data.meal_type ?? data.mealType,
+    meal_name: data.meal_name ?? data.mealName ?? data.notes ?? "Meal",
+    from_plan: data.from_plan ?? data.fromPlan ?? false,
+    plan_meal_id: data.plan_meal_id ?? data.planMealId ?? null,
+    portion_multiplier: data.portion_multiplier ?? data.portionMultiplier ?? 1,
+    food_items: data.food_items ?? data.foods ?? [],
+    total_calories: data.total_calories ?? data.totalCalories ?? 0,
+    total_protein: data.total_protein ?? totalMacros.protein ?? 0,
+    total_carbohydrates:
+      data.total_carbohydrates ?? totalMacros.carbohydrates ?? 0,
+    total_fat: data.total_fat ?? totalMacros.fat ?? 0,
+    logging_mode: data.logging_mode ?? provenance.mode ?? "manual",
+    truth_level: data.truth_level ?? provenance.truthLevel ?? "curated",
+    confidence: data.confidence ?? provenance.confidence ?? null,
+    country_context: data.country_context ?? provenance.countryContext ?? null,
+    requires_review:
+      data.requires_review ?? provenance.requiresReview ?? false,
+    source_metadata:
+      data.source_metadata ??
+      ({
+        source: provenance.source ?? null,
+        productIdentity: provenance.productIdentity ?? null,
+        conflict: provenance.conflict ?? null,
+      } as Record<string, unknown>),
+    notes: data.notes ?? null,
+    logged_at: data.logged_at ?? data.loggedAt ?? data.timestamp ?? new Date().toISOString(),
+  };
+}
+
+function normalizeOfflineAction(action: OfflineAction): OfflineAction {
+  if (action.table === "workout_sessions") {
     return {
-      id: data.id,
-      user_id: data.userId,
-      workout_id: data.workoutId || null,
-      started_at: data.startedAt,
-      completed_at: data.completedAt,
-      duration: data.duration,
-      calories_burned: data.caloriesBurned,
-      exercises: data.exercises,
-      notes: data.notes || "",
-      rating:
-        typeof data.rating === "number" && data.rating > 0 ? data.rating : null,
-      is_completed: data.isCompleted,
+      ...action,
+      data: normalizeWorkoutSessionPayload(action.data as Record<string, unknown>),
     };
   }
-  return data;
+
+  if (action.table === "meal_logs") {
+    return {
+      ...action,
+      data: normalizeMealLogPayload(action.data as Record<string, unknown>),
+    };
+  }
+
+  return action;
 }
 
 function isValidSupabaseResponse(
@@ -99,6 +171,7 @@ class OfflineService {
   private isOnline: boolean = true;
   private syncInProgress: boolean = false;
   private syncQueue: OfflineAction[] = [];
+  private failedActions: OfflineAction[] = [];
   private offlineData: Map<string, OfflineData> = new Map();
   private listeners: Set<(isOnline: boolean) => void> = new Set();
   private rollbackStates: Map<string, OptimisticRollbackState> = new Map();
@@ -147,31 +220,20 @@ class OfflineService {
    */
   private async loadOfflineData(): Promise<void> {
     try {
-      const [queueData, offlineData] = await Promise.all([
+      const [queueData, failedActionsData, offlineData] = await Promise.all([
         AsyncStorage.getItem("offline_sync_queue"),
+        AsyncStorage.getItem("offline_failed_actions"),
         AsyncStorage.getItem("offline_data"),
       ]);
 
       if (queueData) {
-        this.syncQueue = JSON.parse(queueData);
-        // Purge stale workout_sessions actions with camelCase fields
-        const before = this.syncQueue.length;
-        this.syncQueue = this.syncQueue.filter((action) => {
-          if (action.table === "workout_sessions" && action.type === "CREATE") {
-            const d = action.data as Record<string, unknown>;
-            return !(
-              "caloriesBurned" in d ||
-              "userId" in d ||
-              "workoutId" in d
-            );
-          }
-          return true;
-        });
-        if (this.syncQueue.length !== before) {
-          this.saveOfflineData().catch((err) => {
-            console.error("[Offline] Failed to save purged queue:", err);
-          });
-        }
+        this.syncQueue = JSON.parse(queueData).map(normalizeOfflineAction);
+      }
+
+      if (failedActionsData) {
+        this.failedActions = JSON.parse(failedActionsData).map(
+          normalizeOfflineAction,
+        );
       }
 
       if (offlineData) {
@@ -192,6 +254,10 @@ class OfflineService {
         AsyncStorage.setItem(
           "offline_sync_queue",
           JSON.stringify(this.syncQueue),
+        ),
+        AsyncStorage.setItem(
+          "offline_failed_actions",
+          JSON.stringify(this.failedActions),
         ),
         AsyncStorage.setItem(
           "offline_data",
@@ -224,12 +290,12 @@ class OfflineService {
   async queueAction(
     action: Omit<OfflineAction, "id" | "timestamp" | "retryCount">,
   ): Promise<string> {
-    const offlineAction: OfflineAction = {
+    const offlineAction: OfflineAction = normalizeOfflineAction({
       ...action,
       id: this.generateId(),
       timestamp: Date.now(),
       retryCount: 0,
-    };
+    } as OfflineAction);
 
     this.syncQueue.push(offlineAction);
     await this.saveOfflineData();
@@ -314,9 +380,12 @@ class OfflineService {
           this.rollbackStates.delete(action.id);
         } catch (error) {
           action.retryCount++;
+          action.lastError =
+            error instanceof Error ? error.message : String(error);
 
           if (action.retryCount >= action.maxRetries) {
             await this.rollbackAction(action.id);
+            this.failedActions.push({ ...action });
             successfulActions.push(action.id);
             result.failedActions++;
             result.errors.push(`Failed to sync action ${action.id}: ${error}`);
@@ -358,7 +427,7 @@ class OfflineService {
         }
         break;
       case "CREATE":
-        await this.removeOfflineData(key);
+        // Preserve the optimistic local record as the last known truth.
         break;
       case "DELETE":
         if (originalData) {
@@ -384,11 +453,60 @@ class OfflineService {
           case "CREATE":
             const insertData =
               table === "workout_sessions"
-                ? mapSessionToDb(data as Record<string, unknown>)
-                : data;
-            const createResponse = await supabase
-              .from(table)
-              .insert([insertData]);
+                ? normalizeWorkoutSessionPayload(data as Record<string, unknown>)
+                : table === "meal_logs"
+                  ? normalizeMealLogPayload(data as Record<string, unknown>)
+                  : data;
+            let createQuery;
+            if (
+              ["weekly_meal_plans", "weekly_workout_plans"].includes(table) &&
+              (insertData as any).user_id
+            ) {
+              const activePlanLookup = await supabase
+                .from(table)
+                .select("id")
+                .eq("user_id", (insertData as any).user_id)
+                .eq("is_active", true)
+                .order("created_at", { ascending: false })
+                .limit(1);
+
+              const lookupValidation = validateSupabaseResponse(
+                activePlanLookup,
+                "LOOKUP_ACTIVE_PLAN",
+                table,
+              );
+              if (!lookupValidation.valid) {
+                throw new Error(lookupValidation.error);
+              }
+
+              const activePlanId = (activePlanLookup.data as any[] | undefined)?.[0]?.id;
+              if (activePlanId) {
+                const { id: _ignoredId, ...activePlanUpdate } = insertData as Record<
+                  string,
+                  unknown
+                >;
+                createQuery = supabase
+                  .from(table)
+                  .update({
+                    ...activePlanUpdate,
+                    id: activePlanId,
+                    is_active: true,
+                  })
+                  .eq("id", activePlanId);
+              } else {
+                createQuery = supabase.from(table).insert([insertData]);
+              }
+            } else {
+              createQuery = ["workout_sessions", "meal_logs"].includes(table)
+              ? supabase
+                  .from(table)
+                  .upsert([insertData], {
+                    onConflict: "id",
+                    ignoreDuplicates: false,
+                  })
+              : supabase.from(table).insert([insertData]);
+            }
+            const createResponse = await createQuery;
             const createValidation = validateSupabaseResponse(
               createResponse,
               "CREATE",
@@ -400,7 +518,13 @@ class OfflineService {
             break;
 
           case "UPDATE":
-            const { id, ...updateData } = data;
+            const normalizedUpdateData =
+              table === "workout_sessions"
+                ? normalizeWorkoutSessionPayload(data as Record<string, unknown>)
+                : table === "meal_logs"
+                  ? normalizeMealLogPayload(data as Record<string, unknown>)
+                  : data;
+            const { id, ...updateData } = normalizedUpdateData;
             if (!id) {
               throw new Error(
                 `UPDATE operation missing required 'id' field for table ${table}`,
@@ -472,9 +596,11 @@ class OfflineService {
    */
   async clearOfflineData(): Promise<void> {
     this.syncQueue = [];
+    this.failedActions = [];
     this.offlineData.clear();
     await Promise.all([
       AsyncStorage.removeItem("offline_sync_queue"),
+      AsyncStorage.removeItem("offline_failed_actions"),
       AsyncStorage.removeItem("offline_data"),
     ]);
   }
@@ -483,9 +609,18 @@ class OfflineService {
    * Clear failed actions for a specific table (useful for fixing UUID format issues)
    */
   async clearFailedActionsForTable(table: string): Promise<void> {
-    const initialCount = this.syncQueue.length;
-    this.syncQueue = this.syncQueue.filter((action) => action.table !== table);
-    const clearedCount = initialCount - this.syncQueue.length;
+    const initialFailedCount = this.failedActions.length;
+    const initialQueuedCount = this.syncQueue.length;
+    this.failedActions = this.failedActions.filter(
+      (action) => action.table !== table,
+    );
+    this.syncQueue = this.syncQueue.filter(
+      (action) => !(action.table === table && action.retryCount >= action.maxRetries),
+    );
+    const clearedCount =
+      initialFailedCount -
+      this.failedActions.length +
+      (initialQueuedCount - this.syncQueue.length);
 
     if (clearedCount > 0) {
       await this.saveOfflineData();

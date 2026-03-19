@@ -39,6 +39,8 @@ interface SubscriptionPlanRow {
 interface LoadedPlans {
   plans: PlanConfig[];
   rows: SubscriptionPlanRow[];
+  source: "server" | "fallback";
+  errorMessage: string | null;
 }
 
 // ============================================================================
@@ -79,7 +81,13 @@ async function loadPlansFromServer(): Promise<LoadedPlans> {
     .order("price_monthly");
 
   if (error || !data || data.length === 0) {
-    return { plans: FALLBACK_PLANS, rows: [] };
+    return {
+      plans: FALLBACK_PLANS,
+      rows: [],
+      source: "fallback",
+      errorMessage:
+        error?.message ?? "We couldn't load the current subscription plans.",
+    };
   }
 
   const configs: PlanConfig[] = [];
@@ -111,6 +119,11 @@ async function loadPlansFromServer(): Promise<LoadedPlans> {
   return {
     plans: configs.length > 0 ? configs : FALLBACK_PLANS,
     rows: data as SubscriptionPlanRow[],
+    source: configs.length > 0 ? "server" : "fallback",
+    errorMessage:
+      configs.length > 0
+        ? null
+        : "We couldn't load the current subscription plans.",
   };
 }
 
@@ -122,6 +135,10 @@ export const usePaywall = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [plans, setPlans] = useState<PlanConfig[]>([]);
   const [planRows, setPlanRows] = useState<SubscriptionPlanRow[]>([]);
+  const [plansSource, setPlansSource] = useState<"server" | "fallback">(
+    "fallback",
+  );
+  const [planLoadError, setPlanLoadError] = useState<string | null>(null);
   const inFlightRef = useRef(false);
 
   const {
@@ -149,11 +166,19 @@ export const usePaywall = () => {
 
         setPlans(loaded.plans);
         setPlanRows(loaded.rows);
+        setPlansSource(loaded.source);
+        setPlanLoadError(loaded.errorMessage);
       } catch (err) {
         console.warn("[usePaywall] Failed to fetch plans, using fallback:", err);
         if (!cancelled) {
           setPlans(FALLBACK_PLANS);
           setPlanRows([]);
+          setPlansSource("fallback");
+          setPlanLoadError(
+            err instanceof Error
+              ? err.message
+              : "We couldn't load the current subscription plans.",
+          );
         }
       }
     };
@@ -176,6 +201,20 @@ export const usePaywall = () => {
    * @returns Promise<boolean> - true if successful, false otherwise
    */
   const subscribe = async (planId: string): Promise<boolean> => {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      crossPlatformAlert(
+        "Sign In Required",
+        "Please sign in before starting a subscription.",
+        [{ text: "OK" }],
+      );
+      return false;
+    }
+
     if (inFlightRef.current) {
       return false;
     }
@@ -215,14 +254,6 @@ export const usePaywall = () => {
         await razorpayService.createSubscription(originalPlanId, billingCycle);
 
       // Step 2: Get user info for checkout
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-      if (userError || !user) {
-        throw new Error("User not authenticated");
-      }
-
       const userInfo = {
         name: user.user_metadata?.name || user.email?.split("@")[0] || "",
         email: user.email || "",
@@ -341,6 +372,8 @@ export const usePaywall = () => {
     paywallReason,
     currentPlan,
     plans,
+    plansSource,
+    planLoadError,
     usage,
     subscribe,
     dismiss,

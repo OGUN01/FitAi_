@@ -3,7 +3,12 @@ import { generateUUID } from "../utils/uuid";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 
 // Stores
-import { useUserStore, useFitnessStore, useAppStateStore, useProfileStore } from "../stores";
+import {
+  useFitnessStore,
+  useAppStateStore,
+  useProfileStore,
+  useUserStore,
+} from "../stores";
 import { useAchievementStore } from "../stores/achievementStore";
 import { useAuth } from "./useAuth";
 import { supabase } from "../services/supabase";
@@ -12,7 +17,10 @@ import { supabase } from "../services/supabase";
 import { aiService } from "../ai";
 import { DayWorkout } from "../types/ai";
 import { completionTrackingService } from "../services/completionTracking";
-import { calculateWorkoutCalories, ExerciseCalorieInput } from "../services/calorieCalculator";
+import {
+  calculateWorkoutCalories,
+  ExerciseCalorieInput,
+} from "../services/calorieCalculator";
 import { haptics } from "../utils/haptics";
 import { useSubscriptionStore } from "../stores/subscriptionStore";
 import {
@@ -21,10 +29,15 @@ import {
   getWorkoutSlotKey,
 } from "../utils/workoutIdentity";
 import { getCurrentWeekStart, getWeekStartForDate } from "../utils/weekUtils";
+import {
+  buildLegacyFitnessGoals,
+  buildLegacyPersonalInfo,
+} from "../utils/profileLegacyAdapter";
 
 // Type for completed workout history items
 interface CompletedWorkoutItem {
   id: string;
+  sessionId?: string;
   workoutId: string;
   title: string;
   category: string;
@@ -32,10 +45,39 @@ interface CompletedWorkoutItem {
   caloriesBurned: number;
   completedAt: string;
   progress: number;
+  workoutSnapshot?: {
+    title: string;
+    category: string;
+    duration: number;
+    exercises: Array<{
+      name: string;
+      sets: number;
+      reps: number | string;
+      exerciseId?: string;
+      duration?: number;
+      restTime?: number;
+    }>;
+  };
 }
+
+const WORKOUT_CATEGORY_VALUES = [
+  "strength",
+  "cardio",
+  "flexibility",
+  "hiit",
+  "yoga",
+  "pilates",
+  "hybrid",
+] as const;
+
+const normalizeWorkoutCategory = (value: string): DayWorkout["category"] =>
+  WORKOUT_CATEGORY_VALUES.includes(value as DayWorkout["category"])
+    ? (value as DayWorkout["category"])
+    : "strength";
 
 // Navigation interface matching MainNavigation's shape
 export interface FitnessNavigation {
+  // eslint-disable-next-line no-unused-vars
   navigate: (screen: string, params?: Record<string, unknown>) => void;
   goBack: () => void;
 }
@@ -43,23 +85,25 @@ export interface FitnessNavigation {
 export const useFitnessLogic = (navigation: FitnessNavigation) => {
   // Auth & User
   const { user, isGuestMode } = useAuth();
-  const { profile } = useUserStore();
-  const { bodyAnalysis, workoutPreferences: profileWorkoutPreferences, personalInfo: profilePersonalInfo } = useProfileStore();
-
-  // SSOT: Build merged fitnessGoals — profileStore.workoutPreferences is authoritative
-  // profile.fitnessGoals (userStore) is legacy fallback only
-  const mergedFitnessGoals = profileWorkoutPreferences
-    ? {
-        primary_goals: profileWorkoutPreferences.primary_goals || profile?.fitnessGoals?.primary_goals || [],
-        primaryGoals: profileWorkoutPreferences.primary_goals || profile?.fitnessGoals?.primaryGoals || [],
-        experience: profileWorkoutPreferences.intensity || profile?.fitnessGoals?.experience || 'beginner',
-        experience_level: profileWorkoutPreferences.intensity || profile?.fitnessGoals?.experience_level || 'beginner',
-        time_commitment: String(profileWorkoutPreferences.time_preference || profile?.fitnessGoals?.time_commitment || 45),
-        timeCommitment: String(profileWorkoutPreferences.time_preference || profile?.fitnessGoals?.timeCommitment || 45),
-        preferred_equipment: profileWorkoutPreferences.equipment || profile?.fitnessGoals?.preferred_equipment,
-        target_areas: profile?.fitnessGoals?.target_areas,
-      }
-    : profile?.fitnessGoals;
+  const profile = useUserStore((state) => state.profile);
+  const {
+    bodyAnalysis,
+    workoutPreferences: profileWorkoutPreferences,
+    personalInfo: profilePersonalInfo,
+  } = useProfileStore();
+  const legacyPersonalInfo = useMemo(
+    () =>
+      buildLegacyPersonalInfo({
+        personalInfo: profilePersonalInfo,
+        bodyAnalysis,
+        workoutPreferences: profileWorkoutPreferences,
+      }),
+    [profilePersonalInfo, bodyAnalysis, profileWorkoutPreferences],
+  );
+  const mergedFitnessGoals = useMemo(
+    () => buildLegacyFitnessGoals(profileWorkoutPreferences, profile),
+    [profileWorkoutPreferences, profile],
+  );
 
   // Fitness Store
   const {
@@ -78,9 +122,12 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
   const completedSessions = useFitnessStore((state) => state.completedSessions);
 
   const _hasHydrated = useFitnessStore((state) => state._hasHydrated);
-  const completedSessionsHydrated = useFitnessStore((state) => state.completedSessionsHydrated);
-  const markCompletedSessionsHydrated = useFitnessStore((state) => state.markCompletedSessionsHydrated);
-
+  const completedSessionsHydrated = useFitnessStore(
+    (state) => state.completedSessionsHydrated,
+  );
+  const markCompletedSessionsHydrated = useFitnessStore(
+    (state) => state.markCompletedSessionsHydrated,
+  );
 
   // SHARED UI STATE - Single Source of Truth from appStateStore
   const {
@@ -89,16 +136,23 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     isSelectedDayToday: isSelectedDayTodayFn,
   } = useAppStateStore();
   // Subscription store for AI generation gating
-  const { canUseFeature, incrementUsage, triggerPaywall } = useSubscriptionStore();
+  const { canUseFeature, incrementUsage, triggerPaywall } =
+    useSubscriptionStore();
 
   // Local UI State
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedWorkout, setSelectedWorkout] = useState<(DayWorkout & { sessionId?: string; resumeExerciseIndex?: number; isResuming?: boolean }) | null>(
-    null,
-  );
+  const [selectedWorkout, setSelectedWorkout] = useState<
+    | (DayWorkout & {
+        sessionId?: string;
+        resumeExerciseIndex?: number;
+        isResuming?: boolean;
+      })
+    | null
+  >(null);
   const [showWorkoutStartDialog, setShowWorkoutStartDialog] = useState(false);
   const [showRecoveryTipsModal, setShowRecoveryTipsModal] = useState(false);
-  const [workoutDetailsWorkout, setWorkoutDetailsWorkout] = useState<DayWorkout | null>(null);
+  const [workoutDetailsWorkout, setWorkoutDetailsWorkout] =
+    useState<DayWorkout | null>(null);
   const [showGuestSignUp, setShowGuestSignUp] = useState(false);
 
   // Load data on mount and subscribe to completion events
@@ -121,28 +175,43 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
   useEffect(() => {
     if (!_hasHydrated || completedSessionsHydrated) return;
 
-    const { workoutProgress: wp, weeklyWorkoutPlan: plan, addCompletedSession } = useFitnessStore.getState();
+    const {
+      workoutProgress: wp,
+      weeklyWorkoutPlan: plan,
+      addCompletedSession,
+      completedSessions: currentCompletedSessions,
+    } = useFitnessStore.getState();
     Object.entries(wp).forEach(([workoutId, progress]) => {
       if (!progress.completedAt || progress.progress < 100) return;
       const workout = plan?.workouts?.find((w) => w.id === workoutId);
       if (!workout) return;
+      if (
+        findCompletedSessionForWorkout({
+          completedSessions: currentCompletedSessions,
+          workout,
+          plan,
+          weekStart: getWeekStartForDate(progress.completedAt),
+        })
+      ) {
+        return;
+      }
 
       const weekStart = getWeekStartForDate(progress.completedAt);
 
       addCompletedSession({
         sessionId: progress.sessionId || `backfill-${workoutId}`,
-        type: 'planned' as const,
+        type: "planned" as const,
         workoutId,
         plannedDayKey: getWorkoutDayKey(workout),
         planSlotKey: getWorkoutSlotKey(workout, plan || undefined),
         workoutSnapshot: {
           title: workout.title,
-          category: workout.category || 'general',
+          category: workout.category || "general",
           duration: workout.duration || 0,
           exercises: (workout.exercises || []).map((ex: any) => ({
-            name: ex.exerciseName || ex.name || '',
-            sets: typeof ex.sets === 'number' ? ex.sets : 0,
-            reps: typeof ex.reps === 'number' ? ex.reps : 0,
+            name: ex.exerciseName || ex.name || "",
+            sets: typeof ex.sets === "number" ? ex.sets : 0,
+            reps: typeof ex.reps === "number" ? ex.reps : 0,
             exerciseId: ex.exerciseId || ex.id,
             duration: ex.duration,
             restTime: ex.restTime,
@@ -171,7 +240,10 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     const toBackfill = weeklyWorkoutPlan.workouts.filter((w) => {
       if (backfilledWorkoutIds.current.has(w.id)) return false;
       const p = currentWorkoutProgress[w.id];
-      return p?.progress === 100 && (p.caloriesBurned == null || p.caloriesBurned === 0);
+      return (
+        p?.progress === 100 &&
+        (p.caloriesBurned == null || p.caloriesBurned === 0)
+      );
     });
 
     if (toBackfill.length === 0) return;
@@ -179,9 +251,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     // Mark as attempted immediately to prevent re-runs
     toBackfill.forEach((w) => backfilledWorkoutIds.current.add(w.id));
 
-    const userWeight =
-      bodyAnalysis?.current_weight_kg ||
-      profile?.bodyMetrics?.current_weight_kg;
+    const userWeight = bodyAnalysis?.current_weight_kg;
 
     toBackfill.forEach((w) => {
       const completedSession = findCompletedSessionForWorkout({
@@ -190,7 +260,10 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
         plan: weeklyWorkoutPlan,
         weekStart: getCurrentWeekStart(),
       });
-      if (completedSession?.caloriesBurned && completedSession.caloriesBurned > 0) {
+      if (
+        completedSession?.caloriesBurned &&
+        completedSession.caloriesBurned > 0
+      ) {
         updateWorkoutProgress(w.id, 100, {
           caloriesBurned: completedSession.caloriesBurned,
         });
@@ -208,7 +281,9 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
         }));
         const result = calculateWorkoutCalories(inputs, userWeight);
         if (result.totalCalories > 0) {
-          updateWorkoutProgress(w.id, 100, { caloriesBurned: result.totalCalories });
+          updateWorkoutProgress(w.id, 100, {
+            caloriesBurned: result.totalCalories,
+          });
         }
       }
     });
@@ -217,7 +292,9 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
   // Get selected day's workouts (array, since there might be multiple per day)
   const selectedDayWorkouts = useMemo(() => {
     if (!weeklyWorkoutPlan?.workouts) return [];
-    return weeklyWorkoutPlan.workouts.filter((w) => w.dayOfWeek === selectedDay);
+    return weeklyWorkoutPlan.workouts.filter(
+      (w) => w.dayOfWeek === selectedDay,
+    );
   }, [weeklyWorkoutPlan, selectedDay]);
 
   // Keep legacy single-workout selector for backwards compatibility
@@ -242,12 +319,15 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     const dayIndex = DAY_KEYS_MON.indexOf(selectedDay);
     // restDays may contain number indices (Monday-based) or string day names
     return weeklyWorkoutPlan.restDays.some((d: number | string) =>
-      typeof d === "string" ? d === selectedDay : d === dayIndex
+      typeof d === "string" ? d === selectedDay : d === dayIndex,
     );
   }, [weeklyWorkoutPlan, selectedDay]);
 
   // Check if selected day is today - from appStateStore
-  const isSelectedDayToday = useMemo(() => isSelectedDayTodayFn(), [isSelectedDayTodayFn]);
+  const isSelectedDayToday = useMemo(
+    () => isSelectedDayTodayFn(),
+    [isSelectedDayTodayFn],
+  );
 
   // Get selected day's workout progress
   const selectedDayProgress = useMemo(() => {
@@ -261,6 +341,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
       .filter((s) => s.completedAt)
       .map((s) => ({
         id: `history_${s.sessionId}`,
+        sessionId: s.sessionId,
         workoutId: s.workoutId,
         title: s.workoutSnapshot.title,
         category: s.workoutSnapshot.category,
@@ -268,8 +349,12 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
         caloriesBurned: s.caloriesBurned,
         completedAt: s.completedAt,
         progress: 100,
+        workoutSnapshot: s.workoutSnapshot,
       }))
-      .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
+      .sort(
+        (a, b) =>
+          new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
+      );
   }, [completedSessions]);
 
   // Calculate week stats — delegates to store's single source of truth
@@ -287,8 +372,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
       return;
     }
 
-    // SSOT: check profileStore first; profile (userStore) is legacy fallback
-    if ((!profilePersonalInfo && !profile?.personalInfo) || !mergedFitnessGoals?.primary_goals?.length) {
+    if (!legacyPersonalInfo || !mergedFitnessGoals?.primary_goals?.length) {
       crossPlatformAlert(
         "Profile Incomplete",
         "Please complete your profile to generate a personalized workout plan.",
@@ -298,8 +382,10 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     }
 
     // Check subscription gate before hitting the server
-    if (!canUseFeature('ai_generation')) {
-      triggerPaywall("You've used your free AI generation for this month. Upgrade to Pro for unlimited workout plans.");
+    if (!canUseFeature("ai_generation")) {
+      triggerPaywall(
+        "You've used your free AI generation for this month. Upgrade to Pro for unlimited workout plans.",
+      );
       return;
     }
     setGeneratingPlan(true);
@@ -307,8 +393,8 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
 
     try {
       const response = await aiService.generateWeeklyWorkoutPlan(
-        profilePersonalInfo || profile?.personalInfo!,
-        (mergedFitnessGoals || profile?.fitnessGoals)!,
+        legacyPersonalInfo,
+        mergedFitnessGoals,
         1,
         {
           bodyMetrics: bodyAnalysis ?? undefined,
@@ -319,7 +405,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
       if (response.success && response.data) {
         setWeeklyWorkoutPlan(response.data);
         await saveWeeklyWorkoutPlan(response.data);
-        incrementUsage('ai_generation');
+        incrementUsage("ai_generation");
 
         haptics.success();
         crossPlatformAlert(
@@ -329,8 +415,10 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
         );
       } else {
         const errMsg = (response.error || "").toLowerCase();
-        if (errMsg.includes('feature limit exceeded')) {
-          triggerPaywall("You've reached your AI generation limit. Upgrade to Pro for unlimited access.");
+        if (errMsg.includes("feature limit exceeded")) {
+          triggerPaywall(
+            "You've reached your AI generation limit. Upgrade to Pro for unlimited access.",
+          );
         } else {
           crossPlatformAlert(
             "Generation Failed",
@@ -339,9 +427,12 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
         }
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-      if (errorMessage.toLowerCase().includes('feature limit exceeded')) {
-        triggerPaywall("You've reached your AI generation limit. Upgrade to Pro for unlimited access.");
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
+      if (errorMessage.toLowerCase().includes("feature limit exceeded")) {
+        triggerPaywall(
+          "You've reached your AI generation limit. Upgrade to Pro for unlimited access.",
+        );
       } else {
         crossPlatformAlert("Error", errorMessage);
       }
@@ -350,7 +441,8 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     }
   }, [
     user,
-    profile,
+    legacyPersonalInfo,
+    mergedFitnessGoals,
     bodyAnalysis,
     profileWorkoutPreferences,
     setGeneratingPlan,
@@ -390,7 +482,9 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
         // Single source of truth for resume: the persisted workoutProgress entry.
         // currentWorkoutSession is cleared on exit, so we never rely on stale
         // in-memory state where exercises[].completed was never updated.
-        const savedProgress = useFitnessStore.getState().getWorkoutProgress(workout.id);
+        const savedProgress = useFitnessStore
+          .getState()
+          .getWorkoutProgress(workout.id);
         const progressPct = savedProgress?.progress ?? 0;
         const savedExerciseIndex = savedProgress?.exerciseIndex;
         // hasPartialProgress is true when there's set-based progress OR when
@@ -399,10 +493,10 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
           (progressPct > 0 && progressPct < 100) ||
           (savedExerciseIndex !== undefined && savedExerciseIndex > 0);
 
-
         // Fallback: check in-memory session only when exitWorkout was NOT called
         // (e.g. user pressed hardware back button during the session).
-        const existingSession = useFitnessStore.getState().currentWorkoutSession;
+        const existingSession =
+          useFitnessStore.getState().currentWorkoutSession;
         const inMemoryResume =
           existingSession && existingSession.workoutId === workout.id;
 
@@ -437,56 +531,81 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
 
         // isResuming drives the dialog title: "Resume Workout?" vs "Ready to Start?"
         const isResuming = hasPartialProgress || resumeExerciseIndex > 0;
-        const workoutWithSession = { ...workout, sessionId: pendingSessionId, resumeExerciseIndex, isResuming };
+        const workoutWithSession = {
+          ...workout,
+          sessionId: pendingSessionId,
+          resumeExerciseIndex,
+          isResuming,
+        };
         setSelectedWorkout(workoutWithSession);
         setShowWorkoutStartDialog(true);
       } catch (error) {
         console.error("Failed to start workout:", error);
-        crossPlatformAlert("Error", "Failed to start workout. Please try again.");
+        crossPlatformAlert(
+          "Error",
+          "Failed to start workout. Please try again.",
+        );
       }
     },
     [user, isGuestMode],
   );
 
-  const handleStartSelectedDayWorkout = useCallback((workoutArg?: DayWorkout) => {
-    const targetWorkout = workoutArg || selectedDayWorkout;
-    if (targetWorkout) {
-      handleStartWorkout(targetWorkout);
-    } else if (!weeklyWorkoutPlan) {
-      generateWeeklyWorkoutPlan();
-    } else {
-      const dayOrder = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-      const todayIndex = new Date().getDay();
-      const workoutDays = (weeklyWorkoutPlan.workouts ?? []).map((w) =>
-        w.dayOfWeek ? dayOrder.indexOf(w.dayOfWeek.toLowerCase()) : -1,
-      ).filter((i) => i !== -1);
-      const nextDay = dayOrder.find(
-        (_, i) => i > todayIndex && workoutDays.includes(i),
-      ) ?? dayOrder.find((_, i) => workoutDays.includes(i));
-      const todayName = dayOrder[todayIndex];
-      const capitalizedToday = todayName.charAt(0).toUpperCase() + todayName.slice(1);
-      const capitalizedNext = nextDay
-        ? nextDay.charAt(0).toUpperCase() + nextDay.slice(1)
-        : "a future day";
-      crossPlatformAlert(
-        "No Workout Today",
-        `${capitalizedToday} is a rest day in your current plan. Your next scheduled workout is on ${capitalizedNext}.`,
-        [{ text: "OK" }],
-      );
-    }
-  }, [
-    selectedDayWorkout,
-    weeklyWorkoutPlan,
-    handleStartWorkout,
-    generateWeeklyWorkoutPlan,
-  ]);
+  const handleStartSelectedDayWorkout = useCallback(
+    (workoutArg?: DayWorkout) => {
+      const targetWorkout = workoutArg || selectedDayWorkout;
+      if (targetWorkout) {
+        handleStartWorkout(targetWorkout);
+      } else if (!weeklyWorkoutPlan) {
+        generateWeeklyWorkoutPlan();
+      } else {
+        const dayOrder = [
+          "sunday",
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+        ];
+        const todayIndex = new Date().getDay();
+        const workoutDays = (weeklyWorkoutPlan.workouts ?? [])
+          .map((w) =>
+            w.dayOfWeek ? dayOrder.indexOf(w.dayOfWeek.toLowerCase()) : -1,
+          )
+          .filter((i) => i !== -1);
+        const nextDay =
+          dayOrder.find((_, i) => i > todayIndex && workoutDays.includes(i)) ??
+          dayOrder.find((_, i) => workoutDays.includes(i));
+        const todayName = dayOrder[todayIndex];
+        const capitalizedToday =
+          todayName.charAt(0).toUpperCase() + todayName.slice(1);
+        const capitalizedNext = nextDay
+          ? nextDay.charAt(0).toUpperCase() + nextDay.slice(1)
+          : "a future day";
+        crossPlatformAlert(
+          "No Workout Today",
+          `${capitalizedToday} is a rest day in your current plan. Your next scheduled workout is on ${capitalizedNext}.`,
+          [{ text: "OK" }],
+        );
+      }
+    },
+    [
+      selectedDayWorkout,
+      weeklyWorkoutPlan,
+      handleStartWorkout,
+      generateWeeklyWorkoutPlan,
+    ],
+  );
 
-  const handleViewWorkoutDetails = useCallback((workoutArg?: DayWorkout) => {
-    const targetWorkout = workoutArg || selectedDayWorkout;
-    if (targetWorkout) {
-      setWorkoutDetailsWorkout(targetWorkout);
-    }
-  }, [selectedDayWorkout]);
+  const handleViewWorkoutDetails = useCallback(
+    (workoutArg?: DayWorkout) => {
+      const targetWorkout = workoutArg || selectedDayWorkout;
+      if (targetWorkout) {
+        setWorkoutDetailsWorkout(targetWorkout);
+      }
+    },
+    [selectedDayWorkout],
+  );
 
   const handleCloseWorkoutDetails = useCallback(() => {
     setWorkoutDetailsWorkout(null);
@@ -515,7 +634,10 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
           finalSessionId = await startStoreWorkoutSession(selectedWorkout);
         } catch (error) {
           // Keep the locally-generated UUID as fallback.
-          console.error('[useFitnessLogic] startStoreWorkoutSession failed:', error);
+          console.error(
+            "[useFitnessLogic] startStoreWorkoutSession failed:",
+            error,
+          );
         }
       }
       // Resume: reuse the pending UUID — the existing session record in DB is
@@ -539,66 +661,126 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
 
   const handleRepeatWorkout = useCallback(
     (workout: CompletedWorkoutItem) => {
-      const originalWorkout = weeklyWorkoutPlan?.workouts?.find(
-        (w) => w.id === workout.workoutId,
-      );
-      if (originalWorkout) {
-        handleStartWorkout(originalWorkout);
-      }
+      const normalizedCategory = normalizeWorkoutCategory(workout.category);
+      const originalWorkout =
+        weeklyWorkoutPlan?.workouts?.find((w) => w.id === workout.workoutId) ??
+        ({
+          id: workout.workoutId || `history-${workout.sessionId}`,
+          title: workout.title,
+          description: `Repeat workout based on your ${workout.title} history entry.`,
+          category: normalizedCategory,
+          duration: workout.duration,
+          estimatedCalories: workout.caloriesBurned,
+          exercises: (workout.workoutSnapshot?.exercises || []).map(
+            (exercise) => ({
+              exerciseId: exercise.exerciseId || exercise.name,
+              name: exercise.name,
+              exerciseName: exercise.name,
+              sets: exercise.sets,
+              reps: exercise.reps,
+              duration: exercise.duration,
+              restTime: exercise.restTime,
+            }),
+          ),
+          difficulty: "medium",
+          tags: ["history-repeat"],
+          equipment: [],
+          targetMuscleGroups: [],
+          icon: "fitness-outline",
+          dayOfWeek: selectedDay,
+          subCategory: normalizedCategory,
+          intensityLevel: "moderate",
+          warmUp: [],
+          coolDown: [],
+          progressionNotes: [],
+          safetyConsiderations: [],
+          expectedBenefits: [],
+          isExtra: true,
+          aiGenerated: false,
+          isPersonalized: true,
+          createdAt: workout.completedAt,
+        } as unknown as DayWorkout);
+
+      handleStartWorkout(originalWorkout);
     },
-    [weeklyWorkoutPlan, handleStartWorkout],
+    [weeklyWorkoutPlan, handleStartWorkout, selectedDay],
   );
 
-  const handleDeleteWorkout = useCallback(async (workout: CompletedWorkoutItem) => {
-    // Read sessionId BEFORE the optimistic deletion removes the key from workoutProgress
-    const sessionId = useFitnessStore.getState().workoutProgress?.[workout.workoutId]?.sessionId;
+  const handleDeleteWorkout = useCallback(
+    async (workout: CompletedWorkoutItem) => {
+      const storeState = useFitnessStore.getState();
+      const previousWorkoutProgress = storeState.workoutProgress;
+      const previousCompletedSessions = storeState.completedSessions;
+      const nextWorkoutProgress = { ...previousWorkoutProgress };
 
-    // 1. Remove from local Zustand store immediately (optimistic UI)
-    useFitnessStore.setState((state) => {
-      const newProgress = { ...state.workoutProgress };
-      delete newProgress[workout.workoutId];
-      return { workoutProgress: newProgress };
-    });
+      if (
+        nextWorkoutProgress[workout.workoutId]?.sessionId === workout.sessionId
+      ) {
+        delete nextWorkoutProgress[workout.workoutId];
+      }
 
-    // 2. Persist deletion to Supabase so it doesn't reappear on next load
-    try {
-      if (sessionId) {
-        // If we have the sessionId, delete from workout_sessions
-        const { error } = await supabase
-          .from('workout_sessions')
-          .delete()
-          .eq('id', sessionId);
-        if (error) {
-          console.warn('[useFitnessLogic] Failed to delete session from Supabase:', error.message);
-        }
-      } else {
-        // Fallback: delete the exact historical completion row only
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.id) {
+      useFitnessStore.setState({
+        workoutProgress: nextWorkoutProgress,
+        completedSessions: previousCompletedSessions.filter(
+          (session) => session.sessionId !== workout.sessionId,
+        ),
+      });
+
+      try {
+        if (workout.sessionId) {
           const { error } = await supabase
-            .from('workout_sessions')
+            .from("workout_sessions")
             .delete()
-            .eq('workout_id', workout.workoutId)
-            .eq('user_id', user.id)
-            .eq('completed_at', workout.completedAt);
+            .eq("id", workout.sessionId);
           if (error) {
-            console.warn('[useFitnessLogic] Failed to delete session by workout_id:', error.message);
+            throw error;
+          }
+        } else {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          if (user?.id) {
+            const { error } = await supabase
+              .from("workout_sessions")
+              .delete()
+              .eq("workout_id", workout.workoutId)
+              .eq("user_id", user.id)
+              .eq("completed_at", workout.completedAt);
+            if (error) {
+              throw error;
+            }
           }
         }
+      } catch (err) {
+        useFitnessStore.setState({
+          workoutProgress: previousWorkoutProgress,
+          completedSessions: previousCompletedSessions,
+        });
+        console.warn("[useFitnessLogic] Supabase delete error:", err);
+        crossPlatformAlert(
+          "Delete Failed",
+          `We couldn't remove ${workout.title} from your history. Please try again.`,
+        );
+        return;
       }
-    } catch (err) {
-      console.warn('[useFitnessLogic] Supabase delete error:', err);
-    }
 
-    crossPlatformAlert('Deleted', `${workout.title} has been removed from history.`);
-  }, []);
+      crossPlatformAlert(
+        "Deleted",
+        `${workout.title} has been removed from history.`,
+      );
+    },
+    [],
+  );
 
-  const handleViewHistoryWorkout = useCallback((workout: CompletedWorkoutItem) => {
-    crossPlatformAlert(
-      workout.title,
-      `Completed on ${new Date(workout.completedAt).toLocaleDateString()}\n\nDuration: ${workout.duration ?? "N/A"} min\nCalories: ${workout.caloriesBurned ?? "N/A"}`,
-    );
-  }, []);
+  const handleViewHistoryWorkout = useCallback(
+    (workout: CompletedWorkoutItem) => {
+      crossPlatformAlert(
+        workout.title,
+        `Completed on ${new Date(workout.completedAt).toLocaleDateString()}\n\nDuration: ${workout.duration ?? "N/A"} min\nCalories: ${workout.caloriesBurned ?? "N/A"}`,
+      );
+    },
+    [],
+  );
 
   const handleCalendarPress = useCallback(() => {
     // Reset calendar to today's date
@@ -635,14 +817,15 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
   }, [generateWeeklyWorkoutPlan]);
 
   // SSOT: profileStore.personalInfo is authoritative; userStore profile is legacy fallback
-  const profileFitnessName = `${profilePersonalInfo?.first_name || ''} ${profilePersonalInfo?.last_name || ''}`.trim();
-  const userName = profileFitnessName || profilePersonalInfo?.name || profile?.personalInfo?.name;
+  const profileFitnessName =
+    `${profilePersonalInfo?.first_name || ""} ${profilePersonalInfo?.last_name || ""}`.trim();
+  const userName = profileFitnessName || legacyPersonalInfo?.name;
 
   // Build a mergedProfile with SSOT fitnessGoals injected so downstream
   // consumers (PlanSection → EmptyPlanState) see the correct data.
   const mergedProfile = mergedFitnessGoals
-    ? { ...profile, fitnessGoals: mergedFitnessGoals }
-    : profile;
+    ? { personalInfo: legacyPersonalInfo, fitnessGoals: mergedFitnessGoals }
+    : { personalInfo: legacyPersonalInfo, fitnessGoals: null };
 
   return {
     state: {
@@ -664,7 +847,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
       showRecoveryTipsModal,
       workoutDetailsWorkout,
       userName,
-      profile: mergedProfile,  // SSOT: mergedProfile has profileStore fitnessGoals injected
+      profile: mergedProfile, // SSOT: mergedProfile has profileStore fitnessGoals injected
       showGuestSignUp,
     },
     actions: {

@@ -2,6 +2,7 @@
 // Provides cloud persistence for fitness metrics history to prevent data loss on app reinstall
 
 import { supabase } from "./supabase";
+import { getLocalDateString } from "../utils/weekUtils";
 
 export interface DailyMetrics {
   id?: string;
@@ -87,7 +88,7 @@ class AnalyticsDataService {
     try {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
-      const startDateStr = startDate.toISOString().split("T")[0];
+      const startDateStr = getLocalDateString(startDate);
 
       const { data, error } = await supabase
         .from("analytics_metrics")
@@ -167,7 +168,7 @@ class AnalyticsDataService {
     try {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
-      const startDateStr = startDate.toISOString().split("T")[0];
+      const startDateStr = getLocalDateString(startDate);
 
       const { data, error } = await supabase
         .from("progress_entries")
@@ -272,7 +273,7 @@ class AnalyticsDataService {
     try {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
-      const startDateStr = startDate.toISOString().split("T")[0];
+      const startDateStr = getLocalDateString(startDate);
 
       const { data, error } = await supabase
         .from("meals")
@@ -375,7 +376,7 @@ class AnalyticsDataService {
     }
 
     try {
-      const today = new Date().toISOString().split("T")[0];
+      const today = getLocalDateString();
 
       const { data, error } = await supabase
         .from("analytics_metrics")
@@ -419,7 +420,7 @@ class AnalyticsDataService {
     }
 
     try {
-      const today = new Date().toISOString().split("T")[0];
+      const today = getLocalDateString();
       const rowId = `${userId}_${today}`;
 
       // For ACCUMULATING fields (calories, meals, workouts), we must read first

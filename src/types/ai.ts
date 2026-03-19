@@ -223,6 +223,7 @@ export interface DayWorkout extends Workout {
 
 export interface WeeklyWorkoutPlan {
   id: string;
+  databaseId?: string;
   weekNumber: number;
   workouts: DayWorkout[];
   // Additional properties used in FitnessScreen
@@ -235,6 +236,7 @@ export interface WeeklyWorkoutPlan {
 
 export interface WeeklyMealPlan {
   id: string;
+  databaseId?: string;
   weekNumber: number;
   meals: DayMeal[];
   // Additional properties used in DietScreen and nutrition stores

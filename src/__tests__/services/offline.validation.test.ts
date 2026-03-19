@@ -298,7 +298,6 @@ describe("OfflineService - Supabase Response Validation", () => {
 
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining("malformed"),
-        null,
       );
 
       consoleSpy.mockRestore();
@@ -322,7 +321,6 @@ describe("OfflineService - Supabase Response Validation", () => {
 
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining("specific_table"),
-        expect.anything(),
       );
 
       consoleSpy.mockRestore();

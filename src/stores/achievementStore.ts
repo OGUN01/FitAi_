@@ -18,9 +18,155 @@ import {
 } from "../services/achievementEngine";
 import { achievementDataService } from "../services/achievementData";
 import { CompletedSession } from "./fitness/types";
+import { getLocalDateString } from "../utils/weekUtils";
 
 // PERF-006 FIX: Track listener to prevent memory leaks
 let achievementListenerAttached = false;
+let achievementInitializationPromise: Promise<void> | null = null;
+let initializedAchievementUserId: string | null = null;
+
+const normalizeWorkoutType = (value?: string | null): string => {
+  const normalized = String(value || "").toLowerCase();
+
+  if (normalized.includes("strength")) return "strength";
+  if (normalized.includes("cardio")) return "cardio";
+  if (normalized.includes("hiit")) return "hiit";
+  if (
+    normalized.includes("flex") ||
+    normalized.includes("yoga") ||
+    normalized.includes("mobility")
+  ) {
+    return "flexibility";
+  }
+
+  return normalized || "mixed";
+};
+
+const isWeightGoalAchieved = (
+  currentWeight?: number | null,
+  targetWeight?: number | null,
+): boolean => {
+  if (!currentWeight || !targetWeight) {
+    return false;
+  }
+
+  if (currentWeight === targetWeight) {
+    return true;
+  }
+
+  return targetWeight < currentWeight
+    ? currentWeight <= targetWeight
+    : currentWeight >= targetWeight;
+};
+
+const buildAchievementActivityData = ({
+  completedSessions,
+  mealProgress,
+  dailyMeals,
+  hydrationState,
+  healthMetrics,
+  currentStreak,
+  bodyAnalysis,
+}: {
+  completedSessions: CompletedSession[];
+  mealProgress: Record<string, any>;
+  dailyMeals: any[];
+  hydrationState: {
+    dailyGoalML: number | null;
+    waterIntakeML: number;
+  };
+  healthMetrics?: {
+    steps?: number;
+    sleepHours?: number;
+  };
+  currentStreak: number;
+  bodyAnalysis?: {
+    current_weight_kg?: number | null;
+    target_weight_kg?: number | null;
+  } | null;
+}) => {
+  const workoutTypeCounts: Record<string, number> = {};
+  const completedWorkoutDays = new Set<string>();
+  const uniqueWorkoutTypes = new Set<string>();
+
+  let totalCalories = 0;
+  let workoutsBefore8am = 0;
+  let workoutsBefore6am = 0;
+  let workoutsAfter10pm = 0;
+  let weekendWorkouts = 0;
+  let quickWorkouts = 0;
+  let longWorkouts = 0;
+
+  completedSessions.forEach((session) => {
+    totalCalories += session.caloriesBurned || 0;
+
+    const workoutType = normalizeWorkoutType(session.workoutSnapshot?.category);
+    workoutTypeCounts[workoutType] = (workoutTypeCounts[workoutType] || 0) + 1;
+    uniqueWorkoutTypes.add(workoutType);
+
+    const completedAt = new Date(session.completedAt);
+    const hour = completedAt.getHours();
+    const day = completedAt.getDay();
+
+    completedWorkoutDays.add(getLocalDateString(session.completedAt));
+
+    if (hour < 8) workoutsBefore8am++;
+    if (hour < 6) workoutsBefore6am++;
+    if (hour >= 22) workoutsAfter10pm++;
+    if (day === 0 || day === 6) weekendWorkouts++;
+    if ((session.durationMinutes || 0) < 20) quickWorkouts++;
+    if ((session.durationMinutes || 0) > 60) longWorkouts++;
+  });
+
+  const completedMealDates = new Set<string>();
+  const completedMealProgress = Object.values(mealProgress || {}).filter(
+    (progress: any) => progress?.progress === 100,
+  );
+
+  completedMealProgress.forEach((progress: any) => {
+    if (progress?.completedAt) {
+      completedMealDates.add(getLocalDateString(progress.completedAt));
+    }
+  });
+
+  const nutritionLogs = Math.max(
+    completedMealProgress.length,
+    dailyMeals.length,
+  );
+  const activeDays = new Set([...completedWorkoutDays, ...completedMealDates])
+    .size;
+  const waterGoalsHit =
+    hydrationState.dailyGoalML &&
+    hydrationState.waterIntakeML >= hydrationState.dailyGoalML
+      ? 1
+      : 0;
+
+  return {
+    totalWorkouts: completedSessions.length,
+    totalCalories,
+    nutritionLogs,
+    waterGoalsHit,
+    consistentDays: currentStreak,
+    workoutStreak: currentStreak,
+    currentStreak,
+    workoutTypeCounts,
+    workoutsBefore8am,
+    workoutsBefore6am,
+    workoutsAfter10pm,
+    weekendWorkouts,
+    quickWorkouts,
+    longWorkouts,
+    perfectWorkouts: completedSessions.length,
+    uniqueWorkoutTypes: uniqueWorkoutTypes.size,
+    activeDays,
+    steps: healthMetrics?.steps || 0,
+    sleepHours: healthMetrics?.sleepHours || 0,
+    weightGoalAchieved: isWeightGoalAchieved(
+      bodyAnalysis?.current_weight_kg,
+      bodyAnalysis?.target_weight_kg,
+    ),
+  };
+};
 
 interface AchievementStore {
   // State
@@ -88,6 +234,7 @@ interface AchievementStore {
   // Supabase sync methods
   syncWithSupabase: (userId: string) => Promise<void>;
   loadFromSupabase: (userId: string) => Promise<void>;
+  reconcileWithCurrentData: (userId: string) => Promise<void>;
 
   // SSOT Fix 19: streak updater — called after every session completion
   // and on hydration so currentStreak is always the real live value.
@@ -116,7 +263,9 @@ const achievementStorage = {
         }
         return JSON.stringify(parsed);
       } catch {
-        console.warn(`⚠️ [achievementStorage] Corrupt data for key "${name}", clearing`);
+        console.warn(
+          `⚠️ [achievementStorage] Corrupt data for key "${name}", clearing`,
+        );
         await AsyncStorage.removeItem(name);
         return null;
       }
@@ -128,13 +277,13 @@ const achievementStorage = {
   setItem: async (name: string, value: string | any): Promise<void> => {
     try {
       // Zustand persist may call setItem with the state object directly (not a string)
-      const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+      const parsed = typeof value === "string" ? JSON.parse(value) : value;
       // Bug 9 fix: after JSON round-trip, Map becomes a plain object.
       // Check for object with entries instead of instanceof Map.
       const userAchievements = parsed.state?.userAchievements;
       if (
         userAchievements &&
-        typeof userAchievements === 'object' &&
+        typeof userAchievements === "object" &&
         !(userAchievements instanceof Map)
       ) {
         // Convert plain object (from JSON round-trip) to array format for storage
@@ -151,7 +300,10 @@ const achievementStorage = {
       console.warn(`⚠️ [achievementStorage] Failed to write "${name}":`, e);
       // Fallback: try to write the raw value
       try {
-        await AsyncStorage.setItem(name, typeof value === 'string' ? value : JSON.stringify(value));
+        await AsyncStorage.setItem(
+          name,
+          typeof value === "string" ? value : JSON.stringify(value),
+        );
       } catch {
         // Silently fail — data will be reloaded from Supabase on next login
       }
@@ -183,86 +335,110 @@ export const useAchievementStore = create<AchievementStore>()(
 
       // Initialize the achievement system
       initialize: async (userId: string) => {
-        set({ isLoading: true });
-
-        try {
-          console.log("🎯 Initializing achievement store...");
-
-          // Initialize the achievement engine
-          await achievementEngine.initialize();
-
-          // Get all achievements
-          const achievements = achievementEngine.getAllAchievements();
-
-          // Get user's progress from local engine
-          const userProgress =
-            achievementEngine.getUserAchievementProgress(userId);
-
-          // Get user stats
-          const stats = achievementEngine.getUserAchievementStats(userId);
-
-          // PERF-006 FIX: Remove existing listener before adding new one to prevent memory leaks
-          if (achievementListenerAttached) {
-            achievementEngine.removeAllListeners?.("achievementUnlocked");
-            achievementListenerAttached = false;
-          }
-
-          // Set up achievement unlocked listener
-          achievementEngine.on(
-            "achievementUnlocked",
-            (achievement: Achievement, userAchievement: UserAchievement) => {
-              const state = get();
-
-              // Add to unlocked today
-              const newUnlockedToday = [
-                ...state.unlockedToday,
-                userAchievement,
-              ];
-
-              // Show celebration if not shown yet
-              if (!userAchievement.celebrationShown) {
-                set({
-                  showCelebration: true,
-                  celebrationAchievement: achievement,
-                  unlockedToday: newUnlockedToday,
-                });
-              }
-
-              console.log(`🏆 Achievement unlocked: ${achievement.title}`);
-
-              // Sync newly unlocked achievement to Supabase
-              achievementDataService.saveUserAchievement(
-                userId,
-                userAchievement,
-              );
-            },
-          );
-
-          achievementListenerAttached = true;
-
-          set({
-            isInitialized: true,
-            achievements,
-            userAchievements: userProgress,
-            totalFitCoinsEarned: stats.totalFitCoinsEarned,
-            completionRate: stats.completionRate,
-            isLoading: false,
-          });
-
-          // SSOT Fix 19: seed currentStreak immediately from live completedSessions
-          get().updateCurrentStreak();
-
-          console.log(
-            `✅ Achievement store initialized with ${achievements.length} achievements`,
-          );
-
-          // Load and merge achievements from Supabase (for returning users)
-          // This runs async after local init to not block the UI
-          get().loadFromSupabase(userId);
-        } catch (error) {
-          console.error("❌ Error initializing achievement store:", error);
-          set({ isLoading: false });
+        const state = get();
+        if (
+          state.isInitialized &&
+          initializedAchievementUserId === userId &&
+          state.achievements.length > 0
+        ) {
+          return;
         }
+
+        if (
+          achievementInitializationPromise &&
+          initializedAchievementUserId === userId
+        ) {
+          return achievementInitializationPromise;
+        }
+
+        set({ isLoading: true });
+        initializedAchievementUserId = userId;
+
+        achievementInitializationPromise = (async () => {
+          try {
+            console.log("🎯 Initializing achievement store...");
+
+            // Initialize the achievement engine
+            await achievementEngine.initialize();
+
+            // Get all achievements
+            const achievements = achievementEngine.getAllAchievements();
+
+            // Get user's progress from local engine
+            const userProgress =
+              achievementEngine.getUserAchievementProgress(userId);
+
+            // Get user stats
+            const stats = achievementEngine.getUserAchievementStats(userId);
+
+            // PERF-006 FIX: Remove existing listener before adding new one to prevent memory leaks
+            if (achievementListenerAttached) {
+              achievementEngine.removeAllListeners?.("achievementUnlocked");
+              achievementListenerAttached = false;
+            }
+
+            // Set up achievement unlocked listener
+            achievementEngine.on(
+              "achievementUnlocked",
+              (achievement: Achievement, userAchievement: UserAchievement) => {
+                const state = get();
+
+                // Add to unlocked today
+                const newUnlockedToday = [
+                  ...state.unlockedToday,
+                  userAchievement,
+                ];
+
+                // Show celebration if not shown yet
+                if (!userAchievement.celebrationShown) {
+                  set({
+                    showCelebration: true,
+                    celebrationAchievement: achievement,
+                    unlockedToday: newUnlockedToday,
+                  });
+                }
+
+                console.log(`🏆 Achievement unlocked: ${achievement.title}`);
+
+                // Sync newly unlocked achievement to Supabase
+                achievementDataService.saveUserAchievement(
+                  userId,
+                  userAchievement,
+                );
+              },
+            );
+
+            achievementListenerAttached = true;
+
+            set({
+              isInitialized: true,
+              achievements,
+              userAchievements: userProgress,
+              totalFitCoinsEarned: stats.totalFitCoinsEarned,
+              completionRate: stats.completionRate,
+              isLoading: false,
+            });
+
+            // SSOT Fix 19: seed currentStreak immediately from live completedSessions
+            get().updateCurrentStreak();
+            await get().reconcileWithCurrentData(userId);
+
+            console.log(
+              `✅ Achievement store initialized with ${achievements.length} achievements`,
+            );
+
+            // Load and merge achievements from Supabase (for returning users)
+            // This runs async after local init to not block the UI
+            get().loadFromSupabase(userId);
+          } catch (error) {
+            console.error("❌ Error initializing achievement store:", error);
+            set({ isLoading: false });
+          } finally {
+            achievementInitializationPromise = null;
+          }
+        })();
+
+        return achievementInitializationPromise;
       },
 
       // Check user progress and unlock achievements
@@ -276,7 +452,7 @@ export const useAchievementStore = create<AchievementStore>()(
             activityData,
           );
 
-          if (newlyUnlocked.length > 0) {
+          {
             const state = get();
 
             // Update user achievements
@@ -288,12 +464,16 @@ export const useAchievementStore = create<AchievementStore>()(
               userAchievements: updatedProgress,
               totalFitCoinsEarned: stats.totalFitCoinsEarned,
               completionRate: stats.completionRate,
-              unlockedToday: [...state.unlockedToday, ...newlyUnlocked],
+              unlockedToday:
+                newlyUnlocked.length > 0
+                  ? [...state.unlockedToday, ...newlyUnlocked]
+                  : state.unlockedToday,
             });
 
-            console.log(
-              `🎉 ${newlyUnlocked.length} new achievements unlocked!`,
-            );
+            if (newlyUnlocked.length > 0)
+              console.log(
+                `🎉 ${newlyUnlocked.length} new achievements unlocked!`,
+              );
           }
         } catch (error) {
           console.error("❌ Error checking achievement progress:", error);
@@ -360,14 +540,12 @@ export const useAchievementStore = create<AchievementStore>()(
         const state = get();
         return Array.from(state.userAchievements.values())
           .filter((ua) => ua.isCompleted)
-          .sort(
-            (a, b) => {
-              // Bug 6 fix: guard against undefined unlockedAt causing NaN comparisons
-              const timeA = a.unlockedAt ? new Date(a.unlockedAt).getTime() : 0;
-              const timeB = b.unlockedAt ? new Date(b.unlockedAt).getTime() : 0;
-              return timeB - timeA;
-            },
-          )
+          .sort((a, b) => {
+            // Bug 6 fix: guard against undefined unlockedAt causing NaN comparisons
+            const timeA = a.unlockedAt ? new Date(a.unlockedAt).getTime() : 0;
+            const timeB = b.unlockedAt ? new Date(b.unlockedAt).getTime() : 0;
+            return timeB - timeA;
+          })
           .slice(0, count)
           .map((ua) => {
             const achievement = state.achievements.find(
@@ -400,7 +578,9 @@ export const useAchievementStore = create<AchievementStore>()(
                 achievement?.description || "Complete this achievement",
               icon: achievement?.icon || "🎯",
               category: achievement?.category || "General",
-              progress: Math.round(ua.progress * 100),
+              progress: Math.round(
+                (ua.progress / Math.max(ua.maxProgress || 1, 1)) * 100,
+              ),
               currentValue: ua.progress,
               targetValue: ua.maxProgress || 1,
             };
@@ -477,7 +657,9 @@ export const useAchievementStore = create<AchievementStore>()(
         sessions
           .filter((s) => s.completedAt)
           .forEach((s) => {
-            completedDates.add(new Date(s.completedAt!).toISOString().split('T')[0]);
+            completedDates.add(
+              new Date(s.completedAt!).toISOString().split("T")[0],
+            );
           });
 
         // Walk backward from today counting consecutive days
@@ -487,7 +669,7 @@ export const useAchievementStore = create<AchievementStore>()(
         const checkDate = new Date(today);
 
         while (true) {
-          const dateStr = checkDate.toISOString().split('T')[0];
+          const dateStr = checkDate.toISOString().split("T")[0];
           if (completedDates.has(dateStr)) {
             streak++;
             checkDate.setDate(checkDate.getDate() - 1);
@@ -587,13 +769,163 @@ export const useAchievementStore = create<AchievementStore>()(
         }
       },
 
+      reconcileWithCurrentData: async (userId: string) => {
+        if (!userId) {
+          return;
+        }
+
+        try {
+          const fitnessModule = require("./fitnessStore");
+          const nutritionModule = require("./nutritionStore");
+          const hydrationModule = require("./hydrationStore");
+          const healthModule = require("./healthDataStore");
+          const profileModule = require("./profileStore");
+          const analyticsModule = require("./analyticsStore");
+
+          const completedSessions: CompletedSession[] =
+            fitnessModule.useFitnessStore.getState().completedSessions || [];
+          const nutritionState = nutritionModule.useNutritionStore.getState();
+          const hydrationState = hydrationModule.useHydrationStore.getState();
+          const healthState = healthModule.useHealthDataStore.getState();
+          const bodyAnalysis =
+            profileModule.useProfileStore.getState().bodyAnalysis;
+          const weightHistory =
+            analyticsModule.useAnalyticsStore.getState().weightHistory || [];
+          const completedMeals = Object.values(
+            nutritionState.mealProgress || {},
+          ).filter((progress: any) => progress?.completedAt);
+
+          // Derive as much progress as possible from persisted workout + meal history
+          // so the achievement engine reflects real user data instead of only live events.
+          const activeDays = new Set<string>();
+          completedSessions
+            .filter((session) => session.completedAt)
+            .forEach((session) => {
+              activeDays.add(
+                new Date(session.completedAt).toISOString().split("T")[0],
+              );
+            });
+          completedMeals.forEach((progress: any) => {
+            activeDays.add(
+              new Date(progress.completedAt).toISOString().split("T")[0],
+            );
+          });
+
+          const workoutTypeCounts = completedSessions.reduce(
+            (counts: Record<string, number>, session) => {
+              const category = session.workoutSnapshot?.category?.toLowerCase();
+              if (category) {
+                counts[category] = (counts[category] || 0) + 1;
+              }
+              return counts;
+            },
+            {},
+          );
+          const weekendWorkouts = completedSessions.filter((session) => {
+            const day = new Date(session.completedAt).getDay();
+            return day === 0 || day === 6;
+          }).length;
+          const workoutsBefore8am = completedSessions.filter(
+            (session) => new Date(session.completedAt).getHours() < 8,
+          ).length;
+          const workoutsBefore6am = completedSessions.filter(
+            (session) => new Date(session.completedAt).getHours() < 6,
+          ).length;
+          const workoutsAfter10pm = completedSessions.filter(
+            (session) => new Date(session.completedAt).getHours() >= 22,
+          ).length;
+          const quickWorkouts = completedSessions.filter((session) => {
+            const duration =
+              session.durationMinutes || session.workoutSnapshot?.duration || 0;
+            return duration > 0 && duration < 20;
+          }).length;
+          const longWorkouts = completedSessions.filter((session) => {
+            const duration =
+              session.durationMinutes || session.workoutSnapshot?.duration || 0;
+            return duration > 60;
+          }).length;
+
+          const totalWorkouts = completedSessions.length;
+          const totalCalories = completedSessions.reduce(
+            (sum, session) => sum + (session.caloriesBurned || 0),
+            0,
+          );
+          const nutritionLogs = Math.max(
+            Object.values(nutritionState.mealProgress || {}).filter(
+              (progress: any) => progress?.progress === 100,
+            ).length,
+            (nutritionState.dailyMeals || []).length,
+          );
+          const waterGoalsHit =
+            hydrationState.dailyGoalML &&
+            hydrationState.waterIntakeML >= hydrationState.dailyGoalML
+              ? 1
+              : 0;
+          const consistentDays = useAchievementStore.getState().currentStreak;
+          const currentWeight = bodyAnalysis?.current_weight_kg;
+          const targetWeight = bodyAnalysis?.target_weight_kg;
+          const baselineWeight = weightHistory[0]?.weight ?? currentWeight;
+          const weightGoalAchieved =
+            typeof currentWeight === "number" &&
+            typeof targetWeight === "number" &&
+            typeof baselineWeight === "number"
+              ? Math.abs(currentWeight - targetWeight) <= 0.25 ||
+                (baselineWeight > targetWeight
+                  ? currentWeight <= targetWeight
+                  : baselineWeight < targetWeight
+                    ? currentWeight >= targetWeight
+                    : false)
+              : false;
+
+          await achievementEngine.checkAchievements(userId, {
+            totalWorkouts,
+            totalCalories,
+            nutritionLogs,
+            waterGoalsHit,
+            consistentDays,
+            currentStreak: consistentDays,
+            activeDays: activeDays.size,
+            completedWorkouts: totalWorkouts,
+            workoutTypeCounts,
+            weekendWorkouts,
+            workoutsBefore8am,
+            workoutsBefore6am,
+            workoutsAfter10pm,
+            quickWorkouts,
+            longWorkouts,
+            perfectWorkouts: totalWorkouts,
+            uniqueWorkoutTypes: Object.keys(workoutTypeCounts).length,
+            weightGoalAchieved,
+            steps: healthState.metrics?.steps || 0,
+            sleepHours: healthState.metrics?.sleepHours || 0,
+          });
+
+          const updatedProgress =
+            achievementEngine.getUserAchievementProgress(userId);
+          const stats = achievementEngine.getUserAchievementStats(userId);
+
+          set({
+            userAchievements: updatedProgress,
+            totalFitCoinsEarned: stats.totalFitCoinsEarned,
+            completionRate: stats.completionRate,
+          });
+        } catch (error) {
+          console.error("❌ Failed to reconcile achievement data:", error);
+        }
+      },
+
       // Reset store to initial state (for logout)
       reset: () => {
         // Bug 5 fix: cleanup achievement engine listeners on reset
-        if (typeof achievementEngine !== 'undefined' && achievementEngine.removeAllListeners) {
+        if (
+          typeof achievementEngine !== "undefined" &&
+          achievementEngine.removeAllListeners
+        ) {
           achievementEngine.removeAllListeners();
         }
         achievementListenerAttached = false;
+        achievementInitializationPromise = null;
+        initializedAchievementUserId = null;
 
         set({
           isLoading: false,
@@ -628,20 +960,59 @@ export const useAchievementStore = create<AchievementStore>()(
 export const trackAchievementActivity = {
   // Fitness Activities
   workoutCompleted: (userId: string, workoutData: any) => {
-    const activityData = {
-      totalWorkouts: (workoutData.totalWorkouts || 0) + 1,
-      totalCalories: workoutData.caloriesBurned || 0,
-      workoutType: workoutData.type,
-      workoutDuration: workoutData.duration,
+    const fitnessModule = require("./fitnessStore");
+    const nutritionModule = require("./nutritionStore");
+    const hydrationModule = require("./hydrationStore");
+    const healthModule = require("./healthDataStore");
+    const profileModule = require("./profileStore");
+    const completedSessions: CompletedSession[] =
+      fitnessModule.useFitnessStore.getState().completedSessions || [];
+    const nutritionState = nutritionModule.useNutritionStore.getState();
+    const hydrationState = hydrationModule.useHydrationStore.getState();
+    const healthState = healthModule.useHealthDataStore.getState();
+    const bodyAnalysis = profileModule.useProfileStore.getState().bodyAnalysis;
+    const now = new Date();
+    const projectedDuration = workoutData.duration || 0;
+    const projectedSession: CompletedSession = {
+      sessionId: "pending-achievement-check",
+      type: "planned",
+      workoutId: workoutData.workoutId || "pending-workout",
+      workoutSnapshot: {
+        title: workoutData.workoutTitle || "Workout",
+        category: workoutData.workoutType || workoutData.type || "mixed",
+        duration: projectedDuration,
+        exercises: [],
+      },
+      caloriesBurned: workoutData.caloriesBurned || 0,
+      durationMinutes: projectedDuration,
+      completedAt: now.toISOString(),
+      weekStart: "",
     };
+    const activityData = buildAchievementActivityData({
+      completedSessions: [...completedSessions, projectedSession],
+      mealProgress: nutritionState.mealProgress || {},
+      dailyMeals: nutritionState.dailyMeals || [],
+      hydrationState,
+      healthMetrics: healthState.metrics,
+      currentStreak: useAchievementStore.getState().currentStreak,
+      bodyAnalysis,
+    });
 
     useAchievementStore.getState().checkProgress(userId, activityData);
   },
 
   // Nutrition Activities
   mealLogged: (userId: string, mealData: any) => {
+    const nutritionModule = require("./nutritionStore");
+    const nutritionState = nutritionModule.useNutritionStore.getState();
+    const completedMeals = Object.values(
+      nutritionState.mealProgress || {},
+    ).filter((progress: any) => progress?.progress === 100).length;
     const activityData = {
-      nutritionLogs: (mealData.totalLogs || 0) + 1,
+      nutritionLogs: Math.max(
+        (mealData.totalLogs || 0) + 1,
+        completedMeals + 1,
+      ),
       caloriesConsumed: mealData.calories || 0,
       macros: {
         protein: mealData.protein || 0,

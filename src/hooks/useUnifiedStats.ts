@@ -10,11 +10,11 @@
 // the combined workout+meal completion dates (same as before), but we use
 // achievementStore.currentStreak as the floor to stay consistent.
 
-import { useMemo } from "react";
-import { useFitnessStore } from "../stores/fitnessStore";
-import { useNutritionStore } from "../stores/nutritionStore";
-import { useAchievementStore } from "../stores/achievementStore";
-import { useHealthDataStore } from "../stores/healthDataStore";
+import { useMemo } from 'react';
+import { useFitnessStore } from '../stores/fitnessStore';
+import { useNutritionStore } from '../stores/nutritionStore';
+import { useAchievementStore } from '../stores/achievementStore';
+import { useHealthDataStore } from '../stores/healthDataStore';
 
 export interface UnifiedStats {
   totalWorkouts: number;
@@ -38,7 +38,7 @@ export const useUnifiedStats = (): UnifiedStats => {
     const totalWorkouts = completedSessions.length;
     const totalCaloriesBurned = completedSessions.reduce(
       (sum, s) => sum + (s.caloriesBurned ?? 0),
-      0,
+      0
     );
 
     // Longest streak: no single store owns this yet, so we derive it from the
@@ -62,8 +62,7 @@ export const useUnifiedStats = (): UnifiedStats => {
       let best = 1;
       for (let i = 1; i < sortedDates.length; i++) {
         const diff = Math.round(
-          (sortedDates[i].getTime() - sortedDates[i - 1].getTime()) /
-            (1000 * 60 * 60 * 24),
+          (sortedDates[i].getTime() - sortedDates[i - 1].getTime()) / (1000 * 60 * 60 * 24)
         );
         if (diff === 1) {
           currentRun++;
@@ -75,13 +74,15 @@ export const useUnifiedStats = (): UnifiedStats => {
       longestStreak = Math.max(currentStreak, best);
     }
 
-    const achievementCount = userAchievements?.size || 0;
+    const achievementCount = Array.from(userAchievements.values()).filter(
+      (achievement) => achievement.isCompleted
+    ).length;
     const steps = healthSteps || 0;
 
     return {
       totalWorkouts,
       totalCaloriesBurned,
-      currentStreak,   // from achievementStore — SSOT
+      currentStreak, // from achievementStore — SSOT
       longestStreak,
       achievements: achievementCount,
       steps,

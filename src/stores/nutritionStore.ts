@@ -14,6 +14,11 @@ import { supabase } from "../services/supabase";
 import { generateUUID, isValidUUID } from "../utils/uuid";
 import { getCurrentUserId, getUserIdOrGuest } from "../services/authUtils";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import {
+  getCurrentDayName,
+  getLocalDateString,
+  getLocalDayBounds,
+} from "../utils/weekUtils";
 
 let mealLogsChannel: RealtimeChannel | null = null;
 
@@ -215,26 +220,56 @@ export const useNutritionStore = create<NutritionState>()(
             throw new Error("Invalid plan UUID format");
           }
 
+          let activePlanRowId = plan.databaseId || null;
+          if (!activePlanRowId) {
+            try {
+              const { data: activePlans } = await supabase
+                .from("weekly_meal_plans")
+                .select("id")
+                .eq("user_id", userId)
+                .eq("is_active", true)
+                .order("created_at", { ascending: false })
+                .limit(1);
+              activePlanRowId = activePlans?.[0]?.id || null;
+            } catch (activePlanLookupError) {
+              console.warn(
+                "Failed to look up active weekly meal plan before queueing save; falling back to queued create:",
+                activePlanLookupError,
+              );
+            }
+          }
+
+          const planRowId = activePlanRowId || planId;
+          const hasConfirmedDatabaseId = Boolean(activePlanRowId || plan.databaseId);
+          const planDataWithDbId = hasConfirmedDatabaseId
+            ? {
+                ...plan,
+                databaseId: activePlanRowId || plan.databaseId,
+              }
+            : plan;
+
+          set({ weeklyMealPlan: planDataWithDbId });
+
           const weeklyMealPlanData = {
-            id: planId,
+            id: planRowId,
             user_id: userId,
-            plan_title: plan.planTitle || `Week ${plan.weekNumber} Plan`,
+            plan_title: planDataWithDbId.planTitle || `Week ${plan.weekNumber} Plan`,
             plan_description:
-              plan.planDescription || `${plan.meals.length} meals planned`,
+              planDataWithDbId.planDescription || `${plan.meals.length} meals planned`,
             week_number: plan.weekNumber || 1,
             total_meals: plan.meals.length,
             total_calories:
-              plan.totalEstimatedCalories ||
+              planDataWithDbId.totalEstimatedCalories ||
               plan.meals.reduce(
                 (sum: number, meal: DayMeal) => sum + (meal.totalCalories || 0),
                 0,
               ),
-            plan_data: plan, // Store complete meal plan as JSONB
+            plan_data: planDataWithDbId, // Store complete plan as JSONB
             is_active: true,
           };
 
           await offlineService.queueAction({
-            type: "CREATE",
+            type: activePlanRowId ? "UPDATE" : "CREATE",
             table: "weekly_meal_plans",
             data: weeklyMealPlanData,
             userId: getUserIdOrGuest(),
@@ -278,9 +313,13 @@ export const useNutritionStore = create<NutritionState>()(
                 // Extract the complete plan data from JSONB
                 const planData = latestPlan.plan_data;
                 if (planData && planData.meals) {
+                  const planWithDbId = {
+                    ...planData,
+                    databaseId: latestPlan.id,
+                  };
                   // Update local storage with retrieved plan
-                  set({ weeklyMealPlan: planData });
-                  return planData;
+                  set({ weeklyMealPlan: planWithDbId });
+                  return planWithDbId;
                 }
               } else {
               }
@@ -490,17 +529,8 @@ export const useNutritionStore = create<NutritionState>()(
       // PERF-005 FIX: Get consumed nutrition for TODAY only with caching
       getTodaysConsumedNutrition: () => {
         const state = get();
-        const today = new Date();
-        const dayNames = [
-          "sunday",
-          "monday",
-          "tuesday",
-          "wednesday",
-          "thursday",
-          "friday",
-          "saturday",
-        ];
-        const todayName = dayNames[today.getDay()];
+        const todayName = getCurrentDayName();
+        const todayDate = getLocalDateString();
 
         // Create cache key from mealProgress state + dailyMeals (including calorie values for invalidation) + today's date
         const cacheKey =
@@ -512,7 +542,7 @@ export const useNutritionStore = create<NutritionState>()(
             state.dailyMeals.map((m) => `${m.id}:${m.totalCalories || 0}`),
           ) +
           "_" +
-          todayName;
+          todayDate;
 
         // Return cached value if state hasn't changed
         if (
@@ -524,7 +554,12 @@ export const useNutritionStore = create<NutritionState>()(
 
         // Get all meal IDs that are 100% completed
         const completedMealIds = Object.entries(state.mealProgress)
-          .filter(([_, progress]) => progress.progress === 100)
+          .filter(
+            ([_, progress]) =>
+              progress.progress === 100 &&
+              progress.completedAt &&
+              getLocalDateString(progress.completedAt) === todayDate,
+          )
           .map(([id]) => id);
 
         // PERF-005 FIX: Use Set for O(1) lookup instead of O(n) includes
@@ -549,10 +584,10 @@ export const useNutritionStore = create<NutritionState>()(
         );
 
         // Also include nutrition from dailyMeals (e.g. meal suggestions added)
-        const todayDateStr = today.toISOString().split("T")[0];
         const dailyMealsResult = state.dailyMeals
           .filter(
-            (meal) => meal.createdAt && meal.createdAt.startsWith(todayDateStr),
+            (meal) =>
+              meal.createdAt && getLocalDateString(meal.createdAt) === todayDate,
           )
           .reduce(
             (acc, meal) => ({
@@ -768,27 +803,62 @@ export const useNutritionStore = create<NutritionState>()(
           try {
             const { data: authData } = await supabase.auth.getUser();
             if (authData?.user?.id) {
-              const todayISO = new Date().toISOString().split("T")[0];
-              const { data: logs } = await supabase
+              const todayBounds = getLocalDayBounds();
+              const planMealIds =
+                plan?.meals
+                  ?.map((meal: any) => meal.id)
+                  .filter((mealId: string | undefined): mealId is string => !!mealId) ||
+                [];
+              const baseMealLogSelect =
+                "id, meal_plan_id, meal_type, meal_name, from_plan, plan_meal_id, portion_multiplier, total_calories, total_protein, total_carbohydrates, total_fat, food_items, logged_at, logging_mode, truth_level, confidence, country_context, requires_review, source_metadata";
+
+              const plannedLogsPromise = planMealIds.length
+                ? supabase
+                    .from("meal_logs")
+                    .select(baseMealLogSelect)
+                    .eq("user_id", authData.user.id)
+                    .eq("from_plan", true)
+                    .in("plan_meal_id", planMealIds)
+                    .order("logged_at", { ascending: false })
+                : Promise.resolve({ data: [], error: null } as any);
+
+              const dailyLogsPromise = supabase
                 .from("meal_logs")
-                .select(
-                  "id, meal_type, meal_name, total_calories, total_protein, total_carbohydrates, total_fat, food_items, logged_at, logging_mode, truth_level, confidence, country_context, requires_review, source_metadata",
-                )
+                .select(baseMealLogSelect)
                 .eq("user_id", authData.user.id)
-                .gte("logged_at", `${todayISO}T00:00:00.000Z`)
-                .lte("logged_at", `${todayISO}T23:59:59.999Z`)
+                .eq("from_plan", false)
+                .gte("logged_at", todayBounds.startIso)
+                .lte("logged_at", todayBounds.endIso)
                 .order("logged_at", { ascending: false });
 
-              if (logs && logs.length > 0) {
+              const [plannedLogsResult, dailyLogsResult] = await Promise.all([
+                plannedLogsPromise,
+                dailyLogsPromise,
+              ]);
+
+              const plannedLogs = plannedLogsResult?.data || [];
+              const dailyLogs = dailyLogsResult?.data || [];
+
+              if (plannedLogs.length > 0) {
                 // Rebuild mealProgress — skip IDs already tracked (from this session)
                 const existingProgress = get().mealProgress;
+                const remoteProgressKeys = new Set<string>();
+                const remoteLogIds = new Set<string>();
                 const restoredProgress: Record<string, any> = {};
-                (logs as any[]).forEach((log) => {
-                  // Use log.id as the key since plan_meal_id is not stored in meal_logs
-                  const logKey = log.id;
-                  if (logKey && !existingProgress[logKey]) {
-                    restoredProgress[logKey] = {
-                      mealId: logKey,
+                (plannedLogs as any[]).forEach((log) => {
+                  const progressKey = log.plan_meal_id || log.id;
+
+                  if (progressKey) {
+                    remoteProgressKeys.add(progressKey);
+                  }
+                  if (log.id) {
+                    remoteLogIds.add(log.id);
+                  }
+
+                  if (progressKey && !restoredProgress[progressKey]) {
+                    restoredProgress[progressKey] = {
+                      mealId: progressKey,
+                      planMealId: log.plan_meal_id || undefined,
                       progress: 100,
                       completedAt: log.logged_at,
                       logId: log.id,
@@ -796,61 +866,72 @@ export const useNutritionStore = create<NutritionState>()(
                   }
                 });
                 if (Object.keys(restoredProgress).length > 0) {
+                  const preservedLocalProgress = Object.fromEntries(
+                    Object.entries(existingProgress).filter(([key, progress]) => {
+                      const localProgress = progress as any;
+                      if (remoteProgressKeys.has(key)) return false;
+                      if (localProgress?.logId && remoteLogIds.has(localProgress.logId)) {
+                        return false;
+                      }
+                      return true;
+                    }),
+                  );
+
                   set((state) => ({
                     mealProgress: {
+                      ...preservedLocalProgress,
                       ...restoredProgress,
-                      ...state.mealProgress,
                     },
-                  }));
-                }
-
-                // Rebuild dailyMeals (extra logged meals)
-                const existingMealIds = new Set(
-                  (get().dailyMeals || []).map((m) => m.id),
-                );
-                const hydratedMeals: import("../types/ai").Meal[] = (
-                  logs as any[]
-                )
-                  .filter((log) => !existingMealIds.has(log.id))
-                  .map((log) => ({
-                    id: log.id,
-                    type: log.meal_type || "snack",
-                    name: log.meal_name || "Meal",
-                    totalCalories: log.total_calories || 0,
-                    totalMacros: {
-                      protein: log.total_protein || 0,
-                      carbohydrates: log.total_carbohydrates || 0,
-                      fat: log.total_fat || 0,
-                      fiber: 0,
-                    },
-                    items: Array.isArray(log.food_items) ? log.food_items : [],
-                    loggedAt: log.logged_at,
-                    // Required Meal fields with safe defaults for Supabase-hydrated entries
-                    tags: [] as string[],
-                    isPersonalized: false,
-                    aiGenerated: false,
-                    createdAt: log.logged_at || new Date().toISOString(),
-                    updatedAt: log.logged_at || new Date().toISOString(),
-                    sourceMetadata: log.logging_mode
-                      ? {
-                          mode: log.logging_mode,
-                          truthLevel: log.truth_level || "curated",
-                          confidence: log.confidence || null,
-                          countryContext: log.country_context || null,
-                          requiresReview: log.requires_review || false,
-                          source: log.source_metadata?.source || null,
-                          productIdentity:
-                            log.source_metadata?.productIdentity || null,
-                          conflict: log.source_metadata?.conflict || null,
-                        }
-                      : undefined,
-                  }));
-                if (hydratedMeals.length > 0) {
-                  set((state) => ({
-                    dailyMeals: [...hydratedMeals, ...(state.dailyMeals || [])],
                   }));
                 }
               }
+
+              if (dailyLogs.length > 0) {
+              }
+
+              const hydratedMeals: import("../types/ai").Meal[] = (
+                dailyLogs as any[]
+              ).map((log) => ({
+                id: log.id,
+                type: log.meal_type || "snack",
+                name: log.meal_name || "Meal",
+                totalCalories: log.total_calories || 0,
+                totalMacros: {
+                  protein: log.total_protein || 0,
+                  carbohydrates: log.total_carbohydrates || 0,
+                  fat: log.total_fat || 0,
+                  fiber: 0,
+                },
+                items: Array.isArray(log.food_items) ? log.food_items : [],
+                loggedAt: log.logged_at,
+                // Required Meal fields with safe defaults for Supabase-hydrated entries
+                tags: [] as string[],
+                isPersonalized: false,
+                aiGenerated: false,
+                createdAt: log.logged_at || new Date().toISOString(),
+                updatedAt: log.logged_at || new Date().toISOString(),
+                sourceMetadata: log.logging_mode
+                  ? {
+                      mode: log.logging_mode,
+                      truthLevel: log.truth_level || "curated",
+                      confidence: log.confidence || null,
+                      countryContext: log.country_context || null,
+                      requiresReview: log.requires_review || false,
+                      source: log.source_metadata?.source || null,
+                      productIdentity:
+                        log.source_metadata?.productIdentity || null,
+                      conflict: log.source_metadata?.conflict || null,
+                    }
+                  : undefined,
+              }));
+
+              const preservedLocalMeals = (get().dailyMeals || []).filter(
+                (meal: any) => !meal.loggedAt,
+              );
+
+              set({
+                dailyMeals: [...hydratedMeals, ...preservedLocalMeals],
+              });
             }
           } catch (supabaseError) {
             console.error(

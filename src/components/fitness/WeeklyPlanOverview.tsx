@@ -13,6 +13,9 @@ import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { WeeklyWorkoutPlan } from "../../types/ai";
 import { DayName } from "../../stores/appStateStore";
+import { useFitnessStore } from "../../stores/fitnessStore";
+import { findCompletedSessionForWorkout } from "../../utils/workoutIdentity";
+import { getCurrentWeekStart } from "../../utils/weekUtils";
 
 interface WorkoutProgressItem {
   workoutId: string;
@@ -46,13 +49,31 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
   onDayPress,
   onViewFullPlan,
 }) => {
+  const completedSessions = useFitnessStore((state) => state.completedSessions);
+
   // Calculate stats
   const stats = useMemo(() => {
     const totalWorkouts = plan.workouts?.length || 0;
-    const completedWorkouts = Object.values(workoutProgress).filter(
-      (p) => p.progress === 100,
-    ).length;
-    const totalCalories = (plan.workouts || []).reduce((sum, w) => sum + (w.estimatedCalories || 0), 0);
+    const currentPlanIds = new Set((plan.workouts || []).map((w) => w.id));
+    const currentWeekStart = getCurrentWeekStart();
+    const completedPlannedSessions = completedSessions.filter(
+      (session) =>
+        session.type === "planned" &&
+        session.weekStart === currentWeekStart &&
+        currentPlanIds.has(session.workoutId),
+    );
+    const completedWorkoutIds = new Set(
+      completedPlannedSessions.map((session) => session.workoutId),
+    );
+    const completedWorkouts = completedWorkoutIds.size;
+    const completedCalories = completedPlannedSessions.reduce(
+      (sum, session) => sum + (session.caloriesBurned ?? 0),
+      0,
+    );
+    const remainingEstimatedCalories = (plan.workouts || [])
+      .filter((workout) => !completedWorkoutIds.has(workout.id))
+      .reduce((sum, w) => sum + (w.estimatedCalories || 0), 0);
+    const totalCalories = completedCalories + remainingEstimatedCalories;
     const restDays = plan.restDays?.length || 0;
 
     return {
@@ -65,7 +86,7 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
           ? Math.round((completedWorkouts / totalWorkouts) * 100)
           : 0,
     };
-  }, [plan, workoutProgress]);
+  }, [plan, completedSessions]);
 
   // Get day status for mini calendar
   const getDayStatus = (dayKey: string) => {
@@ -75,7 +96,19 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
     const isRestDay = plan.restDays?.some((d: number | string) =>
       typeof d === "string" ? d === dayKey : d === dayIndex
     );
-    const progress = workout ? workoutProgress[workout.id]?.progress || 0 : 0;
+    const completedSession = workout
+      ? findCompletedSessionForWorkout({
+          completedSessions,
+          workout,
+          plan,
+          weekStart: getCurrentWeekStart(),
+        })
+      : null;
+    const progress = workout
+      ? completedSession
+        ? 100
+        : workoutProgress[workout.id]?.progress || 0
+      : 0;
     const isSelected = selectedDay === dayKey;
     const isToday =
       DAY_KEYS[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1] ===

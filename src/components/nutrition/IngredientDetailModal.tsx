@@ -271,7 +271,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
             >
               <Ionicons name="chevron-back" size={24} color="#6B7280" />
               <Text style={[styles.navButtonText, styles.previousButtonText]}>
-                Previous
+                Back
               </Text>
             </TouchableOpacity>
 
@@ -315,18 +315,6 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
               )}
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.navButton, styles.nextButton]}
-              onPress={() => {
-                // For future use - could navigate to next ingredient or step
-                onClose();
-              }}
-            >
-              <Text style={[styles.navButtonText, styles.nextButtonText]}>
-                Next Step
-              </Text>
-              <Ionicons name="chevron-forward" size={24} color={ResponsiveTheme.colors.white} />
-            </TouchableOpacity>
           </View>
         </View>
       </SafeAreaView>

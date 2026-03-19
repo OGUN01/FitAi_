@@ -19,14 +19,22 @@ export async function storeWorkoutSession(session: any): Promise<boolean> {
   try {
     const existingStr = await AsyncStorage.getItem(WORKOUT_SESSIONS_KEY);
     const existing = existingStr ? JSON.parse(existingStr) : [];
-    existing.unshift({
+    const id = session.id || Date.now().toString();
+    const existingIndex = existing.findIndex((s: any) => s.id === id);
+    const existingSession =
+      existingIndex >= 0 ? existing[existingIndex] : null;
+    const next = existing.filter((s: any) => s.id !== id);
+    next.unshift({
+      ...existingSession,
       ...session,
-      id: session.id || Date.now().toString(),
-      createdAt: new Date().toISOString(),
+      id,
+      createdAt:
+        existingSession?.createdAt || session.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     });
     await AsyncStorage.setItem(
       WORKOUT_SESSIONS_KEY,
-      JSON.stringify(existing.slice(0, 100)),
+      JSON.stringify(next.slice(0, 100)),
     ); // Keep last 100
     return true;
   } catch (error) {
@@ -81,14 +89,21 @@ export async function storeMealLog(mealLog: any): Promise<boolean> {
   try {
     const existingStr = await AsyncStorage.getItem(MEAL_LOGS_KEY);
     const existing = existingStr ? JSON.parse(existingStr) : [];
-    existing.unshift({
+    const id = mealLog.id || Date.now().toString();
+    const existingIndex = existing.findIndex((log: any) => log.id === id);
+    const existingLog = existingIndex >= 0 ? existing[existingIndex] : null;
+    const next = existing.filter((log: any) => log.id !== id);
+    next.unshift({
+      ...existingLog,
       ...mealLog,
-      id: mealLog.id || Date.now().toString(),
-      createdAt: new Date().toISOString(),
+      id,
+      createdAt:
+        existingLog?.createdAt || mealLog.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     });
     await AsyncStorage.setItem(
       MEAL_LOGS_KEY,
-      JSON.stringify(existing.slice(0, 500)),
+      JSON.stringify(next.slice(0, 500)),
     ); // Keep last 500
     return true;
   } catch (error) {
@@ -106,7 +121,11 @@ export async function getMealLogs(
     let logs = dataStr ? JSON.parse(dataStr) : [];
     if (date) {
       logs = logs.filter(
-        (log: any) => log.date === date || log.createdAt?.startsWith(date),
+        (log: any) =>
+          log.date === date ||
+          log.loggedAt?.startsWith(date) ||
+          log.logged_at?.startsWith(date) ||
+          log.createdAt?.startsWith(date),
       );
     }
     return logs.slice(0, limit);

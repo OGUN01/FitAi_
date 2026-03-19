@@ -11,6 +11,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { MigrationProgressModal } from "./MigrationProgressModal";
 import { ConflictResolutionModal } from "./ConflictResolutionModal";
 import { SyncConflict, ConflictResolution } from "../../types/profileData";
+import { REMOTE_MIGRATION_SUPPORTED } from "../../services/migration/helpers";
 
 interface MigrationIntegrationProps {
   autoPrompt?: boolean;
@@ -61,6 +62,15 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
   // ============================================================================
 
   const promptMigration = () => {
+    if (!REMOTE_MIGRATION_SUPPORTED) {
+      crossPlatformAlert(
+        "Cloud Sync Unavailable",
+        "Cloud profile sync is not available on this build yet, so we are not starting a migration that could report false success.",
+        [{ text: "OK" }],
+      );
+      return;
+    }
+
     crossPlatformAlert(
       "Sync Your Profile Data",
       "We found profile data on your device. Would you like to sync it to the cloud so you can access it from any device?",
@@ -86,6 +96,16 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
   const startMigration = async () => {
     if (!user?.id) {
       crossPlatformAlert("Error", "Please log in to sync your data");
+      return;
+    }
+
+    if (!REMOTE_MIGRATION_SUPPORTED) {
+      crossPlatformAlert(
+        "Cloud Sync Unavailable",
+        "This build cannot verify remote cloud migration yet, so the sync flow is disabled instead of showing misleading success.",
+        [{ text: "OK" }],
+      );
+      onMigrationComplete?.(false);
       return;
     }
 
@@ -151,6 +171,16 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
   ) => {
 
     setShowConflicts(false);
+
+    if (!REMOTE_MIGRATION_SUPPORTED) {
+      crossPlatformAlert(
+        "Conflict Resolution Unavailable",
+        "Cloud migration conflict resolution is not available on this build yet, so your selections cannot be applied safely.",
+        [{ text: "OK" }],
+      );
+      onMigrationComplete?.(false);
+      return;
+    }
 
     try {
       // Conflict resolution - restart migration with resolutions

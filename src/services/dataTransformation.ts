@@ -127,8 +127,13 @@ export class DataTransformationService {
     userId: string,
   ): SupabaseMealLog {
     return {
+      id: mealLog.id,
       user_id: userId,
+      meal_plan_id: mealLog.mealPlanId || null,
       meal_type: mealLog.mealType,
+      from_plan: mealLog.fromPlan ?? false,
+      plan_meal_id: mealLog.planMealId || null,
+      portion_multiplier: mealLog.portionMultiplier ?? 1,
       meal_name: mealLog.notes || mealLog.foods?.[0]?.name || "Meal",
       food_items: mealLog.foods || [],
       total_calories: mealLog.totalCalories || 0,
@@ -169,6 +174,10 @@ export class DataTransformationService {
 
     return {
       id: supabaseMealLog.id,
+      mealPlanId: supabaseMealLog.meal_plan_id || undefined,
+      planMealId: supabaseMealLog.plan_meal_id || undefined,
+      fromPlan: supabaseMealLog.from_plan ?? false,
+      portionMultiplier: supabaseMealLog.portion_multiplier ?? 1,
       mealType: supabaseMealLog.meal_type,
       foods: foods,
       totalCalories: supabaseMealLog.total_calories || 0,

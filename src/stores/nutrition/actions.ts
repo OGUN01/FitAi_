@@ -100,26 +100,57 @@ export const createMealPlanActions = (set: any, get: () => NutritionState) => ({
         throw new Error("Invalid plan UUID format");
       }
 
+      const { supabase } = await import("../../services/supabase");
+      let activePlanRowId = plan.databaseId || null;
+      if (!activePlanRowId) {
+        try {
+          const { data: activePlans } = await supabase
+            .from("weekly_meal_plans")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("is_active", true)
+            .order("created_at", { ascending: false })
+            .limit(1);
+          activePlanRowId = activePlans?.[0]?.id || null;
+        } catch (activePlanLookupError) {
+          console.warn(
+            "Failed to look up active weekly meal plan before queueing save; falling back to queued create:",
+            activePlanLookupError,
+          );
+        }
+      }
+
+      const planRowId = activePlanRowId || planId;
+      const hasConfirmedDatabaseId = Boolean(activePlanRowId || plan.databaseId);
+      const planDataWithDbId = hasConfirmedDatabaseId
+        ? {
+            ...plan,
+            databaseId: activePlanRowId || plan.databaseId,
+          }
+        : plan;
+
+      set({ weeklyMealPlan: planDataWithDbId });
+
       const weeklyMealPlanData = {
-        id: planId,
+        id: planRowId,
         user_id: userId,
-        plan_title: plan.planTitle || `Week ${plan.weekNumber} Plan`,
+        plan_title: planDataWithDbId.planTitle || `Week ${plan.weekNumber} Plan`,
         plan_description:
-          plan.planDescription || `${plan.meals.length} meals planned`,
+          planDataWithDbId.planDescription || `${plan.meals.length} meals planned`,
         week_number: plan.weekNumber || 1,
         total_meals: plan.meals.length,
         total_calories:
-          plan.totalEstimatedCalories ||
+          planDataWithDbId.totalEstimatedCalories ||
           plan.meals.reduce(
             (sum: number, meal: DayMeal) => sum + (meal.totalCalories || 0),
             0,
           ),
-        plan_data: plan,
+        plan_data: planDataWithDbId,
         is_active: true,
       };
 
       await offlineService.queueAction({
-        type: "CREATE",
+        type: activePlanRowId ? "UPDATE" : "CREATE",
         table: "weekly_meal_plans",
         data: weeklyMealPlanData,
         userId: getUserIdOrGuest(),

@@ -21,7 +21,12 @@ import { useUserStore } from "../stores/userStore";
 import { useAnalyticsStore } from "../stores/analyticsStore";
 import { useProfileStore } from "../stores/profileStore";
 import { findCompletedSessionForWorkout } from "../utils/workoutIdentity";
-import { getCurrentWeekStart } from "../utils/weekUtils";
+import { buildLegacyProfileAdapter } from "../utils/profileLegacyAdapter";
+import {
+  getCurrentDayName,
+  getCurrentWeekStart,
+  getLocalDateString,
+} from "../utils/weekUtils";
 
 // Types for dashboard data
 export interface DashboardUser {
@@ -40,6 +45,7 @@ export interface DashboardNutrition {
 export interface DashboardFitness {
   weeklyWorkoutPlan: any;
   workoutProgress: Record<string, any>;
+  completedSessions: any[];
   isGeneratingPlan: boolean;
 }
 
@@ -74,9 +80,13 @@ export const useDashboardData = (): DashboardData => {
   const authUser = useAuthStore((s) => s.user);
 
   // User profile
-  const profile = useUserStore((s) => s.profile);
-  // SSOT: profileStore.personalInfo is authoritative for name/age (onboarding_data table)
+  const userProfile = useUserStore((s) => s.profile);
   const profilePersonalInfo = useProfileStore((s) => s.personalInfo);
+  const profileBodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
+  const profileWorkoutPreferences = useProfileStore(
+    (s) => s.workoutPreferences,
+  );
+  const profileDietPreferences = useProfileStore((s) => s.dietPreferences);
 
   // Nutrition - individual selectors
   const weeklyMealPlan = useNutritionStore((s) => s.weeklyMealPlan);
@@ -87,6 +97,7 @@ export const useDashboardData = (): DashboardData => {
   // Fitness - individual selectors
   const weeklyWorkoutPlan = useFitnessStore((s) => s.weeklyWorkoutPlan);
   const workoutProgress = useFitnessStore((s) => s.workoutProgress);
+  const completedSessions = useFitnessStore((s) => s.completedSessions);
   const fitnessIsGenerating = useFitnessStore((s) => s.isGeneratingPlan);
 
   // Health - individual selectors
@@ -106,19 +117,39 @@ export const useDashboardData = (): DashboardData => {
   // Achievement streak
   const streak = useAchievementStore((s) => s.currentStreak);
 
-  // Memoize the user object
-  const user = useMemo<DashboardUser>(
-    () => {
-      // SSOT: profileStore.personalInfo is authoritative; compute name from first+last, fallback to userStore
-      const profileName = `${profilePersonalInfo?.first_name || ''} ${profilePersonalInfo?.last_name || ''}`.trim();
-      return {
-        id: authUser?.id ?? null,
-        name: profileName || profilePersonalInfo?.name || profile?.personalInfo?.name || null,
-        isAuthenticated: !!authUser,
-      };
-    },
-    [authUser, profilePersonalInfo, profile?.personalInfo?.name],
+  const profile = useMemo(
+    () => ({
+      ...userProfile,
+      ...buildLegacyProfileAdapter({
+        personalInfo: profilePersonalInfo,
+        bodyAnalysis: profileBodyAnalysis,
+        workoutPreferences: profileWorkoutPreferences,
+        dietPreferences: profileDietPreferences,
+      }),
+    }),
+    [
+      userProfile,
+      profilePersonalInfo,
+      profileBodyAnalysis,
+      profileWorkoutPreferences,
+      profileDietPreferences,
+    ],
   );
+
+  // Memoize the user object
+  const user = useMemo<DashboardUser>(() => {
+    const profileName =
+      `${profilePersonalInfo?.first_name || ""} ${profilePersonalInfo?.last_name || ""}`.trim();
+    return {
+      id: authUser?.id ?? null,
+      name:
+        profileName ||
+        profilePersonalInfo?.name ||
+        profile?.personalInfo?.name ||
+        null,
+      isAuthenticated: !!authUser,
+    };
+  }, [authUser, profilePersonalInfo, profile?.personalInfo?.name]);
 
   // Memoize nutrition object
   const nutrition = useMemo<DashboardNutrition>(
@@ -136,9 +167,15 @@ export const useDashboardData = (): DashboardData => {
     () => ({
       weeklyWorkoutPlan,
       workoutProgress,
+      completedSessions,
       isGeneratingPlan: fitnessIsGenerating,
     }),
-    [weeklyWorkoutPlan, workoutProgress, fitnessIsGenerating],
+    [
+      weeklyWorkoutPlan,
+      workoutProgress,
+      completedSessions,
+      fitnessIsGenerating,
+    ],
   );
 
   // Memoize health object
@@ -185,37 +222,55 @@ export const useTodaysWorkout = () => {
       return { workout: null, isCompleted: false, progress: 0 };
     }
 
-    const dayNames = [
-      "sunday",
-      "monday",
-      "tuesday",
-      "wednesday",
-      "thursday",
-      "friday",
-      "saturday",
-    ];
-    const todayName = dayNames[new Date().getDay()];
+    const todayName = getCurrentDayName();
 
-    const todaysWorkout = weeklyWorkoutPlan.workouts.find(
+    const todaysWorkouts = weeklyWorkoutPlan.workouts.filter(
       (w: any) => w.dayOfWeek?.toLowerCase() === todayName,
     );
+    const todaysWorkout =
+      todaysWorkouts.find(
+        (w: any) =>
+          !findCompletedSessionForWorkout({
+            completedSessions,
+            workout: w as any,
+            plan: weeklyWorkoutPlan,
+            weekStart: getCurrentWeekStart(),
+          }),
+      ) ?? todaysWorkouts[0];
 
     if (!todaysWorkout) {
       return { workout: null, isCompleted: false, progress: 0 };
     }
 
-    const progress = workoutProgress[todaysWorkout.id];
-    const completedSession = findCompletedSessionForWorkout({
-      completedSessions,
-      workout: todaysWorkout as any,
-      plan: weeklyWorkoutPlan,
-      weekStart: getCurrentWeekStart(),
-    });
+    const aggregateProgress = Math.round(
+      todaysWorkouts.reduce((total, workout) => {
+        const completedSession = findCompletedSessionForWorkout({
+          completedSessions,
+          workout: workout as any,
+          plan: weeklyWorkoutPlan,
+          weekStart: getCurrentWeekStart(),
+        });
+        return (
+          total +
+          (completedSession
+            ? 100
+            : (workoutProgress[workout.id]?.progress ?? 0))
+        );
+      }, 0) / Math.max(todaysWorkouts.length, 1),
+    );
 
     return {
       workout: todaysWorkout,
-      isCompleted: !!completedSession || progress?.progress === 100,
-      progress: completedSession ? 100 : progress?.progress ?? 0,
+      isCompleted: todaysWorkouts.every(
+        (workout: any) =>
+          !!findCompletedSessionForWorkout({
+            completedSessions,
+            workout,
+            plan: weeklyWorkoutPlan,
+            weekStart: getCurrentWeekStart(),
+          }),
+      ),
+      progress: aggregateProgress,
     };
   }, [weeklyWorkoutPlan, workoutProgress, completedSessions]);
 };
@@ -255,7 +310,11 @@ export const useTodaysNutrition = () => {
     );
 
     const mealsCompleted = todaysMeals.filter(
-      (m: any) => mealProgress[m.id]?.progress === 100,
+      (m: any) =>
+        mealProgress[m.id]?.progress === 100 &&
+        mealProgress[m.id]?.completedAt &&
+        getLocalDateString(mealProgress[m.id]?.completedAt) ===
+          getLocalDateString(),
     ).length;
 
     return {

@@ -109,8 +109,40 @@ export const useFitnessStore = create<FitnessState>()(
             throw new Error("Invalid plan UUID format");
           }
 
+          let activePlanRowId = (plan as any).databaseId || null;
+          if (!activePlanRowId) {
+            try {
+              const { data: activePlans } = await supabase
+                .from("weekly_workout_plans")
+                .select("id")
+                .eq("user_id", userId)
+                .eq("is_active", true)
+                .order("created_at", { ascending: false })
+                .limit(1);
+              activePlanRowId = activePlans?.[0]?.id || null;
+            } catch (activePlanLookupError) {
+              console.warn(
+                "Failed to look up active weekly workout plan before queueing save; falling back to queued create:",
+                activePlanLookupError,
+              );
+            }
+          }
+
+          const planRowId = activePlanRowId || planId;
+          const hasConfirmedDatabaseId = Boolean(
+            activePlanRowId || (plan as any).databaseId,
+          );
+          const planDataWithDbId = hasConfirmedDatabaseId
+            ? {
+                ...plan,
+                databaseId: activePlanRowId || (plan as any).databaseId,
+              }
+            : plan;
+
+          set({ weeklyWorkoutPlan: planDataWithDbId });
+
           const weeklyPlanData = {
-            id: planId,
+            id: planRowId,
             user_id: userId,
             plan_title: plan.planTitle || `Week ${plan.weekNumber} Plan`,
             plan_description:
@@ -119,22 +151,12 @@ export const useFitnessStore = create<FitnessState>()(
             week_number: plan.weekNumber || 1,
             total_workouts: plan.workouts.length,
             duration_range: plan.duration ? String(plan.duration) : "1 week",
-            plan_data: plan, // Store complete plan as JSONB
+            plan_data: planDataWithDbId, // Store complete plan as JSONB
             is_active: true,
           };
 
-          const { error: deactivateError } = await supabase
-            .from("weekly_workout_plans")
-            .update({ is_active: false })
-            .eq("user_id", userId)
-            .eq("is_active", true);
-
-          if (deactivateError) {
-            throw deactivateError;
-          }
-
           await offlineService.queueAction({
-            type: "CREATE",
+            type: activePlanRowId ? "UPDATE" : "CREATE",
             table: "weekly_workout_plans",
             data: weeklyPlanData,
             userId: getUserIdOrGuest(),
@@ -178,9 +200,13 @@ export const useFitnessStore = create<FitnessState>()(
                 // Extract the complete plan data from JSONB
                 const planData = latestPlan.plan_data;
                 if (planData && planData.workouts) {
+                  const planWithDbId = {
+                    ...planData,
+                    databaseId: latestPlan.id,
+                  };
                   // Update local storage with retrieved plan
-                  set({ weeklyWorkoutPlan: planData });
-                  return planData;
+                  set({ weeklyWorkoutPlan: planWithDbId });
+                  return planWithDbId;
                 }
               } else {
               }
@@ -603,13 +629,21 @@ export const useFitnessStore = create<FitnessState>()(
                 // Restore workoutProgress (for plan completion checkmarks)
                 const restoredProgress: Record<string, WorkoutProgress> = {};
                 sessions.forEach((s) => {
-                  if (s.workout_id) {
+                  const planWorkout = findPlanWorkoutBySessionIdentity({
+                    plan: get().weeklyWorkoutPlan,
+                    workoutId: s.workout_id,
+                    plannedDayKey: s.planned_day_key,
+                    planSlotKey: s.plan_slot_key,
+                  });
+                  const resolvedWorkoutId =
+                    planWorkout?.id || (s.is_extra ? s.workout_id || s.id : null);
+                  if (resolvedWorkoutId) {
                     const caloriesBurned =
                       typeof s.calories_burned === "number"
                         ? s.calories_burned
                         : undefined;
-                    restoredProgress[s.workout_id] = {
-                      workoutId: s.workout_id,
+                    restoredProgress[resolvedWorkoutId] = {
+                      workoutId: resolvedWorkoutId,
                       progress: 100,
                       completedAt: s.completed_at,
                       sessionId: s.id,
@@ -691,7 +725,8 @@ export const useFitnessStore = create<FitnessState>()(
                       type: s.is_extra
                         ? ("extra" as const)
                         : ("planned" as const),
-                      workoutId: s.workout_id || s.id,
+                      workoutId:
+                        planWorkout?.id || s.workout_id || s.id,
                       plannedDayKey: s.is_extra
                         ? undefined
                         : s.planned_day_key || planWorkout?.dayOfWeek || undefined,
@@ -718,11 +753,24 @@ export const useFitnessStore = create<FitnessState>()(
 
                 if (hydrated.length > 0) {
                   set((state) => {
-                    const hydratedById = new Map(
-                      hydrated.map((session) => [session.sessionId, session]),
+                    const hydratedById = new Set(
+                      hydrated.map((session) => session.sessionId),
+                    );
+                    const hydratedPlannedKeys = new Set(
+                      hydrated
+                        .filter((session) => session.type === "planned")
+                        .map(
+                          (session) =>
+                            `${session.weekStart}:${session.planSlotKey || session.workoutId}`,
+                        ),
                     );
                     const preservedLocalSessions = state.completedSessions.filter(
-                      (session) => !hydratedById.has(session.sessionId),
+                      (session) => {
+                        if (hydratedById.has(session.sessionId)) return false;
+                        if (session.type === "extra") return true;
+                        const localKey = `${session.weekStart}:${session.planSlotKey || session.workoutId}`;
+                        return !hydratedPlannedKeys.has(localKey);
+                      },
                     );
                     const normalizedPreservedLocalSessions =
                       preservedLocalSessions.map((session) => ({

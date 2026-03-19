@@ -238,7 +238,16 @@ class DataBridge {
       return await this.loadFromDatabase(targetUserId);
     } catch (error) {
       console.error("[DataBridge] loadAllData error:", error);
-      return await this.loadFromLocal();
+      const profileStore = useProfileStore.getState();
+      profileStore.setSyncStatus(
+        "error",
+        "Cloud load failed. Showing local data instead.",
+      );
+      const localData = await this.loadFromLocal();
+      return {
+        ...localData,
+        source: "local",
+      };
     }
   }
 
@@ -253,7 +262,7 @@ class DataBridge {
           bodyAnalysis: profileStore.bodyAnalysis,
           workoutPreferences: profileStore.workoutPreferences,
           advancedReview: profileStore.advancedReview,
-          source: "new_system",
+          source: "local",
         };
       }
 
@@ -267,7 +276,7 @@ class DataBridge {
           bodyAnalysis: data.bodyAnalysis || null,
           workoutPreferences: data.workoutPreferences || null,
           advancedReview: data.advancedReview || null,
-          source: "new_system",
+          source: "local",
         };
       }
 
@@ -280,7 +289,7 @@ class DataBridge {
           bodyAnalysis: null,
           workoutPreferences: null,
           advancedReview: null,
-          source: "new_system",
+          source: "local",
         };
       }
 
@@ -290,7 +299,7 @@ class DataBridge {
         bodyAnalysis: null,
         workoutPreferences: null,
         advancedReview: null,
-        source: "new_system",
+        source: "local",
       };
     } catch (error) {
       console.error("[DataBridge] loadFromLocal error:", error);
@@ -300,7 +309,7 @@ class DataBridge {
         bodyAnalysis: null,
         workoutPreferences: null,
         advancedReview: null,
-        source: "new_system",
+        source: "local",
       };
     }
   }
@@ -355,11 +364,20 @@ class DataBridge {
         bodyAnalysis,
         workoutPreferences,
         advancedReview,
-        source: "new_system",
+        source: "database",
       };
     } catch (error) {
       console.error("[DataBridge] loadFromDatabase error:", error);
-      return await this.loadFromLocal();
+      const profileStore = useProfileStore.getState();
+      profileStore.setSyncStatus(
+        "error",
+        "Cloud load failed. Showing local data instead.",
+      );
+      const localData = await this.loadFromLocal();
+      return {
+        ...localData,
+        source: "local",
+      };
     }
   }
 
@@ -434,12 +452,6 @@ class DataBridge {
       // Update ProfileStore (LOCAL SYNC - SSOT for onboarding data)
       const profileStore = useProfileStore.getState();
       profileStore.updatePersonalInfo(data as PersonalInfoData);
-
-      // NOTE: userStore.updatePersonalInfo is DEPRECATED
-      // Keeping for backward compatibility but it will be removed
-      // All new code should use profileStore only
-      const userStore = useUserStore.getState();
-      userStore.updatePersonalInfo(data as PersonalInfo);
 
       // Save to database if authenticated (REMOTE SYNC)
       if (targetUserId) {
@@ -940,7 +952,10 @@ class DataBridge {
 
       // Clear sync/offline state that can leak across shared devices
       await syncEngine.resetForLogout().catch((error) => {
-        console.error("[DataBridge] Failed to reset sync engine during clearLocalData:", error);
+        console.error(
+          "[DataBridge] Failed to reset sync engine during clearLocalData:",
+          error,
+        );
       });
 
       // Clear AsyncStorage
@@ -958,18 +973,27 @@ class DataBridge {
       try {
         const allKeys = await AsyncStorage.getAllKeys();
         for (const key of allKeys) {
-          if (key.startsWith("onboarding_") || key.startsWith("onboarding_partial_")) {
+          if (
+            key.startsWith("onboarding_") ||
+            key.startsWith("onboarding_partial_")
+          ) {
             keysToRemove.push(key);
           }
         }
       } catch (error) {
-        console.error("[DataBridge] Failed to enumerate AsyncStorage keys during clearLocalData:", error);
+        console.error(
+          "[DataBridge] Failed to enumerate AsyncStorage keys during clearLocalData:",
+          error,
+        );
       }
 
       await Promise.all(
         Array.from(new Set(keysToRemove)).map((key) =>
           AsyncStorage.removeItem(key).catch((error) => {
-            console.error(`[DataBridge] Failed to remove AsyncStorage key "${key}":`, error);
+            console.error(
+              `[DataBridge] Failed to remove AsyncStorage key "${key}":`,
+              error,
+            );
           }),
         ),
       );
@@ -1038,14 +1062,24 @@ class DataBridge {
     try {
       const existingStr = await AsyncStorage.getItem(WORKOUT_SESSIONS_KEY);
       const existing = existingStr ? JSON.parse(existingStr) : [];
-      existing.unshift({
+      const id = session.id || Date.now().toString();
+      const existingIndex = existing.findIndex((s: any) => s.id === id);
+      const existingSession =
+        existingIndex >= 0 ? existing[existingIndex] : null;
+      const next = existing.filter((s: any) => s.id !== id);
+      next.unshift({
+        ...existingSession,
         ...session,
-        id: session.id || Date.now().toString(),
-        createdAt: new Date().toISOString(),
+        id,
+        createdAt:
+          existingSession?.createdAt ||
+          session.createdAt ||
+          new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
       await AsyncStorage.setItem(
         WORKOUT_SESSIONS_KEY,
-        JSON.stringify(existing.slice(0, 100)),
+        JSON.stringify(next.slice(0, 100)),
       ); // Keep last 100
       return true;
     } catch (error) {
@@ -1101,21 +1135,59 @@ class DataBridge {
       const existingStr = await AsyncStorage.getItem(MEAL_LOGS_KEY);
       const existing = existingStr ? JSON.parse(existingStr) : [];
       const id = mealLog.id || Date.now().toString();
-      if (existing.some((log: any) => log.id === id)) {
-        return true;
-      }
-      existing.unshift({
+      const existingIndex = existing.findIndex((log: any) => log.id === id);
+      const existingLog = existingIndex >= 0 ? existing[existingIndex] : null;
+      const next = existing.filter((log: any) => log.id !== id);
+      next.unshift({
+        ...existingLog,
         ...mealLog,
         id,
-        createdAt: new Date().toISOString(),
+        createdAt:
+          existingLog?.createdAt ||
+          mealLog.createdAt ||
+          new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
       await AsyncStorage.setItem(
         MEAL_LOGS_KEY,
-        JSON.stringify(existing.slice(0, 500)),
+        JSON.stringify(next.slice(0, 500)),
       );
       return true;
     } catch (error) {
       console.error("[DataBridge] storeMealLog error:", error);
+      return false;
+    }
+  }
+
+  async updateMealLog(logId: string, updates: any): Promise<boolean> {
+    try {
+      const existingStr = await AsyncStorage.getItem(MEAL_LOGS_KEY);
+      const existing = existingStr ? JSON.parse(existingStr) : [];
+      const existingIndex = existing.findIndex((log: any) => log.id === logId);
+      if (existingIndex === -1) {
+        return false;
+      }
+
+      const existingLog = existing[existingIndex];
+      const next = existing.filter((log: any) => log.id !== logId);
+      next.unshift({
+        ...existingLog,
+        ...updates,
+        id: logId,
+        createdAt:
+          existingLog.createdAt ||
+          existingLog.loggedAt ||
+          new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      await AsyncStorage.setItem(
+        MEAL_LOGS_KEY,
+        JSON.stringify(next.slice(0, 500)),
+      );
+      return true;
+    } catch (error) {
+      console.error("[DataBridge] updateMealLog error:", error);
       return false;
     }
   }
@@ -1126,7 +1198,11 @@ class DataBridge {
       let logs = dataStr ? JSON.parse(dataStr) : [];
       if (date) {
         logs = logs.filter(
-          (log: any) => log.date === date || log.createdAt?.startsWith(date),
+          (log: any) =>
+            log.date === date ||
+            log.loggedAt?.startsWith(date) ||
+            log.logged_at?.startsWith(date) ||
+            log.createdAt?.startsWith(date),
         );
       }
       return logs.slice(0, limit);

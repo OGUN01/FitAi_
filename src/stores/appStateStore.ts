@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { safeAsyncStorage } from "../utils/safeAsyncStorage";
+import { getLocalDateString, getLocalDayName } from "../utils/weekUtils";
 
 /**
  * APP STATE STORE - SINGLE SOURCE OF TRUTH FOR SHARED UI STATE
@@ -27,9 +27,12 @@ type DayName =
 interface AppStateState {
   // Currently selected day across all screens
   selectedDay: DayName;
+  selectedDate: string;
 
   // Actions
   setSelectedDay: (day: DayName) => void;
+  setSelectedDate: (date: Date | string) => void;
+  shiftSelectedDate: (days: number) => void;
   resetToToday: () => void;
 
   // Getters
@@ -49,37 +52,62 @@ const DAY_NAMES: DayName[] = [
   "saturday",
 ];
 
-const getTodayDayName = (): DayName => {
-  return DAY_NAMES[new Date().getDay()];
+const getTodayDateString = (): string => getLocalDateString();
+
+const getDayNameForDate = (date: Date | string): DayName =>
+  getLocalDayName(date) as DayName;
+
+const createSelectionState = (date: Date | string) => {
+  const selectedDate = getLocalDateString(date);
+  return {
+    selectedDate,
+    selectedDay: getDayNameForDate(selectedDate),
+  };
 };
 
 export const useAppStateStore = create<AppStateState>()(
   persist(
     (set, get) => ({
       // Initialize to today
-      selectedDay: getTodayDayName(),
+      ...createSelectionState(getTodayDateString()),
 
       // Set selected day
       setSelectedDay: (day: DayName) => {
-        set({ selectedDay: day });
+        set((state) => {
+          const currentDate = new Date(`${state.selectedDate}T12:00:00`);
+          const currentDayIndex = currentDate.getDay();
+          const nextDayIndex = DAY_NAMES.indexOf(day);
+          const shiftedDate = new Date(currentDate);
+          shiftedDate.setDate(currentDate.getDate() + (nextDayIndex - currentDayIndex));
+          return createSelectionState(shiftedDate);
+        });
+      },
+
+      setSelectedDate: (date: Date | string) => {
+        set(createSelectionState(date));
+      },
+
+      shiftSelectedDate: (days: number) => {
+        set((state) => {
+          const nextDate = new Date(`${state.selectedDate}T12:00:00`);
+          nextDate.setDate(nextDate.getDate() + days);
+          return createSelectionState(nextDate);
+        });
       },
 
       // Reset to today
       resetToToday: () => {
-        set({ selectedDay: getTodayDayName() });
+        set(createSelectionState(getTodayDateString()));
       },
 
       // Check if selected day is today
       isSelectedDayToday: () => {
-        const today = getTodayDayName();
-        return get().selectedDay === today;
+        return get().selectedDate === getTodayDateString();
       },
 
       // Reset store to initial state (for logout)
       reset: () => {
-        set({
-          selectedDay: getTodayDayName(),
-        });
+        set(createSelectionState(getTodayDateString()));
       },
     }),
     {

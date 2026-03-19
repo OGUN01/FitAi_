@@ -10,6 +10,7 @@ import { useAuth } from "./useAuth";
 import useTrackBIntegration from "./useTrackBIntegration";
 import { nutritionRefreshService } from "../services/nutritionRefreshService";
 import { useNutritionStore } from "../stores/nutritionStore";
+import { getLocalDateString, getLocalDayName } from "../utils/weekUtils";
 
 interface UseNutritionDataReturn {
   // Foods
@@ -110,16 +111,18 @@ export const useNutritionData = (): UseNutritionDataReturn => {
   const storeDailyMeals = useNutritionStore((s) => s.dailyMeals);
   const dailyNutrition = (() => {
     const n = getTodaysConsumedNutrition();
-    const todayDate = new Date().toISOString().split("T")[0];
-    const todayName = new Date().toLocaleDateString("en-US", {
-      weekday: "long",
-    }).toLowerCase();
+    const todayDate = getLocalDateString();
+    const todayName = getLocalDayName();
     const completedPlannedMeals =
       weeklyMealPlan?.meals.filter(
-        (meal) => meal.dayOfWeek === todayName && mealProgress[meal.id]?.progress === 100,
+        (meal) =>
+          meal.dayOfWeek === todayName &&
+          mealProgress[meal.id]?.progress === 100 &&
+          mealProgress[meal.id]?.completedAt &&
+          getLocalDateString(mealProgress[meal.id]?.completedAt) === todayDate,
       ).length ?? 0;
     const completedLoggedMeals = storeDailyMeals.filter(
-      (meal) => meal.createdAt?.startsWith(todayDate),
+      (meal) => meal.createdAt && getLocalDateString(meal.createdAt) === todayDate,
     ).length;
 
     return {
@@ -301,7 +304,13 @@ export const useNutritionData = (): UseNutritionDataReturn => {
   const refreshAll = useCallback(async () => {
     if (!isAuthenticated || !user?.id) return;
 
-    await Promise.all([loadFoods(), loadUserMeals(), loadDietPreferences(), loadNutritionGoals()]);
+    await Promise.all([
+      loadFoods(),
+      loadUserMeals(),
+      loadDietPreferences(),
+      loadNutritionGoals(),
+      useNutritionStore.getState().loadData(),
+    ]);
   }, [isAuthenticated, user?.id, loadFoods, loadUserMeals, loadDietPreferences, loadNutritionGoals]);
 
   // Clear all errors

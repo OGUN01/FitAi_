@@ -113,12 +113,15 @@ export async function generateWeeklyWorkoutPlan(
 
     const weeklyPlanData = response.data as any;
 
-    const workouts = weeklyPlanData.workouts.map((w: any) =>
-      transformWorkoutData(w.workout, w.dayOfWeek),
-    );
+    const daySlotCounts = new Map<string, number>();
+    const workouts = weeklyPlanData.workouts.map((w: any) => {
+      const currentSlot = daySlotCounts.get(w.dayOfWeek) ?? 0;
+      daySlotCounts.set(w.dayOfWeek, currentSlot + 1);
+      return transformWorkoutData(w.workout, w.dayOfWeek, currentSlot);
+    });
 
     const weeklyPlan: WeeklyWorkoutPlan = {
-      id: weeklyPlanData.id || `weekly_workout_${Date.now()}`,
+      id: weeklyPlanData.id || `weekly_workout_week_${weekNumber}`,
       weekNumber,
       workouts: workouts,
       planTitle: weeklyPlanData.planTitle || "Your Personalized Workout Plan",

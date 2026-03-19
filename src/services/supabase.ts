@@ -186,7 +186,11 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          meal_plan_id: string | null;
           meal_type: "breakfast" | "lunch" | "dinner" | "snack";
+          from_plan: boolean;
+          plan_meal_id: string | null;
+          portion_multiplier: number | null;
           meal_name: string;
           food_items: object; // JSONB
           total_calories: number;
@@ -206,7 +210,11 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
+          meal_plan_id?: string | null;
           meal_type: "breakfast" | "lunch" | "dinner" | "snack";
+          from_plan?: boolean;
+          plan_meal_id?: string | null;
+          portion_multiplier?: number | null;
           meal_name: string;
           food_items?: object;
           total_calories?: number;

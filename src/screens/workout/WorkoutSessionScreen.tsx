@@ -277,7 +277,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           setsCompleted: finalStats.setsCompleted,
           onViewProgress: () => {
             setCompleteDialog(null);
-            navigation.goBack();
+            navigation.navigate("Progress");
           },
           onDone: () => {
             setCompleteDialog(null);
@@ -565,6 +565,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       <WorkoutNavigation
         currentExercise={session.currentExerciseIndex}
         totalExercises={session.totalExercises}
+        canAdvance={session.currentProgress.isCompleted}
         onPrevious={goToPreviousExercise}
         onNext={goToNextExercise}
       />

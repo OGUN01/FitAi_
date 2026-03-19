@@ -8,6 +8,10 @@ describe("DataTransformationService meal log provenance", () => {
     const mealLog: MealLog = {
       id: "meal_1",
       userId: "user_1",
+      mealPlanId: "plan_1",
+      planMealId: "monday_breakfast_1",
+      fromPlan: true,
+      portionMultiplier: 1,
       mealType: "lunch",
       foods: [
         {
@@ -65,6 +69,10 @@ describe("DataTransformationService meal log provenance", () => {
     );
 
     expect(transformed.meal_name).toBe("Paneer Bowl");
+    expect(transformed.meal_plan_id).toBe("plan_1");
+    expect(transformed.plan_meal_id).toBe("monday_breakfast_1");
+    expect(transformed.from_plan).toBe(true);
+    expect(transformed.portion_multiplier).toBe(1);
     expect(transformed.logging_mode).toBe("label");
     expect(transformed.truth_level).toBe("authoritative");
     expect(transformed.requires_review).toBe(false);
@@ -85,7 +93,11 @@ describe("DataTransformationService meal log provenance", () => {
   it("hydrates provenance from Supabase meal_logs rows", () => {
     const hydrated = service.transformSupabaseToMealLog({
       id: "meal_2",
+      meal_plan_id: "plan_2",
       meal_type: "snack",
+      from_plan: true,
+      plan_meal_id: "tuesday_snack_1",
+      portion_multiplier: 0.5,
       food_items: [],
       total_calories: 180,
       total_protein: 12,
@@ -112,6 +124,10 @@ describe("DataTransformationService meal log provenance", () => {
       },
     });
 
+    expect(hydrated.mealPlanId).toBe("plan_2");
+    expect(hydrated.planMealId).toBe("tuesday_snack_1");
+    expect(hydrated.fromPlan).toBe(true);
+    expect(hydrated.portionMultiplier).toBe(0.5);
     expect(hydrated.provenance).toEqual({
       mode: "barcode",
       truthLevel: "curated",

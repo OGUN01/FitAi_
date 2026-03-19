@@ -538,9 +538,9 @@ export const useDashboardIntegration = () => {
    * NO FALLBACKS - returns null if data is missing
    */
   const getHealthMetrics = () => {
-    // SSOT: profileStore.bodyAnalysis is authoritative; profile.bodyMetrics is legacy fallback
-    const heightCm = bodyAnalysis?.height_cm || profile?.bodyMetrics?.height_cm;
-    const weightKg = bodyAnalysis?.current_weight_kg || profile?.bodyMetrics?.current_weight_kg;
+    // SSOT: profileStore.bodyAnalysis is authoritative for body metrics here.
+    const heightCm = bodyAnalysis?.height_cm;
+    const weightKg = bodyAnalysis?.current_weight_kg;
 
     if (!heightCm || !weightKg) {
       return null; // Explicit null when data missing
@@ -565,9 +565,9 @@ export const useDashboardIntegration = () => {
       return null;
     }
 
-    // SSOT: profileStore.bodyAnalysis is authoritative; profile.bodyMetrics is legacy fallback
-    const heightCm = bodyAnalysis?.height_cm || profile?.bodyMetrics?.height_cm;
-    const weightKg = bodyAnalysis?.current_weight_kg || profile?.bodyMetrics?.current_weight_kg;
+    // SSOT: profileStore.bodyAnalysis is authoritative for body metrics here.
+    const heightCm = bodyAnalysis?.height_cm;
+    const weightKg = bodyAnalysis?.current_weight_kg;
     // SSOT: profileStore.personalInfo is authoritative (onboarding_data table); profile.personalInfo (userStore) is legacy fallback
     const age = profilePersonalInfo?.age || profile.personalInfo?.age;
     const gender = profilePersonalInfo?.gender || profile.personalInfo?.gender;

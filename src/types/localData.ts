@@ -378,6 +378,10 @@ export interface LocalDailyMealPlan extends DailyMealPlan {
 export interface MealLog {
   id: string;
   mealType: "breakfast" | "lunch" | "dinner" | "snack";
+  mealPlanId?: string;
+  planMealId?: string;
+  fromPlan?: boolean;
+  portionMultiplier?: number;
   foods: LoggedFood[];
   totalCalories: number;
   totalMacros: Macronutrients;

@@ -258,6 +258,8 @@ export const WeeklyWorkoutPlanSchema = z.object({
 	planDescription: z.string(),
 	workouts: z.array(
 		z.object({
+			id: z.string().optional(),
+			slotKey: z.string().optional(),
 			dayOfWeek: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
 			workout: SingleWorkoutSchema,
 		}),

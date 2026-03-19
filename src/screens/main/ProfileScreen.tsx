@@ -43,10 +43,10 @@ import {
 import { GuestSignUpScreen } from "./GuestSignUpScreen";
 import { LogoutConfirmationModal } from "../../components/profile/LogoutConfirmationModal";
 import { SettingsScreenRenderer } from "../../components/profile/SettingsScreenRenderer";
-import PaywallModal from "../../components/subscription/PaywallModal";
 
-const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
+const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
   navigation,
+  route,
 }) => {
   const { showOverlay, setShowOverlay } = useEditStatus();
   const [refreshing, setRefreshing] = useState(false);
@@ -84,8 +84,6 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
     setShowLanguageModal,
     showClearCacheModal,
     setShowClearCacheModal,
-    showPaywallModal,
-    setShowPaywallModal,
     themePreference,
     unitsPreference,
     handleThemeSelect,
@@ -93,6 +91,13 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
     handleLanguageSelect,
     handleClearCache,
   } = useProfileLogic();
+  React.useEffect(() => {
+    const requestedSettingsScreen = route?.params?.settingsScreen;
+    if (!requestedSettingsScreen) return;
+
+    setCurrentSettingsScreen(requestedSettingsScreen);
+    navigation?.setParams?.({ settingsScreen: undefined });
+  }, [navigation, route?.params?.settingsScreen, setCurrentSettingsScreen]);
 
   const languagePreference = (profile?.preferences as { language?: string } | undefined)?.language || "en";
 
@@ -101,7 +106,34 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
     try {
       const userId = useAuthStore.getState().user?.id;
       if (userId) {
-        await useUserStore.getState().getCompleteProfile(userId);
+        const profileResponse = await useUserStore.getState().getCompleteProfile(
+          userId,
+        );
+
+        if (profileResponse.success && profileResponse.data) {
+          const profileStore = useProfileStore.getState();
+          const latestProfile = profileResponse.data as any;
+
+          if (latestProfile.personalInfo) {
+            profileStore.updatePersonalInfo(latestProfile.personalInfo);
+          }
+          if (latestProfile.dietPreferences) {
+            profileStore.updateDietPreferences(latestProfile.dietPreferences);
+          }
+          if (latestProfile.workoutPreferences) {
+            profileStore.updateWorkoutPreferences(
+              latestProfile.workoutPreferences,
+            );
+          }
+          if (latestProfile.bodyMetrics) {
+            profileStore.updateBodyAnalysis(latestProfile.bodyMetrics);
+          }
+          if (latestProfile.advancedReview) {
+            profileStore.updateAdvancedReview(latestProfile.advancedReview);
+          }
+
+          profileStore.setSyncStatus("synced");
+        }
       }
     } catch (error) {
       console.error("[ProfileScreen] Refresh failed:", error);
@@ -278,19 +310,14 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
           onConfirm={handleClearCache}
           onCancel={() => setShowClearCacheModal(false)}
         />
-
-        {/* Paywall / Upgrade Modal */}
-        <PaywallModal
-          visible={showPaywallModal}
-          onClose={() => setShowPaywallModal(false)}
-        />
       </SafeAreaView>
     </AuroraBackground>
   );
 };
 
-export const ProfileScreen: React.FC<{ navigation?: any }> = ({
+export const ProfileScreen: React.FC<{ navigation?: any; route?: any }> = ({
   navigation,
+  route,
 }) => {
   const handleEditComplete = async () => {
     console.log("[ProfileScreen] Edit completed");
@@ -325,7 +352,7 @@ export const ProfileScreen: React.FC<{ navigation?: any }> = ({
       onEditComplete={handleEditComplete}
       onEditCancel={() => console.log("[ProfileScreen] Edit cancelled")}
     >
-      <ProfileScreenInternal navigation={navigation} />
+      <ProfileScreenInternal navigation={navigation} route={route} />
     </EditProvider>
   );
 };

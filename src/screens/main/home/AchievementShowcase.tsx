@@ -9,69 +9,31 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh, rp } from "../../../utils/responsive";
-
-// Professional icon mapping for achievements
-const ACHIEVEMENT_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  // Fitness
-  first_workout: "fitness",
-  streak_7: "flame",
-  streak_30: "bonfire",
-  calories_1000: "flash",
-  steps_10k: "footsteps",
-  // Nutrition
-  first_meal: "nutrition",
-  water_goal: "water",
-  balanced_diet: "leaf",
-  // General
-  default: "ribbon",
-  trophy: "trophy",
-  medal: "medal",
-  star: "star",
-  target: "locate",
-};
-
-// Get professional icon for achievement
-const getAchievementIcon = (
-  iconKey: string,
-): keyof typeof Ionicons.glyphMap => {
-  // If it's already an Ionicon name, use it
-  if (iconKey in Ionicons.glyphMap || iconKey.includes("-")) {
-    return iconKey as keyof typeof Ionicons.glyphMap;
-  }
-  // Map known keys
-  return ACHIEVEMENT_ICONS[iconKey] || ACHIEVEMENT_ICONS["default"];
-};
-
-interface Achievement {
-  id: string;
-  icon: string;
-  title: string;
-  category?: string;
-  unlockedAt?: string;
-}
-
-interface NearlyCompleteAchievement {
-  id: string;
-  icon: string;
-  title: string;
-  progress: number;
-}
+import { rf, rw, rp } from "../../../utils/responsive";
+import { AchievementViewModel } from "../../../utils/achievementViewModel";
 
 interface AchievementShowcaseProps {
-  recentAchievements: Achievement[];
-  nearlyComplete?: NearlyCompleteAchievement[];
+  achievements: AchievementViewModel[];
   totalBadges: number;
+  totalAchievements: number;
   onViewAll?: () => void;
-  onAchievementPress?: (achievement: Achievement) => void;
+  // eslint-disable-next-line no-unused-vars
+  onAchievementPress?: (achievement: AchievementViewModel) => void;
 }
 
-// Badge card with professional icon
+const resolveIconName = (iconName: string): keyof typeof Ionicons.glyphMap => {
+  if (iconName in Ionicons.glyphMap) {
+    return iconName as keyof typeof Ionicons.glyphMap;
+  }
+
+  return "ribbon-outline";
+};
+
 const BadgeCard: React.FC<{
-  icon: string;
+  iconName: string;
   title: string;
   onPress?: () => void;
-}> = ({ icon, title, onPress }) => (
+}> = ({ iconName, title, onPress }) => (
   <AnimatedPressable
     onPress={onPress}
     scaleValue={0.95}
@@ -82,7 +44,11 @@ const BadgeCard: React.FC<{
     accessibilityLabel={title}
   >
     <View style={styles.badgeIconContainer}>
-      <Ionicons name={getAchievementIcon(icon)} size={rf(22)} color={ResponsiveTheme.colors.amber} />
+      <Ionicons
+        name={resolveIconName(iconName)}
+        size={rf(22)}
+        color={ResponsiveTheme.colors.amber}
+      />
     </View>
     <Text style={styles.badgeTitle} numberOfLines={2}>
       {title}
@@ -90,13 +56,12 @@ const BadgeCard: React.FC<{
   </AnimatedPressable>
 );
 
-// Progress badge with professional icon
 const ProgressBadge: React.FC<{
-  icon: string;
+  iconName: string;
   title: string;
   progress: number;
   onPress?: () => void;
-}> = ({ icon, title, progress, onPress }) => (
+}> = ({ iconName, title, progress, onPress }) => (
   <AnimatedPressable
     onPress={onPress}
     scaleValue={0.95}
@@ -108,11 +73,10 @@ const ProgressBadge: React.FC<{
   >
     <View style={styles.progressBadgeIconContainer}>
       <Ionicons
-        name={getAchievementIcon(icon)}
+        name={resolveIconName(iconName)}
         size={rf(18)}
         color="rgba(156, 39, 176, 0.6)"
       />
-      {/* Progress overlay */}
       <View style={styles.progressRing}>
         <View
           style={[
@@ -133,14 +97,13 @@ const ProgressBadge: React.FC<{
 );
 
 export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
-  recentAchievements,
-  nearlyComplete = [],
+  achievements,
   totalBadges,
+  totalAchievements,
   onViewAll,
   onAchievementPress,
 }) => {
-  const hasAchievements =
-    recentAchievements.length > 0 || nearlyComplete.length > 0;
+  const hasAchievements = achievements.length > 0;
 
   return (
     <GlassCard
@@ -149,7 +112,6 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
       padding="md"
       borderRadius="lg"
     >
-      {/* Header */}
       <View style={styles.header}>
         <AnimatedPressable
           onPress={onViewAll}
@@ -162,12 +124,18 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
           style={styles.headerLeft}
         >
           <View style={styles.headerIconBg}>
-            <Ionicons name="trophy" size={rf(16)} color={ResponsiveTheme.colors.amber} />
+            <Ionicons
+              name="trophy"
+              size={rf(16)}
+              color={ResponsiveTheme.colors.amber}
+            />
           </View>
           <Text style={styles.headerTitle}>Achievements</Text>
-          {totalBadges ? (
+          {totalAchievements > 0 ? (
             <View style={styles.countBadge}>
-              <Text style={styles.countText}>{totalBadges}</Text>
+              <Text style={styles.countText}>
+                {totalBadges}/{totalAchievements}
+              </Text>
             </View>
           ) : null}
         </AnimatedPressable>
@@ -197,28 +165,24 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {recentAchievements.map((achievement) => (
-            <BadgeCard
-              key={achievement.id}
-              icon={achievement.icon}
-              title={achievement.title}
-              onPress={() => onAchievementPress?.(achievement)}
-            />
-          ))}
-
-          {recentAchievements.length > 0 && nearlyComplete.length > 0 && (
-            <View style={styles.divider} />
+          {achievements.map((achievement) =>
+            achievement.completed ? (
+              <BadgeCard
+                key={achievement.id}
+                iconName={achievement.iconName}
+                title={achievement.title}
+                onPress={() => onAchievementPress?.(achievement)}
+              />
+            ) : (
+              <ProgressBadge
+                key={achievement.id}
+                iconName={achievement.iconName}
+                title={achievement.title}
+                progress={achievement.percentComplete}
+                onPress={() => onAchievementPress?.(achievement)}
+              />
+            ),
           )}
-
-          {nearlyComplete.map((achievement) => (
-            <ProgressBadge
-              key={achievement.id}
-              icon={achievement.icon}
-              title={achievement.title}
-              progress={achievement.progress}
-              onPress={() => onAchievementPress?.({ id: achievement.id, icon: achievement.icon, title: achievement.title })}
-            />
-          ))}
         </ScrollView>
       ) : (
         <AnimatedPressable
@@ -335,13 +299,6 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.text,
     textAlign: "center",
     lineHeight: rf(13),
-  },
-  divider: {
-    width: 1,
-    height: rh(50),
-    backgroundColor: ResponsiveTheme.colors.border,
-    marginHorizontal: ResponsiveTheme.spacing.xs,
-    alignSelf: "center",
   },
   progressBadgeCard: {
     alignItems: "center",

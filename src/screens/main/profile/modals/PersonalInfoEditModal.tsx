@@ -5,8 +5,6 @@
  * - Name
  * - Age
  * - Gender (picker)
- * - Height
- * - Weight
  * - Activity Level (picker)
  *
  * Uses useProfileStore to save changes.
@@ -23,6 +21,7 @@ import { useUser } from "../../../../hooks/useUser";
 import { useAuth } from "../../../../hooks/useAuth";
 import { useUserStore } from "../../../../stores/userStore";
 import { userProfileService } from "../../../../services/userProfile";
+import { buildLegacyProfileAdapter } from "../../../../utils/profileLegacyAdapter";
 import { ResponsiveTheme } from "../../../../utils/constants";
 import { rf, rp, rbr } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
@@ -76,20 +75,46 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
   visible,
   onClose,
 }) => {
-  const { profile } = useUser();
+  const { profile: rawProfile } = useUser();
   const { user } = useAuth();
-  const { updatePersonalInfo, updateBodyAnalysis, updateWorkoutPreferences } = useProfileStore();
+  const {
+    updatePersonalInfo,
+    updateWorkoutPreferences,
+    bodyAnalysis,
+    dietPreferences,
+  } = useProfileStore();
   // SSOT: profileStore.personalInfo is authoritative (onboarding_data table); userStore.profile is legacy fallback
   const profilePersonalInfo = useProfileStore((s) => s.personalInfo);
   // SSOT: profileStore.workoutPreferences is authoritative for activity_level (onboarding_data table)
-  const profileWorkoutPreferences = useProfileStore((s) => s.workoutPreferences);
+  const profileWorkoutPreferences = useProfileStore(
+    (s) => s.workoutPreferences,
+  );
+  const profile = React.useMemo(
+    () => ({
+      ...rawProfile,
+      bodyMetrics: bodyAnalysis,
+      workoutPreferences: profileWorkoutPreferences,
+      ...buildLegacyProfileAdapter({
+        personalInfo: profilePersonalInfo,
+        bodyAnalysis,
+        workoutPreferences: profileWorkoutPreferences,
+        dietPreferences,
+        legacyProfile: rawProfile,
+      }),
+    }),
+    [
+      rawProfile,
+      profilePersonalInfo,
+      bodyAnalysis,
+      profileWorkoutPreferences,
+      dietPreferences,
+    ],
+  );
 
   // Form state
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("");
-  const [height, setHeight] = useState("");
-  const [weight, setWeight] = useState("");
   const [activityLevel, setActivityLevel] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -98,19 +123,19 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
   useEffect(() => {
     if (visible) {
       const info = profile?.personalInfo;
-      const bodyMetrics = profile?.bodyMetrics;
-      const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
       // ✅ SSOT: profileStore.personalInfo is authoritative; compute name from first+last, fallback to userStore
-      const profileName = `${profilePersonalInfo?.first_name || ''} ${profilePersonalInfo?.last_name || ''}`.trim();
+      const profileName =
+        `${profilePersonalInfo?.first_name || ""} ${profilePersonalInfo?.last_name || ""}`.trim();
       setName(profileName || profilePersonalInfo?.name || info?.name || "");
       // ✅ SSOT: profileStore.personalInfo.age is authoritative; userStore is legacy fallback
       setAge((profilePersonalInfo?.age ?? info?.age)?.toString() || "");
       setGender(profilePersonalInfo?.gender || info?.gender || "");
-      // ✅ SSOT: profileStore.bodyAnalysis is authoritative; profile.bodyMetrics is legacy fallback
-      setHeight((bodyAnalysisData?.height_cm && bodyAnalysisData.height_cm > 0) ? bodyAnalysisData.height_cm.toString() : (bodyMetrics?.height_cm?.toString() || ""));
-      setWeight((bodyAnalysisData?.current_weight_kg && bodyAnalysisData.current_weight_kg > 0) ? bodyAnalysisData.current_weight_kg.toString() : (bodyMetrics?.current_weight_kg?.toString() || ""));
       // ✅ SSOT: profileStore.workoutPreferences is authoritative (onboarding_data table); userStore.profile is legacy fallback
-      setActivityLevel(profileWorkoutPreferences?.activity_level || profile?.workoutPreferences?.activity_level || "");
+      setActivityLevel(
+        profileWorkoutPreferences?.activity_level ||
+          profile?.workoutPreferences?.activity_level ||
+          "",
+      );
       setErrors({});
     }
   }, [visible, profile, profilePersonalInfo, profileWorkoutPreferences]);
@@ -131,31 +156,13 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       newErrors.gender = "Please select your gender";
     }
 
-    if (
-      !height ||
-      isNaN(Number(height)) ||
-      Number(height) < 100 ||
-      Number(height) > 250
-    ) {
-      newErrors.height = "Enter valid height in cm (100-250)";
-    }
-
-    if (
-      !weight ||
-      isNaN(Number(weight)) ||
-      Number(weight) < 30 ||
-      Number(weight) > 300
-    ) {
-      newErrors.weight = "Enter valid weight in kg (30-300)";
-    }
-
     if (!activityLevel) {
       newErrors.activityLevel = "Please select your activity level";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [name, age, gender, height, weight, activityLevel]);
+  }, [name, age, gender, activityLevel]);
 
   // Real-time validation for individual fields
   const validateField = useCallback((field: string, value: string) => {
@@ -182,30 +189,6 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
             delete newErrors.age;
           }
           break;
-        case "height":
-          if (
-            !value ||
-            isNaN(Number(value)) ||
-            Number(value) < 100 ||
-            Number(value) > 250
-          ) {
-            newErrors.height = "Enter valid height in cm (100-250)";
-          } else {
-            delete newErrors.height;
-          }
-          break;
-        case "weight":
-          if (
-            !value ||
-            isNaN(Number(value)) ||
-            Number(value) < 30 ||
-            Number(value) > 300
-          ) {
-            newErrors.weight = "Enter valid weight in kg (30-300)";
-          } else {
-            delete newErrors.weight;
-          }
-          break;
       }
 
       return newErrors;
@@ -225,22 +208,6 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
     (value: string) => {
       setAge(value);
       validateField("age", value);
-    },
-    [validateField],
-  );
-
-  const handleHeightChange = useCallback(
-    (value: string) => {
-      setHeight(value);
-      validateField("height", value);
-    },
-    [validateField],
-  );
-
-  const handleWeightChange = useCallback(
-    (value: string) => {
-      setWeight(value);
-      validateField("weight", value);
     },
     [validateField],
   );
@@ -289,45 +256,31 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
             age: parseInt(age, 10),
             gender: gender as "male" | "female" | "other" | "prefer_not_to_say",
           },
-          bodyMetrics: {
-            // Spread existing to preserve all optional fields, then override updated values
-            ...(currentProfile.bodyMetrics ?? {}),
-            height_cm: height ? parseFloat(height) : (currentProfile.bodyMetrics?.height_cm ?? 0),
-            current_weight_kg: weight ? parseFloat(weight) : (currentProfile.bodyMetrics?.current_weight_kg ?? 0),
-            medical_conditions: currentProfile.bodyMetrics?.medical_conditions ?? [],
-            medications: currentProfile.bodyMetrics?.medications ?? [],
-            physical_limitations: currentProfile.bodyMetrics?.physical_limitations ?? [],
-            pregnancy_status: currentProfile.bodyMetrics?.pregnancy_status ?? false,
-            breastfeeding_status: currentProfile.bodyMetrics?.breastfeeding_status ?? false,
-          } as import('../../../../types/user').BodyMetrics,
           workoutPreferences: {
             // Spread existing to preserve all required fields, then override activity_level
             ...(currentProfile.workoutPreferences ?? {
-              location: 'home' as const,
+              location: "home" as const,
               equipment: [],
               time_preference: 30,
-            intensity: 'beginner' as const,
+              intensity: "beginner" as const,
               workout_types: [],
               primary_goals: [],
-              activity_level: 'moderate',
+              activity_level: "moderate",
             }),
-            activity_level: activityLevel || currentProfile.workoutPreferences?.activity_level || "moderate",
-          } as import('../../../../types/user').WorkoutPreferences,
-        });
-      }
-
-      // ✅ Update body measurements via profileStore's bodyAnalysis
-      if (height && weight) {
-        updateBodyAnalysis({
-          height_cm: parseFloat(height),
-          current_weight_kg: parseFloat(weight),
+            activity_level:
+              activityLevel ||
+              currentProfile.workoutPreferences?.activity_level ||
+              "moderate",
+          } as import("../../../../types/user").WorkoutPreferences,
         });
       }
 
       // ✅ SSOT: profileStore.workoutPreferences is authoritative for activity_level
       if (
         activityLevel &&
-        activityLevel !== (profileWorkoutPreferences?.activity_level || profile?.workoutPreferences?.activity_level)
+        activityLevel !==
+          (profileWorkoutPreferences?.activity_level ||
+            profile?.workoutPreferences?.activity_level)
       ) {
         updateWorkoutPreferences({
           activity_level: activityLevel as any,
@@ -348,7 +301,10 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
             gender: gender as "male" | "female" | "other" | "prefer_not_to_say",
           } as any);
           if (!result.success) {
-            console.error("[PersonalInfoModal] Failed to sync to Supabase:", result.error);
+            console.error(
+              "[PersonalInfoModal] Failed to sync to Supabase:",
+              result.error,
+            );
           } else {
             console.log("✅ Personal info synced to Supabase");
           }
@@ -369,13 +325,10 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
     name,
     age,
     gender,
-    height,
-    weight,
     activityLevel,
     profile,
     user,
     updatePersonalInfo,
-    updateBodyAnalysis,
     updateWorkoutPreferences,
     onClose,
     validate,
@@ -386,26 +339,37 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
     const bodyMetrics = profile?.bodyMetrics;
     const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
     // SSOT: use profileStore.personalInfo for original name comparison
-    const profileName = `${profilePersonalInfo?.first_name || ''} ${profilePersonalInfo?.last_name || ''}`.trim();
-    const origName = profileName || profilePersonalInfo?.name || info?.name || "";
+    const profileName =
+      `${profilePersonalInfo?.first_name || ""} ${profilePersonalInfo?.last_name || ""}`.trim();
+    const origName =
+      profileName || profilePersonalInfo?.name || info?.name || "";
     const origAge = (profilePersonalInfo?.age ?? info?.age)?.toString() || "";
     const origGender = profilePersonalInfo?.gender || info?.gender || "";
     return (
       name !== origName ||
       age !== origAge ||
       gender !== origGender ||
-      height !== ((bodyAnalysisData?.height_cm && bodyAnalysisData.height_cm > 0) ? bodyAnalysisData.height_cm.toString() : (bodyMetrics?.height_cm?.toString() || "")) ||
-      weight !== ((bodyAnalysisData?.current_weight_kg && bodyAnalysisData.current_weight_kg > 0) ? bodyAnalysisData.current_weight_kg.toString() : (bodyMetrics?.current_weight_kg?.toString() || "")) ||
       // SSOT: profileStore.workoutPreferences is authoritative; userStore.profile is legacy fallback
-      activityLevel !== (profileWorkoutPreferences?.activity_level || profile?.workoutPreferences?.activity_level || "")
+      activityLevel !==
+        (profileWorkoutPreferences?.activity_level ||
+          profile?.workoutPreferences?.activity_level ||
+          "")
     );
-  }, [name, age, gender, height, weight, activityLevel, profile, profilePersonalInfo, profileWorkoutPreferences]);
+  }, [
+    name,
+    age,
+    gender,
+    activityLevel,
+    profile,
+    profilePersonalInfo,
+    profileWorkoutPreferences,
+  ]);
 
   return (
     <SettingsModalWrapper
       visible={visible}
       title="Personal Information"
-      subtitle="Update your profile details"
+      subtitle="Update your basic profile details"
       icon="person-outline"
       iconColor={ResponsiveTheme.colors.errorLight}
       onClose={onClose}
@@ -417,7 +381,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       <GlassFormInput
         label="Full Name"
         icon="person-outline"
-      iconColor={ResponsiveTheme.colors.errorLight}
+        iconColor={ResponsiveTheme.colors.errorLight}
         value={name}
         onChangeText={handleNameChange}
         placeholder="Enter your name"
@@ -448,36 +412,6 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
         onChange={(val) => setGender(val as string)}
         columns={3}
         error={errors.gender}
-      />
-
-      {/* Height */}
-      <GlassFormInput
-        label="Height"
-        icon="resize-outline"
-        iconColor={ResponsiveTheme.colors.info}
-        value={height}
-        onChangeText={handleHeightChange}
-        placeholder="Enter your height"
-        keyboardType="numeric"
-        maxLength={3}
-        suffix="cm"
-        error={errors.height}
-        hint="Height in centimeters"
-      />
-
-      {/* Weight */}
-      <GlassFormInput
-        label="Weight"
-        icon="scale-outline"
-        iconColor={ResponsiveTheme.colors.primary}
-        value={weight}
-        onChangeText={handleWeightChange}
-        placeholder="Enter your weight"
-        keyboardType="decimal-pad"
-        maxLength={5}
-        suffix="kg"
-        error={errors.weight}
-        hint="Weight in kilograms"
       />
 
       {/* Activity Level */}

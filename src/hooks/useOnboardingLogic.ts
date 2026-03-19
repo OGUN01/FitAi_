@@ -315,7 +315,7 @@ export const useOnboardingLogic = ({
   // Handle hardware back button
   useEffect(() => {
     const backAction = () => {
-      handleBackPress();
+      handlePreviousTab();
       return true;
     };
 
@@ -324,7 +324,7 @@ export const useOnboardingLogic = ({
       backAction,
     );
     return () => backHandler.remove();
-  }, [handleBackPress]);
+  }, [handlePreviousTab]);
 
   const handleCompleteOnboarding = useCallback(async () => {
     const success = await completeOnboarding();

@@ -11,6 +11,7 @@
 
 import { supabase } from "./supabase";
 import { getCurrentUserId } from "./authUtils";
+import { getLocalDateString } from "../utils/weekUtils";
 
 interface WaterLogEntry {
   id: string;
@@ -39,7 +40,7 @@ export async function logWaterIntake(
       return { success: false, error: "Not authenticated" };
     }
 
-    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const today = getLocalDateString();
 
     const { data, error } = await supabase
       .from("water_logs")
@@ -87,7 +88,7 @@ export async function getTodayWaterIntake(): Promise<{
       };
     }
 
-    const today = new Date().toISOString().split("T")[0];
+    const today = getLocalDateString();
 
     const { data, error } = await supabase
       .from("water_logs")
@@ -138,7 +139,7 @@ export async function getWaterHistory(days: number = 7): Promise<{
     // Calculate start date
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
-    const startDateStr = startDate.toISOString().split("T")[0];
+    const startDateStr = getLocalDateString(startDate);
 
     const { data, error } = await supabase
       .from("water_logs")
