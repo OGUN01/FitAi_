@@ -18,8 +18,9 @@ export function validateTransformationData(
         errors.push("Workout session must have id, user_id, and workout_id");
       }
       if (
-        typeof data.duration_minutes !== "number" ||
-        data.duration_minutes <= 0
+        (typeof data.duration !== "number" || data.duration <= 0) &&
+        (typeof data.total_duration_minutes !== "number" ||
+          data.total_duration_minutes <= 0)
       ) {
         errors.push("Workout session must have valid duration");
       }

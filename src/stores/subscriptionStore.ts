@@ -19,6 +19,7 @@ type SubscriptionTier = "free" | "basic" | "pro";
 
 type SubscriptionStatusType =
   | "active"
+  | "authenticated"
   | "paused"
   | "cancelled"
   | "pending"
@@ -67,7 +68,7 @@ interface BackendStatusData {
   status: string;
   is_active: boolean;
   billing_cycle: string | null;
-  current_period_end: string | null;
+  current_period_end: number | string | null;
   razorpay_subscription_id: string | null;
   features: FeatureLimits;
 }
@@ -78,13 +79,15 @@ interface BackendStatusData {
 
 /**
  * Map the raw backend status string to the narrower type the store cares about.
- * Razorpay statuses like 'created', 'authenticated', 'halted', 'completed',
- * 'expired' are collapsed to `null` (treated as no active subscription).
+ * Razorpay statuses like 'created', 'halted', 'completed', 'expired' are
+ * collapsed to `null` (treated as no subscription).
  */
 function normalizeStatus(raw: string): SubscriptionStatusType {
   switch (raw) {
     case "active":
       return "active";
+    case "authenticated":
+      return "authenticated";
     case "paused":
       return "paused";
     case "cancelled":
@@ -128,13 +131,31 @@ function deriveUsageFromFeatures(features: FeatureLimits): UsageSummary {
   };
 }
 
+function normalizePeriodEnd(
+  value: number | string | null | undefined,
+): string | null {
+  if (value == null) return null;
+
+  if (typeof value === "number") {
+    return new Date(value * 1000).toISOString();
+  }
+
+  const numeric = Number(value);
+  if (!Number.isNaN(numeric) && String(numeric) === value) {
+    return new Date(numeric * 1000).toISOString();
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
 // ============================================================================
 // Free-tier defaults
 // ============================================================================
 
 const FREE_FEATURES: FeatureLimits = {
   ai_generations_per_day: null,
-  ai_generations_per_month: 10,
+  ai_generations_per_month: 1,
   scans_per_day: 10,
   unlimited_scans: false,
   unlimited_ai: false,
@@ -148,7 +169,16 @@ const EMPTY_USAGE: UsageSummary = deriveUsageFromFeatures(FREE_FEATURES);
 // so we can auto-reset counts at the start of each new billing month.
 function getCurrentMonthKey(): string {
   const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function getCurrentDayKey(): string {
+  const d = new Date();
+  return [
+    d.getUTCFullYear(),
+    String(d.getUTCMonth() + 1).padStart(2, "0"),
+    String(d.getUTCDate()).padStart(2, "0"),
+  ].join("-");
 }
 
 // ============================================================================
@@ -169,14 +199,29 @@ interface SubscriptionState {
 
   // Usage reset tracking — persisted to detect a new billing month on restart
   usageResetMonth: string | null;
+  usageResetDay: string | null;
 
   // Actions
-  fetchSubscriptionStatus: () => Promise<void>;
+  fetchSubscriptionStatus: (options?: {
+    preserveExistingOnError?: boolean;
+  }) => Promise<void>;
   initializeSubscription: () => Promise<void>;
   refreshUsage: () => Promise<void>;
   isPremium: () => boolean;
   canUseFeature: (featureKey: "ai_generation" | "barcode_scan") => boolean;
   clearSubscription: () => void;
+  setOptimisticSubscription: (snapshot: {
+    tier: SubscriptionTier;
+    name: string;
+    billing_cycle: string | null;
+    features: FeatureLimits;
+    current_period_end?: number | string | null;
+    status?: SubscriptionStatusType;
+  }) => void;
+  applyLifecycleUpdate: (update: {
+    status: SubscriptionStatusType;
+    current_period_end?: number | string | null;
+  }) => void;
   incrementUsage: (featureKey: "ai_generation" | "barcode_scan") => void;
   showPaywall: boolean;
   paywallReason: string | null;
@@ -203,9 +248,11 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         showPaywall: false,
         paywallReason: null,
         usageResetMonth: null,
+        usageResetDay: null,
         // ----- Actions -----
 
-        fetchSubscriptionStatus: async () => {
+        fetchSubscriptionStatus: async (options) => {
+          const preserveExistingOnError = options?.preserveExistingOnError ?? false;
           set({ isLoading: true });
           try {
             const data =
@@ -215,27 +262,45 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             const features: FeatureLimits =
               data.tier === "free" ? FREE_FEATURES : (data.features ?? FREE_FEATURES);
 
-            // Decide whether to reset usage counts:
-            // Reset when: (a) first run (no month key), (b) new calendar month, or (c) plan tier changed
             const currentMonth = getCurrentMonthKey();
-            const { usageResetMonth, currentPlan: prevPlan, usage: prevUsage } = get();
+            const currentDay = getCurrentDayKey();
+            const {
+              usageResetMonth,
+              usageResetDay,
+              currentPlan: prevPlan,
+              usage: prevUsage,
+            } = get();
             const tierChanged = prevPlan !== null && prevPlan.tier !== data.tier;
-            const monthChanged = usageResetMonth !== null && usageResetMonth !== currentMonth;
-            const shouldReset = tierChanged || monthChanged || usageResetMonth === null;
+            const monthChanged =
+              usageResetMonth !== null && usageResetMonth !== currentMonth;
+            const dayChanged =
+              usageResetDay !== null && usageResetDay !== currentDay;
+            const shouldResetMonthly =
+              tierChanged || monthChanged || usageResetMonth === null;
+            const shouldResetDaily =
+              shouldResetMonthly || tierChanged || dayChanged || usageResetDay === null;
 
             let usage: UsageSummary;
-            if (shouldReset) {
+            if (shouldResetMonthly) {
               usage = deriveUsageFromFeatures(features);
             } else {
               // Preserve persisted counts, update limits from server
               usage = {
                 ai_generation: {
                   daily: {
-                    current: prevUsage.ai_generation.daily.current,
+                    current: shouldResetDaily
+                      ? 0
+                      : prevUsage.ai_generation.daily.current,
                     limit: features.ai_generations_per_day,
                     remaining:
                       features.ai_generations_per_day !== null
-                        ? Math.max(0, features.ai_generations_per_day - prevUsage.ai_generation.daily.current)
+                        ? Math.max(
+                            0,
+                            features.ai_generations_per_day -
+                              (shouldResetDaily
+                                ? 0
+                                : prevUsage.ai_generation.daily.current),
+                          )
                         : null,
                   },
                   monthly: {
@@ -249,11 +314,19 @@ export const useSubscriptionStore = create<SubscriptionState>()(
                 },
                 barcode_scan: {
                   daily: {
-                    current: prevUsage.barcode_scan.daily.current,
+                    current: shouldResetDaily
+                      ? 0
+                      : prevUsage.barcode_scan.daily.current,
                     limit: features.scans_per_day,
                     remaining:
                       features.scans_per_day !== null
-                        ? Math.max(0, features.scans_per_day - prevUsage.barcode_scan.daily.current)
+                        ? Math.max(
+                            0,
+                            features.scans_per_day -
+                              (shouldResetDaily
+                                ? 0
+                                : prevUsage.barcode_scan.daily.current),
+                          )
                         : null,
                   },
                 },
@@ -269,13 +342,32 @@ export const useSubscriptionStore = create<SubscriptionState>()(
               subscriptionStatus: status,
               features,
               usage,
-              currentPeriodEnd: data.current_period_end,
+              currentPeriodEnd: normalizePeriodEnd(data.current_period_end),
               isLoading: false,
-              usageResetMonth: shouldReset ? currentMonth : (usageResetMonth ?? currentMonth),
+              usageResetMonth: shouldResetMonthly
+                ? currentMonth
+                : (usageResetMonth ?? currentMonth),
+              usageResetDay: shouldResetDaily
+                ? currentDay
+                : (usageResetDay ?? currentDay),
             });
           } catch (error) {
             console.warn("[subscriptionStore] Failed to fetch status:", error);
-            set({ isLoading: false });
+            if (preserveExistingOnError) {
+              set({ isLoading: false });
+              return;
+            }
+
+            set({
+              isLoading: false,
+              currentPlan: null,
+              subscriptionStatus: null,
+              features: FREE_FEATURES,
+              usage: EMPTY_USAGE,
+              currentPeriodEnd: null,
+              usageResetMonth: null,
+              usageResetDay: null,
+            });
           }
         },
 
@@ -290,9 +382,11 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         },
 
         isPremium: () => {
-          const { subscriptionStatus, currentPlan } = get();
+          const { subscriptionStatus, currentPlan, isInitialized } = get();
+          if (!isInitialized) return false;
           return (
-            subscriptionStatus === "active" &&
+            (subscriptionStatus === "active" ||
+              subscriptionStatus === "authenticated") &&
             (currentPlan?.tier === "basic" || currentPlan?.tier === "pro")
           );
         },
@@ -300,7 +394,11 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         canUseFeature: (
           featureKey: "ai_generation" | "barcode_scan",
         ): boolean => {
-          const { usage, features } = get();
+          const { usage, features, isInitialized } = get();
+
+          if (!isInitialized) {
+            return false;
+          }
 
           if (featureKey === "ai_generation") {
             if (features.unlimited_ai) return true;
@@ -323,19 +421,29 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           const { usage, features } = get();
           if (featureKey === "ai_generation") {
             if (features.unlimited_ai) return;
+            const daily = usage.ai_generation.daily;
             const monthly = usage.ai_generation.monthly;
-            const newCurrent = monthly.current + 1;
-            const newRemaining =
+            const newDailyCurrent = daily.current + 1;
+            const newDailyRemaining =
+              daily.remaining !== null ? Math.max(0, daily.remaining - 1) : null;
+            const newMonthlyCurrent = monthly.current + 1;
+            const newMonthlyRemaining =
               monthly.remaining !== null ? Math.max(0, monthly.remaining - 1) : null;
             set({
+              usageResetDay: getCurrentDayKey(),
               usage: {
                 ...usage,
                 ai_generation: {
                   ...usage.ai_generation,
+                  daily: {
+                    ...daily,
+                    current: newDailyCurrent,
+                    remaining: newDailyRemaining,
+                  },
                   monthly: {
                     ...monthly,
-                    current: newCurrent,
-                    remaining: newRemaining,
+                    current: newMonthlyCurrent,
+                    remaining: newMonthlyRemaining,
                   },
                 },
               },
@@ -347,6 +455,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             const newRemaining =
               daily.remaining !== null ? Math.max(0, daily.remaining - 1) : null;
             set({
+              usageResetDay: getCurrentDayKey(),
               usage: {
                 ...usage,
                 barcode_scan: {
@@ -380,7 +489,34 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             isInitialized: false,
             isLoading: false,
             usageResetMonth: null,
+            usageResetDay: null,
           });
+        },
+        setOptimisticSubscription: (snapshot) => {
+          const currentMonth = getCurrentMonthKey();
+          const currentDay = getCurrentDayKey();
+
+          set({
+            currentPlan: {
+              tier: snapshot.tier,
+              name: snapshot.name,
+              billing_cycle: snapshot.billing_cycle,
+            },
+            subscriptionStatus: snapshot.status ?? "authenticated",
+            features: snapshot.features,
+            usage: deriveUsageFromFeatures(snapshot.features),
+            currentPeriodEnd: normalizePeriodEnd(snapshot.current_period_end),
+            usageResetMonth: currentMonth,
+            usageResetDay: currentDay,
+          });
+        },
+        applyLifecycleUpdate: ({ status, current_period_end }) => {
+          set((state) => ({
+            currentPlan: state.currentPlan,
+            features: state.features,
+            subscriptionStatus: status,
+            currentPeriodEnd: normalizePeriodEnd(current_period_end),
+          }));
         },
       }),
       {
@@ -393,6 +529,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           // Persist usage so local counter survives app restarts within the same billing month
           usage: state.usage,
           usageResetMonth: state.usageResetMonth,
+          usageResetDay: state.usageResetDay,
           // features intentionally excluded — always recomputed from server on fetch
           // isInitialized intentionally excluded — must always start false on app restart
         }),
@@ -406,6 +543,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             currentPeriodEnd: null,
             usage: EMPTY_USAGE,
             usageResetMonth: null,
+            usageResetDay: null,
           };
         },
       },

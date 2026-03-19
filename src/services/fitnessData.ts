@@ -251,6 +251,7 @@ class FitnessDataService {
         .maybeSingle();
 
       if (error) {
+        console.error("Error fetching fitness goals:", error);
         return {
           success: false,
           error: error.message,
@@ -262,6 +263,7 @@ class FitnessDataService {
         data,
       };
     } catch (error) {
+      console.error("Error in getUserFitnessGoals:", error);
       return {
         success: false,
         error:

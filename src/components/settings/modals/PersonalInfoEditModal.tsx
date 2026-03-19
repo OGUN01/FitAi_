@@ -19,7 +19,6 @@ import { SettingsModalWrapper } from "../SettingsModalWrapper";
 import { GlassFormInput } from "../../form/GlassFormInput";
 import { GlassFormPicker } from "../../form/GlassFormPicker";
 import { useProfileStore } from "../../../stores/profileStore";
-import { useUser } from "../../../hooks/useUser";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { rf } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
@@ -75,10 +74,11 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
   visible,
   onClose,
 }) => {
-  const { profile } = useUser();
-  const { updatePersonalInfo, updateBodyAnalysis, updateWorkoutPreferences } = useProfileStore();
-  // SSOT: profileStore is authoritative for all onboarding data (onboarding_data table)
-  const profileWorkoutPreferences = useProfileStore((s) => s.workoutPreferences);
+  const { updatePersonalInfo, updateBodyAnalysis, updateWorkoutPreferences } =
+    useProfileStore();
+  const profileWorkoutPreferences = useProfileStore(
+    (s) => s.workoutPreferences,
+  );
   const profilePersonalInfo = useProfileStore((s) => s.personalInfo);
   const profileBodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
 
@@ -92,22 +92,26 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Load current values when modal opens
-  // SSOT: profileStore.personalInfo/bodyAnalysis are authoritative; userStore profile is legacy fallback
   useEffect(() => {
-    if (visible && (profilePersonalInfo || profile?.personalInfo)) {
-      const profileName = `${profilePersonalInfo?.first_name || ''} ${profilePersonalInfo?.last_name || ''}`.trim();
-      setName(profileName || profilePersonalInfo?.name || profile?.personalInfo?.name || "");
-      setAge(String(profilePersonalInfo?.age || profile?.personalInfo?.age || ""));
-      setGender(profilePersonalInfo?.gender || profile?.personalInfo?.gender || "");
-      const h = profileBodyAnalysis?.height_cm || profile?.bodyMetrics?.height_cm || (profile?.personalInfo as any)?.height;
-      const w = profileBodyAnalysis?.current_weight_kg || profile?.bodyMetrics?.current_weight_kg || (profile?.personalInfo as any)?.weight;
+    if (visible && profilePersonalInfo) {
+      const profileName =
+        `${profilePersonalInfo?.first_name || ""} ${profilePersonalInfo?.last_name || ""}`.trim();
+      setName(profileName || profilePersonalInfo?.name || "");
+      setAge(String(profilePersonalInfo?.age || ""));
+      setGender(profilePersonalInfo?.gender || "");
+      const h = profileBodyAnalysis?.height_cm;
+      const w = profileBodyAnalysis?.current_weight_kg;
       setHeight(h ? String(h) : "");
       setWeight(w ? String(w) : "");
-      setActivityLevel(profileWorkoutPreferences?.activity_level || profile?.workoutPreferences?.activity_level || "");
+      setActivityLevel(profileWorkoutPreferences?.activity_level || "");
       setErrors({});
     }
-  }, [visible, profilePersonalInfo, profileBodyAnalysis, profileWorkoutPreferences, profile]);
+  }, [
+    visible,
+    profilePersonalInfo,
+    profileBodyAnalysis,
+    profileWorkoutPreferences,
+  ]);
 
   // Validation
   const validate = useCallback((): boolean => {
@@ -165,23 +169,21 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       const firstName = nameParts[0] || "";
       const lastName = nameParts.slice(1).join(" ") || "";
 
-      // ✅ Update personal info via profileStore (snake_case fields)
       updatePersonalInfo({
         first_name: firstName,
         last_name: lastName,
         name: name.trim(),
         age: parseFloat(age),
         gender: gender as "male" | "female" | "other" | "prefer_not_to_say",
-        country: profile?.personalInfo?.country || "",
-        state: profile?.personalInfo?.state || "",
-        wake_time: profile?.personalInfo?.wake_time || "07:00",
-        sleep_time: profile?.personalInfo?.sleep_time || "23:00",
-        occupation_type: profile?.personalInfo?.occupation_type || "desk_job",
-        email: profile?.personalInfo?.email ?? undefined,
-        region: profile?.personalInfo?.region ?? undefined,
+        country: profilePersonalInfo?.country || "",
+        state: profilePersonalInfo?.state || "",
+        wake_time: profilePersonalInfo?.wake_time || "07:00",
+        sleep_time: profilePersonalInfo?.sleep_time || "23:00",
+        occupation_type: profilePersonalInfo?.occupation_type || "desk_job",
+        email: profilePersonalInfo?.email ?? undefined,
+        region: profilePersonalInfo?.region ?? undefined,
       });
 
-      // ✅ Update body measurements via profileStore's bodyAnalysis
       if (height && weight) {
         updateBodyAnalysis({
           height_cm: parseFloat(height),
@@ -189,12 +191,13 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
         });
       }
 
-      // ✅ Update activity level in workoutPreferences if changed
-      // SSOT: activity_level lives in workoutPreferences, not personalInfo
-      // ✅ SSOT: profileStore.workoutPreferences is authoritative for activity_level
-      if (activityLevel && activityLevel !== (profileWorkoutPreferences?.activity_level || profile?.workoutPreferences?.activity_level)) {
+      if (
+        activityLevel &&
+        activityLevel !== profileWorkoutPreferences?.activity_level
+      ) {
         updateWorkoutPreferences({
-          activity_level: activityLevel as WorkoutPreferencesData['activity_level'],
+          activity_level:
+            activityLevel as WorkoutPreferencesData["activity_level"],
         });
       }
       haptics.success();
@@ -212,7 +215,8 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
     height,
     weight,
     activityLevel,
-    profile,
+    profilePersonalInfo,
+    profileWorkoutPreferences,
     updatePersonalInfo,
     updateBodyAnalysis,
     updateWorkoutPreferences,
@@ -221,22 +225,34 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
   ]);
 
   const hasChanges = useCallback(() => {
-    if (!profilePersonalInfo && !profile?.personalInfo) return true;
-    // SSOT: compare against profileStore values (authoritative)
-    const origName = `${profilePersonalInfo?.first_name || ''} ${profilePersonalInfo?.last_name || ''}`.trim() || profilePersonalInfo?.name || profile?.personalInfo?.name || "";
-    const origAge = String(profilePersonalInfo?.age || profile?.personalInfo?.age || "");
-    const origGender = profilePersonalInfo?.gender || profile?.personalInfo?.gender || "";
-    const origH = profileBodyAnalysis?.height_cm || profile?.bodyMetrics?.height_cm || (profile?.personalInfo as any)?.height;
-    const origW = profileBodyAnalysis?.current_weight_kg || profile?.bodyMetrics?.current_weight_kg || (profile?.personalInfo as any)?.weight;
+    if (!profilePersonalInfo) return true;
+    const origName =
+      `${profilePersonalInfo?.first_name || ""} ${profilePersonalInfo?.last_name || ""}`.trim() ||
+      profilePersonalInfo?.name ||
+      "";
+    const origAge = String(profilePersonalInfo?.age || "");
+    const origGender = profilePersonalInfo?.gender || "";
+    const origH = profileBodyAnalysis?.height_cm;
+    const origW = profileBodyAnalysis?.current_weight_kg;
     return (
       name !== origName ||
       age !== origAge ||
       gender !== origGender ||
       height !== (origH ? String(origH) : "") ||
       weight !== (origW ? String(origW) : "") ||
-      activityLevel !== (profileWorkoutPreferences?.activity_level || profile?.workoutPreferences?.activity_level || "")
+      activityLevel !== (profileWorkoutPreferences?.activity_level || "")
     );
-  }, [name, age, gender, height, weight, activityLevel, profilePersonalInfo, profileBodyAnalysis, profileWorkoutPreferences, profile]);
+  }, [
+    name,
+    age,
+    gender,
+    height,
+    weight,
+    activityLevel,
+    profilePersonalInfo,
+    profileBodyAnalysis,
+    profileWorkoutPreferences,
+  ]);
 
   return (
     <SettingsModalWrapper

@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { FitnessState, WorkoutProgress } from "./types";
 import { crudOperations } from "../../services/crudOperations";
 import { offlineService } from "../../services/offline";
@@ -23,14 +24,22 @@ export const createProgressActions = (
           ...state.workoutProgress[workoutId],
           workoutId,
           progress,
-          ...(metadata?.exerciseIndex !== undefined && { exerciseIndex: metadata.exerciseIndex }),
-          ...(metadata?.caloriesBurned !== undefined && { caloriesBurned: metadata.caloriesBurned }),
+          ...(metadata?.exerciseIndex !== undefined && {
+            exerciseIndex: metadata.exerciseIndex,
+          }),
+          ...(metadata?.caloriesBurned !== undefined && {
+            caloriesBurned: metadata.caloriesBurned,
+          }),
         },
       },
     }));
   },
 
-  completeWorkout: async (workoutId: string, sessionId?: string, caloriesBurned?: number) => {
+  completeWorkout: async (
+    workoutId: string,
+    sessionId?: string,
+    caloriesBurned?: number,
+  ) => {
     const completedAt = new Date().toISOString();
 
     try {
@@ -41,7 +50,7 @@ export const createProgressActions = (
           syncMetadata: {
             lastModifiedAt: completedAt,
             syncVersion: 1,
-            deviceId: "dev-device",
+            deviceId: Platform.OS ?? "unknown",
           },
         });
       }

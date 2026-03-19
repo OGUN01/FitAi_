@@ -26,6 +26,7 @@ import { OnboardingContainer } from "../../screens/onboarding/OnboardingContaine
 import { ContributeFood } from "../../screens/ContributeFood";
 import { ResponsiveTheme } from "../../utils/constants";
 import { DayWorkout, DayMeal } from "../../types/ai";
+import { useAppConfig } from "../../hooks/useAppConfig";
 
 interface MainNavigationProps {
   initialTab?: string;
@@ -34,6 +35,7 @@ interface MainNavigationProps {
 export const MainNavigation: React.FC<MainNavigationProps> = ({
   initialTab = "home",
 }) => {
+  const { config: appConfig } = useAppConfig();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [workoutSession, setWorkoutSession] = useState<{
     isActive: boolean;
@@ -112,6 +114,14 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       } else if (screen === "Achievements") {
         setAchievementsSession({ isActive: true });
       } else if (screen === 'ContributeFood') {
+        if (!appConfig.featureFoodContributions) {
+          crossPlatformAlert(
+            "Feature Unavailable",
+            "Food contributions are currently disabled.",
+            [{ text: "OK" }],
+          );
+          return;
+        }
         setContributeFoodSession({ isActive: true, barcode: params?.barcode });
       }
     },
@@ -169,6 +179,12 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     contributeFoodSession.isActive,
   ]);
 
+  useEffect(() => {
+    if (activeTab === "analytics" && !appConfig.featureAnalytics) {
+      setActiveTab("home");
+    }
+  }, [activeTab, appConfig.featureAnalytics]);
+
   const tabs = [
     {
       key: "home",
@@ -183,12 +199,6 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       activeIcon: <FitnessIcon active />,
     },
     {
-      key: "analytics",
-      title: "Analytics",
-      icon: <AnalyticsIcon />,
-      activeIcon: <AnalyticsIcon active />,
-    },
-    {
       key: "diet",
       title: "Diet",
       icon: <DietIcon />,
@@ -200,7 +210,16 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       icon: <ProfileIcon />,
       activeIcon: <ProfileIcon active />,
     },
-  ];
+  ].concat(
+    appConfig.featureAnalytics
+      ? [{
+          key: "analytics",
+          title: "Analytics",
+          icon: <AnalyticsIcon />,
+          activeIcon: <AnalyticsIcon active />,
+        }]
+      : [],
+  );
 
   const renderScreen = () => {
     // If onboarding edit session is active, show OnboardingContainer in edit mode
@@ -282,6 +301,16 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
 
     // If contribute food session is active, show ContributeFood screen
     if (contributeFoodSession.isActive) {
+      if (!appConfig.featureFoodContributions) {
+        return (
+          <View style={styles.unavailableContainer}>
+            <Text style={styles.unavailableTitle}>Feature Unavailable</Text>
+            <Text style={styles.unavailableMessage}>
+              Food contributions are currently disabled by the administrator.
+            </Text>
+          </View>
+        );
+      }
       return (
         <ContributeFood
           route={{ params: { barcode: contributeFoodSession.barcode ?? '' } }}
@@ -311,6 +340,16 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       case "fitness":
         return <FitnessScreen navigation={navigation} />;
       case "analytics":
+        if (!appConfig.featureAnalytics) {
+          return (
+            <View style={styles.unavailableContainer}>
+              <Text style={styles.unavailableTitle}>Feature Unavailable</Text>
+              <Text style={styles.unavailableMessage}>
+                Analytics are currently disabled by the administrator.
+              </Text>
+            </View>
+          );
+        }
         return <AnalyticsScreen navigation={navigation} />;
       case "diet":
         return (
@@ -368,5 +407,25 @@ const styles = StyleSheet.create({
 
   screenContainer: {
     flex: 1,
+  },
+  unavailableContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: rw(24),
+    backgroundColor: ResponsiveTheme.colors.background,
+  },
+  unavailableTitle: {
+    fontSize: rf(22),
+    fontWeight: "700",
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rh(8),
+    textAlign: "center",
+  },
+  unavailableMessage: {
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: "center",
+    lineHeight: rf(20),
   },
 });

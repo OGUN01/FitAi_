@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 import { safeAsyncStorage } from "../utils/safeAsyncStorage";
 import * as crypto from "expo-crypto";
 import { WeeklyMealPlan, DayMeal, MealItem } from "../ai";
@@ -176,65 +177,6 @@ export const useNutritionStore = create<NutritionState>()(
             console.warn("⚠️ No meals in plan to save to database");
             return;
           }
-
-
-          // PERF-008 FIX: Save individual meals to database in parallel for tracking
-          const timestamp = Date.now();
-          const mealLogPromises = plan.meals
-            .filter((meal) => meal.id && meal.name) // Validate meal data upfront
-            .map(async (meal, mealIndex) => {
-              try {
-                // Create a proper MealLog object matching the expected schema
-                const mealLog: import("../types/localData").MealLog = {
-                  id: `meal_${meal.id}_${timestamp}_${crypto.randomUUID().replace(/-/g, "").substring(0, 5)}`,
-                  mealType: toMealType(meal.type),
-                  foods: (meal.items || []).map(
-                    (item: MealItem, index: number) =>
-                      createLoggedFood(item, meal.id, index),
-                  ),
-                  totalCalories: meal.totalCalories || 0,
-                  totalMacros: {
-                    protein: meal.totalMacros?.protein ?? 0,
-                    carbohydrates: meal.totalMacros?.carbohydrates ?? 0,
-                    fat: meal.totalMacros?.fat ?? 0,
-                    fiber: meal.totalMacros?.fiber ?? 0,
-                  },
-                  loggedAt: new Date().toISOString(),
-                  photos: [],
-                  syncStatus: SyncStatus.PENDING,
-                  syncMetadata: {
-                    lastSyncedAt: undefined,
-                    lastModifiedAt: new Date().toISOString(),
-                    syncVersion: 1,
-                    deviceId: "dev-device",
-                  },
-                };
-
-                await crudOperations.createMealLog(mealLog);
-                return { success: true, meal: meal.name };
-              } catch (mealError) {
-                console.error(
-                  `❌ Failed to save meal ${meal.name}:`,
-                  mealError,
-                );
-                return { success: false, meal: meal.name, error: mealError };
-              }
-            });
-
-          // PERF-008 FIX: Execute all saves in parallel instead of sequential
-          const results = await Promise.all(mealLogPromises);
-          const savedCount = results.filter((r) => r.success).length;
-          const errorCount = results.filter((r) => !r.success).length;
-          const invalidCount = plan.meals.length - results.length;
-
-          if (invalidCount > 0) {
-            console.error(`❌ ${invalidCount} invalid meals skipped`);
-          }
-
-
-          if (errorCount > 0 && savedCount === 0) {
-            throw new Error(`Failed to save any meals (${errorCount} errors)`);
-          }
         } catch (error) {
           console.error("❌ Failed to save meal plan:", error);
           // ARCH-003 FIX: Set error state instead of silently swallowing
@@ -253,11 +195,9 @@ export const useNutritionStore = create<NutritionState>()(
           // Clear any failed UUID attempts in the queue first
           await offlineService.clearFailedActionsForTable("weekly_meal_plans");
 
-
           // Get authenticated user ID via StoreCoordinator (removes cross-store dependency)
           const userId = getCurrentUserId();
           const planId = generateUUID();
-
 
           // Ensure user is authenticated before database operation
           if (!userId) {
@@ -274,7 +214,6 @@ export const useNutritionStore = create<NutritionState>()(
             console.error("❌ Invalid plan UUID format:", planId);
             throw new Error("Invalid plan UUID format");
           }
-
 
           const weeklyMealPlanData = {
             id: planId,
@@ -421,7 +360,7 @@ export const useNutritionStore = create<NutritionState>()(
               syncMetadata: {
                 lastModifiedAt: completedAt,
                 syncVersion: (existingLog?.syncMetadata?.syncVersion || 0) + 1,
-                deviceId: "dev-device",
+                deviceId: Platform.OS ?? "unknown",
               },
             });
           }
@@ -438,7 +377,6 @@ export const useNutritionStore = create<NutritionState>()(
                 logId,
               },
             };
-
 
             return {
               mealProgress: newProgress,
@@ -486,7 +424,10 @@ export const useNutritionStore = create<NutritionState>()(
         const state = get();
 
         // Create cache key from mealProgress state + dailyMeals
-        const cacheKey = JSON.stringify(state.mealProgress) + "_dm" + (state.dailyMeals?.length || 0);
+        const cacheKey =
+          JSON.stringify(state.mealProgress) +
+          "_dm" +
+          (state.dailyMeals?.length || 0);
 
         // Return cached value if state hasn't changed
         if (consumedNutritionCache && consumedNutritionCacheKey === cacheKey) {
@@ -562,7 +503,16 @@ export const useNutritionStore = create<NutritionState>()(
         const todayName = dayNames[today.getDay()];
 
         // Create cache key from mealProgress state + dailyMeals (including calorie values for invalidation) + today's date
-        const cacheKey = JSON.stringify(state.mealProgress) + "_" + state.dailyMeals.length + "_" + JSON.stringify(state.dailyMeals.map(m => `${m.id}:${m.totalCalories || 0}`)) + "_" + todayName;
+        const cacheKey =
+          JSON.stringify(state.mealProgress) +
+          "_" +
+          state.dailyMeals.length +
+          "_" +
+          JSON.stringify(
+            state.dailyMeals.map((m) => `${m.id}:${m.totalCalories || 0}`),
+          ) +
+          "_" +
+          todayName;
 
         // Return cached value if state hasn't changed
         if (
@@ -601,7 +551,9 @@ export const useNutritionStore = create<NutritionState>()(
         // Also include nutrition from dailyMeals (e.g. meal suggestions added)
         const todayDateStr = today.toISOString().split("T")[0];
         const dailyMealsResult = state.dailyMeals
-          .filter((meal) => meal.createdAt && meal.createdAt.startsWith(todayDateStr))
+          .filter(
+            (meal) => meal.createdAt && meal.createdAt.startsWith(todayDateStr),
+          )
           .reduce(
             (acc, meal) => ({
               calories: acc.calories + (meal.totalCalories || 0),
@@ -654,7 +606,7 @@ export const useNutritionStore = create<NutritionState>()(
               lastSyncedAt: undefined,
               lastModifiedAt: new Date().toISOString(),
               syncVersion: 1,
-              deviceId: "dev-device",
+              deviceId: Platform.OS ?? "unknown",
             },
             // Note: totalMacros will be computed elsewhere for active sessions
           };
@@ -713,7 +665,6 @@ export const useNutritionStore = create<NutritionState>()(
           await get().completeMeal(currentSession.mealId, logId);
 
           set({ currentMealSession: null });
-
         } catch (error) {
           console.error("❌ Failed to end meal session:", error);
           throw error;
@@ -795,13 +746,12 @@ export const useNutritionStore = create<NutritionState>()(
                 lastSyncedAt: undefined,
                 lastModifiedAt: new Date().toISOString(),
                 syncVersion: 1,
-                deviceId: "dev-device",
+                deviceId: Platform.OS ?? "unknown",
               },
             };
 
             await crudOperations.createMealLog(mealLog);
           }
-
         } catch (error) {
           console.error("❌ Failed to persist nutrition data:", error);
         }
@@ -821,7 +771,9 @@ export const useNutritionStore = create<NutritionState>()(
               const todayISO = new Date().toISOString().split("T")[0];
               const { data: logs } = await supabase
                 .from("meal_logs")
-                .select("id, meal_type, meal_name, custom_meal_name, plan_meal_id, calories, protein_g, carbs_g, fat_g, logged_at, ingredients")
+                .select(
+                  "id, meal_type, meal_name, total_calories, total_protein, total_carbohydrates, total_fat, food_items, logged_at, logging_mode, truth_level, confidence, country_context, requires_review, source_metadata",
+                )
                 .eq("user_id", authData.user.id)
                 .gte("logged_at", `${todayISO}T00:00:00.000Z`)
                 .lte("logged_at", `${todayISO}T23:59:59.999Z`)
@@ -832,9 +784,11 @@ export const useNutritionStore = create<NutritionState>()(
                 const existingProgress = get().mealProgress;
                 const restoredProgress: Record<string, any> = {};
                 (logs as any[]).forEach((log) => {
-                  if (log.plan_meal_id && !existingProgress[log.plan_meal_id]) {
-                    restoredProgress[log.plan_meal_id] = {
-                      mealId: log.plan_meal_id,
+                  // Use log.id as the key since plan_meal_id is not stored in meal_logs
+                  const logKey = log.id;
+                  if (logKey && !existingProgress[logKey]) {
+                    restoredProgress[logKey] = {
+                      mealId: logKey,
                       progress: 100,
                       completedAt: log.logged_at,
                       logId: log.id,
@@ -843,26 +797,33 @@ export const useNutritionStore = create<NutritionState>()(
                 });
                 if (Object.keys(restoredProgress).length > 0) {
                   set((state) => ({
-                    mealProgress: { ...restoredProgress, ...state.mealProgress },
+                    mealProgress: {
+                      ...restoredProgress,
+                      ...state.mealProgress,
+                    },
                   }));
                 }
 
-                // Rebuild dailyMeals (extra logged meals — those without plan_meal_id)
-                const existingMealIds = new Set((get().dailyMeals || []).map((m) => m.id));
-                const hydratedMeals: import("../types/ai").Meal[] = (logs as any[])
-                  .filter((log) => !log.plan_meal_id && !existingMealIds.has(log.id))
+                // Rebuild dailyMeals (extra logged meals)
+                const existingMealIds = new Set(
+                  (get().dailyMeals || []).map((m) => m.id),
+                );
+                const hydratedMeals: import("../types/ai").Meal[] = (
+                  logs as any[]
+                )
+                  .filter((log) => !existingMealIds.has(log.id))
                   .map((log) => ({
                     id: log.id,
                     type: log.meal_type || "snack",
-                    name: log.meal_name || log.custom_meal_name || "Meal",
-                    totalCalories: log.calories || 0,
+                    name: log.meal_name || "Meal",
+                    totalCalories: log.total_calories || 0,
                     totalMacros: {
-                      protein: log.protein_g || 0,
-                      carbohydrates: log.carbs_g || 0,
-                      fat: log.fat_g || 0,
-                      fiber: 0, // meal_logs table doesn't store fiber separately
+                      protein: log.total_protein || 0,
+                      carbohydrates: log.total_carbohydrates || 0,
+                      fat: log.total_fat || 0,
+                      fiber: 0,
                     },
-                    items: Array.isArray(log.ingredients) ? log.ingredients : [],
+                    items: Array.isArray(log.food_items) ? log.food_items : [],
                     loggedAt: log.logged_at,
                     // Required Meal fields with safe defaults for Supabase-hydrated entries
                     tags: [] as string[],
@@ -870,19 +831,33 @@ export const useNutritionStore = create<NutritionState>()(
                     aiGenerated: false,
                     createdAt: log.logged_at || new Date().toISOString(),
                     updatedAt: log.logged_at || new Date().toISOString(),
+                    sourceMetadata: log.logging_mode
+                      ? {
+                          mode: log.logging_mode,
+                          truthLevel: log.truth_level || "curated",
+                          confidence: log.confidence || null,
+                          countryContext: log.country_context || null,
+                          requiresReview: log.requires_review || false,
+                          source: log.source_metadata?.source || null,
+                          productIdentity:
+                            log.source_metadata?.productIdentity || null,
+                          conflict: log.source_metadata?.conflict || null,
+                        }
+                      : undefined,
                   }));
                 if (hydratedMeals.length > 0) {
                   set((state) => ({
                     dailyMeals: [...hydratedMeals, ...(state.dailyMeals || [])],
                   }));
                 }
-
               }
             }
           } catch (supabaseError) {
-            console.error("❌ Failed to hydrate meal data from Supabase:", supabaseError);
+            console.error(
+              "❌ Failed to hydrate meal data from Supabase:",
+              supabaseError,
+            );
           }
-
         } catch (error) {
           console.error("❌ Failed to load nutrition data:", error);
         }

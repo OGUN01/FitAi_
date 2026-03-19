@@ -149,7 +149,7 @@ export async function checkUsageLimit(
 	});
 
 	if (error) {
-		return { allowed: false, current: 0, limit, remaining: 0 };
+		throw new Error(`Failed to fetch feature usage: ${error.message}`);
 	}
 
 	const current = typeof data === 'number' ? data : 0;

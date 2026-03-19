@@ -31,7 +31,6 @@ import { ONBOARDING_DATA_KEY } from "./constants";
  * Load data from local storage (ProfileStore + AsyncStorage)
  */
 export async function loadFromLocal(): Promise<AllDataResult> {
-
   try {
     // Check ProfileStore first
     const profileStore = useProfileStore.getState();
@@ -98,7 +97,6 @@ export async function loadFromLocal(): Promise<AllDataResult> {
  * Load data from database
  */
 export async function loadFromDatabase(userId: string): Promise<AllDataResult> {
-
   try {
     const [
       personalInfo,
@@ -107,11 +105,26 @@ export async function loadFromDatabase(userId: string): Promise<AllDataResult> {
       workoutPreferences,
       advancedReview,
     ] = await Promise.all([
-      PersonalInfoService.load(userId).catch(() => null),
-      DietPreferencesService.load(userId).catch(() => null),
-      BodyAnalysisService.load(userId).catch(() => null),
-      WorkoutPreferencesService.load(userId).catch(() => null),
-      AdvancedReviewService.load(userId).catch(() => null),
+      PersonalInfoService.load(userId).catch((e) => {
+        console.error("Failed to load personalInfo:", e);
+        return null;
+      }),
+      DietPreferencesService.load(userId).catch((e) => {
+        console.error("Failed to load dietPreferences:", e);
+        return null;
+      }),
+      BodyAnalysisService.load(userId).catch((e) => {
+        console.error("Failed to load bodyAnalysis:", e);
+        return null;
+      }),
+      WorkoutPreferencesService.load(userId).catch((e) => {
+        console.error("Failed to load workoutPreferences:", e);
+        return null;
+      }),
+      AdvancedReviewService.load(userId).catch((e) => {
+        console.error("Failed to load advancedReview:", e);
+        return null;
+      }),
     ]);
 
     // Update ProfileStore with loaded data (SSOT for onboarding data)
@@ -219,7 +232,6 @@ export async function clearLocalData(): Promise<void> {
 
     // Clear AsyncStorage
     await AsyncStorage.removeItem(ONBOARDING_DATA_KEY);
-
   } catch (error) {
     console.error("[DataBridge] clearLocalData error:", error);
   }

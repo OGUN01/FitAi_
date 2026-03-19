@@ -36,7 +36,12 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
   upgradeDescription,
 }) => {
   const canUseFeature = useSubscriptionStore((s) => s.canUseFeature);
+  const isInitialized = useSubscriptionStore((s) => s.isInitialized);
   const { triggerPaywall } = usePaywall();
+
+  if (!isInitialized) {
+    return <>{children}</>;
+  }
 
   const canUse = canUseFeature(featureKey);
 

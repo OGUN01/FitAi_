@@ -18,6 +18,8 @@ import { ResponsiveTheme } from "../../utils/constants";
 import { rh, rf, rp, rbr } from "../../utils/responsive";
 import { useFitnessStore } from "../../stores/fitnessStore";
 import { DayWorkout } from "../../types/ai";
+import { findCompletedSessionForWorkout } from "../../utils/workoutIdentity";
+import { getCurrentWeekStart } from "../../utils/weekUtils";
 
 // Hook
 import { useFitnessLogic } from "../../hooks/useFitnessLogic";
@@ -46,6 +48,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
   const { state, actions, setShowGuestSignUp } = useFitnessLogic(navigation);
   const planError = useFitnessStore((s) => s.planError);
   const quickWorkouts = useQuickWorkouts(navigation);
+  const currentWeekStart = getCurrentWeekStart();
 
   const calendarWorkoutData = useMemo(() => {
     const data: Record<string, { hasWorkout: boolean; isCompleted: boolean; isRestDay: boolean }> = {};
@@ -58,7 +61,19 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
       const isRestDay = restDayIndices.some((d: number | string) =>
         typeof d === "string" ? d === dayKey : d === dayIndex
       );
-      const progress = workout ? (state.workoutProgress[workout.id]?.progress ?? 0) : 0;
+      const completedSession = workout
+        ? findCompletedSessionForWorkout({
+            completedSessions: state.completedSessions,
+            workout,
+            plan: state.weeklyWorkoutPlan,
+            weekStart: currentWeekStart,
+          })
+        : null;
+      const progress = workout
+        ? completedSession
+          ? 100
+          : (state.workoutProgress[workout.id]?.progress ?? 0)
+        : 0;
       data[dayKey] = {
         hasWorkout: !!workout && !isRestDay,
         isCompleted: progress === 100,
@@ -66,7 +81,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
       };
     }
     return data;
-  }, [state.weeklyWorkoutPlan, state.workoutProgress]);
+  }, [state.weeklyWorkoutPlan, state.workoutProgress, state.completedSessions, currentWeekStart]);
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
@@ -102,8 +117,18 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
               <View style={styles.section}>
                 {state.selectedDayWorkouts && state.selectedDayWorkouts.length > 0 ? (
                   state.selectedDayWorkouts.map((workout: DayWorkout, index: number) => {
-                    const progress = state.workoutProgress[workout.id]?.progress || 0;
-                    const partialCalories = state.workoutProgress[workout.id]?.caloriesBurned;
+                    const completedSession = findCompletedSessionForWorkout({
+                      completedSessions: state.completedSessions,
+                      workout,
+                      plan: state.weeklyWorkoutPlan,
+                      weekStart: currentWeekStart,
+                    });
+                    const progress = completedSession
+                      ? 100
+                      : (state.workoutProgress[workout.id]?.progress || 0);
+                    const partialCalories =
+                      state.workoutProgress[workout.id]?.caloriesBurned ??
+                      completedSession?.caloriesBurned;
                     return (
                       <View key={workout.id || index} style={{ marginBottom: index < state.selectedDayWorkouts.length - 1 ? 16 : 0 }}>
                         <TodayWorkoutCard
@@ -218,7 +243,14 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
           duration={state.workoutDetailsWorkout?.duration ?? 0}
           calories={
             state.workoutDetailsWorkout
-              ? (state.workoutProgress[state.workoutDetailsWorkout.id]?.caloriesBurned ?? state.workoutDetailsWorkout.estimatedCalories)
+              ? (state.workoutProgress[state.workoutDetailsWorkout.id]?.caloriesBurned ??
+                findCompletedSessionForWorkout({
+                  completedSessions: state.completedSessions,
+                  workout: state.workoutDetailsWorkout,
+                  plan: state.weeklyWorkoutPlan,
+                  weekStart: currentWeekStart,
+                })?.caloriesBurned ??
+                state.workoutDetailsWorkout.estimatedCalories)
               : undefined
           }
           exerciseCount={state.workoutDetailsWorkout?.exercises?.length ?? 0}

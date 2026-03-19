@@ -114,8 +114,7 @@ export async function handleHealthSync(c: any): Promise<Response> {
 			data_source: payload.data_source,
 			steps: payload.steps ?? null,
 			active_calories: payload.active_calories ?? null,
-			resting_calories: payload.resting_calories ?? null,
-			heart_rate_avg: payload.heart_rate_avg ?? null,
+			avg_heart_rate: payload.heart_rate_avg ?? null,
 			resting_heart_rate: payload.resting_heart_rate ?? null,
 			sleep_hours: payload.sleep_hours ?? null,
 			water_intake_ml: payload.water_intake_ml ?? null,
@@ -294,12 +293,18 @@ export async function handleWorkoutSession(c: any): Promise<Response> {
 		const workoutData = {
 			user_id: userId,
 			workout_type: payload.workout_type,
-			start_time: payload.start_time,
-			end_time: payload.end_time,
-			duration_minutes: payload.duration_minutes,
+			started_at: payload.start_time,
+			completed_at: payload.end_time,
+			total_duration_minutes: payload.duration_minutes,
 			calories_burned: payload.calories_burned ?? null,
-			distance_meters: payload.distance_meters ?? null,
-			intensity: payload.intensity ?? null,
+			is_completed: true,
+			notes:
+				[
+					payload.distance_meters ? `Distance: ${payload.distance_meters}m` : null,
+					payload.intensity ? `Intensity: ${payload.intensity}` : null,
+				]
+					.filter(Boolean)
+					.join('; ') || null,
 			created_at: new Date().toISOString(),
 		};
 

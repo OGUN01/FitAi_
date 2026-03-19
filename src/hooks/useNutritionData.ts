@@ -105,10 +105,30 @@ export const useNutritionData = (): UseNutritionDataReturn => {
   // SSOT fix: dailyNutrition derived from nutritionStore.getTodaysConsumedNutrition()
   // instead of getUserMeals() which reads meal_templates (recipe catalogue), not meal_logs.
   const getTodaysConsumedNutrition = useNutritionStore((s) => s.getTodaysConsumedNutrition);
+  const weeklyMealPlan = useNutritionStore((s) => s.weeklyMealPlan);
+  const mealProgress = useNutritionStore((s) => s.mealProgress);
   const storeDailyMeals = useNutritionStore((s) => s.dailyMeals);
   const dailyNutrition = (() => {
     const n = getTodaysConsumedNutrition();
-    return { calories: n.calories, protein: n.protein, carbs: n.carbs, fat: n.fat, mealsCount: storeDailyMeals.length };
+    const todayDate = new Date().toISOString().split("T")[0];
+    const todayName = new Date().toLocaleDateString("en-US", {
+      weekday: "long",
+    }).toLowerCase();
+    const completedPlannedMeals =
+      weeklyMealPlan?.meals.filter(
+        (meal) => meal.dayOfWeek === todayName && mealProgress[meal.id]?.progress === 100,
+      ).length ?? 0;
+    const completedLoggedMeals = storeDailyMeals.filter(
+      (meal) => meal.createdAt?.startsWith(todayDate),
+    ).length;
+
+    return {
+      calories: n.calories,
+      protein: n.protein,
+      carbs: n.carbs,
+      fat: n.fat,
+      mealsCount: completedPlannedMeals + completedLoggedMeals,
+    };
   })();
   // statsLoading and statsError are always false/null — dailyNutrition is derived synchronously from the store.
   const statsLoading = false;
@@ -258,7 +278,10 @@ export const useNutritionData = (): UseNutritionDataReturn => {
         const response = await nutritionDataService.logMeal(user.id, mealData);
 
         if (response.success) {
-          await loadUserMeals();
+          await Promise.all([
+            loadUserMeals(),
+            useNutritionStore.getState().loadData(),
+          ]);
           return true;
         } else {
           setUserMealsError(response.error || "Failed to log meal");

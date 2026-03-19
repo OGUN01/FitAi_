@@ -6,14 +6,15 @@ export async function createMealLog(
   initialize: () => Promise<void>,
 ): Promise<void> {
   try {
-
     await initialize();
-    await dataBridge.storeMealLog(mealLog);
-
-    const stored = await readMealLog(mealLog.id, initialize);
-    if (!stored) {
-    } else {
+    const existing = await readMealLog(mealLog.id, initialize);
+    if (existing) {
+      console.warn(
+        `[createMealLog] Skipping duplicate — id ${mealLog.id} already exists`,
+      );
+      return;
     }
+    await dataBridge.storeMealLog(mealLog);
   } catch (error) {
     console.error("❌ Failed to create meal log:", error);
     console.error("Meal data:", JSON.stringify(mealLog, null, 2));

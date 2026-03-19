@@ -9,7 +9,7 @@ export const API_CONFIG = {
     "https://fitai-workers.sharmaharsh9887.workers.dev",
 
   WORKOUT_GENERATE_ENDPOINT: "/workout/generate",
-  MEAL_GENERATE_ENDPOINT: "/meal/generate",
+  DIET_GENERATE_ENDPOINT: "/diet/generate",
   NUTRITION_ANALYZE_ENDPOINT: "/nutrition/analyze",
 
   // Razorpay subscription endpoints

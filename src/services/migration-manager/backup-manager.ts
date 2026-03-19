@@ -46,31 +46,40 @@ export class BackupManager {
   }
 
   async rollbackStep(step: string, userId: string): Promise<void> {
+    const deleteFrom = async (table: string, idColumn: string = "user_id") => {
+      const { error } = await supabase
+        .from(table)
+        .delete()
+        .eq(idColumn, userId);
+      if (error) {
+        console.error(
+          `[BackupManager] rollback delete from ${table} failed:`,
+          error,
+        );
+      }
+    };
+
     switch (step) {
       case "uploadUserProfile":
-        await supabase.from("profiles").delete().eq("id", userId);
-        await supabase.from("fitness_goals").delete().eq("user_id", userId);
-        await supabase.from("diet_preferences").delete().eq("user_id", userId);
-        await supabase
-          .from("workout_preferences")
-          .delete()
-          .eq("user_id", userId);
-        await supabase.from("body_analysis").delete().eq("user_id", userId);
+        await deleteFrom("profiles", "id");
+        await deleteFrom("fitness_goals");
+        await deleteFrom("diet_preferences");
+        await deleteFrom("workout_preferences");
+        await deleteFrom("body_analysis");
         break;
 
       case "uploadFitnessData":
-        await supabase.from("workouts").delete().eq("user_id", userId);
-        await supabase.from("workout_sessions").delete().eq("user_id", userId);
+        await deleteFrom("workout_sessions");
         break;
 
       case "uploadNutritionData":
-        await supabase.from("meals").delete().eq("user_id", userId);
-        await supabase.from("meal_logs").delete().eq("user_id", userId);
+        await deleteFrom("meals");
+        await deleteFrom("meal_logs");
         break;
 
       case "uploadProgressData":
-        await supabase.from("progress_entries").delete().eq("user_id", userId);
-        await supabase.from("body_measurements").delete().eq("user_id", userId);
+        await deleteFrom("progress_entries");
+        await deleteFrom("body_analysis");
         break;
 
       default:

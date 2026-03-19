@@ -6,6 +6,7 @@ import { offlineService } from "../../services/offline";
 import { supabase } from "../../services/supabase";
 import { generateUUID, isValidUUID } from "../../utils/uuid";
 import { getCurrentUserId, getUserIdOrGuest } from "../../services/authUtils";
+import { Platform } from "react-native";
 import { LocalWorkoutSession, SyncStatus } from "../../types/localData";
 
 export const createPlanActions = (
@@ -27,12 +28,10 @@ export const createPlanActions = (
 
       set({ weeklyWorkoutPlan: plan });
 
-
       if (!plan.workouts || plan.workouts.length === 0) {
         console.warn("⚠️ No workouts in plan to save to database");
         return;
       }
-
 
       let savedCount = 0;
       let errorCount = 0;
@@ -85,7 +84,7 @@ export const createPlanActions = (
               lastSyncedAt: undefined,
               lastModifiedAt: new Date().toISOString(),
               syncVersion: 1,
-              deviceId: "dev-device",
+              deviceId: Platform.OS ?? "unknown",
             },
           };
 
@@ -99,7 +98,6 @@ export const createPlanActions = (
           errorCount++;
         }
       }
-
 
       if (errorCount > 0 && savedCount === 0) {
         throw new Error(`Failed to save any workouts (${errorCount} errors)`);
@@ -118,10 +116,8 @@ export const createPlanActions = (
     try {
       await offlineService.clearFailedActionsForTable("weekly_workout_plans");
 
-
       const userId = getCurrentUserId();
       const planId = generateUUID();
-
 
       if (!userId) {
         console.error("❌ No authenticated user - cannot save to database");
@@ -137,7 +133,6 @@ export const createPlanActions = (
         throw new Error("Invalid plan UUID format");
       }
 
-
       const weeklyPlanData = {
         id: planId,
         user_id: userId,
@@ -151,6 +146,16 @@ export const createPlanActions = (
         plan_data: plan,
         is_active: true,
       };
+
+      const { error: deactivateError } = await supabase
+        .from("weekly_workout_plans")
+        .update({ is_active: false })
+        .eq("user_id", userId)
+        .eq("is_active", true);
+
+      if (deactivateError) {
+        throw deactivateError;
+      }
 
       await offlineService.queueAction({
         type: "CREATE",

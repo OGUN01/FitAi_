@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 import { safeAsyncStorage } from "../utils/safeAsyncStorage";
 import * as crypto from "expo-crypto";
 import { WeeklyWorkoutPlan, DayWorkout, WorkoutSet } from "../ai";
@@ -11,13 +12,29 @@ import { supabase } from "../services/supabase";
 import { generateUUID, isValidUUID } from "../utils/uuid";
 import { getCurrentUserId, getUserIdOrGuest } from "../services/authUtils";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import { useProfileStore } from "./profileStore";
+import {
+  calculateWorkoutCalories,
+  ExerciseCalorieInput,
+} from "../services/calorieCalculator";
+import {
+  findPlanWorkoutBySessionIdentity,
+  getWorkoutSlotKey,
+} from "../utils/workoutIdentity";
 // SSOT: import canonical type definitions from ./fitness/types — do NOT redeclare locally
-import { CompletedSession, FitnessState, WorkoutProgress } from "./fitness/types";
-import { getCurrentWeekStart } from "../utils/weekUtils";
+import {
+  CompletedSession,
+  FitnessState,
+  WorkoutProgress,
+} from "./fitness/types";
+import {
+  getCurrentWeekStart,
+  getLocalDateString,
+  getWeekStartForDate,
+} from "../utils/weekUtils";
 
 // Realtime subscription channel reference (outside store to persist across re-renders)
 let workoutSessionsChannel: RealtimeChannel | null = null;
-
 
 export const useFitnessStore = create<FitnessState>()(
   persist(
@@ -46,13 +63,10 @@ export const useFitnessStore = create<FitnessState>()(
           // Save to local storage via Zustand persist first
           set({ weeklyWorkoutPlan: plan });
 
-
           // Validate plan data
           if (!plan.workouts || plan.workouts.length === 0) {
             return;
           }
-
-
         } catch (error) {
           console.error("❌ Failed to save workout plan:", error);
           // ARCH-003 FIX: Set error state instead of silently swallowing
@@ -75,11 +89,9 @@ export const useFitnessStore = create<FitnessState>()(
             "weekly_workout_plans",
           );
 
-
           // Get authenticated user ID via StoreCoordinator (removes cross-store dependency)
           const userId = getCurrentUserId();
           const planId = generateUUID();
-
 
           // Ensure user is authenticated before database operation
           if (!userId) {
@@ -97,7 +109,6 @@ export const useFitnessStore = create<FitnessState>()(
             throw new Error("Invalid plan UUID format");
           }
 
-
           const weeklyPlanData = {
             id: planId,
             user_id: userId,
@@ -111,6 +122,16 @@ export const useFitnessStore = create<FitnessState>()(
             plan_data: plan, // Store complete plan as JSONB
             is_active: true,
           };
+
+          const { error: deactivateError } = await supabase
+            .from("weekly_workout_plans")
+            .update({ is_active: false })
+            .eq("user_id", userId)
+            .eq("is_active", true);
+
+          if (deactivateError) {
+            throw deactivateError;
+          }
 
           await offlineService.queueAction({
             type: "CREATE",
@@ -165,6 +186,7 @@ export const useFitnessStore = create<FitnessState>()(
               }
             }
           } catch (dbError) {
+            console.error("❌ Failed to load workout plan from DB:", dbError);
           }
 
           // Fallback: Try to load individual workout sessions
@@ -197,8 +219,12 @@ export const useFitnessStore = create<FitnessState>()(
               ...state.workoutProgress[workoutId],
               workoutId,
               progress,
-              ...(metadata?.exerciseIndex !== undefined && { exerciseIndex: metadata.exerciseIndex }),
-              ...(metadata?.caloriesBurned !== undefined && { caloriesBurned: metadata.caloriesBurned }),
+              ...(metadata?.exerciseIndex !== undefined && {
+                exerciseIndex: metadata.exerciseIndex,
+              }),
+              ...(metadata?.caloriesBurned !== undefined && {
+                caloriesBurned: metadata.caloriesBurned,
+              }),
             },
           },
         }));
@@ -206,6 +232,9 @@ export const useFitnessStore = create<FitnessState>()(
 
       completeWorkout: async (workoutId, sessionId, caloriesBurned) => {
         const completedAt = new Date().toISOString();
+        const plannedDuration =
+          get().weeklyWorkoutPlan?.workouts.find((w) => w.id === workoutId)
+            ?.duration;
 
         try {
           // DATABASE-FIRST PATTERN: Update database FIRST
@@ -213,10 +242,12 @@ export const useFitnessStore = create<FitnessState>()(
             await crudOperations.updateWorkoutSession(sessionId, {
               completedAt,
               isCompleted: true,
+              ...(plannedDuration !== undefined && { duration: plannedDuration }),
+              ...(caloriesBurned !== undefined && { caloriesBurned }),
               syncMetadata: {
                 lastModifiedAt: completedAt,
                 syncVersion: 1,
-                deviceId: "dev-device",
+                deviceId: Platform.OS ?? "unknown",
               },
             });
           }
@@ -276,7 +307,7 @@ export const useFitnessStore = create<FitnessState>()(
         const state = get();
         const weekStart = getCurrentWeekStart();
         const planned = state.completedSessions.filter(
-          (s) => s.type === 'planned' && s.weekStart === weekStart
+          (s) => s.type === "planned" && s.weekStart === weekStart,
         );
         return {
           count: planned.length,
@@ -288,14 +319,19 @@ export const useFitnessStore = create<FitnessState>()(
       // Get completed workout stats for TODAY only
       getTodaysCompletedWorkoutStats: () => {
         const state = get();
-        const todayISO = new Date().toISOString();
         const todaySessions = state.completedSessions.filter(
-          s => s.completedAt.split('T')[0] === todayISO.split('T')[0]
+          (s) => getLocalDateString(s.completedAt) === getLocalDateString(),
         );
         return {
           count: todaySessions.length,
-          totalCalories: todaySessions.reduce((sum, s) => sum + s.caloriesBurned, 0),
-          totalDuration: todaySessions.reduce((sum, s) => sum + s.durationMinutes, 0),
+          totalCalories: todaySessions.reduce(
+            (sum, s) => sum + s.caloriesBurned,
+            0,
+          ),
+          totalDuration: todaySessions.reduce(
+            (sum, s) => sum + s.durationMinutes,
+            0,
+          ),
         };
       },
 
@@ -304,14 +340,19 @@ export const useFitnessStore = create<FitnessState>()(
         if (!session?.sessionId) return;
         set((state) => {
           // Idempotent: skip if sessionId already exists
-          if (state.completedSessions.some((s) => s.sessionId === session.sessionId)) {
+          if (
+            state.completedSessions.some(
+              (s) => s.sessionId === session.sessionId,
+            )
+          ) {
             return state;
           }
           return { completedSessions: [...state.completedSessions, session] };
         });
       },
 
-      markCompletedSessionsHydrated: () => set({ completedSessionsHydrated: true }),
+      markCompletedSessionsHydrated: () =>
+        set({ completedSessionsHydrated: true }),
 
       setHasHydrated: () => set({ _hasHydrated: true }),
 
@@ -320,7 +361,12 @@ export const useFitnessStore = create<FitnessState>()(
       updateActiveExtraProgress: (exerciseIndex) =>
         set((state) =>
           state.activeExtraSession
-            ? { activeExtraSession: { ...state.activeExtraSession, exerciseIndex } }
+            ? {
+                activeExtraSession: {
+                  ...state.activeExtraSession,
+                  exerciseIndex,
+                },
+              }
             : state,
         ),
 
@@ -328,29 +374,37 @@ export const useFitnessStore = create<FitnessState>()(
 
       getPlannedSessionStats: (weekStart) => {
         const sessions = get().completedSessions.filter(
-          (s) => s.type === 'planned' && s.weekStart === weekStart
+          (s) => s.type === "planned" && s.weekStart === weekStart,
         );
         return {
           count: sessions.length,
           totalCalories: sessions.reduce((sum, s) => sum + s.caloriesBurned, 0),
-          totalDuration: sessions.reduce((sum, s) => sum + s.durationMinutes, 0),
+          totalDuration: sessions.reduce(
+            (sum, s) => sum + s.durationMinutes,
+            0,
+          ),
         };
       },
 
       getExtraSessionStats: (weekStart) => {
         const sessions = get().completedSessions.filter(
-          (s) => s.type === 'extra' && s.weekStart === weekStart
+          (s) => s.type === "extra" && s.weekStart === weekStart,
         );
         return {
           count: sessions.length,
           totalCalories: sessions.reduce((sum, s) => sum + s.caloriesBurned, 0),
-          totalDuration: sessions.reduce((sum, s) => sum + s.durationMinutes, 0),
+          totalDuration: sessions.reduce(
+            (sum, s) => sum + s.durationMinutes,
+            0,
+          ),
         };
       },
 
       getAllSessionCalories: (dateStr) => {
-        return get().completedSessions
-          .filter((s) => s.completedAt.startsWith(dateStr))
+        return get()
+          .completedSessions.filter(
+            (s) => getLocalDateString(s.completedAt) === dateStr,
+          )
           .reduce((sum, s) => sum + s.caloriesBurned, 0);
       },
 
@@ -398,7 +452,7 @@ export const useFitnessStore = create<FitnessState>()(
                 lastSyncedAt: undefined,
                 lastModifiedAt: new Date().toISOString(),
                 syncVersion: 1,
-                deviceId: "dev-device",
+                deviceId: Platform.OS ?? "unknown",
               },
             };
 
@@ -446,7 +500,6 @@ export const useFitnessStore = create<FitnessState>()(
           await get().completeWorkout(currentSession.workoutId, sessionId);
 
           set({ currentWorkoutSession: null });
-
         } catch (error) {
           console.error("❌ Failed to end workout session:", error);
           throw error;
@@ -518,7 +571,6 @@ export const useFitnessStore = create<FitnessState>()(
           if (state.weeklyWorkoutPlan) {
             await get().saveWeeklyWorkoutPlan(state.weeklyWorkoutPlan);
           }
-
         } catch (error) {
           console.error("❌ Failed to persist fitness data:", error);
         }
@@ -537,7 +589,9 @@ export const useFitnessStore = create<FitnessState>()(
             if (user?.user?.id) {
               const { data: sessions, error } = await supabase
                 .from("workout_sessions")
-                .select("id, workout_id, workout_name, workout_type, total_duration_minutes, calories_burned, completed_at, started_at, is_extra, exercises_completed, is_completed")
+                .select(
+                  "id, workout_id, planned_day_key, plan_slot_key, workout_name, workout_type, duration, total_duration_minutes, calories_burned, completed_at, started_at, is_extra, exercises, exercises_completed, is_completed",
+                )
                 .eq("user_id", user.user.id)
                 .eq("is_completed", true)
                 .order("completed_at", { ascending: false })
@@ -550,70 +604,147 @@ export const useFitnessStore = create<FitnessState>()(
                 const restoredProgress: Record<string, WorkoutProgress> = {};
                 sessions.forEach((s) => {
                   if (s.workout_id) {
+                    const caloriesBurned =
+                      typeof s.calories_burned === "number"
+                        ? s.calories_burned
+                        : undefined;
                     restoredProgress[s.workout_id] = {
                       workoutId: s.workout_id,
                       progress: 100,
                       completedAt: s.completed_at,
                       sessionId: s.id,
-                      caloriesBurned: s.calories_burned || 0,
+                      ...(caloriesBurned !== undefined && { caloriesBurned }),
                     };
                   }
                 });
                 set((state) => ({
-                  workoutProgress: { ...state.workoutProgress, ...restoredProgress },
+                  workoutProgress: {
+                    ...state.workoutProgress,
+                    ...restoredProgress,
+                  },
                 }));
 
-                // Rebuild completedSessions — skip IDs already in the store
-                const existingIds = new Set(get().completedSessions.map((c) => c.sessionId));
                 const hydrated: CompletedSession[] = sessions
-                  .filter((s) => !existingIds.has(s.id))
                   .map((s) => {
-                    // Compute Monday of the week for completed_at
-                    const d = new Date(s.completed_at);
-                    const day = d.getDay();
-                    const diff = day === 0 ? -6 : 1 - day;
-                    d.setDate(d.getDate() + diff);
-                    const weekStart = d.toISOString().split("T")[0];
+                    const planWorkout = findPlanWorkoutBySessionIdentity({
+                      plan: get().weeklyWorkoutPlan,
+                      workoutId: s.workout_id,
+                      plannedDayKey: s.planned_day_key,
+                      planSlotKey: s.plan_slot_key,
+                    });
+                    const durationMinutes =
+                      typeof s.total_duration_minutes === "number" &&
+                      s.total_duration_minutes > 0
+                        ? s.total_duration_minutes
+                        : typeof s.duration === "number" && s.duration > 0
+                          ? s.duration
+                          : planWorkout?.duration || 0;
+                    let caloriesBurned =
+                      typeof s.calories_burned === "number"
+                        ? s.calories_burned
+                        : 0;
+                    const weekStart = getWeekStartForDate(s.completed_at);
 
-                    const exercises = Array.isArray(s.exercises_completed)
-                      ? s.exercises_completed.map((ex: any) => ({
+                    const rawExercises = Array.isArray(s.exercises_completed)
+                      ? s.exercises_completed
+                      : Array.isArray(s.exercises)
+                        ? s.exercises
+                        : [];
+                    const exercises = rawExercises.map((ex: any) => ({
                           name: ex.exerciseName || ex.name || "",
                           sets: Number(ex.sets) || 0,
                           reps: Number(ex.reps) || 0,
                           exerciseId: ex.exerciseId || ex.id,
                           duration: ex.duration,
                           restTime: ex.restTime,
-                        }))
-                      : [];
+                        }));
+
+                    if (
+                      caloriesBurned <= 0 &&
+                      planWorkout?.exercises?.length
+                    ) {
+                      const userWeight =
+                        useProfileStore.getState().bodyAnalysis
+                          ?.current_weight_kg;
+                      if (userWeight && userWeight > 0) {
+                        const exerciseInputs: ExerciseCalorieInput[] =
+                          planWorkout.exercises.map((exercise: any) => ({
+                            exerciseId: exercise.exerciseId || exercise.id,
+                            name: exercise.exerciseName || exercise.name,
+                            sets: exercise.sets,
+                            reps: exercise.reps,
+                            duration: exercise.duration,
+                            restTime: exercise.restTime,
+                          }));
+                        const estimatedCalories = calculateWorkoutCalories(
+                          exerciseInputs,
+                          userWeight,
+                        ).totalCalories;
+                        if (estimatedCalories > 0) {
+                          caloriesBurned = estimatedCalories;
+                        }
+                      }
+                    }
 
                     return {
                       sessionId: s.id,
-                      type: s.is_extra ? ("extra" as const) : ("planned" as const),
+                      type: s.is_extra
+                        ? ("extra" as const)
+                        : ("planned" as const),
                       workoutId: s.workout_id || s.id,
+                      plannedDayKey: s.is_extra
+                        ? undefined
+                        : s.planned_day_key || planWorkout?.dayOfWeek || undefined,
+                      planSlotKey:
+                        !s.is_extra
+                          ? s.plan_slot_key ||
+                            (planWorkout
+                              ? getWorkoutSlotKey(planWorkout, get().weeklyWorkoutPlan || undefined)
+                              : undefined)
+                          : undefined,
                       workoutSnapshot: {
-                        title: s.workout_name || "Workout",
-                        category: s.workout_type || "general",
-                        duration: s.total_duration_minutes || 0,
+                        title: s.workout_name || planWorkout?.title || "Workout",
+                        category:
+                          s.workout_type || planWorkout?.category || "general",
+                        duration: durationMinutes,
                         exercises,
                       },
-                      caloriesBurned: s.calories_burned || 0,
-                      durationMinutes: s.total_duration_minutes || 0,
+                      caloriesBurned,
+                      durationMinutes,
                       completedAt: s.completed_at,
                       weekStart,
                     };
                   });
 
                 if (hydrated.length > 0) {
-                  set((state) => ({
-                    completedSessions: [...hydrated, ...state.completedSessions],
-                  }));
+                  set((state) => {
+                    const hydratedById = new Map(
+                      hydrated.map((session) => [session.sessionId, session]),
+                    );
+                    const preservedLocalSessions = state.completedSessions.filter(
+                      (session) => !hydratedById.has(session.sessionId),
+                    );
+                    const normalizedPreservedLocalSessions =
+                      preservedLocalSessions.map((session) => ({
+                        ...session,
+                        weekStart: session.weekStart || getWeekStartForDate(session.completedAt),
+                      }));
+                    return {
+                      completedSessions: [
+                        ...hydrated,
+                        ...normalizedPreservedLocalSessions,
+                      ],
+                    };
+                  });
                 }
               }
             }
           } catch (supabaseError) {
-            console.error("❌ Failed to hydrate completed sessions:", supabaseError);
+            console.error(
+              "❌ Failed to hydrate completed sessions:",
+              supabaseError,
+            );
           }
-
         } catch (error) {
           console.error("❌ Failed to load fitness data:", error);
         }
@@ -630,7 +761,6 @@ export const useFitnessStore = create<FitnessState>()(
 
       clearOldWorkoutData: async () => {
         try {
-
           // Clear local store data
           get().clearData();
 
@@ -642,7 +772,6 @@ export const useFitnessStore = create<FitnessState>()(
             await import("@react-native-async-storage/async-storage")
           ).default;
           await AsyncStorage.removeItem("fitness-storage");
-
 
           // Set flag to force regeneration
           get().forceWorkoutRegeneration();

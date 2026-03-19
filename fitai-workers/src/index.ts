@@ -33,6 +33,7 @@ import {
 import { authMiddleware, optionalAuthMiddleware, requireRole, AuthContext } from './middleware/auth';
 import {
 	handleAdminDashboard,
+	handleAdminSession,
 	handleGetConfig,
 	handleSetConfig,
 	handleGetPlans,
@@ -54,12 +55,33 @@ import {
 import { rateLimitMiddleware, RATE_LIMITS } from './middleware/rateLimit';
 import { loggingMiddleware } from './middleware/logging';
 import { subscriptionGateMiddleware } from './middleware/subscriptionGate';
+import { getPublicAppConfig } from './utils/appConfig';
 
 // ============================================================================
 // INITIALIZE HONO APP
 // ============================================================================
 
 const app = new Hono<{ Bindings: Env }>();
+
+function requireFeatureFlag(flag: 'featureAiChat' | 'featureAnalytics') {
+	return async (c: any, next: any) => {
+		const config = await getPublicAppConfig(c.env);
+		if (!config[flag]) {
+			return c.json(
+				{
+					success: false,
+					error: {
+						code: 'FEATURE_DISABLED',
+						message: 'This feature is currently disabled by the administrator.',
+					},
+				},
+				503,
+			);
+		}
+
+		await next();
+	};
+}
 
 // ============================================================================
 // MIDDLEWARE
@@ -216,7 +238,7 @@ app.get('/api', (c) => {
 app.get('/health', handleHealthCheck);
 
 // Analytics endpoint (protected - requires authentication)
-app.get('/api/analytics/usage', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleAnalytics);
+app.get('/api/analytics/usage', authMiddleware, requireFeatureFlag('featureAnalytics'), rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleAnalytics);
 
 // ============================================================================
 // AUTHENTICATION TEST ENDPOINTS
@@ -435,6 +457,7 @@ app.post(
 app.post(
 	'/chat/ai',
 	authMiddleware,
+	requireFeatureFlag('featureAiChat'),
 	rateLimitMiddleware(RATE_LIMITS.AI_GENERATION),
 	subscriptionGateMiddleware('ai_generation'),
 	handleChat,
@@ -445,14 +468,14 @@ app.post(
  * - Requires authentication
  * - Returns recent conversations with metadata
  */
-app.get('/chat/conversations', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleGetConversations);
+app.get('/chat/conversations', authMiddleware, requireFeatureFlag('featureAiChat'), rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleGetConversations);
 
 /**
  * GET /chat/history/:conversationId - Get conversation message history
  * - Requires authentication
  * - Returns all messages in chronological order
  */
-app.get('/chat/history/:conversationId', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleGetConversationHistory);
+app.get('/chat/history/:conversationId', authMiddleware, requireFeatureFlag('featureAiChat'), rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleGetConversationHistory);
 
 /**
  * GET /exercises/search - Search and filter exercise database
@@ -544,6 +567,7 @@ app.post('/api/subscription/resume', authMiddleware, rateLimitMiddleware(RATE_LI
 const adminMW = [authMiddleware, requireRole('admin')] as const;
 
 app.get('/api/admin/dashboard',                   ...adminMW, handleAdminDashboard);
+app.get('/api/admin/session',                     ...adminMW, handleAdminSession);
 app.get('/api/admin/config',                      ...adminMW, handleGetConfig);
 app.post('/api/admin/config',                     ...adminMW, handleSetConfig);
 app.get('/api/admin/plans',                       ...adminMW, handleGetPlans);

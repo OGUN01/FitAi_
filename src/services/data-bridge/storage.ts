@@ -7,7 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   WORKOUT_SESSIONS_KEY,
   MEAL_LOGS_KEY,
-  BODY_MEASUREMENTS_KEY,
+  BODY_ANALYSIS_KEY,
   ONBOARDING_DATA_KEY,
 } from "./constants";
 
@@ -117,12 +117,12 @@ export async function getMealLogs(
 }
 
 // ============================================================================
-// BODY MEASUREMENTS
+// BODY ANALYSIS
 // ============================================================================
 
 export async function storeBodyMeasurement(measurement: any): Promise<boolean> {
   try {
-    const existingStr = await AsyncStorage.getItem(BODY_MEASUREMENTS_KEY);
+    const existingStr = await AsyncStorage.getItem(BODY_ANALYSIS_KEY);
     const existing = existingStr ? JSON.parse(existingStr) : [];
     existing.unshift({
       ...measurement,
@@ -130,9 +130,9 @@ export async function storeBodyMeasurement(measurement: any): Promise<boolean> {
       createdAt: new Date().toISOString(),
     });
     await AsyncStorage.setItem(
-      BODY_MEASUREMENTS_KEY,
+      BODY_ANALYSIS_KEY,
       JSON.stringify(existing.slice(0, 100)),
-    ); // Keep last 100
+    );
     return true;
   } catch (error) {
     console.error("[DataBridge] storeBodyMeasurement error:", error);
@@ -142,7 +142,7 @@ export async function storeBodyMeasurement(measurement: any): Promise<boolean> {
 
 export async function getBodyMeasurements(limit: number = 10): Promise<any[]> {
   try {
-    const dataStr = await AsyncStorage.getItem(BODY_MEASUREMENTS_KEY);
+    const dataStr = await AsyncStorage.getItem(BODY_ANALYSIS_KEY);
     const measurements = dataStr ? JSON.parse(dataStr) : [];
     return measurements.slice(0, limit);
   } catch (error) {
@@ -160,7 +160,8 @@ export async function clearAllStorageData(): Promise<void> {
     await AsyncStorage.removeItem(ONBOARDING_DATA_KEY);
     await AsyncStorage.removeItem(WORKOUT_SESSIONS_KEY);
     await AsyncStorage.removeItem(MEAL_LOGS_KEY);
-    await AsyncStorage.removeItem(BODY_MEASUREMENTS_KEY);
+    await AsyncStorage.removeItem(BODY_ANALYSIS_KEY);
+    await AsyncStorage.removeItem("body_measurements");
   } catch (error) {
     console.error("[DataBridge] clearAllStorageData error:", error);
   }

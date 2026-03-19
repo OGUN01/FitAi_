@@ -44,22 +44,25 @@ class AnalyticsDataService {
         return true;
       }
 
-      const { error } = await supabase.from("analytics_metrics").upsert({
-        id: `${userId}_${metrics.metricDate}`,
-        user_id: userId,
-        metric_date: metrics.metricDate,
-        weight_kg: metrics.weightKg,
-        calories_consumed: metrics.caloriesConsumed,
-        calories_burned: metrics.caloriesBurned,
-        workouts_completed: metrics.workoutsCompleted || 0,
-        meals_logged: metrics.mealsLogged || 0,
-        water_intake_ml: metrics.waterIntakeMl || 0,
-        steps: metrics.steps,
-        sleep_hours: metrics.sleepHours,
-      }, { onConflict: 'user_id,metric_date' });
+      const { error } = await supabase.from("analytics_metrics").upsert(
+        {
+          id: `${userId}_${metrics.metricDate}`,
+          user_id: userId,
+          metric_date: metrics.metricDate,
+          weight_kg: metrics.weightKg,
+          calories_consumed: metrics.caloriesConsumed,
+          calories_burned: metrics.caloriesBurned,
+          workouts_completed: metrics.workoutsCompleted || 0,
+          meals_logged: metrics.mealsLogged || 0,
+          water_intake_ml: metrics.waterIntakeMl || 0,
+          steps: metrics.steps,
+          sleep_hours: metrics.sleepHours,
+        },
+        { onConflict: "user_id,metric_date" },
+      );
 
       if (error) {
-        console.error('[analyticsData] saveDailyMetrics upsert error:', error);
+        console.error("[analyticsData] saveDailyMetrics upsert error:", error);
         return false;
       }
 
@@ -94,6 +97,7 @@ class AnalyticsDataService {
         .order("metric_date", { ascending: true });
 
       if (error) {
+        console.error("[analyticsData] loadMetricsHistory error:", error);
         return [];
       }
 
@@ -189,7 +193,10 @@ class AnalyticsDataService {
 
       return fallbackWeights;
     } catch (err) {
-      console.error("[getWeightHistory] progress_entries fallback failed:", err);
+      console.error(
+        "[getWeightHistory] progress_entries fallback failed:",
+        err,
+      );
       return [];
     }
   }
@@ -205,17 +212,15 @@ class AnalyticsDataService {
   ): Promise<void> {
     for (const entry of entries) {
       const rowId = `${userId}_${entry.date}`;
-      const { error } = await supabase
-        .from("analytics_metrics")
-        .upsert(
-          {
-            id: rowId,
-            user_id: userId,
-            metric_date: entry.date,
-            weight_kg: entry.weight,
-          },
-          { onConflict: "user_id,metric_date" },
-        );
+      const { error } = await supabase.from("analytics_metrics").upsert(
+        {
+          id: rowId,
+          user_id: userId,
+          metric_date: entry.date,
+          weight_kg: entry.weight,
+        },
+        { onConflict: "user_id,metric_date" },
+      );
       if (error) {
         console.warn(
           "[backFillWeightToAnalytics] Failed for",
@@ -241,7 +246,7 @@ class AnalyticsDataService {
     userId: string,
     days: number = 30,
   ): Promise<Array<{ date: string; consumed: number; burned: number }>> {
-    if (!userId || userId.startsWith('guest') || userId === 'local-user') {
+    if (!userId || userId.startsWith("guest") || userId === "local-user") {
       return [];
     }
 
@@ -259,22 +264,22 @@ class AnalyticsDataService {
 
     // --- Fallback: meals table ---
     console.warn(
-      '[getCalorieHistory] analytics_metrics has no calorie rows for',
+      "[getCalorieHistory] analytics_metrics has no calorie rows for",
       days,
-      'days — falling back to meals table.',
+      "days — falling back to meals table.",
     );
 
     try {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
-      const startDateStr = startDate.toISOString().split('T')[0];
+      const startDateStr = startDate.toISOString().split("T")[0];
 
       const { data, error } = await supabase
-        .from('meals')
-        .select('consumed_at, total_calories')
-        .eq('user_id', userId)
-        .gte('consumed_at', startDateStr)
-        .order('consumed_at', { ascending: true });
+        .from("meals")
+        .select("consumed_at, total_calories")
+        .eq("user_id", userId)
+        .gte("consumed_at", startDateStr)
+        .order("consumed_at", { ascending: true });
 
       if (error || !data || data.length === 0) {
         return [];
@@ -284,15 +289,20 @@ class AnalyticsDataService {
       const grouped: Record<string, number> = {};
       for (const row of data) {
         if (!row.consumed_at) continue;
-        const dateKey = row.consumed_at.split('T')[0];
-        grouped[dateKey] = (grouped[dateKey] || 0) + (Number(row.total_calories) || 0);
+        const dateKey = row.consumed_at.split("T")[0];
+        grouped[dateKey] =
+          (grouped[dateKey] || 0) + (Number(row.total_calories) || 0);
       }
 
       return Object.entries(grouped)
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([date, consumed]) => ({ date, consumed: Math.round(consumed), burned: 0 }));
+        .map(([date, consumed]) => ({
+          date,
+          consumed: Math.round(consumed),
+          burned: 0,
+        }));
     } catch (err) {
-      console.error('[getCalorieHistory] meals fallback failed:', err);
+      console.error("[getCalorieHistory] meals fallback failed:", err);
       return [];
     }
   }
@@ -306,22 +316,22 @@ class AnalyticsDataService {
     userId: string,
     dateStr: string,
   ): Promise<{ planned: number; extra: number }> {
-    if (!userId || userId.startsWith('guest') || userId === 'local-user') {
+    if (!userId || userId.startsWith("guest") || userId === "local-user") {
       return { planned: 0, extra: 0 };
     }
     try {
-      const dayStart = new Date(`${dateStr}T00:00:00`);   // local midnight
+      const dayStart = new Date(`${dateStr}T00:00:00`); // local midnight
       const dayEnd = new Date(`${dateStr}T23:59:59.999`); // local end of day
       const { data, error } = await supabase
-        .from('workout_sessions')
-        .select('calories_burned, is_extra')
-        .eq('user_id', userId)
-        .eq('is_completed', true)
-        .gte('completed_at', dayStart.toISOString())
-        .lte('completed_at', dayEnd.toISOString());
+        .from("workout_sessions")
+        .select("calories_burned, is_extra")
+        .eq("user_id", userId)
+        .eq("is_completed", true)
+        .gte("completed_at", dayStart.toISOString())
+        .lte("completed_at", dayEnd.toISOString());
 
       if (error) {
-        console.error('[analyticsData] getSessionCaloriesByType error:', error);
+        console.error("[analyticsData] getSessionCaloriesByType error:", error);
         return { planned: 0, extra: 0 };
       }
 
@@ -337,7 +347,7 @@ class AnalyticsDataService {
       }
       return { planned, extra };
     } catch (err) {
-      console.error('[analyticsData] getSessionCaloriesByType threw:', err);
+      console.error("[analyticsData] getSessionCaloriesByType threw:", err);
       return { planned: 0, extra: 0 };
     }
   }
@@ -404,17 +414,23 @@ class AnalyticsDataService {
     userId: string,
     updates: Partial<DailyMetrics>,
   ): Promise<boolean> {
-    if (!userId || userId.startsWith('guest') || userId === 'local-user') {
+    if (!userId || userId.startsWith("guest") || userId === "local-user") {
       return true;
     }
 
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split("T")[0];
       const rowId = `${userId}_${today}`;
 
       // For ACCUMULATING fields (calories, meals, workouts), we must read first
       // then add. A bare upsert would overwrite and lose prior data from the same day.
-      const incrementalFields = ['caloriesConsumed', 'caloriesBurned', 'workoutsCompleted', 'mealsLogged', 'waterIntakeMl'] as const;
+      const incrementalFields = [
+        "caloriesConsumed",
+        "caloriesBurned",
+        "workoutsCompleted",
+        "mealsLogged",
+        "waterIntakeMl",
+      ] as const;
       const hasIncrementalUpdate = incrementalFields.some(
         (f) => updates[f as keyof DailyMetrics] !== undefined,
       );
@@ -422,9 +438,11 @@ class AnalyticsDataService {
       if (hasIncrementalUpdate) {
         // Fetch existing row to accumulate
         const { data: existing } = await supabase
-          .from('analytics_metrics')
-          .select('calories_consumed, calories_burned, workouts_completed, meals_logged, water_intake_ml')
-          .eq('id', rowId)
+          .from("analytics_metrics")
+          .select(
+            "calories_consumed, calories_burned, workouts_completed, meals_logged, water_intake_ml",
+          )
+          .eq("id", rowId)
           .maybeSingle();
 
         const row: Record<string, unknown> = {
@@ -435,32 +453,38 @@ class AnalyticsDataService {
 
         // Accumulate incremental fields
         if (updates.caloriesConsumed !== undefined) {
-          row.calories_consumed = (existing?.calories_consumed ?? 0) + updates.caloriesConsumed;
+          row.calories_consumed =
+            (existing?.calories_consumed ?? 0) + updates.caloriesConsumed;
         }
         if (updates.caloriesBurned !== undefined) {
-          row.calories_burned = (existing?.calories_burned ?? 0) + updates.caloriesBurned;
+          row.calories_burned =
+            (existing?.calories_burned ?? 0) + updates.caloriesBurned;
         }
         if (updates.workoutsCompleted !== undefined) {
-          row.workouts_completed = (existing?.workouts_completed ?? 0) + updates.workoutsCompleted;
+          row.workouts_completed =
+            (existing?.workouts_completed ?? 0) + updates.workoutsCompleted;
         }
         if (updates.mealsLogged !== undefined) {
-          row.meals_logged = (existing?.meals_logged ?? 0) + updates.mealsLogged;
+          row.meals_logged =
+            (existing?.meals_logged ?? 0) + updates.mealsLogged;
         }
         if (updates.waterIntakeMl !== undefined) {
-          row.water_intake_ml = (existing?.water_intake_ml ?? 0) + updates.waterIntakeMl;
+          row.water_intake_ml =
+            (existing?.water_intake_ml ?? 0) + updates.waterIntakeMl;
         }
 
         // Non-accumulating fields (overwrite is correct)
         if (updates.weightKg !== undefined) row.weight_kg = updates.weightKg;
         if (updates.steps !== undefined) row.steps = updates.steps;
-        if (updates.sleepHours !== undefined) row.sleep_hours = updates.sleepHours;
+        if (updates.sleepHours !== undefined)
+          row.sleep_hours = updates.sleepHours;
 
         const { error } = await supabase
-          .from('analytics_metrics')
-          .upsert(row, { onConflict: 'user_id,metric_date' });
+          .from("analytics_metrics")
+          .upsert(row, { onConflict: "user_id,metric_date" });
 
         if (error) {
-          console.error('❌ Metrics accumulate-upsert error:', error);
+          console.error("❌ Metrics accumulate-upsert error:", error);
           return false;
         }
       } else {
@@ -473,21 +497,22 @@ class AnalyticsDataService {
 
         if (updates.weightKg !== undefined) row.weight_kg = updates.weightKg;
         if (updates.steps !== undefined) row.steps = updates.steps;
-        if (updates.sleepHours !== undefined) row.sleep_hours = updates.sleepHours;
+        if (updates.sleepHours !== undefined)
+          row.sleep_hours = updates.sleepHours;
 
         const { error } = await supabase
-          .from('analytics_metrics')
-          .upsert(row, { onConflict: 'user_id,metric_date' });
+          .from("analytics_metrics")
+          .upsert(row, { onConflict: "user_id,metric_date" });
 
         if (error) {
-          console.error('❌ Metrics upsert error:', error);
+          console.error("❌ Metrics upsert error:", error);
           return false;
         }
       }
 
       return true;
     } catch (error) {
-      console.error('❌ Error updating today\'s metrics:', error);
+      console.error("❌ Error updating today's metrics:", error);
       return false;
     }
   }

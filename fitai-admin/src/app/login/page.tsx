@@ -1,15 +1,62 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createSupabaseClient } from '@/lib/supabase/client';
+import { verifyAdminSession } from '@/lib/workers/client';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const router = useRouter();
+
+  useEffect(() => {
+    const supabase = createSupabaseClient();
+    let cancelled = false;
+
+    async function verifyExistingSession() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (cancelled) return;
+
+        if (!session) {
+          return;
+        }
+
+        await verifyAdminSession(session.access_token);
+        if (cancelled) return;
+
+        if (session.user) {
+          router.replace('/dashboard');
+          return;
+        }
+
+        throw new Error('Access denied - not an admin account');
+      } catch (error) {
+        await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+        if (!cancelled) {
+          setError(error instanceof Error ? error.message : 'Access denied - not an admin account');
+        }
+      } finally {
+        if (!cancelled) {
+          setCheckingSession(false);
+        }
+      }
+    }
+
+    verifyExistingSession().catch(() => {
+      if (!cancelled) {
+        setCheckingSession(false);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -19,12 +66,12 @@ export default function LoginPage() {
       const supabase = createSupabaseClient();
       const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
       if (authError) throw authError;
-      if (data.user?.app_metadata?.role !== 'admin') {
-        await supabase.auth.signOut();
-        throw new Error('Access denied — not an admin account');
-      }
+      if (!data.session?.access_token) throw new Error('Missing admin session. Please sign in again.');
+      await verifyAdminSession(data.session.access_token);
       router.replace('/dashboard');
     } catch (err) {
+      const supabase = createSupabaseClient();
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
       setLoading(false);
@@ -36,6 +83,11 @@ export default function LoginPage() {
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 w-full max-w-sm">
         <h1 className="text-2xl font-bold text-white mb-2">FitAI Admin</h1>
         <p className="text-gray-400 mb-6 text-sm">Sign in with your admin account</p>
+        {checkingSession && (
+          <div className="bg-gray-800/60 border border-gray-700 text-gray-300 rounded-lg p-3 mb-4 text-sm">
+            Checking your session...
+          </div>
+        )}
         {error && (
           <div className="bg-red-900/40 border border-red-700 text-red-300 rounded-lg p-3 mb-4 text-sm">
             {error}
@@ -64,10 +116,10 @@ export default function LoginPage() {
           </div>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || checkingSession}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg py-2 font-medium transition-colors"
           >
-            {loading ? 'Signing in…' : 'Sign In'}
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
       </div>

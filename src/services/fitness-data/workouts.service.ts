@@ -19,16 +19,8 @@ export class WorkoutsService {
   ): Promise<FitnessDataResponse<Workout[]>> {
     try {
       let query = supabase
-        .from("workouts")
-        .select(
-          `
-          *,
-          workout_exercises (
-            *,
-            exercises (*)
-          )
-        `,
-        )
+        .from("workout_sessions")
+        .select("*")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
@@ -49,11 +41,7 @@ export class WorkoutsService {
       const workouts =
         data?.map((workout) => ({
           ...workout,
-          exercises:
-            workout.workout_exercises?.map((we: any) => ({
-              ...we,
-              exercise: we.exercises,
-            })) || [],
+          exercises: workout.exercises ?? [],
         })) || [];
 
       return {
@@ -76,14 +64,27 @@ export class WorkoutsService {
     user_id: string;
     name: string;
     type: string;
-    duration_minutes?: number;
+    duration?: number;
+    total_duration_minutes?: number;
     calories_burned?: number;
     notes?: string;
   }): Promise<FitnessDataResponse<Workout>> {
     try {
       const { data, error } = await supabase
-        .from("workouts")
-        .insert(workoutData)
+        .from("workout_sessions")
+        .insert({
+          id: crypto.randomUUID?.() || `ws_${Date.now()}`,
+          user_id: workoutData.user_id,
+          workout_id: `w_${Date.now()}`,
+          workout_name: workoutData.name,
+          workout_type: workoutData.type,
+          duration: workoutData.duration,
+          total_duration_minutes: workoutData.total_duration_minutes,
+          calories_burned: workoutData.calories_burned,
+          notes: workoutData.notes,
+          started_at: new Date().toISOString(),
+          is_completed: false,
+        })
         .select()
         .single();
 
@@ -112,16 +113,18 @@ export class WorkoutsService {
   async completeWorkout(
     workoutId: string,
     completionData: {
-      duration_minutes?: number;
+      duration?: number;
+      total_duration_minutes?: number;
       calories_burned?: number;
       notes?: string;
     },
   ): Promise<FitnessDataResponse<Workout>> {
     try {
       const { data, error } = await supabase
-        .from("workouts")
+        .from("workout_sessions")
         .update({
           ...completionData,
+          is_completed: true,
           completed_at: new Date().toISOString(),
         })
         .eq("id", workoutId)
@@ -164,12 +167,11 @@ export class WorkoutsService {
   ): Promise<FitnessDataResponse<WorkoutExercise[]>> {
     try {
       const { data, error } = await supabase
-        .from("workout_exercises")
-        .insert(exercises.map((ex) => ({ ...ex, workout_id: workoutId })))
-        .select(`
-          *,
-          exercises (*)
-        `);
+        .from("workout_sessions")
+        .update({ exercises })
+        .eq("id", workoutId)
+        .select()
+        .single();
 
       if (error) {
         console.error("Error adding exercises to workout:", error);
@@ -181,11 +183,7 @@ export class WorkoutsService {
 
       return {
         success: true,
-        data:
-          data?.map((we) => ({
-            ...we,
-            exercise: we.exercises,
-          })) || [],
+        data: (data?.exercises as WorkoutExercise[]) ?? [],
       };
     } catch (error) {
       console.error("Error in addExercisesToWorkout:", error);

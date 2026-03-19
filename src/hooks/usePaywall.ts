@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import { useSubscriptionStore } from "../stores/subscriptionStore";
 import razorpayService, {
@@ -26,11 +26,19 @@ interface SubscriptionPlanRow {
   price_yearly: number | null;
   razorpay_plan_id_monthly: string | null;
   razorpay_plan_id_yearly: string | null;
+  ai_generations_per_day: number | null;
+  ai_generations_per_month: number | null;
+  scans_per_day: number | null;
   unlimited_scans: boolean;
   unlimited_ai: boolean;
   analytics: boolean;
   coaching: boolean;
   active: boolean;
+}
+
+interface LoadedPlans {
+  plans: PlanConfig[];
+  rows: SubscriptionPlanRow[];
 }
 
 // ============================================================================
@@ -62,18 +70,69 @@ const FALLBACK_PLANS: PlanConfig[] = [
   },
 ];
 
+async function loadPlansFromServer(): Promise<LoadedPlans> {
+  const { data, error } = await supabase
+    .from("subscription_plans")
+    .select("*")
+    .eq("active", true)
+    .neq("tier", "free")
+    .order("price_monthly");
+
+  if (error || !data || data.length === 0) {
+    return { plans: FALLBACK_PLANS, rows: [] };
+  }
+
+  const configs: PlanConfig[] = [];
+
+  for (const row of data as SubscriptionPlanRow[]) {
+    const tier = row.tier as "basic" | "pro";
+
+    if (row.price_monthly != null) {
+      configs.push({
+        id: `${row.id}_monthly`,
+        tier,
+        name: tier === "basic" ? "Basic Plan" : "Pro Plan",
+        price_monthly: Math.round(row.price_monthly / 100),
+        billing_cycle: "monthly",
+      });
+    }
+
+    if (row.price_yearly != null) {
+      configs.push({
+        id: `${row.id}_yearly`,
+        tier,
+        name: `${row.name} Plan (Yearly)`,
+        price_monthly: Math.round(row.price_yearly / 100 / 12),
+        billing_cycle: "yearly",
+      });
+    }
+  }
+
+  return {
+    plans: configs.length > 0 ? configs : FALLBACK_PLANS,
+    rows: data as SubscriptionPlanRow[],
+  };
+}
+
 // ============================================================================
 // Hook
 // ============================================================================
 
 export const usePaywall = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [showPaywall, setShowPaywall] = useState(false);
-  const [paywallReason, setPaywallReason] = useState<string | null>(null);
   const [plans, setPlans] = useState<PlanConfig[]>([]);
+  const [planRows, setPlanRows] = useState<SubscriptionPlanRow[]>([]);
+  const inFlightRef = useRef(false);
 
-  const { currentPlan, usage, fetchSubscriptionStatus } =
-    useSubscriptionStore();
+  const {
+    currentPlan,
+    usage,
+    fetchSubscriptionStatus,
+    showPaywall,
+    paywallReason,
+    triggerPaywall,
+    dismissPaywall,
+  } = useSubscriptionStore();
 
   /**
    * Fetch subscription plans from Supabase on mount.
@@ -84,53 +143,17 @@ export const usePaywall = () => {
 
     const fetchPlans = async () => {
       try {
-        const { data, error } = await supabase
-          .from("subscription_plans")
-          .select("*")
-          .eq("active", true)
-          .neq("tier", "free")
-          .order("price_monthly");
+        const loaded = await loadPlansFromServer();
 
         if (cancelled) return;
 
-        if (error || !data || data.length === 0) {
-          setPlans(FALLBACK_PLANS);
-          return;
-        }
-
-      const configs: PlanConfig[] = [];
-
-      for (const row of data as SubscriptionPlanRow[]) {
-        const tier = row.tier as "basic" | "pro";
-
-        // Monthly entry (always present for paid plans)
-        if (row.price_monthly != null) {
-          configs.push({
-            id: `${row.id}_monthly`,
-            tier,
-            name: tier === "basic" ? "Basic Plan" : "Pro Plan",
-            price_monthly: Math.round(row.price_monthly / 100),
-            billing_cycle: "monthly",
-          });
-        }
-
-        // Yearly entry (only if the plan offers yearly pricing)
-        if (row.price_yearly != null) {
-          configs.push({
-            id: `${row.id}_yearly`,
-            tier,
-            name: `${row.name} Plan (Yearly)`,
-            price_monthly: Math.round(row.price_yearly / 100 / 12),
-            billing_cycle: "yearly",
-          });
-        }
-      }
-
-      setPlans(configs.length > 0 ? configs : FALLBACK_PLANS);
+        setPlans(loaded.plans);
+        setPlanRows(loaded.rows);
       } catch (err) {
         console.warn("[usePaywall] Failed to fetch plans, using fallback:", err);
         if (!cancelled) {
           setPlans(FALLBACK_PLANS);
+          setPlanRows([]);
         }
       }
     };
@@ -140,22 +163,10 @@ export const usePaywall = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [showPaywall]);
 
-  /**
-   * Trigger paywall display with a specific upgrade reason
-   */
-  const triggerPaywall = (reason: string) => {
-    setPaywallReason(reason);
-    setShowPaywall(true);
-  };
-
-  /**
-   * Dismiss paywall modal
-   */
   const dismiss = () => {
-    setShowPaywall(false);
-    setPaywallReason(null);
+    dismissPaywall();
   };
 
   /**
@@ -165,12 +176,18 @@ export const usePaywall = () => {
    * @returns Promise<boolean> - true if successful, false otherwise
    */
   const subscribe = async (planId: string): Promise<boolean> => {
+    if (inFlightRef.current) {
+      return false;
+    }
+
+    inFlightRef.current = true;
     setIsLoading(true);
     try {
       // Parse composite ID: "<uuid>_monthly" or "<uuid>_yearly"
       const plan = plans.find((p) => p.id === planId);
       const billingCycle = plan?.billing_cycle ?? "monthly";
       const originalPlanId = planId.replace(/_monthly$|_yearly$/, "");
+      const planRow = planRows.find((row) => row.id === originalPlanId);
 
       // Guard: fallback plan IDs (used when DB fetch failed) are not real UUIDs.
       // The worker will reject them with a 404. Show a clear error instead.
@@ -181,6 +198,15 @@ export const usePaywall = () => {
           [{ text: "OK" }],
         );
         setIsLoading(false);
+        return false;
+      }
+
+      if (!planRow) {
+        crossPlatformAlert(
+          "Plans Unavailable",
+          "We couldn't load the current plan details. Please reopen the paywall and try again.",
+          [{ text: "OK" }],
+        );
         return false;
       }
 
@@ -211,24 +237,32 @@ export const usePaywall = () => {
       );
 
       // Step 4: Verify payment signature on backend
-      const verified = await razorpayService.verifyPayment(
+      await razorpayService.verifyPayment(
         result.razorpay_payment_id,
         result.razorpay_subscription_id,
         result.razorpay_signature,
       );
 
-      if (!verified) {
-        crossPlatformAlert(
-          "Payment Verification Failed",
-          "Unable to verify your payment. Please contact support.",
-          [{ text: "OK" }],
-        );
-        setIsLoading(false);
-        return false;
-      }
+      useSubscriptionStore
+        .getState()
+        .setOptimisticSubscription({
+          tier: planRow.tier,
+          name: planRow.name,
+          billing_cycle: billingCycle,
+          features: {
+            ai_generations_per_day: planRow.ai_generations_per_day,
+            ai_generations_per_month: planRow.ai_generations_per_month,
+            scans_per_day: planRow.scans_per_day,
+            unlimited_scans: planRow.unlimited_scans,
+            unlimited_ai: planRow.unlimited_ai,
+            analytics: planRow.analytics,
+            coaching: planRow.coaching,
+          },
+          status: "authenticated",
+        });
 
       // Step 5: Refresh subscription store to reflect new status
-      await fetchSubscriptionStatus();
+      await fetchSubscriptionStatus({ preserveExistingOnError: true });
 
       // Step 6: Success! Dismiss paywall and show success message
       dismiss();
@@ -263,6 +297,15 @@ export const usePaywall = () => {
           return false;
         }
 
+        if (error.code === "API_ERROR") {
+          crossPlatformAlert(
+            "Payment Verification Failed",
+            error.message || "Unable to verify your payment right now. Please try again.",
+            [{ text: "OK" }],
+          );
+          return false;
+        }
+
         if (error.code === "AUTH_ERROR") {
           crossPlatformAlert("Authentication Error", "Please log in and try again.", [
             { text: "OK" },
@@ -286,6 +329,9 @@ export const usePaywall = () => {
         [{ text: "OK" }],
       );
       return false;
+    } finally {
+      inFlightRef.current = false;
+      setIsLoading(false);
     }
   };
 

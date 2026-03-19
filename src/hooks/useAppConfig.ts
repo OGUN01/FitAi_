@@ -1,7 +1,7 @@
 /**
  * useAppConfig — reads public app_config rows (features, app, maintenance)
- * from Supabase. The RLS policy only allows authenticated users to read
- * rows in these three categories, so no secrets are exposed.
+ * from Supabase. The RLS policy allows public reads for the safe categories
+ * below, so no secrets are exposed and guest users can still respect config.
  *
  * Used in App.tsx to:
  *  - Show a maintenance banner and block usage when maintenance_mode = true
@@ -41,6 +41,23 @@ interface UseAppConfigResult {
   error: string | null;
 }
 
+function parseBooleanValue(value: unknown, fallback: boolean): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value !== 0;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
+    if (['false', '0', 'no', 'off'].includes(normalized)) return false;
+  }
+  return fallback;
+}
+
+function parseStringValue(value: unknown, fallback: string): string {
+  if (typeof value === 'string') return value;
+  if (value === null || value === undefined) return fallback;
+  return String(value);
+}
+
 export function useAppConfig(): UseAppConfigResult {
   const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG);
   const [loading, setLoading] = useState(true);
@@ -63,14 +80,15 @@ export function useAppConfig(): UseAppConfigResult {
         for (const row of data) m[row.key] = row.value;
 
         setConfig({
-          maintenanceMode: Boolean(m['maintenance_mode'] ?? false),
-          maintenanceMessage: String(m['maintenance_message'] ?? 'Back soon!'),
-          minAppVersion: String(m['min_app_version'] ?? '1.0.0'),
-          forceUpdateVersion: String(m['force_update_version'] ?? '0.0.0'),
-          featureAiChat: Boolean(m['feature_ai_chat'] ?? true),
-          featureFoodContributions: Boolean(m['feature_food_contributions'] ?? true),
-          featureAnalytics: Boolean(m['feature_analytics'] ?? true),
+          maintenanceMode: parseBooleanValue(m['maintenance_mode'], false),
+          maintenanceMessage: parseStringValue(m['maintenance_message'], 'Back soon!'),
+          minAppVersion: parseStringValue(m['min_app_version'], '1.0.0'),
+          forceUpdateVersion: parseStringValue(m['force_update_version'], '0.0.0'),
+          featureAiChat: parseBooleanValue(m['feature_ai_chat'], true),
+          featureFoodContributions: parseBooleanValue(m['feature_food_contributions'], true),
+          featureAnalytics: parseBooleanValue(m['feature_analytics'], true),
         });
+        setError(null);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Failed to load app config');
@@ -81,7 +99,26 @@ export function useAppConfig(): UseAppConfigResult {
     }
 
     fetchConfig();
-    return () => { cancelled = true; };
+
+    const realtime = typeof (supabase as { channel?: unknown }).channel === 'function'
+      ? (supabase as any)
+          .channel('public:app_config')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'app_config' },
+            () => {
+              void fetchConfig();
+            },
+          )
+          .subscribe()
+      : null;
+
+    return () => {
+      cancelled = true;
+      if (realtime && typeof (supabase as any).removeChannel === 'function') {
+        (supabase as any).removeChannel(realtime);
+      }
+    };
   }, []);
 
   return { config, loading, error };

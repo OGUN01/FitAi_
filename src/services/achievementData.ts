@@ -45,6 +45,7 @@ class AchievementDataService {
       });
 
       if (error) {
+        console.error("❌ Achievement upsert error:", error);
         return false;
       }
 
@@ -106,6 +107,7 @@ class AchievementDataService {
         .eq("user_id", userId);
 
       if (error) {
+        console.error("❌ Error loading achievements from Supabase:", error);
         return achievementsMap;
       }
 
@@ -147,7 +149,11 @@ class AchievementDataService {
         .eq("user_id", userId)
         .eq("is_completed", true);
 
-      if (error || !data) {
+      if (error) {
+        console.error("❌ Error getting total FitCoins:", error);
+        return 0;
+      }
+      if (!data) {
         return 0;
       }
 
@@ -184,7 +190,11 @@ class AchievementDataService {
         .select("is_completed, progress, fit_coins_earned")
         .eq("user_id", userId);
 
-      if (error || !data) {
+      if (error) {
+        console.error("❌ Error getting achievement stats:", error);
+        return defaultStats;
+      }
+      if (!data) {
         return defaultStats;
       }
 

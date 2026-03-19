@@ -1,4 +1,4 @@
-/**
+﻿/**
  * FitAI Workers - Subscription Handler
  *
  * Razorpay subscription lifecycle endpoints:
@@ -116,6 +116,188 @@ function isAccessGrantingStatus(status: SubscriptionStatus): boolean {
 	return status === 'active' || status === 'pending' || status === 'authenticated';
 }
 
+function isNotFoundError(error: { code?: string; message?: string } | null | undefined): boolean {
+	return Boolean(error && (error.code === 'PGRST116' || /not found/i.test(error.message || '')));
+}
+
+function getSubscriptionNotes(subscription: SubscriptionRow | null | undefined): Record<string, unknown> {
+	const notes = subscription?.notes;
+	return notes && typeof notes === 'object' ? notes : {};
+}
+
+function getLastWebhookEventAt(subscription: SubscriptionRow | null | undefined): number {
+	const notes = getSubscriptionNotes(subscription);
+	const value = notes.last_webhook_event_at;
+	if (typeof value === 'number' && Number.isFinite(value)) {
+		return value;
+	}
+	if (typeof value === 'string') {
+		const parsed = Number(value);
+		if (Number.isFinite(parsed)) {
+			return parsed;
+		}
+	}
+	return 0;
+}
+
+function normalizeSingleResult<T>(data: T | T[] | null | undefined): T | null {
+	if (Array.isArray(data)) {
+		return data[0] ?? null;
+	}
+	return data ?? null;
+}
+
+async function readSingleRow<T>(limitedQuery: any): Promise<T | null> {
+	const runners: Array<() => Promise<{ data?: T | T[] | null; error?: { code?: string; message?: string } | null }>> = [];
+
+	if (typeof limitedQuery?.single === 'function') {
+		runners.push(() => limitedQuery.single<T>());
+	}
+
+	if (typeof limitedQuery?.maybeSingle === 'function') {
+		runners.push(() => limitedQuery.maybeSingle<T>());
+	}
+
+	if (runners.length === 0) {
+		const result = await limitedQuery;
+		return normalizeSingleResult(result?.data ?? result);
+	}
+
+	let lastNotFound: { code?: string; message?: string } | null = null;
+
+	for (const run of runners) {
+		const result = await run();
+		if (result?.error) {
+			if (isNotFoundError(result.error)) {
+				lastNotFound = result.error;
+				continue;
+			}
+			throw result.error;
+		}
+
+		const row = normalizeSingleResult(result?.data);
+		if (row) {
+			return row;
+		}
+	}
+
+	if (lastNotFound) {
+		return null;
+	}
+
+	return null;
+}
+
+async function fetchLatestSubscriptionForUser(
+	supabase: ReturnType<typeof getSupabaseClient>,
+	userId: string,
+	statuses?: readonly SubscriptionStatus[],
+): Promise<SubscriptionRow | null> {
+	let query = supabase
+		.from('subscriptions')
+		.select('*')
+		.eq('user_id', userId);
+
+	if (statuses && statuses.length > 0) {
+		query = query.in('status', statuses as SubscriptionStatus[]);
+	}
+
+	const limitedQuery = query.order('updated_at', { ascending: false }).limit(1) as any;
+	return readSingleRow<SubscriptionRow>(limitedQuery);
+}
+
+async function fetchLatestSubscriptionByRazorpayId(
+	supabase: ReturnType<typeof getSupabaseClient>,
+	razorpaySubscriptionId: string,
+): Promise<SubscriptionRow | null> {
+	const limitedQuery = supabase
+		.from('subscriptions')
+		.select('*')
+		.eq('razorpay_subscription_id', razorpaySubscriptionId)
+		.order('updated_at', { ascending: false })
+		.limit(1) as any;
+	return readSingleRow<SubscriptionRow>(limitedQuery);
+}
+
+async function fetchFreePlan(supabase: ReturnType<typeof getSupabaseClient>): Promise<SubscriptionPlanRow> {
+	const { data, error } = await supabase
+		.from('subscription_plans')
+		.select('*')
+		.eq('tier', 'free')
+		.eq('active', true)
+		.single<SubscriptionPlanRow>();
+
+	if (error || !data) {
+		throw new APIError('Free tier plan is not configured', 500, ErrorCode.DATABASE_ERROR, {
+			detail: error?.message ?? 'free plan missing',
+		});
+	}
+
+	return data;
+}
+
+async function webhookEventAlreadyProcessed(
+	supabase: ReturnType<typeof getSupabaseClient>,
+	eventId: string,
+): Promise<boolean> {
+	const { data, error } = await supabase
+		.from('webhook_events')
+		.select('id')
+		.eq('id', eventId)
+		.limit(1)
+		.single();
+
+	if (error) {
+		if (isNotFoundError(error)) {
+			return false;
+		}
+		throw error;
+	}
+
+	return Boolean(data);
+}
+
+async function recordWebhookEvent(
+	supabase: ReturnType<typeof getSupabaseClient>,
+	eventId: string,
+	eventType: string,
+	payload: RazorpayWebhookEvent & {
+		_event_id: string;
+		_event_result?: 'processed' | 'skipped';
+		_event_reason?: string;
+	},
+): Promise<void> {
+	await supabase.from('webhook_events').insert({
+		id: eventId,
+		event_type: eventType,
+		payload,
+	});
+}
+
+function buildWebhookPayload(
+	eventId: string,
+	event: RazorpayWebhookEvent,
+	result: 'processed' | 'skipped',
+	reason?: string,
+) {
+	return {
+		...event,
+		_event_id: eventId,
+		_event_result: result,
+		...(reason ? { _event_reason: reason } : {}),
+	};
+}
+
+function mergeNotes(
+	subscription: SubscriptionRow | null,
+	patch: Record<string, unknown>,
+): Record<string, unknown> {
+	return {
+		...getSubscriptionNotes(subscription),
+		...patch,
+	};
+}
+
 // ============================================================================
 // 1. CREATE SUBSCRIPTION
 // ============================================================================
@@ -175,15 +357,17 @@ export async function handleCreateSubscription(c: Context<{ Bindings: Env; Varia
 		throw new APIError(`Plan does not support ${body.billing_cycle} billing`, 400, ErrorCode.INVALID_PARAMETER);
 	}
 
-	// Check if user already has an active subscription
-	const { data: existing } = await supabase
-		.from('subscriptions')
-		.select('id, status, tier')
-		.eq('user_id', userId)
-		.in('status', ['active', 'authenticated', 'created', 'pending'])
-		.limit(1);
+	// Check if user already has any non-terminal subscription record
+	const existingSubscription = await fetchLatestSubscriptionForUser(supabase, userId, [
+		'created',
+		'authenticated',
+		'active',
+		'pending',
+		'halted',
+		'paused',
+	]);
 
-	if (existing && existing.length > 0) {
+	if (existingSubscription?.id) {
 		throw new APIError('User already has an active or pending subscription', 409, ErrorCode.RESOURCE_ALREADY_EXISTS);
 	}
 
@@ -223,6 +407,18 @@ export async function handleCreateSubscription(c: Context<{ Bindings: Env; Varia
 	});
 
 	if (insertError) {
+		try {
+			await razorpayFetch(env, `/subscriptions/${razorpaySubscription.id}/cancel`, 'POST', {
+				cancel_at_cycle_end: false,
+			});
+		} catch {
+			// Best-effort remote cleanup only.
+		}
+
+		if ((insertError as { code?: string }).code === '23505') {
+			throw new APIError('User already has an active or pending subscription', 409, ErrorCode.RESOURCE_ALREADY_EXISTS);
+		}
+
 		throw new APIError('Failed to save subscription record', 500, ErrorCode.DATABASE_ERROR, { detail: insertError.message });
 	}
 
@@ -286,19 +482,50 @@ export async function handleVerifyPayment(c: Context<{ Bindings: Env; Variables:
 
 	const supabase = getSupabaseClient(env);
 
-	// Update subscription status to 'authenticated'
-	const { data: subscription, error: updateError } = await supabase
+	const subscription = await fetchLatestSubscriptionByRazorpayId(supabase, body.razorpay_subscription_id);
+
+	if (!subscription?.id) {
+		throw new APIError('Subscription not found for this user', 404, ErrorCode.SUBSCRIPTION_NOT_FOUND);
+	}
+
+	if (!['created', 'pending', 'authenticated'].includes(subscription.status)) {
+		throw new APIError('Subscription is not in a verifiable state', 409, ErrorCode.SUBSCRIPTION_INACTIVE);
+	}
+
+	const verifiedPaymentId = getSubscriptionNotes(subscription).verified_payment_id;
+	if (subscription.status === 'authenticated' && typeof verifiedPaymentId === 'string') {
+		if (verifiedPaymentId === body.razorpay_payment_id) {
+			return c.json(
+				{
+					success: true,
+					data: {
+						subscription_id: subscription.razorpay_subscription_id,
+						tier: subscription.tier,
+						status: subscription.status,
+						payment_id: body.razorpay_payment_id,
+						verified: true,
+					},
+				},
+				200,
+			);
+		}
+
+		throw new APIError('Subscription already verified with a different payment', 409, ErrorCode.RESOURCE_ALREADY_EXISTS);
+	}
+
+	const { error: updateError } = await supabase
 		.from('subscriptions')
 		.update({
 			status: 'authenticated' satisfies SubscriptionStatus,
+			notes: mergeNotes(subscription, {
+				verified_payment_id: body.razorpay_payment_id,
+				verified_at: new Date().toISOString(),
+			}),
 		})
-		.eq('razorpay_subscription_id', body.razorpay_subscription_id)
-		.eq('user_id', userId)
-		.select('id, tier, status, razorpay_subscription_id')
-		.single();
+		.eq('id', subscription.id);
 
-	if (updateError || !subscription) {
-		throw new APIError('Subscription not found for this user', 404, ErrorCode.SUBSCRIPTION_NOT_FOUND);
+	if (updateError) {
+		throw new APIError('Failed to verify subscription payment', 500, ErrorCode.DATABASE_ERROR, { detail: updateError.message });
 	}
 
 	return c.json(
@@ -307,7 +534,7 @@ export async function handleVerifyPayment(c: Context<{ Bindings: Env; Variables:
 			data: {
 				subscription_id: subscription.razorpay_subscription_id,
 				tier: subscription.tier,
-				status: subscription.status,
+				status: 'authenticated',
 				payment_id: body.razorpay_payment_id,
 				verified: true,
 			},
@@ -332,6 +559,17 @@ const WEBHOOK_EVENT_STATUS_MAP: Record<string, SubscriptionStatus> = {
 	'subscription.resumed': 'active',
 	'subscription.cancelled': 'cancelled',
 };
+
+const ALL_SUBSCRIPTION_STATUSES: readonly SubscriptionStatus[] = [
+	'created',
+	'authenticated',
+	'active',
+	'pending',
+	'halted',
+	'paused',
+	'cancelled',
+	'completed',
+];
 
 /**
  * POST /api/webhook/razorpay
@@ -390,9 +628,7 @@ export async function handleWebhook(c: Context<{ Bindings: Env }>): Promise<Resp
 
 	// Deduplication: check if we've already processed this event
 	try {
-		const { data: existingEvent } = await supabase.from('webhook_events').select('id').eq('event_id', eventId).single();
-
-		if (existingEvent) {
+		if (await webhookEventAlreadyProcessed(supabase, eventId)) {
 			// Already processed, return success
 			return c.json({ success: true, message: 'Event already processed' }, 200);
 		}
@@ -405,15 +641,9 @@ export async function handleWebhook(c: Context<{ Bindings: Env }>): Promise<Resp
 	const newStatus = WEBHOOK_EVENT_STATUS_MAP[eventType];
 
 	if (!newStatus) {
-		// Unhandled event type — log for idempotency and return success
+		// Unhandled event type â€” log for idempotency and return success
 		try {
-			await supabase.from('webhook_events').insert({
-				event_id: eventId,
-				event_type: eventType,
-				payload: event,
-				processed: true,
-				status: 'skipped',
-			});
+			await recordWebhookEvent(supabase, eventId, eventType, buildWebhookPayload(eventId, event, 'skipped', 'unhandled_event'));
 		} catch {
 			// Non-critical: idempotency insert failed
 		}
@@ -429,13 +659,58 @@ export async function handleWebhook(c: Context<{ Bindings: Env }>): Promise<Resp
 	const razorpaySubscriptionId = subscriptionEntity.id;
 	const razorpayPlanId = subscriptionEntity.plan_id;
 
+	let existingSubscription: SubscriptionRow | null;
+	try {
+		existingSubscription = await fetchLatestSubscriptionByRazorpayId(supabase, razorpaySubscriptionId);
+	} catch {
+		try {
+			await recordWebhookEvent(
+				supabase,
+				eventId,
+				event.event,
+				buildWebhookPayload(eventId, event, 'skipped', 'subscription_lookup_failed'),
+			);
+		} catch {
+			// Best effort only; the webhook must still be acknowledged.
+		}
+		return c.json({ success: true, message: 'Webhook received but subscription lookup failed' }, 200);
+	}
+
+	if (!existingSubscription?.id) {
+		try {
+			await recordWebhookEvent(supabase, eventId, event.event, buildWebhookPayload(eventId, event, 'skipped', 'missing_subscription'));
+		} catch {
+			// Best effort only; we still acknowledge the webhook to avoid retry storms.
+		}
+		return c.json({ success: true, message: 'Webhook received but no matching subscription record exists' }, 200);
+	}
+
+	if (getLastWebhookEventAt(existingSubscription) > event.created_at) {
+		try {
+			await recordWebhookEvent(
+				supabase,
+				eventId,
+				eventType,
+				buildWebhookPayload(eventId, event, 'skipped', 'stale_event'),
+			);
+		} catch {
+			// Non-critical: stale event logging failed
+		}
+		return c.json({ success: true, message: 'Stale webhook ignored' }, 200);
+	}
+
 	// Resolve tier from the plan ID
 	const tierInfo = await resolvePlanTier(env, razorpayPlanId);
 
 	// Build update object
 	const updateData: Record<string, unknown> = {
 		status: newStatus,
-		razorpay_customer_id: subscriptionEntity.customer_id || undefined,
+		razorpay_customer_id: subscriptionEntity.customer_id || null,
+		notes: mergeNotes(existingSubscription, {
+			last_webhook_event_at: event.created_at,
+			last_webhook_event_type: eventType,
+			last_webhook_event_id: eventId,
+		}),
 	};
 
 	// Update period timestamps for activation/charge events
@@ -464,44 +739,20 @@ export async function handleWebhook(c: Context<{ Bindings: Env }>): Promise<Resp
 	}
 
 	// Update the subscription record in Supabase
-	try {
-		const { error: updateError } = await supabase
-			.from('subscriptions')
-			.update(updateData)
-			.eq('razorpay_subscription_id', razorpaySubscriptionId);
+	const { error: updateError } = await supabase
+		.from('subscriptions')
+		.update(updateData)
+		.eq('id', existingSubscription.id);
 
-		if (updateError) {
-			// Log error but still return 200
-			try {
-				await supabase.from('webhook_events').insert({
-					event_id: eventId,
-					event_type: eventType,
-					payload: event,
-					processed: false,
-					status: 'error',
-					error_message: updateError.message,
-				});
-			} catch {
-				// Non-critical
-			}
-			return c.json({ success: false, error: 'Database update failed' }, 200);
-		}
-	} catch {
-		return c.json({ success: false, error: 'Database operation failed' }, 200);
+	if (updateError) {
+		return c.json({ success: false, error: 'Database update failed' }, 500);
 	}
 
 	// Record successful event processing for idempotency
 	try {
-		await supabase.from('webhook_events').insert({
-			event_id: eventId,
-			event_type: eventType,
-			payload: event,
-			processed: true,
-			status: 'success',
-			razorpay_subscription_id: razorpaySubscriptionId,
-		});
+		await recordWebhookEvent(supabase, eventId, eventType, buildWebhookPayload(eventId, event, 'processed'));
 	} catch {
-		// Non-critical: idempotency insert failed but subscription was updated
+		return c.json({ success: false, error: 'Failed to record webhook event' }, 500);
 	}
 
 	return c.json({ success: true, message: 'Webhook processed' }, 200);
@@ -522,7 +773,7 @@ const FREE_TIER_DEFAULTS = {
 	current_period_end: null,
 	features: {
 		ai_generations_per_day: null as number | null,
-		ai_generations_per_month: 10,
+		ai_generations_per_month: 1,
 		scans_per_day: 10,
 		unlimited_scans: false,
 		unlimited_ai: false,
@@ -545,25 +796,26 @@ export async function handleGetSubscriptionStatus(c: Context<{ Bindings: Env; Va
 
 	const supabase = getSupabaseClient(env);
 
-	// Query for user's current subscription with plan details
-	// Look for active, pending (grace period), or authenticated subscriptions
-	const { data: subscription, error: subError } = await supabase
-		.from('subscriptions')
-		.select('*')
-		.eq('user_id', userId)
-		.in('status', ['active', 'pending', 'authenticated'])
-		.order('created_at', { ascending: false })
-		.limit(1)
-		.single<SubscriptionRow>();
+	let subscription: SubscriptionRow | null;
+	try {
+		subscription = await fetchLatestSubscriptionForUser(supabase, userId, ALL_SUBSCRIPTION_STATUSES);
+	} catch (error) {
+		console.error('[Subscription] Error querying subscription status:', error);
+		throw new APIError('Failed to load subscription status', 500, ErrorCode.DATABASE_ERROR);
+	}
 
-	if (subError || !subscription) {
-		// No active subscription — return free tier
-		const { data: freePlan } = await supabase
+	if (!subscription?.id) {
+		const { data: freePlan, error: freePlanError } = await supabase
 			.from('subscription_plans')
 			.select('*')
 			.eq('tier', 'free')
 			.eq('active', true)
 			.single<SubscriptionPlanRow>();
+
+		if (freePlanError && !isNotFoundError(freePlanError)) {
+			console.error('[Subscription] Error querying free plan:', freePlanError);
+			throw new APIError('Failed to load free plan', 500, ErrorCode.DATABASE_ERROR);
+		}
 
 		if (freePlan) {
 			return c.json(
@@ -592,7 +844,6 @@ export async function handleGetSubscriptionStatus(c: Context<{ Bindings: Env; Va
 			);
 		}
 
-		// Fallback if even free plan doesn't exist in DB
 		return c.json(
 			{
 				success: true,
@@ -606,13 +857,17 @@ export async function handleGetSubscriptionStatus(c: Context<{ Bindings: Env; Va
 		);
 	}
 
-	// Fetch the plan details for the subscription's tier
-	const { data: plan } = await supabase
+	const { data: plan, error: planError } = await supabase
 		.from('subscription_plans')
 		.select('*')
 		.eq('tier', subscription.tier)
 		.eq('active', true)
 		.single<SubscriptionPlanRow>();
+
+	if (planError || !plan) {
+		console.error('[Subscription] Error querying subscription plan:', planError ?? new Error('Plan row missing'));
+		throw new APIError('Failed to load subscription plan', 500, ErrorCode.DATABASE_ERROR);
+	}
 
 	const isActive = isAccessGrantingStatus(subscription.status);
 
@@ -621,29 +876,26 @@ export async function handleGetSubscriptionStatus(c: Context<{ Bindings: Env; Va
 			success: true,
 			data: {
 				tier: subscription.tier,
-				name: plan?.name || subscription.tier,
+				name: plan.name,
 				status: subscription.status,
 				is_active: isActive,
 				billing_cycle: subscription.billing_cycle,
 				current_period_end: subscription.current_period_end,
 				razorpay_subscription_id: subscription.razorpay_subscription_id,
-				features: plan
-					? {
-							ai_generations_per_day: plan.ai_generations_per_day,
-							ai_generations_per_month: plan.ai_generations_per_month,
-							scans_per_day: plan.scans_per_day,
-							unlimited_scans: plan.unlimited_scans,
-							unlimited_ai: plan.unlimited_ai,
-							analytics: plan.analytics,
-							coaching: plan.coaching,
-						}
-					: FREE_TIER_DEFAULTS.features,
+				features: {
+					ai_generations_per_day: plan.ai_generations_per_day,
+					ai_generations_per_month: plan.ai_generations_per_month,
+					scans_per_day: plan.scans_per_day,
+					unlimited_scans: plan.unlimited_scans,
+					unlimited_ai: plan.unlimited_ai,
+					analytics: plan.analytics,
+					coaching: plan.coaching,
+				},
 			},
 		},
 		200,
 	);
 }
-
 // ============================================================================
 // 5. CANCEL SUBSCRIPTION
 // ============================================================================
@@ -664,17 +916,9 @@ export async function handleCancelSubscription(c: Context<{ Bindings: Env; Varia
 
 	const supabase = getSupabaseClient(env);
 
-	// Lookup user's active subscription
-	const { data: subscription, error: fetchError } = await supabase
-		.from('subscriptions')
-		.select('*')
-		.eq('user_id', userId)
-		.in('status', ['active', 'authenticated', 'pending'])
-		.order('created_at', { ascending: false })
-		.limit(1)
-		.single<SubscriptionRow>();
+	const subscription = await fetchLatestSubscriptionForUser(supabase, userId, ['active', 'authenticated', 'pending']);
 
-	if (fetchError || !subscription) {
+	if (!subscription?.id) {
 		throw new APIError('No active subscription found', 404, ErrorCode.SUBSCRIPTION_NOT_FOUND);
 	}
 
@@ -682,7 +926,6 @@ export async function handleCancelSubscription(c: Context<{ Bindings: Env; Varia
 		throw new APIError('Cannot cancel a free tier subscription', 400, ErrorCode.INVALID_REQUEST);
 	}
 
-	// Call Razorpay API to cancel at end of billing cycle
 	const razorpayResponse = await razorpayFetch(env, `/subscriptions/${subscription.razorpay_subscription_id}/cancel`, 'POST', {
 		cancel_at_cycle_end: true,
 	});
@@ -723,7 +966,6 @@ export async function handleCancelSubscription(c: Context<{ Bindings: Env; Varia
 		200,
 	);
 }
-
 // ============================================================================
 // 6. PAUSE SUBSCRIPTION
 // ============================================================================
@@ -744,17 +986,9 @@ export async function handlePauseSubscription(c: Context<{ Bindings: Env; Variab
 
 	const supabase = getSupabaseClient(env);
 
-	// Lookup user's active subscription
-	const { data: subscription, error: fetchError } = await supabase
-		.from('subscriptions')
-		.select('*')
-		.eq('user_id', userId)
-		.in('status', ['active', 'authenticated'])
-		.order('created_at', { ascending: false })
-		.limit(1)
-		.single<SubscriptionRow>();
+	const subscription = await fetchLatestSubscriptionForUser(supabase, userId, ['active', 'authenticated']);
 
-	if (fetchError || !subscription) {
+	if (!subscription?.id) {
 		throw new APIError('No active subscription found', 404, ErrorCode.SUBSCRIPTION_NOT_FOUND);
 	}
 
@@ -762,7 +996,6 @@ export async function handlePauseSubscription(c: Context<{ Bindings: Env; Variab
 		throw new APIError('Cannot pause a free tier subscription', 400, ErrorCode.INVALID_REQUEST);
 	}
 
-	// Call Razorpay API to pause subscription
 	const razorpayResponse = await razorpayFetch(env, `/subscriptions/${subscription.razorpay_subscription_id}/pause`, 'POST', {
 		pause_initiated_by: 'customer',
 	});
@@ -800,7 +1033,6 @@ export async function handlePauseSubscription(c: Context<{ Bindings: Env; Variab
 		200,
 	);
 }
-
 // ============================================================================
 // 7. RESUME SUBSCRIPTION
 // ============================================================================
@@ -821,17 +1053,9 @@ export async function handleResumeSubscription(c: Context<{ Bindings: Env; Varia
 
 	const supabase = getSupabaseClient(env);
 
-	// Lookup user's paused subscription
-	const { data: subscription, error: fetchError } = await supabase
-		.from('subscriptions')
-		.select('*')
-		.eq('user_id', userId)
-		.eq('status', 'paused')
-		.order('created_at', { ascending: false })
-		.limit(1)
-		.single<SubscriptionRow>();
+	const subscription = await fetchLatestSubscriptionForUser(supabase, userId, ['paused']);
 
-	if (fetchError || !subscription) {
+	if (!subscription?.id) {
 		throw new APIError('No paused subscription found', 404, ErrorCode.SUBSCRIPTION_NOT_FOUND);
 	}
 
@@ -839,7 +1063,6 @@ export async function handleResumeSubscription(c: Context<{ Bindings: Env; Varia
 		throw new APIError('Cannot resume a free tier subscription', 400, ErrorCode.INVALID_REQUEST);
 	}
 
-	// Call Razorpay API to resume subscription
 	const razorpayResponse = await razorpayFetch(env, `/subscriptions/${subscription.razorpay_subscription_id}/resume`, 'POST', {
 		resume_at: 'now',
 	});

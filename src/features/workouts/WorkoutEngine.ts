@@ -48,7 +48,6 @@ class WorkoutEngineService {
     },
   ): Promise<AIResponse<Workout>> {
     try {
-
       // Delegate to the UnifiedAIService which connects to Cloudflare Workers
       const result = await getAiService().generateWorkout(
         personalInfo,
@@ -103,13 +102,18 @@ class WorkoutEngineService {
     timeAvailable: number,
   ): Promise<AIResponse<Workout>> {
     try {
-      const workout = this._buildLocalQuickWorkout(personalInfo, fitnessGoals, timeAvailable);
+      const workout = this._buildLocalQuickWorkout(
+        personalInfo,
+        fitnessGoals,
+        timeAvailable,
+      );
       return { success: true, data: workout };
     } catch (error) {
       console.error("❌ [WorkoutEngine] generateQuickWorkout failed:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to build workout",
+        error:
+          error instanceof Error ? error.message : "Failed to build workout",
       };
     }
   }
@@ -123,42 +127,78 @@ class WorkoutEngineService {
     fitnessGoals: FitnessGoals,
     timeAvailable: number,
   ): Workout {
-    const experience = (fitnessGoals.experience || fitnessGoals.experience_level || "beginner") as
-      | "beginner"
-      | "intermediate"
-      | "advanced";
+    const experience = (fitnessGoals.experience ||
+      fitnessGoals.experience_level ||
+      "beginner") as "beginner" | "intermediate" | "advanced";
     const goals = fitnessGoals.primary_goals || fitnessGoals.primaryGoals || [];
     const age = personalInfo.age || 30;
-    const workoutType: "hiit" | "strength" = timeAvailable <= 20 ? "hiit" : "strength";
+    const workoutType: "hiit" | "strength" =
+      timeAvailable <= 20 ? "hiit" : "strength";
 
     // --- Per-user training parameters ---
-    const sets = experience === "beginner" ? 2 : experience === "intermediate" ? 3 : 4;
+    const sets =
+      experience === "beginner" ? 2 : experience === "intermediate" ? 3 : 4;
 
     // Rep ranges: muscle_gain/strength = lower reps heavier focus; weight_loss = higher reps
-    const wantsHypertrophy = goals.some((g) => ["muscle_gain", "strength"].includes(g));
-    const wantsWeightLoss = goals.some((g) => ["weight_loss", "fat_loss"].includes(g));
+    const wantsHypertrophy = goals.some((g) =>
+      ["muscle_gain", "strength"].includes(g),
+    );
+    const wantsWeightLoss = goals.some((g) =>
+      ["weight_loss", "fat_loss"].includes(g),
+    );
     let repRange: string;
     if (workoutType === "hiit") {
-      repRange = experience === "beginner" ? "8-10" : experience === "intermediate" ? "10-15" : "15-20";
+      repRange =
+        experience === "beginner"
+          ? "8-10"
+          : experience === "intermediate"
+            ? "10-15"
+            : "15-20";
     } else if (wantsHypertrophy) {
-      repRange = experience === "beginner" ? "8-10" : experience === "intermediate" ? "8-12" : "6-10";
+      repRange =
+        experience === "beginner"
+          ? "8-10"
+          : experience === "intermediate"
+            ? "8-12"
+            : "6-10";
     } else if (wantsWeightLoss) {
-      repRange = experience === "beginner" ? "12-15" : experience === "intermediate" ? "15-20" : "20-25";
+      repRange =
+        experience === "beginner"
+          ? "12-15"
+          : experience === "intermediate"
+            ? "15-20"
+            : "20-25";
     } else {
-      repRange = experience === "beginner" ? "10-12" : experience === "intermediate" ? "12-15" : "15-20";
+      repRange =
+        experience === "beginner"
+          ? "10-12"
+          : experience === "intermediate"
+            ? "12-15"
+            : "15-20";
     }
 
     // Older users and beginners need more recovery time
     const ageModifier = age > 50 ? 15 : age > 40 ? 10 : 0;
     let restTime: number;
     if (workoutType === "hiit") {
-      restTime = (experience === "beginner" ? 45 : experience === "intermediate" ? 30 : 20) + ageModifier;
+      restTime =
+        (experience === "beginner"
+          ? 45
+          : experience === "intermediate"
+            ? 30
+            : 20) + ageModifier;
     } else {
-      restTime = (experience === "beginner" ? 90 : experience === "intermediate" ? 60 : 45) + ageModifier;
+      restTime =
+        (experience === "beginner"
+          ? 90
+          : experience === "intermediate"
+            ? 60
+            : 45) + ageModifier;
     }
 
     // Exercise duration for time-based movements (planks, mountain climbers, etc.)
-    const holdDuration = experience === "beginner" ? 20 : experience === "intermediate" ? 30 : 45;
+    const holdDuration =
+      experience === "beginner" ? 20 : experience === "intermediate" ? 30 : 45;
 
     // --- Exercise count: fit within the available time ---
     // Time per exercise: (sets * (work_time + rest)) + transition_buffer
@@ -166,7 +206,10 @@ class WorkoutEngineService {
     const timePerExerciseSec = sets * (workSecondsPerSet + restTime) + 15;
     const warmupCooldownSec = 120; // ~2 min buffer
     const usableTime = timeAvailable * 60 - warmupCooldownSec;
-    const exerciseCount = Math.max(4, Math.min(8, Math.floor(usableTime / timePerExerciseSec)));
+    const exerciseCount = Math.max(
+      4,
+      Math.min(8, Math.floor(usableTime / timePerExerciseSec)),
+    );
 
     // --- Exercise pool: bodyweight only, filtered by difficulty ---
     const difficultyPool: Array<"beginner" | "intermediate" | "advanced"> =
@@ -185,7 +228,12 @@ class WorkoutEngineService {
     // Exclude flexibility/yoga exercises for hiit and strength quick workouts
     pool = pool.filter(
       (ex) =>
-        !["downward_dog", "child_pose", "sun_salutation", "warrior_pose"].includes(ex.id),
+        ![
+          "downward_dog",
+          "child_pose",
+          "sun_salutation",
+          "warrior_pose",
+        ].includes(ex.id),
     );
 
     // Goal-aware prioritisation: sort so goal-matching exercises come first
@@ -199,8 +247,12 @@ class WorkoutEngineService {
     };
     const priorityMuscles = goals.flatMap((g) => goalMuscleMap[g] || []);
     pool.sort((a, b) => {
-      const aMatch = a.muscleGroups.some((mg) => priorityMuscles.includes(mg)) ? -1 : 0;
-      const bMatch = b.muscleGroups.some((mg) => priorityMuscles.includes(mg)) ? -1 : 0;
+      const aMatch = a.muscleGroups.some((mg) => priorityMuscles.includes(mg))
+        ? -1
+        : 0;
+      const bMatch = b.muscleGroups.some((mg) => priorityMuscles.includes(mg))
+        ? -1
+        : 0;
       return aMatch - bMatch;
     });
 
@@ -238,22 +290,35 @@ class WorkoutEngineService {
         reps: isTimeBased ? `${holdDuration}s` : repRange,
         duration: isTimeBased ? holdDuration : undefined,
         restTime,
-        rpe: experience === "beginner" ? 6 : experience === "intermediate" ? 7 : 8,
+        rpe:
+          experience === "beginner" ? 6 : experience === "intermediate" ? 7 : 8,
       };
     });
 
     // --- Calorie estimate (MET-based approximation) ---
-    const weight = personalInfo.weight || 70;
+    const weight = personalInfo.weight;
+    if (!weight) {
+      console.warn(
+        "[WorkoutEngine] personalInfo.weight is missing — calorie estimate will be 0",
+      );
+    }
     const metValue = workoutType === "hiit" ? 10 : 6;
-    const estimatedCalories = Math.round(metValue * weight * (timeAvailable / 60));
+    const estimatedCalories = weight
+      ? Math.round(metValue * weight * (timeAvailable / 60))
+      : 0;
 
     const category = workoutType === "hiit" ? "hiit" : "strength";
-    const difficultyLabel: "beginner" | "intermediate" | "advanced" = experience;
+    const difficultyLabel: "beginner" | "intermediate" | "advanced" =
+      experience;
 
     const allEquipment = [...new Set(selected.flatMap((ex) => ex.equipment))];
     const allMuscles = [...new Set(selected.flatMap((ex) => ex.muscleGroups))];
 
-    const goalLabel = wantsHypertrophy ? "Strength" : wantsWeightLoss ? "Fat Burn" : "Fitness";
+    const goalLabel = wantsHypertrophy
+      ? "Strength"
+      : wantsWeightLoss
+        ? "Fat Burn"
+        : "Fitness";
     const title = `${timeAvailable}-min ${workoutType === "hiit" ? "HIIT" : goalLabel} Workout`;
 
     return {
@@ -620,7 +685,7 @@ class WorkoutEngineService {
   }
 
   private generateWorkoutId(): string {
-    return `workout_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
+    return `workout_${Date.now()}_${crypto.randomUUID().replace(/-/g, "").substring(0, 9)}`;
   }
 }
 

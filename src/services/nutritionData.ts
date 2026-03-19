@@ -1,9 +1,13 @@
+import { Platform } from "react-native";
 import * as crypto from "expo-crypto";
 import { supabase } from "./supabase";
 import { crudOperations } from "./crudOperations";
 import { dataBridge } from "./DataBridge";
 import { AuthUser } from "../types/user";
 import { MealLog, SyncStatus } from "../types/localData";
+import { MealLogProvenance } from "../types/nutritionLogging";
+import { analyticsDataService } from "./analyticsData";
+import { nutritionRefreshService } from "./nutritionRefreshService";
 
 // Types for nutrition data
 export interface Food {
@@ -88,6 +92,30 @@ export interface NutritionDataResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
+}
+
+export interface MealLogFoodInput {
+  food_id?: string;
+  quantity_grams: number;
+  name?: string;
+  category?: string;
+  barcode?: string;
+  serving_unit?: string;
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  fiber?: number;
+  sugar?: number;
+  sodium?: number;
+}
+
+export interface LogMealRequest {
+  name: string;
+  type: "breakfast" | "lunch" | "dinner" | "snack";
+  foods: MealLogFoodInput[];
+  provenance?: MealLogProvenance;
+  notes?: string;
 }
 
 class NutritionDataService {
@@ -219,13 +247,13 @@ class NutritionDataService {
         data?.map((mealLog: any) => ({
           id: mealLog.id,
           type: mealLog.meal_type,
-          name: mealLog.meal_name || mealLog.custom_meal_name,
-          total_calories: mealLog.calories || 0,
-          total_protein: mealLog.protein_g || 0,
-          total_carbohydrates: mealLog.carbs_g || 0,
-          total_carbs: mealLog.carbs_g || 0,
-          total_fat: mealLog.fat_g || 0,
-          total_fiber: mealLog.fiber_g || 0,
+          name: mealLog.meal_name,
+          total_calories: mealLog.total_calories || 0,
+          total_protein: mealLog.total_protein || 0,
+          total_carbohydrates: mealLog.total_carbohydrates || 0,
+          total_carbs: mealLog.total_carbohydrates || 0,
+          total_fat: mealLog.total_fat || 0,
+          total_fiber: 0,
           consumed_at: mealLog.logged_at,
           logged_at: mealLog.logged_at,
           food_items: mealLog.food_items || [],
@@ -260,7 +288,10 @@ class NutritionDataService {
         .maybeSingle();
 
       if (error) {
-        console.warn("Diet preferences not found or access denied:", error.message);
+        console.warn(
+          "Diet preferences not found or access denied:",
+          error.message,
+        );
         return {
           success: false,
           error: error.message,
@@ -272,7 +303,10 @@ class NutritionDataService {
         data,
       };
     } catch (error) {
-      console.warn("Error in getUserDietPreferences:", error instanceof Error ? error.message : error);
+      console.warn(
+        "Error in getUserDietPreferences:",
+        error instanceof Error ? error.message : error,
+      );
       return {
         success: false,
         error:
@@ -413,64 +447,82 @@ class NutritionDataService {
    */
   async logMeal(
     userId: string,
-    mealData: {
-      name: string;
-      type: "breakfast" | "lunch" | "dinner" | "snack";
-      foods: {
-        food_id: string;
-        quantity_grams: number;
-      }[];
-    },
+    mealData: LogMealRequest,
   ): Promise<NutritionDataResponse<Meal>> {
     try {
-      // Calculate nutrition totals
-      const nutritionTotals = await this.calculateMealNutrition(mealData.foods);
+      const loggedAt = new Date().toISOString();
+      const resolvedFoods = await this.resolveMealFoods(mealData.foods);
+      const nutritionTotals = this.calculateResolvedNutrition(resolvedFoods);
 
-      // Create meal log for Track B
       const mealLog: MealLog = {
-        id: `meal_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`,
+        id: `meal_${Date.now()}_${crypto.randomUUID().replace(/-/g, "").substring(0, 9)}`,
         userId,
         mealType: mealData.type,
-        foods: mealData.foods.map((f) => ({
-          id: `${f.food_id}_${Date.now()}`,
-          foodId: f.food_id,
+        foods: resolvedFoods.map((f, index) => ({
+          id: `${f.food_id || f.name || "food"}_${Date.now()}_${index}`,
+          foodId: f.food_id || `derived_${index}`,
+          name: f.name,
           quantity: f.quantity_grams,
-          unit: "grams",
-          macros: undefined,
+          unit: f.serving_unit || "grams",
+          calories: f.calories,
+          macros: {
+            protein: f.protein || 0,
+            carbohydrates: f.carbs || 0,
+            fat: f.fat || 0,
+            fiber: f.fiber || 0,
+            sugar: f.sugar || 0,
+            sodium: f.sodium || 0,
+          },
+          provenance: mealData.provenance,
         })),
         totalCalories: nutritionTotals.calories,
         totalMacros: {
           protein: nutritionTotals.protein,
           carbohydrates: nutritionTotals.carbs,
           fat: nutritionTotals.fat,
-          fiber: 0,
+          fiber: nutritionTotals.fiber,
+          sugar: nutritionTotals.sugar,
+          sodium: nutritionTotals.sodium,
         },
-        loggedAt: new Date().toISOString(),
-        notes: mealData.name,
+        loggedAt,
+        notes: mealData.notes || mealData.name,
+        provenance: mealData.provenance,
         syncStatus: SyncStatus.PENDING,
         syncMetadata: {
           lastSyncedAt: undefined,
-          lastModifiedAt: new Date().toISOString(),
+          lastModifiedAt: loggedAt,
           syncVersion: 1,
-          deviceId: "dev-device",
+          deviceId: Platform.OS ?? "unknown",
         },
       };
 
-      // Store using Track B's CRUD operations
       await crudOperations.createMealLog(mealLog);
 
       // Also create in Supabase for immediate access
       const { data, error } = await supabase
-        .from("meals")
+        .from("meal_logs")
         .insert({
+          id: mealLog.id,
           user_id: userId,
-          name: mealData.name,
+          meal_name: mealData.name,
           meal_type: mealData.type,
+          food_items: resolvedFoods,
           total_calories: nutritionTotals.calories,
           total_protein: nutritionTotals.protein,
-          total_carbs: nutritionTotals.carbs,
+          total_carbohydrates: nutritionTotals.carbs,
           total_fat: nutritionTotals.fat,
-          consumed_at: new Date().toISOString(),
+          logging_mode: mealData.provenance?.mode ?? "manual",
+          truth_level: mealData.provenance?.truthLevel ?? "curated",
+          confidence: mealData.provenance?.confidence ?? null,
+          country_context: mealData.provenance?.countryContext ?? null,
+          requires_review: mealData.provenance?.requiresReview ?? false,
+          source_metadata: {
+            source: mealData.provenance?.source ?? null,
+            productIdentity: mealData.provenance?.productIdentity ?? null,
+            conflict: mealData.provenance?.conflict ?? null,
+          },
+          notes: mealData.notes || null,
+          logged_at: loggedAt,
         })
         .select()
         .maybeSingle();
@@ -483,56 +535,36 @@ class NutritionDataService {
         };
       }
 
-      // Create meal_foods entries
-      if (data && mealData.foods.length > 0) {
-        const mealFoodsData = await Promise.all(
-          mealData.foods.map(async (food) => {
-            // Get nutrition for this specific food and quantity
-            const { data: foodData } = await supabase
-              .from("foods")
-              .select(
-                "calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g",
-              )
-              .eq("id", food.food_id)
-              .maybeSingle();
-
-            const multiplier = food.quantity_grams / 100;
-            return {
-              meal_id: data.id,
-              food_id: food.food_id,
-              quantity_grams: food.quantity_grams,
-              calories: foodData
-                ? Math.round(foodData.calories_per_100g * multiplier)
-                : 0,
-              protein: foodData
-                ? Math.round(foodData.protein_per_100g * multiplier * 10) / 10
-                : 0,
-              carbs: foodData
-                ? Math.round(foodData.carbs_per_100g * multiplier * 10) / 10
-                : 0,
-              fat: foodData
-                ? Math.round(foodData.fat_per_100g * multiplier * 10) / 10
-                : 0,
-            };
-          }),
+      analyticsDataService
+        .updateTodaysMetrics(userId, {
+          caloriesConsumed: nutritionTotals.calories,
+          mealsLogged: 1,
+        })
+        .catch((analyticsError) =>
+          console.error("[NutritionData.logMeal] analytics sync failed:", analyticsError),
         );
 
-        const { error: mealFoodsError } = await supabase
-          .from("meal_foods")
-          .insert(mealFoodsData);
-
-        if (mealFoodsError) {
-          console.warn(
-            "Warning: Failed to create meal_foods entries:",
-            mealFoodsError,
-          );
-          // Don't fail the entire operation for this
-        }
-      }
+      nutritionRefreshService
+        .triggerRefresh()
+        .catch((refreshError) =>
+          console.error("[NutritionData.logMeal] refresh failed:", refreshError),
+        );
 
       return {
         success: true,
-        data,
+        data: {
+          id: data.id,
+          user_id: userId,
+          name: mealData.name,
+          type: mealData.type,
+          total_calories: nutritionTotals.calories,
+          total_protein: nutritionTotals.protein,
+          total_carbs: nutritionTotals.carbs,
+          total_fat: nutritionTotals.fat,
+          consumed_at: loggedAt,
+          created_at: data.created_at ?? loggedAt,
+          foods: [],
+        },
       };
     } catch (error) {
       console.error("Error in logMeal:", error);
@@ -546,42 +578,119 @@ class NutritionDataService {
   /**
    * Calculate nutrition totals for a meal
    */
-  private async calculateMealNutrition(
-    foods: { food_id: string; quantity_grams: number }[],
-  ): Promise<{
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-  }> {
-    let totalCalories = 0;
-    let totalProtein = 0;
-    let totalCarbs = 0;
-    let totalFat = 0;
+  private async resolveMealFoods(
+    foods: MealLogFoodInput[],
+  ): Promise<MealLogFoodInput[]> {
+    const resolvedFoods: MealLogFoodInput[] = [];
 
     for (const foodItem of foods) {
+      if (!foodItem.food_id) {
+        resolvedFoods.push({
+          ...foodItem,
+          serving_unit: foodItem.serving_unit || "grams",
+          calories: foodItem.calories || 0,
+          protein: foodItem.protein || 0,
+          carbs: foodItem.carbs || 0,
+          fat: foodItem.fat || 0,
+          fiber: foodItem.fiber || 0,
+          sugar: foodItem.sugar || 0,
+          sodium: foodItem.sodium || 0,
+        });
+        continue;
+      }
+
       const { data: food } = await supabase
         .from("foods")
         .select(
-          "calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g",
+          "name, category, barcode, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g, sugar_per_100g, sodium_per_100g",
         )
         .eq("id", foodItem.food_id)
         .maybeSingle();
 
-      if (food) {
-        const multiplier = foodItem.quantity_grams / 100;
-        totalCalories += food.calories_per_100g * multiplier;
-        totalProtein += food.protein_per_100g * multiplier;
-        totalCarbs += food.carbs_per_100g * multiplier;
-        totalFat += food.fat_per_100g * multiplier;
+      if (!food) {
+        resolvedFoods.push({
+          ...foodItem,
+          serving_unit: foodItem.serving_unit || "grams",
+          calories: foodItem.calories || 0,
+          protein: foodItem.protein || 0,
+          carbs: foodItem.carbs || 0,
+          fat: foodItem.fat || 0,
+          fiber: foodItem.fiber || 0,
+          sugar: foodItem.sugar || 0,
+          sodium: foodItem.sodium || 0,
+        });
+        continue;
       }
+
+      const multiplier = foodItem.quantity_grams / 100;
+      resolvedFoods.push({
+        ...foodItem,
+        name: foodItem.name || food.name,
+        category: foodItem.category || food.category,
+        barcode: foodItem.barcode || food.barcode || undefined,
+        serving_unit: foodItem.serving_unit || "grams",
+        calories:
+          foodItem.calories ?? Math.round((food.calories_per_100g || 0) * multiplier),
+        protein:
+          foodItem.protein ??
+          Math.round((food.protein_per_100g || 0) * multiplier * 10) / 10,
+        carbs:
+          foodItem.carbs ??
+          Math.round((food.carbs_per_100g || 0) * multiplier * 10) / 10,
+        fat:
+          foodItem.fat ?? Math.round((food.fat_per_100g || 0) * multiplier * 10) / 10,
+        fiber:
+          foodItem.fiber ??
+          Math.round(((food.fiber_per_100g || 0) * multiplier) * 10) / 10,
+        sugar:
+          foodItem.sugar ??
+          Math.round(((food.sugar_per_100g || 0) * multiplier) * 10) / 10,
+        sodium:
+          foodItem.sodium ??
+          Math.round(((food.sodium_per_100g || 0) * multiplier) * 100) / 100,
+      });
     }
+
+    return resolvedFoods;
+  }
+
+  private calculateResolvedNutrition(
+    foods: MealLogFoodInput[],
+  ): {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    fiber: number;
+    sugar: number;
+    sodium: number;
+  } {
+    let totalCalories = 0;
+    let totalProtein = 0;
+    let totalCarbs = 0;
+    let totalFat = 0;
+    let totalFiber = 0;
+    let totalSugar = 0;
+    let totalSodium = 0;
+
+    foods.forEach((foodItem) => {
+      totalCalories += foodItem.calories || 0;
+      totalProtein += foodItem.protein || 0;
+      totalCarbs += foodItem.carbs || 0;
+      totalFat += foodItem.fat || 0;
+      totalFiber += foodItem.fiber || 0;
+      totalSugar += foodItem.sugar || 0;
+      totalSodium += foodItem.sodium || 0;
+    });
 
     return {
       calories: Math.round(totalCalories),
       protein: Math.round(totalProtein * 10) / 10,
       carbs: Math.round(totalCarbs * 10) / 10,
       fat: Math.round(totalFat * 10) / 10,
+      fiber: Math.round(totalFiber * 10) / 10,
+      sugar: Math.round(totalSugar * 10) / 10,
+      sodium: Math.round(totalSodium * 100) / 100,
     };
   }
 

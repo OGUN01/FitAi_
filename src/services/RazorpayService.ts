@@ -49,6 +49,14 @@ interface SubscriptionStatusResponse {
   usage: Record<string, number>;
 }
 
+interface SubscriptionLifecycleResponse {
+  message: string;
+  status: string;
+  current_period_end?: string | null;
+  paused_at?: string | null;
+  resumed_at?: string | null;
+}
+
 interface UserInfo {
   email: string;
   name: string;
@@ -157,16 +165,15 @@ class RazorpayService {
 
     if (!response.ok || !json.success) {
       const errorMsg =
-        typeof json.error === 'string'
+        typeof json.error === "string"
           ? json.error
-          : typeof json.error === 'object' && json.error?.message
+          : typeof json.error === "object" && json.error?.message
             ? json.error.message
             : `Request failed with status ${response.status}`;
-      throw new RazorpayServiceError(
-        errorMsg,
-        "API_ERROR",
-        { status: response.status, error: json.error },
-      );
+      throw new RazorpayServiceError(errorMsg, "API_ERROR", {
+        status: response.status,
+        error: json.error,
+      });
     }
 
     return json.data as T;
@@ -178,7 +185,7 @@ class RazorpayService {
    */
   async createSubscription(
     planId: string,
-    billingCycle: 'monthly' | 'yearly',
+    billingCycle: "monthly" | "yearly",
   ): Promise<CreateSubscriptionResponse> {
     return this.request<CreateSubscriptionResponse>(
       API_CONFIG.SUBSCRIPTION_CREATE_ENDPOINT,
@@ -212,7 +219,9 @@ class RazorpayService {
     try {
       if (Platform.OS === "web") {
         // On web, use the Razorpay checkout.js shim
-        const { openRazorpayWebCheckout } = await import("./RazorpayWebCheckout");
+        const { openRazorpayWebCheckout } = await import(
+          "./RazorpayWebCheckout"
+        );
         return await openRazorpayWebCheckout(options);
       }
       // Native platforms: use react-native-razorpay SDK
@@ -239,23 +248,18 @@ class RazorpayService {
 
   /**
    * Sends payment proof to the backend for server-side signature verification.
-   * Returns true if the signature is valid, false otherwise.
+   * Throws if verification fails so callers can surface the real backend error.
    */
   async verifyPayment(
     paymentId: string,
     subscriptionId: string,
     signature: string,
-  ): Promise<boolean> {
-    try {
-      await this.request(API_CONFIG.SUBSCRIPTION_VERIFY_ENDPOINT, "POST", {
-        razorpay_payment_id: paymentId,
-        razorpay_subscription_id: subscriptionId,
-        razorpay_signature: signature,
-      });
-      return true;
-    } catch {
-      return false;
-    }
+  ): Promise<void> {
+    await this.request(API_CONFIG.SUBSCRIPTION_VERIFY_ENDPOINT, "POST", {
+      razorpay_payment_id: paymentId,
+      razorpay_subscription_id: subscriptionId,
+      razorpay_signature: signature,
+    });
   }
 
   /**
@@ -269,16 +273,25 @@ class RazorpayService {
     );
   }
 
-  async cancelSubscription(): Promise<void> {
-    await this.request(API_CONFIG.SUBSCRIPTION_CANCEL_ENDPOINT, "POST");
+  async cancelSubscription(): Promise<SubscriptionLifecycleResponse> {
+    return this.request<SubscriptionLifecycleResponse>(
+      API_CONFIG.SUBSCRIPTION_CANCEL_ENDPOINT,
+      "POST",
+    );
   }
 
-  async pauseSubscription(): Promise<void> {
-    await this.request(API_CONFIG.SUBSCRIPTION_PAUSE_ENDPOINT, "POST");
+  async pauseSubscription(): Promise<SubscriptionLifecycleResponse> {
+    return this.request<SubscriptionLifecycleResponse>(
+      API_CONFIG.SUBSCRIPTION_PAUSE_ENDPOINT,
+      "POST",
+    );
   }
 
-  async resumeSubscription(): Promise<void> {
-    await this.request(API_CONFIG.SUBSCRIPTION_RESUME_ENDPOINT, "POST");
+  async resumeSubscription(): Promise<SubscriptionLifecycleResponse> {
+    return this.request<SubscriptionLifecycleResponse>(
+      API_CONFIG.SUBSCRIPTION_RESUME_ENDPOINT,
+      "POST",
+    );
   }
 }
 

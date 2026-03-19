@@ -148,48 +148,41 @@ export const useAuthStore = create<AuthState>()(
       logout: async (): Promise<AuthResponse> => {
         set({ isLoading: true, error: null });
 
+        let response: AuthResponse = {
+          success: true,
+        };
+
         try {
-          const response = await authService.logout();
-
-          if (response.success) {
-            set({
-              user: null,
-              isAuthenticated: false,
-              isGuestMode: false,
-              guestId: null,
-              isLoading: false,
-              error: null,
-            });
-            authEvents.emit("SIGNED_OUT");
-
-            // Clear all user data (fitness, nutrition, hydration, etc.) to prevent data leaks
-            // Use dynamic import to avoid circular dependency issues
-            try {
-              const { clearAllUserData } = await import('../utils/clearUserData');
-              await clearAllUserData();
-            } catch (clearError) {
-            }
-          } else {
-            set({
-              isLoading: false,
-              error: response.error || "Logout failed",
-            });
-          }
-
-          return response;
+          response = await authService.logout();
         } catch (error) {
           const errorMessage =
             error instanceof Error ? error.message : "Logout failed";
-          set({
-            isLoading: false,
-            error: errorMessage,
-          });
-
-          return {
+          response = {
             success: false,
             error: errorMessage,
           };
+        } finally {
+          set({
+            user: null,
+            isAuthenticated: false,
+            isGuestMode: false,
+            guestId: null,
+            isLoading: false,
+            error: null,
+          });
+          authEvents.emit("SIGNED_OUT");
+
+          // Clear all user data (fitness, nutrition, onboarding, offline queues, etc.) to prevent data leaks
+          // Use dynamic import to avoid circular dependency issues
+          try {
+            const { clearAllUserData } = await import('../utils/clearUserData');
+            await clearAllUserData();
+          } catch (clearError) {
+            console.error("[authStore] Failed to clear user data during logout:", clearError);
+          }
         }
+
+        return response.success ? response : { success: true };
       },
 
       resetPassword: async (email: string): Promise<AuthResponse> => {

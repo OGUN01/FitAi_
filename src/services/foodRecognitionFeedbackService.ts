@@ -34,7 +34,6 @@ export class FoodRecognitionFeedbackService {
     error?: string;
   }> {
     try {
-
       // Calculate overall feedback statistics
       const stats = this.calculateFeedbackStats(feedback, recognizedFoods);
 
@@ -88,7 +87,6 @@ export class FoodRecognitionFeedbackService {
 
       // Update recognition accuracy tracking
       await this.updateAccuracyMetrics(stats);
-
 
       return {
         success: true,
@@ -277,9 +275,13 @@ export class FoodRecognitionFeedbackService {
         .select()
         .single();
       if (accError) {
+        console.error(
+          "❌ Failed to insert recognition accuracy metrics:",
+          accError,
+        );
       }
-
     } catch (error) {
+      console.error("❌ Failed to update accuracy metrics:", error);
     }
   }
 

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -48,21 +48,39 @@ const STATUS_CONFIG: Record<
   { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }
 > = {
   active: { label: "Active", color: "#10B981", icon: "checkmark-circle" },
+  authenticated: { label: "Processing", color: "#F59E0B", icon: "time" },
   paused: { label: "Paused", color: "#F59E0B", icon: "pause-circle" },
   cancelled: { label: "Cancelled", color: "#EF4444", icon: "close-circle" },
   pending: { label: "Pending", color: "#6B7280", icon: "time" },
 };
 
-function formatDate(isoDate: string | null): string {
-  if (!isoDate) return "—";
+function normalizeLifecycleStatus(status?: string): "active" | "paused" | "cancelled" {
+  if (status === "paused") return "paused";
+  if (status === "cancelled") return "cancelled";
+  return "active";
+}
+
+function formatDate(value: string | number | null): string {
+  if (value == null) return "-";
   try {
-    return new Date(isoDate).toLocaleDateString("en-US", {
+    const date =
+      typeof value === "number"
+        ? new Date(value * 1000)
+        : /^\d+$/.test(value)
+          ? new Date(Number(value) * 1000)
+          : new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return "-";
+    }
+
+    return date.toLocaleDateString("en-US", {
       month: "long",
       day: "numeric",
       year: "numeric",
     });
   } catch {
-    return "—";
+    return "-";
   }
 }
 
@@ -93,8 +111,9 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
     usage,
     features,
     currentPeriodEnd,
-    fetchSubscriptionStatus,
-    isLoading: storeLoading,
+    initializeSubscription,
+    applyLifecycleUpdate,
+    isInitialized,
   } = useSubscriptionStore();
 
   const { triggerPaywall, showPaywall, dismiss, paywallReason } = usePaywall();
@@ -104,6 +123,12 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
   const planName = currentPlan?.name ?? "Free Plan";
   const tierColors = TIER_COLORS[tier] ?? TIER_COLORS.free;
   const statusInfo = (tier !== "free" && subscriptionStatus) ? (STATUS_CONFIG[subscriptionStatus] ?? null) : null;
+
+  useEffect(() => {
+    if (!isInitialized) {
+      void initializeSubscription();
+    }
+  }, [initializeSubscription, isInitialized]);
 
   // ---- Usage calculations ----
   const aiMonthly = usage.ai_generation.monthly;
@@ -138,11 +163,16 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
           onPress: async () => {
             setActionLoading("cancel");
             try {
-              await razorpayService.cancelSubscription();
-              await fetchSubscriptionStatus();
+              const result = await razorpayService.cancelSubscription();
+              applyLifecycleUpdate({
+                status: normalizeLifecycleStatus(result.status),
+                current_period_end: result.current_period_end ?? currentPeriodEnd,
+              });
               crossPlatformAlert(
                 "Subscription Cancelled",
-                `You can continue using premium features until ${formatDate(currentPeriodEnd)}.`,
+                `You can continue using premium features until ${formatDate(
+                  result.current_period_end ?? currentPeriodEnd,
+                )}.`,
               );
             } catch (error) {
               const message =
@@ -157,7 +187,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
         },
       ],
     );
-  }, [currentPeriodEnd, fetchSubscriptionStatus]);
+  }, [applyLifecycleUpdate, currentPeriodEnd]);
 
   const handlePause = useCallback(() => {
     haptics.medium();
@@ -171,11 +201,13 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
           onPress: async () => {
             setActionLoading("pause");
             try {
-              await razorpayService.pauseSubscription();
-              await fetchSubscriptionStatus();
+              const result = await razorpayService.pauseSubscription();
+              applyLifecycleUpdate({
+                status: normalizeLifecycleStatus(result.status),
+              });
               crossPlatformAlert(
                 "Subscription Paused",
-                "Your subscription has been paused. Resume anytime to continue.",
+                result.message ?? "Your subscription has been paused. Resume anytime to continue.",
               );
             } catch (error) {
               const message =
@@ -190,17 +222,19 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
         },
       ],
     );
-  }, [fetchSubscriptionStatus]);
+  }, [applyLifecycleUpdate]);
 
   const handleResume = useCallback(async () => {
     haptics.medium();
     setActionLoading("resume");
     try {
-      await razorpayService.resumeSubscription();
-      await fetchSubscriptionStatus();
+      const result = await razorpayService.resumeSubscription();
+      applyLifecycleUpdate({
+        status: normalizeLifecycleStatus(result.status),
+      });
       crossPlatformAlert(
         "Subscription Resumed",
-        "Welcome back! Your premium features are active again.",
+        result.message ?? "Welcome back! Your premium features are active again.",
       );
     } catch (error) {
       const message =
@@ -211,7 +245,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
     } finally {
       setActionLoading(null);
     }
-  }, [fetchSubscriptionStatus]);
+  }, [applyLifecycleUpdate]);
 
   const handleUpgrade = useCallback(() => {
     haptics.light();
@@ -514,6 +548,19 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
                       Resubscribe
                     </Text>
                   </AnimatedPressable>
+                )}
+
+                {subscriptionStatus === "authenticated" && (
+                  <View style={styles.pendingNotice}>
+                    <Ionicons
+                      name="time-outline"
+                      size={rf(18)}
+                      color="#F59E0B"
+                    />
+                    <Text style={styles.pendingNoticeText}>
+                      Payment received. Premium access is being confirmed.
+                    </Text>
+                  </View>
                 )}
               </GlassCard>
             </Animated.View>
@@ -822,6 +869,22 @@ const styles = StyleSheet.create({
   },
   resumeButton: {
     backgroundColor: "rgba(16,185,129,0.08)",
+  },
+  pendingNotice: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rw(10),
+    marginTop: rh(4),
+    paddingVertical: rh(10),
+    paddingHorizontal: rw(12),
+    borderRadius: rw(12),
+    backgroundColor: "rgba(245,158,11,0.08)",
+  },
+  pendingNoticeText: {
+    flex: 1,
+    fontSize: rf(13),
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(18),
   },
 
   // Upgrade CTA

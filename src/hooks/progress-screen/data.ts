@@ -9,6 +9,8 @@
 import { useFitnessStore } from "../../stores/fitnessStore";
 import { useNutritionStore } from "../../stores/nutritionStore";
 import { WeeklyDataPoint } from "./types";
+import { findCompletedSessionForWorkout } from "../../utils/workoutIdentity";
+import { getCurrentWeekStart } from "../../utils/weekUtils";
 
 export const ACTIVITIES_PER_PAGE = 10;
 
@@ -75,7 +77,16 @@ export const buildTodaysData = (): any => {
   ) ?? [];
 
   const workoutProgress = todaysWorkout
-    ? fitnessState.getWorkoutProgress(todaysWorkout.id)?.progress ?? 0
+    ? (
+        findCompletedSessionForWorkout({
+          completedSessions: fitnessState.completedSessions,
+          workout: todaysWorkout,
+          plan: fitnessState.weeklyWorkoutPlan,
+          weekStart: getCurrentWeekStart(),
+        })
+          ? 100
+          : fitnessState.getWorkoutProgress(todaysWorkout.id)?.progress ?? 0
+      )
     : 0;
 
   const mealsCompleted = todaysMeals.filter(
@@ -137,11 +148,7 @@ export const refreshProgressData = async (
     // Build weeklyProgress from store values
     const fitnessState = useFitnessStore.getState();
     const nutritionState = useNutritionStore.getState();
-    const d = new Date();
-    const diff = d.getDay() === 0 ? -6 : 1 - d.getDay();
-    d.setDate(d.getDate() + diff);
-    d.setHours(0, 0, 0, 0);
-    const weekStart = d.toISOString().split("T")[0];
+    const weekStart = getCurrentWeekStart();
 
     const workoutsCompleted = fitnessState.completedSessions.filter(
       (s) => s.type === "planned" && s.weekStart === weekStart

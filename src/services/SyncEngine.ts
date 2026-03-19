@@ -97,7 +97,6 @@ class SyncEngine {
       return;
     }
 
-
     try {
       // Load persisted queue from AsyncStorage
       await this.loadQueue();
@@ -130,12 +129,10 @@ class SyncEngine {
    * Set up auth state listener to auto-sync on login
    */
   private setupAuthListener(): void {
-
     // Subscribe to Supabase auth state changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-
       if (event === "SIGNED_IN" && session?.user) {
         const userId = session.user.id;
         this.setUserId(userId);
@@ -156,7 +153,6 @@ class SyncEngine {
    * Set up network state listener to process queue when online
    */
   private async setupNetworkListener(): Promise<void> {
-
     // Get initial network state
     const state = await NetInfo.fetch();
     this.isOnline = state.isConnected ?? true;
@@ -166,7 +162,6 @@ class SyncEngine {
       (state: NetInfoState) => {
         const wasOffline = !this.isOnline;
         this.isOnline = state.isConnected ?? true;
-
 
         // Process queue when coming back online
         if (wasOffline && this.isOnline && this.queue.length > 0) {
@@ -219,7 +214,6 @@ class SyncEngine {
       userId,
       status: "pending",
     };
-
 
     // Add to queue
     this.queue.push(operation);
@@ -401,7 +395,6 @@ class SyncEngine {
         );
 
         if (conflicts.length > 0) {
-
           // Register last-write-wins as default strategy for this operation
           conflictResolutionService.registerResolutionRule(
             ".*",
@@ -423,7 +416,6 @@ class SyncEngine {
             ...resolution.mergedData,
             updated_at: new Date().toISOString(),
           };
-
         }
       }
     } catch (conflictError) {
@@ -483,6 +475,24 @@ class SyncEngine {
     }
   }
 
+  /**
+   * Reset sync state when a user signs out.
+   * Keeps listeners alive, but clears any data that could leak across accounts.
+   */
+  async resetForLogout(): Promise<void> {
+    this.queue = [];
+    this.userId = null;
+    this.lastSyncAt = null;
+    this.lastError = null;
+    this.isSyncing = false;
+
+    try {
+      await AsyncStorage.multiRemove([QUEUE_STORAGE_KEY, LAST_SYNC_KEY]);
+    } catch (error) {
+      console.error("[SyncEngine] Failed to clear persisted sync state:", error);
+    }
+  }
+
   // ============================================================================
   // SYNC ALL DATA
   // ============================================================================
@@ -495,7 +505,6 @@ class SyncEngine {
   }
 
   private async syncAllInternal(userId: string): Promise<SyncResult> {
-
     if (!this.isOnline) {
       console.warn("[SyncEngine] Cannot sync: offline");
       return {
@@ -538,7 +547,6 @@ class SyncEngine {
    * Sync personal info to profiles table
    */
   async syncPersonalInfo(userId: string, data: any): Promise<void> {
-
     // CRITICAL: Get email from auth session - it's NOT in guest onboarding data
     const {
       data: { session },
@@ -610,14 +618,12 @@ class SyncEngine {
       );
       throw new Error(`Failed to sync personal info: ${error.message}`);
     }
-
   }
 
   /**
    * Sync diet preferences to diet_preferences table
    */
   async syncDietPreferences(userId: string, data: any): Promise<void> {
-
     const dietPreferencesData = {
       user_id: userId,
       diet_type: data.diet_type || data.dietType || "omnivore", // NOT NULL - default to omnivore
@@ -679,14 +685,12 @@ class SyncEngine {
       );
       throw new Error(`Failed to sync diet preferences: ${error.message}`);
     }
-
   }
 
   /**
    * Sync body analysis to body_analysis table
    */
   async syncBodyAnalysis(userId: string, data: any): Promise<void> {
-
     // NO HARDCODED FALLBACKS - if data is missing, onboarding is incomplete
     const bodyAnalysisData = {
       user_id: userId,
@@ -752,14 +756,12 @@ class SyncEngine {
       );
       throw new Error(`Failed to sync body analysis: ${error.message}`);
     }
-
   }
 
   /**
    * Sync workout preferences to workout_preferences table
    */
   async syncWorkoutPreferences(userId: string, data: any): Promise<void> {
-
     // WARN if required fields are missing - indicates incomplete onboarding
     if (!data.location || !data.intensity || !data.activity_level) {
       console.warn(
@@ -815,14 +817,12 @@ class SyncEngine {
       );
       throw new Error(`Failed to sync workout preferences: ${error.message}`);
     }
-
   }
 
   /**
    * Sync advanced review to advanced_review table
    */
   async syncAdvancedReview(userId: string, data: any): Promise<void> {
-
     const advancedReviewData = {
       user_id: userId,
       // Calculated metrics
@@ -962,7 +962,6 @@ class SyncEngine {
       );
       throw new Error(`Failed to sync advanced review: ${error.message}`);
     }
-
   }
 
   // ============================================================================
@@ -979,7 +978,6 @@ class SyncEngine {
     workoutPreferences: any | null;
     advancedReview: any | null;
   }> {
-
     const result: {
       personalInfo: any | null;
       dietPreferences: any | null;
@@ -1002,7 +1000,12 @@ class SyncEngine {
         .eq("id", userId)
         .maybeSingle();
 
-      if (profileData && !profileError) {
+      if (profileError) {
+        console.error(
+          "[SyncEngine] Failed to load profiles:",
+          profileError.message,
+        );
+      } else if (profileData) {
         result.personalInfo = profileData;
       }
 
@@ -1013,7 +1016,12 @@ class SyncEngine {
         .eq("user_id", userId)
         .maybeSingle();
 
-      if (dietData && !dietError) {
+      if (dietError) {
+        console.error(
+          "[SyncEngine] Failed to load diet_preferences:",
+          dietError.message,
+        );
+      } else if (dietData) {
         result.dietPreferences = dietData;
       }
 
@@ -1024,7 +1032,12 @@ class SyncEngine {
         .eq("user_id", userId)
         .maybeSingle();
 
-      if (bodyData && !bodyError) {
+      if (bodyError) {
+        console.error(
+          "[SyncEngine] Failed to load body_analysis:",
+          bodyError.message,
+        );
+      } else if (bodyData) {
         result.bodyAnalysis = bodyData;
       }
 
@@ -1035,7 +1048,12 @@ class SyncEngine {
         .eq("user_id", userId)
         .maybeSingle();
 
-      if (workoutData && !workoutError) {
+      if (workoutError) {
+        console.error(
+          "[SyncEngine] Failed to load workout_preferences:",
+          workoutError.message,
+        );
+      } else if (workoutData) {
         result.workoutPreferences = workoutData;
       }
 
@@ -1046,7 +1064,12 @@ class SyncEngine {
         .eq("user_id", userId)
         .maybeSingle();
 
-      if (advancedData && !advancedError) {
+      if (advancedError) {
+        console.error(
+          "[SyncEngine] Failed to load advanced_review:",
+          advancedError.message,
+        );
+      } else if (advancedData) {
         result.advancedReview = advancedData;
       }
 
@@ -1083,7 +1106,6 @@ class SyncEngine {
    * Cleanup listeners and resources
    */
   destroy(): void {
-
     if (this.authUnsubscribe) {
       this.authUnsubscribe();
       this.authUnsubscribe = null;

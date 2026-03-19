@@ -15,6 +15,12 @@ import { completionTrackingService } from "../services/completionTracking";
 import { calculateWorkoutCalories, ExerciseCalorieInput } from "../services/calorieCalculator";
 import { haptics } from "../utils/haptics";
 import { useSubscriptionStore } from "../stores/subscriptionStore";
+import {
+  findCompletedSessionForWorkout,
+  getWorkoutDayKey,
+  getWorkoutSlotKey,
+} from "../utils/workoutIdentity";
+import { getCurrentWeekStart, getWeekStartForDate } from "../utils/weekUtils";
 
 // Type for completed workout history items
 interface CompletedWorkoutItem {
@@ -121,16 +127,14 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
       const workout = plan?.workouts?.find((w) => w.id === workoutId);
       if (!workout) return;
 
-      const monday = new Date(progress.completedAt);
-      const day = monday.getDay();
-      const diff = day === 0 ? -6 : 1 - day;
-      monday.setDate(monday.getDate() + diff);
-      const weekStart = monday.toISOString().split('T')[0];
+      const weekStart = getWeekStartForDate(progress.completedAt);
 
       addCompletedSession({
         sessionId: progress.sessionId || `backfill-${workoutId}`,
         type: 'planned' as const,
         workoutId,
+        plannedDayKey: getWorkoutDayKey(workout),
+        planSlotKey: getWorkoutSlotKey(workout, plan || undefined),
         workoutSnapshot: {
           title: workout.title,
           category: workout.category || 'general',
@@ -157,8 +161,8 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
   }, [_hasHydrated, completedSessionsHydrated, markCompletedSessionsHydrated]);
 
   // Backfill caloriesBurned for completed workouts that are missing it.
-  // Queries Supabase workout_sessions which always has the real burned calories.
-  // Uses a ref to track attempted workouts so we never loop even if DB has 0 calories.
+  // Reads canonical completedSessions first so values stay attached to the
+  // correct planned slot instead of title-matching across history.
   const backfilledWorkoutIds = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!user?.id || !weeklyWorkoutPlan?.workouts) return;
@@ -179,37 +183,36 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
       bodyAnalysis?.current_weight_kg ||
       profile?.bodyMetrics?.current_weight_kg;
 
-    supabase
-      .from("workout_sessions")
-      .select("workout_name, calories_burned")
-      .eq("user_id", user.id)
-      .eq("is_completed", true)
-      .then(({ data }) => {
-        toBackfill.forEach((w) => {
-          // 1st: use saved value from Supabase
-          const row = data?.find((r) => r.workout_name === w.title);
-          if (row?.calories_burned && row.calories_burned > 0) {
-            updateWorkoutProgress(w.id, 100, { caloriesBurned: row.calories_burned });
-            return;
-          }
-          // 2nd: fall back to MET calculation from exercise list + user weight
-          if (userWeight && userWeight > 0 && w.exercises?.length) {
-            const inputs: ExerciseCalorieInput[] = w.exercises.map((ex: any) => ({
-              exerciseId: ex.exerciseId || ex.id,
-              name: ex.exerciseName || ex.name,
-              sets: ex.sets,
-              reps: ex.reps,
-              duration: ex.duration,
-              restTime: ex.restTime,
-            }));
-            const result = calculateWorkoutCalories(inputs, userWeight);
-            if (result.totalCalories > 0) {
-              updateWorkoutProgress(w.id, 100, { caloriesBurned: result.totalCalories });
-            }
-          }
-        });
+    toBackfill.forEach((w) => {
+      const completedSession = findCompletedSessionForWorkout({
+        completedSessions,
+        workout: w,
+        plan: weeklyWorkoutPlan,
+        weekStart: getCurrentWeekStart(),
       });
-  }, [user?.id, weeklyWorkoutPlan, updateWorkoutProgress]);
+      if (completedSession?.caloriesBurned && completedSession.caloriesBurned > 0) {
+        updateWorkoutProgress(w.id, 100, {
+          caloriesBurned: completedSession.caloriesBurned,
+        });
+        return;
+      }
+
+      if (userWeight && userWeight > 0 && w.exercises?.length) {
+        const inputs: ExerciseCalorieInput[] = w.exercises.map((ex: any) => ({
+          exerciseId: ex.exerciseId || ex.id,
+          name: ex.exerciseName || ex.name,
+          sets: ex.sets,
+          reps: ex.reps,
+          duration: ex.duration,
+          restTime: ex.restTime,
+        }));
+        const result = calculateWorkoutCalories(inputs, userWeight);
+        if (result.totalCalories > 0) {
+          updateWorkoutProgress(w.id, 100, { caloriesBurned: result.totalCalories });
+        }
+      }
+    });
+  }, [user?.id, weeklyWorkoutPlan, updateWorkoutProgress, completedSessions]);
 
   // Get selected day's workouts (array, since there might be multiple per day)
   const selectedDayWorkouts = useMemo(() => {
@@ -261,7 +264,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
         workoutId: s.workoutId,
         title: s.workoutSnapshot.title,
         category: s.workoutSnapshot.category,
-        duration: s.workoutSnapshot.duration,
+        duration: s.durationMinutes || s.workoutSnapshot.duration,
         caloriesBurned: s.caloriesBurned,
         completedAt: s.completedAt,
         progress: 100,
@@ -569,14 +572,15 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
           console.warn('[useFitnessLogic] Failed to delete session from Supabase:', error.message);
         }
       } else {
-        // Fallback: delete by workout_id for this user
+        // Fallback: delete the exact historical completion row only
         const { data: { user } } = await supabase.auth.getUser();
         if (user?.id) {
           const { error } = await supabase
             .from('workout_sessions')
             .delete()
             .eq('workout_id', workout.workoutId)
-            .eq('user_id', user.id);
+            .eq('user_id', user.id)
+            .eq('completed_at', workout.completedAt);
           if (error) {
             console.warn('[useFitnessLogic] Failed to delete session by workout_id:', error.message);
           }
@@ -653,6 +657,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
       selectedDayProgress,
       completedWorkouts,
       weekStats,
+      completedSessions,
       refreshing,
       selectedWorkout,
       showWorkoutStartDialog,

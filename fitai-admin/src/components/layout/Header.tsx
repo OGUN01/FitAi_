@@ -24,8 +24,9 @@ export default function Header({ user }: { user: User }) {
 
   async function handleSignOut() {
     const supabase = createSupabaseClient();
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
     router.replace('/login');
+    router.refresh();
   }
 
   return (

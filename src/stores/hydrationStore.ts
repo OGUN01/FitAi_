@@ -56,10 +56,11 @@ export const useHydrationStore = create<HydrationState>()(
 
       // Add water (main action for UI buttons)
       addWater: (amountML: number) => {
-        const state = get();
-
         // Check if we need to reset for a new day first
-        state.checkAndResetIfNewDay();
+        get().checkAndResetIfNewDay();
+
+        // Re-read after reset so today's intake is always based on today's store state.
+        const state = get();
 
         const newIntake = state.waterIntakeML + amountML;
         // Cap at 150% of goal to prevent accidental over-logging

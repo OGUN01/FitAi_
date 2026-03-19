@@ -97,33 +97,32 @@ class FoodRecognitionService {
     mealType: MealType,
     dietaryRestrictions?: string[],
     portionGrams?: number,
+    region?: string,
+    cuisine?: string,
   ): Promise<FoodRecognitionResult> {
     const startTime = Date.now();
 
     try {
-      console.log(`🔍 Starting food recognition for ${mealType}...`);
-
-      // Check cache first
       const cacheKey = this.generateCacheKey(imageUri, mealType);
       const cachedResult = this.cache.get(cacheKey);
       if (cachedResult) {
-        console.log("✅ Found cached result");
         return cachedResult;
       }
 
-      // Convert image to base64
-      console.log("📸 Converting image to base64...");
       const imageBase64 = await this.convertImageToBase64(imageUri);
 
-      // Call Workers backend
-      console.log("🌐 Calling Cloudflare Workers backend...");
       const userContext: any = {};
-      if (dietaryRestrictions?.length) userContext.dietaryRestrictions = dietaryRestrictions;
-      if (portionGrams && portionGrams > 0) userContext.portionGrams = portionGrams;
+      if (dietaryRestrictions?.length)
+        userContext.dietaryRestrictions = dietaryRestrictions;
+      if (portionGrams && portionGrams > 0)
+        userContext.portionGrams = portionGrams;
+      if (region) userContext.region = region;
+      if (cuisine) userContext.cuisine = cuisine;
       const response = await fitaiWorkersClient.recognizeFood({
         imageBase64,
         mealType,
-        userContext: Object.keys(userContext).length > 0 ? userContext : undefined,
+        userContext:
+          Object.keys(userContext).length > 0 ? userContext : undefined,
       });
 
       if (!response.success || !response.data) {
@@ -158,16 +157,8 @@ class FoodRecognitionService {
         processingTime: Date.now() - startTime,
       };
 
-      // Cache for 24 hours
       this.cache.set(cacheKey, result);
       setTimeout(() => this.cache.delete(cacheKey), 24 * 60 * 60 * 1000);
-
-      console.log(
-        `✅ Food recognition completed in ${result.processingTime}ms`,
-      );
-      console.log(
-        `   Found ${foods.length} items, ${result.overallConfidence}% confidence`,
-      );
 
       return result;
     } catch (error) {

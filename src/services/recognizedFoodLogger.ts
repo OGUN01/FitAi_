@@ -1,7 +1,24 @@
-import { RecognizedFood, MealType } from './foodRecognitionService';
-import { nutritionDataService, Food } from './nutritionData';
-import { supabase } from './supabase';
-import { nutritionRefreshService } from './nutritionRefreshService';
+import { RecognizedFood, MealType } from "./foodRecognitionService";
+import {
+  nutritionDataService,
+  Food,
+  MealLogFoodInput,
+} from "./nutritionData";
+import { supabase } from "./supabase";
+import { nutritionRefreshService } from "./nutritionRefreshService";
+import { MealLogProvenance } from "../types/nutritionLogging";
+
+export interface RecognizedFoodLoggingOptions {
+  provenance?: MealLogProvenance;
+  persistCatalogFoods?: boolean;
+  notes?: string;
+}
+
+type FoodMapping = {
+  recognizedFood: RecognizedFood;
+  databaseFoodId: string;
+  isNewFood: boolean;
+};
 
 /**
  * Service to handle logging recognized foods as meals
@@ -26,7 +43,8 @@ export class RecognizedFoodLogger {
     userId: string,
     recognizedFoods: RecognizedFood[],
     mealType: MealType,
-    customMealName?: string
+    customMealName?: string,
+    options?: RecognizedFoodLoggingOptions,
   ): Promise<{
     success: boolean;
     mealId?: string;
@@ -34,69 +52,66 @@ export class RecognizedFoodLogger {
     error?: string;
   }> {
     try {
-      console.log('🍽️ Starting to log recognized foods:', {
+      console.log("Starting to log recognized foods:", {
         userId,
         foodCount: recognizedFoods.length,
         mealType,
         customMealName,
+        persistCatalogFoods: options?.persistCatalogFoods ?? false,
       });
 
-      // Step 1: Create or find foods in the database
-      const foodMappings = await this.createOrFindFoods(recognizedFoods);
-
-      if (foodMappings.length === 0) {
-        throw new Error('Failed to create food entries in database');
+      if (!recognizedFoods.length) {
+        throw new Error("No recognized foods to log");
       }
 
-      // Step 2: Prepare meal data
-      const mealName = customMealName || this.generateMealName(recognizedFoods, mealType);
-      const totalCalories = recognizedFoods.reduce((sum, food) => sum + food.nutrition.calories, 0);
+      const provenance =
+        options?.provenance ?? this.buildDefaultProvenance(recognizedFoods);
+      const shouldPersistCatalogFoods = options?.persistCatalogFoods ?? false;
+      const foodMappings = shouldPersistCatalogFoods
+        ? await this.createOrFindFoods(recognizedFoods)
+        : [];
 
-      console.log('📊 Meal preparation:', {
-        mealName,
-        totalCalories,
-        foodMappings: foodMappings.length,
-      });
+      const mealName =
+        customMealName || this.generateMealName(recognizedFoods, mealType);
+      const totalCalories = recognizedFoods.reduce(
+        (sum, food) => sum + food.nutrition.calories,
+        0,
+      );
 
-      // Step 3: Log the meal using existing nutrition data service
-      const mealData = {
+      const logResult = await nutritionDataService.logMeal(userId, {
         name: mealName,
         type: mealType,
-        foods: foodMappings.map((mapping) => ({
-          food_id: mapping.databaseFoodId,
-          quantity_grams: mapping.recognizedFood.userGrams ?? mapping.recognizedFood.estimatedGrams,
-        })),
-      };
-
-      const logResult = await nutritionDataService.logMeal(userId, mealData);
-
-      if (!logResult.success) {
-        throw new Error(logResult.error || 'Failed to log meal');
-      }
-
-      console.log('✅ Successfully logged recognized foods as meal:', {
-        mealId: logResult.data?.id,
-        totalCalories,
-        foodCount: recognizedFoods.length,
+        foods: this.buildMealFoods(recognizedFoods, foodMappings, provenance),
+        provenance,
+        notes: options?.notes,
       });
 
-      // Step 4: Store additional metadata for food recognition tracking
-      await this.storeRecognitionMetadata(logResult.data!.id, recognizedFoods, foodMappings);
+      if (!logResult.success || !logResult.data) {
+        throw new Error(logResult.error || "Failed to log meal");
+      }
 
-      // Step 5: Trigger nutrition data refresh for real-time UI updates
-      await nutritionRefreshService.refreshAfterMealLogged(userId, logResult.data!);
+      await this.storeRecognitionMetadata(
+        logResult.data.id,
+        recognizedFoods,
+        foodMappings,
+        provenance,
+      );
+      await nutritionRefreshService.refreshAfterMealLogged(
+        userId,
+        logResult.data,
+      );
 
       return {
         success: true,
-        mealId: logResult.data!.id,
+        mealId: logResult.data.id,
         totalCalories: Math.round(totalCalories),
-        // meal removed from return type for type safety
       };
     } catch (error) {
-      console.error('❌ Failed to log recognized foods:', error);
+      console.error("Failed to log recognized foods:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
   }
@@ -104,26 +119,19 @@ export class RecognizedFoodLogger {
   /**
    * Create or find foods in the database from recognized foods
    */
-  private async createOrFindFoods(recognizedFoods: RecognizedFood[]): Promise<
-    {
-      recognizedFood: RecognizedFood;
-      databaseFoodId: string;
-      isNewFood: boolean;
-    }[]
-  > {
-    const foodMappings: {
-      recognizedFood: RecognizedFood;
-      databaseFoodId: string;
-      isNewFood: boolean;
-    }[] = [];
+  private async createOrFindFoods(
+    recognizedFoods: RecognizedFood[],
+  ): Promise<FoodMapping[]> {
+    const foodMappings: FoodMapping[] = [];
 
     for (const recognizedFood of recognizedFoods) {
       try {
-        // Step 1: Try to find existing food by name
-        const existingFood = await this.findExistingFood(recognizedFood.name);
+        const existingFood = await this.findExistingFood(
+          recognizedFood.name,
+          (recognizedFood as any).barcode,
+        );
 
         if (existingFood) {
-          console.log(`✅ Found existing food: ${recognizedFood.name} -> ${existingFood.id}`);
           foodMappings.push({
             recognizedFood,
             databaseFoodId: existingFood.id,
@@ -132,22 +140,17 @@ export class RecognizedFoodLogger {
           continue;
         }
 
-        // Step 2: Create new food entry
         const newFood = await this.createFoodFromRecognized(recognizedFood);
 
         if (newFood) {
-          console.log(`🆕 Created new food: ${recognizedFood.name} -> ${newFood.id}`);
           foodMappings.push({
             recognizedFood,
             databaseFoodId: newFood.id,
             isNewFood: true,
           });
-        } else {
-          console.warn(`⚠️ Failed to create food: ${recognizedFood.name}`);
         }
       } catch (error) {
-        console.error(`❌ Error processing food ${recognizedFood.name}:`, error);
-        // Continue with other foods even if one fails
+        console.error(`Error processing food ${recognizedFood.name}:`, error);
       }
     }
 
@@ -155,19 +158,33 @@ export class RecognizedFoodLogger {
   }
 
   /**
-   * Find existing food in database by name (fuzzy matching)
+   * Find existing food in database by barcode or name
    */
-  private async findExistingFood(foodName: string): Promise<Food | null> {
+  private async findExistingFood(
+    foodName: string,
+    barcode?: string,
+  ): Promise<Food | null> {
     try {
-      // Try exact match first
+      if (barcode) {
+        const { data: barcodeMatches, error: barcodeError } = await supabase
+          .from("foods")
+          .select("*")
+          .eq("barcode", barcode)
+          .limit(1);
+
+        if (!barcodeError && barcodeMatches && barcodeMatches.length > 0) {
+          return barcodeMatches[0];
+        }
+      }
+
       let { data, error } = await supabase
-        .from('foods')
-        .select('*')
-        .ilike('name', foodName)
+        .from("foods")
+        .select("*")
+        .ilike("name", foodName)
         .limit(1);
 
       if (error) {
-        console.error('Error searching for existing food:', error);
+        console.error("Error searching for existing food:", error);
         return null;
       }
 
@@ -175,27 +192,33 @@ export class RecognizedFoodLogger {
         return data[0];
       }
 
-      // Try fuzzy match with cleaned name
       const cleanedName = foodName
         .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, '')
+        .replace(/[^a-z0-9\s]/g, "")
         .trim();
-      const searchTerms = cleanedName.split(' ').filter((term) => term.length > 2);
+      const searchTerms = cleanedName
+        .split(" ")
+        .filter((term) => term.length > 2);
 
       if (searchTerms.length > 0) {
-        const searchQuery = searchTerms.map((term) => `name.ilike.%${term}%`).join(',');
+        const searchQuery = searchTerms
+          .map((term) => `name.ilike.%${term}%`)
+          .join(",");
 
-        ({ data, error } = await supabase.from('foods').select('*').or(searchQuery).limit(1));
+        ({ data, error } = await supabase
+          .from("foods")
+          .select("*")
+          .or(searchQuery)
+          .limit(1));
 
         if (!error && data && data.length > 0) {
-          console.log(`🔍 Fuzzy matched: "${foodName}" -> "${data[0].name}"`);
           return data[0];
         }
       }
 
       return null;
     } catch (error) {
-      console.error('Error in findExistingFood:', error);
+      console.error("Error in findExistingFood:", error);
       return null;
     }
   }
@@ -203,24 +226,35 @@ export class RecognizedFoodLogger {
   /**
    * Create new food entry from recognized food
    */
-  private async createFoodFromRecognized(recognizedFood: RecognizedFood): Promise<Food | null> {
+  private async createFoodFromRecognized(
+    recognizedFood: RecognizedFood,
+  ): Promise<Food | null> {
     try {
-      // Prefer nutritionPer100g already provided by the Worker.
-      // If missing (legacy / edge case), scale from per-serving values.
-      // Guard: estimatedGrams must be > 0 to avoid Infinity / NaN.
       const safeGrams = Math.max(recognizedFood.estimatedGrams, 1);
       const per100g = recognizedFood.nutritionPer100g ?? {
         calories: Math.round((recognizedFood.nutrition.calories / safeGrams) * 100),
-        protein:  Math.round(((recognizedFood.nutrition.protein  / safeGrams) * 100) * 10) / 10,
-        carbs:    Math.round(((recognizedFood.nutrition.carbs    / safeGrams) * 100) * 10) / 10,
-        fat:      Math.round(((recognizedFood.nutrition.fat      / safeGrams) * 100) * 10) / 10,
-        fiber:    Math.round(((recognizedFood.nutrition.fiber    / safeGrams) * 100) * 10) / 10,
+        protein:
+          Math.round(
+            ((recognizedFood.nutrition.protein / safeGrams) * 100) * 10,
+          ) / 10,
+        carbs:
+          Math.round(
+            ((recognizedFood.nutrition.carbs / safeGrams) * 100) * 10,
+          ) / 10,
+        fat:
+          Math.round(((recognizedFood.nutrition.fat / safeGrams) * 100) * 10) /
+          10,
+        fiber:
+          Math.round(
+            ((recognizedFood.nutrition.fiber / safeGrams) * 100) * 10,
+          ) / 10,
       };
 
-      // Sanity-check: if per100g contains Infinity/NaN (guard failed somehow), zero them out
       for (const key of Object.keys(per100g) as Array<keyof typeof per100g>) {
         const val = per100g[key];
-        if (val === undefined || !isFinite(val)) per100g[key] = 0;
+        if (val === undefined || !isFinite(val)) {
+          per100g[key] = 0;
+        }
       }
 
       const foodData = {
@@ -231,21 +265,26 @@ export class RecognizedFoodLogger {
         carbs_per_100g: per100g.carbs,
         fat_per_100g: per100g.fat,
         fiber_per_100g: per100g.fiber || null,
+        sugar_per_100g: recognizedFood.nutritionPer100g?.sugar ?? null,
+        sodium_per_100g: recognizedFood.nutritionPer100g?.sodium ?? null,
+        barcode: (recognizedFood as any).barcode ?? null,
         created_at: new Date().toISOString(),
       };
 
-      console.log('🆕 Creating new food:', foodData);
-
-      const { data, error } = await supabase.from('foods').insert(foodData).select().single();
+      const { data, error } = await supabase
+        .from("foods")
+        .insert(foodData)
+        .select()
+        .single();
 
       if (error) {
-        console.error('Error creating food:', error);
+        console.error("Error creating food:", error);
         return null;
       }
 
       return data;
     } catch (error) {
-      console.error('Error in createFoodFromRecognized:', error);
+      console.error("Error in createFoodFromRecognized:", error);
       return null;
     }
   }
@@ -253,7 +292,10 @@ export class RecognizedFoodLogger {
   /**
    * Generate a descriptive meal name from recognized foods
    */
-  private generateMealName(recognizedFoods: RecognizedFood[], mealType: MealType): string {
+  private generateMealName(
+    recognizedFoods: RecognizedFood[],
+    mealType: MealType,
+  ): string {
     if (recognizedFoods.length === 1) {
       return recognizedFoods[0].name;
     }
@@ -262,19 +304,19 @@ export class RecognizedFoodLogger {
       return `${recognizedFoods[0].name} & ${recognizedFoods[1].name}`;
     }
 
-    // For multiple foods, create a descriptive name
     const mainFoods = recognizedFoods.slice(0, 2);
     const remainingCount = recognizedFoods.length - 2;
 
-    let mealName = mainFoods.map((food) => food.name).join(', ');
+    let mealName = mainFoods.map((food) => food.name).join(", ");
 
     if (remainingCount > 0) {
-      mealName += ` & ${remainingCount} more item${remainingCount !== 1 ? 's' : ''}`;
+      mealName += ` & ${remainingCount} more item${remainingCount !== 1 ? "s" : ""}`;
     }
 
-    // Add meal type context if it's a complex meal
-    const cuisineTypes = [...new Set(recognizedFoods.map((food) => food.cuisine))];
-    if (cuisineTypes.length === 1 && cuisineTypes[0] === 'indian') {
+    const cuisineTypes = [
+      ...new Set(recognizedFoods.map((food) => food.cuisine)),
+    ];
+    if (cuisineTypes.length === 1 && cuisineTypes[0] === "indian") {
       mealName = `${mealType.charAt(0).toUpperCase() + mealType.slice(1)} - ${mealName}`;
     }
 
@@ -285,53 +327,57 @@ export class RecognizedFoodLogger {
    * Store additional metadata for food recognition tracking and accuracy improvement
    */
   private async storeRecognitionMetadata(
-    mealId: string,
+    mealLogId: string,
     recognizedFoods: RecognizedFood[],
-    foodMappings: { recognizedFood: RecognizedFood; databaseFoodId: string; isNewFood: boolean }[]
+    foodMappings: FoodMapping[],
+    provenance: MealLogProvenance,
   ): Promise<void> {
     try {
       const metadata = {
-        meal_id: mealId,
+        meal_log_id: mealLogId,
         recognition_data: {
           totalFoods: recognizedFoods.length,
           averageConfidence:
             recognizedFoods.reduce((sum, food) => sum + food.confidence, 0) /
             recognizedFoods.length,
           cuisineTypes: [...new Set(recognizedFoods.map((food) => food.cuisine))],
-          newFoodsCreated: foodMappings.filter((mapping) => mapping.isNewFood).length,
+          newFoodsCreated: foodMappings.filter((mapping) => mapping.isNewFood)
+            .length,
+          provenance,
           recognizedAt: new Date().toISOString(),
-          foods: recognizedFoods.map((food, index) => ({
-            id: food.id,
-            name: food.name,
-            confidence: food.confidence,
-            cuisine: food.cuisine,
-            estimatedGrams: food.estimatedGrams,
-            userGrams: food.userGrams,
-            databaseFoodId: foodMappings[index]?.databaseFoodId,
-            isNewFood: foodMappings[index]?.isNewFood,
-          })),
+          foods: recognizedFoods.map((food) => {
+            const mapping = foodMappings.find(
+              (item) => item.recognizedFood.id === food.id,
+            );
+            return {
+              id: food.id,
+              name: food.name,
+              confidence: food.confidence,
+              cuisine: food.cuisine,
+              estimatedGrams: food.estimatedGrams,
+              userGrams: food.userGrams,
+              databaseFoodId: mapping?.databaseFoodId,
+              isNewFood: mapping?.isNewFood,
+            };
+          }),
         },
         created_at: new Date().toISOString(),
       };
 
-      // Store in meal_recognition_metadata table (if it exists)
       const { error: metaError } = await supabase
-        .from('meal_recognition_metadata')
+        .from("meal_recognition_metadata")
         .insert(metadata)
         .select()
         .single();
+
       if (metaError) {
-        // Table might not exist, which is fine for now
         console.log(
-          'Recognition metadata storage skipped (table may not exist):',
-          metaError.message
+          "Recognition metadata storage skipped (table may not exist):",
+          metaError.message,
         );
       }
-
-      console.log('📊 Recognition metadata stored successfully');
     } catch (error) {
-      console.warn('Warning: Failed to store recognition metadata:', error);
-      // Don't fail the entire operation for metadata storage issues
+      console.warn("Warning: Failed to store recognition metadata:", error);
     }
   }
 
@@ -340,7 +386,7 @@ export class RecognizedFoodLogger {
    */
   async getRecognitionStats(
     userId: string,
-    days: number = 30
+    days: number = 30,
   ): Promise<{
     totalRecognitions: number;
     averageConfidence: number;
@@ -352,13 +398,13 @@ export class RecognizedFoodLogger {
       startDate.setDate(startDate.getDate() - days);
 
       const { data, error } = await supabase
-        .from('meal_recognition_metadata')
-        .select('*')
-        .gte('created_at', startDate.toISOString())
-        .order('created_at', { ascending: false });
+        .from("meal_recognition_metadata")
+        .select("*")
+        .gte("created_at", startDate.toISOString())
+        .order("created_at", { ascending: false });
 
       if (error) {
-        console.error('Error fetching recognition stats:', error);
+        console.error("Error fetching recognition stats:", error);
         return {
           totalRecognitions: 0,
           averageConfidence: 0,
@@ -375,30 +421,28 @@ export class RecognizedFoodLogger {
       };
 
       if (data && data.length > 0) {
-        // Calculate average confidence
         const totalConfidence = data.reduce((sum, record) => {
           return sum + (record.recognition_data?.averageConfidence || 0);
         }, 0);
         stats.averageConfidence = totalConfidence / data.length;
 
-        // Build cuisine breakdown
         data.forEach((record) => {
           const cuisines = record.recognition_data?.cuisineTypes || [];
           cuisines.forEach((cuisine: string) => {
-            stats.cuisineBreakdown[cuisine] = (stats.cuisineBreakdown[cuisine] || 0) + 1;
+            stats.cuisineBreakdown[cuisine] =
+              (stats.cuisineBreakdown[cuisine] || 0) + 1;
           });
         });
 
-        // Build accuracy trends
         stats.accuracyTrends = data.map((record) => ({
-          date: record.created_at.split('T')[0],
+          date: record.created_at.split("T")[0],
           confidence: record.recognition_data?.averageConfidence || 0,
         }));
       }
 
       return stats;
     } catch (error) {
-      console.error('Error in getRecognitionStats:', error);
+      console.error("Error in getRecognitionStats:", error);
       return {
         totalRecognitions: 0,
         averageConfidence: 0,
@@ -406,6 +450,57 @@ export class RecognizedFoodLogger {
         accuracyTrends: [],
       };
     }
+  }
+
+  private buildDefaultProvenance(
+    recognizedFoods: RecognizedFood[],
+  ): MealLogProvenance {
+    const avgConfidence =
+      recognizedFoods.length > 0
+        ? recognizedFoods.reduce((sum, food) => sum + food.confidence, 0) /
+          recognizedFoods.length
+        : null;
+
+    return {
+      mode: "meal_photo",
+      truthLevel: "estimated",
+      confidence: avgConfidence,
+      countryContext: "IN",
+      requiresReview: true,
+      source: "food-recognition",
+    };
+  }
+
+  private buildMealFoods(
+    recognizedFoods: RecognizedFood[],
+    foodMappings: FoodMapping[],
+    provenance: MealLogProvenance,
+  ): MealLogFoodInput[] {
+    const mappingByFoodId = new Map(
+      foodMappings.map((mapping) => [mapping.recognizedFood.id, mapping]),
+    );
+    const omitEstimatedMicronutrients =
+      provenance.mode === "meal_photo" && provenance.truthLevel === "estimated";
+
+    return recognizedFoods.map((food) => {
+      const mapping = mappingByFoodId.get(food.id);
+      return {
+        food_id: mapping?.databaseFoodId,
+        quantity_grams: food.userGrams ?? food.estimatedGrams,
+        name: food.name,
+        category: food.category,
+        barcode: (food as any).barcode,
+        serving_unit: "grams",
+        calories: food.nutrition.calories,
+        protein: food.nutrition.protein,
+        carbs: food.nutrition.carbs,
+        fat: food.nutrition.fat,
+        fiber: omitEstimatedMicronutrients ? undefined : food.nutrition.fiber,
+        sugar: omitEstimatedMicronutrients ? undefined : food.nutrition.sugar,
+        sodium:
+          omitEstimatedMicronutrients ? undefined : food.nutrition.sodium,
+      };
+    });
   }
 }
 

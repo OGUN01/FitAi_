@@ -294,7 +294,7 @@ export class BackupRecoveryService {
         checksum: "",
         version: data.version,
         deviceId: await this.getDeviceId(),
-        userId: data.user?.profile?.id || "unknown",
+        userId: data.user?.profile?.id || "",
         description:
           description || `${type} backup created on ${startTime.toISOString()}`,
         dataTypes: this.getDataTypes(data),
@@ -487,7 +487,6 @@ export class BackupRecoveryService {
 
       // Update available backups
       await this.updateAvailableBackups();
-
     } catch (error) {
       console.error(`Failed to delete backup ${backupId}:`, error);
       throw error;

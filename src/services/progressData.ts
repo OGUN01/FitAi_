@@ -229,7 +229,7 @@ class ProgressDataService {
 
       // Create body measurement for Track B
       const bodyMeasurement: BodyMeasurement = {
-        id: `progress_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`,
+        id: `progress_${Date.now()}_${crypto.randomUUID().replace(/-/g, "").substring(0, 9)}`,
         date: entryDate,
         weight: entryData.weight_kg,
         bodyFat: entryData.body_fat_percentage,
@@ -245,16 +245,19 @@ class ProgressDataService {
       // Upsert to Supabase — handles logging weight multiple times on the same day
       const { data, error } = await supabase
         .from("progress_entries")
-        .upsert({
-          user_id: userId,
-          entry_date: entryDate,
-          weight_kg: entryData.weight_kg,
-          body_fat_percentage: entryData.body_fat_percentage,
-          muscle_mass_kg: entryData.muscle_mass_kg,
-          measurements: entryData.measurements || {},
-          progress_photos: entryData.progress_photos || [],
-          notes: entryData.notes,
-        }, { onConflict: "user_id,entry_date" })
+        .upsert(
+          {
+            user_id: userId,
+            entry_date: entryDate,
+            weight_kg: entryData.weight_kg,
+            body_fat_percentage: entryData.body_fat_percentage,
+            muscle_mass_kg: entryData.muscle_mass_kg,
+            measurements: entryData.measurements || {},
+            progress_photos: entryData.progress_photos || [],
+            notes: entryData.notes,
+          },
+          { onConflict: "user_id,entry_date" },
+        )
         .select()
         .single();
 
@@ -272,8 +275,11 @@ class ProgressDataService {
           weightKg: entryData.weight_kg,
         });
       } catch (analyticsError) {
+        console.error(
+          "Failed to update analytics metrics after progress entry:",
+          analyticsError,
+        );
       }
-
 
       return {
         success: true,
@@ -363,9 +369,10 @@ class ProgressDataService {
         current: latest.weight_kg,
         previous: previous.weight_kg,
         change: Math.round(rawWeightChange * 100) / 100,
-        changePercentage: previous.weight_kg > 0
-          ? Math.round((rawWeightChange / previous.weight_kg) * 10000) / 100
-          : 0,
+        changePercentage:
+          previous.weight_kg > 0
+            ? Math.round((rawWeightChange / previous.weight_kg) * 10000) / 100
+            : 0,
       };
 
       // Calculate body fat change
@@ -575,7 +582,7 @@ class ProgressDataService {
       measurements: (measurement as any).measurements || {},
       progress_photos: measurement.photos || [],
       notes: measurement.notes,
-      recorded_at: measurement.date,  // kept for legacy consumers; column is optional
+      recorded_at: measurement.date, // kept for legacy consumers; column is optional
       created_at: measurement.date,
     };
   }

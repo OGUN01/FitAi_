@@ -554,7 +554,6 @@ export class MigrationManager {
    * Resume an interrupted migration from the last checkpoint
    */
   async resumeMigration(userId: string): Promise<MigrationResult> {
-
     const checkpoint = await this.loadCheckpoint();
     if (!checkpoint) {
       return {
@@ -591,7 +590,6 @@ export class MigrationManager {
         duration: 0,
       } as any;
     }
-
 
     // Update checkpoint to show we're resuming
     checkpoint.status = "in_progress";
@@ -678,7 +676,6 @@ export class MigrationManager {
   async rollbackMigration(
     userId: string,
   ): Promise<{ success: boolean; message: string }> {
-
     const checkpoint = await this.loadCheckpoint();
 
     try {
@@ -690,7 +687,6 @@ export class MigrationManager {
 
       // Step 2: Clear any partially uploaded remote data
       if (checkpoint && checkpoint.completedSteps.length > 0) {
-
         // Delete data from Supabase for each completed step
         for (const step of checkpoint.completedSteps.reverse()) {
           try {
@@ -754,7 +750,6 @@ export class MigrationManager {
         break;
 
       case "uploadFitnessData":
-        // Delete workout data
         await supabase.from("workouts").delete().eq("user_id", userId);
         await supabase.from("workout_sessions").delete().eq("user_id", userId);
         break;
@@ -768,7 +763,7 @@ export class MigrationManager {
       case "uploadProgressData":
         // Delete progress data
         await supabase.from("progress_entries").delete().eq("user_id", userId);
-        await supabase.from("body_measurements").delete().eq("user_id", userId);
+        await supabase.from("body_analysis").delete().eq("user_id", userId);
         break;
 
       default:
@@ -843,7 +838,6 @@ export class MigrationManager {
    */
   async checkProfileMigrationNeeded(userId: string): Promise<boolean> {
     try {
-
       // Set user ID in data manager
       dataBridge.setUserId(userId);
 
@@ -887,13 +881,11 @@ export class MigrationManager {
    * Start profile data migration process
    */
   async startProfileMigration(userId: string): Promise<MigrationResult> {
-
     try {
       // Use DataBridge for the actual migration
       const result = await dataBridge.migrateGuestToUser(userId);
 
       if (result.success) {
-
         // Update migration history
         const attempt: MigrationAttempt = {
           id: `profile_${Date.now()}`,
@@ -1019,7 +1011,6 @@ export class MigrationManager {
    */
   async testMigrationFlow(userId: string): Promise<void> {
     try {
-
       // Step 0: Test localStorage methods directly
       await dataBridge.testLocalStorageMethods();
 
@@ -1031,7 +1022,6 @@ export class MigrationManager {
 
       // Step 3: Test profile data validation
       const validationResult = await this.validateProfileData();
-
     } catch (error) {
       console.error("❌ Migration flow test failed:", error);
     }
@@ -1042,7 +1032,6 @@ export class MigrationManager {
    */
   async setupTestEnvironment(userId: string): Promise<boolean> {
     try {
-
       // Set user ID
       dataBridge.setUserId(userId);
 

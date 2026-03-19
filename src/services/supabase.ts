@@ -47,23 +47,21 @@ export interface Database {
       profiles: {
         Row: {
           id: string;
-          email: string;
+          first_name: string | null;
+          last_name: string | null;
           name: string;
+          email: string;
           age: number | null;
           gender: "male" | "female" | "other" | null;
-          height_cm: number | null;
-          weight_kg: number | null;
-          activity_level:
-            | "sedentary"
-            | "light"
-            | "moderate"
-            | "active"
-            | "extreme"
-            | null;
+          occupation_type: string | null;
+          country: string | null;
+          region: string | null;
+          state: string | null;
           profile_picture: string | null;
           units: "metric" | "imperial";
           notifications_enabled: boolean;
           dark_mode: boolean;
+          subscription_tier: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -71,21 +69,19 @@ export interface Database {
           id: string;
           email: string;
           name: string;
+          first_name?: string | null;
+          last_name?: string | null;
           age?: number | null;
           gender?: "male" | "female" | "other" | null;
-          height_cm?: number | null;
-          weight_kg?: number | null;
-          activity_level?:
-            | "sedentary"
-            | "light"
-            | "moderate"
-            | "active"
-            | "extreme"
-            | null;
+          occupation_type?: string | null;
+          country?: string | null;
+          region?: string | null;
+          state?: string | null;
           profile_picture?: string | null;
           units?: "metric" | "imperial";
           notifications_enabled?: boolean;
           dark_mode?: boolean;
+          subscription_tier?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -93,21 +89,19 @@ export interface Database {
           id?: string;
           email?: string;
           name?: string;
+          first_name?: string | null;
+          last_name?: string | null;
           age?: number | null;
           gender?: "male" | "female" | "other" | null;
-          height_cm?: number | null;
-          weight_kg?: number | null;
-          activity_level?:
-            | "sedentary"
-            | "light"
-            | "moderate"
-            | "active"
-            | "extreme"
-            | null;
+          occupation_type?: string | null;
+          country?: string | null;
+          region?: string | null;
+          state?: string | null;
           profile_picture?: string | null;
           units?: "metric" | "imperial";
           notifications_enabled?: boolean;
           dark_mode?: boolean;
+          subscription_tier?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -158,14 +152,23 @@ export interface Database {
           id: string;
           user_id: string;
           workout_id: string;
+          workout_plan_id: string | null;
+          workout_name: string | null;
+          workout_type: string | null;
+          duration: number | null;
+          total_duration_minutes: number | null;
+          calories_burned: number | null;
+          exercises: object | null; // JSONB
+          exercises_completed: object | null; // JSONB
+          is_completed: boolean;
+          is_extra: boolean | null;
+          rating: number | null;
+          enjoyment_rating: number | null;
+          notes: string | null;
           started_at: string;
           completed_at: string | null;
-          duration_minutes: number;
-          calories_burned: number;
-          exercises_data: string;
-          notes: string | null;
-          rating: number | null;
-          is_completed: boolean;
+          cache_id: string | null;
+          generation_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -190,6 +193,12 @@ export interface Database {
           total_protein: number;
           total_carbohydrates: number;
           total_fat: number;
+          logging_mode: "barcode" | "label" | "meal_photo" | "manual" | null;
+          truth_level: "authoritative" | "curated" | "estimated" | null;
+          confidence: number | null;
+          country_context: string | null;
+          requires_review: boolean;
+          source_metadata: object; // JSONB
           notes: string | null;
           logged_at: string;
           created_at: string;
@@ -204,6 +213,12 @@ export interface Database {
           total_protein?: number;
           total_carbohydrates?: number;
           total_fat?: number;
+          logging_mode?: "barcode" | "label" | "meal_photo" | "manual" | null;
+          truth_level?: "authoritative" | "curated" | "estimated" | null;
+          confidence?: number | null;
+          country_context?: string | null;
+          requires_review?: boolean;
+          source_metadata?: object;
           notes?: string | null;
           logged_at?: string;
         };

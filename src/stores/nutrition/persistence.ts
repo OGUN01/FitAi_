@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { SyncStatus } from "../../types/localData";
 import { crudOperations } from "../../services/crudOperations";
 import { supabase } from "../../services/supabase";
@@ -85,13 +86,12 @@ export const createPersistenceActions = (
             lastSyncedAt: undefined,
             lastModifiedAt: new Date().toISOString(),
             syncVersion: 1,
-            deviceId: "dev-device",
+            deviceId: Platform.OS ?? "unknown",
           },
         };
 
         await crudOperations.createMealLog(mealLog);
       }
-
     } catch (error) {
       console.error("❌ Failed to persist nutrition data:", error);
     }
@@ -99,7 +99,6 @@ export const createPersistenceActions = (
 
   loadData: async () => {
     try {
-
       const currentMealProgress = get().mealProgress;
 
       const plan = await get().loadWeeklyMealPlan();
@@ -113,7 +112,6 @@ export const createPersistenceActions = (
       const mealLogs = await crudOperations.readMealLogs(
         new Date().toISOString().split("T")[0],
       );
-
     } catch (error) {
       console.error("❌ Failed to load nutrition data:", error);
     }

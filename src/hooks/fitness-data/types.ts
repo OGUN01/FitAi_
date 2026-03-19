@@ -51,14 +51,16 @@ export interface UseFitnessDataReturn {
   createWorkout: (workoutData: {
     name: string;
     type: string;
-    duration_minutes?: number;
+    duration?: number;
+    total_duration_minutes?: number;
     calories_burned?: number;
     notes?: string;
   }) => Promise<boolean>;
   completeWorkout: (
     workoutId: string,
     completionData: {
-      duration_minutes?: number;
+      duration?: number;
+      total_duration_minutes?: number;
       calories_burned?: number;
       notes?: string;
     },
@@ -103,13 +105,15 @@ export interface ExerciseFilters {
 export interface WorkoutData {
   name: string;
   type: string;
-  duration_minutes?: number;
+  duration?: number;
+  total_duration_minutes?: number;
   calories_burned?: number;
   notes?: string;
 }
 
 export interface CompletionData {
-  duration_minutes?: number;
+  duration?: number;
+  total_duration_minutes?: number;
   calories_burned?: number;
   notes?: string;
 }

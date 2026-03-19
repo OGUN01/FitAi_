@@ -193,7 +193,7 @@ export const MealEditModal: React.FC<MealEditModalProps> = ({
           .from("meals")
           .update({
             name: mealName.trim(),
-            type: mealType,
+            meal_type: mealType,
             timing: mealTime,
             total_calories: nutrition.calories,
             total_protein: nutrition.protein,

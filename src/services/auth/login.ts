@@ -15,7 +15,7 @@ function mapLoginError(error: any, email?: string): string {
 
   // Email not confirmed
   if (
-    msg.includes("email") && msg.includes("confirm") ||
+    (msg.includes("email") && msg.includes("confirm")) ||
     msg.includes("not confirmed") ||
     msg.includes("Email not confirmed")
   ) {
@@ -28,7 +28,7 @@ function mapLoginError(error: any, email?: string): string {
     msg.includes("invalid_credentials") ||
     msg.includes("Invalid email or password")
   ) {
-    return "Invalid email or password. If you signed up with Google, please use the \"Continue with Google\" button instead.";
+    return 'Invalid email or password. If you signed up with Google, please use the "Continue with Google" button instead.';
   }
 
   // Too many attempts
@@ -37,7 +37,11 @@ function mapLoginError(error: any, email?: string): string {
   }
 
   // Account disabled
-  if (msg.includes("banned") || msg.includes("blocked") || msg.includes("disabled")) {
+  if (
+    msg.includes("banned") ||
+    msg.includes("blocked") ||
+    msg.includes("disabled")
+  ) {
     return "This account has been disabled. Please contact support.";
   }
 
@@ -97,7 +101,9 @@ export async function login(
       await AsyncStorage.setItem("auth_session", JSON.stringify(session));
 
       // Clear any stale offline sync queue from previous sessions
-      await AsyncStorage.removeItem(SYNC_QUEUE_KEY).catch(() => {});
+      await AsyncStorage.removeItem(SYNC_QUEUE_KEY).catch((err) => {
+        console.error("Failed to clear sync queue during login:", err);
+      });
 
       // Set user ID in data bridge for potential migration
       dataBridge.setUserId(authUser.id);

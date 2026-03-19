@@ -129,8 +129,6 @@ export const createBarcodeHandlers = (
 
       const healthAssessment = generateHealthAssessment(product);
 
-      incrementUsage('barcode_scan');
-
       setScannedProduct(product);
       setProductHealthAssessment(healthAssessment);
       setShowProductModal(true);

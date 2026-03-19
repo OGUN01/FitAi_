@@ -3,7 +3,6 @@
  * Save and load operations for personal info data
  */
 
-import { useUserStore } from "../../stores/userStore";
 import { useProfileStore } from "../../stores/profileStore";
 import { syncEngine } from "../SyncEngine";
 import { PersonalInfoService } from "../onboardingService";
@@ -17,7 +16,6 @@ export async function savePersonalInfo(
   data: PersonalInfoData | PersonalInfo,
   currentUserId: string | null,
 ): Promise<SaveResult> {
-
   const result: SaveResult = {
     success: true,
     errors: [],
@@ -28,12 +26,6 @@ export async function savePersonalInfo(
     // Update ProfileStore (LOCAL SYNC - SSOT for onboarding data)
     const profileStore = useProfileStore.getState();
     profileStore.updatePersonalInfo(data as PersonalInfoData);
-
-    // NOTE: userStore.updatePersonalInfo is DEPRECATED
-    // Keeping for backward compatibility but it will be removed
-    // All new code should use profileStore only
-    const userStore = useUserStore.getState();
-    userStore.updatePersonalInfo(data as PersonalInfo);
 
     // Save to database if authenticated (REMOTE SYNC)
     if (currentUserId) {

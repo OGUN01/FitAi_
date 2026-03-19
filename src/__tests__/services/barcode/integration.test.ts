@@ -1,8 +1,36 @@
+jest.mock("@/services/sqliteFood", () => ({
+  sqliteFood: {
+    isDatabaseReady: jest.fn(() => false),
+    lookupBarcode: jest.fn(),
+  },
+}));
+
+jest.mock("@/services/supabase", () => ({
+  supabase: {
+    rpc: jest.fn((fnName: string) => {
+      if (fnName === "lookup_barcode") {
+        return Promise.resolve({ data: [], error: null });
+      }
+      return Promise.resolve({ data: null, error: null });
+    }),
+  },
+}));
+
+jest.mock("@/services/fitaiWorkersClient", () => ({
+  __esModule: true,
+  default: {
+    estimateNutrition: jest.fn(),
+  },
+}));
+
 import barcodeService from "@/services/barcodeService";
 import type { ProductLookupResult } from "@/services/barcodeService";
+import fitaiWorkersClient from "@/services/fitaiWorkersClient";
 
 const originalFetch = global.fetch;
-const originalEnv = { ...process.env };
+const mockedWorkersClient = fitaiWorkersClient as unknown as {
+  estimateNutrition: jest.Mock;
+};
 
 function makeOFFResponse(overrides: Record<string, unknown> = {}) {
   return {
@@ -37,59 +65,20 @@ function makeOFFNotFound() {
   return { status: 0, product: null };
 }
 
-function makeUPCitemdbResponse(overrides: Record<string, unknown> = {}) {
-  return {
-    items: [
-      {
-        title: "UPC Product Name",
-        brand: "UPC Brand",
-        ...overrides,
-      },
-    ],
-  };
-}
-
-function makeGeminiResponse(overrides: Record<string, unknown> = {}) {
-  const nutrition = {
-    calories_kcal: 450,
-    protein_g: 8,
-    carbs_g: 65,
-    fat_g: 18,
-    fiber_g: 2,
-    sugar_g: 25,
-    sodium_mg: 150,
-    confidence_0_to_100: 85,
-    ...overrides,
-  };
-  return {
-    candidates: [
-      {
-        content: {
-          parts: [{ text: JSON.stringify(nutrition) }],
-        },
-      },
-    ],
-  };
-}
-
 beforeEach(() => {
   global.fetch = jest.fn();
   jest.useRealTimers();
-  process.env.EXPO_PUBLIC_GEMINI_API_KEY = "test-gemini-key";
+  mockedWorkersClient.estimateNutrition.mockReset();
   barcodeService.clearCache();
 });
 
 afterEach(() => {
   global.fetch = originalFetch;
   jest.restoreAllMocks();
-  delete process.env.EXPO_PUBLIC_GEMINI_API_KEY;
-  Object.keys(process.env).forEach((key) => {
-    if (!(key in originalEnv)) delete process.env[key];
-  });
 });
 
 describe("lookupProduct integration", () => {
-  it("1. Happy path — EAN-13 found on OFF with full nutrition", async () => {
+  it("returns a packaged product from OFF world with full nutrition", async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () =>
@@ -130,25 +119,30 @@ describe("lookupProduct integration", () => {
     expect(p.source).toBe("openfoodfacts");
   });
 
-  it("2. Happy path — Indian product found on OFF", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () =>
-        makeOFFResponse({
-          product_name: "Parle-G Biscuits",
-          brands: "Parle",
-          nutriments: {
-            "energy-kcal_100g": 462,
-            "energy-kcal": 462,
-            proteins_100g: 6.7,
-            carbohydrates_100g: 72.3,
-            fat_100g: 16.7,
-            fiber_100g: 2.4,
-            sugars_100g: 26.9,
-            salt_100g: 0.85,
-          },
-        }),
-    });
+  it("falls back to OFF India for an Indian barcode when world misses", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => makeOFFNotFound(),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () =>
+          makeOFFResponse({
+            product_name: "Parle-G Biscuits",
+            brands: "Parle",
+            nutriments: {
+              "energy-kcal_100g": 462,
+              "energy-kcal": 462,
+              proteins_100g: 6.7,
+              carbohydrates_100g: 72.3,
+              fat_100g: 16.7,
+              fiber_100g: 2.4,
+              sugars_100g: 26.9,
+              salt_100g: 0.85,
+            },
+          }),
+      });
 
     const result = await barcodeService.lookupProduct("8901234567890");
 
@@ -158,9 +152,10 @@ describe("lookupProduct integration", () => {
     expect(p.gs1Country).toBe("India");
     expect(p.needsNutritionEstimate).toBe(false);
     expect(p.nutrition.calories).toBe(462);
+    expect(p.source).toBe("openfoodfacts-india");
   });
 
-  it("3. Fallback — OFF miss, UPCitemdb hit", async () => {
+  it("returns failure when no trusted barcode source finds the product", async () => {
     (global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
@@ -168,39 +163,17 @@ describe("lookupProduct integration", () => {
       })
       .mockResolvedValueOnce({
         ok: true,
-        json: async () =>
-          makeUPCitemdbResponse({
-            title: "Granola Bar",
-            brand: "Nature Valley",
-          }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => makeGeminiResponse(),
+        json: async () => makeOFFNotFound(),
       });
 
     const result = await barcodeService.lookupProduct("4006381333931");
 
-    expect(result.success).toBe(true);
-    expect(result.product).toBeDefined();
-    const p = result.product!;
-    expect(p.name).toBe("Granola Bar");
-    expect(p.source).toContain("upcitemdb");
-  });
-
-  it("4. Fallback — everything fails → null-like result", async () => {
-    (global.fetch as jest.Mock)
-      .mockRejectedValueOnce(new Error("OFF down"))
-      .mockRejectedValueOnce(new Error("UPCitemdb down"));
-
-    const result = await barcodeService.lookupProduct("4006381333932");
-
     expect(result.success).toBe(false);
     expect(result.product).toBeUndefined();
+    expect(mockedWorkersClient.estimateNutrition).not.toHaveBeenCalled();
   });
 
-  it("5. UPC-A normalization — 12 digits padded to 13", async () => {
+  it("normalizes UPC-A barcodes before lookup", async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => makeOFFResponse(),
@@ -213,7 +186,7 @@ describe("lookupProduct integration", () => {
     expect(calledUrl).toContain("openfoodfacts.org");
   });
 
-  it("6. Invalid barcode → failure without calling fetch", async () => {
+  it("fails fast on invalid barcodes without calling fetch", async () => {
     const result = await barcodeService.lookupProduct("ABC123");
 
     expect(result.success).toBe(false);
@@ -222,7 +195,7 @@ describe("lookupProduct integration", () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
-  it("7. Cache hit — second call returns from cache, fetch called once", async () => {
+  it("returns cached products on repeated lookups", async () => {
     const barcode = "3017620422099";
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
@@ -242,7 +215,7 @@ describe("lookupProduct integration", () => {
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
-  it("8. Indian barcode skips UPCitemdb when OFF misses", async () => {
+  it("does not invent nutrition for Indian barcodes with no trusted identity", async () => {
     (global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
@@ -250,93 +223,76 @@ describe("lookupProduct integration", () => {
       })
       .mockResolvedValueOnce({
         ok: true,
-        status: 200,
-        json: async () => makeGeminiResponse(),
+        json: async () => makeOFFNotFound(),
       });
 
     const result = await barcodeService.lookupProduct("8901234567891");
 
-    expect(result.success).toBe(true);
-    const urls = (global.fetch as jest.Mock).mock.calls.map(
-      (c: unknown[]) => c[0] as string,
-    );
-    expect(urls.length).toBe(2);
-    expect(urls[0]).toContain("openfoodfacts.org");
-    expect(urls[1]).toContain("generativelanguage.googleapis.com");
-    expect(urls.every((u: string) => !u.includes("upcitemdb"))).toBe(true);
+    expect(result.success).toBe(false);
+    expect(mockedWorkersClient.estimateNutrition).not.toHaveBeenCalled();
   });
 
-  it("9. OFF timeout → fallback to UPCitemdb", async () => {
-    jest.useFakeTimers();
-
-    (global.fetch as jest.Mock)
-      .mockImplementationOnce(
-        () =>
-          new Promise((resolve) => {
-            setTimeout(
-              () => resolve({ ok: true, json: async () => makeOFFResponse() }),
-              60000,
-            );
-          }),
-      )
-      .mockImplementationOnce(() =>
-        Promise.resolve({
-          ok: true,
-          json: async () =>
-            makeUPCitemdbResponse({ title: "Fallback Item", brand: "FB" }),
+  it("uses AI estimation only after a trusted product identity is found", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () =>
+        makeOFFResponse({
+          product_name: "Mystery Snack",
+          product_name_en: "Mystery Snack",
+          brands: "SnackCo",
+          nutriments: {},
+          nutrition_grades: undefined,
+          nova_group: undefined,
         }),
-      )
-      .mockImplementationOnce(() =>
-        Promise.resolve({
-          ok: true,
-          status: 200,
-          json: async () => makeGeminiResponse(),
-        }),
-      );
-
-    const promise = barcodeService.lookupProduct("4006381333934");
-
-    jest.advanceTimersByTime(6000);
-
-    const result = await promise;
-
-    expect(result.success).toBe(true);
-    expect(result.product).toBeDefined();
-    expect(result.product!.source).toContain("upcitemdb");
-
-    jest.useRealTimers();
-  });
-
-  it("10. Gemini estimation wired — OFF has name only, no nutrition", async () => {
-    (global.fetch as jest.Mock)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () =>
-          makeOFFResponse({
-            product_name: "Mystery Snack",
-            product_name_en: "Mystery Snack",
-            brands: "SnackCo",
-            nutriments: {},
-            nutrition_grades: undefined,
-            nova_group: undefined,
-          }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => makeGeminiResponse(),
-      });
+    });
+    mockedWorkersClient.estimateNutrition.mockResolvedValueOnce({
+      success: true,
+      data: {
+        calories: 450,
+        protein: 8,
+        carbs: 65,
+        fat: 18,
+        fiber: 2,
+        sugar: 25,
+        sodium: 150,
+        confidence: 85,
+        isAIEstimated: true,
+      },
+    });
 
     const result = await barcodeService.lookupProduct("3017620422055");
 
     expect(result.success).toBe(true);
     expect(result.product).toBeDefined();
     const p = result.product!;
-    expect(p.source).toContain("gemini-estimation");
+    expect(p.source).toBe("openfoodfacts+gemini-estimation");
+    expect(p.isAIEstimated).toBe(true);
+    expect(p.confidence).toBe(40);
     expect(p.nutrition.calories).toBe(450);
     expect(p.nutrition.protein).toBe(8);
     expect(p.nutrition.carbs).toBe(65);
     expect(p.nutrition.fat).toBe(18);
     expect(p.needsNutritionEstimate).toBe(false);
+  });
+
+  it("continues to OFF India when OFF world fails", async () => {
+    (global.fetch as jest.Mock)
+      .mockRejectedValueOnce(new Error("Timeout after 5000ms"))
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: async () =>
+            makeOFFResponse({
+              product_name: "Fallback India Product",
+              product_name_en: "Fallback India Product",
+            }),
+        }),
+      );
+
+    const result = await barcodeService.lookupProduct("8901234567892");
+
+    expect(result.success).toBe(true);
+    expect(result.product).toBeDefined();
+    expect(result.product!.source).toBe("openfoodfacts-india");
   });
 });

@@ -79,9 +79,6 @@ interface OFFv2Product {
   labels_tags?: string[];
 }
 
-
-
-
 export async function estimateNutritionWithAI(
   productName: string,
   brand: string,
@@ -93,8 +90,12 @@ export async function estimateNutritionWithAI(
       brand,
       gs1Country,
     );
-    if (!response.success || !response.data) return null;
+    if (!response.success || !response.data) {
+      console.warn("[BarcodeAI] Nutrition estimate unavailable:", response.error);
+      return null;
+    }
     const d = response.data;
+    const cappedConfidence = Math.min(Math.max(d.confidence ?? 0, 0), 40);
     return {
       nutrition: {
         calories: d.calories,
@@ -104,20 +105,21 @@ export async function estimateNutritionWithAI(
         fiber: d.fiber,
         sugar: d.sugar,
         sodium: d.sodium,
-        source: "workers-gemini-estimation",
-        confidence: d.confidence,
+        source: "gemini-estimation",
+        confidence: cappedConfidence,
       },
       productInfo: {
         name: productName,
         brand,
         gs1Country,
       },
-      source: "workers-gemini-estimation",
+      source: "gemini-estimation",
       needsNutritionEstimate: false,
-      confidence: d.confidence,
+      confidence: cappedConfidence,
       isAIEstimated: true,
     };
-  } catch {
+  } catch (error) {
+    console.warn("[BarcodeAI] Nutrition estimate failed:", error);
     return null;
   }
 }
@@ -129,12 +131,23 @@ export function clearBarcodeCache(): void {
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms),
-    ),
-  ]);
+  return new Promise<T>((resolve, reject) => {
+    const timeoutId = setTimeout(
+      () => reject(new Error(`Timeout after ${ms}ms`)),
+      ms,
+    );
+
+    promise.then(
+      (value) => {
+        clearTimeout(timeoutId);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      },
+    );
+  });
 }
 
 export class FreeNutritionAPIs {
@@ -153,7 +166,6 @@ export class FreeNutritionAPIs {
    */
   async enhanceNutritionData(foodName: string): Promise<NutritionData | null> {
     try {
-
       // Check cache first
       const cacheKey = foodName.toLowerCase().trim();
       const cached = this.cache.get(cacheKey);
@@ -535,6 +547,7 @@ export class FreeNutritionAPIs {
         }
       }
     } catch (error) {
+      console.error("OpenFoodFacts barcode lookup failed:", error);
     }
 
     if (offResult) {
@@ -568,7 +581,9 @@ export class FreeNutritionAPIs {
     try {
       const offIndiaUrl = `https://in.openfoodfacts.org/api/v2/product/${barcode}?fields=product_name,product_name_en,brands,nutriments,ingredients_text,allergens_tags,nutrition_grades,nova_group,image_front_url,countries_tags,labels_tags`;
       const offIndiaResponse = await withTimeout(
-        fetch(offIndiaUrl, { headers: { "User-Agent": "FitAI/1.0 (fitai@example.com)" } }),
+        fetch(offIndiaUrl, {
+          headers: { "User-Agent": "FitAI/1.0 (fitai@example.com)" },
+        }),
         5000,
       );
       if (offIndiaResponse.ok) {
@@ -576,7 +591,9 @@ export class FreeNutritionAPIs {
         if (offIndiaData.status === 1 && offIndiaData.product) {
           const p = offIndiaData.product as OFFv2Product;
           const n = p.nutriments || {};
-          const hasNutrition = Boolean(n["energy-kcal_100g"] || n["energy-kcal"]);
+          const hasNutrition = Boolean(
+            n["energy-kcal_100g"] || n["energy-kcal"],
+          );
           offIndiaResult = {
             nutrition: hasNutrition
               ? {
@@ -597,7 +614,8 @@ export class FreeNutritionAPIs {
               imageUrl: p.image_front_url || undefined,
               ingredients: p.ingredients_text || undefined,
               allergens:
-                p.allergens_tags?.map((t: string) => t.replace("en:", "")) || [],
+                p.allergens_tags?.map((t: string) => t.replace("en:", "")) ||
+                [],
               labels:
                 p.labels_tags?.map((t: string) => t.replace("en:", "")) || [],
               nutriScore: p.nutrition_grades || undefined,
@@ -610,10 +628,15 @@ export class FreeNutritionAPIs {
           };
         }
       }
-    } catch (_offIndiaErr) {}
+    } catch (offIndiaErr) {
+      console.error("[NutritionAPIs] OFF India lookup failed:", offIndiaErr);
+    }
 
     if (offIndiaResult) {
-      if (offIndiaResult.needsNutritionEstimate && offIndiaResult.productInfo.name) {
+      if (
+        offIndiaResult.needsNutritionEstimate &&
+        offIndiaResult.productInfo.name
+      ) {
         const aiResult = await estimateNutritionWithAI(
           offIndiaResult.productInfo.name,
           offIndiaResult.productInfo.brand || "",

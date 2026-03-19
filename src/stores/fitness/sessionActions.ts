@@ -1,4 +1,5 @@
-import { storeLogger } from '../../utils/logger';
+import { Platform } from "react-native";
+import { storeLogger } from "../../utils/logger";
 import { DayWorkout } from "../../ai";
 import { generateUUID } from "../../utils/uuid";
 import { FitnessState, CurrentWorkoutSession } from "./types";
@@ -55,7 +56,7 @@ export const createSessionActions = (
           lastSyncedAt: undefined,
           lastModifiedAt: new Date().toISOString(),
           syncVersion: 1,
-          deviceId: "dev-device",
+          deviceId: Platform.OS ?? "unknown",
         },
       };
 
@@ -82,7 +83,9 @@ export const createSessionActions = (
 
       return sessionId;
     } catch (error) {
-      storeLogger.error('Failed to start workout session', { error: String(error) });
+      storeLogger.error("Failed to start workout session", {
+        error: String(error),
+      });
       throw error;
     }
   },
@@ -101,9 +104,10 @@ export const createSessionActions = (
       await get().completeWorkout(currentSession.workoutId, sessionId);
 
       set({ currentWorkoutSession: null });
-
     } catch (error) {
-      storeLogger.error('Failed to end workout session', { error: String(error) });
+      storeLogger.error("Failed to end workout session", {
+        error: String(error),
+      });
       throw error;
     }
   },

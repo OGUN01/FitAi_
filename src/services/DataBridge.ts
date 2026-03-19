@@ -113,7 +113,8 @@ interface MigrationResult {
 const ONBOARDING_DATA_KEY = "onboarding_data";
 const WORKOUT_SESSIONS_KEY = "workout_sessions";
 const MEAL_LOGS_KEY = "meal_logs";
-const BODY_MEASUREMENTS_KEY = "body_measurements";
+const BODY_ANALYSIS_KEY = "body_analysis";
+const LEGACY_BODY_MEASUREMENTS_KEY = "body_measurements";
 
 // ============================================================================
 // DATA BRIDGE CLASS - UNIFIED NEW ARCHITECTURE
@@ -131,8 +132,7 @@ class DataBridge {
     SHADOW_MODE: false,
   };
 
-  private constructor() {
-  }
+  private constructor() {}
 
   static getInstance(): DataBridge {
     if (!DataBridge.instance) {
@@ -167,9 +167,7 @@ class DataBridge {
 
   setUserId(userId: string | null): void {
     this.currentUserId = userId;
-    if (userId) {
-      syncEngine.setUserId(userId);
-    }
+    syncEngine.setUserId(userId);
   }
 
   getUserId(): string | null {
@@ -245,7 +243,6 @@ class DataBridge {
   }
 
   private async loadFromLocal(): Promise<AllDataResult> {
-
     try {
       // Check ProfileStore first
       const profileStore = useProfileStore.getState();
@@ -309,7 +306,6 @@ class DataBridge {
   }
 
   private async loadFromDatabase(userId: string): Promise<AllDataResult> {
-
     try {
       const [
         personalInfo,
@@ -318,11 +314,26 @@ class DataBridge {
         workoutPreferences,
         advancedReview,
       ] = await Promise.all([
-        PersonalInfoService.load(userId).catch(() => null),
-        DietPreferencesService.load(userId).catch(() => null),
-        BodyAnalysisService.load(userId).catch(() => null),
-        WorkoutPreferencesService.load(userId).catch(() => null),
-        AdvancedReviewService.load(userId).catch(() => null),
+        PersonalInfoService.load(userId).catch((e) => {
+          console.error("Failed to load personalInfo:", e);
+          return null;
+        }),
+        DietPreferencesService.load(userId).catch((e) => {
+          console.error("Failed to load dietPreferences:", e);
+          return null;
+        }),
+        BodyAnalysisService.load(userId).catch((e) => {
+          console.error("Failed to load bodyAnalysis:", e);
+          return null;
+        }),
+        WorkoutPreferencesService.load(userId).catch((e) => {
+          console.error("Failed to load workoutPreferences:", e);
+          return null;
+        }),
+        AdvancedReviewService.load(userId).catch((e) => {
+          console.error("Failed to load advancedReview:", e);
+          return null;
+        }),
       ]);
 
       // Update ProfileStore with loaded data (SSOT for onboarding data)
@@ -664,7 +675,6 @@ class DataBridge {
    * Handles nested structures like bodyAnalysis.measurements
    */
   private transformBodyAnalysisForDB(data: any): BodyAnalysisData {
-
     // Check if data is in old format (nested measurements)
     if (data.measurements) {
       const transformed: any = {
@@ -722,7 +732,6 @@ class DataBridge {
    * Transform old workoutPreferences format to new database format
    */
   private transformWorkoutPreferencesForDB(data: any): WorkoutPreferencesData {
-
     // Map old field names to new ones
     const transformed: any = {
       location: data.location,
@@ -754,7 +763,6 @@ class DataBridge {
   }
 
   async migrateGuestToUser(userId: string): Promise<MigrationResult> {
-
     const result: MigrationResult = {
       success: true,
       migratedKeys: [],
@@ -862,7 +870,6 @@ class DataBridge {
       // Remote sync failures are handled by retry mechanism
       result.success = result.localSyncKeys!.length > 0;
 
-
       return result;
     } catch (error) {
       console.error("[MIGRATION] Critical error:", error);
@@ -925,16 +932,47 @@ class DataBridge {
 
   async clearLocalData(): Promise<void> {
     try {
+      this.currentUserId = null;
+
       // Clear ProfileStore
       const profileStore = useProfileStore.getState();
       profileStore.reset();
 
-      // Clear AsyncStorage
-      await AsyncStorage.removeItem(ONBOARDING_DATA_KEY);
-      await AsyncStorage.removeItem(WORKOUT_SESSIONS_KEY);
-      await AsyncStorage.removeItem(MEAL_LOGS_KEY);
-      await AsyncStorage.removeItem(BODY_MEASUREMENTS_KEY);
+      // Clear sync/offline state that can leak across shared devices
+      await syncEngine.resetForLogout().catch((error) => {
+        console.error("[DataBridge] Failed to reset sync engine during clearLocalData:", error);
+      });
 
+      // Clear AsyncStorage
+      const keysToRemove = [
+        ONBOARDING_DATA_KEY,
+        WORKOUT_SESSIONS_KEY,
+        MEAL_LOGS_KEY,
+        BODY_ANALYSIS_KEY,
+        LEGACY_BODY_MEASUREMENTS_KEY,
+        "auth_session",
+        "onboarding_completed",
+        "profileEditIntent",
+      ];
+
+      try {
+        const allKeys = await AsyncStorage.getAllKeys();
+        for (const key of allKeys) {
+          if (key.startsWith("onboarding_") || key.startsWith("onboarding_partial_")) {
+            keysToRemove.push(key);
+          }
+        }
+      } catch (error) {
+        console.error("[DataBridge] Failed to enumerate AsyncStorage keys during clearLocalData:", error);
+      }
+
+      await Promise.all(
+        Array.from(new Set(keysToRemove)).map((key) =>
+          AsyncStorage.removeItem(key).catch((error) => {
+            console.error(`[DataBridge] Failed to remove AsyncStorage key "${key}":`, error);
+          }),
+        ),
+      );
     } catch (error) {
       console.error("[DataBridge] clearLocalData error:", error);
     }
@@ -1062,15 +1100,19 @@ class DataBridge {
     try {
       const existingStr = await AsyncStorage.getItem(MEAL_LOGS_KEY);
       const existing = existingStr ? JSON.parse(existingStr) : [];
+      const id = mealLog.id || Date.now().toString();
+      if (existing.some((log: any) => log.id === id)) {
+        return true;
+      }
       existing.unshift({
         ...mealLog,
-        id: mealLog.id || Date.now().toString(),
+        id,
         createdAt: new Date().toISOString(),
       });
       await AsyncStorage.setItem(
         MEAL_LOGS_KEY,
         JSON.stringify(existing.slice(0, 500)),
-      ); // Keep last 500
+      );
       return true;
     } catch (error) {
       console.error("[DataBridge] storeMealLog error:", error);
@@ -1100,17 +1142,27 @@ class DataBridge {
 
   async storeBodyMeasurement(measurement: any): Promise<boolean> {
     try {
-      const existingStr = await AsyncStorage.getItem(BODY_MEASUREMENTS_KEY);
-      const existing = existingStr ? JSON.parse(existingStr) : [];
+      const legacyStr = await AsyncStorage.getItem(
+        LEGACY_BODY_MEASUREMENTS_KEY,
+      );
+      const existingStr = await AsyncStorage.getItem(BODY_ANALYSIS_KEY);
+      const existing = existingStr
+        ? JSON.parse(existingStr)
+        : legacyStr
+          ? JSON.parse(legacyStr)
+          : [];
+      if (legacyStr && !existingStr) {
+        await AsyncStorage.removeItem(LEGACY_BODY_MEASUREMENTS_KEY);
+      }
       existing.unshift({
         ...measurement,
         id: measurement.id || Date.now().toString(),
         createdAt: new Date().toISOString(),
       });
       await AsyncStorage.setItem(
-        BODY_MEASUREMENTS_KEY,
+        BODY_ANALYSIS_KEY,
         JSON.stringify(existing.slice(0, 100)),
-      ); // Keep last 100
+      );
       return true;
     } catch (error) {
       console.error("[DataBridge] storeBodyMeasurement error:", error);
@@ -1120,8 +1172,20 @@ class DataBridge {
 
   async getBodyMeasurements(limit: number = 10): Promise<any[]> {
     try {
-      const dataStr = await AsyncStorage.getItem(BODY_MEASUREMENTS_KEY);
-      const measurements = dataStr ? JSON.parse(dataStr) : [];
+      const dataStr = await AsyncStorage.getItem(BODY_ANALYSIS_KEY);
+      if (!dataStr) {
+        const legacyStr = await AsyncStorage.getItem(
+          LEGACY_BODY_MEASUREMENTS_KEY,
+        );
+        if (legacyStr) {
+          await AsyncStorage.setItem(BODY_ANALYSIS_KEY, legacyStr);
+          await AsyncStorage.removeItem(LEGACY_BODY_MEASUREMENTS_KEY);
+          const measurements = JSON.parse(legacyStr);
+          return measurements.slice(0, limit);
+        }
+        return [];
+      }
+      const measurements = JSON.parse(dataStr);
       return measurements.slice(0, limit);
     } catch (error) {
       console.error("[DataBridge] getBodyMeasurements error:", error);

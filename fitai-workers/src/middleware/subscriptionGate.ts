@@ -52,6 +52,15 @@ export interface SubscriptionContext {
 
 // Grace period: 'active', 'authenticated', 'pending' all grant access
 const ACCESS_GRANTING_STATUSES: readonly SubscriptionStatus[] = ['active', 'authenticated', 'pending'];
+const FALLBACK_FREE_FEATURES: FeatureLimitConfig = {
+	ai_generations_per_day: undefined,
+	ai_generations_per_month: 1,
+	scans_per_day: 10,
+	unlimited_scans: false,
+	unlimited_ai: false,
+	analytics: false,
+	coaching: false,
+};
 
 function extractFeatures(plan: SubscriptionPlanRow): FeatureLimitConfig {
 	return {
@@ -97,12 +106,22 @@ export function subscriptionGateMiddleware(featureKey: FeatureKey, periodType: P
 				)
 				.eq('user_id', userId)
 				.in('status', ACCESS_GRANTING_STATUSES as unknown as string[])
-				.order('created_at', { ascending: false })
+				.order('updated_at', { ascending: false })
 				.limit(1)
 				.maybeSingle();
 
 			if (error) {
-				// Query error — treat as no subscription and fall through to free plan
+				console.error('[SubscriptionGate] DB query error:', error);
+				return c.json(
+					{
+						success: false,
+						error: {
+							code: ErrorCode.INTERNAL_ERROR,
+							message: 'Failed to verify subscription status',
+						},
+					},
+					500,
+				);
 			}
 
 			if (data) {
@@ -124,36 +143,8 @@ export function subscriptionGateMiddleware(featureKey: FeatureKey, periodType: P
 		}
 
 		if (!subscription) {
-			try {
-				const { data: freePlan, error: freeError } = await supabase.from('subscription_plans').select('*').eq('tier', 'free').single();
-
-				if (freeError || !freePlan) {
-					return c.json(
-						{
-							success: false,
-							error: {
-								code: ErrorCode.INTERNAL_ERROR,
-								message: 'Failed to resolve subscription plan',
-							},
-						},
-						500,
-					);
-				}
-
-				planRow = freePlan as SubscriptionPlanRow;
-				planFeatures = extractFeatures(planRow);
-			} catch {
-				return c.json(
-					{
-						success: false,
-						error: {
-							code: ErrorCode.INTERNAL_ERROR,
-							message: 'Failed to resolve subscription plan',
-						},
-					},
-					500,
-				);
-			}
+			planRow = null;
+			planFeatures = FALLBACK_FREE_FEATURES;
 		}
 
 		let limitCheck: UsageLimitResult;
@@ -191,11 +182,32 @@ export function subscriptionGateMiddleware(featureKey: FeatureKey, periodType: P
 			);
 		}
 
-		// Increment usage BEFORE proceeding — failure is non-critical
+		// Increment usage BEFORE proceeding to keep backend enforcement authoritative.
 		try {
-			await incrementUsage(c.env, userId, featureKey, periodType);
+			const incrementResult = await incrementUsage(c.env, userId, featureKey, periodType);
+			if (!incrementResult.success) {
+				return c.json(
+					{
+						success: false,
+						error: {
+							code: ErrorCode.INTERNAL_ERROR,
+							message: 'Failed to update usage limits',
+						},
+					},
+					500,
+				);
+			}
 		} catch {
-			// Allow request even if increment fails (telemetry, not enforcement)
+			return c.json(
+				{
+					success: false,
+					error: {
+						code: ErrorCode.INTERNAL_ERROR,
+						message: 'Failed to update usage limits',
+					},
+				},
+				500,
+			);
 		}
 
 		c.set('subscription', {

@@ -1,6 +1,5 @@
 import { useFitnessStore } from "../stores/fitnessStore";
 import { useNutritionStore } from "../stores/nutritionStore";
-import { useUserStore } from "../stores/userStore";
 import { useProfileStore } from "../stores/profileStore";
 import { useAchievementStore } from "../stores/achievementStore";
 import { DayWorkout, DayMeal } from "../ai";
@@ -14,8 +13,10 @@ import {
   ExerciseCalorieInput,
 } from "./calorieCalculator";
 import { analyticsDataService } from "./analyticsData";
-import { getCurrentWeekStart } from "../utils/weekUtils";
+import { getCurrentWeekStart, getWeekStartForDate } from "../utils/weekUtils";
+import { getWorkoutDayKey, getWorkoutSlotKey } from "../utils/workoutIdentity";
 import { generateUUID } from "../utils/uuid";
+import { MealLogProvenance } from "../types/nutritionLogging";
 
 export interface CompletionEvent {
   id: string;
@@ -59,18 +60,14 @@ class CompletionTrackingService {
       sessionData?.stats?.caloriesBurned &&
       sessionData.stats.caloriesBurned > 0
     ) {
-
       return sessionData.stats.caloriesBurned;
     }
 
-    // Get user's weight from profile (single source of truth)
-    const userStore = useUserStore.getState();
-    const userWeight = useProfileStore.getState().bodyAnalysis?.current_weight_kg
-      || userStore.profile?.bodyMetrics?.current_weight_kg;
+    const userWeight =
+      useProfileStore.getState().bodyAnalysis?.current_weight_kg;
 
     // NO FALLBACK - if weight not available, return 0 and log warning
     if (!userWeight || userWeight <= 0) {
-
       return 0;
     }
 
@@ -90,7 +87,6 @@ class CompletionTrackingService {
       const result = calculateWorkoutCalories(exerciseInputs, userWeight);
 
       if (result.totalCalories > 0) {
-
         return result.totalCalories;
       }
     }
@@ -120,9 +116,18 @@ class CompletionTrackingService {
           workout as any,
           sessionData,
         );
+        const completedAt = new Date().toISOString();
+        const completedDurationMinutes =
+          sessionData?.duration || workout.duration || 0;
+        const completedExercises =
+          sessionData?.stats?.exercises || workout.exercises || [];
 
         // Update workout progress to 100%, persisting calories in the store
-        await fitnessStore.completeWorkout(workoutId, sessionData?.sessionId, actualCaloriesBurned || undefined);
+        await fitnessStore.completeWorkout(
+          workoutId,
+          sessionData?.sessionId,
+          actualCaloriesBurned || undefined,
+        );
 
         // Will be set to the Supabase-generated row ID after a successful insert.
         // Using this as sessionId ensures loadData() dedup matches by ID and avoids
@@ -132,30 +137,55 @@ class CompletionTrackingService {
         // Sync workout completion to Supabase (only for logged-in users)
         if (userId) {
           try {
-            const supabaseResult = await supabase
-              .from("workout_sessions")
-              .insert({
-                user_id: userId,
-                workout_id: workoutId,
-                workout_plan_id: null,
-                workout_name: workout.title,
-                workout_type: workout.category || "general",
-                is_extra: false,
-                // Prefer actual elapsed duration; fall back to planned workout duration
-                total_duration_minutes:
-                  sessionData?.duration || workout.duration || null,
-                calories_burned: actualCaloriesBurned,
-                exercises_completed:
-                  sessionData?.stats?.exercises || workout.exercises || [],
-                started_at: sessionData?.startedAt || new Date().toISOString(),
-                completed_at: new Date().toISOString(),
-                is_completed: true,
-                enjoyment_rating: sessionData?.rating || null,
-                notes:
-                  sessionData?.notes || `Weekly workout plan: ${workout.title}`,
-              })
-              .select("id")
-              .single();
+            const completionPayload = {
+              user_id: userId,
+              workout_id: workoutId,
+              workout_plan_id: null,
+              planned_day_key: getWorkoutDayKey(workout),
+              plan_slot_key: getWorkoutSlotKey(
+                workout,
+                fitnessStore.weeklyWorkoutPlan || undefined,
+              ),
+              workout_name: workout.title,
+              workout_type: workout.category || "general",
+              is_extra: false,
+              duration: completedDurationMinutes || null,
+              total_duration_minutes: completedDurationMinutes || null,
+              calories_burned: actualCaloriesBurned,
+              exercises: completedExercises,
+              exercises_completed: completedExercises,
+              started_at: sessionData?.startedAt || completedAt,
+              completed_at: completedAt,
+              is_completed: true,
+              enjoyment_rating: sessionData?.rating || null,
+              notes:
+                sessionData?.notes || `Weekly workout plan: ${workout.title}`,
+            };
+
+            let supabaseResult;
+            if (sessionData?.sessionId) {
+              supabaseResult = await supabase
+                .from("workout_sessions")
+                .update(completionPayload)
+                .eq("id", sessionData.sessionId)
+                .eq("user_id", userId)
+                .select("id")
+                .single();
+
+              if (supabaseResult.error) {
+                supabaseResult = await supabase
+                  .from("workout_sessions")
+                  .insert(completionPayload)
+                  .select("id")
+                  .single();
+              }
+            } else {
+              supabaseResult = await supabase
+                .from("workout_sessions")
+                .insert(completionPayload)
+                .select("id")
+                .single();
+            }
 
             if (supabaseResult.error) {
               console.error(
@@ -175,7 +205,10 @@ class CompletionTrackingService {
                   caloriesBurned: actualCaloriesBurned,
                 });
               } catch (analyticsError) {
-                console.error('⚠️ Failed to update analytics metrics:', analyticsError);
+                console.error(
+                  "⚠️ Failed to update analytics metrics:",
+                  analyticsError,
+                );
               }
 
               // CRITICAL: Trigger refresh so fitness hooks refetch data
@@ -184,11 +217,14 @@ class CompletionTrackingService {
                 await fitnessRefreshService.refreshAfterWorkoutCompleted({
                   workoutId,
                   workoutName: workout.title,
-                  duration: workout.duration,
+                  duration: completedDurationMinutes,
                   caloriesBurned: actualCaloriesBurned,
                 });
               } catch (refreshError) {
-                console.error('⚠️ Failed to trigger fitness refresh:', refreshError);
+                console.error(
+                  "⚠️ Failed to trigger fitness refresh:",
+                  refreshError,
+                );
               }
             }
           } catch (supabaseError) {
@@ -204,26 +240,32 @@ class CompletionTrackingService {
         // Use supabaseSessionId when available so loadData() dedup can match by ID
         // and avoid double-counting when the realtime subscription re-fires loadData()
         useFitnessStore.getState().addCompletedSession({
-          sessionId: supabaseSessionId || sessionData?.sessionId || generateUUID(),
-          type: 'planned' as const,
+          sessionId:
+            supabaseSessionId || sessionData?.sessionId || generateUUID(),
+          type: "planned" as const,
           workoutId: workoutId,
+          plannedDayKey: getWorkoutDayKey(workout),
+          planSlotKey: getWorkoutSlotKey(
+            workout,
+            fitnessStore.weeklyWorkoutPlan || undefined,
+          ),
           workoutSnapshot: {
             title: workout.title,
-            category: workout.category || 'general',
-            duration: workout.duration || 0,
+            category: workout.category || "general",
+            duration: completedDurationMinutes,
             exercises: (workout.exercises || []).map((ex: any) => ({
-              name: ex.exerciseName || ex.name || '',
-              sets: typeof ex.sets === 'number' ? ex.sets : 0,
-              reps: typeof ex.reps === 'number' ? ex.reps : 0,
+              name: ex.exerciseName || ex.name || "",
+              sets: typeof ex.sets === "number" ? ex.sets : 0,
+              reps: typeof ex.reps === "number" ? ex.reps : 0,
               exerciseId: ex.exerciseId || ex.id,
               duration: ex.duration,
               restTime: ex.restTime,
             })),
           },
           caloriesBurned: actualCaloriesBurned,
-          durationMinutes: sessionData?.duration || workout.duration || 0,
-          completedAt: new Date().toISOString(),
-          weekStart: getCurrentWeekStart(),
+          durationMinutes: completedDurationMinutes,
+          completedAt,
+          weekStart: getWeekStartForDate(completedAt),
         });
 
         // SSOT Fix 19: update achievementStore.currentStreak immediately
@@ -234,13 +276,13 @@ class CompletionTrackingService {
           id: `workout_completion_${workoutId}_${Date.now()}`,
           type: "workout",
           itemId: workoutId,
-          completedAt: new Date().toISOString(),
+          completedAt,
           progress: 100,
           data: {
             workout,
             sessionData,
             calories: actualCaloriesBurned,
-            duration: workout.duration,
+            duration: completedDurationMinutes,
           },
         };
 
@@ -273,9 +315,18 @@ class CompletionTrackingService {
       );
 
       if (meal) {
+        const provenance: MealLogProvenance = logData?.provenance ||
+          (meal as any).sourceMetadata || {
+            mode: "manual",
+            truthLevel: "curated",
+            confidence: null,
+            countryContext: "IN",
+            requiresReview: false,
+            source: "manual-log",
+          };
+
         // Create actual meal log in database for calorie tracking
         try {
-
           // Use provided userId - NO FALLBACK to fake user IDs
           const currentUserId = userId;
 
@@ -296,6 +347,7 @@ class CompletionTrackingService {
               },
               loggedAt: new Date().toISOString(),
               notes: `Weekly meal plan: ${meal.name}`,
+              provenance,
               syncStatus: SyncStatus.PENDING,
               syncMetadata: {
                 lastModifiedAt: new Date().toISOString(),
@@ -313,15 +365,23 @@ class CompletionTrackingService {
               const supabaseResult = await supabase.from("meal_logs").insert({
                 user_id: currentUserId,
                 meal_type: meal.type,
-                custom_meal_name: meal.name,
                 meal_name: meal.name,
-                plan_meal_id: mealId,
-                ingredients: meal.items || [],
-                calories: meal.totalCalories || 0,
-                protein_g: meal.totalMacros?.protein ?? 0,
-                carbs_g: meal.totalMacros?.carbohydrates ?? 0,
-                fat_g: meal.totalMacros?.fat ?? 0,
-                fiber_g: meal.totalMacros?.fiber ?? 0,
+                food_items: meal.items || [],
+                total_calories: meal.totalCalories || 0,
+                total_protein: meal.totalMacros?.protein ?? 0,
+                total_carbohydrates: meal.totalMacros?.carbohydrates ?? 0,
+                total_fat: meal.totalMacros?.fat ?? 0,
+                logging_mode: provenance.mode,
+                truth_level: provenance.truthLevel,
+                confidence: provenance.confidence ?? null,
+                country_context: provenance.countryContext ?? null,
+                requires_review: provenance.requiresReview,
+                source_metadata: {
+                  source: provenance.source ?? null,
+                  productIdentity: provenance.productIdentity ?? null,
+                  conflict: provenance.conflict ?? null,
+                },
+                notes: logData?.reviewNote || null,
                 logged_at: new Date().toISOString(),
               });
 
@@ -331,7 +391,6 @@ class CompletionTrackingService {
                   supabaseResult.error,
                 );
               } else {
-
                 // Save to analytics_metrics for Monthly Summary tracking
                 try {
                   await analyticsDataService.updateTodaysMetrics(
@@ -342,6 +401,10 @@ class CompletionTrackingService {
                     },
                   );
                 } catch (analyticsError) {
+                  console.error(
+                    "⚠️ Failed to update analytics metrics:",
+                    analyticsError,
+                  );
                 }
 
                 // CRITICAL: Trigger refresh so useNutritionData hook refetches dailyNutrition
@@ -349,6 +412,10 @@ class CompletionTrackingService {
                 try {
                   await nutritionRefreshService.triggerRefresh();
                 } catch (refreshError) {
+                  console.error(
+                    "⚠️ Failed to trigger nutrition refresh:",
+                    refreshError,
+                  );
                 }
               }
             } catch (supabaseError) {
@@ -510,7 +577,8 @@ class CompletionTrackingService {
     const plannedStats = fitnessStore.getPlannedSessionStats(weekStart);
     const extraStats = fitnessStore.getExtraSessionStats(weekStart);
     const completedWorkouts = plannedStats.count;
-    const caloriesBurned = plannedStats.totalCalories + extraStats.totalCalories;
+    const caloriesBurned =
+      plannedStats.totalCalories + extraStats.totalCalories;
 
     const totalWorkouts = fitnessStore.weeklyWorkoutPlan?.workouts.length || 0;
 

@@ -21,7 +21,7 @@ export function detectConflicts(
       break;
 
     case "workout":
-      if (localData.duration_minutes !== remoteData.duration_minutes) {
+      if (localData.duration !== remoteData.duration) {
         conflictFields.push("duration");
         recommendations.push(
           "Use the local duration if workout was completed offline",
@@ -105,7 +105,8 @@ function performIntelligentMerge(
       if (localData.is_completed && !remoteData.is_completed) {
         merged.is_completed = true;
         merged.completed_at = localData.completed_at;
-        merged.duration_minutes = localData.duration_minutes;
+        merged.duration = localData.duration;
+        merged.total_duration_minutes = localData.total_duration_minutes;
         merged.calories_burned = localData.calories_burned;
         merged.rating = localData.rating;
       }

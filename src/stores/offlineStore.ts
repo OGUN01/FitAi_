@@ -143,6 +143,7 @@ export const useOfflineStore = create<OfflineState>()(
             lastSyncAttempt: null,
           });
         } catch (error) {
+          console.error("Failed to clear offline data:", error);
         }
       },
 

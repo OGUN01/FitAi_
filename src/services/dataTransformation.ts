@@ -89,9 +89,10 @@ export class DataTransformationService {
       workout_id: session.workoutId,
       started_at: session.startedAt,
       completed_at: session.completedAt,
-      duration_minutes: (session.duration ?? undefined) as any,
-      calories_burned: (session.caloriesBurned ?? undefined) as any,
-      exercises_data: JSON.stringify(session.exercises),
+      duration: session.duration ?? null,
+      total_duration_minutes: session.duration ?? null,
+      calories_burned: session.caloriesBurned ?? null,
+      exercises: session.exercises || [],
       notes: session.notes || "",
       rating: session.rating,
       is_completed: session.isCompleted,
@@ -107,9 +108,10 @@ export class DataTransformationService {
       userId: supabaseSession.user_id,
       startedAt: supabaseSession.started_at,
       completedAt: supabaseSession.completed_at,
-      duration: supabaseSession.duration_minutes,
+      duration:
+        supabaseSession.total_duration_minutes ?? supabaseSession.duration,
       caloriesBurned: supabaseSession.calories_burned,
-      exercises: JSON.parse(supabaseSession.exercises_data || "[]"),
+      exercises: supabaseSession.exercises || [],
       notes: supabaseSession.notes || "",
       rating: supabaseSession.rating || 0,
       isCompleted: supabaseSession.is_completed,
@@ -127,13 +129,22 @@ export class DataTransformationService {
     return {
       user_id: userId,
       meal_type: mealLog.mealType,
-      meal_name:
-        mealLog.foods?.[0]?.food?.name || mealLog.foods?.[0]?.foodId || "Meal",
+      meal_name: mealLog.notes || mealLog.foods?.[0]?.name || "Meal",
       food_items: mealLog.foods || [],
       total_calories: mealLog.totalCalories || 0,
       total_protein: mealLog.totalMacros?.protein || 0,
       total_carbohydrates: mealLog.totalMacros?.carbohydrates || 0,
       total_fat: mealLog.totalMacros?.fat || 0,
+      logging_mode: mealLog.provenance?.mode || "manual",
+      truth_level: mealLog.provenance?.truthLevel || "curated",
+      confidence: mealLog.provenance?.confidence || null,
+      country_context: mealLog.provenance?.countryContext || null,
+      requires_review: mealLog.provenance?.requiresReview || false,
+      source_metadata: {
+        source: mealLog.provenance?.source || null,
+        productIdentity: mealLog.provenance?.productIdentity || null,
+        conflict: mealLog.provenance?.conflict || null,
+      },
       notes: mealLog.notes || null,
       logged_at: mealLog.loggedAt || new Date().toISOString(),
     };
@@ -169,6 +180,16 @@ export class DataTransformationService {
       },
       loggedAt: supabaseMealLog.logged_at || new Date().toISOString(),
       notes: supabaseMealLog.notes || "",
+      provenance: {
+        mode: supabaseMealLog.logging_mode || "manual",
+        truthLevel: supabaseMealLog.truth_level || "curated",
+        confidence: supabaseMealLog.confidence || null,
+        countryContext: supabaseMealLog.country_context || null,
+        requiresReview: supabaseMealLog.requires_review || false,
+        source: supabaseMealLog.source_metadata?.source || null,
+        productIdentity: supabaseMealLog.source_metadata?.productIdentity || null,
+        conflict: supabaseMealLog.source_metadata?.conflict || null,
+      },
       photos: [],
       syncStatus: SyncStatus.SYNCED,
       syncMetadata: {
@@ -314,8 +335,9 @@ export class DataTransformationService {
           errors.push("Workout session must have id, user_id, and workout_id");
         }
         if (
-          typeof data.duration_minutes !== "number" ||
-          data.duration_minutes <= 0
+          (typeof data.duration !== "number" || data.duration <= 0) &&
+          (typeof data.total_duration_minutes !== "number" ||
+            data.total_duration_minutes <= 0)
         ) {
           errors.push("Workout session must have valid duration");
         }
@@ -409,7 +431,7 @@ export class DataTransformationService {
         break;
 
       case "workout":
-        if (localData.duration_minutes !== remoteData.duration_minutes) {
+        if (localData.duration !== remoteData.duration) {
           conflictFields.push("duration");
           recommendations.push(
             "Use the local duration if workout was completed offline",
@@ -499,7 +521,8 @@ export class DataTransformationService {
         if (localData.is_completed && !remoteData.is_completed) {
           merged.is_completed = true;
           merged.completed_at = localData.completed_at;
-          merged.duration_minutes = localData.duration_minutes;
+          merged.duration = localData.duration;
+          merged.total_duration_minutes = localData.total_duration_minutes;
           merged.calories_burned = localData.calories_burned;
           merged.rating = localData.rating;
         }

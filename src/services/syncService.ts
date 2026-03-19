@@ -629,15 +629,15 @@ export class RealTimeSyncService {
 
   // Utility methods
   private generateSyncId(): string {
-    return `sync_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
+    return `sync_${Date.now()}_${crypto.randomUUID().replace(/-/g, "").substring(0, 9)}`;
   }
 
   private generateOperationId(): string {
-    return `op_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
+    return `op_${Date.now()}_${crypto.randomUUID().replace(/-/g, "").substring(0, 9)}`;
   }
 
   private generateErrorId(): string {
-    return `err_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
+    return `err_${Date.now()}_${crypto.randomUUID().replace(/-/g, "").substring(0, 9)}`;
   }
 
   private chunkArray<T>(array: T[], size: number): T[][] {
@@ -764,7 +764,6 @@ export class RealTimeSyncService {
         if (deleteError) throw new Error(deleteError.message);
         break;
     }
-
   }
 
   private async getDeltaSyncInfo(): Promise<DeltaSyncInfo> {
@@ -813,6 +812,10 @@ export class RealTimeSyncService {
           .order("updated_at", { ascending: true });
 
         if (error) {
+          console.error(
+            `[syncService] fetchRemoteChanges error for table ${table}:`,
+            error,
+          );
           continue;
         }
 
@@ -826,6 +829,10 @@ export class RealTimeSyncService {
           );
         }
       } catch (error) {
+        console.error(
+          `[syncService] fetchRemoteChanges exception for table ${table}:`,
+          error,
+        );
       }
     }
 

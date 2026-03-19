@@ -1,4 +1,3 @@
-import { useUserStore } from "../../stores/userStore";
 import { useProfileStore } from "../../stores/profileStore";
 import { DayWorkout } from "../../ai";
 import {
@@ -17,9 +16,7 @@ export function calculateActualCalories(
     return sessionData.stats.caloriesBurned;
   }
 
-  const userStore = useUserStore.getState();
-  const userWeight = useProfileStore.getState().bodyAnalysis?.current_weight_kg
-    || userStore.profile?.bodyMetrics?.current_weight_kg;
+  const userWeight = useProfileStore.getState().bodyAnalysis?.current_weight_kg;
 
   if (!userWeight || userWeight <= 0) {
     return 0;

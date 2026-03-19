@@ -9,6 +9,7 @@ import { useAnalyticsStore } from "../stores/analyticsStore";
 import { useAchievementStore } from "../stores/achievementStore";
 import { useFitnessStore } from "../stores/fitnessStore";
 import { useNutritionStore } from "../stores/nutritionStore";
+import { analyticsDataService } from "../services/analyticsData";
 
 export const useProgressScreen = (navigation: any) => {
   const [refreshing, setRefreshing] = useState(false);
@@ -34,7 +35,7 @@ export const useProgressScreen = (navigation: any) => {
     d.setHours(0, 0, 0, 0);
     const weekStart = d.toISOString().split("T")[0];
     return completedSessions.filter(
-      (s) => s.type === "planned" && s.weekStart === weekStart
+      (s) => s.type === "planned" && s.weekStart === weekStart,
     ).length;
   }, [completedSessions]);
 
@@ -42,13 +43,30 @@ export const useProgressScreen = (navigation: any) => {
   const mealProgress = useNutritionStore((s) => s.mealProgress);
   const mealsCompleted = useMemo(
     () => Object.values(mealProgress).filter((p) => p.progress === 100).length,
-    [mealProgress]
+    [mealProgress],
   );
 
-  // Weight history — analyticsStore (SSOT, populated by AnalyticsScreen Fix 6)
+  // Weight history — analyticsStore (SSOT)
   const weightHistory = useAnalyticsStore((s) => s.weightHistory);
+  const setHistoryData = useAnalyticsStore((s) => s.setHistoryData);
 
   const { user, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (!user?.id || user.id.startsWith("guest") || user.id === "local-user")
+      return;
+    analyticsDataService
+      .getWeightHistory(user.id, 90)
+      .then((weightData) => {
+        if (weightData.length > 0) {
+          const analyticsState = useAnalyticsStore.getState();
+          setHistoryData(weightData, analyticsState.calorieHistory);
+        }
+      })
+      .catch((err) => {
+        console.warn("[ProgressScreen] Failed to fetch weight history:", err);
+      });
+  }, [user?.id]);
 
   const {
     progressEntries,
@@ -61,7 +79,8 @@ export const useProgressScreen = (navigation: any) => {
     refreshAll,
   } = useProgressData();
 
-  const { metrics: calculatedMetrics, hasCalculatedMetrics } = useCalculatedMetrics();
+  const { metrics: calculatedMetrics, hasCalculatedMetrics } =
+    useCalculatedMetrics();
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -106,11 +125,21 @@ export const useProgressScreen = (navigation: any) => {
     });
 
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }),
     ]).start();
 
-    return () => { unsubscribe(); };
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const onRefresh = async () => {
@@ -124,99 +153,114 @@ export const useProgressScreen = (navigation: any) => {
     }
   };
 
-  const handleAddProgressEntry = () => { setShowWeightModal(true); };
+  const handleAddProgressEntry = () => {
+    setShowWeightModal(true);
+  };
 
   const handleShareProgress = async () => {
     const currentWeight = progressStats?.weightChange?.current;
-    const weightDisplay = currentWeight ? `${currentWeight.toFixed(1)} kg` : "Not recorded";
-    const bmi = calculatedMetrics?.calculatedBMI ? calculatedMetrics.calculatedBMI.toFixed(1) : "Not calculated";
+    const weightDisplay = currentWeight
+      ? `${currentWeight.toFixed(1)} kg`
+      : "Not recorded";
+    const bmi = calculatedMetrics?.calculatedBMI
+      ? calculatedMetrics.calculatedBMI.toFixed(1)
+      : "Not calculated";
     const message = `My FitAI Progress Update!\n\nCurrent Weight: ${weightDisplay}\nBMI: ${bmi}\n\nTrack your fitness journey with FitAI!`;
 
     try {
       await Share.share({ message, title: "My FitAI Progress" });
     } catch {
-      if (Platform.OS === "web" && typeof navigator !== "undefined" && navigator.clipboard) {
-        await navigator.clipboard.writeText(message).catch(() => {});
+      if (
+        Platform.OS === "web" &&
+        typeof navigator !== "undefined" &&
+        navigator.clipboard
+      ) {
+        await navigator.clipboard.writeText(message).catch((err) => {
+          console.error("[ProgressScreen] Clipboard write failed:", err);
+        });
       }
     }
   };
 
   // SSOT fix: achievements are derived from the same store-based values used
   // above instead of a stale `weeklyProgress` local state shadow.
-  const achievements = useMemo(() => [
-    {
-      id: "first-workout",
-      title: "First Workout",
-      description: "Complete your first workout",
-      iconName: "barbell-outline",
-      date: workoutsCompleted > 0 ? "Completed" : "Not yet",
-      completed: workoutsCompleted > 0,
-      category: "Milestone",
-      points: 25,
-      rarity: "common",
-    },
-    {
-      id: "first-meal",
-      title: "First Meal",
-      description: "Complete your first meal",
-      iconName: "restaurant-outline",
-      date: mealsCompleted > 0 ? "Completed" : "Not yet",
-      completed: mealsCompleted > 0,
-      category: "Nutrition",
-      points: 15,
-      rarity: "common",
-    },
-    {
-      id: "meal-streak",
-      title: "Meal Master",
-      description: "Complete 5 meals in a row",
-      iconName: "nutrition-outline",
-      date: mealsCompleted >= 5 ? "Completed" : "Not yet",
-      completed: mealsCompleted >= 5,
-      category: "Nutrition",
-      points: 50,
-      rarity: "uncommon",
-      progress: mealsCompleted,
-      target: 5,
-    },
-    {
-      id: "week-streak",
-      title: "Week Warrior",
-      description: "Maintain a 7-day streak",
-      iconName: "flame-outline",
-      date: currentStreak >= 7 ? "Completed" : "Not yet",
-      completed: currentStreak >= 7,
-      category: "Consistency",
-      points: 100,
-      rarity: "uncommon",
-      progress: currentStreak,
-      target: 7,
-    },
-    {
-      id: "weight-logged",
-      title: "Weight Tracker",
-      description: "Log your first weight entry",
-      iconName: "scale-outline",
-      date: progressEntries.length > 0 ? "Completed" : "Not yet",
-      completed: progressEntries.length > 0,
-      category: "Milestone",
-      points: 20,
-      rarity: "common",
-    },
-    {
-      id: "weight-5-entries",
-      title: "Consistent Tracker",
-      description: "Log weight 5 times",
-      iconName: "analytics-outline",
-      date: progressEntries.length >= 5 ? "Completed" : "Not yet",
-      completed: progressEntries.length >= 5,
-      category: "Milestone",
-      points: 75,
-      rarity: "uncommon",
-      progress: progressEntries.length,
-      target: 5,
-    },
-  ], [workoutsCompleted, mealsCompleted, currentStreak, progressEntries.length]);
+  const achievements = useMemo(
+    () => [
+      {
+        id: "first-workout",
+        title: "First Workout",
+        description: "Complete your first workout",
+        iconName: "barbell-outline",
+        date: workoutsCompleted > 0 ? "Completed" : "Not yet",
+        completed: workoutsCompleted > 0,
+        category: "Milestone",
+        points: 25,
+        rarity: "common",
+      },
+      {
+        id: "first-meal",
+        title: "First Meal",
+        description: "Complete your first meal",
+        iconName: "restaurant-outline",
+        date: mealsCompleted > 0 ? "Completed" : "Not yet",
+        completed: mealsCompleted > 0,
+        category: "Nutrition",
+        points: 15,
+        rarity: "common",
+      },
+      {
+        id: "meal-streak",
+        title: "Meal Master",
+        description: "Complete 5 meals in a row",
+        iconName: "nutrition-outline",
+        date: mealsCompleted >= 5 ? "Completed" : "Not yet",
+        completed: mealsCompleted >= 5,
+        category: "Nutrition",
+        points: 50,
+        rarity: "uncommon",
+        progress: mealsCompleted,
+        target: 5,
+      },
+      {
+        id: "week-streak",
+        title: "Week Warrior",
+        description: "Maintain a 7-day streak",
+        iconName: "flame-outline",
+        date: currentStreak >= 7 ? "Completed" : "Not yet",
+        completed: currentStreak >= 7,
+        category: "Consistency",
+        points: 100,
+        rarity: "uncommon",
+        progress: currentStreak,
+        target: 7,
+      },
+      {
+        id: "weight-logged",
+        title: "Weight Tracker",
+        description: "Log your first weight entry",
+        iconName: "scale-outline",
+        date: progressEntries.length > 0 ? "Completed" : "Not yet",
+        completed: progressEntries.length > 0,
+        category: "Milestone",
+        points: 20,
+        rarity: "common",
+      },
+      {
+        id: "weight-5-entries",
+        title: "Consistent Tracker",
+        description: "Log weight 5 times",
+        iconName: "analytics-outline",
+        date: progressEntries.length >= 5 ? "Completed" : "Not yet",
+        completed: progressEntries.length >= 5,
+        category: "Milestone",
+        points: 75,
+        rarity: "uncommon",
+        progress: progressEntries.length,
+        target: 5,
+      },
+    ],
+    [workoutsCompleted, mealsCompleted, currentStreak, progressEntries.length],
+  );
 
   return {
     state: {

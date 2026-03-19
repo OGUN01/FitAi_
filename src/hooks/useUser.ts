@@ -1,5 +1,9 @@
-import { useUserStore } from '../stores/userStore';
-import { useProfileStore } from '../stores/profileStore';
+import { useUserStore } from "../stores/userStore";
+import {
+  useProfileStore,
+  selectIsProfileComplete,
+} from "../stores/profileStore";
+import { useUnifiedStats } from "./useUnifiedStats";
 import {
   UserProfile,
   PersonalInfo,
@@ -8,8 +12,11 @@ import {
   UpdateProfileRequest,
   CreateFitnessGoalsRequest,
   UpdateFitnessGoalsRequest,
-} from '../types/user';
-import { UserProfileResponse, FitnessGoalsResponse } from '../services/userProfile';
+} from "../types/user";
+import {
+  UserProfileResponse,
+  FitnessGoalsResponse,
+} from "../services/userProfile";
 
 export interface UseUserReturn {
   // State
@@ -19,17 +26,26 @@ export interface UseUserReturn {
   isProfileComplete: boolean;
 
   // Actions
-  createProfile: (profileData: CreateProfileRequest) => Promise<UserProfileResponse>;
+  createProfile: (
+    profileData: CreateProfileRequest,
+  ) => Promise<UserProfileResponse>;
   getProfile: (userId: string) => Promise<UserProfileResponse>;
-  updateProfile: (userId: string, updates: UpdateProfileRequest) => Promise<UserProfileResponse>;
-  createFitnessGoals: (goalsData: CreateFitnessGoalsRequest) => Promise<FitnessGoalsResponse>;
+  updateProfile: (
+    userId: string,
+    updates: UpdateProfileRequest,
+  ) => Promise<UserProfileResponse>;
+  createFitnessGoals: (
+    goalsData: CreateFitnessGoalsRequest,
+  ) => Promise<FitnessGoalsResponse>;
   getFitnessGoals: (userId: string) => Promise<FitnessGoalsResponse>;
   updateFitnessGoals: (
     userId: string,
-    updates: UpdateFitnessGoalsRequest
+    updates: UpdateFitnessGoalsRequest,
   ) => Promise<FitnessGoalsResponse>;
   getCompleteProfile: (userId: string) => Promise<UserProfileResponse>;
-  deleteProfile: (userId: string) => Promise<{ success: boolean; error?: string }>;
+  deleteProfile: (
+    userId: string,
+  ) => Promise<{ success: boolean; error?: string }>;
   clearError: () => void;
   clearProfile: () => void;
   setProfile: (profile: UserProfile | null) => void;
@@ -97,8 +113,11 @@ export const useUserProfile = (): UserProfile | null => {
  * Returns boolean indicating if profile has all required fields
  */
 export const useIsProfileComplete = (): boolean => {
-  const isProfileComplete = useUserStore((state) => state.isProfileComplete);
-  return isProfileComplete;
+  const profileStoreComplete = useProfileStore(selectIsProfileComplete);
+  const legacyProfileComplete = useUserStore(
+    (state) => state.isProfileComplete,
+  );
+  return profileStoreComplete || legacyProfileComplete;
 };
 
 /**
@@ -116,7 +135,9 @@ export const usePersonalInfo = (): PersonalInfo | null => {
  */
 export const useFitnessGoals = (): FitnessGoals | null => {
   // SSOT: profileStore.workoutPreferences is authoritative for fitness goals (onboarding_data table)
-  const workoutPreferences = useProfileStore((state) => state.workoutPreferences);
+  const workoutPreferences = useProfileStore(
+    (state) => state.workoutPreferences,
+  );
   const profile = useUserStore((state) => state.profile);
 
   // Return profileStore data first (SSOT), fall back to userStore for legacy users
@@ -124,9 +145,9 @@ export const useFitnessGoals = (): FitnessGoals | null => {
     // Map WorkoutPreferencesData (onboarding schema) → legacy FitnessGoals shape
     return {
       primary_goals: workoutPreferences.primary_goals,
-      experience_level: workoutPreferences.intensity,    // intensity maps to experience_level
+      experience_level: workoutPreferences.intensity, // intensity maps to experience_level
       preferred_equipment: workoutPreferences.equipment, // equipment = preferred_equipment
-      workout_location: workoutPreferences.location,     // location = workout_location
+      workout_location: workoutPreferences.location, // location = workout_location
       time_preference: workoutPreferences.time_preference,
     } as unknown as FitnessGoals;
   }
@@ -194,12 +215,12 @@ export const useUserActions = () => {
  * NO FALLBACKS - returns undefined if not set
  */
 export const useUserPreferences = () => {
-  const profile = useUserStore((state) => state.profile);
+  const personalInfo = useProfileStore((state) => state.personalInfo);
 
   return {
-    units: profile?.preferences?.units,
-    notifications: profile?.preferences?.notifications,
-    darkMode: profile?.preferences?.darkMode,
+    units: personalInfo?.units,
+    notifications: personalInfo?.notifications_enabled,
+    darkMode: personalInfo?.dark_mode,
   };
 };
 
@@ -209,17 +230,16 @@ export const useUserPreferences = () => {
  * If data is missing, returns undefined to let UI show explicit missing state
  */
 export const useUserStats = () => {
-  const profile = useUserStore((state) => state.profile);
+  const unifiedStats = useUnifiedStats();
+  const legacyStats = useUserStore((state) => state.profile?.stats);
 
-  // NO FALLBACKS - return actual values or undefined
   return {
-    totalWorkouts: profile?.stats?.totalWorkouts,
-    totalCaloriesBurned: profile?.stats?.totalCaloriesBurned,
-    // NOTE: currentStreak should come from achievementStore, not here
-    // This is kept for backward compatibility but achievementStore is the source
-    currentStreak: profile?.stats?.currentStreak,
-    longestStreak: profile?.stats?.longestStreak,
-    achievements: profile?.stats?.achievements,
+    totalWorkouts: unifiedStats.totalWorkouts ?? legacyStats?.totalWorkouts,
+    totalCaloriesBurned:
+      unifiedStats.totalCaloriesBurned ?? legacyStats?.totalCaloriesBurned,
+    currentStreak: unifiedStats.currentStreak ?? legacyStats?.currentStreak,
+    longestStreak: unifiedStats.longestStreak ?? legacyStats?.longestStreak,
+    achievements: unifiedStats.achievements ?? legacyStats?.achievements,
   };
 };
 

@@ -1,4 +1,5 @@
-import { storeLogger } from '../../utils/logger';
+import { Platform } from "react-native";
+import { storeLogger } from "../../utils/logger";
 import { DayMeal } from "../../ai";
 import { SyncStatus } from "../../types/localData";
 import { crudOperations } from "../../services/crudOperations";
@@ -33,7 +34,7 @@ export async function startMealSession(
         lastSyncedAt: undefined,
         lastModifiedAt: new Date().toISOString(),
         syncVersion: 1,
-        deviceId: "dev-device",
+        deviceId: Platform.OS ?? "unknown",
       },
     };
 
@@ -54,7 +55,7 @@ export async function startMealSession(
 
     return logId;
   } catch (error) {
-    storeLogger.error('Failed to start meal session', { error: String(error) });
+    storeLogger.error("Failed to start meal session", { error: String(error) });
     throw error;
   }
 }
@@ -79,9 +80,8 @@ export async function endMealSession(
     await completeMeal(currentSession.mealId, logId);
 
     setCurrentMealSession(null);
-
   } catch (error) {
-    storeLogger.error('Failed to end meal session', { error: String(error) });
+    storeLogger.error("Failed to end meal session", { error: String(error) });
     throw error;
   }
 }

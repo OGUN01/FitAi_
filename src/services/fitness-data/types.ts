@@ -19,7 +19,8 @@ export interface Workout {
   user_id: string;
   name: string;
   type: string;
-  duration_minutes?: number;
+  duration?: number;
+  total_duration_minutes?: number;
   calories_burned?: number;
   notes?: string;
   completed_at?: string;

@@ -7,6 +7,7 @@ import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import { getSuggestions, generateWorkout } from "../services/extraWorkoutService";
 import type { ExtraWorkoutTemplate } from "../stores/fitness/types";
 import type { FitnessNavigation } from "./useFitnessLogic";
+import { getLocalDateString } from "../utils/weekUtils";
 
 export type TemplateStatus = 'idle' | 'in_progress' | 'completed';
 
@@ -45,7 +46,6 @@ export const useQuickWorkouts = (navigation: FitnessNavigation): QuickWorkoutsHo
   const isVisible = useMemo(() => {
     if (!weeklyWorkoutPlan?.workouts) return false;
 
-    const todayStr = new Date().toISOString().split('T')[0];
     const todayDayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const todayName = todayDayNames[new Date().getDay()];
 
@@ -64,7 +64,7 @@ export const useQuickWorkouts = (navigation: FitnessNavigation): QuickWorkoutsHo
         (s) =>
           s.type === 'planned' &&
           w.id && s.workoutId === w.id &&
-          s.completedAt.split('T')[0] === todayStr,
+          getLocalDateString(s.completedAt) === getLocalDateString(),
       ),
     );
   }, [weeklyWorkoutPlan, completedSessions]);
@@ -76,8 +76,6 @@ export const useQuickWorkouts = (navigation: FitnessNavigation): QuickWorkoutsHo
 
   // Derive per-template status from store — single source of truth
   const getTemplateStatus = useCallback((template: ExtraWorkoutTemplate): TemplateStatus => {
-    const todayStr = new Date().toISOString().split('T')[0];
-
     const extraSessions = completedSessions.filter((s) => s.type === 'extra');
 
     // Completed: an extra session with matching duration was finished today.
@@ -86,7 +84,7 @@ export const useQuickWorkouts = (navigation: FitnessNavigation): QuickWorkoutsHo
       (s) =>
         s.type === 'extra' &&
         s.workoutSnapshot.duration === template.duration &&
-        s.completedAt.split('T')[0] === todayStr,
+        getLocalDateString(s.completedAt) === getLocalDateString(),
     );
     if (isCompleted) return 'completed';
 

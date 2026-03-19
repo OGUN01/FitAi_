@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import { useProfileStore } from "../stores/profileStore";
-import { useUserStore } from "../stores/userStore";
 
 export interface MealGenerationOption {
   id: string;
@@ -130,8 +129,8 @@ export const useAIMealsPanel = (
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
 
   // SSOT: read directly from stores rather than relying on a prop
-  const { personalInfo, workoutPreferences, dietPreferences } = useProfileStore();
-  const { profile } = useUserStore();
+  const { personalInfo, workoutPreferences, dietPreferences } =
+    useProfileStore();
 
   const handleMealGeneration = async (
     option: MealGenerationOption,
@@ -140,7 +139,7 @@ export const useAIMealsPanel = (
     try {
       const generationOptions = {
         mealType: option.type,
-        userPreferences: profile,
+        userPreferences: { personalInfo, workoutPreferences, dietPreferences },
         customOptions: customOptions || {},
         suggestions: selectedOptions,
       };
@@ -160,7 +159,7 @@ export const useAIMealsPanel = (
   const handleQuickAction = async (action: QuickActionOption) => {
     try {
       await onGenerateMeal(action.action, {
-        userPreferences: profile,
+        userPreferences: { personalInfo, workoutPreferences, dietPreferences },
         actionType: action.action,
       });
     } catch (error) {
@@ -180,10 +179,9 @@ export const useAIMealsPanel = (
   };
 
   const getProfileStatus = () => {
-    // SSOT: profileStore is authoritative for all onboarding data
-    const hasPersonalInfo = !!(personalInfo || profile?.personalInfo);
-    const hasFitnessGoals = !!(workoutPreferences?.primary_goals?.length || profile?.fitnessGoals);
-    const hasDietPreferences = !!(dietPreferences || profile?.dietPreferences);
+    const hasPersonalInfo = !!personalInfo;
+    const hasFitnessGoals = !!workoutPreferences?.primary_goals?.length;
+    const hasDietPreferences = !!dietPreferences;
 
     if (!hasPersonalInfo && !hasFitnessGoals && !hasDietPreferences) {
       return { status: "incomplete", message: "Profile not available" };
@@ -215,4 +213,3 @@ export const useAIMealsPanel = (
     getProfileStatus,
   };
 };
-

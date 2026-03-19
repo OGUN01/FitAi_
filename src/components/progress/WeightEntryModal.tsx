@@ -33,6 +33,7 @@ import { rf, rp, rbr, rs, rh } from "../../utils/responsive";
 import { progressDataService } from "../../services/progressData";
 import { useProfileStore } from "../../stores/profileStore";
 import { useHealthDataStore } from "../../stores/healthDataStore";
+import { useAnalyticsStore } from "../../stores/analyticsStore";
 import { useAuth } from "../../hooks/useAuth";
 import { invalidateMetricsCache } from "../../hooks/useCalculatedMetrics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -162,6 +163,14 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
       useHealthDataStore.getState().updateHealthMetrics({
         weight: weightKg,
       });
+
+      const analyticsState = useAnalyticsStore.getState();
+      const entryDate = new Date().toISOString().split("T")[0];
+      const nextWeightHistory = [
+        ...analyticsState.weightHistory.filter((entry) => entry.date !== entryDate),
+        { date: entryDate, weight: weightKg },
+      ].sort((a, b) => a.date.localeCompare(b.date));
+      analyticsState.setHistoryData(nextWeightHistory, analyticsState.calorieHistory);
 
       // Bust the metrics cache so the next call to refreshMetrics() re-fetches
       // from Supabase and picks up the new body_analysis.current_weight_kg.

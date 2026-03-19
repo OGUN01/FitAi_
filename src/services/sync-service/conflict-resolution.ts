@@ -14,11 +14,19 @@ export async function getPendingConflicts(
 
     for (const operation of syncQueue) {
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from(operation.table)
           .select("*")
           .eq("id", operation.recordId)
           .maybeSingle();
+
+        if (error) {
+          console.error(
+            `[ConflictResolution] Failed to fetch remote record ${operation.recordId} from ${operation.table}:`,
+            error,
+          );
+          continue;
+        }
 
         if (data && new Date(data.updated_at) > operation.timestamp) {
           conflicts.push({
@@ -32,8 +40,12 @@ export async function getPendingConflicts(
             timestamp: new Date(),
           });
         }
-      } catch {
+      } catch (error) {
         // No conflict if record doesn't exist remotely
+        console.error(
+          `[ConflictResolution] Unexpected error checking conflict for ${operation.recordId}:`,
+          error,
+        );
       }
     }
 

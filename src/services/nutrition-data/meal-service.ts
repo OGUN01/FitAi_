@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import * as crypto from "expo-crypto";
 import { supabase } from "../supabase";
 import { crudOperations } from "../crudOperations";
@@ -49,7 +50,6 @@ export class MealService {
           error: error.message,
         };
       }
-
 
       const meals =
         data?.map((mealLog: any) => ({
@@ -122,23 +122,30 @@ export class MealService {
           lastSyncedAt: undefined,
           lastModifiedAt: new Date().toISOString(),
           syncVersion: 1,
-          deviceId: "dev-device",
+          deviceId: Platform.OS ?? "unknown",
         },
       };
 
       await crudOperations.createMealLog(mealLog);
 
       const { data, error } = await supabase
-        .from("meals")
+        .from("meal_logs")
         .insert({
+          id: mealLog.id,
           user_id: userId,
-          name: mealData.name,
+          meal_name: mealData.name,
           meal_type: mealData.type,
+          food_items: mealLog.foods,
           total_calories: nutritionTotals.calories,
           total_protein: nutritionTotals.protein,
-          total_carbs: nutritionTotals.carbs,
+          total_carbohydrates: nutritionTotals.carbs,
           total_fat: nutritionTotals.fat,
-          consumed_at: new Date().toISOString(),
+          logging_mode: "manual",
+          truth_level: "curated",
+          requires_review: false,
+          source_metadata: {},
+          notes: mealData.name,
+          logged_at: mealLog.loggedAt,
         })
         .select()
         .single();
@@ -152,54 +159,28 @@ export class MealService {
       }
 
       // Populate analytics_metrics so the calorie chart always has data
-      analyticsDataService.updateTodaysMetrics(userId, {
-        caloriesConsumed: nutritionTotals.calories,
-        mealsLogged: 1,
-      }).catch((err) => console.error('[logMeal] analytics sync failed:', err));
-
-      if (data && mealData.foods.length > 0) {
-        const mealFoodsData = await Promise.all(
-          mealData.foods.map(async (food) => {
-            const { data: foodData } = await supabase
-              .from("foods")
-              .select(
-                "calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g",
-              )
-              .eq("id", food.food_id)
-              .single();
-
-            const multiplier = food.quantity_grams / 100;
-            return {
-              meal_id: data.id,
-              food_id: food.food_id,
-              quantity_grams: food.quantity_grams,
-              calories: foodData
-                ? Math.round(foodData.calories_per_100g * multiplier)
-                : 0,
-              protein: foodData
-                ? Math.round(foodData.protein_per_100g * multiplier * 10) / 10
-                : 0,
-              carbs: foodData
-                ? Math.round(foodData.carbs_per_100g * multiplier * 10) / 10
-                : 0,
-              fat: foodData
-                ? Math.round(foodData.fat_per_100g * multiplier * 10) / 10
-                : 0,
-            };
-          }),
-        );
-
-        const { error: mealFoodsError } = await supabase
-          .from("meal_foods")
-          .insert(mealFoodsData);
-
-        if (mealFoodsError) {
-        }
-      }
+      analyticsDataService
+        .updateTodaysMetrics(userId, {
+          caloriesConsumed: nutritionTotals.calories,
+          mealsLogged: 1,
+        })
+        .catch((err) => console.error("[logMeal] analytics sync failed:", err));
 
       return {
         success: true,
-        data,
+        data: {
+          id: data.id,
+          user_id: userId,
+          name: mealData.name,
+          type: mealData.type,
+          total_calories: nutritionTotals.calories,
+          total_protein: nutritionTotals.protein,
+          total_carbs: nutritionTotals.carbs,
+          total_fat: nutritionTotals.fat,
+          consumed_at: mealLog.loggedAt,
+          created_at: data.created_at ?? mealLog.loggedAt,
+          foods: [],
+        },
       };
     } catch (error) {
       console.error("Error in logMeal:", error);

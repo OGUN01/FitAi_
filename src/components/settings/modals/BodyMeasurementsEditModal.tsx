@@ -18,7 +18,6 @@ import { SettingsModalWrapper } from "../SettingsModalWrapper";
 import { GlassFormInput } from "../../form/GlassFormInput";
 import { GlassCard } from "../../ui/aurora/GlassCard";
 import { useProfileStore } from "../../../stores/profileStore";
-import { useUser } from "../../../hooks/useUser";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { rf, rw, rp, rbr } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
@@ -33,7 +32,6 @@ interface BodyMeasurementsEditModalProps {
 export const BodyMeasurementsEditModal: React.FC<
   BodyMeasurementsEditModalProps
 > = ({ visible, onClose }) => {
-  const { profile } = useUser();
   const { updateBodyAnalysis, bodyAnalysis } = useProfileStore();
 
   // Form state
@@ -42,17 +40,15 @@ export const BodyMeasurementsEditModal: React.FC<
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Load current values when modal opens
-  // SSOT: profileStore.bodyAnalysis is authoritative; profile.personalInfo.weight/height are deprecated
   useEffect(() => {
     if (visible) {
-      const w = bodyAnalysis?.current_weight_kg || profile?.bodyMetrics?.current_weight_kg || (profile?.personalInfo as any)?.weight;
-      const h = bodyAnalysis?.height_cm || profile?.bodyMetrics?.height_cm || (profile?.personalInfo as any)?.height;
+      const w = bodyAnalysis?.current_weight_kg;
+      const h = bodyAnalysis?.height_cm;
       setWeight(w ? String(w) : "");
       setHeight(h ? String(h) : "");
       setErrors({});
     }
-  }, [visible, bodyAnalysis, profile]);
+  }, [visible, bodyAnalysis]);
 
   // Calculate BMI
   const bmi = useMemo(() => {
@@ -68,9 +64,12 @@ export const BodyMeasurementsEditModal: React.FC<
   const bmiCategory = useMemo(() => {
     if (!bmi) return null;
     const bmiValue = parseFloat(bmi);
-    if (bmiValue < 18.5) return { label: "Underweight", color: ResponsiveTheme.colors.info };
-    if (bmiValue < 25) return { label: "Normal", color: ResponsiveTheme.colors.success };
-    if (bmiValue < 30) return { label: "Overweight", color: ResponsiveTheme.colors.warning };
+    if (bmiValue < 18.5)
+      return { label: "Underweight", color: ResponsiveTheme.colors.info };
+    if (bmiValue < 25)
+      return { label: "Normal", color: ResponsiveTheme.colors.success };
+    if (bmiValue < 30)
+      return { label: "Overweight", color: ResponsiveTheme.colors.warning };
     return { label: "Obese", color: ResponsiveTheme.colors.error };
   }, [bmi]);
 
@@ -109,7 +108,6 @@ export const BodyMeasurementsEditModal: React.FC<
 
     setIsSaving(true);
     try {
-      // ✅ Update body measurements via profileStore's bodyAnalysis
       updateBodyAnalysis({
         height_cm: parseFloat(height),
         current_weight_kg: parseFloat(weight),
@@ -122,18 +120,17 @@ export const BodyMeasurementsEditModal: React.FC<
     } finally {
       setIsSaving(false);
     }
-  }, [height, weight, profile, updateBodyAnalysis, onClose, validate]);
+  }, [height, weight, updateBodyAnalysis, onClose, validate]);
 
   const hasChanges = useCallback(() => {
-    // SSOT: profileStore.bodyAnalysis is authoritative for weight/height
-    const origW = bodyAnalysis?.current_weight_kg || profile?.bodyMetrics?.current_weight_kg || (profile?.personalInfo as any)?.weight;
-    const origH = bodyAnalysis?.height_cm || profile?.bodyMetrics?.height_cm || (profile?.personalInfo as any)?.height;
+    const origW = bodyAnalysis?.current_weight_kg;
+    const origH = bodyAnalysis?.height_cm;
     if (!origW && !origH) return true;
     return (
       height !== (origH ? String(origH) : "") ||
       weight !== (origW ? String(origW) : "")
     );
-  }, [height, weight, bodyAnalysis, profile]);
+  }, [height, weight, bodyAnalysis]);
 
   return (
     <SettingsModalWrapper
@@ -194,19 +191,28 @@ export const BodyMeasurementsEditModal: React.FC<
                 <View
                   style={[
                     styles.bmiScaleSegment,
-                    { backgroundColor: ResponsiveTheme.colors.info, flex: 18.5 },
+                    {
+                      backgroundColor: ResponsiveTheme.colors.info,
+                      flex: 18.5,
+                    },
                   ]}
                 />
                 <View
                   style={[
                     styles.bmiScaleSegment,
-                    { backgroundColor: ResponsiveTheme.colors.success, flex: 6.5 },
+                    {
+                      backgroundColor: ResponsiveTheme.colors.success,
+                      flex: 6.5,
+                    },
                   ]}
                 />
                 <View
                   style={[
                     styles.bmiScaleSegment,
-                    { backgroundColor: ResponsiveTheme.colors.warning, flex: 5 },
+                    {
+                      backgroundColor: ResponsiveTheme.colors.warning,
+                      flex: 5,
+                    },
                   ]}
                 />
                 <View

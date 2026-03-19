@@ -71,6 +71,7 @@ import {
   transformDietResponseToWeeklyPlan,
   transformWorkoutResponseToWeeklyPlan,
 } from "../services/aiRequestTransformers";
+import { generateUUID } from "../utils/uuid";
 
 // ============================================================================
 // TYPES
@@ -787,7 +788,7 @@ function transformWorkoutData(workoutPlan: any, dayOfWeek: string): Workout {
   );
 
   return {
-    id: `${dayOfWeek}_workout_${Date.now()}`,
+    id: `${dayOfWeek}_workout_${generateUUID()}`,
     title: workoutPlan.title || "AI Generated Workout",
     description: workoutPlan.description || "",
     category: "strength", // Default category

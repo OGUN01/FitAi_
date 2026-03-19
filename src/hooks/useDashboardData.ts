@@ -20,6 +20,8 @@ import { useAchievementStore } from "../stores/achievementStore";
 import { useUserStore } from "../stores/userStore";
 import { useAnalyticsStore } from "../stores/analyticsStore";
 import { useProfileStore } from "../stores/profileStore";
+import { findCompletedSessionForWorkout } from "../utils/workoutIdentity";
+import { getCurrentWeekStart } from "../utils/weekUtils";
 
 // Types for dashboard data
 export interface DashboardUser {
@@ -176,6 +178,7 @@ export const useDashboardData = (): DashboardData => {
 export const useTodaysWorkout = () => {
   const weeklyWorkoutPlan = useFitnessStore((s) => s.weeklyWorkoutPlan);
   const workoutProgress = useFitnessStore((s) => s.workoutProgress);
+  const completedSessions = useFitnessStore((s) => s.completedSessions);
 
   return useMemo(() => {
     if (!weeklyWorkoutPlan?.workouts) {
@@ -202,13 +205,19 @@ export const useTodaysWorkout = () => {
     }
 
     const progress = workoutProgress[todaysWorkout.id];
+    const completedSession = findCompletedSessionForWorkout({
+      completedSessions,
+      workout: todaysWorkout as any,
+      plan: weeklyWorkoutPlan,
+      weekStart: getCurrentWeekStart(),
+    });
 
     return {
       workout: todaysWorkout,
-      isCompleted: progress?.progress === 100,
-      progress: progress?.progress ?? 0,
+      isCompleted: !!completedSession || progress?.progress === 100,
+      progress: completedSession ? 100 : progress?.progress ?? 0,
     };
-  }, [weeklyWorkoutPlan, workoutProgress]);
+  }, [weeklyWorkoutPlan, workoutProgress, completedSessions]);
 };
 
 /**

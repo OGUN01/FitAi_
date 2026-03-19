@@ -2,6 +2,8 @@ import { dataBridge } from "../DataBridge";
 import { offlineService } from "../offline";
 import { supabase } from "../supabase";
 import { LocalWorkoutSession } from "../../types/localData";
+import { useFitnessStore } from "../../stores/fitnessStore";
+import { getPlanIdentityForWorkoutId } from "../../utils/workoutIdentity";
 
 export async function createWorkoutSession(
   session: LocalWorkoutSession,
@@ -40,6 +42,10 @@ export async function createWorkoutSession(
 async function syncWorkoutSessionToSupabase(
   session: LocalWorkoutSession,
 ): Promise<void> {
+  const planIdentity = getPlanIdentityForWorkoutId(
+    session.workoutId,
+    useFitnessStore.getState().weeklyWorkoutPlan,
+  );
   try {
     const userId = session.userId;
 
@@ -48,19 +54,29 @@ async function syncWorkoutSessionToSupabase(
       return;
     }
 
-    const { error } = await supabase.from("workout_sessions").upsert({
-      id: session.id,
-      user_id: userId,
-      workout_id: session.workoutId || null,
-      started_at: session.startedAt,
-      completed_at: session.completedAt,
-      duration: session.duration ?? 0,
-      calories_burned: session.caloriesBurned ?? 0,
-      exercises: session.exercises,
-      notes: session.notes || "",
-      rating: session.rating || 0,
-      is_completed: session.isCompleted,
-    }, { onConflict: 'id', ignoreDuplicates: false });
+    const { error } = await supabase.from("workout_sessions").upsert(
+      {
+        id: session.id,
+        user_id: userId,
+        workout_id: session.workoutId || null,
+        planned_day_key: planIdentity.plannedDayKey || null,
+        plan_slot_key: planIdentity.planSlotKey || null,
+        started_at: session.startedAt,
+        completed_at: session.completedAt,
+        duration: session.duration ?? null,
+        total_duration_minutes: session.duration ?? null,
+        calories_burned: session.caloriesBurned ?? null,
+        exercises: session.exercises,
+        exercises_completed: session.exercises,
+        notes: session.notes || "",
+        rating:
+          typeof session.rating === "number" && session.rating > 0
+            ? session.rating
+            : null,
+        is_completed: session.isCompleted,
+      },
+      { onConflict: "id", ignoreDuplicates: false },
+    );
 
     if (error) {
       console.warn(
@@ -74,13 +90,20 @@ async function syncWorkoutSessionToSupabase(
           id: session.id,
           user_id: session.userId,
           workout_id: session.workoutId,
+          planned_day_key: planIdentity.plannedDayKey || null,
+          plan_slot_key: planIdentity.planSlotKey || null,
           started_at: session.startedAt,
           completed_at: session.completedAt,
-          duration: session.duration ?? 0,
-          calories_burned: session.caloriesBurned ?? 0,
+          duration: session.duration ?? null,
+          total_duration_minutes: session.duration ?? null,
+          calories_burned: session.caloriesBurned ?? null,
           exercises: session.exercises,
+          exercises_completed: session.exercises,
           notes: session.notes || "",
-          rating: session.rating || 0,
+          rating:
+            typeof session.rating === "number" && session.rating > 0
+              ? session.rating
+              : null,
           is_completed: session.isCompleted,
         },
         userId: userId,
@@ -98,13 +121,20 @@ async function syncWorkoutSessionToSupabase(
         id: session.id,
         user_id: session.userId,
         workout_id: session.workoutId,
+        planned_day_key: planIdentity.plannedDayKey || null,
+        plan_slot_key: planIdentity.planSlotKey || null,
         started_at: session.startedAt,
         completed_at: session.completedAt,
-        duration: session.duration ?? 0,
-        calories_burned: session.caloriesBurned ?? 0,
+        duration: session.duration ?? null,
+        total_duration_minutes: session.duration ?? null,
+        calories_burned: session.caloriesBurned ?? null,
         exercises: session.exercises,
+        exercises_completed: session.exercises,
         notes: session.notes || "",
-        rating: session.rating || 0,
+        rating:
+          typeof session.rating === "number" && session.rating > 0
+            ? session.rating
+            : null,
         is_completed: session.isCompleted,
       },
       userId: session.userId || "unknown",
@@ -177,7 +207,10 @@ export async function deleteWorkoutSession(
         .delete()
         .eq("id", sessionId);
       if (error) {
-        console.warn("\u26a0\ufe0f Failed to delete from Supabase:", error.message);
+        console.warn(
+          "\u26a0\ufe0f Failed to delete from Supabase:",
+          error.message,
+        );
       }
     } catch (syncError) {
       console.warn("\u26a0\ufe0f Supabase delete sync error:", syncError);

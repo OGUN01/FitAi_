@@ -22,13 +22,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { clearNutritionCache } from "../stores/nutrition/selectors";
 import { invalidateMetricsCache } from "../hooks/useCalculatedMetrics";
 import { userMetricsService } from "../services/userMetricsService";
+import { offlineService } from "../services/offline";
+import { syncEngine } from "../services/SyncEngine";
 
 /**
  * Clears all user data from all stores.
  * Call this function on logout AFTER calling the auth logout.
  */
 export const clearAllUserData = async (): Promise<void> => {
-
   const errors: string[] = [];
 
   // Helper: safely reset a store without letting one failure block others
@@ -45,22 +46,39 @@ export const clearAllUserData = async (): Promise<void> => {
 
   // Fitness store
   const fitnessState = useFitnessStore.getState();
-  safeReset("Fitness store", fitnessState.reset || fitnessState.clearData || (() => {}));
+  safeReset(
+    "Fitness store",
+    fitnessState.reset || fitnessState.clearData || (() => {}),
+  );
 
   // Nutrition store
   const nutritionState = useNutritionStore.getState();
-  safeReset("Nutrition store", nutritionState.reset || nutritionState.clearData || (() => {}));
+  safeReset(
+    "Nutrition store",
+    nutritionState.reset || nutritionState.clearData || (() => {}),
+  );
 
   // Clear module-level nutrition selector caches (prevents stale data across user sessions)
   clearNutritionCache();
 
   // Clear singleton service caches (user-specific data keyed without userId)
-  try { userMetricsService.clearCache(); } catch (e) {}
-  try { invalidateMetricsCache(); } catch (e) {}
+  try {
+    userMetricsService.clearCache();
+  } catch (e) {
+    console.error("Failed to clear userMetricsService cache:", e);
+  }
+  try {
+    invalidateMetricsCache();
+  } catch (e) {
+    console.error("Failed to invalidate metrics cache:", e);
+  }
 
   // Hydration store
   const hydrationState = useHydrationStore.getState();
-  safeReset("Hydration store", hydrationState.reset || hydrationState.resetDaily || (() => {}));
+  safeReset(
+    "Hydration store",
+    hydrationState.reset || hydrationState.resetDaily || (() => {}),
+  );
 
   // Analytics store
   const analyticsState = useAnalyticsStore.getState();
@@ -68,11 +86,15 @@ export const clearAllUserData = async (): Promise<void> => {
 
   // Achievement store
   const achievementState = useAchievementStore.getState();
-  if (achievementState.reset) safeReset("Achievement store", achievementState.reset);
+  if (achievementState.reset)
+    safeReset("Achievement store", achievementState.reset);
 
   // Health data store
   const healthDataState = useHealthDataStore.getState();
-  safeReset("Health data store", healthDataState.reset || healthDataState.resetHealthData || (() => {}));
+  safeReset(
+    "Health data store",
+    healthDataState.reset || healthDataState.resetHealthData || (() => {}),
+  );
 
   // Subscription store
   const subscriptionState = useSubscriptionStore.getState();
@@ -80,7 +102,10 @@ export const clearAllUserData = async (): Promise<void> => {
 
   // App state store
   const appState = useAppStateStore.getState();
-  safeReset("App state store", appState.reset || appState.resetToToday || (() => {}));
+  safeReset(
+    "App state store",
+    appState.reset || appState.resetToToday || (() => {}),
+  );
 
   // Profile store
   const profileState = useProfileStore.getState();
@@ -90,7 +115,7 @@ export const clearAllUserData = async (): Promise<void> => {
   const userState = useUserStore.getState();
   safeReset("User store", userState.reset);
 
-  // Also clear persisted storage for these stores
+  // Also clear persisted storage for these stores and any auth-scoped queues
   const storageKeysToRemove = [
     "fitness-storage",
     "nutrition-storage",
@@ -104,22 +129,55 @@ export const clearAllUserData = async (): Promise<void> => {
     "profile-storage-v2",
     "user-storage",
     "enhanced-offline-storage",
+    "auth_session",
+    "offline_sync_queue",
+    "offline_data",
+    "@fitai_sync_queue",
+    "@fitai_last_sync",
+    "onboarding_data",
+    "onboarding_completed",
+    "profileEditIntent",
     // DataBridge CRUD cache — must clear to prevent stale data leaking across user sessions
     "workout_sessions",
     "meal_logs",
+    "body_analysis",
     "body_measurements",
   ];
 
+  try {
+    const allKeys = await AsyncStorage.getAllKeys();
+    for (const key of allKeys) {
+      if (key.startsWith("onboarding_") || key.startsWith("onboarding_partial_")) {
+        storageKeysToRemove.push(key);
+      }
+    }
+  } catch (e) {
+    console.error("Failed to enumerate AsyncStorage keys for cleanup:", e);
+  }
+
+  try {
+    await offlineService.clearOfflineData();
+  } catch (e) {
+    console.error("Failed to clear offline service data:", e);
+  }
+
+  try {
+    await syncEngine.resetForLogout();
+  } catch (e) {
+    console.error("Failed to reset sync engine state:", e);
+  }
+
   await Promise.all(
-    storageKeysToRemove.map((key) =>
-      AsyncStorage.removeItem(key).catch(() => {}),
+    Array.from(new Set(storageKeysToRemove)).map((key) =>
+      AsyncStorage.removeItem(key).catch((e) => {
+        console.error(`Failed to remove AsyncStorage key "${key}":`, e);
+      }),
     ),
   );
 
   if (errors.length > 0) {
     // errors occurred but we don't throw - best effort cleanup
   }
-
 };
 
 /**
@@ -127,7 +185,6 @@ export const clearAllUserData = async (): Promise<void> => {
  * Useful for regenerating plans.
  */
 export const clearPlanData = (): void => {
-
   // Clear fitness plan
   const fitnessReset = useFitnessStore.getState().clearData;
   if (fitnessReset) {
@@ -139,7 +196,6 @@ export const clearPlanData = (): void => {
   if (nutritionReset) {
     nutritionReset();
   }
-
 };
 
 export default clearAllUserData;

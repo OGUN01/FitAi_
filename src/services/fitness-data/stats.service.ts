@@ -27,8 +27,10 @@ export class StatsService {
   > {
     try {
       let query = supabase
-        .from("workouts")
-        .select("type, duration_minutes, calories_burned, completed_at")
+        .from("workout_sessions")
+        .select(
+          "workout_type, duration, total_duration_minutes, calories_burned, completed_at",
+        )
         .eq("user_id", userId)
         .not("completed_at", "is", null);
 
@@ -64,7 +66,7 @@ export class StatsService {
       const workouts = data || [];
       const totalWorkouts = workouts.length;
       const totalDuration = workouts.reduce(
-        (sum, w) => sum + (w.duration_minutes || 0),
+        (sum, w) => sum + (w.total_duration_minutes || w.duration || 0),
         0,
       );
       const totalCalories = workouts.reduce(
@@ -76,7 +78,8 @@ export class StatsService {
 
       const workoutsByType = workouts.reduce(
         (acc, w) => {
-          acc[w.type] = (acc[w.type] || 0) + 1;
+          const wType = w.workout_type || "unknown";
+          acc[wType] = (acc[wType] || 0) + 1;
           return acc;
         },
         {} as Record<string, number>,

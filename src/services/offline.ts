@@ -36,7 +36,7 @@ interface SupabaseResponse {
 
 // Map LocalWorkoutSession camelCase fields to Supabase snake_case columns
 function mapSessionToDb(data: Record<string, unknown>) {
-  if ('caloriesBurned' in data || 'userId' in data || 'workoutId' in data) {
+  if ("caloriesBurned" in data || "userId" in data || "workoutId" in data) {
     return {
       id: data.id,
       user_id: data.userId,
@@ -46,8 +46,9 @@ function mapSessionToDb(data: Record<string, unknown>) {
       duration: data.duration,
       calories_burned: data.caloriesBurned,
       exercises: data.exercises,
-      notes: data.notes || '',
-      rating: data.rating || 0,
+      notes: data.notes || "",
+      rating:
+        typeof data.rating === "number" && data.rating > 0 ? data.rating : null,
       is_completed: data.isCompleted,
     };
   }
@@ -137,6 +138,7 @@ class OfflineService {
         }
       });
     } catch (error) {
+      console.error("[Offline] Failed to setup network listener:", error);
     }
   }
 
@@ -155,14 +157,20 @@ class OfflineService {
         // Purge stale workout_sessions actions with camelCase fields
         const before = this.syncQueue.length;
         this.syncQueue = this.syncQueue.filter((action) => {
-          if (action.table === 'workout_sessions' && action.type === 'CREATE') {
+          if (action.table === "workout_sessions" && action.type === "CREATE") {
             const d = action.data as Record<string, unknown>;
-            return !('caloriesBurned' in d || 'userId' in d || 'workoutId' in d);
+            return !(
+              "caloriesBurned" in d ||
+              "userId" in d ||
+              "workoutId" in d
+            );
           }
           return true;
         });
         if (this.syncQueue.length !== before) {
-          this.saveOfflineData().catch(() => {});
+          this.saveOfflineData().catch((err) => {
+            console.error("[Offline] Failed to save purged queue:", err);
+          });
         }
       }
 
@@ -171,6 +179,7 @@ class OfflineService {
         this.offlineData = new Map(Object.entries(data));
       }
     } catch (error) {
+      console.error("[Offline] Failed to load offline data:", error);
     }
   }
 
@@ -190,6 +199,7 @@ class OfflineService {
         ),
       ]);
     } catch (error) {
+      console.error("[Offline] Failed to save offline data:", error);
     }
   }
 
@@ -370,11 +380,15 @@ class OfflineService {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-
         switch (type) {
           case "CREATE":
-            const insertData = table === 'workout_sessions' ? mapSessionToDb(data as Record<string, unknown>) : data;
-            const createResponse = await supabase.from(table).insert([insertData]);
+            const insertData =
+              table === "workout_sessions"
+                ? mapSessionToDb(data as Record<string, unknown>)
+                : data;
+            const createResponse = await supabase
+              .from(table)
+              .insert([insertData]);
             const createValidation = validateSupabaseResponse(
               createResponse,
               "CREATE",
@@ -449,7 +463,7 @@ class OfflineService {
 
     // All attempts failed
     const errorMessage = `Failed to execute ${type} on ${table} after ${maxRetries} attempts: ${lastError?.message}`;
-    console.warn(errorMessage);
+    console.error(errorMessage);
     throw new Error(errorMessage);
   }
 

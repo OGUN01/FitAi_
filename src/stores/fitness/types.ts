@@ -122,6 +122,8 @@ export interface CompletedSession {
   sessionId: string;           // UUID, unique per completion
   type: 'planned' | 'extra';   // enum — extensible (e.g. 'recovery' later)
   workoutId: string;           // plan workout ID ('planned') or generated UUID ('extra')
+  plannedDayKey?: string;      // canonical planned day owner for planned workouts
+  planSlotKey?: string;        // canonical slot key within the weekly plan (e.g. monday:0)
   workoutSnapshot: {
     title: string;
     category: string;

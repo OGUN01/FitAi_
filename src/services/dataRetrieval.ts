@@ -206,23 +206,18 @@ class DataRetrievalService {
 
     const activities: RecentActivity[] = [];
 
-    // Add completed workouts
-    Object.values(fitnessStore.workoutProgress)
-      .filter((progress) => progress.progress === 100 && progress.completedAt)
-      .forEach((progress) => {
-        const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find(
-          (w) => w.id === progress.workoutId,
-        );
-        if (workout) {
-          activities.push({
-            id: `workout_${progress.workoutId}`,
-            type: "workout",
-            name: workout.title,
-            completedAt: progress.completedAt!,
-            calories: workout.estimatedCalories,
-            duration: workout.duration,
-          });
-        }
+    // Add completed workouts from the canonical completion ledger
+    fitnessStore.completedSessions
+      .filter((session) => session.completedAt)
+      .forEach((session) => {
+        activities.push({
+          id: `workout_${session.sessionId}`,
+          type: "workout",
+          name: session.workoutSnapshot.title,
+          completedAt: session.completedAt,
+          calories: session.caloriesBurned,
+          duration: session.durationMinutes,
+        });
       });
 
     // Add completed meals

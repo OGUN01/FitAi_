@@ -37,15 +37,20 @@ export async function completeWorkout(
               started_at: sessionData?.startedAt || new Date().toISOString(),
               completed_at: new Date().toISOString(),
               duration:
-                sessionData?.duration || sessionData?.totalDuration || workout.duration || null,
+                sessionData?.duration ||
+                sessionData?.totalDuration ||
+                workout.duration ||
+                null,
               calories_burned: actualCaloriesBurned,
               exercises:
-                sessionData?.exercisesCompleted ||
-                workout.exercises ||
-                null,
+                sessionData?.exercisesCompleted || workout.exercises || null,
               notes:
                 sessionData?.notes || `Weekly workout plan: ${workout.title}`,
-              rating: sessionData?.rating || 0,
+              rating:
+                typeof sessionData?.rating === "number" &&
+                sessionData.rating > 0
+                  ? sessionData.rating
+                  : null,
               is_completed: true,
             });
 

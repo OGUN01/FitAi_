@@ -72,23 +72,27 @@ function buildApp(featureKey: 'ai_generation' | 'barcode_scan' | 'chat_message' 
 }
 
 function mockSubscriptionQuery(subscription: any, freePlan: any = FREE_PLAN) {
-	const maybeSingleSub = (vi.fn() as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-		data: subscription,
-		error: null,
-	});
-	const limitSub = (vi.fn() as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ maybeSingle: maybeSingleSub });
-	const orderSub = (vi.fn() as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ limit: limitSub });
-	const inSub = (vi.fn() as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ order: orderSub });
-	const eqSub = (vi.fn() as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ in: inSub });
-	const selectSub = (vi.fn() as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ eq: eqSub });
+	const subscriptionChain: any = {
+		select: vi.fn().mockReturnThis(),
+		eq: vi.fn().mockReturnThis(),
+		in: vi.fn().mockReturnThis(),
+		order: vi.fn().mockReturnThis(),
+		limit: vi.fn().mockReturnThis(),
+		maybeSingle: vi.fn().mockResolvedValue({
+			data: subscription,
+			error: null,
+		}),
+	};
 
-	const singleFree = (vi.fn() as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ data: freePlan, error: null });
-	const eqFreeId = (vi.fn() as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ single: singleFree });
-	const selectFree = (vi.fn() as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ eq: eqFreeId });
+	const freePlanChain: any = {
+		select: vi.fn().mockReturnThis(),
+		eq: vi.fn().mockReturnThis(),
+		single: vi.fn().mockResolvedValue({ data: freePlan, error: null }),
+	};
 
 	const fromFn = vi.fn().mockImplementation((table: string) => {
-		if (table === 'subscriptions') return { select: selectSub };
-		if (table === 'subscription_plans') return { select: selectFree };
+		if (table === 'subscriptions') return subscriptionChain;
+		if (table === 'subscription_plans') return freePlanChain;
 		return {};
 	});
 
@@ -171,16 +175,18 @@ describe('subscriptionGateMiddleware', () => {
 	});
 
 	it('returns 500 on DB error (fail-closed)', async () => {
-		const maybeSingle = (vi.fn() as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-			data: null,
-			error: { message: 'connection lost' },
-		});
-		const limit = (vi.fn() as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ maybeSingle });
-		const order = (vi.fn() as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ limit });
-		const inFn = (vi.fn() as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ order });
-		const eq = (vi.fn() as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ in: inFn });
-		const select = (vi.fn() as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ eq });
-		const fromFn = (vi.fn() as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ select });
+		const subscriptionChain: any = {
+			select: vi.fn().mockReturnThis(),
+			eq: vi.fn().mockReturnThis(),
+			in: vi.fn().mockReturnThis(),
+			order: vi.fn().mockReturnThis(),
+			limit: vi.fn().mockReturnThis(),
+			maybeSingle: vi.fn().mockResolvedValue({
+				data: null,
+				error: { message: 'connection lost' },
+			}),
+		};
+		const fromFn = (vi.fn() as unknown as ReturnType<typeof vi.fn>).mockReturnValue(subscriptionChain);
 
 		(getSupabaseClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ from: fromFn } as any);
 
@@ -221,7 +227,7 @@ describe('subscriptionGateMiddleware', () => {
 		expect(body.error.message).toContain('5/5');
 	});
 
-	it('still passes if incrementUsage throws (non-critical)', async () => {
+	it('returns 500 if incrementUsage throws', async () => {
 		mockSubscriptionQuery(null, FREE_PLAN);
 		(checkUsageLimit as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
 			allowed: true,
@@ -234,6 +240,9 @@ describe('subscriptionGateMiddleware', () => {
 		const app = buildApp();
 		const res = await app.fetch(new Request('http://localhost/test'), makeEnv());
 
-		expect(res.status).toBe(200);
+		expect(res.status).toBe(500);
+		const body = (await res.json()) as any;
+		expect(body.success).toBe(false);
+		expect(body.error.code).toBe(ErrorCode.INTERNAL_ERROR);
 	});
 });

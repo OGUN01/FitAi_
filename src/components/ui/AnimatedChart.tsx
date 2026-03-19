@@ -44,9 +44,9 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
   height = 200,
   style,
 }) => {
-  // Sanitize inputs to prevent NaN
-  const currentValue = Number.isFinite(rawCurrentValue) ? rawCurrentValue : 70;
-  const targetValue = Number.isFinite(rawTargetValue) ? rawTargetValue : 65;
+  // Sanitize inputs to prevent NaN — use 0 if missing (never hardcode fake values)
+  const currentValue = Number.isFinite(rawCurrentValue) ? rawCurrentValue : 0;
+  const targetValue = Number.isFinite(rawTargetValue) ? rawTargetValue : 0;
 
   const progress = useSharedValue(0);
   const [tooltipData, setTooltipData] = useState<{

@@ -302,9 +302,10 @@ describe('handleVerifyPayment', () => {
 		(verifyPaymentSignature as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 
 		const { chain } = makeSupabaseMock();
-		chain.single.mockResolvedValue({
+		chain.maybeSingle.mockResolvedValue({
 			data: {
 				id: 'sub-db-1',
+				user_id: 'user-123',
 				tier: 'basic',
 				status: 'authenticated',
 				razorpay_subscription_id: 'sub_rzp_123',
@@ -403,11 +404,59 @@ describe('handleWebhook', () => {
 	it('processes valid webhook and returns 200', async () => {
 		(verifyWebhookSignature as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 
-		const { chain } = makeSupabaseMock();
-		chain.single.mockResolvedValue({ data: null, error: { message: 'not found' } });
-		chain.eq.mockReturnThis();
-		chain.update.mockReturnThis();
-		chain.insert.mockReturnValue(Promise.resolve({ error: null }));
+		const existingSubscription = {
+			id: 'sub-db-1',
+			user_id: 'user-123',
+			tier: 'basic',
+			status: 'created',
+			razorpay_subscription_id: 'sub_rzp_123',
+			notes: {},
+		};
+
+		(getSupabaseClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+			from: vi.fn((table: string) => {
+				if (table === 'webhook_events') {
+					return {
+						select: vi.fn().mockReturnValue({
+							eq: vi.fn().mockReturnValue({
+								limit: vi.fn().mockReturnValue({
+									single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116', message: 'not found' } }),
+								}),
+							}),
+						}),
+						insert: vi.fn().mockResolvedValue({ error: null }),
+					};
+				}
+				if (table === 'subscriptions') {
+					return {
+						select: vi.fn().mockReturnValue({
+							eq: vi.fn().mockReturnValue({
+								order: vi.fn().mockReturnValue({
+									limit: vi.fn().mockReturnValue({
+										maybeSingle: vi.fn().mockResolvedValue({ data: existingSubscription, error: null }),
+									}),
+								}),
+							}),
+						}),
+						update: vi.fn().mockReturnValue({
+							eq: vi.fn().mockResolvedValue({ error: null }),
+						}),
+					};
+				}
+				if (table === 'subscription_plans') {
+					return {
+						select: vi.fn().mockReturnValue({
+							eq: vi.fn().mockReturnValue({
+								eq: vi.fn().mockReturnValue({
+									single: vi.fn().mockResolvedValue({ data: BASIC_PLAN, error: null }),
+								}),
+							}),
+						}),
+					};
+				}
+				return {};
+			}),
+		} as any);
 
 		const app = buildRawApp(handleWebhook);
 		const res = await app.fetch(makeWebhookRequest(activationPayload), makeEnv());
@@ -466,11 +515,60 @@ describe('handleWebhook', () => {
 			created_at: 1703000000,
 		});
 
-		const { chain } = makeSupabaseMock();
-		chain.single.mockResolvedValue({ data: null, error: { message: 'not found' } });
-		chain.eq.mockReturnThis();
-		chain.update.mockReturnThis();
-		chain.insert.mockReturnValue(Promise.resolve({ error: null }));
+		const existingSubscription = {
+			id: 'sub-db-1',
+			user_id: 'user-123',
+			tier: 'basic',
+			status: 'active',
+			razorpay_subscription_id: 'sub_rzp_123',
+			current_period_end: 1703000000,
+			notes: {},
+		};
+
+		(getSupabaseClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+			from: vi.fn((table: string) => {
+				if (table === 'webhook_events') {
+					return {
+						select: vi.fn().mockReturnValue({
+							eq: vi.fn().mockReturnValue({
+								limit: vi.fn().mockReturnValue({
+									single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116', message: 'not found' } }),
+								}),
+							}),
+						}),
+						insert: vi.fn().mockResolvedValue({ error: null }),
+					};
+				}
+				if (table === 'subscriptions') {
+					return {
+						select: vi.fn().mockReturnValue({
+							eq: vi.fn().mockReturnValue({
+								order: vi.fn().mockReturnValue({
+									limit: vi.fn().mockReturnValue({
+										maybeSingle: vi.fn().mockResolvedValue({ data: existingSubscription, error: null }),
+									}),
+								}),
+							}),
+						}),
+						update: vi.fn().mockReturnValue({
+							eq: vi.fn().mockResolvedValue({ error: null }),
+						}),
+					};
+				}
+				if (table === 'subscription_plans') {
+					return {
+						select: vi.fn().mockReturnValue({
+							eq: vi.fn().mockReturnValue({
+								eq: vi.fn().mockReturnValue({
+									single: vi.fn().mockResolvedValue({ data: BASIC_PLAN, error: null }),
+								}),
+							}),
+						}),
+					};
+				}
+				return {};
+			}),
+		} as any);
 
 		const app = buildRawApp(handleWebhook);
 		const res = await app.fetch(makeWebhookRequest(chargedPayload, 'valid_sig', 'evt_charged_1'), makeEnv());
@@ -751,10 +849,10 @@ describe('handleResumeSubscription', () => {
 		(client.from as any).mockImplementation(() => ({
 			select: vi.fn().mockReturnValue({
 				eq: vi.fn().mockReturnValue({
-					eq: vi.fn().mockReturnValue({
+					in: vi.fn().mockReturnValue({
 						order: vi.fn().mockReturnValue({
 							limit: vi.fn().mockReturnValue({
-								single: vi.fn().mockResolvedValue({
+								maybeSingle: vi.fn().mockResolvedValue({
 									data: {
 										id: 'sub-db-1',
 										tier: 'basic',
@@ -790,10 +888,10 @@ describe('handleResumeSubscription', () => {
 		(client.from as any).mockImplementation(() => ({
 			select: vi.fn().mockReturnValue({
 				eq: vi.fn().mockReturnValue({
-					eq: vi.fn().mockReturnValue({
+					in: vi.fn().mockReturnValue({
 						order: vi.fn().mockReturnValue({
 							limit: vi.fn().mockReturnValue({
-								single: vi.fn().mockResolvedValue({ data: null, error: { message: 'not found' } }),
+								maybeSingle: vi.fn().mockResolvedValue({ data: null, error: { message: 'not found' } }),
 							}),
 						}),
 					}),

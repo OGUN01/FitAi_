@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import * as crypto from "expo-crypto";
 import { WeeklyMealPlan, DayMeal } from "../../ai";
 import { SyncStatus } from "../../types/localData";
@@ -49,7 +50,7 @@ export const createMealPlanActions = (set: any, get: () => NutritionState) => ({
                 lastSyncedAt: undefined,
                 lastModifiedAt: new Date().toISOString(),
                 syncVersion: 1,
-                deviceId: "dev-device",
+                deviceId: Platform.OS ?? "unknown",
               },
             };
 
@@ -194,7 +195,7 @@ export const createMealProgressActions = (
           syncMetadata: {
             lastModifiedAt: completedAt,
             syncVersion: (existingLog?.syncMetadata?.syncVersion || 0) + 1,
-            deviceId: "dev-device",
+            deviceId: Platform.OS ?? "unknown",
           },
         });
       }

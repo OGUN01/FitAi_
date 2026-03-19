@@ -21,6 +21,7 @@ import {
 } from "./diet";
 
 import { Achievement } from "./ai";
+import { MealLogProvenance } from "./nutritionLogging";
 
 // ============================================================================
 // ONBOARDING DATA
@@ -169,10 +170,12 @@ export interface LoggedFood {
   id: string;
   foodId: string;
   food?: LocalFood; // optional to allow lightweight logs
+  name?: string;
   quantity: number;
   unit: string;
   calories?: number;
   macros?: Macronutrients;
+  provenance?: MealLogProvenance;
 }
 // ============================================================================
 // PROGRESS MEASUREMENTS (Lightweight type used across services)
@@ -391,6 +394,7 @@ export interface MealLog {
     lng?: number;
   };
   mood?: "satisfied" | "still_hungry" | "too_full";
+  provenance?: MealLogProvenance;
   syncStatus: SyncStatus;
   syncMetadata: SyncMetadata;
 }

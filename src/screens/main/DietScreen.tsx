@@ -39,7 +39,10 @@ import { DietModals } from "../../components/diet/DietModals";
 import { DietQuickActions } from "../../components/diet/DietQuickActions";
 import { ManualBarcodeEntry } from "../../components/diet/ManualBarcodeEntry";
 import DatabaseDownloadBanner from "../../components/DatabaseDownloadBanner";
-import { LogMealModal, LogMealScanResult } from "../../components/diet/LogMealModal";
+import {
+  LogMealModal,
+  LogMealScanResult,
+} from "../../components/diet/LogMealModal";
 import { MealDetailModal } from "../../components/diet/MealDetailModal";
 import { DayMeal } from "../../types/ai";
 
@@ -70,12 +73,15 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   const [showAIMealsPanel, setShowAIMealsPanel] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [showLogMealModal, setShowLogMealModal] = useState(false);
-  const [logMealScanResult, setLogMealScanResult] = useState<LogMealScanResult | null>(null);
+  const [logMealScanResult, setLogMealScanResult] =
+    useState<LogMealScanResult | null>(null);
   const [showMealDetailModal, setShowMealDetailModal] = useState(false);
-  const [selectedMealForDetail, setSelectedMealForDetail] = useState<DayMeal | null>(null);
+  const [selectedMealForDetail, setSelectedMealForDetail] =
+    useState<DayMeal | null>(null);
   const [showBarcodeOptions, setShowBarcodeOptions] = useState(false);
   const [showLabelScanPrep, setShowLabelScanPrep] = useState(false);
   const [labelScanGramsInput, setLabelScanGramsInput] = useState("");
+  const [photoWeightInput, setPhotoWeightInput] = useState("");
 
   const { showPaywall, paywallReason, dismissPaywall } = useSubscriptionStore();
 
@@ -156,19 +162,36 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     aiError,
     portionGrams,
     setPortionGrams,
+    showWeightPrompt,
+    confirmPhotoRecognition,
+    dismissWeightPrompt,
     setLogMealScanCallback,
   } = useAIMealGeneration({
-    onBarcodeNotFound: (barcode) => navigation?.navigate('ContributeFood', { barcode }),
+    onBarcodeNotFound: (barcode) =>
+      navigation?.navigate("ContributeFood", { barcode }),
   });
 
   const { setSelectedDay } = useAppStateStore();
 
   // Day name → index mapping for date navigation
   const DAY_NAME_TO_INDEX: Record<string, number> = {
-    sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
-    thursday: 4, friday: 5, saturday: 6,
+    sunday: 0,
+    monday: 1,
+    tuesday: 2,
+    wednesday: 3,
+    thursday: 4,
+    friday: 5,
+    saturday: 6,
   };
-  const INDEX_TO_DAY_NAME = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
+  const INDEX_TO_DAY_NAME = [
+    "sunday",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+  ];
 
   // Compute the actual Date for the currently selected day
   const selectedDate = React.useMemo(() => {
@@ -193,9 +216,22 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     setSelectedDay(INDEX_TO_DAY_NAME[next.getDay()] as any);
   }, [selectedDate, setSelectedDay]);
 
-  const { getMealProgress: storeGetMealProgress, dailyMeals } = useNutritionStore();
-  const { personalInfo, bodyAnalysis, dietPreferences, workoutPreferences, advancedReview } = useProfileStore();
-  const userProfile = { personalInfo, bodyMetrics: bodyAnalysis, fitnessGoals: advancedReview, dietPreferences, workoutPreferences };
+  const { getMealProgress: storeGetMealProgress, dailyMeals } =
+    useNutritionStore();
+  const {
+    personalInfo,
+    bodyAnalysis,
+    dietPreferences,
+    workoutPreferences,
+    advancedReview,
+  } = useProfileStore();
+  const userProfile = {
+    personalInfo,
+    bodyMetrics: bodyAnalysis,
+    fitnessGoals: advancedReview,
+    dietPreferences,
+    workoutPreferences,
+  };
 
   const canAccessMealFeatures = isAuthenticated || isGuestMode;
 
@@ -219,7 +255,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   }, [route?.params, navigation, forceRefresh]);
 
   useEffect(() => {
-    if (!isActive || Platform.OS === 'web') return;
+    if (!isActive || Platform.OS === "web") return;
     const pulseAnimation = Animated.loop(
       Animated.sequence([
         Animated.timing(fabScale, {
@@ -271,19 +307,25 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     setShowMealDetailModal(true);
   }, []);
 
-  const handleMealDetailComplete = useCallback((meal: DayMeal) => {
-    completeMealPreparation(meal);
-    setShowMealDetailModal(false);
-    setSelectedMealForDetail(null);
-  }, [completeMealPreparation]);
-
-  const handleMealDetailDelete = useCallback(async (meal: DayMeal) => {
-    const result = await handleDeleteMeal(meal);
-    if (result) {
+  const handleMealDetailComplete = useCallback(
+    (meal: DayMeal) => {
+      completeMealPreparation(meal);
       setShowMealDetailModal(false);
       setSelectedMealForDetail(null);
-    }
-  }, [handleDeleteMeal]);
+    },
+    [completeMealPreparation],
+  );
+
+  const handleMealDetailDelete = useCallback(
+    async (meal: DayMeal) => {
+      const result = await handleDeleteMeal(meal);
+      if (result) {
+        setShowMealDetailModal(false);
+        setSelectedMealForDetail(null);
+      }
+    },
+    [handleDeleteMeal],
+  );
 
   const handleManualProductFound = useCallback(
     (product: ScannedProduct) => {
@@ -313,7 +355,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     // Use a Set to avoid double-counting by meal id.
     mealsCount: (() => {
       const storeMealIds = new Set(dailyMeals.map((m) => m.id));
-      const extraFromSupabase = (userMeals || []).filter((m) => !storeMealIds.has(m.id));
+      const extraFromSupabase = (userMeals || []).filter(
+        (m) => !storeMealIds.has(m.id),
+      );
       return dailyMeals.length + extraFromSupabase.length;
     })(),
   };
@@ -468,7 +512,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             />
 
             <DatabaseDownloadBanner />
-            {(foodsLoading || userMealsLoading || isGeneratingMeal) ? (
+            {foodsLoading || userMealsLoading || isGeneratingMeal ? (
               <View style={styles.loadingContainer}>
                 <AuroraSpinner size="lg" theme="primary" />
                 <Text style={styles.loadingText}>
@@ -477,14 +521,16 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                     : "Loading nutrition data..."}
                 </Text>
               </View>
-            ) : (foodsError || userMealsError || aiError) ? (
+            ) : foodsError || userMealsError || aiError ? (
               <GlassCard style={styles.errorCard} elevation={1} padding="md">
                 <Text style={styles.errorText}>
                   {foodsError || userMealsError || aiError}
                 </Text>
                 <Button
                   title="Retry"
-                  onPress={() => { refreshAll().catch(console.error); }}
+                  onPress={() => {
+                    refreshAll().catch(console.error);
+                  }}
                   size="sm"
                 />
               </GlassCard>
@@ -513,60 +559,76 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             {!weeklyMealPlan?.meals || weeklyMealPlan.meals.length === 0 ? (
               userMeals && userMeals.length > 0 ? (
                 <View style={styles.dailyMealsSection}>
-                  <Text style={styles.dailyMealsSectionTitle}>Today's Meals</Text>
+                  <Text style={styles.dailyMealsSectionTitle}>
+                    Today's Meals
+                  </Text>
                   {userMeals.map((meal) => (
-                    <GlassCard key={meal.id} elevation={1} padding="md" style={styles.dailyMealCard}>
+                    <GlassCard
+                      key={meal.id}
+                      elevation={1}
+                      padding="md"
+                      style={styles.dailyMealCard}
+                    >
                       <View style={styles.dailyMealRow}>
                         <View style={styles.dailyMealInfo}>
-                          <Text style={styles.dailyMealName}>{meal.name || meal.type}</Text>
+                          <Text style={styles.dailyMealName}>
+                            {meal.name || meal.type}
+                          </Text>
                           <Text style={styles.dailyMealMacros}>
-                            {meal.total_calories} cal | {Math.round(meal.total_protein || 0)}g P | {Math.round(meal.total_carbs || 0)}g C | {Math.round(meal.total_fat || 0)}g F
+                            {meal.total_calories} cal |{" "}
+                            {Math.round(meal.total_protein || 0)}g P |{" "}
+                            {Math.round(meal.total_carbs || 0)}g C |{" "}
+                            {Math.round(meal.total_fat || 0)}g F
                           </Text>
                         </View>
                         <View style={styles.dailyMealBadge}>
-                          <Ionicons name="checkmark-circle" size={rf(20)} color={ResponsiveTheme.colors.primary} />
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={rf(20)}
+                            color={ResponsiveTheme.colors.primary}
+                          />
                         </View>
                       </View>
                     </GlassCard>
                   ))}
                 </View>
               ) : (
-              <View
-                style={{
-                  paddingTop: ResponsiveTheme.spacing.md,
-                  paddingBottom: ResponsiveTheme.spacing.xl,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Ionicons
-                  name="restaurant-outline"
-                  size={rf(48)}
-                  color={ResponsiveTheme.colors.textSecondary}
+                <View
                   style={{
-                    opacity: 0.3,
-                    marginBottom: ResponsiveTheme.spacing.md,
-                  }}
-                />
-                <Text
-                  style={{
-                    color: ResponsiveTheme.colors.textSecondary,
-                    fontSize: ResponsiveTheme.fontSize.md,
-                    marginBottom: ResponsiveTheme.spacing.xs,
+                    paddingTop: ResponsiveTheme.spacing.md,
+                    paddingBottom: ResponsiveTheme.spacing.xl,
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
-                  No meals logged
-                </Text>
-                <Text
-                  style={{
-                    color: ResponsiveTheme.colors.textSecondary,
-                    opacity: 0.6,
-                    fontSize: ResponsiveTheme.fontSize.sm,
-                  }}
-                >
-                  Tap + to log your first meal
-                </Text>
-              </View>
+                  <Ionicons
+                    name="restaurant-outline"
+                    size={rf(48)}
+                    color={ResponsiveTheme.colors.textSecondary}
+                    style={{
+                      opacity: 0.3,
+                      marginBottom: ResponsiveTheme.spacing.md,
+                    }}
+                  />
+                  <Text
+                    style={{
+                      color: ResponsiveTheme.colors.textSecondary,
+                      fontSize: ResponsiveTheme.fontSize.md,
+                      marginBottom: ResponsiveTheme.spacing.xs,
+                    }}
+                  >
+                    No meals logged
+                  </Text>
+                  <Text
+                    style={{
+                      color: ResponsiveTheme.colors.textSecondary,
+                      opacity: 0.6,
+                      fontSize: ResponsiveTheme.fontSize.sm,
+                    }}
+                  >
+                    Tap + to log your first meal
+                  </Text>
+                </View>
               )
             ) : (
               <MealPlanView
@@ -588,7 +650,6 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               />
             )}
 
-
             {(() => {
               // D3: Deduplicate dailyMeals against userMeals.
               // userMeals come from Supabase meal_logs (manually logged).
@@ -596,31 +657,48 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               // They use different ID spaces, but a user could log the same meal
               // via both paths. Deduplicate by lowercased name + today's date.
               const userMealNames = new Set(
-                (userMeals || []).map((m) =>
-                  `${(m.name || m.type || '').toLowerCase()}_${new Date().toISOString().split('T')[0]}`,
+                (userMeals || []).map(
+                  (m) =>
+                    `${(m.name || m.type || "").toLowerCase()}_${new Date().toISOString().split("T")[0]}`,
                 ),
               );
-              const todayStr = new Date().toISOString().split('T')[0];
+              const todayStr = new Date().toISOString().split("T")[0];
               const uniqueDailyMeals = dailyMeals.filter((meal) => {
-                const mealDate = meal.createdAt ? meal.createdAt.split('T')[0] : '';
+                const mealDate = meal.createdAt
+                  ? meal.createdAt.split("T")[0]
+                  : "";
                 if (mealDate !== todayStr) return false; // Only today's meals
-                const key = `${(meal.name || '').toLowerCase()}_${todayStr}`;
+                const key = `${(meal.name || "").toLowerCase()}_${todayStr}`;
                 return !userMealNames.has(key);
               });
               return uniqueDailyMeals.length > 0 ? (
                 <View style={styles.dailyMealsSection}>
-                  <Text style={styles.dailyMealsSectionTitle}>Today's Added Meals</Text>
+                  <Text style={styles.dailyMealsSectionTitle}>
+                    Today's Added Meals
+                  </Text>
                   {uniqueDailyMeals.map((meal) => (
-                    <GlassCard key={meal.id} elevation={1} padding="md" style={styles.dailyMealCard}>
+                    <GlassCard
+                      key={meal.id}
+                      elevation={1}
+                      padding="md"
+                      style={styles.dailyMealCard}
+                    >
                       <View style={styles.dailyMealRow}>
                         <View style={styles.dailyMealInfo}>
                           <Text style={styles.dailyMealName}>{meal.name}</Text>
                           <Text style={styles.dailyMealMacros}>
-                            {meal.totalCalories} cal | {meal.totalMacros?.protein || 0}g P | {meal.totalMacros?.carbohydrates || 0}g C | {meal.totalMacros?.fat || 0}g F
+                            {meal.totalCalories} cal |{" "}
+                            {meal.totalMacros?.protein || 0}g P |{" "}
+                            {meal.totalMacros?.carbohydrates || 0}g C |{" "}
+                            {meal.totalMacros?.fat || 0}g F
                           </Text>
                         </View>
                         <View style={styles.dailyMealBadge}>
-                          <Ionicons name="checkmark-circle" size={rf(20)} color={ResponsiveTheme.colors.primary} />
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={rf(20)}
+                            color={ResponsiveTheme.colors.primary}
+                          />
                         </View>
                       </View>
                     </GlassCard>
@@ -684,7 +762,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           onDelete={handleMealDetailDelete}
           isCompleted={
             selectedMealForDetail
-              ? (storeGetMealProgress(selectedMealForDetail.id)?.progress ?? 0) >= 100
+              ? (storeGetMealProgress(selectedMealForDetail.id)?.progress ??
+                  0) >= 100
               : false
           }
         />
@@ -754,7 +833,11 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                 }}
                 scaleValue={0.96}
               >
-                <Ionicons name="barcode-outline" size={rf(22)} color={ResponsiveTheme.colors.teal} />
+                <Ionicons
+                  name="barcode-outline"
+                  size={rf(22)}
+                  color={ResponsiveTheme.colors.teal}
+                />
                 <Text style={styles.optionText}>Scan Barcode</Text>
               </AnimatedPressable>
               <AnimatedPressable
@@ -765,7 +848,11 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                 }}
                 scaleValue={0.96}
               >
-                <Ionicons name="keypad-outline" size={rf(22)} color={ResponsiveTheme.colors.text} />
+                <Ionicons
+                  name="keypad-outline"
+                  size={rf(22)}
+                  color={ResponsiveTheme.colors.text}
+                />
                 <Text style={styles.optionText}>Enter Manually</Text>
               </AnimatedPressable>
               <AnimatedPressable
@@ -784,16 +871,22 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           visible={showLabelScanPrep}
           transparent
           animationType="fade"
-          onRequestClose={() => { setShowLabelScanPrep(false); setLabelScanGramsInput(""); }}
+          onRequestClose={() => {
+            setShowLabelScanPrep(false);
+            setLabelScanGramsInput("");
+          }}
         >
           <View style={styles.optionsOverlay}>
             <View style={styles.optionsSheet}>
               <Text style={styles.optionsTitle}>Scan Nutrition Label</Text>
               <Text style={styles.optionsSubtitle}>
-                Enter the serving size you are eating for exact nutrient calculation
+                Enter the serving size you are eating for exact nutrient
+                calculation
               </Text>
               <View style={styles.labelGramsContainer}>
-                <Text style={styles.labelGramsLabel}>⚖️ Serving size (optional)</Text>
+                <Text style={styles.labelGramsLabel}>
+                  ⚖️ Serving size (optional)
+                </Text>
                 <View style={styles.labelGramsRow}>
                   <TextInput
                     style={styles.labelGramsInputField}
@@ -822,12 +915,19 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                 }}
                 scaleValue={0.96}
               >
-                <Ionicons name="document-text-outline" size={rf(22)} color="#8B5CF6" />
+                <Ionicons
+                  name="document-text-outline"
+                  size={rf(22)}
+                  color="#8B5CF6"
+                />
                 <Text style={styles.optionText}>Scan Label</Text>
               </AnimatedPressable>
               <AnimatedPressable
                 style={[styles.optionButton, styles.optionButtonCancel]}
-                onPress={() => { setShowLabelScanPrep(false); setLabelScanGramsInput(""); }}
+                onPress={() => {
+                  setShowLabelScanPrep(false);
+                  setLabelScanGramsInput("");
+                }}
                 scaleValue={0.96}
               >
                 <Text style={styles.optionCancelText}>Cancel</Text>
@@ -836,39 +936,113 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           </View>
         </Modal>
 
-        {!showLogMealModal && !showAIMealsPanel && !showManualEntry && !showMealDetailModal && (
-        <Animated.View
-          style={{
-            transform: [
-              { scale: fabScale },
-              {
-                rotate: fabRotation.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ["0deg", "45deg"],
-                }),
-              },
-            ],
+        {/* Photo weight prompt modal — asks for optional gram weight before food recognition */}
+        <Modal
+          visible={showWeightPrompt}
+          transparent
+          animationType="fade"
+          onRequestClose={() => {
+            dismissWeightPrompt();
+            setPhotoWeightInput("");
           }}
         >
-          <AnimatedPressable
-            style={styles.fab}
-            onPress={() => setShowAIMealsPanel(true)}
-            scaleValue={0.9}
-          >
-            <LinearGradient
-              {...(toLinearGradientProps(gradients.button.primary) as any)}
-              style={styles.fabGradient}
+          <View style={styles.optionsOverlay}>
+            <View style={styles.optionsSheet}>
+              <Text style={styles.optionsTitle}>📸 Scan Food</Text>
+              <Text style={styles.optionsSubtitle}>
+                Enter the weight of your portion for more accurate calorie
+                tracking
+              </Text>
+              <View style={styles.labelGramsContainer}>
+                <Text style={styles.labelGramsLabel}>
+                  ⚖️ Portion weight (optional)
+                </Text>
+                <View style={styles.labelGramsRow}>
+                  <TextInput
+                    style={styles.labelGramsInputField}
+                    value={photoWeightInput}
+                    onChangeText={setPhotoWeightInput}
+                    placeholder="grams"
+                    placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                    keyboardType="numeric"
+                    maxLength={4}
+                    returnKeyType="done"
+                    autoFocus
+                  />
+                  <Text style={styles.labelGramsUnit}>g</Text>
+                </View>
+                <Text style={styles.labelGramsHint}>
+                  AI estimates portion size from the photo if left blank
+                </Text>
+              </View>
+              <AnimatedPressable
+                style={styles.optionButton}
+                onPress={() => {
+                  const grams = parseFloat(photoWeightInput);
+                  const portionG =
+                    !isNaN(grams) && grams > 0 ? grams : undefined;
+                  setPhotoWeightInput("");
+                  confirmPhotoRecognition(portionG);
+                }}
+                scaleValue={0.96}
+              >
+                <Ionicons
+                  name="camera-outline"
+                  size={rf(22)}
+                  color={ResponsiveTheme.colors.teal}
+                />
+                <Text style={styles.optionText}>Recognise Food</Text>
+              </AnimatedPressable>
+              <AnimatedPressable
+                style={[styles.optionButton, styles.optionButtonCancel]}
+                onPress={() => {
+                  dismissWeightPrompt();
+                  setPhotoWeightInput("");
+                }}
+                scaleValue={0.96}
+              >
+                <Text style={styles.optionCancelText}>Cancel</Text>
+              </AnimatedPressable>
+            </View>
+          </View>
+        </Modal>
+
+        {!showLogMealModal &&
+          !showAIMealsPanel &&
+          !showManualEntry &&
+          !showMealDetailModal && (
+            <Animated.View
+              style={{
+                transform: [
+                  { scale: fabScale },
+                  {
+                    rotate: fabRotation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ["0deg", "45deg"],
+                    }),
+                  },
+                ],
+              }}
             >
-              <Text style={styles.fabIcon}>+</Text>
-            </LinearGradient>
-          </AnimatedPressable>
-        </Animated.View>
-        )}
-      <PaywallModal
-        visible={showPaywall}
-        reason={paywallReason ?? undefined}
-        onClose={dismissPaywall}
-      />
+              <AnimatedPressable
+                style={styles.fab}
+                onPress={() => setShowAIMealsPanel(true)}
+                scaleValue={0.9}
+              >
+                <LinearGradient
+                  {...(toLinearGradientProps(gradients.button.primary) as any)}
+                  style={styles.fabGradient}
+                >
+                  <Text style={styles.fabIcon}>+</Text>
+                </LinearGradient>
+              </AnimatedPressable>
+            </Animated.View>
+          )}
+        <PaywallModal
+          visible={showPaywall}
+          reason={paywallReason ?? undefined}
+          onClose={dismissPaywall}
+        />
       </SafeAreaView>
     </AuroraBackground>
   );

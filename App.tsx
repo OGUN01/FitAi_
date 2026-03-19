@@ -58,12 +58,31 @@ const isExpoGo = (() => {
       Constants.platform?.web === undefined,
   };
 
-  const isExpoGoDetected = Object.values(detectionMethods).some(Boolean);
+const isExpoGoDetected = Object.values(detectionMethods).some(Boolean);
 
 
 
   return isExpoGoDetected;
 })();
+
+const compareVersions = (a: string, b: string): number => {
+  const parse = (version: string) =>
+    version
+      .split('.')
+      .map((part) => Number.parseInt(part, 10))
+      .map((part) => (Number.isFinite(part) ? part : 0));
+
+  const aParts = parse(a);
+  const bParts = parse(b);
+  const length = Math.max(aParts.length, bParts.length);
+
+  for (let i = 0; i < length; i += 1) {
+    const diff = (aParts[i] ?? 0) - (bParts[i] ?? 0);
+    if (diff !== 0) return diff;
+  }
+
+  return 0;
+};
 
 // Load notification store with multiple safety nets
 let useNotificationStore: any = null;
@@ -92,7 +111,11 @@ export default function App() {
   const [showWelcome, setShowWelcome] = useState(true);
 
   const { user, isLoading, isInitialized, isGuestMode, guestId } = useAuth();
-  const { config: appConfig } = useAppConfig();
+  const { config: appConfig, loading: appConfigLoading } = useAppConfig();
+  const appVersion = Constants.expoConfig?.version || "1.0.1";
+  const updateRequired =
+    compareVersions(appVersion, appConfig.forceUpdateVersion) < 0 ||
+    compareVersions(appVersion, appConfig.minAppVersion) < 0;
 
 
   const { setProfile, profile } = useUserStore();
@@ -1089,15 +1112,37 @@ export default function App() {
     }
   };
 
-  // Show loading while authentication is initializing or loading onboarding data
-  // Only show loading if we're actually waiting for something (with timeout protection)
-  if (isLoadingOnboarding) {
+  // Show loading while authentication, config, or onboarding data are initializing.
+  // This keeps maintenance and version gates from flashing open before config loads.
+  if (isLoadingOnboarding || appConfigLoading) {
     return (
       <View style={styles.loadingContainer}>
         <StatusBar style="light" translucent backgroundColor="transparent" />
         <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
         <Text style={styles.loadingText}>Loading your profile...</Text>
       </View>
+    );
+  }
+
+  if (updateRequired) {
+    const requiredVersion =
+      compareVersions(appVersion, appConfig.forceUpdateVersion) < 0
+        ? appConfig.forceUpdateVersion
+        : appConfig.minAppVersion;
+
+    return (
+      <GestureHandlerRootView style={styles.container}>
+        <SafeAreaProvider>
+          <View style={styles.maintenanceContainer}>
+            <StatusBar style="light" translucent backgroundColor="transparent" />
+            <Text style={styles.maintenanceIcon}>⬆️</Text>
+            <Text style={styles.maintenanceTitle}>Update Required</Text>
+            <Text style={styles.maintenanceMessage}>
+              {`You are using version ${appVersion}. Please update to ${requiredVersion} or newer to continue.`}
+            </Text>
+          </View>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
     );
   }
 

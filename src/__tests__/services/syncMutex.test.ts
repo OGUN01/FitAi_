@@ -140,7 +140,9 @@ describe("syncMutex", () => {
           executionOrder.push("second");
           return "second-result";
         })
-        .catch(() => {});
+        .catch((err: unknown) => {
+          console.error("syncMutex withLock failed:", err);
+        });
 
       // Release first lock after a delay
       setTimeout(() => {

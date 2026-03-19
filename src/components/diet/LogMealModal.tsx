@@ -31,20 +31,31 @@ import { haptics } from "../../utils/haptics";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { completionTrackingService } from "../../services/completionTracking";
 import { useAuth } from "../../hooks/useAuth";
+import { MealLogProvenance } from "../../types/nutritionLogging";
 
 export interface LogMealScanResult {
-  type: 'food' | 'label' | 'barcode';
+  type: "food" | "label" | "barcode";
   mealName: string;
   suggestedMealType?: MealType;
   ingredients?: Array<{
-    name: string; grams: string;
-    protein: string; carbs: string; fat: string; fiber: string;
+    name: string;
+    grams: string;
+    protein: string;
+    carbs: string;
+    fat: string;
+    fiber: string;
   }>;
   directEntry?: {
-    calories: string; protein: string;
-    carbs: string; fat: string; fiber: string;
+    calories: string;
+    protein: string;
+    carbs: string;
+    fat: string;
+    fiber: string;
   };
+  portionAssumptionGrams?: number;
   confidence?: number;
+  provenance?: MealLogProvenance;
+  reviewNote?: string;
 }
 
 interface LogMealModalProps {
@@ -101,7 +112,9 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
   const [mealName, setMealName] = useState("");
   const [mealType, setMealType] = useState<MealType>("lunch");
   const [mode, setMode] = useState<"ingredients" | "simple">("ingredients");
-  const [ingredients, setIngredients] = useState<Ingredient[]>([makeIngredient()]);
+  const [ingredients, setIngredients] = useState<Ingredient[]>([
+    makeIngredient(),
+  ]);
 
   // Simple mode fields
   const [simpleCalories, setSimpleCalories] = useState("");
@@ -110,8 +123,22 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
   const [simpleFat, setSimpleFat] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [scanProvenance, setScanProvenance] =
+    useState<MealLogProvenance | null>(null);
+  const [scanReviewNote, setScanReviewNote] = useState<string | null>(null);
+  const [scanType, setScanType] = useState<LogMealScanResult["type"] | null>(
+    null,
+  );
+  const [portionAssumptionGrams, setPortionAssumptionGrams] = useState<
+    number | null
+  >(null);
+  const [baseDirectEntry, setBaseDirectEntry] = useState<
+    LogMealScanResult["directEntry"] | null
+  >(null);
+  const [activeMultiplier, setActiveMultiplier] = useState<number>(1);
 
-  const { weeklyMealPlan, setWeeklyMealPlan, saveWeeklyMealPlan } = useNutritionStore();
+  const { weeklyMealPlan, setWeeklyMealPlan, saveWeeklyMealPlan } =
+    useNutritionStore();
   const { user } = useAuth();
 
   // Derived totals from ingredient mode
@@ -120,27 +147,39 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
   const totalFat = ingredients.reduce((s, i) => s + parseNum(i.fat), 0);
   const totalFiber = ingredients.reduce((s, i) => s + parseNum(i.fiber), 0);
   // Approx calories: 4 cal/g protein+carbs, 9 cal/g fat
-  const totalCalories = Math.round(totalProtein * 4 + totalCarbs * 4 + totalFat * 9);
+  const totalCalories = Math.round(
+    totalProtein * 4 + totalCarbs * 4 + totalFat * 9,
+  );
 
   useEffect(() => {
     if (!pendingScanResult) return;
 
     if (pendingScanResult.mealName) setMealName(pendingScanResult.mealName);
-    if (pendingScanResult.suggestedMealType) setMealType(pendingScanResult.suggestedMealType);
+    if (pendingScanResult.suggestedMealType)
+      setMealType(pendingScanResult.suggestedMealType);
+    setScanProvenance(pendingScanResult.provenance || null);
+    setScanReviewNote(pendingScanResult.reviewNote || null);
+    setScanType(pendingScanResult.type);
+    setPortionAssumptionGrams(pendingScanResult.portionAssumptionGrams ?? null);
+    setActiveMultiplier(1);
 
     if (pendingScanResult.ingredients?.length) {
-      setMode('ingredients');
-      setIngredients(pendingScanResult.ingredients.map((ing) => ({
-        ...makeIngredient(),
-        name: ing.name,
-        grams: ing.grams,
-        protein: ing.protein,
-        carbs: ing.carbs,
-        fat: ing.fat,
-        fiber: ing.fiber,
-      })));
+      setMode("ingredients");
+      setIngredients(
+        pendingScanResult.ingredients.map((ing) => ({
+          ...makeIngredient(),
+          name: ing.name,
+          grams: ing.grams,
+          protein: ing.protein,
+          carbs: ing.carbs,
+          fat: ing.fat,
+          fiber: ing.fiber,
+        })),
+      );
+      setBaseDirectEntry(null);
     } else if (pendingScanResult.directEntry) {
-      setMode('simple');
+      setMode("simple");
+      setBaseDirectEntry(pendingScanResult.directEntry);
       setSimpleCalories(pendingScanResult.directEntry.calories);
       setSimpleProtein(pendingScanResult.directEntry.protein);
       setSimpleCarbs(pendingScanResult.directEntry.carbs);
@@ -149,6 +188,18 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
 
     onScanResultConsumed?.();
   }, [pendingScanResult]);
+
+  const applyMultiplier = (m: number) => {
+    if (!baseDirectEntry) return;
+    setActiveMultiplier(m);
+    setSimpleCalories(
+      Math.round(parseNum(baseDirectEntry.calories) * m).toString(),
+    );
+    setSimpleProtein((parseNum(baseDirectEntry.protein) * m).toFixed(1));
+    setSimpleCarbs((parseNum(baseDirectEntry.carbs) * m).toFixed(1));
+    setSimpleFat((parseNum(baseDirectEntry.fat) * m).toFixed(1));
+    haptics.light();
+  };
 
   const resetForm = () => {
     setMealName("");
@@ -159,6 +210,12 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
     setSimpleProtein("");
     setSimpleCarbs("");
     setSimpleFat("");
+    setScanProvenance(null);
+    setScanReviewNote(null);
+    setScanType(null);
+    setPortionAssumptionGrams(null);
+    setBaseDirectEntry(null);
+    setActiveMultiplier(1);
     setIsSubmitting(false);
   };
 
@@ -221,7 +278,10 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
     } else {
       finalCalories = parseNum(simpleCalories);
       if (finalCalories <= 0) {
-        crossPlatformAlert("Missing Info", "Please enter a valid calorie amount.");
+        crossPlatformAlert(
+          "Missing Info",
+          "Please enter a valid calorie amount.",
+        );
         return;
       }
       finalProtein = parseNum(simpleProtein);
@@ -234,38 +294,49 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
 
     const today = new Date();
     const dayNames = [
-      "sunday", "monday", "tuesday", "wednesday",
-      "thursday", "friday", "saturday",
+      "sunday",
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
     ];
     const todayName = dayNames[today.getDay()];
     const mealId = `manual_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
     // Build items list from ingredients (ingredient mode) for display
-    const items = mode === "ingredients"
-      ? ingredients
-          .filter((i) => i.name.trim())
-          .map((i, idx) => ({
-            id: `item_${mealId}_${idx}`,
-            name: i.name.trim(),
-            quantity: parseNum(i.grams) || 1,
-            unit: parseNum(i.grams) > 0 ? "g" : "serving",
-            calories: Math.round(parseNum(i.protein) * 4 + parseNum(i.carbs) * 4 + parseNum(i.fat) * 9),
-            macros: {
-              protein: parseNum(i.protein),
-              carbohydrates: parseNum(i.carbs),
-              fat: parseNum(i.fat),
-              fiber: parseNum(i.fiber),
-            },
-          }))
-      : [];
+    const items =
+      mode === "ingredients"
+        ? ingredients
+            .filter((i) => i.name.trim())
+            .map((i, idx) => ({
+              id: `item_${mealId}_${idx}`,
+              name: i.name.trim(),
+              quantity: parseNum(i.grams) || 1,
+              unit: parseNum(i.grams) > 0 ? "g" : "serving",
+              calories: Math.round(
+                parseNum(i.protein) * 4 +
+                  parseNum(i.carbs) * 4 +
+                  parseNum(i.fat) * 9,
+              ),
+              macros: {
+                protein: parseNum(i.protein),
+                carbohydrates: parseNum(i.carbs),
+                fat: parseNum(i.fat),
+                fiber: parseNum(i.fiber),
+              },
+            }))
+        : [];
 
     const newMeal = {
       id: mealId,
       type: mealType,
       name: trimmedName,
-      description: mode === "ingredients"
-        ? `Custom meal with ${items.length} ingredient${items.length !== 1 ? "s" : ""}`
-        : `Manually logged ${mealType}`,
+      description:
+        mode === "ingredients"
+          ? `Custom meal with ${items.length} ingredient${items.length !== 1 ? "s" : ""}`
+          : `Manually logged ${mealType}`,
       items,
       totalCalories: finalCalories,
       totalMacros: {
@@ -283,6 +354,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
       createdAt: today.toISOString(),
       isCompleted: true,
       completedAt: today.toISOString(),
+      sourceMetadata: scanProvenance,
     };
 
     try {
@@ -293,13 +365,23 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
         planTitle: "Manual Meals",
       };
 
-      const updatedPlan = { ...currentPlan, meals: [...currentPlan.meals, newMeal as any] };
+      const updatedPlan = {
+        ...currentPlan,
+        meals: [...currentPlan.meals, newMeal as any],
+      };
       // Update local store first so completionTrackingService can find the meal
       setWeeklyMealPlan(updatedPlan);
       // Persist plan to DB
       await saveWeeklyMealPlan(updatedPlan);
       // completionTrackingService handles: mealProgress update + Supabase meal_logs insert + analytics + refresh
-      await completionTrackingService.completeMeal(mealId, undefined, user?.id || undefined);
+      await completionTrackingService.completeMeal(
+        mealId,
+        {
+          provenance: scanProvenance,
+          reviewNote: scanReviewNote,
+        },
+        user?.id || undefined,
+      );
 
       haptics.success();
       resetForm();
@@ -328,7 +410,10 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
             {/* Header */}
             <View style={styles.header}>
               <Text style={styles.title}>Log Meal</Text>
-              <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+              <TouchableOpacity
+                onPress={handleClose}
+                style={styles.closeButton}
+              >
                 <Ionicons
                   name="close"
                   size={rf(24)}
@@ -343,6 +428,17 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
               keyboardShouldPersistTaps="handled"
             >
               {/* Meal Name */}
+              {scanReviewNote && (
+                <View style={styles.scanNotice}>
+                  <Ionicons
+                    name="information-circle-outline"
+                    size={rf(16)}
+                    color={ResponsiveTheme.colors.primary}
+                  />
+                  <Text style={styles.scanNoticeText}>{scanReviewNote}</Text>
+                </View>
+              )}
+
               <View style={styles.section}>
                 <Text style={styles.label}>Meal Name</Text>
                 <TextInput
@@ -372,7 +468,9 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                       }}
                     >
                       <Ionicons
-                        name={MEAL_ICONS[type] as keyof typeof Ionicons.glyphMap}
+                        name={
+                          MEAL_ICONS[type] as keyof typeof Ionicons.glyphMap
+                        }
                         size={rf(14)}
                         color={
                           mealType === type
@@ -448,24 +546,47 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
               </View>
 
               {/* Scan auto-fill row */}
-              {(onRequestFoodScan || onRequestLabelScan || onRequestBarcodeScan) && (
+              {(onRequestFoodScan ||
+                onRequestLabelScan ||
+                onRequestBarcodeScan) && (
                 <View style={styles.scanRow}>
                   <Text style={styles.scanRowLabel}>Auto-fill via:</Text>
                   {onRequestFoodScan && (
-                    <TouchableOpacity style={styles.scanChip} onPress={onRequestFoodScan}>
-                      <Ionicons name="camera-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+                    <TouchableOpacity
+                      style={styles.scanChip}
+                      onPress={onRequestFoodScan}
+                    >
+                      <Ionicons
+                        name="camera-outline"
+                        size={rf(14)}
+                        color={ResponsiveTheme.colors.primary}
+                      />
                       <Text style={styles.scanChipText}>Scan Dish</Text>
                     </TouchableOpacity>
                   )}
                   {onRequestLabelScan && (
-                    <TouchableOpacity style={styles.scanChip} onPress={onRequestLabelScan}>
-                      <Ionicons name="document-text-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+                    <TouchableOpacity
+                      style={styles.scanChip}
+                      onPress={onRequestLabelScan}
+                    >
+                      <Ionicons
+                        name="document-text-outline"
+                        size={rf(14)}
+                        color={ResponsiveTheme.colors.primary}
+                      />
                       <Text style={styles.scanChipText}>Label</Text>
                     </TouchableOpacity>
                   )}
                   {onRequestBarcodeScan && (
-                    <TouchableOpacity style={styles.scanChip} onPress={onRequestBarcodeScan}>
-                      <Ionicons name="barcode-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+                    <TouchableOpacity
+                      style={styles.scanChip}
+                      onPress={onRequestBarcodeScan}
+                    >
+                      <Ionicons
+                        name="barcode-outline"
+                        size={rf(14)}
+                        color={ResponsiveTheme.colors.primary}
+                      />
                       <Text style={styles.scanChipText}>Barcode</Text>
                     </TouchableOpacity>
                   )}
@@ -499,62 +620,105 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                     <View>
                       {/* Column headers */}
                       <View style={styles.ingredientColumnHeaders}>
-                        <Text style={[styles.colHeader, { width: rw(108) }]}>Ingredient</Text>
-                        <Text style={[styles.colHeader, styles.colFixed]}>g</Text>
-                        <Text style={[styles.colHeader, styles.colFixed]}>Pro</Text>
-                        <Text style={[styles.colHeader, styles.colFixed]}>Carb</Text>
-                        <Text style={[styles.colHeader, styles.colFixed]}>Fat</Text>
-                        <Text style={[styles.colHeader, styles.colFixed]}>Fiber</Text>
+                        <Text style={[styles.colHeader, { width: rw(108) }]}>
+                          Ingredient
+                        </Text>
+                        <Text style={[styles.colHeader, styles.colFixed]}>
+                          g
+                        </Text>
+                        <Text style={[styles.colHeader, styles.colFixed]}>
+                          Pro
+                        </Text>
+                        <Text style={[styles.colHeader, styles.colFixed]}>
+                          Carb
+                        </Text>
+                        <Text style={[styles.colHeader, styles.colFixed]}>
+                          Fat
+                        </Text>
+                        <Text style={[styles.colHeader, styles.colFixed]}>
+                          Fiber
+                        </Text>
                         <View style={{ width: rw(26) }} />
                       </View>
 
                       {ingredients.map((ing, idx) => (
                         <View key={ing.id} style={styles.ingredientRow}>
                           <TextInput
-                            style={[styles.ingredientInput, { width: rw(108), textAlign: "left" as const, paddingHorizontal: rp(8) }]}
+                            style={[
+                              styles.ingredientInput,
+                              {
+                                width: rw(108),
+                                textAlign: "left" as const,
+                                paddingHorizontal: rp(8),
+                              },
+                            ]}
                             value={ing.name}
-                            onChangeText={(v) => updateIngredient(ing.id, "name", v)}
+                            onChangeText={(v) =>
+                              updateIngredient(ing.id, "name", v)
+                            }
                             placeholder={`Item ${idx + 1}`}
-                            placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                            placeholderTextColor={
+                              ResponsiveTheme.colors.textSecondary
+                            }
                           />
                           <TextInput
                             style={[styles.ingredientInput, styles.colFixed]}
                             value={ing.grams}
-                            onChangeText={(v) => updateIngredient(ing.id, "grams", v)}
+                            onChangeText={(v) =>
+                              updateIngredient(ing.id, "grams", v)
+                            }
                             placeholder="0"
-                            placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                            placeholderTextColor={
+                              ResponsiveTheme.colors.textSecondary
+                            }
                             keyboardType="numeric"
                           />
                           <TextInput
                             style={[styles.ingredientInput, styles.colFixed]}
                             value={ing.protein}
-                            onChangeText={(v) => updateIngredient(ing.id, "protein", v)}
+                            onChangeText={(v) =>
+                              updateIngredient(ing.id, "protein", v)
+                            }
                             placeholder="0"
-                            placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                            placeholderTextColor={
+                              ResponsiveTheme.colors.textSecondary
+                            }
                             keyboardType="numeric"
                           />
                           <TextInput
                             style={[styles.ingredientInput, styles.colFixed]}
                             value={ing.carbs}
-                            onChangeText={(v) => updateIngredient(ing.id, "carbs", v)}
+                            onChangeText={(v) =>
+                              updateIngredient(ing.id, "carbs", v)
+                            }
                             placeholder="0"
-                            placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                            placeholderTextColor={
+                              ResponsiveTheme.colors.textSecondary
+                            }
                             keyboardType="numeric"
                           />
                           <TextInput
                             style={[styles.ingredientInput, styles.colFixed]}
                             value={ing.fat}
-                            onChangeText={(v) => updateIngredient(ing.id, "fat", v)}
+                            onChangeText={(v) =>
+                              updateIngredient(ing.id, "fat", v)
+                            }
                             placeholder="0"
-                            placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                            placeholderTextColor={
+                              ResponsiveTheme.colors.textSecondary
+                            }
                             keyboardType="numeric"
                           />
                           <TextInput
                             style={[styles.ingredientInput, styles.colFixed]}
                             value={ing.fiber}
-                            onChangeText={(v) => updateIngredient(ing.id, "fiber", v)}
+                            onChangeText={(v) =>
+                              updateIngredient(ing.id, "fiber", v)
+                            }
                             placeholder="0"
-                            placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                            placeholderTextColor={
+                              ResponsiveTheme.colors.textSecondary
+                            }
                             keyboardType="numeric"
                           />
                           <TouchableOpacity
@@ -562,17 +726,17 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                             style={styles.removeBtn}
                             disabled={ingredients.length === 1}
                           >
-                        <Ionicons
-                          name="remove-circle-outline"
-                          size={rf(18)}
-                          color={
-                            ingredients.length === 1
-                              ? ResponsiveTheme.colors.textSecondary
-                              : ResponsiveTheme.colors.error
-                          }
-                        />
-                      </TouchableOpacity>
-                    </View>
+                            <Ionicons
+                              name="remove-circle-outline"
+                              size={rf(18)}
+                              color={
+                                ingredients.length === 1
+                                  ? ResponsiveTheme.colors.textSecondary
+                                  : ResponsiveTheme.colors.error
+                              }
+                            />
+                          </TouchableOpacity>
+                        </View>
                       ))}
                     </View>
                   </ScrollView>
@@ -584,25 +748,45 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                       <Text style={styles.totalLabel}>cal</Text>
                     </View>
                     <View style={styles.totalItem}>
-                      <Text style={[styles.totalValue, { color: ResponsiveTheme.colors.errorLight }]}>
+                      <Text
+                        style={[
+                          styles.totalValue,
+                          { color: ResponsiveTheme.colors.errorLight },
+                        ]}
+                      >
                         {totalProtein.toFixed(1)}g
                       </Text>
                       <Text style={styles.totalLabel}>protein</Text>
                     </View>
                     <View style={styles.totalItem}>
-                      <Text style={[styles.totalValue, { color: ResponsiveTheme.colors.teal }]}>
+                      <Text
+                        style={[
+                          styles.totalValue,
+                          { color: ResponsiveTheme.colors.teal },
+                        ]}
+                      >
                         {totalCarbs.toFixed(1)}g
                       </Text>
                       <Text style={styles.totalLabel}>carbs</Text>
                     </View>
                     <View style={styles.totalItem}>
-                      <Text style={[styles.totalValue, { color: ResponsiveTheme.colors.amber }]}>
+                      <Text
+                        style={[
+                          styles.totalValue,
+                          { color: ResponsiveTheme.colors.amber },
+                        ]}
+                      >
                         {totalFat.toFixed(1)}g
                       </Text>
                       <Text style={styles.totalLabel}>fat</Text>
                     </View>
                     <View style={styles.totalItem}>
-                      <Text style={[styles.totalValue, { color: ResponsiveTheme.colors.textSecondary }]}>
+                      <Text
+                        style={[
+                          styles.totalValue,
+                          { color: ResponsiveTheme.colors.textSecondary },
+                        ]}
+                      >
                         {totalFiber.toFixed(1)}g
                       </Text>
                       <Text style={styles.totalLabel}>fiber</Text>
@@ -614,6 +798,43 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
               {/* SIMPLE MODE */}
               {mode === "simple" && (
                 <View style={styles.section}>
+                  {scanType === "food" && portionAssumptionGrams != null && (
+                    <View style={styles.portionBadgeRow}>
+                      <Ionicons
+                        name="scale-outline"
+                        size={rf(13)}
+                        color={ResponsiveTheme.colors.textSecondary}
+                      />
+                      <Text style={styles.portionBadgeText}>
+                        Assuming {portionAssumptionGrams}g serving
+                      </Text>
+                    </View>
+                  )}
+                  {scanType === "food" && baseDirectEntry != null && (
+                    <View style={styles.multiplierRow}>
+                      {([0.5, 1, 1.5, 2] as const).map((m) => (
+                        <TouchableOpacity
+                          key={m}
+                          style={[
+                            styles.multiplierBtn,
+                            activeMultiplier === m &&
+                              styles.multiplierBtnActive,
+                          ]}
+                          onPress={() => applyMultiplier(m)}
+                        >
+                          <Text
+                            style={[
+                              styles.multiplierBtnText,
+                              activeMultiplier === m &&
+                                styles.multiplierBtnTextActive,
+                            ]}
+                          >
+                            {m}×
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
                   <Text style={styles.label}>
                     Calories <Text style={styles.required}>*</Text>
                   </Text>
@@ -636,7 +857,9 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                         value={simpleProtein}
                         onChangeText={setSimpleProtein}
                         placeholder="0"
-                        placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                        placeholderTextColor={
+                          ResponsiveTheme.colors.textSecondary
+                        }
                         keyboardType="numeric"
                       />
                     </View>
@@ -647,7 +870,9 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                         value={simpleCarbs}
                         onChangeText={setSimpleCarbs}
                         placeholder="0"
-                        placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                        placeholderTextColor={
+                          ResponsiveTheme.colors.textSecondary
+                        }
                         keyboardType="numeric"
                       />
                     </View>
@@ -658,7 +883,9 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                         value={simpleFat}
                         onChangeText={setSimpleFat}
                         placeholder="0"
-                        placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                        placeholderTextColor={
+                          ResponsiveTheme.colors.textSecondary
+                        }
                         keyboardType="numeric"
                       />
                     </View>
@@ -907,20 +1134,36 @@ const styles = StyleSheet.create({
     borderColor: ResponsiveTheme.colors.border,
     textAlign: "center" as const,
   },
+  scanNotice: {
+    flexDirection: "row" as const,
+    alignItems: "flex-start" as const,
+    gap: rw(8),
+    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
+    borderRadius: rbr(12),
+    paddingHorizontal: rp(12),
+    paddingVertical: rh(10),
+    marginBottom: rh(12),
+  },
+  scanNoticeText: {
+    flex: 1,
+    fontSize: rf(12),
+    lineHeight: rf(17),
+    color: ResponsiveTheme.colors.text,
+  },
   scanRow: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     gap: rw(8),
     marginBottom: rh(12),
-    flexWrap: 'wrap' as const,
+    flexWrap: "wrap" as const,
   },
   scanRowLabel: {
     fontSize: rf(11),
     color: ResponsiveTheme.colors.textSecondary,
   },
   scanChip: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     gap: rw(4),
     paddingVertical: rh(6),
     paddingHorizontal: rw(10),
@@ -931,8 +1174,44 @@ const styles = StyleSheet.create({
   },
   scanChipText: {
     fontSize: rf(11),
-    fontWeight: '600' as const,
+    fontWeight: "600" as const,
     color: ResponsiveTheme.colors.primary,
+  },
+  portionBadgeRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: rw(5),
+    marginBottom: rh(8),
+  },
+  portionBadgeText: {
+    fontSize: rf(12),
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+  multiplierRow: {
+    flexDirection: "row" as const,
+    gap: rw(8),
+    marginBottom: rh(14),
+  },
+  multiplierBtn: {
+    flex: 1,
+    alignItems: "center" as const,
+    paddingVertical: rh(8),
+    borderRadius: rbr(10),
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderWidth: 1,
+    borderColor: ResponsiveTheme.colors.border,
+  },
+  multiplierBtnActive: {
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderColor: ResponsiveTheme.colors.primary,
+  },
+  multiplierBtnText: {
+    fontSize: rf(13),
+    fontWeight: "600" as const,
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+  multiplierBtnTextActive: {
+    color: ResponsiveTheme.colors.white,
   },
   footer: {
     flexDirection: "row",

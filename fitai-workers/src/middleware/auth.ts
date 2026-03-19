@@ -6,7 +6,8 @@
 
 import { Context, Next } from 'hono';
 import { Env } from '../utils/types';
-import { UnauthorizedError } from '../utils/errors';
+import { APIError, ForbiddenError, UnauthorizedError } from '../utils/errors';
+import { ErrorCode } from '../utils/errorCodes';
 import { getSupabaseClient } from '../utils/supabase';
 
 /**
@@ -45,6 +46,10 @@ function extractToken(authHeader: string | null | undefined): string | null {
   }
 
   return null;
+}
+
+function isNotFoundError(error: { code?: string; message?: string } | null | undefined): boolean {
+  return Boolean(error && (error.code === 'PGRST116' || /not found|no rows/i.test(error.message || '')));
 }
 
 /**
@@ -176,9 +181,30 @@ export function requireRole(...allowedRoles: string[]) {
       throw new UnauthorizedError('Authentication required');
     }
 
+    if (allowedRoles.includes('admin')) {
+      const supabase = getSupabaseClient(c.env);
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error && !isNotFoundError(error)) {
+        throw new APIError('Failed to verify admin permissions', 500, ErrorCode.DATABASE_ERROR, {
+          detail: error.message,
+        });
+      }
+
+      if (data) {
+        await next();
+        return;
+      }
+    }
+
+    const fallbackRoles = allowedRoles.filter((role) => role !== 'admin');
     const effectiveRole = user.appRole || user.role;
-    if (!effectiveRole || !allowedRoles.includes(effectiveRole)) {
-      throw new UnauthorizedError('Insufficient permissions', {
+    if (!effectiveRole || !fallbackRoles.includes(effectiveRole)) {
+      throw new ForbiddenError('Insufficient permissions', {
         required: allowedRoles,
         actual: effectiveRole,
       });

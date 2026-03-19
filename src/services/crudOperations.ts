@@ -14,6 +14,8 @@ import {
   SyncStatus,
   UserPreferences,
 } from "../types/localData";
+import { useFitnessStore } from "../stores/fitnessStore";
+import { getPlanIdentityForWorkoutId } from "../utils/workoutIdentity";
 
 // ============================================================================
 // CRUD OPERATIONS SERVICE
@@ -145,16 +147,24 @@ export class CrudOperationsService {
       if (!userId || userId.startsWith("guest") || userId === "local-user") {
         return;
       }
+      const planIdentity = getPlanIdentityForWorkoutId(
+        session.workoutId,
+        useFitnessStore.getState().weeklyWorkoutPlan,
+      );
 
       const { error } = await supabase.from("workout_sessions").upsert({
         id: session.id,
         user_id: userId,
         workout_id: session.workoutId || null,
+        planned_day_key: planIdentity.plannedDayKey || null,
+        plan_slot_key: planIdentity.planSlotKey || null,
         started_at: session.startedAt,
         completed_at: session.completedAt || null,
-        duration: session.duration ?? 0,
-        calories_burned: session.caloriesBurned ?? 0,
+        duration: session.duration ?? null,
+        total_duration_minutes: session.duration ?? null,
+        calories_burned: session.caloriesBurned ?? null,
         exercises: session.exercises || [],
+        exercises_completed: session.exercises || [],
         notes: session.notes || "",
         // rating: null unless user explicitly rated (1-5); 0 violates check constraint
         rating: (typeof session.rating === 'number' && session.rating > 0) ? session.rating : null,
@@ -170,7 +180,13 @@ export class CrudOperationsService {
         offlineService.queueAction({
           type: "CREATE",
           table: "workout_sessions",
-          data: session,
+          data: {
+            ...session,
+            planned_day_key: planIdentity.plannedDayKey || null,
+            plan_slot_key: planIdentity.planSlotKey || null,
+            total_duration_minutes: session.duration ?? null,
+            exercises_completed: session.exercises || [],
+          },
           userId: userId,
           maxRetries: 3,
         });
@@ -180,11 +196,21 @@ export class CrudOperationsService {
       }
     } catch (syncError) {
       console.warn("⚠️ Supabase sync error (will retry later):", syncError);
+      const planIdentity = getPlanIdentityForWorkoutId(
+        session.workoutId,
+        useFitnessStore.getState().weeklyWorkoutPlan,
+      );
       // Queue for later sync
       offlineService.queueAction({
         type: "CREATE",
         table: "workout_sessions",
-        data: session,
+        data: {
+          ...session,
+          planned_day_key: planIdentity.plannedDayKey || null,
+          plan_slot_key: planIdentity.planSlotKey || null,
+          total_duration_minutes: session.duration ?? null,
+          exercises_completed: session.exercises || [],
+        },
         userId: session.userId || "unknown",
         maxRetries: 3,
       });

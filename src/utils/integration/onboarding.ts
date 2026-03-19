@@ -40,11 +40,10 @@ export const useOnboardingIntegration = () => {
       const localSaveSuccess = await dataBridge.savePersonalInfo(personalInfo);
 
       if (!localSaveSuccess) {
+        console.warn("[INTEGRATION] Local save of personal info failed");
       }
 
       if (isAuthenticated && authUser) {
-        updatePersonalInfo(personalInfo);
-
         const personalData = personalInfo as any;
 
         let firstName = personalData.first_name || "";
@@ -56,7 +55,6 @@ export const useOnboardingIntegration = () => {
           lastName = nameParts.slice(1).join(" ") || "";
         }
 
-
         const heightValue =
           personalData.height_cm ||
           parseFloat(personalData.height) ||
@@ -66,7 +64,6 @@ export const useOnboardingIntegration = () => {
           parseFloat(personalData.weight) ||
           undefined;
         const ageValue = personalData.age;
-
 
         const profileData = {
           name: personalData.name || `${firstName} ${lastName}`.trim(),
@@ -98,8 +95,11 @@ export const useOnboardingIntegration = () => {
         }
 
         if (!response.success) {
+          console.warn(
+            "[INTEGRATION] Profile save/create both failed for user:",
+            authUser.id,
+          );
         }
-      } else {
       }
 
       return { success: true };
@@ -127,6 +127,7 @@ export const useOnboardingIntegration = () => {
       );
 
       if (!localSaveSuccess) {
+        console.warn("[INTEGRATION] Local save of fitness goals failed");
       }
 
       if (isAuthenticated && authUser) {
@@ -160,8 +161,11 @@ export const useOnboardingIntegration = () => {
         }
 
         if (!response.success) {
+          console.warn(
+            "[INTEGRATION] Fitness goals save/create both failed for user:",
+            authUser.id,
+          );
         }
-      } else {
       }
 
       return { success: true };
@@ -202,6 +206,7 @@ export const useOnboardingIntegration = () => {
       );
 
       if (!localSaveSuccess) {
+        console.warn("[INTEGRATION] Local save of diet preferences failed");
       }
 
       if (isAuthenticated && authUser) {
@@ -216,10 +221,17 @@ export const useOnboardingIntegration = () => {
             });
 
           if (error) {
+            console.error(
+              "[INTEGRATION] diet_preferences upsert error:",
+              error,
+            );
           }
         } catch (remoteError) {
+          console.error(
+            "[INTEGRATION] diet_preferences remote error:",
+            remoteError,
+          );
         }
-      } else {
       }
 
       return { success: true };
@@ -246,6 +258,7 @@ export const useOnboardingIntegration = () => {
         await dataBridge.saveWorkoutPreferences(workoutPreferences);
 
       if (!localSaveSuccess) {
+        console.warn("[INTEGRATION] Local save of workout preferences failed");
       }
 
       if (isAuthenticated && authUser) {
@@ -268,10 +281,17 @@ export const useOnboardingIntegration = () => {
             });
 
           if (error) {
+            console.error(
+              "[INTEGRATION] workout_preferences upsert error:",
+              error,
+            );
           }
         } catch (remoteError) {
+          console.error(
+            "[INTEGRATION] workout_preferences remote error:",
+            remoteError,
+          );
         }
-      } else {
       }
 
       return { success: true };
@@ -293,18 +313,24 @@ export const useOnboardingIntegration = () => {
     try {
       const currentUserId = getUserId();
 
-
       if (isAuthenticated && authUser) {
         try {
+          const photoUrls = bodyAnalysis.photos || {};
           const { data, error } = await supabase.from("body_analysis").upsert({
             user_id: authUser.id,
-            photos: bodyAnalysis.photos,
-            analysis: bodyAnalysis.analysis,
+            front_photo_url: (photoUrls as any).front || null,
+            side_photo_url: (photoUrls as any).side || null,
+            back_photo_url: (photoUrls as any).back || null,
           });
 
           if (error) {
+            console.error("[INTEGRATION] body_analysis upsert error:", error);
           }
         } catch (remoteError) {
+          console.error(
+            "[INTEGRATION] body_analysis remote error:",
+            remoteError,
+          );
         }
       }
 
