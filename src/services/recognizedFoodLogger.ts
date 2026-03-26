@@ -1,12 +1,9 @@
 import { RecognizedFood, MealType } from "./foodRecognitionService";
-import {
-  nutritionDataService,
-  Food,
-  MealLogFoodInput,
-} from "./nutritionData";
+import { nutritionDataService, Food, MealLogFoodInput } from "./nutritionData";
 import { supabase } from "./supabase";
 import { nutritionRefreshService } from "./nutritionRefreshService";
 import { MealLogProvenance } from "../types/nutritionLogging";
+import { normalizeMealLogFiberValue } from "../utils/mealLogNutrition";
 
 export interface RecognizedFoodLoggingOptions {
   provenance?: MealLogProvenance;
@@ -64,8 +61,9 @@ export class RecognizedFoodLogger {
         throw new Error("No recognized foods to log");
       }
 
-      const provenance =
-        options?.provenance ?? this.buildDefaultProvenance(recognizedFoods);
+      const provenance = this.normalizeProvenance(
+        options?.provenance ?? this.buildDefaultProvenance(recognizedFoods),
+      );
       const shouldPersistCatalogFoods = options?.persistCatalogFoods ?? false;
       const foodMappings = shouldPersistCatalogFoods
         ? await this.createOrFindFoods(recognizedFoods)
@@ -232,22 +230,22 @@ export class RecognizedFoodLogger {
     try {
       const safeGrams = Math.max(recognizedFood.estimatedGrams, 1);
       const per100g = recognizedFood.nutritionPer100g ?? {
-        calories: Math.round((recognizedFood.nutrition.calories / safeGrams) * 100),
+        calories: Math.round(
+          (recognizedFood.nutrition.calories / safeGrams) * 100,
+        ),
         protein:
           Math.round(
-            ((recognizedFood.nutrition.protein / safeGrams) * 100) * 10,
+            (recognizedFood.nutrition.protein / safeGrams) * 100 * 10,
           ) / 10,
         carbs:
-          Math.round(
-            ((recognizedFood.nutrition.carbs / safeGrams) * 100) * 10,
-          ) / 10,
+          Math.round((recognizedFood.nutrition.carbs / safeGrams) * 100 * 10) /
+          10,
         fat:
-          Math.round(((recognizedFood.nutrition.fat / safeGrams) * 100) * 10) /
+          Math.round((recognizedFood.nutrition.fat / safeGrams) * 100 * 10) /
           10,
         fiber:
-          Math.round(
-            ((recognizedFood.nutrition.fiber / safeGrams) * 100) * 10,
-          ) / 10,
+          Math.round((recognizedFood.nutrition.fiber / safeGrams) * 100 * 10) /
+          10,
       };
 
       for (const key of Object.keys(per100g) as Array<keyof typeof per100g>) {
@@ -268,6 +266,7 @@ export class RecognizedFoodLogger {
         sugar_per_100g: recognizedFood.nutritionPer100g?.sugar ?? null,
         sodium_per_100g: recognizedFood.nutritionPer100g?.sodium ?? null,
         barcode: (recognizedFood as any).barcode ?? null,
+        verified: false,
         created_at: new Date().toISOString(),
       };
 
@@ -340,7 +339,9 @@ export class RecognizedFoodLogger {
           averageConfidence:
             recognizedFoods.reduce((sum, food) => sum + food.confidence, 0) /
             recognizedFoods.length,
-          cuisineTypes: [...new Set(recognizedFoods.map((food) => food.cuisine))],
+          cuisineTypes: [
+            ...new Set(recognizedFoods.map((food) => food.cuisine)),
+          ],
           newFoodsCreated: foodMappings.filter((mapping) => mapping.isNewFood)
             .length,
           provenance,
@@ -471,6 +472,23 @@ export class RecognizedFoodLogger {
     };
   }
 
+  private normalizeProvenance(
+    provenance: MealLogProvenance,
+  ): MealLogProvenance {
+    if (
+      provenance.mode === "meal_photo" &&
+      provenance.truthLevel === "estimated" &&
+      !provenance.requiresReview
+    ) {
+      return {
+        ...provenance,
+        requiresReview: true,
+      };
+    }
+
+    return provenance;
+  }
+
   private buildMealFoods(
     recognizedFoods: RecognizedFood[],
     foodMappings: FoodMapping[],
@@ -479,11 +497,12 @@ export class RecognizedFoodLogger {
     const mappingByFoodId = new Map(
       foodMappings.map((mapping) => [mapping.recognizedFood.id, mapping]),
     );
-    const omitEstimatedMicronutrients =
+    const omitEstimatedSecondaryMicronutrients =
       provenance.mode === "meal_photo" && provenance.truthLevel === "estimated";
 
     return recognizedFoods.map((food) => {
       const mapping = mappingByFoodId.get(food.id);
+      const normalizedFiber = normalizeMealLogFiberValue(food.nutrition.fiber);
       return {
         food_id: mapping?.databaseFoodId,
         quantity_grams: food.userGrams ?? food.estimatedGrams,
@@ -495,10 +514,13 @@ export class RecognizedFoodLogger {
         protein: food.nutrition.protein,
         carbs: food.nutrition.carbs,
         fat: food.nutrition.fat,
-        fiber: omitEstimatedMicronutrients ? undefined : food.nutrition.fiber,
-        sugar: omitEstimatedMicronutrients ? undefined : food.nutrition.sugar,
-        sodium:
-          omitEstimatedMicronutrients ? undefined : food.nutrition.sodium,
+        fiber: normalizedFiber ?? 0,
+        sugar: omitEstimatedSecondaryMicronutrients
+          ? undefined
+          : food.nutrition.sugar,
+        sodium: omitEstimatedSecondaryMicronutrients
+          ? undefined
+          : food.nutrition.sodium,
       };
     });
   }
