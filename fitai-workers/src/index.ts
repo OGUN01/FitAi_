@@ -63,6 +63,16 @@ import { getPublicAppConfig } from './utils/appConfig';
 
 const app = new Hono<{ Bindings: Env }>();
 
+function isLocalDevOrigin(origin: string | null | undefined): origin is string {
+	if (!origin) return false;
+	try {
+		const url = new URL(origin);
+		return /^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/i.test(url.hostname);
+	} catch {
+		return false;
+	}
+}
+
 function requireFeatureFlag(flag: 'featureAiChat' | 'featureAnalytics') {
 	return async (c: any, next: any) => {
 		const config = await getPublicAppConfig(c.env);
@@ -108,6 +118,8 @@ app.use('*', async (c, next) => {
 	if (allowedOrigins.includes('*')) {
 		// Open — echo back the request origin, or fallback to * if no origin header
 		allowOrigin = origin || '*';
+	} else if (isLocalDevOrigin(origin)) {
+		allowOrigin = origin;
 	} else if (origin && allowedOrigins.includes(origin)) {
 		allowOrigin = origin;
 	} else {
@@ -153,6 +165,8 @@ function addCorsHeaders(c: Parameters<Parameters<typeof app.onError>[0]>[1], res
 	let allowOrigin: string;
 	if (allowedOrigins.includes('*')) {
 		allowOrigin = origin || '*';
+	} else if (isLocalDevOrigin(origin)) {
+		allowOrigin = origin;
 	} else if (origin && allowedOrigins.includes(origin)) {
 		allowOrigin = origin;
 	} else {

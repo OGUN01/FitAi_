@@ -13,7 +13,7 @@ export const InstructionSteps: React.FC<InstructionStepsProps> = ({
   if (!instructions?.length) {
     return (
       <View style={styles.noDataContainer}>
-        <Text style={styles.noDataEmoji}>📝</Text>
+        <Text style={styles.noDataEmoji}>i</Text>
         <Text style={styles.noDataText}>
           No detailed instructions available
         </Text>

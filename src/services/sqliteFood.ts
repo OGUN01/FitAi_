@@ -308,13 +308,22 @@ class SqliteFoodService {
     // Decompress
     const outputArr = inflate(inputArr);
 
-    // Uint8Array → base64 string in 8 KB chunks
-    const CHUNK = 8192;
+    // Uint8Array → base64 string in chunks.
+    // IMPORTANT: chunk size MUST be a multiple of 3 so that each chunk
+    // base64-encodes without padding (only the final chunk may pad).
+    // Previously this used 8192, which is NOT a multiple of 3, causing
+    // each chunk to emit trailing '=' padding — corrupting the concatenated
+    // base64 string and producing a broken SQLite file.
+    const CHUNK = 12288; // 3 * 4096 — multiple of 3
     let b64 = "";
     for (let i = 0; i < outputArr.length; i += CHUNK) {
-      b64 += btoa(
-        String.fromCharCode(...Array.from(outputArr.subarray(i, i + CHUNK))),
-      );
+      const slice = outputArr.subarray(i, i + CHUNK);
+      // Build binary string without spread to avoid stack overflow on large slices
+      let binaryChunk = "";
+      for (let j = 0; j < slice.length; j++) {
+        binaryChunk += String.fromCharCode(slice[j]);
+      }
+      b64 += btoa(binaryChunk);
     }
 
     // Write decompressed bytes as base64

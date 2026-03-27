@@ -1,7 +1,7 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { persist } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { safeAsyncStorage } from "../utils/safeAsyncStorage";
+import { createDebouncedStorage } from "../utils/safeAsyncStorage";
 import NotificationServiceClass, {
   NotificationPreferences,
   WaterReminderConfig,
@@ -264,7 +264,7 @@ export const useNotificationStore = create<NotificationState>()(
     }),
     {
       name: "notification-store",
-      storage: createJSONStorage(() => safeAsyncStorage),
+      storage: createDebouncedStorage(),
       partialize: (state) => ({
         preferences: state.preferences,
         isInitialized: state.isInitialized,

@@ -1,4 +1,4 @@
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 // React Hook for HealthKit Integration
 // Provides convenient access to HealthKit functionality with automatic sync management
 
@@ -102,7 +102,9 @@ export const useHealthKitSync = (
         try {
           await initializeHealthKit();
         } catch (error) {
-          logger.error('Failed to auto-initialize HealthKit', { error: String(error) });
+          logger.error("Failed to auto-initialize HealthKit", {
+            error: String(error),
+          });
         } finally {
           setIsLoading(false);
         }
@@ -117,7 +119,6 @@ export const useHealthKitSync = (
 
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (nextAppState === "active") {
-
         // Sync if enough time has passed
         const checkAndSync = async () => {
           try {
@@ -136,7 +137,7 @@ export const useHealthKitSync = (
               await syncHealthData(false);
             }
           } catch (error) {
-            logger.error('Background sync failed', { error: String(error) });
+            logger.error("Background sync failed", { error: String(error) });
           }
         };
 
@@ -151,6 +152,7 @@ export const useHealthKitSync = (
     return () => subscription?.remove();
   }, [
     isHealthKitAuthorized,
+    lastSyncTime,
     syncIntervalMinutes,
     syncOnAppForeground,
     syncHealthData,
@@ -175,7 +177,7 @@ export const useHealthKitSync = (
       try {
         await syncHealthData(false);
       } catch (error) {
-        logger.error('Periodic sync failed', { error: String(error) });
+        logger.error("Periodic sync failed", { error: String(error) });
       }
     };
 

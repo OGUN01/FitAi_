@@ -1,6 +1,7 @@
-import { FitnessState, WorkoutProgress, CompletedSession } from "./types";
+import { FitnessState, CompletedSession } from "./types";
 import { crudOperations } from "../../services/crudOperations";
 import { supabase } from "../../services/supabase";
+import { getLocalDateString, getCurrentWeekStart, getWeekStartForDate } from "../../utils/weekUtils";
 
 export const createDataActions = (
   set: (
@@ -26,12 +27,15 @@ export const createDataActions = (
 
   loadData: async () => {
     try {
+      // Day-boundary reset BEFORE loading any data — ensures stale partial progress is gone
+      get().checkAndResetProgressIfNewDay();
+
       const plan = await get().loadWeeklyWorkoutPlan();
       if (plan) {
         set({ weeklyWorkoutPlan: plan });
       }
 
-      // Hydrate workoutProgress + completedSessions from Supabase
+      // Hydrate completedSessions from Supabase
       try {
         const { data: user } = await supabase.auth.getUser();
         if (user?.user?.id) {
@@ -41,33 +45,12 @@ export const createDataActions = (
             .eq("user_id", user.user.id)
             .eq("is_completed", true)
             .order("completed_at", { ascending: false })
-            .limit(200);
+            .limit(50);
 
           if (sessions && sessions.length > 0) {
-            // Restore workoutProgress (for plan completion checkmarks)
-            const restoredProgress: Record<string, WorkoutProgress> = {};
-            sessions.forEach((s) => {
-              const planWorkout = get().weeklyWorkoutPlan?.workouts?.find(
-                (workout) =>
-                  workout.id === s.workout_id ||
-                  workout.dayOfWeek === s.planned_day_key,
-              );
-              const resolvedWorkoutId =
-                planWorkout?.id || s.workout_id || (s.is_extra ? s.id : null);
-              if (resolvedWorkoutId) {
-                restoredProgress[resolvedWorkoutId] = {
-                  workoutId: resolvedWorkoutId,
-                  progress: 100,
-                  completedAt: s.completed_at,
-                  sessionId: s.id,
-                };
-              }
-            });
-            set((state) => ({
-              workoutProgress: { ...state.workoutProgress, ...restoredProgress },
-            }));
-
             // Rebuild completedSessions — skip IDs already in the store (from this session)
+            // NOTE: workoutProgress is NOT restored from Supabase sessions.
+            // Completion status is determined solely from completedSessions.
             const existingIds = new Set(get().completedSessions.map((c) => c.sessionId));
             const hydrated: CompletedSession[] = sessions
               .filter((s) => !existingIds.has(s.id))
@@ -77,12 +60,8 @@ export const createDataActions = (
                     workout.id === s.workout_id ||
                     workout.dayOfWeek === s.planned_day_key,
                 );
-                // Compute Monday of the week for completed_at
-                const d = new Date(s.completed_at);
-                const day = d.getDay();
-                const diff = day === 0 ? -6 : 1 - day;
-                d.setDate(d.getDate() + diff);
-                const weekStart = d.toISOString().split('T')[0];
+                // Compute Monday of the week for completed_at (local time)
+                const weekStart = getWeekStartForDate(s.completed_at);
 
                 const exercises = Array.isArray(s.exercises_completed)
                   ? s.exercises_completed.map((ex: any) => ({
@@ -131,7 +110,8 @@ export const createDataActions = (
                   (session) => {
                     if (hydratedById.has(session.sessionId)) return false;
                     if (session.type === "extra") return true;
-                    const localKey = `${session.weekStart}:${session.planSlotKey || session.workoutId}`;
+                    const localWeekStart = session.weekStart || (session.completedAt ? getWeekStartForDate(session.completedAt) : '__none__');
+                    const localKey = `${localWeekStart}:${session.planSlotKey || session.workoutId}`;
                     return !hydratedPlannedKeys.has(localKey);
                   },
                 );
@@ -155,6 +135,7 @@ export const createDataActions = (
     set({
       weeklyWorkoutPlan: null,
       workoutProgress: {},
+      lastProgressDate: getLocalDateString(),
       currentWorkoutSession: null,
       planError: null,
     });

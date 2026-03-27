@@ -107,7 +107,7 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
     const progress = workout
       ? completedSession
         ? 100
-        : workoutProgress[workout.id]?.progress || 0
+        : Math.min(workoutProgress[workout.id]?.progress || 0, 99)
       : 0;
     const isSelected = selectedDay === dayKey;
     const isToday =
@@ -117,7 +117,7 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
     return {
       hasWorkout: !!workout && !isRestDay,
       isRestDay,
-      isCompleted: progress === 100,
+      isCompleted: !!completedSession,
       isSelected,
       isToday,
       progress,

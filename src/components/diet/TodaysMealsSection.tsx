@@ -26,13 +26,19 @@ const MEAL_CONFIG = {
     icon: "restaurant-outline" as const,
     color: ResponsiveTheme.colors.success,
     time: "1:00 PM",
-    gradient: [ResponsiveTheme.colors.success, ResponsiveTheme.colors.successLight],
+    gradient: [
+      ResponsiveTheme.colors.success,
+      ResponsiveTheme.colors.successLight,
+    ],
   },
   dinner: {
     icon: "moon-outline" as const,
     color: ResponsiveTheme.colors.primary,
     time: "7:00 PM",
-    gradient: [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight],
+    gradient: [
+      ResponsiveTheme.colors.primary,
+      ResponsiveTheme.colors.primaryLight,
+    ],
   },
   snack: {
     icon: "nutrition-outline" as const,
@@ -68,9 +74,13 @@ const MealCard: React.FC<{
   index: number;
   onPress: () => void;
   onStart: () => void;
-}> = ({ meal, index, onPress, onStart }) => {
+}> = React.memo(({ meal, index, onPress, onStart }) => {
   const config = MEAL_CONFIG[meal.type] || MEAL_CONFIG.lunch;
   const isCompleted = meal.isCompleted || meal.progress === 100;
+  const handleActionPress = (event: any) => {
+    event.stopPropagation?.();
+    onStart();
+  };
 
   return (
     <Animated.View entering={FadeInRight.duration(400).delay(100 + index * 80)}>
@@ -98,7 +108,11 @@ const MealCard: React.FC<{
               <Ionicons name={config.icon} size={rf(22)} color={config.color} />
               {isCompleted && (
                 <View style={styles.completedBadge}>
-                  <Ionicons name="checkmark" size={rf(10)} color={ResponsiveTheme.colors.white} />
+                  <Ionicons
+                    name="checkmark"
+                    size={rf(10)}
+                    color={ResponsiveTheme.colors.white}
+                  />
                 </View>
               )}
             </View>
@@ -133,10 +147,17 @@ const MealCard: React.FC<{
                 <View
                   style={[
                     styles.macroBadge,
-                    { backgroundColor: `${ResponsiveTheme.colors.errorLight}1F` },
+                    {
+                      backgroundColor: `${ResponsiveTheme.colors.errorLight}1F`,
+                    },
                   ]}
                 >
-                  <Text style={[styles.macroBadgeText, { color: ResponsiveTheme.colors.errorLight }]}>
+                  <Text
+                    style={[
+                      styles.macroBadgeText,
+                      { color: ResponsiveTheme.colors.errorLight },
+                    ]}
+                  >
                     P {Math.round(meal.protein)}g
                   </Text>
                 </View>
@@ -146,7 +167,12 @@ const MealCard: React.FC<{
                     { backgroundColor: `${ResponsiveTheme.colors.teal}1F` },
                   ]}
                 >
-                  <Text style={[styles.macroBadgeText, { color: ResponsiveTheme.colors.teal }]}>
+                  <Text
+                    style={[
+                      styles.macroBadgeText,
+                      { color: ResponsiveTheme.colors.teal },
+                    ]}
+                  >
                     C {Math.round(meal.carbs)}g
                   </Text>
                 </View>
@@ -156,7 +182,12 @@ const MealCard: React.FC<{
                     { backgroundColor: `${ResponsiveTheme.colors.amber}1F` },
                   ]}
                 >
-                  <Text style={[styles.macroBadgeText, { color: ResponsiveTheme.colors.amber }]}>
+                  <Text
+                    style={[
+                      styles.macroBadgeText,
+                      { color: ResponsiveTheme.colors.amber },
+                    ]}
+                  >
                     F {Math.round(meal.fat)}g
                   </Text>
                 </View>
@@ -165,14 +196,19 @@ const MealCard: React.FC<{
 
             {/* Action Button */}
             <AnimatedPressable
-              onPress={onStart}
+              onPress={handleActionPress}
               scaleValue={0.85}
               hapticFeedback={true}
               hapticType="medium"
               style={[
                 styles.actionButton,
-                { backgroundColor: isCompleted ? ResponsiveTheme.colors.success : config.color },
+                {
+                  backgroundColor: isCompleted
+                    ? ResponsiveTheme.colors.success
+                    : config.color,
+                },
               ]}
+              accessibilityLabel={`${isCompleted ? "Completed meal" : "Start meal"} ${meal.name}`}
             >
               <Ionicons
                 name={isCompleted ? "checkmark" : "play"}
@@ -185,7 +221,7 @@ const MealCard: React.FC<{
       </AnimatedPressable>
     </Animated.View>
   );
-};
+});
 
 // Empty State
 const EmptyMealsState: React.FC<{ onGenerate?: () => void }> = ({
@@ -223,12 +259,19 @@ const EmptyMealsState: React.FC<{ onGenerate?: () => void }> = ({
             style={styles.generateButton}
           >
             <LinearGradient
-              colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]}
+              colors={[
+                ResponsiveTheme.colors.primary,
+                ResponsiveTheme.colors.primaryLight,
+              ]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.generateButtonGradient}
             >
-              <Ionicons name="sparkles" size={rf(16)} color={ResponsiveTheme.colors.white} />
+              <Ionicons
+                name="sparkles"
+                size={rf(16)}
+                color={ResponsiveTheme.colors.white}
+              />
               <Text style={styles.generateButtonText}>Generate Plan</Text>
             </LinearGradient>
           </AnimatedPressable>
@@ -238,7 +281,7 @@ const EmptyMealsState: React.FC<{ onGenerate?: () => void }> = ({
   </Animated.View>
 );
 
-export const TodaysMealsSection: React.FC<TodaysMealsSectionProps> = ({
+export const TodaysMealsSection: React.FC<TodaysMealsSectionProps> = React.memo(({
   meals,
   onMealPress,
   onStartMeal,
@@ -308,7 +351,7 @@ export const TodaysMealsSection: React.FC<TodaysMealsSectionProps> = ({
       )}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -436,9 +479,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   actionButton: {
-    width: rw(36),
-    height: rw(36),
-    borderRadius: rw(18),
+    width: rw(44),
+    height: rw(44),
+    borderRadius: rw(22),
     justifyContent: "center",
     alignItems: "center",
     marginLeft: ResponsiveTheme.spacing.sm,

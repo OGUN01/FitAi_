@@ -1,5 +1,7 @@
 package com.fitai.app
 
+import dev.matinzd.healthconnect.permissions.HealthConnectPermissionDelegate
+
 import android.os.Build
 import android.os.Bundle
 
@@ -10,20 +12,15 @@ import com.facebook.react.defaults.DefaultReactActivityDelegate
 
 import expo.modules.ReactActivityDelegateWrapper
 
-// Health Connect permission delegate
-import dev.matinzd.healthconnect.permissions.HealthConnectPermissionDelegate
-
 class MainActivity : ReactActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     // Set the theme to AppTheme BEFORE onCreate to support
     // coloring the background, status bar, and navigation bar.
     // This is required for expo-splash-screen.
     setTheme(R.style.AppTheme);
-    
-    // Initialize Health Connect permission delegate BEFORE super.onCreate
-    HealthConnectPermissionDelegate.setPermissionDelegate(this)
-    
     super.onCreate(null)
+    // Register the launcher required by Health Connect permission requests.
+    HealthConnectPermissionDelegate.setPermissionDelegate(this)
   }
 
   /**

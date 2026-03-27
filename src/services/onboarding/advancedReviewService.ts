@@ -61,6 +61,7 @@ export class AdvancedReviewService {
         daily_carbs_g: Math.round(metrics.carbs),
         daily_fat_g: Math.round(metrics.fat),
         daily_water_ml: Math.round(metrics.waterIntakeML),
+        daily_fiber_g: Math.round((metrics.dailyCalories / 1000) * 14),
         detected_climate: metrics.climate,
         detected_ethnicity: metrics.ethnicity,
         bmr_formula_used: metrics.bmrFormula,

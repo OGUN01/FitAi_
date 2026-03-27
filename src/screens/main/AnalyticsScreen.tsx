@@ -37,6 +37,7 @@ import { useAuthStore } from "../../stores/authStore";
 import { useProfileStore } from "../../stores/profileStore";
 import { useCalculatedMetrics } from "../../hooks/useCalculatedMetrics";
 import { analyticsDataService } from "../../services/analyticsData";
+import { resolveCurrentWeight } from "../../services/currentWeight";
 import { useAchievementStore } from "../../stores/achievementStore";
 import {
   getCurrentWeekStart,
@@ -72,6 +73,9 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
   const [refreshing, setRefreshing] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [dataError, setDataError] = useState<string | null>(null);
+  const [loadedHistoryPeriodDays, setLoadedHistoryPeriodDays] = useState<
+    number | null
+  >(null);
 
   // Stores
   // SSOT: weight/target come from profileStore.bodyAnalysis — userStore.profile is NOT used here
@@ -93,7 +97,9 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     calorieHistory,
     setHistoryData,
   } = useAnalyticsStore();
+  const hasCachedHistory = weightHistory.length > 0 || calorieHistory.length > 0;
   const initializeAchievements = useAchievementStore((s) => s.initialize);
+  const areAchievementsLoading = useAchievementStore((s) => s.isLoading);
   const areAchievementsInitialized = useAchievementStore(
     (s) => s.isInitialized,
   );
@@ -136,15 +142,24 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     }
   }, [selectedPeriod]);
 
+  const isHistoryCurrent = loadedHistoryPeriodDays === periodDays;
+
   // Shared data loader used by both useEffect and handleRefresh
-  const loadHistoryData = useCallback(async () => {
+  const loadHistoryData = useCallback(async (options?: { showLoading?: boolean }) => {
     if (!user?.id) {
       setIsDataLoading(false);
+      setLoadedHistoryPeriodDays(null);
       return;
     }
 
+    const showLoading =
+      options?.showLoading ??
+      (!hasCachedHistory || loadedHistoryPeriodDays !== periodDays);
+
     try {
-      setIsDataLoading(true);
+      if (showLoading) {
+        setIsDataLoading(true);
+      }
       setDataError(null);
       const [weightData, calorieData] = await Promise.all([
         analyticsDataService.getWeightHistory(user.id, periodDays),
@@ -154,18 +169,29 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
       // SSOT fix: write fetched history into the store instead of local state
       // so the Analytics tab shows cached data immediately on the next mount.
       setHistoryData(weightData, calorieData);
+      setLoadedHistoryPeriodDays(periodDays);
     } catch (error) {
       console.error("Failed to load analytics history:", error);
       setDataError("Failed to load analytics data. Pull to refresh.");
     } finally {
-      setIsDataLoading(false);
+      if (showLoading) {
+        setIsDataLoading(false);
+      }
     }
-  }, [user?.id, periodDays, setHistoryData]);
+  }, [
+    hasCachedHistory,
+    loadedHistoryPeriodDays,
+    periodDays,
+    setHistoryData,
+    user?.id,
+  ]);
 
   // Load weight and calorie history from Supabase
   useEffect(() => {
-    loadHistoryData();
-  }, [loadHistoryData]);
+    loadHistoryData({
+      showLoading: !hasCachedHistory || loadedHistoryPeriodDays !== periodDays,
+    });
+  }, [hasCachedHistory, loadHistoryData, loadedHistoryPeriodDays, periodDays]);
 
   const periodBoundaries = useMemo(() => {
     const today = new Date();
@@ -211,15 +237,18 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
 
   // Calculate metrics data - prioritize calculatedMetrics from onboarding
   const metricsData = useMemo((): MetricData => {
+    const resolvedCurrentWeight = resolveCurrentWeight({
+      weightHistory,
+      bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
+    });
+
     // Weight data - prefer calculated metrics from onboarding, fallback to health metrics or profile
     // Weight: prefer calculatedMetrics, then profileStore.bodyAnalysis (source of truth from onboarding)
     const currentWeight =
       calculatedMetrics?.currentWeightKg &&
       calculatedMetrics.currentWeightKg > 0
         ? calculatedMetrics.currentWeightKg
-        : bodyAnalysis?.current_weight_kg && bodyAnalysis.current_weight_kg > 0
-          ? bodyAnalysis.current_weight_kg
-          : undefined;
+        : resolvedCurrentWeight.value ?? undefined;
     const targetWeight =
       calculatedMetrics?.targetWeightKg ||
       (bodyAnalysis?.target_weight_kg && bodyAnalysis.target_weight_kg > 0
@@ -251,27 +280,26 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     // Weight change: derive from Supabase history (oldest → newest in period)
     // Positive = gained weight, negative = lost weight
     // Fallback shows remaining to goal: target - current (negative = target lower than current = needs to lose)
+    const hasWeightTrendData = weightHistory.length >= 2;
     const weightChange =
-      weightHistory.length >= 2
+      hasWeightTrendData
         ? Number(
             (
               weightHistory[weightHistory.length - 1].weight -
               weightHistory[0].weight
             ).toFixed(1),
           )
-        : currentWeight && targetWeight
-          ? Number((targetWeight - currentWeight).toFixed(1)) // negative = still needs to lose, positive = already below (gained back)
-          : undefined;
+        : undefined;
 
     // Weight trend: negative change (losing weight / below goal) = "down" = green (good for weight-loss goals)
     const weightTrend =
-      weightChange !== undefined
+      hasWeightTrendData && weightChange !== undefined
         ? weightChange < 0
           ? ("down" as const)
           : weightChange > 0
             ? ("up" as const)
             : ("stable" as const)
-        : ("stable" as const);
+        : undefined;
 
     // Calorie change: percentage change from start to end of period
     const periodCalorieHistory = calorieHistory.filter((entry) =>
@@ -295,6 +323,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
             change: weightChange,
             trend: weightTrend,
             target: targetWeight,
+            hasTrendData: hasWeightTrendData,
           }
         : undefined,
       calories: {
@@ -302,6 +331,8 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
         target: calculatedMetrics?.dailyCalories || undefined,
         change: calorieChange,
         trend: displayCalories > 0 ? ("up" as const) : ("stable" as const),
+        period: selectedPeriod,
+        hasData: periodCalorieHistory.some((entry) => (entry.consumed || 0) > 0),
       },
       workouts: {
         count: completedWorkouts,
@@ -374,10 +405,10 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
               calculatedMetrics?.currentWeightKg &&
               calculatedMetrics.currentWeightKg > 0
                 ? calculatedMetrics.currentWeightKg
-                : bodyAnalysis?.current_weight_kg &&
-                    bodyAnalysis.current_weight_kg > 0
-                  ? bodyAnalysis.current_weight_kg
-                  : undefined;
+                : resolveCurrentWeight({
+                    weightHistory,
+                    bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
+                  }).value ?? undefined;
             return fallbackWeight
               ? [
                   {
@@ -596,7 +627,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     haptics.light();
     try {
       await refreshAnalytics();
-      await loadHistoryData();
+      await loadHistoryData({ showLoading: false });
     } catch (error) {
       console.error("Refresh error:", error);
       setDataError("Failed to refresh data. Please try again.");
@@ -650,7 +681,8 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
   }, [navigation]);
 
   // Show loading state for initial load
-  const showLoading = (isDataLoading || isAnalyticsLoading) && !refreshing;
+  const showLoading =
+    !refreshing && (isDataLoading || isAnalyticsLoading || !isHistoryCurrent);
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
@@ -738,7 +770,10 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
 
                 {/* 3. Achievement Showcase */}
                 <View style={styles.sectionContainer}>
-                  <AchievementShowcase />
+                  <AchievementShowcase
+                    isLoading={areAchievementsLoading}
+                    isInitialized={areAchievementsInitialized}
+                  />
                 </View>
 
                 {/* 4. Trend Charts */}

@@ -83,6 +83,8 @@ const TimePickerWheel: React.FC<TimePickerWheelProps> = ({
               ]}
               onPress={() => onValueChange(value)}
               delayPressIn={50}
+              accessibilityRole="button"
+              accessibilityLabel={value}
             >
               <Text
                 style={[
@@ -245,6 +247,8 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                           setSelectedPeriod(parseInt(h) >= 12 ? "PM" : "AM");
                         }
                       }}
+                      accessibilityRole="button"
+                      accessibilityLabel={preset.label}
                     >
                       <Text style={styles.quickTimeText}>{preset.label}</Text>
                     </TouchableOpacity>
@@ -267,6 +271,8 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                           setSelectedPeriod(parseInt(h) >= 12 ? "PM" : "AM");
                         }
                       }}
+                      accessibilityRole="button"
+                      accessibilityLabel={preset.label}
                     >
                       <Text style={styles.quickTimeText}>{preset.label}</Text>
                     </TouchableOpacity>
@@ -368,6 +374,7 @@ const styles = StyleSheet.create({
   wheelItem: {
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
+    minHeight: 44,
     alignItems: "center",
     borderRadius: ResponsiveTheme.borderRadius.md,
     marginVertical: ResponsiveTheme.spacing.xs,
@@ -413,10 +420,12 @@ const styles = StyleSheet.create({
   quickTimeButton: {
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
+    minHeight: 44,
     borderRadius: ResponsiveTheme.borderRadius.md,
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    justifyContent: "center",
   },
 
   quickTimeText: {

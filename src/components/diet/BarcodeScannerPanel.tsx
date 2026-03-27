@@ -6,7 +6,10 @@ interface BarcodeScannerPanelProps {
   showProductModal: boolean;
   setShowProductModal: (show: boolean) => void;
   productHealthAssessment: any;
-  onHandleAddProductToMeal: (product: any) => Promise<void> | void;
+  onHandleAddProductToMeal: (
+    product: any,
+    grams: number,
+  ) => Promise<void> | void;
 }
 
 export const BarcodeScannerPanel: React.FC<BarcodeScannerPanelProps> = ({

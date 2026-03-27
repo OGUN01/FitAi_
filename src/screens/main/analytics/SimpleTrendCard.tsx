@@ -14,6 +14,7 @@ interface SimpleTrendCardProps {
   unit: string;
   color: string;
   ctaLabel?: string;
+  onCtaPress?: () => void;
 }
 
 export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
@@ -23,6 +24,7 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
   unit,
   color,
   ctaLabel,
+  onCtaPress,
 }) => {
   return (
     <Animated.View
@@ -88,10 +90,13 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
           <Text style={styles.noDataSubtext}>
             Keep tracking to see your trends
           </Text>
-          {ctaLabel ? (
+          {ctaLabel && onCtaPress ? (
             <TouchableOpacity
               style={styles.ctaButton}
-              onPress={() => haptics.light()}
+              onPress={() => {
+                haptics.light();
+                onCtaPress();
+              }}
               activeOpacity={0.75}
             >
               <Text style={styles.ctaButtonText}>{ctaLabel}</Text>

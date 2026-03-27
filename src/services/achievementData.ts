@@ -3,6 +3,7 @@
 
 import { supabase } from "./supabase";
 import { UserAchievement } from "./achievementEngine";
+import { achievementEngine } from "./achievements";
 
 export interface AchievementSyncResult {
   success: boolean;
@@ -32,17 +33,24 @@ class AchievementDataService {
         return true;
       }
 
-      const { error } = await supabase.from("user_achievements").upsert({
-        id: `${userId}_${achievement.achievementId}`,
-        user_id: userId,
-        achievement_id: achievement.achievementId,
-        progress: achievement.progress,
-        max_progress: achievement.maxProgress || 1,
-        is_completed: achievement.isCompleted,
-        unlocked_at: achievement.unlockedAt || null,
-        celebration_shown: achievement.celebrationShown,
-        fit_coins_earned: achievement.fitCoinsEarned || 0,
-      });
+      const definition = achievementEngine
+        .getAllAchievements()
+        .find((a) => a.id === achievement.achievementId);
+
+      const { error } = await supabase.from("user_achievements").upsert(
+        {
+          user_id: userId,
+          achievement_id: achievement.achievementId,
+          title: definition?.title || achievement.achievementId,
+          progress: achievement.progress,
+          max_progress: achievement.maxProgress || 1,
+          is_completed: achievement.isCompleted,
+          unlocked_at: achievement.unlockedAt || null,
+          celebration_shown: achievement.celebrationShown,
+          fit_coins_earned: achievement.fitCoinsEarned || 0,
+        },
+        { onConflict: "user_id,achievement_id" },
+      );
 
       if (error) {
         console.error("❌ Achievement upsert error:", error);

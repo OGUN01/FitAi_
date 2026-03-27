@@ -219,26 +219,34 @@ export const SelectedPointTooltip: React.FC<SelectedPointTooltipProps> = ({
   getX,
   getY,
   unit,
-}) => (
-  <G>
-    <Rect
-      x={getX(selectedPoint) - rw(30)}
-      y={getY(data[selectedPoint].value) - rh(35)}
-      width={rw(60)}
-      height={rh(26)}
-      rx={rw(8)}
-      fill="rgba(0,0,0,0.85)"
-    />
-    <SvgText
-      x={getX(selectedPoint)}
-      y={getY(data[selectedPoint].value) - rh(18)}
-      fill={ResponsiveTheme.colors.white}
-      fontSize={rf(11)}
-      textAnchor="middle"
-      fontWeight="700"
-    >
-      {data[selectedPoint].value.toFixed(1)}
-      {unit}
-    </SvgText>
-  </G>
-);
+}) => {
+  const point = data[selectedPoint];
+
+  if (!point) {
+    return null;
+  }
+
+  return (
+    <G>
+      <Rect
+        x={getX(selectedPoint) - rw(30)}
+        y={getY(point.value) - rh(35)}
+        width={rw(60)}
+        height={rh(26)}
+        rx={rw(8)}
+        fill="rgba(0,0,0,0.85)"
+      />
+      <SvgText
+        x={getX(selectedPoint)}
+        y={getY(point.value) - rh(18)}
+        fill={ResponsiveTheme.colors.white}
+        fontSize={rf(11)}
+        textAnchor="middle"
+        fontWeight="700"
+      >
+        {point.value.toFixed(1)}
+        {unit}
+      </SvgText>
+    </G>
+  );
+};

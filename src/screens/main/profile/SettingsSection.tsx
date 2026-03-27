@@ -30,6 +30,7 @@ export interface SettingItem {
   badge?: string;
   badgeColor?: string;
   showChevron?: boolean;
+  disabled?: boolean;
   isDestructive?: boolean;
   isPremium?: boolean;
   isIncomplete?: boolean; // Shows warning indicator
@@ -90,8 +91,15 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
               }}
               scaleValue={0.98}
               hapticFeedback={false}
+              disabled={item.disabled}
             >
-              <View style={[styles.row, item.isPremium && styles.premiumRow]}>
+              <View
+                style={[
+                  styles.row,
+                  item.isPremium && styles.premiumRow,
+                  item.disabled && styles.disabledRow,
+                ]}
+              >
                 {/* Icon with colored background */}
                 <View
                   style={[
@@ -101,6 +109,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
                     },
                     item.isDestructive && styles.destructiveIconBg,
                     item.isPremium && styles.premiumIconBg,
+                    item.disabled && styles.disabledIconBg,
                   ]}
                 >
                   {item.isPremium ? (
@@ -131,6 +140,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
                         styles.title,
                         item.isDestructive && styles.destructiveText,
                         item.isPremium && styles.premiumText,
+                        item.disabled && styles.disabledTitle,
                       ]}
                     >
                       {item.title}
@@ -156,6 +166,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
                       style={[
                         styles.subtitle,
                         item.isPremium && styles.premiumSubtitle,
+                        item.disabled && styles.disabledSubtitle,
                       ]}
                       numberOfLines={1}
                       ellipsizeMode="tail"
@@ -166,7 +177,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
                 </View>
 
                 {/* Chevron */}
-                {item.showChevron !== false && (
+                {!item.disabled && item.showChevron !== false && (
                   <View style={styles.chevronContainer}>
                     <Ionicons
                       name="chevron-forward"
@@ -231,6 +242,9 @@ const styles = StyleSheet.create({
   premiumRow: {
     backgroundColor: "rgba(255, 215, 0, 0.05)",
   },
+  disabledRow: {
+    opacity: 0.68,
+  },
   iconContainer: {
     width: rw(36),
     height: rw(36),
@@ -245,6 +259,9 @@ const styles = StyleSheet.create({
   premiumIconBg: {
     backgroundColor: "transparent",
     overflow: "hidden",
+  },
+  disabledIconBg: {
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
   },
   premiumIconGradient: {
     width: "100%",
@@ -274,6 +291,9 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.gold,
     fontWeight: "600",
   },
+  disabledTitle: {
+    color: ResponsiveTheme.colors.textSecondary,
+  },
   subtitle: {
     fontSize: rf(12),
     color: "rgba(255, 255, 255, 0.65)",
@@ -281,6 +301,9 @@ const styles = StyleSheet.create({
   },
   premiumSubtitle: {
     color: "rgba(255, 215, 0, 0.7)",
+  },
+  disabledSubtitle: {
+    color: ResponsiveTheme.colors.textMuted,
   },
   badge: {
     marginLeft: ResponsiveTheme.spacing.sm,

@@ -14,11 +14,118 @@ jest.mock("react-native-css-interop", () => ({
   remapProps: jest.fn(),
 }));
 
+// Mock react-native-svg to prevent Touchable.Mixin errors in test environment
+jest.mock("react-native-svg", () => {
+  const React = require("react");
+  const mockComponent = (name) => {
+    const C = (props) => React.createElement(name, props, props.children);
+    C.displayName = name;
+    return C;
+  };
+  return {
+    __esModule: true,
+    default: mockComponent("Svg"),
+    Svg: mockComponent("Svg"),
+    Rect: mockComponent("Rect"),
+    Circle: mockComponent("Circle"),
+    Line: mockComponent("Line"),
+    Polyline: mockComponent("Polyline"),
+    Polygon: mockComponent("Polygon"),
+    Path: mockComponent("Path"),
+    Text: mockComponent("SvgText"),
+    G: mockComponent("G"),
+    Defs: mockComponent("Defs"),
+    LinearGradient: mockComponent("LinearGradient"),
+    RadialGradient: mockComponent("RadialGradient"),
+    Stop: mockComponent("Stop"),
+    ClipPath: mockComponent("ClipPath"),
+    Use: mockComponent("Use"),
+    Symbol: mockComponent("Symbol"),
+    Mask: mockComponent("Mask"),
+  };
+});
+
 // Mock react-native-reanimated
 jest.mock("react-native-reanimated", () => {
-  const Reanimated = require("react-native-reanimated/mock");
-  Reanimated.default.call = () => {};
-  return Reanimated;
+  const createAnimation = () => {
+    const animation = {
+      delay: () => animation,
+      duration: () => animation,
+      springify: () => animation,
+    };
+
+    return animation;
+  };
+
+  const interpolate = (value, inputRange, outputRange) => {
+    if (
+      !Array.isArray(inputRange) ||
+      !Array.isArray(outputRange) ||
+      inputRange.length < 2 ||
+      outputRange.length < 2
+    ) {
+      return outputRange?.[0];
+    }
+
+    const [inputStart, inputEnd] = inputRange;
+    const [outputStart, outputEnd] = outputRange;
+
+    if (
+      typeof value !== "number" ||
+      typeof inputStart !== "number" ||
+      typeof inputEnd !== "number" ||
+      typeof outputStart !== "number" ||
+      typeof outputEnd !== "number" ||
+      inputEnd === inputStart
+    ) {
+      return outputStart;
+    }
+
+    const progress = (value - inputStart) / (inputEnd - inputStart);
+    return outputStart + (outputEnd - outputStart) * progress;
+  };
+
+  return {
+    __esModule: true,
+    Easing: {
+      linear: (value) => value,
+      ease: "ease",
+      in: (value) => value,
+      out: (value) => value,
+      inOut: (value) => value,
+      bezier: () => "bezier",
+      bounce: "bounce",
+      elastic: () => "elastic",
+    },
+    default: {
+      View: "AnimatedView",
+      Text: "AnimatedText",
+      ScrollView: "AnimatedScrollView",
+      createAnimatedComponent: (Component) => Component,
+    },
+    createAnimatedComponent: (Component) => Component,
+    useSharedValue: (value) => ({ value }),
+    useAnimatedStyle: (updater) => updater(),
+    useAnimatedProps: (updater) => updater(),
+    withSpring: (value) => value,
+    withTiming: (value) => value,
+    withDelay: (_delay, value) => value,
+    withRepeat: (value) => value,
+    withSequence: (...values) => values[values.length - 1],
+    interpolate,
+    interpolateColor: (_value, _inputRange, outputRange) => outputRange?.[0],
+    runOnJS: (fn) => fn,
+    Extrapolate: {
+      CLAMP: "clamp",
+    },
+    Extrapolation: {
+      CLAMP: "clamp",
+    },
+    FadeIn: createAnimation(),
+    FadeInDown: createAnimation(),
+    FadeInRight: createAnimation(),
+    FadeInUp: createAnimation(),
+  };
 });
 
 // Mock NetInfo

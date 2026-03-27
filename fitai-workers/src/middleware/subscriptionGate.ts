@@ -96,22 +96,18 @@ export function subscriptionGateMiddleware(featureKey: FeatureKey, periodType: P
 		let planRow: SubscriptionPlanRow | null = null;
 
 		try {
-			const { data, error } = await supabase
+			// Query subscription and plan separately (no FK relationship between the tables)
+			const { data: subData, error: subError } = await supabase
 				.from('subscriptions')
-				.select(
-					`
-					*,
-					plan:subscription_plans!inner(*)
-				`,
-				)
+				.select('*')
 				.eq('user_id', userId)
 				.in('status', ACCESS_GRANTING_STATUSES as unknown as string[])
 				.order('updated_at', { ascending: false })
 				.limit(1)
 				.maybeSingle();
 
-			if (error) {
-				console.error('[SubscriptionGate] DB query error:', error);
+			if (subError) {
+				console.error('[SubscriptionGate] Subscription query error:', subError);
 				return c.json(
 					{
 						success: false,
@@ -124,10 +120,34 @@ export function subscriptionGateMiddleware(featureKey: FeatureKey, periodType: P
 				);
 			}
 
-			if (data) {
-				subscription = data as unknown as SubscriptionWithPlan;
-				planRow = subscription.plan;
-				planFeatures = extractFeatures(planRow);
+			if (subData) {
+				// Look up the plan by tier
+				const { data: planData, error: planError } = await supabase
+					.from('subscription_plans')
+					.select('*')
+					.eq('tier', subData.tier)
+					.eq('active', true)
+					.maybeSingle();
+
+				if (planError) {
+					console.error('[SubscriptionGate] Plan query error:', planError);
+					return c.json(
+						{
+							success: false,
+							error: {
+								code: ErrorCode.INTERNAL_ERROR,
+								message: 'Failed to verify subscription status',
+							},
+						},
+						500,
+					);
+				}
+
+				if (planData) {
+					planRow = planData as SubscriptionPlanRow;
+					subscription = { ...subData, plan: planRow } as unknown as SubscriptionWithPlan;
+					planFeatures = extractFeatures(planRow);
+				}
 			}
 		} catch {
 			return c.json(

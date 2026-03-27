@@ -13,6 +13,7 @@ import {
   DietGenerationRequest,
   WorkersResponse,
 } from "./fitaiWorkersClient";
+import { resolveCurrentWeight } from "./currentWeight";
 import { DayWorkout, WeeklyWorkoutPlan } from "../types/ai";
 import { BodyAnalysisData } from "../types/onboarding";
 // Note: MET-based calorie calculation happens at workout completion (completionTracking.ts)
@@ -62,14 +63,22 @@ export function transformProfileForWorkoutRequest(
   fitnessGoals: FitnessGoals,
   bodyAnalysis: BodyAnalysisData,
   workoutPreferences?: WorkoutPreferences,
+  currentWeightKg?: number | null,
 ): WorkoutGenerationRequest["profile"] {
+  const resolvedCurrentWeight = resolveCurrentWeight({
+    bodyAnalysisWeight: currentWeightKg ?? bodyAnalysis.current_weight_kg,
+  });
+
   return {
     age: personalInfo.age,
     gender:
       personalInfo.gender === "prefer_not_to_say"
         ? "other"
         : personalInfo.gender,
-    weight: bodyAnalysis.current_weight_kg,
+    weight:
+      resolvedCurrentWeight.value ??
+      currentWeightKg ??
+      bodyAnalysis.current_weight_kg,
     height: bodyAnalysis.height_cm,
     fitnessGoal: (fitnessGoals.primaryGoals?.[0] as any) || "get_fit",
     experienceLevel:
@@ -91,17 +100,30 @@ export function transformProfileForDietRequest(
   bodyAnalysis: BodyAnalysisData,
   workoutPreferences?: WorkoutPreferences,
   dietPreferences?: any,
+  currentWeightKg?: number | null,
 ): DietGenerationRequest["profile"] {
+  const resolvedCurrentWeight = resolveCurrentWeight({
+    bodyAnalysisWeight: currentWeightKg ?? bodyAnalysis.current_weight_kg,
+  });
+
   return {
     age: personalInfo.age,
     gender:
       personalInfo.gender === "prefer_not_to_say"
         ? "other"
         : personalInfo.gender,
-    weight: bodyAnalysis.current_weight_kg,
+    weight:
+      resolvedCurrentWeight.value ??
+      currentWeightKg ??
+      bodyAnalysis.current_weight_kg,
     height: bodyAnalysis.height_cm,
-    fitnessGoal: (fitnessGoals.primaryGoals?.[0] as any) || "get_fit",
-    activityLevel: (workoutPreferences?.activity_level as any) || "moderate",
+    fitness_goal: (fitnessGoals.primaryGoals?.[0] as any) || "get_fit",
+    activity_level: (workoutPreferences?.activity_level as any) || "moderate",
+    country: personalInfo.country,
+    state: personalInfo.state,
+    occupation_type: personalInfo.occupation_type,
+    wake_time: personalInfo.wake_time,
+    sleep_time: personalInfo.sleep_time,
   };
 }
 

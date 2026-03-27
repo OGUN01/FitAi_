@@ -380,6 +380,29 @@ export interface Database {
           Database["public"]["Tables"]["analytics_metrics"]["Insert"]
         >;
       };
+      user_current_weight: {
+        Row: {
+          user_id: string;
+          weight_kg: number;
+          source: "manual_log";
+          entry_date: string;
+          recorded_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          weight_kg: number;
+          source?: "manual_log";
+          entry_date: string;
+          recorded_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["user_current_weight"]["Insert"]
+        >;
+      };
     };
   };
 }

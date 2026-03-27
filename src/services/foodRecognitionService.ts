@@ -9,7 +9,7 @@
  */
 
 import { fitaiWorkersClient } from "./fitaiWorkersClient";
-import * as FileSystem from "expo-file-system";
+import { imageUriToDataUrl } from "../utils/imageDataUrl";
 
 // ============================================================================
 // TYPES - SIMPLIFIED
@@ -226,23 +226,7 @@ class FoodRecognitionService {
    * Convert image URI to base64 data URL
    */
   private async convertImageToBase64(imageUri: string): Promise<string> {
-    try {
-      if (imageUri.startsWith("data:image/")) {
-        return imageUri;
-      }
-
-      const base64Data = await FileSystem.readAsStringAsync(imageUri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-
-      const extension = imageUri.split(".").pop()?.toLowerCase() || "jpeg";
-      const mimeType = extension === "png" ? "image/png" : "image/jpeg";
-
-      return `data:${mimeType};base64,${base64Data}`;
-    } catch (error) {
-      console.error("Failed to convert image to base64:", error);
-      throw new Error("Failed to process image. Please try again.");
-    }
+    return imageUriToDataUrl(imageUri);
   }
 
   /**

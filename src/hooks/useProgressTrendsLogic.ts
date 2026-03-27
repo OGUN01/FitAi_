@@ -43,6 +43,27 @@ export const useProgressTrendsLogic = () => {
           ? 90
           : 365;
 
+  const selectedMetricsHistory = useMemo(() => {
+    if (metricsHistory.length === 0) {
+      return [];
+    }
+
+    const sortedHistory = [...metricsHistory].sort(
+      (a, b) =>
+        new Date(a.metricDate).getTime() - new Date(b.metricDate).getTime(),
+    );
+    const latestMetricDate = new Date(
+      sortedHistory[sortedHistory.length - 1].metricDate,
+    );
+    const cutoffDate = new Date(latestMetricDate);
+    cutoffDate.setHours(0, 0, 0, 0);
+    cutoffDate.setDate(cutoffDate.getDate() - (periodDays - 1));
+
+    return sortedHistory.filter(
+      (metric) => new Date(metric.metricDate).getTime() >= cutoffDate.getTime(),
+    );
+  }, [metricsHistory, periodDays]);
+
   const loadMetrics = useCallback(
     async (force = false) => {
       if (!user?.id) return;
@@ -72,7 +93,7 @@ export const useProgressTrendsLogic = () => {
 
   // Derived trend calculations — all read from the SSOT metricsHistory
   const weightTrend = useMemo((): TrendData | null => {
-    const weightData = metricsHistory.filter((m) => m.weightKg !== null);
+    const weightData = selectedMetricsHistory.filter((m) => m.weightKg !== null);
     if (weightData.length < 2) return null;
 
     const weights = weightData.map((m) => m.weightKg!);
@@ -90,10 +111,10 @@ export const useProgressTrendsLogic = () => {
     const changePercent = (change / weights[0]) * 100;
 
     return { labels, data: weights, min, max, avg, change, changePercent };
-  }, [metricsHistory]);
+  }, [selectedMetricsHistory]);
 
   const calorieTrend = useMemo((): TrendData | null => {
-    const calorieData = metricsHistory.filter(
+    const calorieData = selectedMetricsHistory.filter(
       (m) => m.caloriesConsumed !== null,
     );
     if (calorieData.length < 2) return null;
@@ -113,18 +134,20 @@ export const useProgressTrendsLogic = () => {
     const changePercent = (change / calories[0]) * 100;
 
     return { labels, data: calories, min, max, avg, change, changePercent };
-  }, [metricsHistory]);
+  }, [selectedMetricsHistory]);
 
   const workoutTrend = useMemo(() => {
-    const totalWorkouts = metricsHistory.reduce(
+    const totalWorkouts = selectedMetricsHistory.reduce(
       (sum, m) => sum + (m.workoutsCompleted || 0),
       0,
     );
     const avgPerDay =
-      metricsHistory.length > 0 ? totalWorkouts / metricsHistory.length : 0;
+      selectedMetricsHistory.length > 0
+        ? totalWorkouts / selectedMetricsHistory.length
+        : 0;
 
     return { total: totalWorkouts, avgPerDay };
-  }, [metricsHistory]);
+  }, [selectedMetricsHistory]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -142,7 +165,7 @@ export const useProgressTrendsLogic = () => {
     selectedPeriod,
     refreshing,
     loading,
-    metricsHistory,
+    metricsHistory: selectedMetricsHistory,
     // SSOT: callers should use profileStore.personalInfo/bodyAnalysis directly;
     // calculatedMetrics provides the authoritative computed health stats (BMI/BMR/TDEE)
     calculatedMetrics,

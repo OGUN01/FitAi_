@@ -255,7 +255,13 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
               recipe
             </Text>
           </View>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <TouchableOpacity
+            onPress={onClose}
+            style={styles.closeButton}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Close recipe creator"
+          >
             <Text style={styles.closeButtonText}>✕</Text>
           </TouchableOpacity>
         </View>
@@ -422,9 +428,9 @@ const styles = StyleSheet.create({
   },
 
   closeButton: {
-    width: rw(32),
-    height: rh(32),
-    borderRadius: rs(16),
+    width: Math.max(rw(32), 44),
+    height: Math.max(rh(32), 44),
+    borderRadius: Math.max(rs(16), 22),
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",

@@ -286,6 +286,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
+    minHeight: 44,
     backgroundColor: "rgba(255, 255, 255, 0.05)",
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.sm,

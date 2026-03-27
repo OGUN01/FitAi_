@@ -1,7 +1,7 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { persist } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { safeAsyncStorage } from "../utils/safeAsyncStorage";
+import { createDebouncedStorage } from "../utils/safeAsyncStorage";
 import { offlineService, SyncResult, OfflineAction } from "../services/offline";
 import { dataBridge } from "../services/DataBridge";
 import {
@@ -305,7 +305,7 @@ export const useOfflineStore = create<OfflineState>()(
     }),
     {
       name: "enhanced-offline-storage",
-      storage: createJSONStorage(() => safeAsyncStorage),
+      storage: createDebouncedStorage(),
       partialize: (state) => ({
         autoSyncEnabled: state.autoSyncEnabled,
         lastSyncResult: state.lastSyncResult,

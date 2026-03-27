@@ -1,4 +1,4 @@
-import { useProfileStore } from "../../stores/profileStore";
+import { weightTrackingService } from "../WeightTrackingService";
 import { DayWorkout } from "../../ai";
 import {
   calculateWorkoutCalories,
@@ -16,7 +16,7 @@ export function calculateActualCalories(
     return sessionData.stats.caloriesBurned;
   }
 
-  const userWeight = useProfileStore.getState().bodyAnalysis?.current_weight_kg;
+  const userWeight = weightTrackingService.getCurrentWeight();
 
   if (!userWeight || userWeight <= 0) {
     return 0;

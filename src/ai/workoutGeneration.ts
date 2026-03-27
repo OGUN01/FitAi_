@@ -12,6 +12,7 @@ import {
   transformForWorkoutRequest,
   transformWorkoutResponseToWeeklyPlan,
 } from "../services/aiRequestTransformers";
+import { resolveCurrentWeightFromStores } from "../services/currentWeight";
 
 export async function generateWorkout(
   personalInfo: PersonalInfo,
@@ -36,6 +37,9 @@ export async function generateWorkout(
         workoutType: preferences.workoutType,
         duration: preferences.duration,
         focusMuscles: preferences.focusMuscles,
+        currentWeightKg: resolveCurrentWeightFromStores({
+          bodyAnalysisWeight: preferences.bodyMetrics?.current_weight_kg,
+        }).value,
       },
     );
 
@@ -95,6 +99,9 @@ export async function generateWeeklyWorkoutPlan(
       {
         requestWeeklyPlan: true,
         duration: options.workoutPreferences?.time_preference || 30,
+        currentWeightKg: resolveCurrentWeightFromStores({
+          bodyAnalysisWeight: options.bodyMetrics?.current_weight_kg,
+        }).value,
       },
     );
 

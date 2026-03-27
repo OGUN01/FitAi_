@@ -22,17 +22,17 @@ interface PaywallModalProps {
 const TIER_FEATURES: Record<string, string[]> = {
   free: [
     "10 AI generations per month",
-    "10 food scans per day",
+    "10 AI food scans per day",
     "Basic progress tracking",
   ],
   basic: [
     "10 AI generations per day",
-    "Unlimited barcode scans",
+    "Unlimited AI food scans",
     "Basic analytics dashboard",
   ],
   pro: [
     "Unlimited AI generations",
-    "Unlimited barcode scans",
+    "Unlimited AI food scans",
     "Advanced analytics & insights",
     "Personalized AI coaching",
     "Priority support",

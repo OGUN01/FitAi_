@@ -33,11 +33,10 @@
 import { create } from "zustand";
 import {
   persist,
-  createJSONStorage,
   subscribeWithSelector,
 } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { safeAsyncStorage } from "../utils/safeAsyncStorage";
+import { createDebouncedStorage } from "../utils/safeAsyncStorage";
 
 // Import types from onboarding (which are the actual data structures used)
 import type {
@@ -253,7 +252,7 @@ export const useProfileStore = create<ProfileStore>()(
       }),
       {
         name: "profile-storage-v2", // v2 to avoid conflicts with existing storage
-        storage: createJSONStorage(() => safeAsyncStorage),
+        storage: createDebouncedStorage(),
         // Persist data fields, sync status, and sync error for recovery after app restart
         partialize: (state) => ({
           personalInfo: state.personalInfo,

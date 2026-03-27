@@ -25,6 +25,7 @@ export interface Meal {
   total_protein: number;
   total_carbs: number;
   total_fat: number;
+  total_fiber?: number;
   consumed_at: string;
   created_at: string;
   foods?: MealFood[];

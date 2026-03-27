@@ -1,43 +1,5 @@
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { safeAsyncStorage } from "../../utils/safeAsyncStorage";
-import { FitnessState } from "./types";
-import { initialFitnessState } from "./state";
-import { createPlanActions } from "./planActions";
-import { createProgressActions } from "./progressActions";
-import { createSessionActions } from "./sessionActions";
-import { createDataActions } from "./dataActions";
-import { createRealtimeActions } from "./realtimeActions";
-import { createSelectors } from "./selectors";
-
-export const useFitnessStore = create<FitnessState>()(
-  persist(
-    (set, get) => ({
-      ...initialFitnessState,
-      ...createPlanActions(set, get),
-      ...createProgressActions(set, get),
-      ...createSessionActions(set, get),
-      ...createDataActions(set, get),
-      ...createRealtimeActions(set, get),
-      ...createSelectors(get, set),
-    }),
-    {
-      name: "fitness-storage",
-      storage: createJSONStorage(() => safeAsyncStorage),
-      partialize: (state) => ({
-        weeklyWorkoutPlan: state.weeklyWorkoutPlan,
-        workoutProgress: state.workoutProgress,
-        completedSessions: state.completedSessions,
-        // completedSessionsHydrated: intentionally excluded (resets on cold start)
-        // _hasHydrated: intentionally excluded (set by onRehydrateStorage)
-      }),
-      onRehydrateStorage: () => (state) => {
-        if (state) state.setHasHydrated();
-      },
-    },
-  ),
-);
+// DEPRECATED: Do NOT import useFitnessStore from this file.
+// Use `import { useFitnessStore } from '../fitnessStore'` instead.
+// The canonical store is src/stores/fitnessStore.ts (standalone).
 
 export * from "./types";
-export default useFitnessStore;

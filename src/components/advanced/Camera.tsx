@@ -1,11 +1,10 @@
-import React, { useState, useRef, useEffect, ErrorInfo } from "react";
+import React, { useState, useRef, ErrorInfo } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  Dimensions,
   ActivityIndicator,
   Modal,
   StyleProp,
@@ -15,7 +14,11 @@ import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 import { Button } from "../ui";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rbr, rs } from '../../utils/responsive';
-import { isProductBarcode, normalizeBarcode } from "@/utils/countryMapping";
+import {
+  isProductBarcode,
+  matchesPackagedFoodBarcodeType,
+  normalizeBarcode,
+} from "@/utils/countryMapping";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 // Error Boundary Component
@@ -58,17 +61,28 @@ class CameraErrorBoundary extends React.Component<
   }
 }
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
-
 interface CameraProps {
-  mode: "food" | "progress" | "barcode";
+  mode: "food" | "progress" | "barcode" | "label";
   onCapture: (uri: string) => void;
-  onBarcodeScanned?: (barcode: string, type: string) => void;
+  onBarcodeScanned?: (
+    barcode: string,
+    type: string,
+    rawBarcode?: string,
+  ) => void;
+  onLabelLibraryPick?: () => void | Promise<void>;
   onClose: () => void;
   visible?: boolean;
   style?: StyleProp<ViewStyle>;
   portionGrams?: number | null;
   onPortionGramsChange?: (grams: number | null) => void;
+  barcodeSessionState?: "idle" | "decoding" | "lookup_in_progress" | "transient_retry" | "resolved";
+  barcodeStatusMessage?: string | null;
+  barcodeActions?: Array<{
+    id: string;
+    label: string;
+    onPress: () => void;
+    variant?: "primary" | "secondary" | "ghost";
+  }>;
 }
 
 const CameraComponent: React.FC<CameraProps> = ({
@@ -76,24 +90,24 @@ const CameraComponent: React.FC<CameraProps> = ({
   mode,
   onCapture,
   onBarcodeScanned,
+  onLabelLibraryPick,
   onClose,
   style,
   portionGrams,
   onPortionGramsChange,
+  barcodeSessionState = "idle",
+  barcodeStatusMessage,
+  barcodeActions = [],
 }) => {
   const [permission, requestPermission] = useCameraPermissions();
   const [cameraType, setCameraType] = useState<CameraType>("back");
   const [flashMode, setFlashMode] = useState<"off" | "on">("off");
   const [isCapturing, setIsCapturing] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
-  const [isScanning, setIsScanning] = useState(false);
   const [gramsText, setGramsText] = useState(() =>
     portionGrams != null ? String(portionGrams) : "",
   );
   const cameraRef = useRef<CameraView>(null);
-
-  const mountedRef = useRef(true);
-  useEffect(() => () => { mountedRef.current = false; }, []);
   React.useEffect(() => {
     if (!visible) {
       return;
@@ -138,24 +152,14 @@ const CameraComponent: React.FC<CameraProps> = ({
     type: string;
     data: string;
   }) => {
-    if (!isProductBarcode(type)) {
+    if (!isProductBarcode(type) || !matchesPackagedFoodBarcodeType(type, data)) {
       return;
     }
     const normalized = normalizeBarcode(data);
-    if (normalized === null) {
+    if (normalized === null || !onBarcodeScanned) {
       return;
     }
-    if (!isScanning && onBarcodeScanned) {
-      setIsScanning(true);
-      onBarcodeScanned(normalized, type);
-
-      // Reset scanning state after a delay to prevent multiple scans
-      setTimeout(() => {
-        if (mountedRef.current) {
-          setIsScanning(false);
-        }
-      }, 2000);
-    }
+    onBarcodeScanned(normalized, type, data);
   };
 
   if (!permission) {
@@ -194,6 +198,8 @@ const CameraComponent: React.FC<CameraProps> = ({
         return "Progress Photo";
       case "barcode":
         return "Scan Product";
+      case "label":
+        return "Scan Label";
       default:
         return "Camera";
     }
@@ -207,10 +213,26 @@ const CameraComponent: React.FC<CameraProps> = ({
         return "Stand in good lighting and position yourself in the frame";
       case "barcode":
         return "Point your camera at the barcode on the product packaging";
+      case "label":
+        return "Align the full nutrition facts table inside the frame";
       default:
         return "Take a photo";
     }
   };
+
+  const isBarcodeBusy =
+    mode === "barcode" &&
+    (barcodeSessionState === "decoding" ||
+      barcodeSessionState === "lookup_in_progress" ||
+      barcodeSessionState === "transient_retry");
+
+  const effectiveBarcodeStatus =
+    barcodeStatusMessage ||
+    (mode === "barcode"
+      ? isBarcodeBusy
+        ? "Looking up product..."
+        : "Ready to scan"
+      : null);
 
   return (
     <View style={[styles.container, style]}>
@@ -290,12 +312,33 @@ const CameraComponent: React.FC<CameraProps> = ({
               <View style={styles.barcodeFrame}>
                 <View style={styles.scanningArea}>
                   <View style={styles.scanningLine} />
-                  {isScanning && (
+                  {isBarcodeBusy && (
                     <View style={styles.scanningIndicator}>
-                      <Text style={styles.scanningText}>✓ Scanning...</Text>
+                      <Text style={styles.scanningText}>
+                        {effectiveBarcodeStatus}
+                      </Text>
                     </View>
                   )}
                 </View>
+                <View style={styles.barcodeCorner} />
+                <View
+                  style={[styles.barcodeCorner, styles.barcodeCornerTopRight]}
+                />
+                <View
+                  style={[styles.barcodeCorner, styles.barcodeCornerBottomLeft]}
+                />
+                <View
+                  style={[
+                    styles.barcodeCorner,
+                    styles.barcodeCornerBottomRight,
+                  ]}
+                />
+              </View>
+            )}
+
+            {mode === "label" && (
+              <View style={styles.labelFrame}>
+                <View style={styles.labelGuide} />
                 <View style={styles.barcodeCorner} />
                 <View
                   style={[styles.barcodeCorner, styles.barcodeCornerTopRight]}
@@ -343,14 +386,50 @@ const CameraComponent: React.FC<CameraProps> = ({
           </TouchableOpacity>
         ) : (
           <View style={styles.scanningStatus}>
-            <Text style={styles.scanningStatusText}>
-              {isScanning ? "📱 Scanning..." : "📱 Ready to Scan"}
-            </Text>
+            <Text style={styles.scanningStatusText}>{effectiveBarcodeStatus}</Text>
           </View>
         )}
 
         <View style={styles.placeholder} />
       </View>
+
+      {mode === "barcode" && barcodeActions.length > 0 && (
+        <View style={styles.barcodeActionRow}>
+          {barcodeActions.map((action) => (
+            <TouchableOpacity
+              key={action.id}
+              style={[
+                styles.barcodeActionButton,
+                action.variant === "primary" && styles.barcodeActionButtonPrimary,
+              ]}
+              onPress={action.onPress}
+              accessibilityRole="button"
+            >
+              <Text
+                style={[
+                  styles.barcodeActionText,
+                  action.variant === "primary" && styles.barcodeActionTextPrimary,
+                ]}
+              >
+                {action.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
+      {mode === "label" && onLabelLibraryPick && (
+        <View style={styles.labelLibraryRow}>
+          <TouchableOpacity
+            style={styles.labelLibraryButton}
+            onPress={onLabelLibraryPick}
+            accessibilityRole="button"
+            accessibilityLabel="Choose nutrition label from library"
+          >
+            <Text style={styles.labelLibraryButtonText}>Choose From Library</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Portion size hint for food mode */}
       {mode === "food" && onPortionGramsChange && (
@@ -423,6 +502,16 @@ const CameraComponent: React.FC<CameraProps> = ({
             <Text style={styles.tipText}>
               Hold the barcode 6-8 inches away and keep it steady for best
               scanning
+            </Text>
+          </View>
+        )}
+
+        {mode === "label" && (
+          <View style={styles.tipItem}>
+            <Text style={styles.tipIcon}>Label</Text>
+            <Text style={styles.tipText}>
+              Keep the label flat, fill the frame, and avoid glare for the best
+              reading accuracy
             </Text>
           </View>
         )}
@@ -590,6 +679,23 @@ const styles = StyleSheet.create({
     borderColor: ResponsiveTheme.colors.primary,
     borderRadius: rbr(75),
     borderStyle: "dashed",
+  },
+
+  labelFrame: {
+    width: rs(260),
+    height: rs(340),
+    position: "relative",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+  },
+
+  labelGuide: {
+    width: "100%",
+    height: "100%",
+    borderWidth: 2,
+    borderColor: ResponsiveTheme.colors.primary,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: "rgba(0,0,0,0.08)",
   },
 
   controls: {
@@ -838,6 +944,56 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.primary,
     fontWeight: ResponsiveTheme.fontWeight.medium as "500",
     textAlign: "center",
+  },
+  barcodeActionRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingBottom: ResponsiveTheme.spacing.md,
+    justifyContent: "center" as const,
+  },
+  barcodeActionButton: {
+    minWidth: rs(110),
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    alignItems: "center" as const,
+  },
+  barcodeActionButtonPrimary: {
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderColor: ResponsiveTheme.colors.primary,
+  },
+  barcodeActionText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
+    color: ResponsiveTheme.colors.text,
+  },
+  barcodeActionTextPrimary: {
+    color: ResponsiveTheme.colors.white,
+  },
+  labelLibraryRow: {
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingBottom: ResponsiveTheme.spacing.md,
+    alignItems: "center" as const,
+  },
+  labelLibraryButton: {
+    minWidth: rs(190),
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    alignItems: "center" as const,
+  },
+  labelLibraryButtonText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
+    color: ResponsiveTheme.colors.text,
   },
 });
 

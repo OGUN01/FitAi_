@@ -20,7 +20,7 @@ interface UsageCounterProps {
 
 const FEATURE_LABELS: Record<UsageCounterProps["featureKey"], string> = {
   ai_generation: "AI Generations",
-  barcode_scan: "Food Scans",
+  barcode_scan: "AI Food Scans",
 };
 
 const PERIOD_LABELS: Record<UsageCounterProps["featureKey"], string> = {

@@ -37,7 +37,13 @@ export const InfoTooltipModal: React.FC<InfoTooltipModalProps> = ({
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{title}</Text>
-            <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
+            <TouchableOpacity
+              onPress={onClose}
+              style={styles.modalCloseButton}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={`Close ${title}`}
+            >
               <Ionicons
                 name="close-circle"
                 size={rf(24)}
@@ -97,7 +103,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modalCloseButton: {
-    padding: ResponsiveTheme.spacing.xs,
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalDescription: {
     fontSize: ResponsiveTheme.fontSize.md,

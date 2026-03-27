@@ -28,6 +28,8 @@ export const IngredientList: React.FC<IngredientListProps> = ({
                   onQuantityChange(index, Math.max(0, item.quantity - 10))
                 }
                 style={styles.quantityButton}
+                accessibilityRole="button"
+                accessibilityLabel={`Decrease ${item.name} quantity`}
               >
                 <Ionicons
                   name="remove"
@@ -39,6 +41,8 @@ export const IngredientList: React.FC<IngredientListProps> = ({
               <TouchableOpacity
                 onPress={() => onQuantityChange(index, item.quantity + 10)}
                 style={styles.quantityButton}
+                accessibilityRole="button"
+                accessibilityLabel={`Increase ${item.name} quantity`}
               >
                 <Ionicons
                   name="add"
@@ -54,6 +58,8 @@ export const IngredientList: React.FC<IngredientListProps> = ({
           <TouchableOpacity
             onPress={() => onRemoveIngredient(index)}
             style={styles.removeButton}
+            accessibilityRole="button"
+            accessibilityLabel={`Remove ${item.name}`}
           >
             <Ionicons
               name="trash-outline"
@@ -100,7 +106,10 @@ const styles = StyleSheet.create({
     marginVertical: rh(4),
   },
   quantityButton: {
-    padding: rp(4),
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
   quantityText: {
     fontSize: rf(14),
@@ -114,6 +123,9 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textSecondary,
   },
   removeButton: {
-    padding: rp(8),
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

@@ -44,7 +44,9 @@ export const HydrationPanel: React.FC<HydrationPanelProps> = ({
       ? Math.min(waterConsumedLiters / effectiveGoalLiters, 1)
       : 0;
 
-  const animatedProgressWidth = useRef(new Animated.Value(waterProgress)).current;
+  const animatedProgressWidth = useRef(
+    new Animated.Value(waterProgress),
+  ).current;
 
   React.useEffect(() => {
     Animated.timing(animatedProgressWidth, {
@@ -164,7 +166,12 @@ export const HydrationPanel: React.FC<HydrationPanelProps> = ({
               onPress={() => setShowWaterIntakeModal(true)}
               style={[styles.waterQuickAddButton, styles.waterCustomButton]}
             >
-              <Text style={[styles.waterQuickAddButtonText, styles.waterCustomButtonText]}>
+              <Text
+                style={[
+                  styles.waterQuickAddButtonText,
+                  styles.waterCustomButtonText,
+                ]}
+              >
                 Custom
               </Text>
             </AnimatedPressable>
@@ -238,7 +245,9 @@ const styles = StyleSheet.create({
     borderRadius: ResponsiveTheme.borderRadius.md,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.sm,
+    minHeight: 44,
     alignItems: "center",
+    justifyContent: "center",
     overflow: "hidden",
     position: "relative",
   },

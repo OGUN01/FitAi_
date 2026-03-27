@@ -2,6 +2,7 @@ import type { HealthDataState, HealthConnectSyncResult } from "./types";
 import { healthConnectService } from "../../services/healthConnect";
 import { weightTrackingService } from "../../services/WeightTrackingService";
 import { mapWorkoutTypeToHealthConnect } from "../../services/health/types";
+import { useProfileStore } from "../profileStore";
 
 export interface WriteWorkoutResult {
   success: boolean;
@@ -19,7 +20,6 @@ export const createHealthConnectActions = (
 ) => ({
   initializeHealthConnect: async (): Promise<boolean> => {
     try {
-
       const isAvailable = await healthConnectService.initializeHealthConnect();
 
       if (isAvailable) {
@@ -44,7 +44,6 @@ export const createHealthConnectActions = (
 
   requestHealthConnectPermissions: async (): Promise<boolean> => {
     try {
-
       const permissionGranted = await healthConnectService.requestPermissions();
 
       set((state) => ({
@@ -62,7 +61,6 @@ export const createHealthConnectActions = (
 
   reauthorizeHealthConnect: async (): Promise<boolean> => {
     try {
-
       set({ isHealthConnectAuthorized: false, syncStatus: "syncing" });
 
       const success = await healthConnectService.reauthorize();
@@ -88,7 +86,6 @@ export const createHealthConnectActions = (
     daysBack: number = 7,
   ): Promise<HealthConnectSyncResult> => {
     try {
-
       const isInitialized =
         await healthConnectService.initializeHealthConnect();
       if (!isInitialized) {
@@ -130,6 +127,9 @@ export const createHealthConnectActions = (
         }));
 
         if (healthData.data?.weight) {
+          useProfileStore
+            .getState()
+            .updateBodyAnalysis({ current_weight_kg: healthData.data.weight });
           weightTrackingService.setWeight(healthData.data.weight);
         }
 
@@ -141,7 +141,6 @@ export const createHealthConnectActions = (
             },
           );
         }
-
       } else {
         set({
           syncStatus: "error",
@@ -171,7 +170,6 @@ export const createHealthConnectActions = (
     notes?: string;
   }): Promise<WriteWorkoutResult> => {
     try {
-
       const state = get();
       if (!state.isHealthConnectAvailable) {
         return { success: false, error: "Health Connect not available" };

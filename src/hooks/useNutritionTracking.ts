@@ -51,7 +51,11 @@ export const useNutritionTracking = (navigation: any) => {
       setHydrationGoal(calculatedMetrics.dailyWaterML);
     }
     checkAndResetIfNewDay();
-  }, [calculatedMetrics?.dailyWaterML]);
+  }, [
+    calculatedMetrics?.dailyWaterML,
+    setHydrationGoal,
+    checkAndResetIfNewDay,
+  ]);
 
   const waterConsumedLiters = waterIntakeML / 1000;
   const DEFAULT_WATER_GOAL_ML = 2500; // 2.5L default when no profile metrics available

@@ -101,7 +101,6 @@ export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
             trend={displayWeightTrend}
             unit={weightUnit}
             color={ResponsiveTheme.colors.success}
-            ctaLabel="Log Weight"
           />
 
           <SimpleTrendCard
@@ -110,7 +109,6 @@ export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
             trend={calorieTrend}
             unit="kcal"
             color={ResponsiveTheme.colors.warning}
-            ctaLabel="Log Meal"
           />
 
           <GoalProgressCard

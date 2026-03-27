@@ -25,7 +25,9 @@ jest.mock("../../services/supabase", () => ({
   },
 }));
 
-const { nutritionDataService } = jest.requireMock("../../services/nutritionData");
+const { nutritionDataService } = jest.requireMock(
+  "../../services/nutritionData",
+);
 
 describe("recognizedFoodLogger", () => {
   const baseFood: RecognizedFood = {
@@ -64,7 +66,7 @@ describe("recognizedFoodLogger", () => {
     });
   });
 
-  it("omits micronutrients for estimated meal-photo logs", async () => {
+  it("preserves fiber while omitting secondary micronutrients for estimated meal-photo logs", async () => {
     await recognizedFoodLogger.logRecognizedFoods(
       "user-1",
       [baseFood],
@@ -91,7 +93,7 @@ describe("recognizedFoodLogger", () => {
             protein: 18,
             carbs: 12,
             fat: 22,
-            fiber: undefined,
+            fiber: 4,
             sugar: undefined,
             sodium: undefined,
           }),
@@ -126,6 +128,48 @@ describe("recognizedFoodLogger", () => {
             fiber: 4,
             sugar: 6,
             sodium: 480,
+          }),
+        ],
+      }),
+    );
+  });
+
+  it("normalizes invalid estimated meal-photo fiber to 0 and forces review", async () => {
+    const invalidFiberFood: RecognizedFood = {
+      ...baseFood,
+      id: "food-invalid-fiber",
+      nutrition: {
+        ...baseFood.nutrition,
+        fiber: Number.NaN,
+      },
+    };
+
+    await recognizedFoodLogger.logRecognizedFoods(
+      "user-1",
+      [invalidFiberFood],
+      "lunch",
+      undefined,
+      {
+        provenance: {
+          mode: "meal_photo",
+          truthLevel: "estimated",
+          confidence: 84,
+          countryContext: "IN",
+          requiresReview: false,
+          source: "food-recognition",
+        },
+      },
+    );
+
+    expect(nutritionDataService.logMeal).toHaveBeenCalledWith(
+      "user-1",
+      expect.objectContaining({
+        provenance: expect.objectContaining({
+          requiresReview: true,
+        }),
+        foods: [
+          expect.objectContaining({
+            fiber: 0,
           }),
         ],
       }),

@@ -22,11 +22,12 @@ import { GlassCard } from "../../../../components/ui/aurora/GlassCard";
 import { useProfileStore } from "../../../../stores/profileStore";
 import { useUser } from "../../../../hooks/useUser";
 import { useAuth } from "../../../../hooks/useAuth";
+import { BodyAnalysisService } from "../../../../services/onboardingService";
+import { resolveCurrentWeightForUser } from "../../../../services/currentWeight";
 import { ResponsiveTheme } from "../../../../utils/constants";
 import { rf, rp, rbr, rw } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
 import { crossPlatformAlert } from "../../../../utils/crossPlatformAlert";
-import { supabase } from "../../../../services/supabase";
 
 interface BodyMeasurementsEditModalProps {
   visible: boolean;
@@ -172,24 +173,44 @@ export const BodyMeasurementsEditModal: React.FC<
       }
 
       const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
-
-      // ✅ Update bodyAnalysis in profileStore
-      updateBodyAnalysis({
+      const canonicalCurrentWeight = user?.id
+        ? (await resolveCurrentWeightForUser(user.id, {
+            bodyAnalysisWeight: parseFloat(weight),
+          })).value ?? parseFloat(weight)
+        : parseFloat(weight);
+      const nextBodyAnalysis = {
+        // Preserve other fields - profileStore.bodyAnalysis is authoritative SSOT
+        medical_conditions:
+          bodyAnalysisData?.medical_conditions ||
+          profile.bodyMetrics?.medical_conditions ||
+          [],
+        medications:
+          bodyAnalysisData?.medications ||
+          profile.bodyMetrics?.medications ||
+          [],
+        physical_limitations:
+          bodyAnalysisData?.physical_limitations ||
+          profile.bodyMetrics?.physical_limitations ||
+          [],
+        pregnancy_status:
+          bodyAnalysisData?.pregnancy_status ||
+          profile.bodyMetrics?.pregnancy_status ||
+          false,
+        breastfeeding_status:
+          bodyAnalysisData?.breastfeeding_status ||
+          profile.bodyMetrics?.breastfeeding_status ||
+          false,
         height_cm: parseFloat(height),
-        current_weight_kg: parseFloat(weight),
+        current_weight_kg: canonicalCurrentWeight,
         ...(targetWeight ? { target_weight_kg: parseFloat(targetWeight) } : {}),
         body_fat_percentage: bodyFat ? parseFloat(bodyFat) : undefined,
         chest_cm: chest ? parseFloat(chest) : undefined,
         waist_cm: waist ? parseFloat(waist) : undefined,
         hip_cm: hips ? parseFloat(hips) : undefined,
-        // Preserve other fields — profileStore.bodyAnalysis is authoritative SSOT
-        medical_conditions: bodyAnalysisData?.medical_conditions || profile.bodyMetrics?.medical_conditions || [],
-        medications: bodyAnalysisData?.medications || profile.bodyMetrics?.medications || [],
-        physical_limitations: bodyAnalysisData?.physical_limitations || profile.bodyMetrics?.physical_limitations || [],
-        pregnancy_status: bodyAnalysisData?.pregnancy_status || profile.bodyMetrics?.pregnancy_status || false,
-        breastfeeding_status:
-          bodyAnalysisData?.breastfeeding_status || profile.bodyMetrics?.breastfeeding_status || false,
-      });
+      };
+
+      // ✅ Update bodyAnalysis in profileStore
+      updateBodyAnalysis(nextBodyAnalysis);
       console.log(
         "✅ BodyMeasurementsEditModal: Saved body metrics locally",
       );
@@ -197,28 +218,12 @@ export const BodyMeasurementsEditModal: React.FC<
       // Sync to Supabase body_analysis table
       if (user?.id) {
         try {
-          const { error } = await supabase.from("body_analysis").upsert(
-            {
-              user_id: user.id,
-              height_cm: parseFloat(height),
-              current_weight_kg: parseFloat(weight),
-              target_weight_kg: targetWeight ? parseFloat(targetWeight) : null,
-              body_fat_percentage: bodyFat ? parseFloat(bodyFat) : null,
-              chest_cm: chest ? parseFloat(chest) : null,
-              waist_cm: waist ? parseFloat(waist) : null,
-              hip_cm: hips ? parseFloat(hips) : null,
-              updated_at: new Date().toISOString(),
-            },
-            {
-              onConflict: "user_id",
-            },
+          const success = await BodyAnalysisService.save(
+            user.id,
+            nextBodyAnalysis as any,
           );
 
-          if (error) {
-            console.error(
-              "Failed to sync body measurements to database:",
-              error,
-            );
+          if (!success) {
             crossPlatformAlert(
               "Saved Locally",
               "Your measurements were saved locally but failed to sync to the server. They will sync automatically when connection is restored.",

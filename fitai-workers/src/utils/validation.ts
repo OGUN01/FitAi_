@@ -166,6 +166,11 @@ export const UserProfileSchema = z.object({
 	pregnancyStatus: z.boolean().optional().default(false),
 	pregnancyTrimester: z.enum(['1', '2', '3']).or(z.number().int().min(1).max(3)).optional(),
 	breastfeedingStatus: z.boolean().optional().default(false),
+
+	// ✅ Progressive overloading / split scoring fields
+	prefersVariety: z.boolean().optional(),
+	stressLevel: z.enum(['low', 'moderate', 'high']).optional(),
+	activityLevel: z.enum(['sedentary', 'light', 'moderate', 'active', 'extreme']).optional(),
 });
 
 export type UserProfile = z.infer<typeof UserProfileSchema>;
@@ -197,6 +202,9 @@ export const WorkoutGenerationRequestSchema = z.object({
 	// Optional filters
 	focusMuscles: z.array(MuscleGroupSchema).optional(),
 	excludeExercises: z.array(z.string()).optional(), // Exercise IDs to exclude
+
+	// Mesocycle week (1-4), defaults handled at usage site
+	weekNumber: z.number().int().min(1).max(4).optional(),
 
 	// AI parameters (optional)
 	model: z.string().default('google/gemini-2.5-flash'), // Vercel AI Gateway model ID (format: provider/model)
@@ -306,6 +314,7 @@ export const FoodItemSchema = z.object({
  * Single meal in the diet plan
  */
 export const MealSchema = z.object({
+	dayOfWeek: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']).optional(),
 	mealType: z.enum(['breakfast', 'morning_snack', 'lunch', 'afternoon_snack', 'dinner', 'evening_snack']),
 	name: z.string(), // "High Protein Breakfast Bowl"
 	foods: z.array(FoodItemSchema).min(1).max(15),
@@ -339,6 +348,82 @@ export type FoodItem = z.infer<typeof FoodItemSchema>;
 export type Meal = z.infer<typeof MealSchema>;
 export type DietResponse = z.infer<typeof DietResponseSchema>;
 
+const DietProfileOverrideSchema = z.object({
+	age: z.number().int().min(13).max(120).optional(),
+	gender: z.string().optional(),
+	weight: z.number().min(30).max(300).optional(),
+	height: z.number().min(100).max(250).optional(),
+	country: z.string().optional(),
+	state: z.string().optional(),
+	occupation_type: z.string().optional(),
+	wake_time: z.string().optional(),
+	sleep_time: z.string().optional(),
+	activity_level: z.string().optional(),
+	fitness_goal: z.string().optional(),
+});
+
+const DietPreferencesOverrideSchema = z.object({
+	diet_type: z.string().optional(),
+	allergies: z.array(z.string()).optional(),
+	restrictions: z.array(z.string()).optional(),
+	dislikes: z.array(z.string()).optional(),
+	cuisine_preferences: z.array(z.string()).optional(),
+	breakfast_enabled: z.boolean().optional(),
+	lunch_enabled: z.boolean().optional(),
+	dinner_enabled: z.boolean().optional(),
+	snacks_enabled: z.boolean().optional(),
+	cooking_methods: z.array(z.string()).optional(),
+	cooking_skill_level: z.string().optional(),
+	max_prep_time_minutes: z.number().int().min(0).max(240).nullable().optional(),
+	budget_level: z.string().optional(),
+	keto_ready: z.boolean().optional(),
+	intermittent_fasting_ready: z.boolean().optional(),
+	paleo_ready: z.boolean().optional(),
+	mediterranean_ready: z.boolean().optional(),
+	low_carb_ready: z.boolean().optional(),
+	high_protein_ready: z.boolean().optional(),
+	drinks_enough_water: z.boolean().optional(),
+	limits_sugary_drinks: z.boolean().optional(),
+	eats_regular_meals: z.boolean().optional(),
+	avoids_late_night_eating: z.boolean().optional(),
+	controls_portion_sizes: z.boolean().optional(),
+	reads_nutrition_labels: z.boolean().optional(),
+	eats_processed_foods: z.boolean().optional(),
+	eats_5_servings_fruits_veggies: z.boolean().optional(),
+	limits_refined_sugar: z.boolean().optional(),
+	includes_healthy_fats: z.boolean().optional(),
+	drinks_alcohol: z.boolean().optional(),
+	smokes_tobacco: z.boolean().optional(),
+	drinks_coffee: z.boolean().optional(),
+	takes_supplements: z.boolean().optional(),
+});
+
+const BodyMetricsOverrideSchema = z.object({
+	height_cm: z.number().min(100).max(250).optional(),
+	current_weight_kg: z.number().min(30).max(300).optional(),
+	target_weight_kg: z.number().min(30).max(300).optional(),
+	body_fat_percentage: z.number().min(3).max(60).optional(),
+	medical_conditions: z.array(z.string()).optional(),
+	medications: z.array(z.string()).optional(),
+	physical_limitations: z.array(z.string()).optional(),
+	pregnancy_status: z.boolean().optional(),
+	pregnancy_trimester: z.number().int().min(1).max(3).optional(),
+	breastfeeding_status: z.boolean().optional(),
+	stress_level: z.string().optional(),
+});
+
+const AdvancedReviewOverrideSchema = z.object({
+	daily_calories: z.number().int().min(1000).max(5000).optional(),
+	daily_protein_g: z.number().min(0).max(400).optional(),
+	daily_carbs_g: z.number().min(0).max(600).optional(),
+	daily_fat_g: z.number().min(0).max(250).optional(),
+	daily_water_ml: z.number().int().min(0).max(10000).optional(),
+	daily_fiber_g: z.number().min(0).max(200).optional(),
+	calculated_bmi: z.number().min(0).max(80).optional(),
+	bmi_category: z.string().optional(),
+	health_score: z.number().min(0).max(100).optional(),
+});
+
 // ============================================================================
 // DIET GENERATION REQUEST SCHEMA (Task 1.6)
 // ============================================================================
@@ -349,6 +434,13 @@ export type DietResponse = z.infer<typeof DietResponseSchema>;
  */
 export const DietGenerationRequestSchema = z.object({
 	userId: z.string().uuid().optional(),
+	country: z.string().optional(),
+
+	// Optional live onboarding overrides from the app
+	profile: DietProfileOverrideSchema.optional(),
+	dietPreferences: DietPreferencesOverrideSchema.optional(),
+	bodyMetrics: BodyMetricsOverrideSchema.optional(),
+	advancedReview: AdvancedReviewOverrideSchema.optional(),
 
 	// Dietary preferences
 	calorieTarget: z.number().int().min(1000).max(5000),
@@ -583,6 +675,12 @@ export interface UserProfileContext {
 	country?: string;
 	state?: string;
 	occupation_type?: string;
+	wake_time?: string;
+	sleep_time?: string;
+	activity_level?: string;
+	fitness_goal?: string;
+	weight?: number;
+	height?: number;
 }
 
 /**
@@ -592,9 +690,60 @@ export interface DietPreferences {
 	diet_type?: string;
 	allergies?: string[];
 	restrictions?: string[];
+	dislikes?: string[];
+	cuisine_preferences?: string[];
 	breakfast_enabled?: boolean;
 	lunch_enabled?: boolean;
 	dinner_enabled?: boolean;
 	snacks_enabled?: boolean;
 	cooking_methods?: string[];
+	cooking_skill_level?: string;
+	max_prep_time_minutes?: number | null;
+	budget_level?: string;
+	keto_ready?: boolean;
+	intermittent_fasting_ready?: boolean;
+	paleo_ready?: boolean;
+	mediterranean_ready?: boolean;
+	low_carb_ready?: boolean;
+	high_protein_ready?: boolean;
+	drinks_enough_water?: boolean;
+	limits_sugary_drinks?: boolean;
+	eats_regular_meals?: boolean;
+	avoids_late_night_eating?: boolean;
+	controls_portion_sizes?: boolean;
+	reads_nutrition_labels?: boolean;
+	eats_processed_foods?: boolean;
+	eats_5_servings_fruits_veggies?: boolean;
+	limits_refined_sugar?: boolean;
+	includes_healthy_fats?: boolean;
+	drinks_alcohol?: boolean;
+	smokes_tobacco?: boolean;
+	drinks_coffee?: boolean;
+	takes_supplements?: boolean;
+}
+
+export interface BodyMetricsContext {
+	height_cm?: number;
+	current_weight_kg?: number;
+	target_weight_kg?: number;
+	body_fat_percentage?: number;
+	medical_conditions?: string[];
+	medications?: string[];
+	physical_limitations?: string[];
+	pregnancy_status?: boolean;
+	pregnancy_trimester?: number;
+	breastfeeding_status?: boolean;
+	stress_level?: string;
+}
+
+export interface AdvancedReviewContext {
+	daily_calories?: number;
+	daily_protein_g?: number;
+	daily_carbs_g?: number;
+	daily_fat_g?: number;
+	daily_water_ml?: number;
+	daily_fiber_g?: number;
+	calculated_bmi?: number;
+	bmi_category?: string;
+	health_score?: number;
 }

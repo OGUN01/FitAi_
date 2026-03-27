@@ -7,6 +7,7 @@ import {
   DietPreferencesService,
 } from "../../services/onboardingService";
 import { weightTrackingService } from "../../services/WeightTrackingService";
+import { resolveCurrentWeightForUser } from "../../services/currentWeight";
 import { CalculatedMetrics } from "./types";
 import { mapToCalculatedMetrics } from "./mappers";
 
@@ -34,15 +35,26 @@ export async function loadFromDatabase(
       return null;
     }
 
-    if (bodyAnalysis?.current_weight_kg) {
+    const resolvedCurrentWeight = await resolveCurrentWeightForUser(userId, {
+      bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
+    });
+    const effectiveBodyAnalysis =
+      resolvedCurrentWeight.value != null
+        ? ({
+            ...(bodyAnalysis || {}),
+            current_weight_kg: resolvedCurrentWeight.value,
+          } as typeof bodyAnalysis)
+        : bodyAnalysis;
+
+    if (effectiveBodyAnalysis?.current_weight_kg) {
       weightTrackingService.initializeFromBodyAnalysis({
-        current_weight_kg: bodyAnalysis.current_weight_kg,
+        current_weight_kg: effectiveBodyAnalysis.current_weight_kg,
       });
     }
 
     return mapToCalculatedMetrics(
       advancedReview,
-      bodyAnalysis,
+      effectiveBodyAnalysis,
       personalInfo,
       workoutPreferences,
       dietPreferences,

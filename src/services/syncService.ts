@@ -111,6 +111,8 @@ export class RealTimeSyncService {
   private status: SyncStatus;
   private syncQueue: SyncOperation[] = [];
   private syncTimer: NodeJS.Timeout | null = null;
+  private isAutoSyncProcessing = false;
+  private isConnectionCheckProcessing = false;
   private isInitialized = false;
   private statusCallbacks: ((status: SyncStatus) => void)[] = [];
   private resultCallbacks: ((result: SyncResult) => void)[] = [];
@@ -559,16 +561,20 @@ export class RealTimeSyncService {
     }
 
     this.syncTimer = setInterval(async () => {
-      if (
-        this.status.isOnline &&
-        !this.status.isSyncing &&
-        this.syncQueue.length > 0
-      ) {
-        try {
+      if (this.isAutoSyncProcessing) return;
+      this.isAutoSyncProcessing = true;
+      try {
+        if (
+          this.status.isOnline &&
+          !this.status.isSyncing &&
+          this.syncQueue.length > 0
+        ) {
           await this.startSync();
-        } catch (error) {
-          console.error("Auto-sync failed:", error);
         }
+      } catch (error) {
+        console.error("Auto-sync failed:", error);
+      } finally {
+        this.isAutoSyncProcessing = false;
       }
     }, this.config.syncIntervalMs);
   }
@@ -582,8 +588,14 @@ export class RealTimeSyncService {
       clearInterval(this.connectionMonitorTimer);
     }
 
-    this.connectionMonitorTimer = setInterval(() => {
-      this.updateConnectionStatus();
+    this.connectionMonitorTimer = setInterval(async () => {
+      if (this.isConnectionCheckProcessing) return;
+      this.isConnectionCheckProcessing = true;
+      try {
+        await this.updateConnectionStatus();
+      } finally {
+        this.isConnectionCheckProcessing = false;
+      }
     }, 5000);
   }
 
@@ -920,8 +932,13 @@ export class RealTimeSyncService {
               timestamp: new Date(),
             });
           }
-        } catch {
-          // No conflict if record doesn't exist remotely
+        } catch (e) {
+          if (e instanceof Error && !e.message.includes("No rows")) {
+            console.warn(
+              "[syncService] getPendingConflicts remote check failed:",
+              e,
+            );
+          }
         }
       }
 

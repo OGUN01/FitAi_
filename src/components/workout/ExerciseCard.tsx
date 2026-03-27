@@ -72,7 +72,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         <Button
           title={
             isCompleted
-              ? "✅ Exercise Complete"
+              ? "Exercise Complete"
               : isTimeBased
                 ? `Start ${repsDisplay}`
                 : "Start Exercise"
@@ -85,7 +85,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
         <View style={styles.exerciseDetails}>
           <Text style={styles.exerciseDetailText}>
-            {safeString(sets, "0")} sets × {repsDisplay}
+            {safeString(sets, "0")} sets x {repsDisplay}
           </Text>
 
           {safeNumber(weight, 0) > 0 && (
@@ -123,7 +123,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               >
                 {safeString(setIndex + 1)}
               </Text>
-              {isSetCompleted && <Text style={styles.setButtonCheck}>✓</Text>}
+              {isSetCompleted && <Text style={styles.setButtonCheck}>OK</Text>}
             </TouchableOpacity>
           ))}
         </View>

@@ -74,7 +74,7 @@ beforeEach(async () => {
 });
 
 describe('auth session lifecycle', () => {
-	it('restores a validated server session instead of trusting the cached blob', async () => {
+	it('returns a valid cached session immediately without waiting on Supabase', async () => {
 		mockedAsyncStorage.getItem.mockResolvedValueOnce(
 			JSON.stringify({
 				user: {
@@ -88,6 +88,36 @@ describe('auth session lifecycle', () => {
 				expiresAt: Math.floor(Date.now() / 1000) + 3600,
 			}),
 		);
+
+		const result = await authService.restoreSession();
+
+		expect(result.success).toBe(true);
+		expect(result.source).toBe('cache');
+		expect(result.user?.email).toBe('cached@example.com');
+		expect(mockedSupabase.auth.getSession).not.toHaveBeenCalled();
+		expect(mockedSupabase.auth.refreshSession).not.toHaveBeenCalled();
+		expect(mockedAsyncStorage.setItem).not.toHaveBeenCalled();
+		expect(dataBridge.setUserId).toHaveBeenCalledWith('user-123');
+		expect(authService.getCurrentUser()?.email).toBe('cached@example.com');
+	});
+
+	it('revalidates a cached session against Supabase and persists newer server data', async () => {
+		mockedAsyncStorage.getItem.mockResolvedValueOnce(
+			JSON.stringify({
+				user: {
+					id: 'user-123',
+					email: 'cached@example.com',
+					isEmailVerified: false,
+					lastLoginAt: '2026-03-01T00:00:00.000Z',
+				},
+				accessToken: 'cached-token',
+				refreshToken: 'cached-refresh',
+				expiresAt: Math.floor(Date.now() / 1000) + 3600,
+			}),
+		);
+
+		await authService.restoreSession();
+		jest.clearAllMocks();
 
 		mockedSupabase.auth.getSession.mockResolvedValueOnce({
 			data: {
@@ -105,16 +135,15 @@ describe('auth session lifecycle', () => {
 			error: null,
 		});
 
-		const result = await authService.restoreSession();
+		const result = await authService.revalidateSession();
 
 		expect(result.success).toBe(true);
+		expect(result.source).toBe('server');
 		expect(result.user?.email).toBe('server@example.com');
-		expect(mockedSupabase.auth.refreshSession).not.toHaveBeenCalled();
 		expect(mockedAsyncStorage.setItem).toHaveBeenCalledWith(
 			'auth_session',
 			expect.stringContaining('server-token'),
 		);
-		expect(dataBridge.setUserId).toHaveBeenCalledWith('user-123');
 		expect(authService.getCurrentUser()?.email).toBe('server@example.com');
 	});
 
@@ -143,7 +172,10 @@ describe('auth session lifecycle', () => {
 			error: new Error('revoked'),
 		});
 
-		const result = await authService.restoreSession();
+		await authService.restoreSession();
+		jest.clearAllMocks();
+
+		const result = await authService.revalidateSession();
 
 		expect(result.success).toBe(false);
 		expect(result.error).toBe('Stored session is no longer valid');

@@ -1,0 +1,32 @@
+- generic [ref=e14]:
+  - generic [ref=e16]:
+    - generic [ref=e17]:
+      - generic [ref=e20]: 
+      - generic [ref=e21]: FitAI
+      - generic [ref=e22]: Your AI-Powered Fitness Companion
+      - generic [ref=e23]: Workouts, nutrition, and insights — all personalized just for you.
+    - generic [ref=e24]:
+      - generic [ref=e25]:
+        - generic [ref=e26]: 🤖
+        - generic [ref=e27]:
+          - generic [ref=e28]: AI-Powered Workouts
+          - generic [ref=e29]: Personalized plans that adapt to you
+      - generic [ref=e30]:
+        - generic [ref=e31]: 🥗
+        - generic [ref=e32]:
+          - generic [ref=e33]: Smart Meal Planning
+          - generic [ref=e34]: Nutrition guidance built for your goals
+      - generic [ref=e35]:
+        - generic [ref=e36]: 📊
+        - generic [ref=e37]:
+          - generic [ref=e38]: Track Your Progress
+          - generic [ref=e39]: Visualize gains and stay motivated
+  - generic [ref=e40]:
+    - button "Get Started" [ref=e41] [cursor=pointer]:
+      - generic [ref=e43]: Get Started
+    - generic [ref=e44]:
+      - generic [ref=e45]: Already have an account?
+      - button "Sign In" [ref=e47] [cursor=pointer]:
+        - generic [ref=e48]: Sign In
+    - button "Continue as Guest" [ref=e51] [cursor=pointer]:
+      - generic [ref=e52]: Continue as Guest

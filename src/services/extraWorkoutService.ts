@@ -2,6 +2,7 @@ import { DayWorkout } from "../types/ai";
 import { workoutEngine } from "../features/workouts/WorkoutEngine";
 import { supabase } from "./supabase";
 import { analyticsDataService } from "./analyticsData";
+import { resolveCurrentWeightForUser } from "./currentWeight";
 import { fitnessRefreshService } from "./fitnessRefreshService";
 import { useFitnessStore } from "../stores/fitnessStore";
 import { useUserStore } from "../stores/userStore";
@@ -18,6 +19,7 @@ import type {
   CompletedSession,
 } from "../stores/fitness/types";
 import type { PersonalInfo, FitnessGoals } from "../types/user";
+import { weightTrackingService } from "./WeightTrackingService";
 
 /**
  * Returns 2-3 quick workout suggestion templates based on user goals/experience.
@@ -115,7 +117,19 @@ export async function completeExtraWorkout(
   try {
     // Calculate actual calories burned via MET — 0 if weight unavailable (Rule 8)
     const profileStore = useProfileStore.getState();
-    const userWeight = profileStore.bodyAnalysis?.current_weight_kg;
+    const trackedWeight = weightTrackingService.getCurrentWeight();
+    const resolvedCurrentWeight = userId
+      ? await resolveCurrentWeightForUser(userId, {
+          bodyAnalysisWeight: profileStore.bodyAnalysis?.current_weight_kg,
+        })
+      : {
+          value:
+            trackedWeight ?? profileStore.bodyAnalysis?.current_weight_kg ?? null,
+        };
+    const userWeight =
+      trackedWeight && trackedWeight > 0
+        ? trackedWeight
+        : resolvedCurrentWeight.value;
 
     let actualCaloriesBurned = 0;
 

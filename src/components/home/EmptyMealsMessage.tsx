@@ -35,6 +35,8 @@ export const EmptyMealsMessage: React.FC<EmptyMealsMessageProps> = ({
             style={styles.ctaButton}
             onPress={onLogMeal}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Log your first meal"
           >
             <Ionicons name="add-circle-outline" size={rf(16)} color={ResponsiveTheme.colors.white} />
             <Text style={styles.ctaText}>Log Meal</Text>
@@ -78,10 +80,12 @@ const styles = StyleSheet.create({
   ctaButton: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: rp(6),
     backgroundColor: ResponsiveTheme.colors.primary,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingVertical: ResponsiveTheme.spacing.sm,
+    minHeight: 44,
     borderRadius: ResponsiveTheme.borderRadius.full,
   },
   ctaText: {

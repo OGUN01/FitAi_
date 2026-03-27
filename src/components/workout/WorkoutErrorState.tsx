@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { Button } from "../../components/ui";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rw } from "../../utils/responsive";
@@ -16,12 +17,14 @@ export const WorkoutErrorState: React.FC<WorkoutErrorStateProps> = ({
   const config =
     errorType === "no-data"
       ? {
-          emoji: "⚠️",
+          icon: "alert-circle-outline" as const,
+          iconColor: ResponsiveTheme.colors.error,
           title: "No Workout Data",
           subtitle: "Unable to load workout information",
         }
       : {
-          emoji: "🏋️‍♂️",
+          icon: "barbell-outline" as const,
+          iconColor: ResponsiveTheme.colors.primary,
           title: "No Exercises Found",
           subtitle: "This workout appears to be empty",
         };
@@ -29,7 +32,13 @@ export const WorkoutErrorState: React.FC<WorkoutErrorStateProps> = ({
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.errorContainer}>
-        <Text style={styles.errorEmoji}>{config.emoji}</Text>
+        <View style={styles.iconContainer}>
+          <Ionicons
+            name={config.icon}
+            size={rf(36)}
+            color={config.iconColor}
+          />
+        </View>
         <Text style={styles.errorText}>{config.title}</Text>
         <Text style={styles.errorSubtext}>{config.subtitle}</Text>
         <Button
@@ -54,8 +63,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: ResponsiveTheme.spacing.xl,
   },
-  errorEmoji: {
-    fontSize: rf(64),
+  iconContainer: {
+    width: rw(72),
+    height: rw(72),
+    borderRadius: rw(36),
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.lg,
   },
   errorText: {

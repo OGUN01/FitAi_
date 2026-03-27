@@ -438,13 +438,21 @@ class AnalyticsDataService {
 
       if (hasIncrementalUpdate) {
         // Fetch existing row to accumulate
-        const { data: existing } = await supabase
+        const { data: existing, error: fetchError } = await supabase
           .from("analytics_metrics")
           .select(
             "calories_consumed, calories_burned, workouts_completed, meals_logged, water_intake_ml",
           )
           .eq("id", rowId)
           .maybeSingle();
+
+        if (fetchError) {
+          console.error(
+            "[analyticsData] Failed to fetch existing metrics row for accumulation:",
+            fetchError,
+          );
+          return;
+        }
 
         const row: Record<string, unknown> = {
           id: rowId,

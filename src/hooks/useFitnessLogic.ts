@@ -23,6 +23,7 @@ import {
 } from "../services/calorieCalculator";
 import { haptics } from "../utils/haptics";
 import { useSubscriptionStore } from "../stores/subscriptionStore";
+import { checkProactiveDeload } from "../services/deloadService";
 import {
   findCompletedSessionForWorkout,
   getWorkoutDayKey,
@@ -33,6 +34,7 @@ import {
   buildLegacyFitnessGoals,
   buildLegacyPersonalInfo,
 } from "../utils/profileLegacyAdapter";
+import { resolveCurrentWeightFromStores } from "../services/currentWeight";
 
 // Type for completed workout history items
 interface CompletedWorkoutItem {
@@ -154,10 +156,21 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
   const [workoutDetailsWorkout, setWorkoutDetailsWorkout] =
     useState<DayWorkout | null>(null);
   const [showGuestSignUp, setShowGuestSignUp] = useState(false);
+  const [proactiveDeload, setProactiveDeload] = useState<{
+    visible: boolean;
+    message: string;
+  } | null>(null);
 
-  // Load data on mount and subscribe to completion events
   useEffect(() => {
     loadFitnessData();
+
+    const mesocycleWeek = useFitnessStore.getState().getMesocycleWeek();
+    if (mesocycleWeek > 0) {
+      const suggestion = checkProactiveDeload(mesocycleWeek);
+      if (suggestion) {
+        setProactiveDeload({ visible: true, message: suggestion.reason });
+      }
+    }
 
     const unsubscribe = completionTrackingService.subscribe((event) => {
       if (event.type === "workout") {
@@ -251,7 +264,9 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     // Mark as attempted immediately to prevent re-runs
     toBackfill.forEach((w) => backfilledWorkoutIds.current.add(w.id));
 
-    const userWeight = bodyAnalysis?.current_weight_kg;
+    const userWeight = resolveCurrentWeightFromStores({
+      bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
+    }).value;
 
     toBackfill.forEach((w) => {
       const completedSession = findCompletedSessionForWorkout({
@@ -287,7 +302,13 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
         }
       }
     });
-  }, [user?.id, weeklyWorkoutPlan, updateWorkoutProgress, completedSessions]);
+  }, [
+    user?.id,
+    weeklyWorkoutPlan,
+    updateWorkoutProgress,
+    completedSessions,
+    bodyAnalysis,
+  ]);
 
   // Get selected day's workouts (array, since there might be multiple per day)
   const selectedDayWorkouts = useMemo(() => {
@@ -406,6 +427,12 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
         setWeeklyWorkoutPlan(response.data);
         await saveWeeklyWorkoutPlan(response.data);
         incrementUsage("ai_generation");
+
+        if (!useFitnessStore.getState().mesocycleStartDate) {
+          useFitnessStore
+            .getState()
+            .setMesocycleStartDate(new Date().toISOString());
+        }
 
         haptics.success();
         crossPlatformAlert(
@@ -849,6 +876,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
       userName,
       profile: mergedProfile, // SSOT: mergedProfile has profileStore fitnessGoals injected
       showGuestSignUp,
+      proactiveDeload,
     },
     actions: {
       setRefreshing,
@@ -869,6 +897,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
       handleCalendarPress,
       handleViewFullPlan,
       handleRegeneratePlan,
+      dismissProactiveDeload: () => setProactiveDeload(null),
     },
     setShowGuestSignUp,
   };

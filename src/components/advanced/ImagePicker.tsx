@@ -153,6 +153,8 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
             style={styles.actionButton}
             onPress={takePhoto}
             disabled={isLoading || (!canAddMore && mode === "multiple")}
+            accessibilityRole="button"
+            accessibilityLabel="Take photo"
           >
             <View style={styles.actionIcon}>
               <Text style={styles.actionEmoji}>📷</Text>
@@ -164,6 +166,8 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
             style={styles.actionButton}
             onPress={pickFromLibrary}
             disabled={isLoading || (!canAddMore && mode === "multiple")}
+            accessibilityRole="button"
+            accessibilityLabel="Choose image from library"
           >
             <View style={styles.actionIcon}>
               <Text style={styles.actionEmoji}>🖼️</Text>
@@ -249,6 +253,8 @@ const styles = StyleSheet.create({
     borderRadius: ResponsiveTheme.borderRadius.lg,
     backgroundColor: ResponsiveTheme.colors.surface,
     minWidth: 120,
+    minHeight: 44,
+    justifyContent: "center",
   },
 
   actionIcon: {
@@ -302,9 +308,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -8,
     right: -8,
-    width: rs(24),
-    height: rs(24),
-    borderRadius: rbr(12),
+    width: Math.max(rs(24), 44),
+    height: Math.max(rs(24), 44),
+    borderRadius: Math.max(rbr(12), 22),
     backgroundColor: ResponsiveTheme.colors.error,
     alignItems: "center",
     justifyContent: "center",

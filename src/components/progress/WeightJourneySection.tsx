@@ -42,7 +42,7 @@ interface RawChartPoint {
   valueKg: number;
 }
 
-export const WeightJourneySection: React.FC<WeightJourneySectionProps> = ({
+export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.memo(({
   weightHistory,
   progressEntries,
   calculatedMetrics,
@@ -175,7 +175,13 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = ({
           </LinearGradient>
           <Text style={styles.sectionTitle}>Weight Journey</Text>
         </View>
-        <TouchableOpacity style={styles.logButton} onPress={onLogWeight} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.logButton}
+          onPress={onLogWeight}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Log weight"
+        >
           <Ionicons name="add" size={rf(14)} color={ResponsiveTheme.colors.white} />
           <Text style={styles.logButtonText}>Log</Text>
         </TouchableOpacity>
@@ -198,6 +204,8 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = ({
             style={[styles.periodTab, period === item.key && styles.periodTabActive]}
             onPress={() => setPeriod(item.key)}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={`${item.label} period`}
           >
             <Text style={[styles.periodLabel, period === item.key && styles.periodLabelActive]}>
               {item.label}
@@ -307,7 +315,7 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = ({
       )}
     </GlassCard>
   );
-};
+});
 
 const styles = StyleSheet.create({
   card: {
@@ -346,6 +354,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(10),
     paddingVertical: rp(6),
     borderRadius: rbr(12),
+    minHeight: 44,
+    justifyContent: 'center',
   },
   logButtonText: {
     fontSize: rf(12),
@@ -380,6 +390,8 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.glassSurface,
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.glassBorder,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   periodTabActive: {
     backgroundColor: ResponsiveTheme.colors.primary,

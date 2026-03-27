@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-
 } from "react-native";
 import { Card } from "../ui";
 import { ResponsiveTheme } from "../../utils/constants";
@@ -13,6 +12,7 @@ import { rf, rp, rbr, rs } from "../../utils/responsive";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../services/supabase";
+import { useAchievementStore } from "../../stores/achievementStore";
 
 interface Achievement {
   id: string;
@@ -210,7 +210,6 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
           .insert(newAchievements);
 
         if (!error) {
-          // Show achievement notification
           const titles = newAchievements.map((a) => a.title).join(", ");
           crossPlatformAlert(
             "🎉 Achievement Unlocked!",
@@ -218,8 +217,16 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
             [{ text: "Awesome!" }],
           );
 
-          // Reload achievements
           loadAchievements();
+          useAchievementStore
+            .getState()
+            .reconcileWithCurrentData(user.id)
+            .catch((e) => {
+              console.error(
+                "[AchievementSystem] Failed to sync achievements to store:",
+                e,
+              );
+            });
         }
       } catch (err) {
         console.error("Failed to award achievements:", err);

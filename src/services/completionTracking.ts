@@ -13,6 +13,8 @@ import {
   ExerciseCalorieInput,
 } from "./calorieCalculator";
 import { analyticsDataService } from "./analyticsData";
+import { resolveCurrentWeightForUser } from "./currentWeight";
+import { weightTrackingService } from "./WeightTrackingService";
 import { getCurrentWeekStart, getWeekStartForDate } from "../utils/weekUtils";
 import { getWorkoutDayKey, getWorkoutSlotKey } from "../utils/workoutIdentity";
 import { generateUUID } from "../utils/uuid";
@@ -25,6 +27,26 @@ export interface CompletionEvent {
   completedAt: string;
   progress: number;
   data: any;
+}
+
+function createLoggedFoodsFromMealItems(meal: DayMeal) {
+  return (meal.items || []).map((item: any, index: number) => ({
+    id: item.id || `${meal.id}_food_${index}`,
+    foodId: item.foodId || item.id || `${meal.id}_food_${index}`,
+    name: item.name,
+    quantity: typeof item.quantity === "number" ? item.quantity : 1,
+    unit: item.unit || "serving",
+    calories: item.calories ?? 0,
+    macros: {
+      protein: item.macros?.protein ?? 0,
+      carbohydrates: item.macros?.carbohydrates ?? 0,
+      fat: item.macros?.fat ?? 0,
+      fiber: item.macros?.fiber ?? 0,
+      sugar: item.macros?.sugar ?? 0,
+      sodium: item.macros?.sodium ?? 0,
+    },
+    provenance: (meal as any).sourceMetadata,
+  }));
 }
 
 class CompletionTrackingService {
@@ -51,10 +73,11 @@ class CompletionTrackingService {
    * Uses user's real weight for personalized calculation
    * NO FALLBACK VALUES - returns 0 if weight not available
    */
-  private calculateActualCalories(
+  private async calculateActualCalories(
     workout: DayWorkout,
     sessionData?: any,
-  ): number {
+    userId?: string,
+  ): Promise<number> {
     // If session data has pre-calculated stats (from WorkoutSessionScreen), use those
     if (
       sessionData?.stats?.caloriesBurned &&
@@ -63,8 +86,18 @@ class CompletionTrackingService {
       return sessionData.stats.caloriesBurned;
     }
 
-    const userWeight =
+    const trackedWeight = weightTrackingService.getCurrentWeight();
+    const fallbackWeight =
       useProfileStore.getState().bodyAnalysis?.current_weight_kg;
+    const resolvedWeight = userId
+      ? await resolveCurrentWeightForUser(userId, {
+          bodyAnalysisWeight: fallbackWeight,
+        })
+      : {
+          value: trackedWeight ?? fallbackWeight ?? null,
+        };
+    const userWeight =
+      trackedWeight && trackedWeight > 0 ? trackedWeight : resolvedWeight.value;
 
     // NO FALLBACK - if weight not available, return 0 and log warning
     if (!userWeight || userWeight <= 0) {
@@ -112,9 +145,10 @@ class CompletionTrackingService {
 
       if (workout) {
         // Calculate actual calories using MET-based formula with user's weight
-        const actualCaloriesBurned = this.calculateActualCalories(
+        const actualCaloriesBurned = await this.calculateActualCalories(
           workout as any,
           sessionData,
+          userId,
         );
         const completedAt = new Date().toISOString();
         const completedDurationMinutes =
@@ -196,6 +230,16 @@ class CompletionTrackingService {
               // Use the Supabase-generated row ID as sessionId so loadData() dedup works
               if (supabaseResult.data?.id) {
                 supabaseSessionId = supabaseResult.data.id;
+              }
+
+              if (supabaseSessionId) {
+                this._writeExerciseSets(
+                  userId,
+                  supabaseSessionId,
+                  completedExercises,
+                ).catch((err) => {
+                  console.error("⚠️ _writeExerciseSets failed:", err);
+                });
               }
 
               // Save to analytics_metrics for Monthly Summary tracking
@@ -291,9 +335,6 @@ class CompletionTrackingService {
 
         this.emit(event);
 
-        if (userId) {
-          await useAchievementStore.getState().reconcileWithCurrentData(userId);
-        }
         return true;
       }
 
@@ -362,7 +403,7 @@ class CompletionTrackingService {
               fromPlan: true,
               portionMultiplier: 1,
               mealType: meal.type as "breakfast" | "lunch" | "dinner" | "snack",
-              foods: [],
+              foods: createLoggedFoodsFromMealItems(meal),
               totalCalories: meal.totalCalories || 0,
               totalMacros: {
                 protein: meal.totalMacros?.protein ?? 0,
@@ -757,6 +798,69 @@ class CompletionTrackingService {
       ) || [];
     for (const meal of todaysMeals) {
       await this.completeMeal(meal.id, undefined, undefined);
+    }
+  }
+
+  // Dual-write per-set data to exercise_sets table (fire-and-forget)
+  private async _writeExerciseSets(
+    userId: string,
+    sessionId: string,
+    completedExercises: any[],
+  ): Promise<void> {
+    if (!completedExercises?.length) return;
+
+    const rows: any[] = [];
+
+    for (const exercise of completedExercises) {
+      const exerciseId = exercise.exerciseId || exercise.id || "unknown";
+      const sets = exercise.sets || exercise.completedSets || [];
+
+      if (Array.isArray(sets) && sets.length > 0) {
+        // Per-set data available
+        for (let i = 0; i < sets.length; i++) {
+          const set = sets[i];
+          rows.push({
+            user_id: userId,
+            session_id: sessionId,
+            exercise_id: exerciseId,
+            set_number: i + 1,
+            weight_kg: set.weight ?? set.weight_kg ?? null,
+            reps: set.reps ?? null,
+            duration_seconds: set.duration_seconds ?? null,
+            set_type: set.setType ?? set.set_type ?? "normal",
+            is_completed: set.completed ?? set.is_completed ?? true,
+          });
+        }
+      } else {
+        // Flat exercise data — infer from sets/reps fields
+        const numSets = typeof exercise.sets === "number" ? exercise.sets : 1;
+        const reps =
+          typeof exercise.reps === "string"
+            ? parseInt(exercise.reps.split("-")[1] || exercise.reps, 10)
+            : (exercise.reps ?? null);
+
+        for (let i = 0; i < numSets; i++) {
+          rows.push({
+            user_id: userId,
+            session_id: sessionId,
+            exercise_id: exerciseId,
+            set_number: i + 1,
+            weight_kg: null,
+            reps: reps,
+            duration_seconds: null,
+            set_type: "normal",
+            is_completed: true,
+          });
+        }
+      }
+    }
+
+    if (rows.length === 0) return;
+
+    const { error } = await supabase.from("exercise_sets").insert(rows);
+
+    if (error) {
+      console.error("⚠️ Failed to write exercise_sets:", error);
     }
   }
 }

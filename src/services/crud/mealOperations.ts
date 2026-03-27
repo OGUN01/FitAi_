@@ -16,8 +16,7 @@ export async function createMealLog(
     }
     await dataBridge.storeMealLog(mealLog);
   } catch (error) {
-    console.error("❌ Failed to create meal log:", error);
-    console.error("Meal data:", JSON.stringify(mealLog, null, 2));
+    console.error("❌ Failed to create meal log:", error, "| id:", mealLog?.id, "type:", mealLog?.mealType);
     throw error;
   }
 }

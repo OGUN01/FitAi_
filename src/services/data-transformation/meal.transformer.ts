@@ -1,5 +1,9 @@
 import { MealLog, SyncStatus } from "../../types/localData";
 import { SupabaseMealLog } from "./types";
+import {
+  deriveMealLogFiber,
+  normalizeMealLogFoodItems,
+} from "../../utils/mealLogNutrition";
 
 export function transformMealLogToSupabase(
   mealLog: MealLog,
@@ -30,31 +34,18 @@ export function transformMealLogToSupabase(
 }
 
 export function transformSupabaseToMealLog(supabaseMealLog: any): MealLog {
-  let foods = [];
-  if (supabaseMealLog.food_items) {
-    if (typeof supabaseMealLog.food_items === "string") {
-      try {
-        foods = JSON.parse(supabaseMealLog.food_items);
-      } catch {
-        foods = [];
-      }
-    } else if (Array.isArray(supabaseMealLog.food_items)) {
-      foods = supabaseMealLog.food_items;
-    } else {
-      foods = [supabaseMealLog.food_items];
-    }
-  }
+  const foods = normalizeMealLogFoodItems(supabaseMealLog.food_items);
 
   return {
     id: supabaseMealLog.id,
     mealType: supabaseMealLog.meal_type,
-    foods: foods,
+    foods: foods as any,
     totalCalories: supabaseMealLog.total_calories || 0,
     totalMacros: {
       protein: supabaseMealLog.total_protein || 0,
       carbohydrates: supabaseMealLog.total_carbohydrates || 0,
       fat: supabaseMealLog.total_fat || 0,
-      fiber: 0,
+      fiber: deriveMealLogFiber(foods),
     },
     loggedAt: supabaseMealLog.logged_at || new Date().toISOString(),
     notes: supabaseMealLog.notes || "",

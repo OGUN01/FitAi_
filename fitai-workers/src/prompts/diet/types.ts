@@ -50,6 +50,12 @@ export interface DietPlaceholders {
 
 	// Medical conditions (optional)
 	MEDICAL_CONDITIONS: string[];
+	MEDICATIONS: string[];
+	PHYSICAL_LIMITATIONS: string[];
+	PREGNANCY_STATUS: boolean;
+	PREGNANCY_TRIMESTER?: number;
+	BREASTFEEDING_STATUS: boolean;
+	STRESS_LEVEL?: string;
 
 	// ============================================
 	// ONBOARDING DATA - User's cooking & lifestyle

@@ -40,6 +40,12 @@ export const GoalsSection: React.FC<GoalsSectionProps> = ({
   hasFieldError,
   showInfoTooltip,
 }) => {
+  const handleInfoPress =
+    (title: string, description: string) => (event: any) => {
+      event.stopPropagation?.();
+      showInfoTooltip(title, description);
+    };
+
   // Get activity level info for display
   const currentActivityLevel = ACTIVITY_LEVELS.find(
     (level: any) => level.value === formData.activity_level,
@@ -134,10 +140,10 @@ export const GoalsSection: React.FC<GoalsSectionProps> = ({
                       }
                     />
                     <TouchableOpacity
-                      onPress={() =>
-                        showInfoTooltip(goal.title, goal.description)
-                      }
+                      onPress={handleInfoPress(goal.title, goal.description)}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`More info about ${goal.title}`}
                     >
                       <Ionicons
                         name="information-circle-outline"

@@ -15,6 +15,7 @@ import type {
   WorkoutPreferences,
   BodyMetrics,
 } from "../types/user";
+import type { AdvancedReviewData } from "../types/onboarding";
 import type {
   DietGenerationRequest,
   WorkoutGenerationRequest,
@@ -30,12 +31,108 @@ import type {
   Workout,
 } from "../types/ai";
 import type { MealItem, Food } from "../types/diet";
+import { resolveCurrentWeight } from "./currentWeight";
 // Note: MET-based calorie calculation happens at workout completion (completionTracking.ts)
 // where we have access to the user's actual weight from their profile
 
 // ============================================================================
 // DIET REQUEST TRANSFORMERS
 // ============================================================================
+
+const WEEKDAY_SEQUENCE = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+] as const;
+
+function clampInt(
+  value: number | undefined,
+  min: number,
+  max: number,
+  fallback: number,
+): number {
+  if (!Number.isFinite(value)) {
+    return fallback;
+  }
+
+  return Math.min(max, Math.max(min, Math.round(value as number)));
+}
+
+function getRequestedMealsPerDay(dietPreferences?: DietPreferences): number {
+  if (!dietPreferences) {
+    return 3;
+  }
+
+  let mealsPerDay = 0;
+
+  if (dietPreferences.breakfast_enabled !== false) mealsPerDay += 1;
+  if (dietPreferences.lunch_enabled !== false) mealsPerDay += 1;
+  if (dietPreferences.dinner_enabled !== false) mealsPerDay += 1;
+  if (dietPreferences.snacks_enabled) mealsPerDay += 2;
+
+  return mealsPerDay > 0 ? mealsPerDay : 3;
+}
+
+function mapSupportedDietaryRestriction(
+  restriction: string | undefined,
+): string | null {
+  if (!restriction) {
+    return null;
+  }
+
+  const normalized = restriction.trim().toLowerCase().replace(/\s+/g, "-");
+  const supportedRestrictions: Record<string, string> = {
+    vegetarian: "vegetarian",
+    vegan: "vegan",
+    pescatarian: "pescatarian",
+    keto: "keto",
+    "gluten-free": "gluten_free",
+    gluten_free: "gluten_free",
+    "dairy-free": "dairy_free",
+    dairy_free: "dairy_free",
+    "nut-free": "nut_free",
+    nut_free: "nut_free",
+    halal: "halal",
+    kosher: "kosher",
+    "low-carb": "low_carb",
+    low_carb: "low_carb",
+  };
+
+  return supportedRestrictions[normalized] ?? null;
+}
+
+function normalizeDayOfWeek(dayOfWeek: unknown): string | null {
+  if (typeof dayOfWeek !== "string") {
+    return null;
+  }
+
+  const normalized = dayOfWeek.trim().toLowerCase();
+  return WEEKDAY_SEQUENCE.includes(normalized as (typeof WEEKDAY_SEQUENCE)[number])
+    ? normalized
+    : null;
+}
+
+function inferDayOfWeekFromPosition(
+  mealIndex: number,
+  requestedDaysCount: number,
+  mealsPerDay: number,
+  fallbackDay: string,
+): string {
+  if (requestedDaysCount <= 1) {
+    return fallbackDay;
+  }
+
+  const inferredDayIndex = Math.min(
+    requestedDaysCount - 1,
+    Math.floor(mealIndex / Math.max(1, mealsPerDay)),
+  );
+
+  return WEEKDAY_SEQUENCE[inferredDayIndex];
+}
 
 /**
  * Transform frontend types to DietGenerationRequest for backend
@@ -56,6 +153,12 @@ export function transformForDietRequest(
   bodyMetrics?: BodyMetrics,
   dietPreferences?: DietPreferences,
   calorieTarget?: number,
+  generationOptions: {
+    daysCount?: number;
+    mealsPerDay?: number;
+    advancedReview?: AdvancedReviewData | null;
+    currentWeightKg?: number | null;
+  } = {},
 ): DietGenerationRequest {
   // Extract activity level from workout preferences or fitness goals
   const activityLevel =
@@ -75,52 +178,143 @@ export function transformForDietRequest(
   //               'nut_free', 'halal', 'kosher', 'low_carb', 'keto'
   const dietaryRestrictions: string[] = [];
   if (dietPreferences?.diet_type) {
-    // Map common diet types to backend-expected values
-    const dietType = dietPreferences.diet_type.toLowerCase();
-    if (["vegetarian", "vegan", "pescatarian", "keto"].includes(dietType)) {
-      dietaryRestrictions.push(dietType);
-    } else if (dietType === "non-veg") {
-      dietaryRestrictions.push("non-vegetarian");
+    const supportedDietType = mapSupportedDietaryRestriction(
+      dietPreferences.diet_type,
+    );
+    if (supportedDietType) {
+      dietaryRestrictions.push(supportedDietType);
     }
   }
   // Add any explicit restrictions
   if (dietPreferences?.restrictions) {
-    dietaryRestrictions.push(...dietPreferences.restrictions);
+    dietaryRestrictions.push(
+      ...dietPreferences.restrictions
+        .map((restriction) => mapSupportedDietaryRestriction(restriction))
+        .filter((restriction): restriction is string => Boolean(restriction)),
+    );
   }
+  const uniqueDietaryRestrictions = [...new Set(dietaryRestrictions)];
+
+  const excludeIngredients = Array.isArray((dietPreferences as any)?.dislikes)
+    ? ((dietPreferences as any).dislikes as string[]).filter(Boolean)
+    : [];
+  const mealsPerDay = clampInt(
+    generationOptions.mealsPerDay ?? getRequestedMealsPerDay(dietPreferences),
+    1,
+    6,
+    3,
+  );
+  const daysCount = clampInt(generationOptions.daysCount, 1, 7, 1);
+  const advancedReview = generationOptions.advancedReview;
+  const resolvedCurrentWeight = resolveCurrentWeight({
+    bodyAnalysisWeight:
+      generationOptions.currentWeightKg ??
+      bodyMetrics?.current_weight_kg ??
+      personalInfo.weight,
+  });
 
   // Validate required profile data - NO FALLBACKS for critical values
   if (!personalInfo.age || !personalInfo.weight || !personalInfo.height) {
   }
 
   return {
-    // Profile data (may be stripped by backend, but included for compatibility)
+    // Rich request context so the worker can use the latest onboarding values
+    // even before Supabase has finished syncing.
     profile: {
       age: personalInfo.age, // NO FALLBACK - must come from onboarding
       gender: personalInfo.gender, // NO FALLBACK
-      weight: (bodyMetrics?.current_weight_kg ?? personalInfo.weight) as number, // Type assertion
+      weight:
+        (resolvedCurrentWeight.value ?? personalInfo.weight) as number, // Type assertion
       height: (bodyMetrics?.height_cm ?? personalInfo.height) as number, // Type assertion
-      activityLevel: activityLevel,
-      fitnessGoal: primaryGoal,
+      activity_level: activityLevel,
+      fitness_goal: primaryGoal,
+      country: personalInfo.country,
+      state: personalInfo.state,
+      occupation_type: personalInfo.occupation_type,
+      wake_time: personalInfo.wake_time,
+      sleep_time: personalInfo.sleep_time,
     },
     country: personalInfo.country,
-    // Diet preferences (may be stripped by backend, but included for compatibility)
     dietPreferences: dietPreferences
       ? {
-          dietType: dietPreferences.diet_type,
+          diet_type: dietPreferences.diet_type,
           allergies: dietPreferences.allergies ?? [],
           restrictions: dietPreferences.restrictions ?? [],
-          cuisinePreferences: dietPreferences.cuisine_preferences ?? [],
-          dislikes: [],
+          cuisine_preferences: dietPreferences.cuisine_preferences ?? [],
+          dislikes: excludeIngredients,
+          breakfast_enabled: dietPreferences.breakfast_enabled,
+          lunch_enabled: dietPreferences.lunch_enabled,
+          dinner_enabled: dietPreferences.dinner_enabled,
+          snacks_enabled: dietPreferences.snacks_enabled,
+          cooking_skill_level: dietPreferences.cooking_skill_level,
+          max_prep_time_minutes: dietPreferences.max_prep_time_minutes,
+          budget_level: dietPreferences.budget_level,
+          keto_ready: dietPreferences.keto_ready,
+          intermittent_fasting_ready:
+            dietPreferences.intermittent_fasting_ready,
+          paleo_ready: dietPreferences.paleo_ready,
+          mediterranean_ready: dietPreferences.mediterranean_ready,
+          low_carb_ready: dietPreferences.low_carb_ready,
+          high_protein_ready: dietPreferences.high_protein_ready,
+          drinks_enough_water: dietPreferences.drinks_enough_water,
+          limits_sugary_drinks: dietPreferences.limits_sugary_drinks,
+          eats_regular_meals: dietPreferences.eats_regular_meals,
+          avoids_late_night_eating: dietPreferences.avoids_late_night_eating,
+          controls_portion_sizes: dietPreferences.controls_portion_sizes,
+          reads_nutrition_labels: dietPreferences.reads_nutrition_labels,
+          eats_processed_foods: dietPreferences.eats_processed_foods,
+          eats_5_servings_fruits_veggies:
+            dietPreferences.eats_5_servings_fruits_veggies,
+          limits_refined_sugar: dietPreferences.limits_refined_sugar,
+          includes_healthy_fats: dietPreferences.includes_healthy_fats,
+          drinks_alcohol: dietPreferences.drinks_alcohol,
+          smokes_tobacco: dietPreferences.smokes_tobacco,
+          drinks_coffee: dietPreferences.drinks_coffee,
+          takes_supplements: dietPreferences.takes_supplements,
+        }
+      : undefined,
+    bodyMetrics: bodyMetrics
+      ? {
+          height_cm: bodyMetrics.height_cm,
+          current_weight_kg:
+            resolvedCurrentWeight.value ?? bodyMetrics.current_weight_kg,
+          target_weight_kg: bodyMetrics.target_weight_kg,
+          body_fat_percentage: bodyMetrics.body_fat_percentage,
+          medical_conditions: bodyMetrics.medical_conditions ?? [],
+          medications: bodyMetrics.medications ?? [],
+          physical_limitations: bodyMetrics.physical_limitations ?? [],
+          pregnancy_status: bodyMetrics.pregnancy_status ?? false,
+          pregnancy_trimester: bodyMetrics.pregnancy_trimester,
+          breastfeeding_status: bodyMetrics.breastfeeding_status ?? false,
+          stress_level: bodyMetrics.stress_level,
+        }
+      : undefined,
+    advancedReview: advancedReview
+      ? {
+          daily_calories: advancedReview.daily_calories ?? undefined,
+          daily_protein_g: advancedReview.daily_protein_g ?? undefined,
+          daily_carbs_g: advancedReview.daily_carbs_g ?? undefined,
+          daily_fat_g: advancedReview.daily_fat_g ?? undefined,
+          daily_water_ml: advancedReview.daily_water_ml ?? undefined,
+          daily_fiber_g: advancedReview.daily_fiber_g ?? undefined,
+          calculated_bmi: advancedReview.calculated_bmi ?? undefined,
+          bmi_category: advancedReview.bmi_category ?? undefined,
+          health_score: advancedReview.health_score ?? undefined,
         }
       : undefined,
 
     // REQUIRED: Fields that backend schema expects for cache key generation
     calorieTarget: calorieTarget,
-    mealsPerDay: 3,
+    mealsPerDay,
+    daysCount,
 
     // IMPORTANT: dietaryRestrictions is used for cache key (not dietPreferences.dietType)
     dietaryRestrictions:
-      dietaryRestrictions.length > 0 ? dietaryRestrictions : undefined,
+      uniqueDietaryRestrictions.length > 0
+        ? uniqueDietaryRestrictions
+        : undefined,
+    excludeIngredients:
+      excludeIngredients.length > 0 ? excludeIngredients : undefined,
 
     // AI model configuration
     model: "google/gemini-2.5-flash",
@@ -238,6 +432,7 @@ export function transformForWorkoutRequest(
     workoutType?: string;
     duration?: number;
     focusMuscles?: string[];
+    currentWeightKg?: number | null;
   },
 ): WorkoutGenerationRequest {
   // Get experience level
@@ -293,6 +488,12 @@ export function transformForWorkoutRequest(
     activityLevel: workoutPreferences?.activity_level,
     preferredWorkoutTime: preferredWorkoutTime, // ✅ NEW
   };
+  const resolvedCurrentWeight = resolveCurrentWeight({
+    bodyAnalysisWeight:
+      options?.currentWeightKg ??
+      bodyMetrics?.current_weight_kg ??
+      personalInfo.weight,
+  });
 
   // Map gender: worker expects 'male' | 'female' | 'other'
   const mappedGender: 'male' | 'female' | 'other' =
@@ -303,7 +504,7 @@ export function transformForWorkoutRequest(
     profile: {
       age: personalInfo.age,
       gender: mappedGender,
-      weight: bodyMetrics?.current_weight_kg ?? personalInfo.weight ?? 70,
+      weight: resolvedCurrentWeight.value ?? personalInfo.weight ?? 70,
       height: bodyMetrics?.height_cm ?? personalInfo.height ?? 170,
       fitnessGoal: primaryGoal,
       experienceLevel: experienceLevel,
@@ -441,6 +642,9 @@ export function transformWorkoutResponseToWeeklyPlan(
 export function transformDietResponseToWeeklyPlan(
   response: WorkersResponse<DietPlan>,
   weekNumber: number = 1,
+  options: {
+    requestedDaysCount?: number;
+  } = {},
 ): WeeklyMealPlan | null {
   if (!response.success || !response.data) {
     console.error("[Transformer] Diet response failed:", response.error);
@@ -456,19 +660,15 @@ export function transformDietResponseToWeeklyPlan(
   }
 
   const now = new Date().toISOString();
-  const daysOfWeek = [
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-    "sunday",
-  ];
+  const requestedDaysCount = clampInt(options.requestedDaysCount, 1, 7, 1);
 
   // Get current day of week for single-day assignment
   const todayIndex = new Date().getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
-  const todayName = daysOfWeek[todayIndex === 0 ? 6 : todayIndex - 1]; // Adjust to Mon-based
+  const todayName = WEEKDAY_SEQUENCE[todayIndex === 0 ? 6 : todayIndex - 1]; // Adjust to Mon-based
+  const inferredMealsPerDay =
+    requestedDaysCount > 1
+      ? Math.max(1, Math.ceil(meals.length / requestedDaysCount))
+      : meals.length;
 
   const dayMeals: DayMeal[] = meals.map(
     (meal: any, index: number): DayMeal => {
@@ -553,7 +753,14 @@ export function transformDietResponseToWeeklyPlan(
           "ai-generated",
           mapMealType(meal.mealType || meal.type || "lunch"),
         ],
-        dayOfWeek: meal.dayOfWeek || todayName,
+        dayOfWeek:
+          normalizeDayOfWeek(meal.dayOfWeek) ||
+          inferDayOfWeekFromPosition(
+            index,
+            requestedDaysCount,
+            inferredMealsPerDay,
+            todayName,
+          ),
         isPersonalized: true,
         aiGenerated: true,
         createdAt: now,

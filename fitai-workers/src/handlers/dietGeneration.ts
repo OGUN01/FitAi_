@@ -29,13 +29,21 @@ import {
 	DietValidationResult,
 	UserProfileContext,
 	DietPreferences,
+	BodyMetricsContext,
+	AdvancedReviewContext,
 	Meal,
 } from '../utils/validation';
 import { getCachedData, saveCachedData, CacheMetadata } from '../utils/cache';
 import { ValidationError, APIError } from '../utils/errors';
 import { ErrorCode } from '../utils/errorCodes';
 import { withDeduplication } from '../utils/deduplication';
-import { loadUserMetrics, loadUserProfile, loadUserPreferences, UserHealthMetrics } from '../services/userMetricsService';
+import {
+	loadUserMetrics,
+	loadUserProfile,
+	loadUserPreferences,
+	loadBodyMeasurements,
+	UserHealthMetrics,
+} from '../services/userMetricsService';
 import { adjustForProteinTarget } from '../utils/portionAdjustment';
 import { getAIConfig } from '../utils/appConfig';
 
@@ -394,6 +402,92 @@ function checkDietTypeViolations(meals: Meal[], dietType: string): DietValidatio
 // COMPREHENSIVE VALIDATION
 // ============================================================================
 
+const MICRONUTRIENT_SOURCE_KEYWORDS: Record<string, string[]> = {
+	iron: ['spinach', 'lentil', 'chickpea', 'bean', 'rajma', 'red meat', 'beef', 'liver', 'tofu', 'pumpkin seed'],
+	calcium: ['milk', 'yogurt', 'curd', 'cheese', 'paneer', 'tofu', 'sesame', 'sardine', 'fortified'],
+	omega_3: ['salmon', 'sardine', 'mackerel', 'herring', 'chia', 'flax', 'walnut'],
+	vitamin_c: ['orange', 'lemon', 'amla', 'guava', 'kiwi', 'berry', 'bell pepper', 'broccoli'],
+	vitamin_a: ['carrot', 'sweet potato', 'pumpkin', 'spinach', 'kale', 'mango', 'egg yolk', 'liver'],
+	vitamin_b12: ['egg', 'milk', 'yogurt', 'cheese', 'fish', 'chicken', 'beef', 'fortified', 'nutritional yeast'],
+	vitamin_d: ['salmon', 'sardine', 'fortified', 'egg yolk', 'mushroom'],
+	magnesium: ['almond', 'cashew', 'pumpkin seed', 'spinach', 'bean', 'lentil', 'oat', 'dark chocolate'],
+	potassium: ['banana', 'potato', 'sweet potato', 'bean', 'yogurt', 'coconut water', 'spinach', 'avocado'],
+};
+
+function getDailyFiberTarget(metrics: UserHealthMetrics): number {
+	if (metrics.daily_fiber_g && metrics.daily_fiber_g > 0) {
+		return metrics.daily_fiber_g;
+	}
+
+	return Math.max(25, Math.round((metrics.daily_calories / 1000) * 14));
+}
+
+function buildMicronutrientCoverageWarnings(
+	meals: Meal[],
+	aiResponse: DietResponse,
+	metrics: UserHealthMetrics,
+	prefs: DietPreferences | null,
+	daysCount: number,
+): DietValidationWarning[] {
+	const warnings: DietValidationWarning[] = [];
+	const planDays = Math.max(1, daysCount);
+	const foodNames = meals.flatMap((meal) => meal.foods.map((food) => food.name.toLowerCase()));
+	const totalFiber = aiResponse.totalNutrition.fiber;
+	const totalSodium = aiResponse.totalNutrition.sodium;
+	const totalSugar = aiResponse.totalNutrition.sugar;
+	const fiberTarget = getDailyFiberTarget(metrics) * planDays;
+	const sodiumLimit = 2300 * planDays;
+	const sugarLimit = 50 * planDays;
+
+	if (typeof totalFiber === 'number' && totalFiber < fiberTarget * 0.85) {
+		warnings.push({
+			severity: 'WARNING',
+			code: 'LOW_FIBER',
+			message: `Fiber is ${totalFiber}g for the full plan; target is about ${fiberTarget}g.`,
+			type: 'low_fiber',
+			suggestion: 'Add legumes, vegetables, fruits, seeds, and whole grains across the week.',
+		});
+	}
+
+	if (typeof totalSodium === 'number' && totalSodium > sodiumLimit) {
+		warnings.push({
+			severity: 'WARNING',
+			code: 'HIGH_SODIUM',
+			message: `Sodium is ${totalSodium}mg for the full plan, above the ${sodiumLimit}mg guideline.`,
+			type: 'high_sodium',
+			suggestion: 'Reduce packaged foods and salty sauces; use fresh herbs, lemon, and spices.',
+		});
+	}
+
+	if (typeof totalSugar === 'number' && totalSugar > sugarLimit) {
+		warnings.push({
+			severity: 'INFO',
+			code: 'HIGH_SUGAR',
+			message: `Sugar is ${totalSugar}g for the full plan, above the ${sugarLimit}g guideline.`,
+			suggestion: 'Prefer whole-fruit sweetness and reduce desserts or sweetened drinks.',
+		});
+	}
+
+	const uncoveredNutrients = Object.entries(MICRONUTRIENT_SOURCE_KEYWORDS)
+		.filter(([, keywords]) => !keywords.some((keyword) => foodNames.some((food) => food.includes(keyword))))
+		.map(([nutrient]) => nutrient.replace(/_/g, ' '));
+
+	if (uncoveredNutrients.length > 0) {
+		warnings.push({
+			severity: uncoveredNutrients.length >= 3 ? 'WARNING' : 'INFO',
+			code: 'MICRONUTRIENT_COVERAGE_GAPS',
+			message: `Potential weekly micronutrient gaps detected for: ${uncoveredNutrients.join(', ')}.`,
+			affectedItems: uncoveredNutrients,
+			suggestions: [
+				'Rotate leafy greens, legumes, dairy or fortified alternatives, seeds, colorful produce, and omega-3 sources.',
+				`Recheck food variety for the ${prefs?.diet_type || 'current'} diet pattern.`,
+			],
+		});
+	}
+
+	return warnings;
+}
+
 /**
  * Validate AI-generated diet plan with multi-layer checks
  *
@@ -411,11 +505,20 @@ function checkDietTypeViolations(meals: Meal[], dietType: string): DietValidatio
  * @param aiResponse - AI-generated meal plan
  * @param metrics - User's calculated metrics
  * @param prefs - User's diet preferences
+ * @param daysCount - Number of days represented by the plan
  * @returns Validation result with errors and warnings
  */
-function validateDietPlan(aiResponse: DietResponse, metrics: UserHealthMetrics, prefs: DietPreferences | null): DietValidationResult {
+function validateDietPlan(
+	aiResponse: DietResponse,
+	metrics: UserHealthMetrics,
+	prefs: DietPreferences | null,
+	daysCount: number = 1,
+): DietValidationResult {
 	const errors: DietValidationError[] = [];
 	const warnings: DietValidationWarning[] = [];
+	const planDays = Math.max(1, daysCount);
+	const calorieTarget = metrics.daily_calories * planDays;
+	const proteinTarget = metrics.daily_protein_g * planDays;
 
 	console.log('[DietValidation] Starting comprehensive validation');
 
@@ -458,7 +561,7 @@ function validateDietPlan(aiResponse: DietResponse, metrics: UserHealthMetrics, 
 
 	// 3. EXTREME CALORIE DRIFT CHECK (CRITICAL - >30% off)
 	const totalCal = aiResponse.totalCalories;
-	const targetCal = metrics.daily_calories;
+	const targetCal = calorieTarget;
 	const calorieDrift = Math.abs(totalCal - targetCal) / targetCal;
 
 	if (calorieDrift > 0.3) {
@@ -520,18 +623,18 @@ function validateDietPlan(aiResponse: DietResponse, metrics: UserHealthMetrics, 
 	}
 
 	// 2. LOW PROTEIN WARNING (<80% of target)
-	const proteinRatio = aiResponse.totalNutrition.protein / metrics.daily_protein_g;
+	const proteinRatio = aiResponse.totalNutrition.protein / proteinTarget;
 	if (proteinRatio < 0.8) {
 		warnings.push({
 			severity: 'WARNING',
 			code: 'LOW_PROTEIN',
-			message: `Protein is ${aiResponse.totalNutrition.protein}g, target is ${metrics.daily_protein_g}g (${(proteinRatio * 100).toFixed(0)}%)`,
+			message: `Protein is ${aiResponse.totalNutrition.protein}g, target is ${proteinTarget}g (${(proteinRatio * 100).toFixed(0)}%)`,
 			action: 'LOG_FOR_AI_IMPROVEMENT',
 		});
 
 		console.warn('[DietValidation] Low protein:', {
 			actual: aiResponse.totalNutrition.protein,
-			target: metrics.daily_protein_g,
+			target: proteinTarget,
 			ratio: `${(proteinRatio * 100).toFixed(1)}%`,
 		});
 	}
@@ -557,6 +660,16 @@ function validateDietPlan(aiResponse: DietResponse, metrics: UserHealthMetrics, 
 		});
 	}
 
+	warnings.push(
+		...buildMicronutrientCoverageWarnings(
+			aiResponse.meals,
+			aiResponse,
+			metrics,
+			prefs,
+			planDays,
+		),
+	);
+
 	// Log validation summary
 	console.log('[DietValidation] Validation complete:', {
 		isValid: errors.length === 0,
@@ -568,6 +681,91 @@ function validateDietPlan(aiResponse: DietResponse, metrics: UserHealthMetrics, 
 		isValid: errors.length === 0,
 		errors,
 		warnings,
+	};
+}
+
+function mergeProfileContext(
+	storedProfile: UserProfileContext | null,
+	request: DietGenerationRequest,
+): UserProfileContext | null {
+	const override = request.profile;
+
+	if (!storedProfile && !override && !request.country) {
+		return null;
+	}
+
+	return {
+		...(storedProfile || {}),
+		...(override || {}),
+		country: override?.country ?? request.country ?? storedProfile?.country,
+	};
+}
+
+function mergeDietPreferences(
+	storedPrefs: DietPreferences | null,
+	request: DietGenerationRequest,
+): DietPreferences | null {
+	const override = request.dietPreferences;
+
+	if (!storedPrefs && !override && !request.excludeIngredients?.length) {
+		return null;
+	}
+
+	const dislikes = [
+		...(override?.dislikes || []),
+		...(request.excludeIngredients || []),
+	];
+
+	return {
+		...(storedPrefs || {}),
+		...(override || {}),
+		dislikes: dislikes.length > 0 ? [...new Set(dislikes)] : storedPrefs?.dislikes,
+		restrictions:
+			override?.restrictions ??
+			storedPrefs?.restrictions ??
+			request.dietaryRestrictions,
+		allergies: override?.allergies ?? storedPrefs?.allergies,
+	};
+}
+
+function mergeBodyMetricsContext(
+	storedBody: BodyMetricsContext | null,
+	request: DietGenerationRequest,
+): BodyMetricsContext | null {
+	const override = request.bodyMetrics;
+
+	if (!storedBody && !override) {
+		return null;
+	}
+
+	return {
+		...(storedBody || {}),
+		...(override || {}),
+	};
+}
+
+function mergeHealthMetrics(
+	storedMetrics: UserHealthMetrics,
+	request: DietGenerationRequest,
+): UserHealthMetrics {
+	const override = request.advancedReview;
+	const calorieTarget = override?.daily_calories ?? request.calorieTarget;
+	const derivedFiberTarget =
+		override?.daily_fiber_g ??
+		storedMetrics.daily_fiber_g ??
+		Math.max(25, Math.round(((calorieTarget || storedMetrics.daily_calories) / 1000) * 14));
+
+	return {
+		...storedMetrics,
+		daily_calories: calorieTarget ?? storedMetrics.daily_calories,
+		daily_protein_g: override?.daily_protein_g ?? storedMetrics.daily_protein_g,
+		daily_carbs_g: override?.daily_carbs_g ?? storedMetrics.daily_carbs_g,
+		daily_fat_g: override?.daily_fat_g ?? storedMetrics.daily_fat_g,
+		daily_water_ml: override?.daily_water_ml ?? storedMetrics.daily_water_ml,
+		daily_fiber_g: derivedFiberTarget,
+		calculated_bmi: override?.calculated_bmi ?? storedMetrics.calculated_bmi,
+		bmi_category: override?.bmi_category ?? storedMetrics.bmi_category,
+		health_score: override?.health_score ?? storedMetrics.health_score,
 	};
 }
 
@@ -656,6 +854,10 @@ export async function handleDietGeneration(c: Context<{ Bindings: Env; Variables
 				macros: request.macros,
 				dietaryRestrictions: request.dietaryRestrictions,
 				excludeIngredients: request.excludeIngredients,
+				profile: request.profile,
+				dietPreferences: request.dietPreferences,
+				bodyMetrics: request.bodyMetrics,
+				advancedReview: request.advancedReview,
 				model: request.model,
 				temperature: request.temperature,
 			});
@@ -678,6 +880,10 @@ export async function handleDietGeneration(c: Context<{ Bindings: Env; Variables
 								macros: request.macros,
 								dietaryRestrictions: request.dietaryRestrictions,
 								excludeIngredients: request.excludeIngredients,
+								profile: request.profile,
+								dietPreferences: request.dietPreferences,
+								bodyMetrics: request.bodyMetrics,
+								advancedReview: request.advancedReview,
 								model: request.model,
 								temperature: request.temperature,
 							},
@@ -820,25 +1026,43 @@ export async function handleDietGeneration(c: Context<{ Bindings: Env; Variables
  * 5. Adjust portions if needed
  * 6. Return or throw detailed error
  */
-async function generateFreshDiet(request: DietGenerationRequest, env: Env, userId: string) {
+export async function generateFreshDiet(request: DietGenerationRequest, env: Env, userId: string) {
 	console.log('[Diet Generation] Starting AI-first generation for user:', userId);
 
 	// 1. Load user data from database
-	const [metrics, profile, preferences] = await Promise.all([
+	const [storedMetrics, storedProfile, preferences, bodyContext] = await Promise.all([
 		loadUserMetrics(env, userId),
 		loadUserProfile(env, userId),
 		loadUserPreferences(env, userId),
+		loadBodyMeasurements(env, userId),
 	]);
+	const metrics = mergeHealthMetrics(storedMetrics, request);
+	const profile = mergeProfileContext(storedProfile, request);
+	const mergedDietPreferences = mergeDietPreferences(preferences.diet, request);
+	const mergedBodyContext = mergeBodyMetricsContext(bodyContext, request);
 
 	console.log('[Diet Generation] User data loaded:', {
 		daily_calories: metrics.daily_calories,
 		protein: metrics.daily_protein_g,
-		diet_type: preferences.diet?.diet_type,
-		allergies: preferences.diet?.allergies?.length || 0,
+		diet_type: mergedDietPreferences?.diet_type,
+		allergies: mergedDietPreferences?.allergies?.length || 0,
 	});
 
+	const planDays = Math.max(1, request.daysCount || 1);
+	const planCalorieTarget = metrics.daily_calories * planDays;
+	const planProteinTarget = metrics.daily_protein_g * planDays;
+	const planCarbsTarget = metrics.daily_carbs_g * planDays;
+	const planFatTarget = metrics.daily_fat_g * planDays;
+
 	// 2. Build comprehensive AI prompt (NO FOOD FILTERING)
-	const prompt = buildDietPrompt(metrics, profile, preferences.diet, request.daysCount || 1);
+	const prompt = buildDietPrompt(
+		metrics,
+		profile,
+		mergedDietPreferences,
+		mergedBodyContext,
+		planDays,
+		request.excludeIngredients || [],
+	);
 
 	console.log('[Diet Generation] Prompt built. Cuisine detected:', {
 		cuisine: detectCuisine(profile?.country),
@@ -878,10 +1102,15 @@ async function generateFreshDiet(request: DietGenerationRequest, env: Env, userI
 	});
 
 	// 3.5 POST-PROCESSING: Filter out disabled meal types (safety net for prompt violations)
-	const filteredMealPlan = filterDisabledMeals(result.object, preferences.diet);
+	const filteredMealPlanWithMergedPrefs = filterDisabledMeals(result.object, mergedDietPreferences);
 
 	// 4. COMPREHENSIVE VALIDATION (NO FALLBACK)
-	const validationResult = validateDietPlan(filteredMealPlan, metrics, preferences.diet);
+	const validationResult = validateDietPlan(
+		filteredMealPlanWithMergedPrefs,
+		metrics,
+		mergedDietPreferences,
+		planDays,
+	);
 
 	// If validation FAILED - throw error (NO FALLBACK)
 	if (!validationResult.isValid) {
@@ -900,17 +1129,21 @@ async function generateFreshDiet(request: DietGenerationRequest, env: Env, userI
 	}
 
 	// 5. Adjust portions to match EXACT calorie AND protein targets
-	const adjustedDiet = adjustForProteinTarget(filteredMealPlan, metrics.daily_calories, metrics.daily_protein_g);
+	const adjustedDiet = adjustForProteinTarget(
+		filteredMealPlanWithMergedPrefs,
+		planCalorieTarget,
+		planProteinTarget,
+	);
 
 	console.log('[Diet Generation] Portions adjusted (calorie + protein):', {
-		originalCalories: filteredMealPlan.totalCalories,
+		originalCalories: filteredMealPlanWithMergedPrefs.totalCalories,
 		adjustedCalories: adjustedDiet.totalCalories,
-		targetCalories: metrics.daily_calories,
-		calorieDifference: Math.abs(adjustedDiet.totalCalories - metrics.daily_calories),
-		originalProtein: filteredMealPlan.totalNutrition.protein,
+		targetCalories: planCalorieTarget,
+		calorieDifference: Math.abs(adjustedDiet.totalCalories - planCalorieTarget),
+		originalProtein: filteredMealPlanWithMergedPrefs.totalNutrition.protein,
 		adjustedProtein: adjustedDiet.totalNutrition.protein,
-		targetProtein: metrics.daily_protein_g,
-		proteinDifference: Math.abs(adjustedDiet.totalNutrition.protein - metrics.daily_protein_g),
+		targetProtein: planProteinTarget,
+		proteinDifference: Math.abs(adjustedDiet.totalNutrition.protein - planProteinTarget),
 	});
 
 	// Return diet with metadata for deduplication/caching
@@ -926,14 +1159,14 @@ async function generateFreshDiet(request: DietGenerationRequest, env: Env, userI
 			warnings: validationResult.warnings,
 			adjustmentApplied: true,
 			nutritionalAccuracy: {
-				targetCalories: metrics.daily_calories,
+				targetCalories: planCalorieTarget,
 				actualCalories: adjustedDiet.totalCalories,
-				difference: Math.abs(adjustedDiet.totalCalories - metrics.daily_calories),
-				targetProtein: metrics.daily_protein_g,
+				difference: Math.abs(adjustedDiet.totalCalories - planCalorieTarget),
+				targetProtein: planProteinTarget,
 				actualProtein: adjustedDiet.totalNutrition.protein,
-				targetCarbs: metrics.daily_carbs_g,
+				targetCarbs: planCarbsTarget,
 				actualCarbs: adjustedDiet.totalNutrition.carbs,
-				targetFat: metrics.daily_fat_g,
+				targetFat: planFatTarget,
 				actualFat: adjustedDiet.totalNutrition.fats,
 			},
 		},

@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { rf, rw, rh, rbr } from "../../../utils/responsive";
 import { CalculatedMetrics } from "../../../hooks/useCalculatedMetrics";
+import { getWeightGoalProgress } from "../../../components/progress/goalProgressUtils";
 // SSOT: use onboarding types (the actual data format used by profileStore)
 import type { PersonalInfoData, BodyAnalysisData } from "../../../types/onboarding";
 
@@ -19,8 +20,22 @@ interface GoalProgressCardProps {
 export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
   calculatedMetrics,
   profilePersonalInfo: _profilePersonalInfo,
-  bodyAnalysis: _bodyAnalysis,
+  bodyAnalysis,
 }) => {
+  const { weightProgress } = getWeightGoalProgress({
+    currentWeightKg: calculatedMetrics?.currentWeightKg ?? null,
+    targetWeightKg: calculatedMetrics?.targetWeightKg ?? null,
+    fallbackStartWeightKg:
+      calculatedMetrics?.currentWeightKg ??
+      bodyAnalysis?.current_weight_kg ??
+      null,
+    weeklyRateKg: calculatedMetrics?.weeklyWeightLossRate ?? null,
+    targetTimelineWeeks: calculatedMetrics?.targetTimelineWeeks ?? null,
+  });
+
+  const weightProgressPercent =
+    weightProgress != null ? Math.round(weightProgress * 100) : 0;
+
   return (
     <Animated.View
       entering={FadeInDown.delay(400).duration(400)}
@@ -45,7 +60,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
                   style={[
                     styles.goalProgressFill,
                     {
-                      width: "0%",
+                      width: `${Math.min(100, weightProgressPercent)}%`,
                       backgroundColor: ResponsiveTheme.colors.primary,
                     },
                   ]}
@@ -53,8 +68,8 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
               </View>
               <Text style={styles.goalText}>
                 {calculatedMetrics.currentWeightKg > 0
-                  ? `${calculatedMetrics.currentWeightKg.toFixed(1)} kg → ${calculatedMetrics.targetWeightKg.toFixed(1)} kg`
-                  : "— kg → — kg"}
+                  ? `${calculatedMetrics.currentWeightKg.toFixed(1)} kg -> ${calculatedMetrics.targetWeightKg.toFixed(1)} kg`
+                  : "-- kg -> -- kg"}
               </Text>
             </View>
           )}
@@ -78,7 +93,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
               size={rf(28)}
               color={ResponsiveTheme.colors.textSecondary}
             />
-            <Text style={styles.emptyStateValue}>—</Text>
+            <Text style={styles.emptyStateValue}>--</Text>
             <Text style={styles.emptyStateText}>
               Set goals in Profile to track progress
             </Text>
@@ -160,3 +175,4 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
+

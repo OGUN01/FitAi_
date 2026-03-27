@@ -77,7 +77,7 @@ const WaterDropVisual: React.FC<{ progress: number; size: number }> = ({
   );
 };
 
-export const HydrationCard: React.FC<HydrationCardProps> = ({
+export const HydrationCard: React.FC<HydrationCardProps> = React.memo(({
   currentIntake,
   dailyGoal,
   onAddWater,
@@ -101,6 +101,10 @@ export const HydrationCard: React.FC<HydrationCardProps> = ({
   }, [progress]);
 
   const dropSize = rw(80);
+  const handleQuickAddPress = (amount: number) => (event: any) => {
+    event.stopPropagation?.();
+    onAddWater(amount);
+  };
 
   return (
     <Animated.View
@@ -157,11 +161,12 @@ export const HydrationCard: React.FC<HydrationCardProps> = ({
                 {QUICK_ADD_OPTIONS.map((option) => (
                   <AnimatedPressable
                     key={option.amount}
-                    onPress={() => onAddWater(option.amount)}
+                    onPress={handleQuickAddPress(option.amount)}
                     scaleValue={0.9}
                     hapticFeedback={true}
                     hapticType="medium"
                     style={styles.quickAddButton}
+                    accessibilityLabel={`Add ${option.label} of water`}
                   >
                     <Text style={styles.quickAddText}>+{option.label}</Text>
                   </AnimatedPressable>
@@ -181,7 +186,7 @@ export const HydrationCard: React.FC<HydrationCardProps> = ({
       </AnimatedPressable>
     </Animated.View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -275,10 +280,13 @@ const styles = StyleSheet.create({
   quickAddButton: {
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
+    minHeight: 44,
     borderRadius: ResponsiveTheme.borderRadius.md,
     backgroundColor: "rgba(33, 150, 243, 0.12)",
     borderWidth: 1,
     borderColor: "rgba(33, 150, 243, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   quickAddText: {
     fontSize: rf(12),

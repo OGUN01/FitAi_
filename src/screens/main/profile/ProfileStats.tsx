@@ -1,5 +1,5 @@
 /**
- * ProfileStats - Horizontal Scrollable Stats Row
+ * ProfileStats - Compact Stats Grid
  *
  * World-class design:
  * - Horizontal scrollable row (edge-to-edge)
@@ -9,7 +9,7 @@
  */
 
 import React from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInRight } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -151,14 +151,7 @@ export const ProfileStats: React.FC<ProfileStatsProps> = ({
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        decelerationRate="fast"
-        snapToInterval={rw(90) + 8}
-        snapToAlignment="start"
-      >
+      <View style={styles.statsGrid}>
         {stats.map((stat, index) => (
           <StatCard
             key={stat.id}
@@ -167,15 +160,7 @@ export const ProfileStats: React.FC<ProfileStatsProps> = ({
             onPress={() => onStatPress?.(stat.id)}
           />
         ))}
-      </ScrollView>
-      {/* Right-edge fade to hint at horizontal scrollability */}
-      <LinearGradient
-        colors={["transparent", "rgba(10, 10, 15, 0.85)"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.scrollFadeRight}
-        pointerEvents="none"
-      />
+      </View>
     </View>
   );
 };
@@ -184,13 +169,16 @@ const styles = StyleSheet.create({
   container: {
     marginTop: ResponsiveTheme.spacing.sm,
     marginBottom: ResponsiveTheme.spacing.lg,
-  },
-  scrollContent: {
     paddingHorizontal: rp(ResponsiveTheme.spacing.lg),
+  },
+  statsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
     gap: rp(ResponsiveTheme.spacing.sm),
   },
   statCardWrapper: {
-    width: rw(90),
+    width: "31.5%",
   },
   statCard: {
     alignItems: "center",
@@ -226,14 +214,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     flexShrink: 1,
   },
-  scrollFadeRight: {
-    position: "absolute",
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: rw(48),
-    pointerEvents: "none",
-  },
-  });
+});
 
 export default ProfileStats;

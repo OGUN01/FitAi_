@@ -37,7 +37,7 @@ const COLORS = {
   fat: "#FFA726",
 };
 
-export const WeeklyNutritionChart: React.FC<WeeklyNutritionChartProps> = ({
+export const WeeklyNutritionChart: React.FC<WeeklyNutritionChartProps> = React.memo(({
   weeklyData,
   proteinTarget,
   carbsTarget,
@@ -97,6 +97,9 @@ export const WeeklyNutritionChart: React.FC<WeeklyNutritionChartProps> = ({
           scaleValue={0.95}
           hapticFeedback={true}
           hapticType="light"
+          style={styles.seeAllButton}
+          accessibilityRole="button"
+          accessibilityLabel="See nutrition trend details"
         >
           <Text style={styles.seeAllText}>See Details</Text>
         </AnimatedPressable>
@@ -196,7 +199,7 @@ export const WeeklyNutritionChart: React.FC<WeeklyNutritionChartProps> = ({
       </View>
     </Animated.View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -216,6 +219,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
+  },
+  seeAllButton: {
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
   },
   sectionTitle: {
     fontSize: rf(18),

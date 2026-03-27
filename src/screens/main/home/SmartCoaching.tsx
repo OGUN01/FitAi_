@@ -180,7 +180,7 @@ const generateRecommendations = (
     recommendations.push({
       id: "streak-active",
       type: "motivation",
-      title: `${currentStreak} Day Streak! 🔥`,
+      title: `${currentStreak} Day Streak`,
       description: "Incredible consistency! You're building lasting habits.",
       priority: 3,
     });
@@ -277,7 +277,7 @@ const RecommendationCard: React.FC<{
   );
 };
 
-export const SmartCoaching: React.FC<SmartCoachingProps> = (props) => {
+export const SmartCoaching: React.FC<SmartCoachingProps> = React.memo((props) => {
   const { onTipPress, onViewAll } = props;
 
   const recommendations = useMemo(
@@ -335,7 +335,7 @@ export const SmartCoaching: React.FC<SmartCoachingProps> = (props) => {
       </View>
     </GlassCard>
   );
-};
+});
 
 const styles = StyleSheet.create({
   header: {

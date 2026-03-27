@@ -4,6 +4,9 @@ import {
   workoutSessionsChannel,
 } from "./types";
 import { supabase } from "../../services/supabase";
+import { getLocalDateString } from "../../utils/weekUtils";
+
+let realtimeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const createRealtimeActions = (
   set: (
@@ -28,8 +31,12 @@ export const createRealtimeActions = (
           table: "workout_sessions",
           filter: `user_id=eq.${userId}`,
         },
-        (payload) => {
-          get().loadData();
+        () => {
+          // Debounce realtime updates to avoid rapid-fire loadData() calls
+          if (realtimeDebounceTimer) clearTimeout(realtimeDebounceTimer);
+          realtimeDebounceTimer = setTimeout(() => {
+            get().loadData();
+          }, 2000);
         },
       )
       .subscribe();
@@ -51,6 +58,7 @@ export const createRealtimeActions = (
       isGeneratingPlan: false,
       planError: null,
       workoutProgress: {},
+      lastProgressDate: getLocalDateString(),
       currentWorkoutSession: null,
       completedSessions: [],
       completedSessionsHydrated: false,

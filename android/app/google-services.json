@@ -49,51 +49,6 @@
           ]
         }
       }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:852515904515:android:dac1503c8527136abf0236",
-        "android_client_info": {
-          "package_name": "com.fitai.app.dev"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "852515904515-8hb0t06623jffo7p3nqq6pu3q6leg27b.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.fitai.app",
-            "certificate_hash": "8159221f60302f2d51cceb052da3025ea22f7b86"
-          }
-        },
-        {
-          "client_id": "852515904515-fpoke75nm1crgpkola56qtbdeelhn11m.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.fitai.app",
-            "certificate_hash": "22836d99afc032caeb29d542bb2b7516fc48e290"
-          }
-        },
-        {
-          "client_id": "852515904515-010uf4hr9cgaasfg7bskpcdkes469r5h.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyCjAflIOy4s85ASIr2BGLww7i2zxsSeVXg"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "852515904515-010uf4hr9cgaasfg7bskpcdkes469r5h.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
     }
   ],
   "configuration_version": "1"

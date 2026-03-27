@@ -46,11 +46,17 @@ export const ExerciseInstructionModal: React.FC<
           {displayName}
         </Text>
         <View style={styles.qualityBadge}>
-          <Text style={styles.qualityBadgeText}>✅ Verified</Text>
+          <Text style={styles.qualityBadgeText}>Verified</Text>
         </View>
       </View>
-      <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-        <Text style={styles.closeButtonText}>✕</Text>
+      <TouchableOpacity
+        style={styles.closeButton}
+        onPress={onClose}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        accessibilityRole="button"
+        accessibilityLabel={`Close ${displayName}`}
+      >
+        <Text style={styles.closeButtonText}>X</Text>
       </TouchableOpacity>
     </View>
   );
@@ -74,6 +80,8 @@ export const ExerciseInstructionModal: React.FC<
       <TouchableOpacity
         style={[styles.tab, activeTab === "instructions" && styles.activeTab]}
         onPress={() => setActiveTab("instructions")}
+        accessibilityRole="button"
+        accessibilityLabel="Show instructions tab"
       >
         <Text
           style={[
@@ -81,12 +89,14 @@ export const ExerciseInstructionModal: React.FC<
             activeTab === "instructions" && styles.activeTabText,
           ]}
         >
-          📋 Instructions
+          Instructions
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.tab, activeTab === "details" && styles.activeTab]}
         onPress={() => setActiveTab("details")}
+        accessibilityRole="button"
+        accessibilityLabel="Show details tab"
       >
         <Text
           style={[
@@ -94,7 +104,7 @@ export const ExerciseInstructionModal: React.FC<
             activeTab === "details" && styles.activeTabText,
           ]}
         >
-          ℹ️ Details
+          Details
         </Text>
       </TouchableOpacity>
     </View>
@@ -104,7 +114,7 @@ export const ExerciseInstructionModal: React.FC<
     if (!exercise?.instructions?.length) {
       return (
         <View style={styles.noDataContainer}>
-          <Text style={styles.noDataEmoji}>📝</Text>
+          <Text style={styles.noDataEmoji}>i</Text>
           <Text style={styles.noDataText}>
             No detailed instructions available
           </Text>
@@ -139,7 +149,7 @@ export const ExerciseInstructionModal: React.FC<
     if (!exercise) {
       return (
         <View style={styles.noDataContainer}>
-          <Text style={styles.noDataEmoji}>❓</Text>
+          <Text style={styles.noDataEmoji}>?</Text>
           <Text style={styles.noDataText}>No exercise details available</Text>
         </View>
       );
@@ -150,7 +160,7 @@ export const ExerciseInstructionModal: React.FC<
         {/* Target Muscles */}
         {exercise.targetMuscles.length > 0 && (
           <View style={styles.detailSection}>
-            <Text style={styles.detailSectionTitle}>🎯 Primary Muscles</Text>
+            <Text style={styles.detailSectionTitle}>Primary Muscles</Text>
             <View style={styles.chipContainer}>
               {exercise.targetMuscles.map((muscle) => (
                 <View
@@ -167,7 +177,7 @@ export const ExerciseInstructionModal: React.FC<
         {/* Secondary Muscles */}
         {exercise.secondaryMuscles?.length > 0 && (
           <View style={styles.detailSection}>
-            <Text style={styles.detailSectionTitle}>💪 Secondary Muscles</Text>
+            <Text style={styles.detailSectionTitle}>Secondary Muscles</Text>
             <View style={styles.chipContainer}>
               {exercise.secondaryMuscles.map((muscle) => (
                 <View
@@ -184,7 +194,7 @@ export const ExerciseInstructionModal: React.FC<
         {/* Equipment */}
         {exercise.equipments.length > 0 && (
           <View style={styles.detailSection}>
-            <Text style={styles.detailSectionTitle}>🏋️ Equipment Needed</Text>
+            <Text style={styles.detailSectionTitle}>Equipment Needed</Text>
             <View style={styles.chipContainer}>
               {exercise.equipments.map((equipment) => (
                 <View
@@ -201,7 +211,7 @@ export const ExerciseInstructionModal: React.FC<
         {/* Body Parts */}
         {exercise.bodyParts.length > 0 && (
           <View style={styles.detailSection}>
-            <Text style={styles.detailSectionTitle}>🦴 Body Parts</Text>
+            <Text style={styles.detailSectionTitle}>Body Parts</Text>
             <View style={styles.chipContainer}>
               {exercise.bodyParts.map((bodyPart) => (
                 <View
@@ -217,19 +227,19 @@ export const ExerciseInstructionModal: React.FC<
 
         {/* Exercise Tips */}
         <View style={styles.detailSection}>
-          <Text style={styles.detailSectionTitle}>💡 Tips</Text>
+          <Text style={styles.detailSectionTitle}>Tips</Text>
           <View style={styles.tipContainer}>
             <Text style={styles.tipText}>
-              • Focus on proper form over speed or weight
+              - Focus on proper form over speed or weight
             </Text>
             <Text style={styles.tipText}>
-              • Control the movement throughout the full range of motion
+              - Control the movement throughout the full range of motion
             </Text>
             <Text style={styles.tipText}>
-              • Breathe properly - exhale on exertion, inhale on release
+              - Breathe properly - exhale on exertion, inhale on release
             </Text>
             <Text style={styles.tipText}>
-              • Stop if you feel pain or discomfort
+              - Stop if you feel pain or discomfort
             </Text>
           </View>
         </View>
@@ -319,9 +329,9 @@ const styles = StyleSheet.create({
   },
 
   closeButton: {
-    width: rs(40),
-    height: rs(40),
-    borderRadius: rbr(20),
+    width: Math.max(rs(40), 44),
+    height: Math.max(rs(40), 44),
+    borderRadius: Math.max(rbr(20), 22),
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
@@ -361,8 +371,10 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1,
     paddingVertical: ResponsiveTheme.spacing.sm,
+    minHeight: 44,
     borderRadius: ResponsiveTheme.borderRadius.md,
     alignItems: "center",
+    justifyContent: "center",
   },
 
   activeTab: {

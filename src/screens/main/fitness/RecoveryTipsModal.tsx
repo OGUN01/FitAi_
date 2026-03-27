@@ -241,6 +241,8 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
                   hapticType="light"
                   style={styles.closeButton}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close recovery tips"
                 >
                   <Ionicons
                     name="close"
@@ -373,9 +375,9 @@ const styles = StyleSheet.create({
     marginTop: rp(2),
   },
   closeButton: {
-    width: rw(36),
-    height: rw(36),
-    borderRadius: rw(18),
+    width: Math.max(rw(36), 44),
+    height: Math.max(rw(36), 44),
+    borderRadius: Math.max(rw(18), 22),
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     justifyContent: "center",
     alignItems: "center",

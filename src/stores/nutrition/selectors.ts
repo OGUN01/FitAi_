@@ -1,9 +1,13 @@
 import { ConsumedNutrition, MealProgress, NutritionState } from "./types";
+import { getLocalDateString } from "../../utils/weekUtils";
 
 let consumedNutritionCache: ConsumedNutrition | null = null;
-let consumedNutritionCacheKey: string = "";
+let lastConsumedMealProgressRef: Record<string, MealProgress> | null = null;
+let lastConsumedDailyMealsRef: any[] | null = null;
 let todaysConsumedNutritionCache: ConsumedNutrition | null = null;
-let todaysConsumedNutritionCacheKey: string = "";
+let lastTodaysMealProgressRef: Record<string, MealProgress> | null = null;
+let lastTodaysDailyMealsRef: any[] | null = null;
+let lastTodaysDateStr: string = "";
 
 /**
  * Clear nutrition selector caches. Must be called on logout to prevent
@@ -11,15 +15,21 @@ let todaysConsumedNutritionCacheKey: string = "";
  */
 export function clearNutritionCache(): void {
   consumedNutritionCache = null;
-  consumedNutritionCacheKey = "";
+  lastConsumedMealProgressRef = null;
+  lastConsumedDailyMealsRef = null;
   todaysConsumedNutritionCache = null;
-  todaysConsumedNutritionCacheKey = "";
+  lastTodaysMealProgressRef = null;
+  lastTodaysDailyMealsRef = null;
+  lastTodaysDateStr = "";
 }
 
 export function getConsumedNutrition(state: NutritionState): ConsumedNutrition {
-  const cacheKey = JSON.stringify(state.mealProgress) + "_dm" + (state.dailyMeals?.length || 0);
-
-  if (consumedNutritionCache && consumedNutritionCacheKey === cacheKey) {
+  // O(1) reference-equality check instead of JSON.stringify
+  if (
+    consumedNutritionCache &&
+    state.mealProgress === lastConsumedMealProgressRef &&
+    state.dailyMeals === lastConsumedDailyMealsRef
+  ) {
     return consumedNutritionCache;
   }
 
@@ -40,8 +50,9 @@ export function getConsumedNutrition(state: NutritionState): ConsumedNutrition {
       protein: acc.protein + (meal.totalMacros?.protein || 0),
       carbs: acc.carbs + (meal.totalMacros?.carbohydrates || 0),
       fat: acc.fat + (meal.totalMacros?.fat || 0),
+      fiber: acc.fiber + (meal.totalMacros?.fiber || 0),
     }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0 },
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
   );
 
   // Also include daily meals (added from suggestions)
@@ -51,8 +62,9 @@ export function getConsumedNutrition(state: NutritionState): ConsumedNutrition {
       protein: acc.protein + (meal.totalMacros?.protein || 0),
       carbs: acc.carbs + (meal.totalMacros?.carbohydrates || 0),
       fat: acc.fat + (meal.totalMacros?.fat || 0),
+      fiber: acc.fiber + (meal.totalMacros?.fiber || 0),
     }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0 },
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
   );
 
   const result = {
@@ -60,10 +72,12 @@ export function getConsumedNutrition(state: NutritionState): ConsumedNutrition {
     protein: weeklyResult.protein + dailyMealsTotal.protein,
     carbs: weeklyResult.carbs + dailyMealsTotal.carbs,
     fat: weeklyResult.fat + dailyMealsTotal.fat,
+    fiber: weeklyResult.fiber + dailyMealsTotal.fiber,
   };
 
   consumedNutritionCache = result;
-  consumedNutritionCacheKey = cacheKey;
+  lastConsumedMealProgressRef = state.mealProgress;
+  lastConsumedDailyMealsRef = state.dailyMeals;
 
   return result;
 }
@@ -72,7 +86,7 @@ export function getTodaysConsumedNutrition(
   state: NutritionState,
 ): ConsumedNutrition {
   const today = new Date();
-  const todayDateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD for date comparison
+  const todayDateStr = getLocalDateString(today); // YYYY-MM-DD in local timezone for date comparison
   const dayNames = [
     "sunday",
     "monday",
@@ -84,11 +98,12 @@ export function getTodaysConsumedNutrition(
   ];
   const todayName = dayNames[today.getDay()];
 
-  const cacheKey = JSON.stringify(state.mealProgress) + "_" + todayDateStr + "_" + todayName + "_dm" + JSON.stringify((state.dailyMeals || []).map(m => `${m.id}:${m.totalCalories || 0}`));
-
+  // O(1) reference-equality check + date check instead of JSON.stringify
   if (
     todaysConsumedNutritionCache &&
-    todaysConsumedNutritionCacheKey === cacheKey
+    state.mealProgress === lastTodaysMealProgressRef &&
+    state.dailyMeals === lastTodaysDailyMealsRef &&
+    todayDateStr === lastTodaysDateStr
   ) {
     return todaysConsumedNutritionCache;
   }
@@ -110,14 +125,15 @@ export function getTodaysConsumedNutrition(
       protein: acc.protein + (meal.totalMacros?.protein || 0),
       carbs: acc.carbs + (meal.totalMacros?.carbohydrates || 0),
       fat: acc.fat + (meal.totalMacros?.fat || 0),
+      fiber: acc.fiber + (meal.totalMacros?.fiber || 0),
     }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0 },
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
   );
 
   // Only include daily meals created today (dailyMeals persist across days in storage)
   const todaysDailyMeals = (state.dailyMeals || []).filter((meal) => {
     if (!meal.createdAt) return false;
-    const mealDate = meal.createdAt.split('T')[0];
+    const mealDate = meal.createdAt.split("T")[0];
     return mealDate === todayDateStr;
   });
   const dailyMealsTotal = todaysDailyMeals.reduce(
@@ -126,8 +142,9 @@ export function getTodaysConsumedNutrition(
       protein: acc.protein + (meal.totalMacros?.protein || 0),
       carbs: acc.carbs + (meal.totalMacros?.carbohydrates || 0),
       fat: acc.fat + (meal.totalMacros?.fat || 0),
+      fiber: acc.fiber + (meal.totalMacros?.fiber || 0),
     }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0 },
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
   );
 
   const result = {
@@ -135,10 +152,13 @@ export function getTodaysConsumedNutrition(
     protein: weeklyResult.protein + dailyMealsTotal.protein,
     carbs: weeklyResult.carbs + dailyMealsTotal.carbs,
     fat: weeklyResult.fat + dailyMealsTotal.fat,
+    fiber: weeklyResult.fiber + dailyMealsTotal.fiber,
   };
 
   todaysConsumedNutritionCache = result;
-  todaysConsumedNutritionCacheKey = cacheKey;
+  lastTodaysMealProgressRef = state.mealProgress;
+  lastTodaysDailyMealsRef = state.dailyMeals;
+  lastTodaysDateStr = todayDateStr;
 
   return result;
 }

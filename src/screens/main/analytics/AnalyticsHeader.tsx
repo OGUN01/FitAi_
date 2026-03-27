@@ -20,7 +20,6 @@ import { ResponsiveTheme } from "../../../utils/constants";
 import { rf, rw, rh, rp, rs } from "../../../utils/responsive";
 import { PeriodSelector, Period } from "./PeriodSelector";
 import { haptics } from "../../../utils/haptics";
-import { crossPlatformAlert } from "../../../utils/crossPlatformAlert";
 
 interface AnalyticsHeaderProps {
   selectedPeriod: Period;
@@ -101,23 +100,15 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
 
 
 
-          {/* AI Badge */}
-          <TouchableOpacity
+          {/* Honest status badge - do not render fake CTA for unavailable insights */}
+          <View
             style={styles.badge}
-            activeOpacity={0.7}
-            onPress={() => {
-              haptics.light();
-              crossPlatformAlert(
-                "AI Insights",
-                "AI Insights coming soon! Complete workouts and log meals to unlock AI-powered analytics.",
-                [{ text: "Got it", style: "default" }],
-              );
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="AI Insights"
+            accessibilityRole="text"
+            accessibilityLabel="AI insights coming soon"
           >
-            <Text style={styles.badgeText}>AI</Text>
-          </TouchableOpacity>
+            <View style={styles.badgeDot} />
+            <Text style={styles.badgeText}>AI Soon</Text>
+          </View>
         </View>
       </Animated.View>
 
@@ -162,9 +153,9 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   navButton: {
-    width: rw(32),
-    height: rw(32),
-    borderRadius: rw(8),
+    width: Math.max(rw(32), 44),
+    height: Math.max(rw(32), 44),
+    borderRadius: Math.max(rw(8), 12),
     backgroundColor: ResponsiveTheme.colors.glassBorder,
     justifyContent: "center",
     alignItems: "center",
@@ -191,22 +182,30 @@ const styles = StyleSheet.create({
     marginTop: rp(-2),
   },
   badge: {
-    width: rw(32),
-    height: rw(32),
-    borderRadius: rw(16),
-    backgroundColor: ResponsiveTheme.colors.warningTint,
-    justifyContent: "center",
+    height: Math.max(rw(24), 30),
+    borderRadius: Math.max(rw(12), 15),
+    backgroundColor: "rgba(255, 193, 7, 0.14)",
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    gap: ResponsiveTheme.spacing.xs,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.warningTint,
+    borderColor: "rgba(255, 193, 7, 0.25)",
+  },
+  badgeDot: {
+    width: rw(6),
+    height: rw(6),
+    borderRadius: rw(3),
+    backgroundColor: ResponsiveTheme.colors.gold,
   },
   badgeText: {
-    fontSize: rf(11),
-    fontWeight: "700",
+    fontSize: rf(10),
+    fontWeight: "600",
     color: ResponsiveTheme.colors.gold,
-    letterSpacing: 0.5,
+    letterSpacing: 0.2,
     textAlign: "center",
-    lineHeight: rf(11),
+    lineHeight: rf(10),
     ...(Platform.OS === "android" ? { includeFontPadding: false } : {}),
   },
   periodSelectorWrapper: {

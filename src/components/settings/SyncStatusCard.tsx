@@ -88,11 +88,17 @@ export const SyncStatusCard: React.FC<SyncStatusCardProps> = ({
         <TouchableOpacity
           onPress={onSyncNow}
           disabled={syncStatus === "syncing"}
+          accessibilityRole="button"
+          accessibilityLabel={
+            syncStatus === "syncing" ? "Sync in progress" : "Sync now"
+          }
           style={{
             flexDirection: "row",
             alignItems: "center",
+            justifyContent: "center",
             paddingVertical: rp(6),
             paddingHorizontal: rp(12),
+            minHeight: 44,
             backgroundColor: ResponsiveTheme.colors.primary,
             borderRadius: rbr(8),
             opacity: syncStatus === "syncing" ? 0.6 : 1,

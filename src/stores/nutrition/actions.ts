@@ -1,5 +1,4 @@
 import { Platform } from "react-native";
-import * as crypto from "expo-crypto";
 import { WeeklyMealPlan, DayMeal } from "../../ai";
 import { SyncStatus } from "../../types/localData";
 import { crudOperations } from "../../services/crudOperations";
@@ -30,7 +29,7 @@ export const createMealPlanActions = (set: any, get: () => NutritionState) => ({
         .map(async (meal) => {
           try {
             const mealLog: import("../../types/localData").MealLog = {
-              id: `meal_${meal.id}_${timestamp}_${crypto.randomUUID().replace(/-/g, "").substring(0, 5)}`,
+              id: generateUUID(),
               mealType: toMealType(meal.type),
               foods: (meal.items || []).map(
                 (item: import("../../ai").MealItem, index: number) =>
@@ -104,13 +103,19 @@ export const createMealPlanActions = (set: any, get: () => NutritionState) => ({
       let activePlanRowId = plan.databaseId || null;
       if (!activePlanRowId) {
         try {
-          const { data: activePlans } = await supabase
+          const { data: activePlans, error: activePlansError } = await supabase
             .from("weekly_meal_plans")
             .select("id")
             .eq("user_id", userId)
             .eq("is_active", true)
             .order("created_at", { ascending: false })
             .limit(1);
+          if (activePlansError) {
+            console.error(
+              "[nutritionActions] Failed to look up active meal plan:",
+              activePlansError,
+            );
+          }
           activePlanRowId = activePlans?.[0]?.id || null;
         } catch (activePlanLookupError) {
           console.warn(
@@ -121,7 +126,9 @@ export const createMealPlanActions = (set: any, get: () => NutritionState) => ({
       }
 
       const planRowId = activePlanRowId || planId;
-      const hasConfirmedDatabaseId = Boolean(activePlanRowId || plan.databaseId);
+      const hasConfirmedDatabaseId = Boolean(
+        activePlanRowId || plan.databaseId,
+      );
       const planDataWithDbId = hasConfirmedDatabaseId
         ? {
             ...plan,
@@ -134,9 +141,11 @@ export const createMealPlanActions = (set: any, get: () => NutritionState) => ({
       const weeklyMealPlanData = {
         id: planRowId,
         user_id: userId,
-        plan_title: planDataWithDbId.planTitle || `Week ${plan.weekNumber} Plan`,
+        plan_title:
+          planDataWithDbId.planTitle || `Week ${plan.weekNumber} Plan`,
         plan_description:
-          planDataWithDbId.planDescription || `${plan.meals.length} meals planned`,
+          planDataWithDbId.planDescription ||
+          `${plan.meals.length} meals planned`,
         week_number: plan.weekNumber || 1,
         total_meals: plan.meals.length,
         total_calories:

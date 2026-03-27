@@ -17,6 +17,7 @@ import {
   AchievementTier,
 } from "../services/achievementEngine";
 import { achievementDataService } from "../services/achievementData";
+import { resolveCurrentWeightFromStores } from "../services/currentWeight";
 import { CompletedSession } from "./fitness/types";
 import { getLocalDateString } from "../utils/weekUtils";
 
@@ -162,7 +163,9 @@ const buildAchievementActivityData = ({
     steps: healthMetrics?.steps || 0,
     sleepHours: healthMetrics?.sleepHours || 0,
     weightGoalAchieved: isWeightGoalAchieved(
-      bodyAnalysis?.current_weight_kg,
+      resolveCurrentWeightFromStores({
+        bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
+      }).value,
       bodyAnalysis?.target_weight_kg,
     ),
   };
@@ -652,24 +655,23 @@ export const useAchievementStore = create<AchievementStore>()(
           return;
         }
 
-        // Build a set of unique date strings (YYYY-MM-DD) for all completed sessions
+        // Build a set of unique LOCAL date strings (YYYY-MM-DD) for all completed sessions.
+        // Must use getLocalDateString (not toISOString) to avoid timezone mismatches
+        // where UTC date differs from the user's local date.
         const completedDates = new Set<string>();
         sessions
           .filter((s) => s.completedAt)
           .forEach((s) => {
-            completedDates.add(
-              new Date(s.completedAt!).toISOString().split("T")[0],
-            );
+            completedDates.add(getLocalDateString(s.completedAt!));
           });
 
         // Walk backward from today counting consecutive days
         let streak = 0;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const checkDate = new Date(today);
+        const checkDate = new Date();
+        checkDate.setHours(0, 0, 0, 0);
 
         while (true) {
-          const dateStr = checkDate.toISOString().split("T")[0];
+          const dateStr = getLocalDateString(checkDate);
           if (completedDates.has(dateStr)) {
             streak++;
             checkDate.setDate(checkDate.getDate() - 1);
@@ -801,14 +803,10 @@ export const useAchievementStore = create<AchievementStore>()(
           completedSessions
             .filter((session) => session.completedAt)
             .forEach((session) => {
-              activeDays.add(
-                new Date(session.completedAt).toISOString().split("T")[0],
-              );
+              activeDays.add(getLocalDateString(session.completedAt));
             });
           completedMeals.forEach((progress: any) => {
-            activeDays.add(
-              new Date(progress.completedAt).toISOString().split("T")[0],
-            );
+            activeDays.add(getLocalDateString(progress.completedAt));
           });
 
           const workoutTypeCounts = completedSessions.reduce(
@@ -862,7 +860,9 @@ export const useAchievementStore = create<AchievementStore>()(
               ? 1
               : 0;
           const consistentDays = useAchievementStore.getState().currentStreak;
-          const currentWeight = bodyAnalysis?.current_weight_kg;
+          const currentWeight = resolveCurrentWeightFromStores({
+            bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
+          }).value;
           const targetWeight = bodyAnalysis?.target_weight_kg;
           const baselineWeight = weightHistory[0]?.weight ?? currentWeight;
           const weightGoalAchieved =

@@ -81,6 +81,9 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
                     <TouchableOpacity
                       style={styles.closeButton}
                       onPress={onClose}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Close goal adjustment"
                     >
                       <Ionicons
                         name="close"
@@ -153,6 +156,8 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
                       style={styles.cancelButton}
                       onPress={onClose}
                       activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityLabel="Cancel goal adjustment"
                     >
                       <Text style={styles.cancelButtonText}>Cancel</Text>
                     </TouchableOpacity>
@@ -165,6 +170,8 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
                       onPress={handleSelectAlternative}
                       disabled={selectedIndex === null}
                       activeOpacity={0.8}
+                      accessibilityRole="button"
+                      accessibilityLabel="Apply goal adjustment"
                     >
                       <LinearGradient
                         colors={
@@ -239,9 +246,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: ResponsiveTheme.spacing.md,
     right: ResponsiveTheme.spacing.md,
-    width: rw(32),
-    height: rw(32),
-    borderRadius: rw(16),
+    width: Math.max(rw(32), 44),
+    height: Math.max(rw(32), 44),
+    borderRadius: Math.max(rw(16), 22),
     backgroundColor: ResponsiveTheme.colors.glassSurface,
     alignItems: "center",
     justifyContent: "center",
@@ -345,7 +352,7 @@ const styles = StyleSheet.create({
 
   cancelButton: {
     flex: 1,
-    height: rf(48),
+    minHeight: 44,
     borderRadius: ResponsiveTheme.borderRadius.md,
     alignItems: "center",
     justifyContent: "center",
@@ -362,7 +369,7 @@ const styles = StyleSheet.create({
 
   applyButton: {
     flex: 2,
-    height: rf(48),
+    minHeight: 44,
     borderRadius: ResponsiveTheme.borderRadius.md,
     overflow: "hidden",
     shadowColor: ResponsiveTheme.colors.primary,

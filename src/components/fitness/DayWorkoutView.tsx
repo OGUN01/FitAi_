@@ -19,7 +19,7 @@ interface DayWorkoutViewProps {
   onClose: () => void;
 }
 
-export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
+export const DayWorkoutView: React.FC<DayWorkoutViewProps> = React.memo(({
   workout,
   onStartWorkout,
   onClose,
@@ -93,7 +93,7 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
         {/* Warmup Section */}
         {warmupExercises.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>🔥 Warmup</Text>
+            <Text style={styles.sectionTitle}>Warmup</Text>
             {warmupExercises.map((exercise, index) => (
               <GlassCard key={`warmup-${exercise.exerciseId}-${index}`} style={styles.exerciseCard}>
                 <View style={styles.exerciseContent}>
@@ -108,8 +108,8 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
                         "Exercise"}
                     </Text>
                     <Text style={styles.exerciseDetails}>
-                      {exercise.sets} sets × {exercise.reps} reps
-                      {exercise.restTime && ` • ${exercise.restTime}s rest`}
+                      {exercise.sets} sets x {exercise.reps} reps
+                      {exercise.restTime && ` - ${exercise.restTime}s rest`}
                     </Text>
                   </View>
                 </View>
@@ -121,7 +121,7 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
         {/* Main Workout Section */}
         {mainExercises.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>💪 Main Workout</Text>
+            <Text style={styles.sectionTitle}>Main Workout</Text>
             {mainExercises.map((exercise, index) => (
               <GlassCard key={`main-${exercise.exerciseId}-${index}`} style={styles.exerciseCard}>
                 <View style={styles.exerciseContent}>
@@ -136,8 +136,8 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
                         "Exercise"}
                     </Text>
                     <Text style={styles.exerciseDetails}>
-                      {exercise.sets} sets × {exercise.reps} reps
-                      {exercise.restTime && ` • ${exercise.restTime}s rest`}
+                      {exercise.sets} sets x {exercise.reps} reps
+                      {exercise.restTime && ` - ${exercise.restTime}s rest`}
                     </Text>
                     {exercise.exerciseData?.targetMuscles && (
                       <Text style={styles.targetMuscles}>
@@ -154,7 +154,7 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
         {/* Cooldown Section */}
         {cooldownExercises.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>🧘 Cooldown</Text>
+            <Text style={styles.sectionTitle}>Cooldown</Text>
             {cooldownExercises.map((exercise, index) => (
               <GlassCard key={`cooldown-${exercise.exerciseId}-${index}`} style={styles.exerciseCard}>
                 <View style={styles.exerciseContent}>
@@ -169,8 +169,8 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
                         "Exercise"}
                     </Text>
                     <Text style={styles.exerciseDetails}>
-                      {exercise.sets} sets × {exercise.reps} reps
-                      {exercise.restTime && ` • ${exercise.restTime}s rest`}
+                      {exercise.sets} sets x {exercise.reps} reps
+                      {exercise.restTime && ` - ${exercise.restTime}s rest`}
                     </Text>
                   </View>
                 </View>
@@ -202,7 +202,7 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

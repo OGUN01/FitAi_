@@ -7,28 +7,8 @@
 
 import { Env, DietJobMessage } from '../utils/types';
 import { updateJobStatus } from '../services/jobService';
-import { loadUserMetrics, loadUserProfile, loadUserPreferences } from '../services/userMetricsService';
-import { buildDietPrompt } from '../prompts/diet';
-import { DietResponseSchema } from '../utils/validation';
-import { adjustForProteinTarget } from '../utils/portionAdjustment';
+import { generateFreshDiet } from './dietGeneration';
 import { saveCachedData, CacheMetadata } from '../utils/cache';
-import { generateObject } from 'ai';
-import { createGateway } from 'ai';
-
-// ============================================================================
-// AI PROVIDER (copied from dietGeneration.ts)
-// ============================================================================
-
-function createAIProvider(env: Env, modelId: string) {
-	// Create gateway instance with explicit API key for Cloudflare Workers
-	const gatewayInstance = createGateway({
-		apiKey: env.AI_GATEWAY_API_KEY,
-	});
-
-	// Return model from gateway - use gemini-2.5-flash which is confirmed working
-	const model = modelId || 'google/gemini-2.5-flash';
-	return gatewayInstance(model);
-}
 
 // ============================================================================
 // QUEUE CONSUMER
@@ -54,68 +34,35 @@ export async function consumeDietJobs(batch: MessageBatch<DietJobMessage>, env: 
 				started_at: new Date().toISOString(),
 			});
 
-			// 2. Load user data from database
-			const [metrics, profile, preferences] = await Promise.all([
-				loadUserMetrics(env, userId),
-				loadUserProfile(env, userId),
-				loadUserPreferences(env, userId),
-			]);
+			// 2. Reuse the main generation pipeline so async jobs and sync requests
+			// share the same overrides, validation, prompt context, and adjustments.
+			const { diet: adjustedDiet, metadata: generationMetadata } = await generateFreshDiet(
+				params as any,
+				env,
+				userId,
+			);
 
-			console.log(`[QueueConsumer] Loaded user data for ${userId}:`, {
-				calories: metrics.daily_calories,
-				protein: metrics.daily_protein_g,
-				dietType: preferences.diet?.diet_type,
-			});
+			const aiGenerationTime = generationMetadata.aiGenerationTime;
 
-			// 3. Build AI prompt
-			const prompt = buildDietPrompt(metrics, profile, preferences.diet, params.daysCount || 1);
-
-			// 4. Generate with AI (the slow part - 30-120s)
-			const model = createAIProvider(env, params.model || 'google/gemini-2.5-flash');
-
-			console.log(`[QueueConsumer] Calling AI model: ${params.model || 'google/gemini-2.5-flash'}`);
-			const aiStartTime = Date.now();
-
-			const result = await generateObject({
-				model,
-				schema: DietResponseSchema,
-				prompt,
-				temperature: params.temperature || 0.7,
-			});
-
-			const aiGenerationTime = Date.now() - aiStartTime;
-			console.log(`[QueueConsumer] AI generation completed in ${aiGenerationTime}ms`);
-
-			// 5. Validate response
-			if (!result.object || !result.object.meals || result.object.meals.length === 0) {
-				throw new Error('AI returned empty or invalid response');
-			}
-
-			// 6. Adjust portions to match targets
-			const adjustedDiet = adjustForProteinTarget(result.object, metrics.daily_calories, metrics.daily_protein_g);
-
-			// 7. Prepare final result
+			// 3. Prepare final result
 			const finalResult = {
 				...adjustedDiet,
 				generatedAt: new Date().toISOString(),
 				metadata: {
-					model: params.model || 'google/gemini-2.5-flash',
-					aiGenerationTime,
-					tokensUsed: result.usage?.totalTokens,
-					validationPassed: true,
+					...generationMetadata,
 				},
 			};
 
-			// 8. Save to cache (KV + DB)
+			// 4. Save to cache (KV + DB)
 			const cacheMetadata: CacheMetadata = {
 				modelUsed: params.model || 'google/gemini-2.5-flash',
 				generationTimeMs: aiGenerationTime,
-				tokensUsed: result.usage?.totalTokens,
+				tokensUsed: generationMetadata.tokensUsed,
 			};
 
 			await saveCachedData(env, 'meal', cacheKey, finalResult, cacheMetadata, userId);
 
-			// 9. Update job as completed
+			// 5. Update job as completed
 			const totalTime = Date.now() - startTime;
 			await updateJobStatus(env, jobId, 'completed', {
 				completed_at: new Date().toISOString(),
@@ -126,7 +73,7 @@ export async function consumeDietJobs(batch: MessageBatch<DietJobMessage>, env: 
 
 			console.log(`[QueueConsumer] Job ${jobId} completed successfully in ${totalTime}ms`);
 
-			// 10. Acknowledge message (success)
+			// 6. Acknowledge message (success)
 			message.ack();
 		} catch (error: any) {
 			const totalTime = Date.now() - startTime;

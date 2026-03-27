@@ -2,9 +2,9 @@
 // Handles health metrics, sync status, and integration preferences
 
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { persist } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { safeAsyncStorage } from "../utils/safeAsyncStorage";
+import { createDebouncedStorage } from "../utils/safeAsyncStorage";
 import {
   healthKitService,
   HealthKitData,
@@ -22,8 +22,10 @@ import {
   MetricSource,
   DataSource,
 } from "../services/healthConnect";
+import { resolveCurrentWeightForUser } from "../services/currentWeight";
 import { weightTrackingService } from "../services/WeightTrackingService";
 import { useProfileStore } from "./profileStore";
+import { useAuthStore } from "./authStore";
 
 function mergeRecentWorkouts(
   existing: HealthMetrics["recentWorkouts"],
@@ -41,12 +43,24 @@ function mergeRecentWorkouts(
     .slice(0, 20);
 }
 
-function syncWeightToProfile(weight?: number) {
+async function syncWeightToProfile(weight?: number) {
   if (!weight || weight <= 0) return;
+  const userId = useAuthStore.getState().user?.id;
+  const resolvedCurrentWeight = userId
+    ? await resolveCurrentWeightForUser(userId, {
+        bodyAnalysisWeight: weight,
+      })
+    : {
+        value: weight,
+        source: "body_analysis" as const,
+        asOf: null,
+      };
+  const canonicalWeight = resolvedCurrentWeight.value ?? weight;
+
   useProfileStore.getState().updateBodyAnalysis({
-    current_weight_kg: weight,
+    current_weight_kg: canonicalWeight,
   });
-  weightTrackingService.setWeight(weight);
+  weightTrackingService.setWeight(canonicalWeight);
 }
 
 // Re-export MetricSource for UI components
@@ -484,7 +498,7 @@ export const useHealthDataStore = create<HealthDataState>()(
               syncStatus: "success",
             }));
 
-            syncWeightToProfile(healthData.data?.weight);
+            await syncWeightToProfile(healthData.data?.weight);
 
             // Log sources for debugging
 
@@ -573,7 +587,7 @@ export const useHealthDataStore = create<HealthDataState>()(
               syncError: undefined,
             });
 
-            syncWeightToProfile(syncResult.data.bodyWeight);
+            await syncWeightToProfile(syncResult.data.bodyWeight);
 
 
             // Generate health tip based on new data
@@ -594,7 +608,7 @@ export const useHealthDataStore = create<HealthDataState>()(
       },
 
       updateHealthMetrics: (newMetrics: Partial<HealthMetrics>): void => {
-        syncWeightToProfile(newMetrics.weight);
+        void syncWeightToProfile(newMetrics.weight);
         set((state) => ({
           metrics: {
             ...state.metrics,
@@ -1183,7 +1197,7 @@ export const useHealthDataStore = create<HealthDataState>()(
               syncError: undefined,
             });
 
-            syncWeightToProfile(result.data.weight);
+            await syncWeightToProfile(result.data.weight);
 
           } else {
             set({
@@ -1345,7 +1359,7 @@ export const useHealthDataStore = create<HealthDataState>()(
     }),
     {
       name: "fitai-health-data-store",
-      storage: createJSONStorage(() => safeAsyncStorage),
+      storage: createDebouncedStorage(),
       partialize: (state) => ({
         metrics: state.metrics,
         settings: state.settings,

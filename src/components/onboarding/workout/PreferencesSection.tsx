@@ -35,6 +35,12 @@ export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
   toggleWorkoutTime,
   showInfoTooltip,
 }) => {
+  const handleInfoPress =
+    (title: string, description: string) => (event: any) => {
+      event.stopPropagation?.();
+      showInfoTooltip(title, description);
+    };
+
   const formatTime = (minutes: number): string => {
     if (minutes < 60) return `${minutes} min`;
     const hours = Math.floor(minutes / 60);
@@ -111,10 +117,13 @@ export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                       }
                     />
                     <TouchableOpacity
-                      onPress={() =>
-                        showInfoTooltip(option.title, option.description)
-                      }
+                      onPress={handleInfoPress(
+                        option.title,
+                        option.description,
+                      )}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`More info about ${option.title}`}
                     >
                       <Ionicons
                         name="information-circle-outline"

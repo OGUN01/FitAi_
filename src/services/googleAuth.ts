@@ -88,7 +88,9 @@ class GoogleAuthService {
               return manifestValue;
             }
             
-            console.warn(`❌ ${key} not found in any location`);
+            if (Platform.OS === 'ios' || !key.includes('IOS')) {
+              console.warn(`❌ ${key} not found in any location`);
+            }
             return null;
           } catch (error) {
             console.error(`Error accessing ${key}:`, error);

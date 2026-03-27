@@ -4,11 +4,13 @@ import {
   BodyMetrics,
   DietPreferences,
 } from "../types/user";
+import { AdvancedReviewData } from "../types/onboarding";
 import { Meal, DailyMealPlan, AIResponse } from "../types/ai";
 import { WeeklyMealPlan, AIServiceMetadata } from "./types";
 import { handleError } from "./utils";
 import { fitaiWorkersClient } from "../services/fitaiWorkersClient";
 import { transformForDietRequest } from "../services/aiRequestTransformers";
+import { resolveCurrentWeightFromStores } from "../services/currentWeight";
 import { getLocalDateString } from "../utils/weekUtils";
 
 import { transformDietResponseToWeeklyPlan } from "../services/aiRequestTransformers";
@@ -30,6 +32,12 @@ export async function generateMeal(
       fitnessGoals,
       preferences.bodyMetrics,
       preferences.dietPreferences,
+      undefined,
+      {
+        currentWeightKg: resolveCurrentWeightFromStores({
+          bodyAnalysisWeight: preferences.bodyMetrics?.current_weight_kg,
+        }).value,
+      },
     );
 
     const response = await fitaiWorkersClient.generateDietPlan(request);
@@ -83,6 +91,12 @@ export async function generateDailyMealPlan(
       fitnessGoals,
       preferences.bodyMetrics,
       preferences.dietPreferences,
+      undefined,
+      {
+        currentWeightKg: resolveCurrentWeightFromStores({
+          bodyAnalysisWeight: preferences.bodyMetrics?.current_weight_kg,
+        }).value,
+      },
     );
 
     const response = await fitaiWorkersClient.generateDietPlan(request);
@@ -128,6 +142,7 @@ export async function generateWeeklyMealPlan(
     bodyMetrics?: BodyMetrics;
     dietPreferences?: DietPreferences;
     calorieTarget?: number;
+    advancedReview?: AdvancedReviewData | null;
   } = {},
   updateMetadata: (metadata: AIServiceMetadata) => void,
 ): Promise<AIResponse<WeeklyMealPlan>> {
@@ -139,6 +154,13 @@ export async function generateWeeklyMealPlan(
       options.bodyMetrics,
       options.dietPreferences,
       options.calorieTarget,
+      {
+        daysCount: 7,
+        advancedReview: options.advancedReview,
+        currentWeightKg: resolveCurrentWeightFromStores({
+          bodyAnalysisWeight: options.bodyMetrics?.current_weight_kg,
+        }).value,
+      },
     );
 
     const response = await fitaiWorkersClient.generateDietPlan(request);
@@ -155,7 +177,9 @@ export async function generateWeeklyMealPlan(
       };
     }
 
-    const weeklyPlan = transformDietResponseToWeeklyPlan(response, weekNumber);
+    const weeklyPlan = transformDietResponseToWeeklyPlan(response, weekNumber, {
+      requestedDaysCount: 7,
+    });
 
     if (!weeklyPlan) {
       return {

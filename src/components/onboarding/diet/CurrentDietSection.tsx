@@ -27,6 +27,12 @@ export const CurrentDietSection: React.FC<CurrentDietSectionProps> = ({
   updateField,
   showInfoTooltip,
 }) => {
+  const handleInfoPress =
+    (title: string, description: string) => (event: any) => {
+      event.stopPropagation?.();
+      showInfoTooltip(title, description);
+    };
+
   return (
     <GlassCard
       style={styles.sectionEdgeToEdge}
@@ -91,10 +97,13 @@ export const CurrentDietSection: React.FC<CurrentDietSectionProps> = ({
                       }
                     />
                     <TouchableOpacity
-                      onPress={() =>
-                        showInfoTooltip(option.title, option.description)
-                      }
+                      onPress={handleInfoPress(
+                        option.title,
+                        option.description,
+                      )}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`More info about ${option.title}`}
                     >
                       <Ionicons
                         name="information-circle-outline"

@@ -11,7 +11,7 @@ interface MealPlanViewProps {
   weeklyMealPlan: any;
   selectedDay: string;
   setSelectedDay: (day: any) => void;
-  getTodaysMeals: () => any[];
+  todaysMeals: any[];
   storeGetMealProgress: (id: string) => any;
   mealSchedule: any;
   handleStartMeal: (meal: any) => void;
@@ -25,11 +25,11 @@ interface MealPlanViewProps {
   calorieTarget: number;
 }
 
-export const MealPlanView: React.FC<MealPlanViewProps> = ({
+export const MealPlanView: React.FC<MealPlanViewProps> = React.memo(({
   weeklyMealPlan,
   selectedDay,
   setSelectedDay,
-  getTodaysMeals,
+  todaysMeals,
   storeGetMealProgress,
   mealSchedule,
   handleStartMeal,
@@ -96,9 +96,9 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
         </Text>
       </View>
 
-      {getTodaysMeals().length > 0 ? (
+      {todaysMeals.length > 0 ? (
         <View style={styles.premiumMealsContainer}>
-          {getTodaysMeals().map((meal) => {
+          {todaysMeals.map((meal) => {
             const progress = storeGetMealProgress(meal.id);
             const mealTime = getMealTime(meal.type as any, mealSchedule);
             return (
@@ -137,7 +137,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
       )}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   section: {

@@ -43,7 +43,6 @@ export const GifPlayerContent: React.FC<GifPlayerContentProps> = ({
   if (!exercise || !exercise.gifUrl) {
     return (
       <View style={[styles.placeholder, { height, width }]}>
-        <Text style={styles.placeholderEmoji}>🚨</Text>
         <Text style={styles.placeholderText}>Exercise Not Found</Text>
         <Text style={styles.placeholderSubtext}>ID: {exerciseId}</Text>
       </View>
@@ -61,7 +60,7 @@ export const GifPlayerContent: React.FC<GifPlayerContentProps> = ({
 
       {hasError ? (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorEmoji}>⚠️</Text>
+          <Text style={styles.errorEmoji}>!</Text>
           <Text style={styles.errorText}>Failed to load demonstration</Text>
           <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
             <Text style={styles.retryButtonText}>Try Again</Text>
@@ -93,7 +92,7 @@ export const GifPlayerContent: React.FC<GifPlayerContentProps> = ({
             />
 
             <View style={styles.zoomHint}>
-              <Text style={styles.zoomHintText}>🔍 Tap to zoom</Text>
+              <Text style={styles.zoomHintText}>Tap to zoom</Text>
             </View>
           </TouchableOpacity>
 
@@ -103,7 +102,7 @@ export const GifPlayerContent: React.FC<GifPlayerContentProps> = ({
             activeOpacity={0.7}
           >
             <View style={styles.playbackButton}>
-              <Text style={styles.playbackIcon}>{isPlaying ? "⏸️" : "▶️"}</Text>
+              <Text style={styles.playbackIcon}>{isPlaying ? "||" : ">"}</Text>
             </View>
           </TouchableOpacity>
         </>
@@ -128,7 +127,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
   },
 
   gif: {
@@ -183,11 +182,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderTopLeftRadius: ResponsiveTheme.borderRadius.lg,
     borderTopRightRadius: ResponsiveTheme.borderRadius.lg,
-  },
-
-  placeholderEmoji: {
-    fontSize: rf(48),
-    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   placeholderText: {

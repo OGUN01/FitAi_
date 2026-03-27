@@ -43,6 +43,21 @@ export interface BarcodeSearchResult {
   isAIEstimated?: boolean;
 }
 
+export type BarcodeLookupPath =
+  | "sqlite"
+  | "supabase"
+  | "off_world"
+  | "off_india"
+  | "ai_estimate";
+
+export interface BarcodeSearchDetailedResult {
+  outcome: "match" | "not_found" | "transient_failure";
+  result: BarcodeSearchResult | null;
+  lookupPath: BarcodeLookupPath[];
+  retryable: boolean;
+  error?: string;
+}
+
 interface USDAFood {
   fdcId: number;
   description: string;
@@ -482,8 +497,52 @@ export class FreeNutritionAPIs {
     return Math.round(30 + wordMatchRatio * 50); // 30-80 range
   }
 
-  async searchByBarcode(barcode: string): Promise<BarcodeSearchResult | null> {
-    if (barcodeCache.has(barcode)) return barcodeCache.get(barcode)!;
+  private cacheBarcodeResult(
+    barcode: string,
+    result: BarcodeSearchResult,
+  ): void {
+    if (barcodeCache.size >= 100) {
+      const firstKey = barcodeCache.keys().next().value;
+      if (firstKey !== undefined) barcodeCache.delete(firstKey);
+    }
+    barcodeCache.set(barcode, result);
+  }
+
+  private deriveLookupPathFromSource(source: string): BarcodeLookupPath[] {
+    if (source.includes("openfoodfacts-india")) {
+      return source.includes("gemini-estimation")
+        ? ["off_india", "ai_estimate"]
+        : ["off_india"];
+    }
+
+    if (source.includes("openfoodfacts")) {
+      return source.includes("gemini-estimation")
+        ? ["off_world", "ai_estimate"]
+        : ["off_world"];
+    }
+
+    if (source.includes("gemini-estimation")) {
+      return ["ai_estimate"];
+    }
+
+    return [];
+  }
+
+  async searchByBarcodeDetailed(
+    barcode: string,
+  ): Promise<BarcodeSearchDetailedResult> {
+    if (barcodeCache.has(barcode)) {
+      const cachedResult = barcodeCache.get(barcode)!;
+      return {
+        outcome: "match",
+        result: cachedResult,
+        lookupPath: this.deriveLookupPathFromSource(cachedResult.source),
+        retryable: false,
+      };
+    }
+
+    const lookupPath: BarcodeLookupPath[] = ["off_world"];
+    const transientErrors: string[] = [];
 
     let offResult: BarcodeSearchResult | null = null;
     try {
@@ -492,10 +551,12 @@ export class FreeNutritionAPIs {
         fetch(offUrl, {
           headers: { "User-Agent": "FitAI/1.0 (fitai@example.com)" },
         }),
-        5000,
+        8000,
       );
 
-      if (response.ok) {
+      if (!response.ok) {
+        transientErrors.push(`OFF world HTTP ${response.status}`);
+      } else {
         const data = await response.json();
         if (data.status === 1 && data.product) {
           const product = data.product as OFFv2Product;
@@ -548,6 +609,9 @@ export class FreeNutritionAPIs {
       }
     } catch (error) {
       console.error("OpenFoodFacts barcode lookup failed:", error);
+      transientErrors.push(
+        error instanceof Error ? error.message : String(error),
+      );
     }
 
     if (offResult) {
@@ -559,6 +623,7 @@ export class FreeNutritionAPIs {
           offResult.productInfo.gs1Country || getCountryFromBarcode(barcode),
         );
         if (aiResult && aiResult.nutrition) {
+          lookupPath.push("ai_estimate");
           offResult.nutrition = aiResult.nutrition;
           offResult.needsNutritionEstimate = false;
           offResult.isAIEstimated = true;
@@ -566,15 +631,17 @@ export class FreeNutritionAPIs {
           offResult.source = "openfoodfacts+gemini-estimation";
         }
       }
-      if (barcodeCache.size >= 100) {
-        const firstKey = barcodeCache.keys().next().value;
-        if (firstKey !== undefined) barcodeCache.delete(firstKey);
-      }
-      barcodeCache.set(barcode, offResult);
-      return offResult;
+      this.cacheBarcodeResult(barcode, offResult);
+      return {
+        outcome: "match",
+        result: offResult,
+        lookupPath,
+        retryable: false,
+      };
     }
 
     const gs1Country = getCountryFromBarcode(barcode);
+    lookupPath.push("off_india");
 
     // Step 2: Try OFF India endpoint — 14K+ Indian products not indexed on OFF World
     let offIndiaResult: BarcodeSearchResult | null = null;
@@ -584,9 +651,11 @@ export class FreeNutritionAPIs {
         fetch(offIndiaUrl, {
           headers: { "User-Agent": "FitAI/1.0 (fitai@example.com)" },
         }),
-        5000,
+        8000,
       );
-      if (offIndiaResponse.ok) {
+      if (!offIndiaResponse.ok) {
+        transientErrors.push(`OFF India HTTP ${offIndiaResponse.status}`);
+      } else {
         const offIndiaData = await offIndiaResponse.json();
         if (offIndiaData.status === 1 && offIndiaData.product) {
           const p = offIndiaData.product as OFFv2Product;
@@ -630,6 +699,9 @@ export class FreeNutritionAPIs {
       }
     } catch (offIndiaErr) {
       console.error("[NutritionAPIs] OFF India lookup failed:", offIndiaErr);
+      transientErrors.push(
+        offIndiaErr instanceof Error ? offIndiaErr.message : String(offIndiaErr),
+      );
     }
 
     if (offIndiaResult) {
@@ -643,6 +715,7 @@ export class FreeNutritionAPIs {
           gs1Country || "",
         );
         if (aiResult && aiResult.nutrition) {
+          lookupPath.push("ai_estimate");
           offIndiaResult.nutrition = aiResult.nutrition;
           offIndiaResult.needsNutritionEstimate = false;
           offIndiaResult.isAIEstimated = true;
@@ -650,16 +723,36 @@ export class FreeNutritionAPIs {
           offIndiaResult.source = "openfoodfacts-india+gemini-estimation";
         }
       }
-      if (barcodeCache.size >= 100) {
-        const firstKey = barcodeCache.keys().next().value;
-        if (firstKey !== undefined) barcodeCache.delete(firstKey);
-      }
-      barcodeCache.set(barcode, offIndiaResult);
-      return offIndiaResult;
+      this.cacheBarcodeResult(barcode, offIndiaResult);
+      return {
+        outcome: "match",
+        result: offIndiaResult,
+        lookupPath,
+        retryable: false,
+      };
     }
 
-    // No product found in any database
-    return null;
+    if (transientErrors.length > 0) {
+      return {
+        outcome: "transient_failure",
+        result: null,
+        lookupPath,
+        retryable: true,
+        error: transientErrors[0],
+      };
+    }
+
+    return {
+      outcome: "not_found",
+      result: null,
+      lookupPath,
+      retryable: false,
+    };
+  }
+
+  async searchByBarcode(barcode: string): Promise<BarcodeSearchResult | null> {
+    const detailedResult = await this.searchByBarcodeDetailed(barcode);
+    return detailedResult.result;
   }
 
   /**

@@ -45,6 +45,12 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  const getFallbackDisplayName = (value: string) =>
+    value
+      .replace(/[_-]+/g, " ")
+      .trim()
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
   // Direct lookup by exercise ID with fallbacks, then name-based fuzzy match
   const exercise = useMemo(() => {
     // 1. Direct ID lookup
@@ -77,7 +83,11 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
 
 
   // Always prioritize database name over passed name to avoid showing IDs
-  const displayName = exercise?.name || exerciseName || "Exercise";
+  const displayName =
+    exercise?.name ||
+    exerciseName ||
+    (exerciseId ? getFallbackDisplayName(exerciseId) : "") ||
+    "Exercise";
 
   useEffect(() => {
     if (exercise?.gifUrl) {
@@ -127,14 +137,17 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
         animationType="fade"
         onRequestClose={toggleFullscreen}
       >
-        <StatusBar backgroundColor="rgba(0,0,0,0.9)" barStyle="light-content" />
+        <StatusBar barStyle="light-content" />
         <View style={styles.fullscreenOverlay}>
           <View style={styles.fullscreenContainer}>
             <TouchableOpacity
               style={styles.closeButton}
               onPress={toggleFullscreen}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={`Close ${displayName} fullscreen view`}
             >
-              <Text style={styles.closeButtonText}>✕</Text>
+              <Text style={styles.closeButtonText}>X</Text>
             </TouchableOpacity>
 
             <Text style={styles.fullscreenTitle}>{displayName}</Text>
@@ -151,7 +164,7 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
             />
 
             <Text style={styles.fullscreenHint}>
-              🔍 Maximum quality view • Tap × to close
+              Maximum quality view - tap X to close
             </Text>
           </View>
         </View>
@@ -171,7 +184,7 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
             </Text>
             {/* Quality indicator */}
             <View style={styles.qualityIndicator}>
-              <Text style={styles.qualityText}>🎬 Demo</Text>
+              <Text style={styles.qualityText}>Demo</Text>
             </View>
           </View>
         )}
@@ -181,14 +194,14 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
           {exercise.equipments?.length > 0 && (
             <View style={styles.infoChip}>
               <Text style={styles.infoChipText}>
-                🏋️ {exercise.equipments?.[0] || "Equipment"}
+                Equipment: {exercise.equipments?.[0] || "Equipment"}
               </Text>
             </View>
           )}
           {exercise.targetMuscles?.length > 0 && (
             <View style={styles.infoChip}>
               <Text style={styles.infoChipText}>
-                💪 {exercise.targetMuscles?.[0] || "Muscle"}
+                Target: {exercise.targetMuscles?.[0] || "Muscle"}
               </Text>
             </View>
           )}
@@ -199,9 +212,11 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
           <TouchableOpacity
             style={styles.instructionsButton}
             onPress={onInstructionsPress}
+            accessibilityRole="button"
+            accessibilityLabel={`View ${displayName} instructions`}
           >
             <Text style={styles.instructionsButtonText}>
-              📋 View Instructions ({exercise.instructions?.length || 0} steps)
+              View Instructions ({exercise.instructions?.length || 0} steps)
             </Text>
           </TouchableOpacity>
         )}
@@ -213,9 +228,20 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
     if (!exercise || !exercise.gifUrl) {
       return (
         <View style={[styles.placeholder, { height, width }]}>
-          <Text style={styles.placeholderEmoji}>🚨</Text>
-          <Text style={styles.placeholderText}>Exercise Not Found</Text>
-          <Text style={styles.placeholderSubtext}>ID: {exerciseId}</Text>
+          <Text style={styles.placeholderText}>Demo unavailable</Text>
+          <Text style={styles.placeholderSubtext}>
+            We could not load the movement demo for {displayName}.
+          </Text>
+          {showInstructions && onInstructionsPress ? (
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={onInstructionsPress}
+              accessibilityRole="button"
+              accessibilityLabel={`View ${displayName} instructions`}
+            >
+              <Text style={styles.retryButtonText}>View Instructions</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       );
     }
@@ -231,7 +257,7 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
 
         {hasError ? (
           <View style={styles.errorContainer}>
-            <Text style={styles.errorEmoji}>⚠️</Text>
+            <Text style={styles.errorEmoji}>!</Text>
             <Text style={styles.errorText}>Failed to load demonstration</Text>
             <TouchableOpacity
               style={styles.retryButton}
@@ -239,6 +265,8 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
                 setHasError(false);
                 setIsLoading(true);
               }}
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading exercise demonstration"
             >
               <Text style={styles.retryButtonText}>Try Again</Text>
             </TouchableOpacity>
@@ -270,7 +298,7 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
 
               {/* Zoom hint overlay */}
               <View style={styles.zoomHint}>
-                <Text style={styles.zoomHintText}>🔍 Tap to zoom</Text>
+                <Text style={styles.zoomHintText}>Tap to zoom</Text>
               </View>
             </TouchableOpacity>
 
@@ -279,10 +307,12 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
               style={styles.playbackOverlay}
               onPress={togglePlayback}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={isPlaying ? "Pause exercise demonstration" : "Play exercise demonstration"}
             >
               <View style={styles.playbackButton}>
                 <Text style={styles.playbackIcon}>
-                  {isPlaying ? "⏸️" : "▶️"}
+                  {isPlaying ? "||" : ">"}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -368,9 +398,9 @@ const styles = StyleSheet.create({
 
   playbackButton: {
     backgroundColor: "rgba(0, 0, 0, 0.6)",
-    borderRadius: rbr(20),
-    width: rs(40),
-    height: rs(40),
+    borderRadius: Math.max(rbr(20), 22),
+    width: Math.max(rs(40), 44),
+    height: Math.max(rs(40), 44),
     justifyContent: "center",
     alignItems: "center",
   },
@@ -387,23 +417,19 @@ const styles = StyleSheet.create({
     borderTopRightRadius: ResponsiveTheme.borderRadius.lg,
   },
 
-  placeholderEmoji: {
-    fontSize: rf(48),
-    marginBottom: ResponsiveTheme.spacing.md,
-  },
-
   placeholderText: {
     fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    color: ResponsiveTheme.colors.text,
     textAlign: "center",
     marginBottom: ResponsiveTheme.spacing.sm,
-    fontWeight: "500",
+    fontWeight: "600",
   },
 
   placeholderSubtext: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   errorContainer: {
@@ -428,7 +454,9 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.primary,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingVertical: ResponsiveTheme.spacing.sm,
+    minHeight: 44,
     borderRadius: ResponsiveTheme.borderRadius.md,
+    justifyContent: "center",
   },
 
   retryButtonText: {
@@ -495,8 +523,10 @@ const styles = StyleSheet.create({
     borderColor: ResponsiveTheme.colors.primary + "30",
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
+    minHeight: 44,
     borderRadius: ResponsiveTheme.borderRadius.md,
     alignSelf: "flex-start",
+    justifyContent: "center",
   },
 
   instructionsButtonText: {
@@ -544,9 +574,9 @@ const styles = StyleSheet.create({
     right: rp(20),
     zIndex: 10,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: rbr(20),
-    width: rs(40),
-    height: rs(40),
+    borderRadius: Math.max(rbr(20), 22),
+    width: Math.max(rs(40), 44),
+    height: Math.max(rs(40), 44),
     justifyContent: "center",
     alignItems: "center",
   },

@@ -1,5 +1,6 @@
 import { WeeklyWorkoutPlan, DayWorkout } from "../../ai";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import type { WorkoutTemplate } from "../../services/workoutTemplateService";
 
 export interface WorkoutProgress {
   workoutId: string;
@@ -7,8 +8,8 @@ export interface WorkoutProgress {
   completedAt?: string;
   sessionId?: string;
   // Persisted on partial exit to enable accurate resume
-  exerciseIndex?: number;   // last active exercise index when user exited
-  caloriesBurned?: number;  // actual calories burned up to exit point
+  exerciseIndex?: number; // last active exercise index when user exited
+  caloriesBurned?: number; // actual calories burned up to exit point
 }
 
 // Computed workout stats — SSOT returned by getCompletedWorkoutStats selectors
@@ -17,8 +18,6 @@ export interface CompletedWorkoutStats {
   totalCalories: number;
   totalDuration: number;
 }
-
-
 
 export interface CurrentWorkoutSession {
   workoutId: string;
@@ -31,6 +30,7 @@ export interface CurrentWorkoutSession {
       reps: number;
       weight: number;
       completed: boolean;
+      setType?: string;
     }>;
   }>;
 }
@@ -43,9 +43,15 @@ export interface FitnessState {
 
   // Workout progress tracking
   workoutProgress: Record<string, WorkoutProgress>;
+  lastProgressDate: string; // YYYY-MM-DD — guards day-boundary reset
 
   // Current workout session
   currentWorkoutSession: CurrentWorkoutSession | null;
+
+  // Mesocycle tracking
+  mesocycleStartDate: string | null;
+  setMesocycleStartDate: (date: string) => void;
+  getMesocycleWeek: () => number;
 
   // Actions
   setWeeklyWorkoutPlan: (plan: WeeklyWorkoutPlan | null) => void;
@@ -60,7 +66,11 @@ export interface FitnessState {
     progress: number,
     metadata?: { exerciseIndex?: number; caloriesBurned?: number },
   ) => void;
-  completeWorkout: (workoutId: string, sessionId?: string, caloriesBurned?: number) => Promise<void>;
+  completeWorkout: (
+    workoutId: string,
+    sessionId?: string,
+    caloriesBurned?: number,
+  ) => Promise<void>;
   getWorkoutProgress: (workoutId: string) => WorkoutProgress | null;
 
   // Computed selectors - SINGLE SOURCE OF TRUTH
@@ -69,6 +79,10 @@ export interface FitnessState {
 
   // Workout session actions
   startWorkoutSession: (workout: DayWorkout) => Promise<string>;
+  startTemplateSession: (
+    template: WorkoutTemplate,
+    userId?: string,
+  ) => Promise<string>;
   endWorkoutSession: (sessionId: string) => Promise<void>;
   updateExerciseProgress: (
     exerciseId: string,
@@ -76,6 +90,19 @@ export interface FitnessState {
     reps: number,
     weight: number,
   ) => void;
+  updateSetData: (
+    exerciseId: string,
+    setIndex: number,
+    data: {
+      weightKg: number;
+      reps: number;
+      setType: string;
+      completed: boolean;
+    },
+  ) => void;
+
+  // Day-boundary reset (clears stale partial progress on new day)
+  checkAndResetProgressIfNewDay: () => void;
 
   // Data persistence
   persistData: () => Promise<void>;
@@ -93,8 +120,8 @@ export interface FitnessState {
 
   // Completed sessions — single source of truth for all stats
   completedSessions: CompletedSession[];
-  completedSessionsHydrated: boolean;   // NOT persisted — guards one-time backfill
-  _hasHydrated: boolean;                 // NOT persisted — set true by onRehydrateStorage
+  completedSessionsHydrated: boolean; // NOT persisted — guards one-time backfill
+  _hasHydrated: boolean; // NOT persisted — set true by onRehydrateStorage
 
   // Active extra (quick) workout session — null when idle or completed
   activeExtraSession: ActiveExtraSession | null;
@@ -102,12 +129,23 @@ export interface FitnessState {
   updateActiveExtraProgress: (exerciseIndex: number) => void;
   clearActiveExtraSession: () => void;
 
+  restTimerEnabled: boolean;
+  setRestTimerEnabled: (enabled: boolean) => void;
+
   // New actions
   addCompletedSession: (session: CompletedSession) => void;
   markCompletedSessionsHydrated: () => void;
   setHasHydrated: () => void;
-  getPlannedSessionStats: (weekStart: string) => { count: number; totalCalories: number; totalDuration: number };
-  getExtraSessionStats: (weekStart: string) => { count: number; totalCalories: number; totalDuration: number };
+  getPlannedSessionStats: (weekStart: string) => {
+    count: number;
+    totalCalories: number;
+    totalDuration: number;
+  };
+  getExtraSessionStats: (weekStart: string) => {
+    count: number;
+    totalCalories: number;
+    totalDuration: number;
+  };
   getAllSessionCalories: (dateStr: string) => number;
 }
 
@@ -119,45 +157,45 @@ export const setWorkoutSessionsChannel = (channel: RealtimeChannel | null) => {
 };
 
 export interface CompletedSession {
-  sessionId: string;           // UUID, unique per completion
-  type: 'planned' | 'extra';   // enum — extensible (e.g. 'recovery' later)
-  workoutId: string;           // plan workout ID ('planned') or generated UUID ('extra')
-  plannedDayKey?: string;      // canonical planned day owner for planned workouts
-  planSlotKey?: string;        // canonical slot key within the weekly plan (e.g. monday:0)
+  sessionId: string; // UUID, unique per completion
+  type: "planned" | "extra"; // enum — extensible (e.g. 'recovery' later)
+  workoutId: string; // plan workout ID ('planned') or generated UUID ('extra')
+  plannedDayKey?: string; // canonical planned day owner for planned workouts
+  planSlotKey?: string; // canonical slot key within the weekly plan (e.g. monday:0)
   workoutSnapshot: {
     title: string;
     category: string;
-    duration: number;          // planned/estimated minutes
+    duration: number; // planned/estimated minutes
     exercises: Array<{
       name: string;
       sets: number;
       reps: number;
       exerciseId?: string;
-      duration?: number;       // seconds, for time-based exercises
-      restTime?: number;       // seconds between sets
+      duration?: number; // seconds, for time-based exercises
+      restTime?: number; // seconds between sets
     }>;
   };
-  caloriesBurned: number;      // MET-calculated at completion; 0 if weight unavailable
-  durationMinutes: number;     // actual elapsed time
-  completedAt: string;         // ISO timestamp
-  weekStart: string;           // ISO date of Monday of that week (YYYY-MM-DD)
+  caloriesBurned: number; // MET-calculated at completion; 0 if weight unavailable
+  durationMinutes: number; // actual elapsed time
+  completedAt: string; // ISO timestamp
+  weekStart: string; // ISO date of Monday of that week (YYYY-MM-DD)
 }
 
 // Persisted when a quick workout is started but not yet completed.
 // Enables RESUME: navigate back to the exact exercise with the same workout.
 export interface ActiveExtraSession {
-  templateId: string;      // matches ExtraWorkoutTemplate.id — links card to session
-  workout: DayWorkout;     // full generated workout (needed to reconstruct navigation)
-  sessionId: string;       // UUID for this session
-  exerciseIndex: number;   // last saved exercise position (updated on exit)
-  startedAt: string;       // ISO timestamp
+  templateId: string; // matches ExtraWorkoutTemplate.id — links card to session
+  workout: DayWorkout; // full generated workout (needed to reconstruct navigation)
+  sessionId: string; // UUID for this session
+  exerciseIndex: number; // last saved exercise position (updated on exit)
+  startedAt: string; // ISO timestamp
 }
 
 export interface ExtraWorkoutTemplate {
   id: string;
   title: string;
-  category: string;            // 'hiit' | 'cardio' | 'strength' | 'flexibility'
-  duration: number;            // minutes
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  estimatedCalories: number;   // display-only — never used in calculations
+  category: string; // 'hiit' | 'cardio' | 'strength' | 'flexibility'
+  duration: number; // minutes
+  difficulty: "beginner" | "intermediate" | "advanced";
+  estimatedCalories: number; // display-only — never used in calculations
 }

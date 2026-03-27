@@ -1,9 +1,17 @@
 {
-  "active_plan": "D:\\FitAi\\FitAI\\.sisyphus\\plans\\phase2-barcode-database.md",
-  "started_at": "2026-02-28T17:30:51.256Z",
+  "active_plan": "D:\\FitAi\\FitAI\\.sisyphus\\plans\\workout-progressive-overload.md",
+  "started_at": "2026-03-26T09:40:46.057Z",
   "session_ids": [
-    "ses_35bc28c54ffeyM7Zj5ccKl3gjp"
+    "ses_2d6dce1e7ffe1ENgQOwG1sbULO",
+    "ses_2d67493b0ffeCNYNA9M4u2Zugq",
+    "ses_2d660ec93ffeeA6pP2vZvPFGT2",
+    "ses_2d65230cdffeBDTvP9DG2Evq7J",
+    "ses_2d6387645ffegNMxQ74GUGIWGF",
+    "ses_2d61fe49dffepLq5iqSJ7HWGKw",
+    "ses_2d5e755bfffeMiDPunq9DwQdJf",
+    "ses_2d5d4b4f8ffeHJ9QMd23lcTpW0",
+    "ses_2d5c8b208ffezkl30M72hTEMa3"
   ],
-  "plan_name": "phase2-barcode-database",
+  "plan_name": "workout-progressive-overload",
   "agent": "atlas"
 }

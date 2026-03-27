@@ -16,7 +16,7 @@ interface ProgressHeaderProps {
   onShare: () => void;
 }
 
-export const ProgressHeader: React.FC<ProgressHeaderProps> = ({
+export const ProgressHeader: React.FC<ProgressHeaderProps> = React.memo(({
   navigation,
   trackBStatus,
   showAnalytics,
@@ -85,7 +85,7 @@ export const ProgressHeader: React.FC<ProgressHeaderProps> = ({
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   header: {
@@ -103,8 +103,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backButton: {
-    width: rw(40),
-    height: rh(40),
+    width: Math.max(rw(40), 44),
+    height: Math.max(rh(40), 44),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     justifyContent: "center",
@@ -136,16 +136,16 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.primary,
   },
   addButton: {
-    width: rs(36),
-    height: rs(36),
-    borderRadius: rs(18),
+    width: Math.max(rs(36), 44),
+    height: Math.max(rs(36), 44),
+    borderRadius: Math.max(rs(18), 22),
     backgroundColor: ResponsiveTheme.colors.primary,
     justifyContent: "center",
     alignItems: "center",
   },
   shareButton: {
-    width: rw(40),
-    height: rh(40),
+    width: Math.max(rw(40), 44),
+    height: Math.max(rh(40), 44),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     justifyContent: "center",

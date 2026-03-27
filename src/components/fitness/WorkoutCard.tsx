@@ -2,13 +2,13 @@ import React, { memo } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
   Pressable,
   StyleSheet,
   Animated,
   StyleProp,
   ViewStyle,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Card, Button } from "../ui";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rp, rbr } from "../../utils/responsive";
@@ -19,12 +19,11 @@ interface WorkoutCardProps {
   onStart: () => void;
   onViewDetails?: () => void;
   isInProgress?: boolean;
-  progress?: number; // 0-100
+  progress?: number;
   style?: StyleProp<ViewStyle>;
   animatedValue?: Animated.Value;
 }
 
-// PERF-010 FIX: Wrap component in React.memo to prevent unnecessary re-renders in FlatList
 export const WorkoutCard: React.FC<WorkoutCardProps> = memo(
   ({
     workout,
@@ -48,17 +47,19 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = memo(
       }
     };
 
-    const getCategoryIcon = (category: string) => {
-      const icons: Record<string, string> = {
-        strength: "💪",
-        cardio: "🏃",
-        flexibility: "🧘",
-        hiit: "🔥",
-        yoga: "🕉️",
-        pilates: "🤸",
-        hybrid: "⚡",
+    const getCategoryIcon = (
+      category: string,
+    ): keyof typeof Ionicons.glyphMap => {
+      const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
+        strength: "barbell-outline",
+        cardio: "heart-outline",
+        flexibility: "body-outline",
+        hiit: "flash-outline",
+        yoga: "leaf-outline",
+        pilates: "accessibility-outline",
+        hybrid: "fitness-outline",
       };
-      return icons[category] || "🏋️";
+      return icons[category] || "fitness-outline";
     };
 
     const getEquipmentText = (equipment: string[]) => {
@@ -81,115 +82,130 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = memo(
 
     const cardContent = (
       <Card style={StyleSheet.flatten([styles.card, style])} variant="elevated">
-        {/* Progress Bar */}
         {progress > 0 && (
           <View style={styles.progressContainer}>
             <View style={[styles.progressBar, { width: `${progress}%` }]} />
           </View>
         )}
 
-        <View
-          style={styles.cardContent}
-        >
+        <View style={styles.cardContent}>
           <Pressable onPress={onViewDetails}>
-          <View style={styles.header}>
-            <View style={styles.titleSection}>
-              <View style={styles.titleRow}>
-                <View style={styles.iconContainer}>
-                  <Text style={styles.categoryIcon}>
-                    {getCategoryIcon(workout.category)}
-                  </Text>
-                </View>
-                <View style={styles.titleContainer}>
-                  <Text style={styles.title} numberOfLines={2}>
-                    {workout.title}
-                  </Text>
-                  <View style={styles.badgeRow}>
-                    <View
-                      style={[
-                        styles.difficultyBadge,
-                        {
-                          backgroundColor: getDifficultyColor(
-                            workout.difficulty,
-                          ),
-                        },
-                      ]}
-                    >
-                      <Text style={styles.difficultyText}>
-                        {workout.difficulty.toUpperCase()}
-                      </Text>
-                    </View>
-                    {workout.aiGenerated && (
-                      <View style={styles.aiPillBadge}>
-                        <Text style={styles.aiPillText}>✨ AI</Text>
+            <View style={styles.header}>
+              <View style={styles.titleSection}>
+                <View style={styles.titleRow}>
+                  <View style={styles.iconContainer}>
+                    <Ionicons
+                      name={getCategoryIcon(workout.category)}
+                      size={rf(24)}
+                      color={ResponsiveTheme.colors.primary}
+                    />
+                  </View>
+                  <View style={styles.titleContainer}>
+                    <Text style={styles.title} numberOfLines={2}>
+                      {workout.title}
+                    </Text>
+                    <View style={styles.badgeRow}>
+                      <View
+                        style={[
+                          styles.difficultyBadge,
+                          {
+                            backgroundColor: getDifficultyColor(
+                              workout.difficulty,
+                            ),
+                          },
+                        ]}
+                      >
+                        <Text style={styles.difficultyText}>
+                          {workout.difficulty.toUpperCase()}
+                        </Text>
                       </View>
-                    )}
+                      {workout.aiGenerated && (
+                        <View style={styles.aiPillBadge}>
+                          <Text style={styles.aiPillText}>AI</Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
                 </View>
+                <Text style={styles.description} numberOfLines={3}>
+                  {workout.description}
+                </Text>
               </View>
-              <Text style={styles.description} numberOfLines={3}>
-                {workout.description}
-              </Text>
             </View>
-          </View>
 
-          {/* Progress Bar (if workout is in progress) */}
-          {isInProgress && (
-            <View style={styles.progressSection}>
-              <View style={styles.workoutProgressBar}>
-                <View
-                  style={[styles.progressFill, { width: `${progress}%` }]}
+            {isInProgress && (
+              <View style={styles.progressSection}>
+                <View style={styles.workoutProgressBar}>
+                  <View
+                    style={[styles.progressFill, { width: `${progress}%` }]}
+                  />
+                </View>
+                <Text style={styles.progressText}>
+                  {Math.round(progress)}% complete
+                </Text>
+              </View>
+            )}
+
+            <View style={styles.detailsGrid}>
+              <View style={styles.detailItem}>
+                <Ionicons
+                  name="time-outline"
+                  size={rf(18)}
+                  color={ResponsiveTheme.colors.textSecondary}
                 />
+                <Text style={styles.detailLabel}>Duration</Text>
+                <Text style={styles.detailValue}>{workout.duration} min</Text>
               </View>
-              <Text style={styles.progressText}>
-                {Math.round(progress)}% complete
-              </Text>
-            </View>
-          )}
 
-          {/* Workout Details */}
-          <View style={styles.detailsGrid}>
-            <View style={styles.detailItem}>
-              <Text style={styles.detailIcon}>⏱️</Text>
-              <Text style={styles.detailLabel}>Duration</Text>
-              <Text style={styles.detailValue}>{workout.duration} min</Text>
+              <View style={styles.detailItem}>
+                <Ionicons
+                  name="flame-outline"
+                  size={rf(18)}
+                  color={ResponsiveTheme.colors.textSecondary}
+                />
+                <Text style={styles.detailLabel}>Calories</Text>
+                <Text style={styles.detailValue}>
+                  {workout.estimatedCalories || 0}
+                </Text>
+              </View>
+
+              <View style={styles.detailItem}>
+                <Ionicons
+                  name="barbell-outline"
+                  size={rf(18)}
+                  color={ResponsiveTheme.colors.textSecondary}
+                />
+                <Text style={styles.detailLabel}>Exercises</Text>
+                <Text style={styles.detailValue}>
+                  {workout.exercises?.length ?? 0}
+                </Text>
+              </View>
             </View>
 
-            <View style={styles.detailItem}>
-              <Text style={styles.detailIcon}>🔥</Text>
-              <Text style={styles.detailLabel}>Calories</Text>
-              <Text style={styles.detailValue}>
-                {workout.estimatedCalories || 0}
-              </Text>
+            <View style={styles.infoSection}>
+              <View style={styles.infoRow}>
+                <Ionicons
+                  name="barbell-outline"
+                  size={rf(16)}
+                  color={ResponsiveTheme.colors.textSecondary}
+                />
+                <Text style={styles.infoText}>
+                  {getEquipmentText(workout.equipment)}
+                </Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Ionicons
+                  name="body-outline"
+                  size={rf(16)}
+                  color={ResponsiveTheme.colors.textSecondary}
+                />
+                <Text style={styles.infoText}>
+                  {getMuscleGroupText(workout.targetMuscleGroups)}
+                </Text>
+              </View>
             </View>
-
-            <View style={styles.detailItem}>
-              <Text style={styles.detailIcon}>🎯</Text>
-              <Text style={styles.detailLabel}>Exercises</Text>
-              <Text style={styles.detailValue}>
-                {workout.exercises?.length ?? 0}
-              </Text>
-            </View>
-          </View>
-
-          {/* Equipment & Target Muscles */}
-          <View style={styles.infoSection}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoIcon}>🏋️</Text>
-              <Text style={styles.infoText}>
-                {getEquipmentText(workout.equipment)}
-              </Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoIcon}>💪</Text>
-              <Text style={styles.infoText}>
-                {getMuscleGroupText(workout.targetMuscleGroups)}
-              </Text>
-            </View>
-          </View>
           </Pressable>
 
-          {/* Action Button */}
           <View style={styles.actionSection}>
             <Button
               title={isInProgress ? "Continue Workout" : "Start Workout"}
@@ -200,7 +216,6 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = memo(
             />
           </View>
 
-          {/* Additional Info */}
           {workout.tags && workout.tags.length > 0 && (
             <View style={styles.tagsSection}>
               {workout.tags.slice(0, 3).map((tag, index) => (
@@ -219,7 +234,6 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = memo(
       </Card>
     );
 
-    // Wrap with animation if provided
     if (animatedValue) {
       return (
         <Animated.View
@@ -255,7 +269,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 8,
-    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+    boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
   },
 
   progressContainer: {
@@ -304,10 +318,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: ResponsiveTheme.spacing.md,
-  },
-
-  categoryIcon: {
-    fontSize: rf(24),
   },
 
   titleContainer: {
@@ -395,11 +405,7 @@ const styles = StyleSheet.create({
   detailItem: {
     alignItems: "center",
     flex: 1,
-  },
-
-  detailIcon: {
-    fontSize: rf(20),
-    marginBottom: rp(4),
+    gap: rp(4),
   },
 
   detailLabel: {
@@ -422,12 +428,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
-  },
-
-  infoIcon: {
-    fontSize: rf(16),
-    marginRight: ResponsiveTheme.spacing.sm,
-    width: rp(20),
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   infoText: {

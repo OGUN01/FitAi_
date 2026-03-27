@@ -224,7 +224,7 @@ export class QueueManager {
       .from(table)
       .select("*")
       .eq(idField, userId)
-      .single();
+      .maybeSingle();
 
     if (error && error.code !== "PGRST116") {
     }

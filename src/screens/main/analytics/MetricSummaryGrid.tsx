@@ -19,12 +19,15 @@ export interface MetricData {
     change?: number;
     trend?: "up" | "down" | "stable";
     target?: number;
+    hasTrendData?: boolean;
   };
   calories?: {
     consumed: number;
     target?: number;
     change?: number;
     trend?: "up" | "down" | "stable";
+    period?: string;
+    hasData?: boolean;
   };
   workouts?: {
     count: number;
@@ -200,9 +203,10 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
   };
 
   // Only show sparklines if we have real data
-  const hasWeightHistory =
-    data.weight?.current !== undefined && data.weight.current > 0;
-  const hasCaloriesData = data.calories?.consumed !== undefined;
+  const hasWeightTrendData = Boolean(
+    data.weight?.hasTrendData && data.weight?.change !== undefined,
+  );
+  const hasCaloriesData = Boolean(data.calories?.hasData);
   const hasWorkoutsData =
     data.workouts?.count !== undefined && data.workouts.count > 0;
 
@@ -222,22 +226,23 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           value={formatWeight(data.weight?.current)}
           icon="scale-outline"
           color={ResponsiveTheme.colors.primary}
-          trend={hasWeightHistory ? data.weight?.trend : undefined}
+          trend={hasWeightTrendData ? data.weight?.trend : undefined}
           trendValue={
-            hasWeightHistory &&
+            hasWeightTrendData &&
             data.weight?.change !== undefined &&
             data.weight.change !== 0
               ? `${data.weight.change > 0 ? "+" : ""}${data.weight.change.toFixed(1)} kg`
               : undefined
           }
+          subtitle={!hasWeightTrendData ? "Log again to see trend" : undefined}
           delay={0}
           onPress={() => onMetricPress?.("weight")}
         />
 
         <MetricCard
           title="Calories"
-          value={formatCalories(data.calories?.consumed)}
-          subtitle={!hasCaloriesData ? "Log meals to track" : "today"}
+          value={hasCaloriesData ? formatCalories(data.calories?.consumed) : "--"}
+          subtitle={!hasCaloriesData ? "Log meals to track" : `This ${(data.calories?.period || period).charAt(0).toUpperCase() + (data.calories?.period || period).slice(1)}`}
           icon="flame-outline"
           color={ResponsiveTheme.colors.warning}
           trend={

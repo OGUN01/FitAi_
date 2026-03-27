@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { LayoutAnimation, Platform, UIManager } from "react-native";
 import {
   useSharedValue,
   useAnimatedStyle,
@@ -10,13 +9,8 @@ import { haptics } from "../utils/haptics";
 import { DayMeal, MealItem } from "../types/ai";
 import { colors } from "../theme/aurora-tokens";
 
-// Enable LayoutAnimation on Android
-if (
-  Platform.OS === "android" &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+// LayoutAnimation disabled on Android — Reanimated handles animations
+// on the UI thread. Enabling both causes JS thread contention and lag.
 
 export interface MacroTargets {
   protein: number;
@@ -167,7 +161,6 @@ export const useMealCard = ({
   };
 
   const toggleExpanded = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     haptics.light();
     setIsExpanded(!isExpanded);
   };

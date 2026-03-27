@@ -31,7 +31,7 @@ import {
   DietPreferencesData,
 } from "../types/onboarding";
 import { weightTrackingService } from "../services/WeightTrackingService";
-import { supabase } from "../services/supabase";
+import { resolveCurrentWeightForUser } from "../services/currentWeight";
 
 // ============================================================================
 // TYPES
@@ -160,6 +160,9 @@ let metricsCache: {
   userId: null,
 };
 
+let metricsLoadPromise: Promise<CalculatedMetrics | null> | null = null;
+let metricsLoadPromiseUserId: string | null = null;
+
 const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
@@ -206,23 +209,12 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
           personalInfo,
           workoutPreferences,
           dietPreferences,
-          latestProgressEntry,
         ] = await Promise.all([
           AdvancedReviewService.load(userId),
           BodyAnalysisService.load(userId),
           PersonalInfoService.load(userId),
           WorkoutPreferencesService.load(userId),
           DietPreferencesService.load(userId),
-          // Fetch the most recently logged weight from progress_entries
-          supabase
-            .from("progress_entries")
-            .select("weight_kg")
-            .eq("user_id", userId)
-            .not("weight_kg", "is", null)
-            .order("entry_date", { ascending: false })
-            .limit(1)
-            .maybeSingle()
-            .then((res) => res.data),
         ]);
 
         // If no advanced_review data, user hasn't completed onboarding calculations
@@ -232,9 +224,16 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
 
         // Merge latest logged weight into bodyAnalysis so currentWeightKg
         // reflects actual tracked weight rather than the static onboarding value.
-        const effectiveBodyAnalysis: BodyAnalysisData | null = latestProgressEntry?.weight_kg
-          ? ({ ...bodyAnalysis, current_weight_kg: latestProgressEntry.weight_kg } as BodyAnalysisData)
-          : bodyAnalysis;
+        const resolvedCurrentWeight = await resolveCurrentWeightForUser(userId, {
+          bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
+        });
+        const effectiveBodyAnalysis: BodyAnalysisData | null =
+          resolvedCurrentWeight.value != null
+            ? ({
+                ...(bodyAnalysis || {}),
+                current_weight_kg: resolvedCurrentWeight.value,
+              } as BodyAnalysisData)
+            : bodyAnalysis;
 
         if (effectiveBodyAnalysis?.current_weight_kg) {
           weightTrackingService.initializeFromBodyAnalysis({
@@ -337,22 +336,32 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
     setError(null);
 
     try {
-      let loadedMetrics: CalculatedMetrics | null = null;
+      if (!metricsLoadPromise || metricsLoadPromiseUserId !== userId) {
+        metricsLoadPromiseUserId = userId;
+        metricsLoadPromise = (async () => {
+          let loadedMetrics: CalculatedMetrics | null = null;
 
-      if (isAuthenticated && user?.id) {
-        loadedMetrics = await loadFromDatabase(user.id);
-      } else if (isGuestMode) {
-        loadedMetrics = await loadFromAsyncStorage();
+          if (isAuthenticated && user?.id) {
+            loadedMetrics = await loadFromDatabase(user.id);
+          } else if (isGuestMode) {
+            loadedMetrics = await loadFromAsyncStorage();
+          }
+
+          if (loadedMetrics) {
+            metricsCache = {
+              metrics: loadedMetrics,
+              timestamp: Date.now(),
+              userId,
+            };
+          }
+
+          return loadedMetrics;
+        })();
       }
 
-      if (loadedMetrics) {
-        // Update cache
-        metricsCache = {
-          metrics: loadedMetrics,
-          timestamp: now,
-          userId,
-        };
+      const loadedMetrics = await metricsLoadPromise;
 
+      if (loadedMetrics) {
         setMetrics(loadedMetrics);
         setHasCalculatedMetrics(true);
         setHasCompletedOnboarding(true);
@@ -369,6 +378,10 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
       setMetrics(null);
       setHasCalculatedMetrics(false);
     } finally {
+      if (metricsLoadPromiseUserId === userId) {
+        metricsLoadPromise = null;
+        metricsLoadPromiseUserId = null;
+      }
       setIsLoading(false);
     }
   }, [

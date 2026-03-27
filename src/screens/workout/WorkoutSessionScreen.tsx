@@ -8,6 +8,7 @@ import {
   Animated,
 } from "react-native";
 import { ResponsiveTheme } from "../../utils/constants";
+import { getLocalDateString } from "../../utils/weekUtils";
 import { DayWorkout } from "../../types/ai";
 import { WorkoutTimer } from "../../components/fitness/WorkoutTimer";
 import { ExerciseGifPlayer } from "../../components/fitness/ExerciseGifPlayer";
@@ -28,11 +29,24 @@ import { useWorkoutAchievements } from "../../hooks/useWorkoutAchievements";
 import { useWorkoutAnimations } from "../../hooks/useWorkoutAnimations";
 import { WorkoutHeader } from "../../components/workout/WorkoutHeader";
 import { WorkoutProgressBar } from "../../components/workout/WorkoutProgressBar";
-import { ExerciseCard } from "../../components/workout/ExerciseCard";
+import {
+  ExerciseCard,
+  SetCompletionData,
+} from "../../features/workouts/components/ExerciseCard";
+import { RestTimer } from "../../features/workouts/components/RestTimer";
+import { DeloadModal } from "../../features/workouts/components/DeloadModal";
+import { startTimer } from "../../services/restTimerService";
+import {
+  checkReactiveDeload,
+  RecentSessionForDeload,
+  DeloadSuggestion,
+} from "../../services/deloadService";
+import { exerciseHistoryService } from "../../services/exerciseHistoryService";
 import { WorkoutNavigation } from "../../components/workout/WorkoutNavigation";
 import { AchievementNotifications } from "../../components/workout/AchievementNotifications";
 import { WorkoutErrorState } from "../../components/workout/WorkoutErrorState";
 import { NextExercisePreview } from "../../components/workout/NextExercisePreview";
+import { useProfileStore } from "../../stores/profileStore";
 import {
   showWorkoutCompleteErrorAlert,
   showExitWorkoutAlert,
@@ -48,7 +62,10 @@ interface WorkoutSessionScreenProps {
       isExtra?: boolean;
     };
   };
-  navigation: { navigate: (screen: string, params?: Record<string, unknown>) => void; goBack: () => void };
+  navigation: {
+    navigate: (screen: string, params?: Record<string, unknown>) => void;
+    goBack: () => void;
+  };
 }
 
 const safeString = (value: any, fallback: string = ""): string => {
@@ -114,7 +131,11 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   const insets = useSafeAreaInsets();
 
   const parsedResumeIndex = safeNumber(resumeExerciseIndex, 0);
-  const session = useWorkoutSession((workout ?? { exercises: [] }) as DayWorkout, sessionId, parsedResumeIndex);
+  const session = useWorkoutSession(
+    (workout ?? { exercises: [] }) as DayWorkout,
+    sessionId,
+    parsedResumeIndex,
+  );
   const achievements = useWorkoutAchievements();
   const animations = useWorkoutAnimations();
 
@@ -128,6 +149,15 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     onViewProgress: () => void;
     onDone: () => void;
   } | null>(null);
+
+  const [restTimerEndTime, setRestTimerEndTime] = useState<number | null>(null);
+  const [deloadSuggestion, setDeloadSuggestion] =
+    useState<DeloadSuggestion | null>(null);
+
+  const userId = getCurrentUserId() || undefined;
+  const personalInfo = useProfileStore((s) => s.personalInfo);
+  const userUnits: "kg" | "lbs" =
+    personalInfo?.units === "imperial" ? "lbs" : "kg";
 
   // All hooks must be declared before any early returns (Rules of Hooks).
   // The guards below still run before the render JSX.
@@ -165,39 +195,60 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   }, []);
 
   const handleSetComplete = useCallback(
-    async (setIndex: number) => {
-      await session.handleSetComplete(setIndex, async (percentage) => {
-        await achievements.trackMilestone(
-          percentage,
-          workout.category || "General",
-          session.workoutStats.exercisesCompleted,
-          session.totalExercises,
-          Math.round(
-            (new Date().getTime() - session.workoutStartTime.getTime()) / 60000,
-          ),
-        );
-      });
+    async (setIndex: number, _setData?: SetCompletionData) => {
+      let wasAllSetsCompleted = false;
 
-      const allSetsCompleted =
-        session.currentProgress.completedSets.every(Boolean);
+      await session.handleSetComplete(
+        setIndex,
+        async (percentage) => {
+          await achievements.trackMilestone(
+            percentage,
+            workout.category || "General",
+            session.workoutStats.exercisesCompleted,
+            session.totalExercises,
+            Math.round(
+              (new Date().getTime() - session.workoutStartTime.getTime()) /
+                60000,
+            ),
+          );
+        },
+        async () => {
+          // Called when ALL sets of the current exercise are completed
+          wasAllSetsCompleted = true;
+          await achievements.trackExerciseCompletion(
+            session.currentExercise.name ||
+              session.currentExercise.exerciseName ||
+              "Exercise",
+            workout.category || "General",
+            session.currentProgress.completedSets.length,
+            session.currentExerciseIndex,
+            session.totalExercises,
+          );
+        },
+      );
 
-      if (allSetsCompleted) {
-        await achievements.trackExerciseCompletion(
-          session.currentExercise.name ||
-            session.currentExercise.exerciseName ||
-            "Exercise",
-          workout.category || "General",
-          session.currentProgress.completedSets.length,
-          session.currentExerciseIndex,
-          session.totalExercises,
-        );
-      } else {
+      // Rest timer: only fire when not the last set (i.e. not all sets completed).
+      // The hook-level rest timer (setIsRestTime) already fires inside handleSetComplete
+      // for the WorkoutTimer overlay. Here we fire the RestTimer overlay (timestamp-based)
+      // only when enabled and NOT all sets done.
+      if (!wasAllSetsCompleted) {
+        const restTimerEnabled = useFitnessStore.getState().restTimerEnabled;
+        if (restTimerEnabled) {
+          session.setIsRestTime(false);
+          const restSecs = safeNumber(session.currentExercise.restTime, 60);
+          if (restSecs > 0) {
+            setRestTimerEndTime(startTimer(restSecs));
+          }
+        }
+
+        // Per-set achievement tracking (only fires when NOT all sets completed)
+        const totalSets = session.currentProgress.completedSets.length;
         await achievements.trackSetCompletion(
           session.currentExercise.name ||
             session.currentExercise.exerciseName ||
             "Exercise",
           setIndex + 1,
-          session.currentProgress.completedSets.length,
+          totalSets,
           workout.category || "General",
         );
       }
@@ -218,7 +269,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       const durationMinutes = Math.max(1, Math.round(elapsedSeconds / 60));
 
       let success: boolean;
-      if (isExtra === true || (isExtra as any) === 'true') {
+      if (isExtra === true || (isExtra as any) === "true") {
         success = await completeExtraWorkout(
           workout,
           {
@@ -259,15 +310,59 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         // are based on real completion data (analyticsEngine was previously never
         // called on workout completion, leaving analyticsStore always empty).
         analyticsHelpers.trackWorkoutCompleted({
-          date: new Date().toISOString().split('T')[0],
+          date: getLocalDateString(),
           duration: durationMinutes,
           caloriesBurned: finalStats.caloriesBurned,
-          type: workout.category || 'general',
+          type: workout.category || "general",
         });
 
         // NOTE: analyticsDataService.updateTodaysMetrics() is already called by
         // completionTrackingService.completeWorkout() and completeExtraWorkout().
         // Do NOT call it again here — that would double-count calories/workoutsCompleted.
+
+        if (userId) {
+          for (const ex of workout.exercises) {
+            if (!ex.exerciseId) continue;
+            try {
+              const history = await exerciseHistoryService.getHistory(
+                ex.exerciseId,
+                userId,
+                30,
+              );
+              const recentSessions: RecentSessionForDeload[] = history.map(
+                (h) => ({
+                  sets: (h.sets || []).map((s) => ({
+                    reps: s.reps ?? 0,
+                    weight: s.weightKg ?? 0,
+                    completed: true,
+                  })),
+                  repRange: [
+                    typeof ex.reps === "number"
+                      ? ex.reps
+                      : parseInt(String(ex.reps), 10) || 8,
+                    typeof ex.reps === "number"
+                      ? ex.reps
+                      : parseInt(String(ex.reps), 10) || 12,
+                  ] as [number, number],
+                }),
+              );
+              const mesocycleWeek = useFitnessStore
+                .getState()
+                .getMesocycleWeek();
+              const suggestion = checkReactiveDeload(
+                ex.exerciseId,
+                recentSessions,
+                mesocycleWeek ?? undefined,
+              );
+              if (suggestion) {
+                setDeloadSuggestion(suggestion);
+                break;
+              }
+            } catch (err) {
+              console.error("[WorkoutSession] deload check failed:", err);
+            }
+          }
+        }
 
         setCompleteDialog({
           visible: true,
@@ -331,7 +426,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         // Never overwrite a higher prior progress with a lower value
         // (e.g. user navigated but did no sets this session).
         const savedPrior =
-          useFitnessStore.getState().getWorkoutProgress(workout.id || "unknown")?.progress ?? 0;
+          useFitnessStore.getState().getWorkoutProgress(workout.id || "unknown")
+            ?.progress ?? 0;
         const progressToSave = Math.max(progressPercentage, savedPrior);
 
         // 1. Emit event to subscribers (e.g. fitness screen refresh)
@@ -358,24 +454,22 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             ? firstIncompleteIdx
             : session.currentExerciseIndex;
 
-        useFitnessStore.getState().updateWorkoutProgress(
-          workout.id || "unknown",
-          progressToSave,
-          {
+        useFitnessStore
+          .getState()
+          .updateWorkoutProgress(workout.id || "unknown", progressToSave, {
             exerciseIndex: resumeAt,
             caloriesBurned: session.workoutStats.caloriesBurned,
-          },
-        );
+          });
 
         // 3. For extra workouts: update the persisted active session so the card
         //    shows RESUME at the correct exercise index.
         //    Use currentExerciseIndex (where user is now), not firstIncompleteIdx
         //    — if no sets were completed, firstIncompleteIdx would be 0 regardless.
-        if (isExtra === true || (isExtra as any) === 'true') {
+        if (isExtra === true || (isExtra as any) === "true") {
           // updateActiveExtraProgress is an optional method — guard call in case
           // the fitnessStore version in use hasn't implemented it yet.
           const storeState = useFitnessStore.getState() as any;
-          if (typeof storeState.updateActiveExtraProgress === 'function') {
+          if (typeof storeState.updateActiveExtraProgress === "function") {
             storeState.updateActiveExtraProgress(session.currentExerciseIndex);
           }
         }
@@ -506,32 +600,30 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           />
 
           <ExerciseCard
-            exerciseName={
-              session.currentExercise.name ||
-              getExerciseName(session.currentExercise.exerciseId)
-            }
-            sets={safeNumber(session.currentExercise.sets, 3)}
-            reps={safeString(session.currentExercise.reps, "0")}
-            weight={session.currentExercise.weight}
-            restTime={session.currentExercise.restTime}
-            notes={session.currentExercise.notes}
-            completedSets={session.currentProgress.completedSets}
-            isCompleted={session.currentProgress.isCompleted}
-            setsCompleted={session.workoutStats.setsCompleted}
-            totalDuration={session.workoutStats.totalDuration}
-            caloriesBurned={session.workoutStats.caloriesBurned}
-            onSetComplete={handleSetComplete}
-            onStartExercise={() => {
-              if (parseDurationFromReps(session.currentExercise.reps) > 0) {
-                session.setShowExerciseTimer(true);
-              } else {
-                session.setShowExerciseSession(true);
-              }
+            exercise={{
+              exerciseId: session.currentExercise.exerciseId || "",
+              exerciseName:
+                session.currentExercise.name ||
+                getExerciseName(session.currentExercise.exerciseId),
+              sets: safeNumber(session.currentExercise.sets, 3),
+              reps: session.currentExercise.reps ?? 0,
+              restTime: session.currentExercise.restTime,
+              weight: session.currentExercise.weight,
             }}
-            isTimeBased={
-              parseDurationFromReps(session.currentExercise.reps) > 0
-            }
-            repsDisplay={safeString(session.currentExercise.reps, "0")}
+            exerciseIndex={session.currentExerciseIndex}
+            onSetComplete={handleSetComplete}
+            onExerciseNamePress={() => {
+              const exId = session.currentExercise.exerciseId;
+              if (!exId) return;
+              navigation.navigate("ExerciseHistory", {
+                exerciseId: exId,
+                exerciseName:
+                  session.currentExercise.name ||
+                  getExerciseName(session.currentExercise.exerciseId),
+              });
+            }}
+            userId={userId}
+            userUnits={userUnits}
           />
         </Animated.View>
       </ScrollView>
@@ -592,6 +684,23 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           totalExercises={session.totalExercises}
           onViewProgress={completeDialog.onViewProgress}
           onDone={completeDialog.onDone}
+        />
+      )}
+
+      <RestTimer
+        targetEndTime={restTimerEndTime}
+        onExpire={() => setRestTimerEndTime(null)}
+        onSkip={() => setRestTimerEndTime(null)}
+      />
+
+      {deloadSuggestion && (
+        <DeloadModal
+          visible={!!deloadSuggestion}
+          variant={deloadSuggestion.type}
+          message={deloadSuggestion.reason}
+          exerciseName={deloadSuggestion.exerciseId}
+          onAccept={() => setDeloadSuggestion(null)}
+          onDismiss={() => setDeloadSuggestion(null)}
         />
       )}
     </SafeAreaView>

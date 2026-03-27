@@ -237,7 +237,11 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
               onPress={onBack}
               scaleValue={0.97}
             >
-              <Text style={styles.backIcon}>←</Text>
+              <Ionicons
+                name="arrow-back"
+                size={rf(22)}
+                color={ResponsiveTheme.colors.primary}
+              />
             </AnimatedPressable>
             <Text style={styles.title}>
               {mode === "signup" ? "Complete Your Account" : "Welcome Back"}
@@ -268,7 +272,7 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
                 </Text>
               </View>
               <Text style={styles.googleSubtext}>
-                Fastest • No email verification needed
+                Fastest - No email verification needed
               </Text>
             </AnimatedPressable>
 
@@ -393,12 +397,6 @@ const styles = StyleSheet.create({
     top: ResponsiveTheme.spacing.lg,
     zIndex: 1,
     padding: ResponsiveTheme.spacing.sm,
-  },
-
-  backIcon: {
-    fontSize: rf(24),
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: "bold",
   },
 
   title: {

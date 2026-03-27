@@ -43,6 +43,7 @@ import {
   WorkoutPreferences,
   BodyMetrics,
 } from "../types/user";
+import { AdvancedReviewData } from "../types/onboarding";
 import {
   Workout,
   Meal,
@@ -71,6 +72,7 @@ import {
   transformDietResponseToWeeklyPlan,
   transformWorkoutResponseToWeeklyPlan,
 } from "../services/aiRequestTransformers";
+import { resolveCurrentWeightFromStores } from "../services/currentWeight";
 import { getLocalDateString } from "../utils/weekUtils";
 
 // ============================================================================
@@ -140,6 +142,9 @@ class UnifiedAIService {
           workoutType: preferences?.workoutType,
           duration: preferences?.duration,
           focusMuscles: preferences?.focusMuscles,
+          currentWeightKg: resolveCurrentWeightFromStores({
+            bodyAnalysisWeight: preferences?.bodyMetrics?.current_weight_kg,
+          }).value,
         },
       );
 
@@ -201,6 +206,11 @@ class UnifiedAIService {
         preferences?.bodyMetrics,
         preferences?.dietPreferences,
         preferences?.calorieTarget,
+        {
+          currentWeightKg: resolveCurrentWeightFromStores({
+            bodyAnalysisWeight: preferences?.bodyMetrics?.current_weight_kg,
+          }).value,
+        },
       );
       const response = await fitaiWorkersClient.generateDietPlan(request);
       if (response.metadata) {
@@ -263,6 +273,11 @@ class UnifiedAIService {
         preferences?.bodyMetrics,
         preferences?.dietPreferences,
         preferences?.calorieTarget,
+        {
+          currentWeightKg: resolveCurrentWeightFromStores({
+            bodyAnalysisWeight: preferences?.bodyMetrics?.current_weight_kg,
+          }).value,
+        },
       );
 
       const response = await fitaiWorkersClient.generateDietPlan(request);
@@ -380,6 +395,9 @@ class UnifiedAIService {
         {
           requestWeeklyPlan: true, // ✅ Always request weekly plan
           duration: options?.workoutPreferences?.time_preference || 30,
+          currentWeightKg: resolveCurrentWeightFromStores({
+            bodyAnalysisWeight: options?.bodyMetrics?.current_weight_kg,
+          }).value,
         },
       );
 
@@ -443,6 +461,7 @@ class UnifiedAIService {
       bodyMetrics?: BodyMetrics;
       dietPreferences?: DietPreferences;
       calorieTarget?: number;
+      advancedReview?: AdvancedReviewData | null;
     },
   ): Promise<AIResponse<WeeklyMealPlan>> {
 
@@ -454,6 +473,13 @@ class UnifiedAIService {
         options?.bodyMetrics,
         options?.dietPreferences,
         options?.calorieTarget,
+        {
+          daysCount: 7,
+          advancedReview: options?.advancedReview,
+          currentWeightKg: resolveCurrentWeightFromStores({
+            bodyAnalysisWeight: options?.bodyMetrics?.current_weight_kg,
+          }).value,
+        },
       );
 
       const response = await fitaiWorkersClient.generateDietPlan(request);
@@ -475,6 +501,7 @@ class UnifiedAIService {
       const weeklyPlan = transformDietResponseToWeeklyPlan(
         response,
         weekNumber,
+        { requestedDaysCount: 7 },
       );
 
       if (!weeklyPlan) {
@@ -509,6 +536,7 @@ class UnifiedAIService {
       bodyMetrics?: BodyMetrics;
       dietPreferences?: DietPreferences;
       calorieTarget?: number;
+      advancedReview?: AdvancedReviewData | null;
     },
   ): Promise<
     AIResponse<
@@ -525,6 +553,13 @@ class UnifiedAIService {
         options?.bodyMetrics,
         options?.dietPreferences,
         options?.calorieTarget,
+        {
+          daysCount: 7,
+          advancedReview: options?.advancedReview,
+          currentWeightKg: resolveCurrentWeightFromStores({
+            bodyAnalysisWeight: options?.bodyMetrics?.current_weight_kg,
+          }).value,
+        },
       );
 
       const response = await fitaiWorkersClient.generateDietPlanAsync(request);
@@ -549,6 +584,7 @@ class UnifiedAIService {
         const weeklyPlan = transformDietResponseToWeeklyPlan(
           { ...response, data: response.data },
           weekNumber,
+          { requestedDaysCount: 7 },
         );
 
         if (!weeklyPlan) {
@@ -616,6 +652,7 @@ class UnifiedAIService {
         const weeklyPlan = transformDietResponseToWeeklyPlan(
           { success: true, data: jobData.result },
           weekNumber,
+          { requestedDaysCount: 7 },
         );
 
         return {

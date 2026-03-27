@@ -15,11 +15,21 @@ export const MealDetailHeader: React.FC<MealDetailHeaderProps> = ({
 }) => {
   return (
     <View style={styles.header}>
-      <TouchableOpacity style={styles.backButton} onPress={onBack}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={onBack}
+        accessibilityRole="button"
+        accessibilityLabel="Back"
+      >
         <Text style={styles.backIcon}>←</Text>
       </TouchableOpacity>
       <Text style={styles.headerTitle}>Meal Details</Text>
-      <TouchableOpacity style={styles.editButton} onPress={onEdit}>
+      <TouchableOpacity
+        style={styles.editButton}
+        onPress={onEdit}
+        accessibilityRole="button"
+        accessibilityLabel="Edit meal"
+      >
         <Text style={styles.editIcon}>✏️</Text>
       </TouchableOpacity>
     </View>
@@ -38,9 +48,9 @@ const styles = StyleSheet.create({
   },
 
   backButton: {
-    width: rw(40),
-    height: rh(40),
-    borderRadius: rbr(20),
+    width: Math.max(rw(40), 44),
+    height: Math.max(rh(40), 44),
+    borderRadius: Math.max(rbr(20), 22),
     backgroundColor: ResponsiveTheme.colors.surface,
     alignItems: "center" as const,
     justifyContent: "center" as const,
@@ -58,9 +68,9 @@ const styles = StyleSheet.create({
   },
 
   editButton: {
-    width: rw(40),
-    height: rh(40),
-    borderRadius: rbr(20),
+    width: Math.max(rw(40), 44),
+    height: Math.max(rh(40), 44),
+    borderRadius: Math.max(rbr(20), 22),
     backgroundColor: ResponsiveTheme.colors.surface,
     alignItems: "center" as const,
     justifyContent: "center" as const,

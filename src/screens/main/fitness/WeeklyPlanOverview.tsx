@@ -14,7 +14,7 @@ import { rf, rw, rh, rp, rbr } from "../../../utils/responsive";
 import { WeeklyWorkoutPlan } from "../../../ai";
 import { DayName } from "../../../stores/appStateStore";
 import { useFitnessStore } from "../../../stores/fitnessStore";
-import { getCurrentWeekStart } from "../../../utils/weekUtils";
+import { getCurrentWeekStart, getWeekStartForDate } from "../../../utils/weekUtils";
 import { findCompletedSessionForWorkout } from "../../../utils/workoutIdentity";
 
 interface WorkoutProgressItem {
@@ -94,6 +94,7 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
 
   // Get day status for mini calendar
   const getDayStatus = (dayKey: string) => {
+    const currentWeekStart = getCurrentWeekStart();
     const workout = plan.workouts?.find((w) => w.dayOfWeek === dayKey);
     const restDayIndices = plan.restDays || [];
     const dayIndex = DAY_KEYS.indexOf(dayKey as DayName);
@@ -106,13 +107,20 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
           completedSessions,
           workout,
           plan,
-          weekStart: getCurrentWeekStart(),
+          weekStart: currentWeekStart,
         })
       : null;
+    const progressEntry = workout ? workoutProgress[workout.id] : null;
+    const hasStaleCompletedProgress =
+      progressEntry?.progress === 100 &&
+      !!progressEntry.completedAt &&
+      getWeekStartForDate(progressEntry.completedAt) !== currentWeekStart;
     const progress = workout
       ? completedSession
         ? 100
-        : (workoutProgress[workout.id]?.progress ?? 0)
+        : hasStaleCompletedProgress
+          ? 0
+          : Math.min(progressEntry?.progress ?? 0, 99)
       : 0;
     const isSelected = selectedDay === dayKey;
     const isToday =
@@ -122,7 +130,7 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
     return {
       hasWorkout: !!workout && !isRestDay,
       isRestDay,
-      isCompleted: progress === 100,
+      isCompleted: !!completedSession,
       isSelected,
       isToday,
       progress,

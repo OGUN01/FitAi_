@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rs, rp, rbr } from "../../utils/responsive";
+import { getLocalDateString } from "../../utils/weekUtils";
 
 interface WorkoutDay {
   date: string;
@@ -27,12 +28,15 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({
   data,
   style,
 }) => {
-  // Generate calendar grid for the last 12 weeks
+  // Generate calendar grid for the last 12 weeks, aligned to Monday-first weeks
   const generateCalendarData = () => {
     const weeks = [];
     const today = new Date();
+    // Align start to Monday of the week 12 weeks ago
     const startDate = new Date(today);
-    startDate.setDate(today.getDate() - 12 * 7); // 12 weeks ago
+    const dayOfWeek = startDate.getDay();
+    startDate.setDate(startDate.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1)); // Go to this Monday
+    startDate.setDate(startDate.getDate() - 12 * 7); // Then back 12 weeks
 
     for (let week = 0; week < 12; week++) {
       const weekData = [];
@@ -40,7 +44,7 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({
         const currentDate = new Date(startDate);
         currentDate.setDate(startDate.getDate() + week * 7 + day);
 
-        const dateString = currentDate.toISOString().split("T")[0];
+        const dateString = getLocalDateString(currentDate);
         const workoutData = data.find((workout) => workout.date === dateString);
 
         weekData.push({
@@ -56,7 +60,7 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({
   };
 
   const calendarData = generateCalendarData();
-  const dayLabels = ["S", "M", "T", "W", "T", "F", "S"];
+  const dayLabels = ["M", "T", "W", "T", "F", "S", "S"];
 
   // Get intensity color
   const getIntensityColor = (intensity: number) => {

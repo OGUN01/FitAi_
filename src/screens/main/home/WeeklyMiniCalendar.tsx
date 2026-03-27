@@ -24,7 +24,7 @@ interface WeeklyMiniCalendarProps {
   onViewFullCalendar?: () => void;
 }
 
-const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
+const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
 
 export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
   weekData,
@@ -36,16 +36,18 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
 
     const today = new Date();
     const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
+    const dayOfWeek = today.getDay();
+    // Start from Monday (day 1), not Sunday (day 0)
+    startOfWeek.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
 
     return Array.from({ length: 7 }, (_, i) => {
       const date = new Date(startOfWeek);
       date.setDate(startOfWeek.getDate() + i);
       return {
         date,
-        hasWorkout: i !== 0 && i !== 6,
+        hasWorkout: i < 5, // Mon-Fri have workouts in fallback
         workoutCompleted: false,
-        isRestDay: i === 0 || i === 6,
+        isRestDay: i >= 5, // Sat-Sun are rest days in fallback
       };
     });
   }, [weekData]);

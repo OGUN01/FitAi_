@@ -60,15 +60,37 @@ export const HealthIntelligencePlaceholder: React.FC<
 
         {/* Placeholder Content */}
         <View style={styles.placeholderContent}>
-          <Ionicons
-            name="fitness-outline"
-            size={rf(48)}
-            color={ResponsiveTheme.colors.textMuted}
-          />
-          <Text style={styles.placeholderTitle}>Connect Health Data</Text>
-          <Text style={styles.placeholderSubtitle}>
-            Connect to Health Connect or Apple Health to see your recovery metrics and health insights.
-          </Text>
+          <View style={styles.placeholderIconContainer}>
+            <Ionicons
+              name="fitness-outline"
+              size={rf(28)}
+              color={ResponsiveTheme.colors.primary}
+            />
+          </View>
+          <View style={styles.placeholderTextBlock}>
+            <Text style={styles.placeholderTitle}>Connect Health Data</Text>
+            <Text style={styles.placeholderSubtitle}>
+              Sync Apple Health or Health Connect to unlock recovery, sleep,
+              and heart-rate insights.
+            </Text>
+            <View style={styles.placeholderHintRow}>
+              <Ionicons
+                name="phone-portrait-outline"
+                size={rf(12)}
+                color={ResponsiveTheme.colors.textMuted}
+              />
+              <Text style={styles.placeholderHintText}>
+                Use Health Sync on your phone to get started
+              </Text>
+            </View>
+          </View>
+          {onPress ? (
+            <Ionicons
+              name="chevron-forward"
+              size={rf(18)}
+              color={ResponsiveTheme.colors.textMuted}
+            />
+          ) : null}
         </View>
       </GlassCard>
     </AnimatedPressable>
@@ -112,24 +134,45 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   placeholderContent: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.md,
+  },
+  placeholderIconContainer: {
+    width: rw(44),
+    height: rw(44),
+    borderRadius: rw(22),
+    backgroundColor: `${ResponsiveTheme.colors.primary}16`,
     justifyContent: "center",
-    paddingVertical: ResponsiveTheme.spacing.xl,
-    gap: ResponsiveTheme.spacing.sm,
+    alignItems: "center",
+    flexShrink: 0,
+  },
+  placeholderTextBlock: {
+    flex: 1,
   },
   placeholderTitle: {
-    fontSize: rf(16),
-    fontWeight: "600",
+    fontSize: rf(14),
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   placeholderSubtitle: {
     fontSize: rf(12),
     fontWeight: '400',
     color: ResponsiveTheme.colors.text,
-    textAlign: 'center',
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
     lineHeight: rf(18),
     opacity: 0.65,
+  },
+  placeholderHintRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: ResponsiveTheme.spacing.xs,
+    marginTop: ResponsiveTheme.spacing.sm,
+  },
+  placeholderHintText: {
+    fontSize: rf(10),
+    color: ResponsiveTheme.colors.textMuted,
+    flex: 1,
   },
 });

@@ -9,6 +9,7 @@ import React, { useCallback } from "react";
 import {
   Pressable,
   PressableProps,
+  StyleProp,
   ViewStyle,
   AccessibilityRole,
 } from "react-native";
@@ -78,7 +79,12 @@ interface AnimatedPressableProps extends Omit<PressableProps, "style"> {
   /**
    * Style prop (supports animated values)
    */
-  style?: ViewStyle | ViewStyle[];
+  style?: StyleProp<ViewStyle>;
+
+  /**
+   * Optional wrapper style for the animated container
+   */
+  containerStyle?: StyleProp<ViewStyle>;
 
   /**
    * Accessibility label for screen readers
@@ -102,10 +108,17 @@ interface AnimatedPressableProps extends Omit<PressableProps, "style"> {
   testID?: string;
 }
 
-// Haptic feedback helper using our centralized haptics utility
-const triggerHaptic = async (type: HapticType) => {
-  await haptics.trigger(type);
+// Fire-and-forget haptic — never await, never block the JS thread
+const triggerHaptic = (type: HapticType) => {
+  haptics.trigger(type);
 };
+
+const DEFAULT_PRESS_RETENTION_OFFSET = {
+  top: 12,
+  bottom: 12,
+  left: 12,
+  right: 12,
+} as const;
 
 const getSpringConfig = (config: string) => {
   const springKey = config as keyof typeof animations.spring;
@@ -116,7 +129,7 @@ const getSpringConfig = (config: string) => {
 // (like `transform-origin`) directly onto the <button> DOM element on web,
 // which would cause React's `Invalid DOM property` warning.
 
-export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
+export const AnimatedPressable: React.FC<AnimatedPressableProps> = React.memo(({
   scaleValue = animations.scale.press,
   useSpring = true,
   springConfig = "default",
@@ -127,6 +140,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
   pressOpacity = 0.6,
   children,
   style,
+  containerStyle,
   onPressIn,
   onPressOut,
   disabled,
@@ -136,6 +150,15 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
   testID,
   ...pressableProps
 }) => {
+  const isInteractive =
+    !disabled &&
+    Boolean(
+      pressableProps.onPress ||
+        pressableProps.onLongPress ||
+        onPressIn ||
+        onPressOut,
+    );
+
   // Animated values
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
@@ -143,7 +166,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
   // Handle press in
   const handlePressIn = useCallback(
     (event: any) => {
-      if (!disableAnimation) {
+      if (!disableAnimation && isInteractive) {
         scale.value = withTiming(scaleValue, {
           duration: animations.duration.instant,
         });
@@ -155,7 +178,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
         }
       }
 
-      if (hapticFeedback && !disabled) {
+      if (hapticFeedback && isInteractive) {
         triggerHaptic(hapticType);
       }
 
@@ -167,7 +190,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
       fadeOnPress,
       pressOpacity,
       hapticFeedback,
-      disabled,
+      isInteractive,
       hapticType,
       onPressIn,
     ],
@@ -176,7 +199,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
   // Handle press out
   const handlePressOut = useCallback(
     (event: any) => {
-      if (!disableAnimation) {
+      if (!disableAnimation && isInteractive) {
         if (useSpring) {
           const spring = getSpringConfig(springConfig);
           scale.value = withSpring(1, spring);
@@ -199,7 +222,14 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
 
       onPressOut?.(event);
     },
-    [disableAnimation, useSpring, springConfig, fadeOnPress, onPressOut],
+    [
+      disableAnimation,
+      isInteractive,
+      useSpring,
+      springConfig,
+      fadeOnPress,
+      onPressOut,
+    ],
   );
 
   // Animated style
@@ -209,24 +239,31 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
   }));
 
   return (
-    <Animated.View style={[animatedStyle, style]}>
+    <Animated.View style={[containerStyle, animatedStyle]}>
       <Pressable
         {...pressableProps}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
+        onPressIn={isInteractive ? handlePressIn : undefined}
+        onPressOut={isInteractive ? handlePressOut : undefined}
         disabled={disabled}
         accessibilityLabel={accessibilityLabel}
         accessibilityHint={accessibilityHint}
         accessibilityRole={accessibilityRole}
         accessibilityState={{ disabled: !!disabled }}
+        pressRetentionOffset={
+          isInteractive
+            ? pressableProps.pressRetentionOffset ??
+              DEFAULT_PRESS_RETENTION_OFFSET
+            : undefined
+        }
+        style={style}
         testID={testID}
-        accessible={true}
+        accessible={isInteractive}
       >
         {children}
       </Pressable>
     </Animated.View>
   );
-};
+});
 
 // Export default
 export default AnimatedPressable;

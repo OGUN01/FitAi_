@@ -2,12 +2,15 @@ import { Platform } from "react-native";
 import * as crypto from "expo-crypto";
 import { supabase } from "./supabase";
 import { crudOperations } from "./crudOperations";
-import { dataBridge } from "./DataBridge";
-import { AuthUser } from "../types/user";
 import { MealLog, SyncStatus } from "../types/localData";
 import { MealLogProvenance } from "../types/nutritionLogging";
 import { analyticsDataService } from "./analyticsData";
 import { nutritionRefreshService } from "./nutritionRefreshService";
+import {
+  deriveMealLogFiber,
+  normalizeMealLogFoodItems,
+  normalizeMealLogFiberValue,
+} from "../utils/mealLogNutrition";
 
 // Types for nutrition data
 export interface Food {
@@ -35,6 +38,7 @@ export interface Meal {
   total_protein: number;
   total_carbs: number;
   total_fat: number;
+  total_fiber?: number;
   consumed_at: string;
   created_at: string;
   foods?: MealFood[];
@@ -238,27 +242,30 @@ class NutritionDataService {
       }
 
       console.log(
-        `📊 meal_logs query result: ${data?.length || 0} meals for date ${date || "all"}`,
+        `ðŸ“Š meal_logs query result: ${data?.length || 0} meals for date ${date || "all"}`,
       );
 
       // Transform meal_logs data to match expected Meal interface
       // Supabase meal_logs columns: meal_type, meal_name, total_calories, total_protein, total_carbohydrates, total_fat
       const meals =
-        data?.map((mealLog: any) => ({
-          id: mealLog.id,
-          type: mealLog.meal_type,
-          name: mealLog.meal_name,
-          total_calories: mealLog.total_calories || 0,
-          total_protein: mealLog.total_protein || 0,
-          total_carbohydrates: mealLog.total_carbohydrates || 0,
-          total_carbs: mealLog.total_carbohydrates || 0,
-          total_fat: mealLog.total_fat || 0,
-          total_fiber: 0,
-          consumed_at: mealLog.logged_at,
-          logged_at: mealLog.logged_at,
-          food_items: mealLog.food_items || [],
-          foods: [],
-        })) || [];
+        data?.map((mealLog: any) => {
+          const foodItems = normalizeMealLogFoodItems(mealLog.food_items);
+          return {
+            id: mealLog.id,
+            type: mealLog.meal_type,
+            name: mealLog.meal_name,
+            total_calories: mealLog.total_calories || 0,
+            total_protein: mealLog.total_protein || 0,
+            total_carbohydrates: mealLog.total_carbohydrates || 0,
+            total_carbs: mealLog.total_carbohydrates || 0,
+            total_fat: mealLog.total_fat || 0,
+            total_fiber: deriveMealLogFiber(foodItems),
+            consumed_at: mealLog.logged_at,
+            logged_at: mealLog.logged_at,
+            food_items: foodItems,
+            foods: [],
+          };
+        }) || [];
 
       return {
         success: true,
@@ -331,7 +338,7 @@ class NutritionDataService {
   ): Promise<NutritionDataResponse<NutritionGoals>> {
     try {
       console.log(
-        "📊 [NutritionData] getUserNutritionGoals - Loading for user:",
+        "ðŸ“Š [NutritionData] getUserNutritionGoals - Loading for user:",
         userId,
       );
 
@@ -347,7 +354,7 @@ class NutritionDataService {
 
       if (advancedReview && !advancedError) {
         console.log(
-          "✅ [NutritionData] Found goals in advanced_review (onboarding):",
+          "âœ… [NutritionData] Found goals in advanced_review (onboarding):",
           advancedReview,
         );
 
@@ -389,7 +396,7 @@ class NutritionDataService {
 
       if (error) {
         console.warn(
-          "⚠️ [NutritionData] Nutrition goals table not accessible:",
+          "âš ï¸ [NutritionData] Nutrition goals table not accessible:",
           error.message,
         );
         return {
@@ -402,11 +409,11 @@ class NutritionDataService {
       // If no goals exist anywhere, return null to make the issue visible
       if (!data) {
         console.warn(
-          "⚠️ [NutritionData] No nutrition goals found for user:",
+          "âš ï¸ [NutritionData] No nutrition goals found for user:",
           userId,
         );
         console.warn(
-          "⚠️ [NutritionData] User needs to complete onboarding to calculate nutrition targets",
+          "âš ï¸ [NutritionData] User needs to complete onboarding to calculate nutrition targets",
         );
         return {
           success: false,
@@ -416,7 +423,7 @@ class NutritionDataService {
       }
 
       console.log(
-        "✅ [NutritionData] Found goals in nutrition_goals table:",
+        "âœ… [NutritionData] Found goals in nutrition_goals table:",
         data,
       );
       return {
@@ -425,7 +432,7 @@ class NutritionDataService {
       };
     } catch (error) {
       console.warn(
-        "⚠️ [NutritionData] Error in getUserNutritionGoals:",
+        "âš ï¸ [NutritionData] Error in getUserNutritionGoals:",
         error instanceof Error ? error.message : error,
       );
       return {
@@ -454,8 +461,9 @@ class NutritionDataService {
       const resolvedFoods = await this.resolveMealFoods(mealData.foods);
       const nutritionTotals = this.calculateResolvedNutrition(resolvedFoods);
 
+      const mealId = crypto.randomUUID();
       const mealLog: MealLog = {
-        id: `meal_${Date.now()}_${crypto.randomUUID().replace(/-/g, "").substring(0, 9)}`,
+        id: mealId,
         userId,
         mealType: mealData.type,
         foods: resolvedFoods.map((f, index) => ({
@@ -541,13 +549,19 @@ class NutritionDataService {
           mealsLogged: 1,
         })
         .catch((analyticsError) =>
-          console.error("[NutritionData.logMeal] analytics sync failed:", analyticsError),
+          console.error(
+            "[NutritionData.logMeal] analytics sync failed:",
+            analyticsError,
+          ),
         );
 
       nutritionRefreshService
         .triggerRefresh()
         .catch((refreshError) =>
-          console.error("[NutritionData.logMeal] refresh failed:", refreshError),
+          console.error(
+            "[NutritionData.logMeal] refresh failed:",
+            refreshError,
+          ),
         );
 
       return {
@@ -592,20 +606,27 @@ class NutritionDataService {
           protein: foodItem.protein || 0,
           carbs: foodItem.carbs || 0,
           fat: foodItem.fat || 0,
-          fiber: foodItem.fiber || 0,
+          fiber: normalizeMealLogFiberValue(foodItem.fiber) ?? 0,
           sugar: foodItem.sugar || 0,
           sodium: foodItem.sodium || 0,
         });
         continue;
       }
 
-      const { data: food } = await supabase
+      const { data: food, error: foodError } = await supabase
         .from("foods")
         .select(
           "name, category, barcode, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g, sugar_per_100g, sodium_per_100g",
         )
         .eq("id", foodItem.food_id)
         .maybeSingle();
+
+      if (foodError) {
+        console.error(
+          "[nutritionData] Failed to fetch food record:",
+          foodError,
+        );
+      }
 
       if (!food) {
         resolvedFoods.push({
@@ -615,7 +636,7 @@ class NutritionDataService {
           protein: foodItem.protein || 0,
           carbs: foodItem.carbs || 0,
           fat: foodItem.fat || 0,
-          fiber: foodItem.fiber || 0,
+          fiber: normalizeMealLogFiberValue(foodItem.fiber) ?? 0,
           sugar: foodItem.sugar || 0,
           sodium: foodItem.sodium || 0,
         });
@@ -630,7 +651,8 @@ class NutritionDataService {
         barcode: foodItem.barcode || food.barcode || undefined,
         serving_unit: foodItem.serving_unit || "grams",
         calories:
-          foodItem.calories ?? Math.round((food.calories_per_100g || 0) * multiplier),
+          foodItem.calories ??
+          Math.round((food.calories_per_100g || 0) * multiplier),
         protein:
           foodItem.protein ??
           Math.round((food.protein_per_100g || 0) * multiplier * 10) / 10,
@@ -638,25 +660,24 @@ class NutritionDataService {
           foodItem.carbs ??
           Math.round((food.carbs_per_100g || 0) * multiplier * 10) / 10,
         fat:
-          foodItem.fat ?? Math.round((food.fat_per_100g || 0) * multiplier * 10) / 10,
+          foodItem.fat ??
+          Math.round((food.fat_per_100g || 0) * multiplier * 10) / 10,
         fiber:
-          foodItem.fiber ??
-          Math.round(((food.fiber_per_100g || 0) * multiplier) * 10) / 10,
+          normalizeMealLogFiberValue(foodItem.fiber) ??
+          Math.round((food.fiber_per_100g || 0) * multiplier * 10) / 10,
         sugar:
           foodItem.sugar ??
-          Math.round(((food.sugar_per_100g || 0) * multiplier) * 10) / 10,
+          Math.round((food.sugar_per_100g || 0) * multiplier * 10) / 10,
         sodium:
           foodItem.sodium ??
-          Math.round(((food.sodium_per_100g || 0) * multiplier) * 100) / 100,
+          Math.round((food.sodium_per_100g || 0) * multiplier * 100) / 100,
       });
     }
 
     return resolvedFoods;
   }
 
-  private calculateResolvedNutrition(
-    foods: MealLogFoodInput[],
-  ): {
+  private calculateResolvedNutrition(foods: MealLogFoodInput[]): {
     calories: number;
     protein: number;
     carbs: number;

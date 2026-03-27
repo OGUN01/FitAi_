@@ -192,7 +192,12 @@ export const JobStatusIndicator: React.FC<JobStatusIndicatorProps> = ({
         </View>
 
         {isTerminal && onDismiss && (
-          <TouchableOpacity onPress={onDismiss} style={styles.dismissButton}>
+          <TouchableOpacity
+            onPress={onDismiss}
+            style={styles.dismissButton}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss generation status"
+          >
             <Text style={styles.dismissText}>✕</Text>
           </TouchableOpacity>
         )}
@@ -233,6 +238,8 @@ export const JobStatusIndicator: React.FC<JobStatusIndicatorProps> = ({
             <TouchableOpacity
               onPress={onCancel}
               style={[styles.cancelButton, { borderColor: config.color }]}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel generation"
             >
               <Text style={[styles.cancelText, { color: config.color }]}>
                 Cancel Generation
@@ -327,9 +334,9 @@ const styles = StyleSheet.create({
   },
 
   dismissButton: {
-    width: rw(24),
-    height: rh(24),
-    borderRadius: rs(12),
+    width: Math.max(rw(24), 44),
+    height: Math.max(rh(24), 44),
+    borderRadius: Math.max(rs(12), 22),
     backgroundColor: "rgba(0,0,0,0.1)",
     justifyContent: "center",
     alignItems: "center",
@@ -379,11 +386,13 @@ const styles = StyleSheet.create({
   },
 
   cancelButton: {
+    minHeight: 44,
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.md,
     borderWidth: 1,
     alignItems: "center",
+    justifyContent: "center",
   },
 
   cancelText: {

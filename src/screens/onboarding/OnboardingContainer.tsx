@@ -162,7 +162,6 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = (
     >
       <StatusBar
         barStyle="light-content"
-        backgroundColor="transparent"
         translucent
       />
       <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>

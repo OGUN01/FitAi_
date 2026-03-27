@@ -35,6 +35,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useUserStore } from "../stores/userStore";
 import { useProfileStore } from "../stores/profileStore";
 import { syncEngine } from "./SyncEngine";
+import { resolveCurrentWeightForUser } from "./currentWeight";
+import { weightTrackingService } from "./WeightTrackingService";
 // Type transformation utilities for snake_case/camelCase conversion
 // Use these at API boundaries when dealing with legacy components
 import { toDbFormat, normalizeToSnakeCase } from "../utils/typeTransformers";
@@ -196,26 +198,36 @@ class DataBridge {
     }
 
     try {
+      const profileStore = useProfileStore.getState();
+      if (
+        profileStore.isHydrated ||
+        profileStore.personalInfo ||
+        profileStore.dietPreferences ||
+        profileStore.bodyAnalysis ||
+        profileStore.workoutPreferences ||
+        profileStore.advancedReview
+      ) {
+        this.isInitialized = true;
+        return;
+      }
+
       // Load any persisted data into ProfileStore
       const data = await this.loadFromLocal();
-      if (data.personalInfo) {
-        const profileStore = useProfileStore.getState();
-        if (data.personalInfo)
-          profileStore.updatePersonalInfo(
-            data.personalInfo as PersonalInfoData,
-          );
-        if (data.dietPreferences)
-          profileStore.updateDietPreferences(
-            data.dietPreferences as DietPreferencesData,
-          );
-        if (data.bodyAnalysis)
-          profileStore.updateBodyAnalysis(data.bodyAnalysis);
-        if (data.workoutPreferences)
-          profileStore.updateWorkoutPreferences(
-            data.workoutPreferences as WorkoutPreferencesData,
-          );
-        if (data.advancedReview)
-          profileStore.updateAdvancedReview(data.advancedReview);
+      if (
+        data.personalInfo ||
+        data.dietPreferences ||
+        data.bodyAnalysis ||
+        data.workoutPreferences ||
+        data.advancedReview
+      ) {
+        profileStore.hydrateFromLegacy({
+          personalInfo: data.personalInfo as PersonalInfoData | null,
+          dietPreferences: data.dietPreferences as DietPreferencesData | null,
+          bodyAnalysis: data.bodyAnalysis as BodyAnalysisData | null,
+          workoutPreferences:
+            data.workoutPreferences as WorkoutPreferencesData | null,
+          advancedReview: data.advancedReview as AdvancedReviewData | null,
+        });
       }
       this.isInitialized = true;
     } catch (error) {
@@ -331,15 +343,49 @@ class DataBridge {
           return null;
         }),
       ]);
+      const resolvedCurrentWeight = bodyAnalysis
+        ? await resolveCurrentWeightForUser(userId, {
+            bodyAnalysisWeight: bodyAnalysis.current_weight_kg,
+          })
+        : null;
+      const canonicalBodyAnalysis =
+        bodyAnalysis && resolvedCurrentWeight?.value != null
+          ? {
+              ...bodyAnalysis,
+              current_weight_kg:
+                resolvedCurrentWeight.value ?? bodyAnalysis.current_weight_kg,
+            }
+          : bodyAnalysis;
+      if (
+        bodyAnalysis &&
+        canonicalBodyAnalysis &&
+        canonicalBodyAnalysis.current_weight_kg !== bodyAnalysis.current_weight_kg
+      ) {
+        try {
+          await BodyAnalysisService.save(
+            userId,
+            canonicalBodyAnalysis as BodyAnalysisData,
+          );
+        } catch (error) {
+          console.warn(
+            "[DataBridge] Failed to heal canonical current weight in body_analysis:",
+            error,
+          );
+        }
+      }
 
       // Update ProfileStore with loaded data (SSOT for onboarding data)
       const profileStore = useProfileStore.getState();
       if (personalInfo) profileStore.updatePersonalInfo(personalInfo);
       if (dietPreferences) profileStore.updateDietPreferences(dietPreferences);
-      if (bodyAnalysis) profileStore.updateBodyAnalysis(bodyAnalysis);
+      if (canonicalBodyAnalysis)
+        profileStore.updateBodyAnalysis(canonicalBodyAnalysis);
       if (workoutPreferences)
         profileStore.updateWorkoutPreferences(workoutPreferences);
       if (advancedReview) profileStore.updateAdvancedReview(advancedReview);
+      if (resolvedCurrentWeight?.value != null) {
+        weightTrackingService.setWeight(resolvedCurrentWeight.value);
+      }
 
       // NOTE: userStore is NOT updated here - profileStore is the SSOT
       // userStore.updatePersonalInfo is deprecated and should not be used
@@ -348,7 +394,7 @@ class DataBridge {
       return {
         personalInfo,
         dietPreferences,
-        bodyAnalysis,
+        bodyAnalysis: canonicalBodyAnalysis,
         workoutPreferences,
         advancedReview,
         source: "database",

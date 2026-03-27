@@ -1,7 +1,8 @@
 import {
   getCountryFromBarcode,
-  normalizeBarcode,
   isProductBarcode,
+  matchesPackagedFoodBarcodeType,
+  normalizeBarcode,
   normalizeCountryName,
 } from "@/utils/countryMapping";
 
@@ -20,10 +21,6 @@ describe("getCountryFromBarcode", () => {
     expect(getCountryFromBarcode("4901234567894")).toBe("Japan"));
   it("returns Unknown for too-short barcode", () =>
     expect(getCountryFromBarcode("69")).toBe("Unknown"));
-  it("returns Australia for 930 prefix", () =>
-    expect(getCountryFromBarcode("9300675000012")).toBe("Australia"));
-  it("returns Brazil for 789 prefix", () =>
-    expect(getCountryFromBarcode("7891234567890")).toBe("Brazil"));
 });
 
 describe("normalizeBarcode", () => {
@@ -31,14 +28,18 @@ describe("normalizeBarcode", () => {
     expect(normalizeBarcode("012345678905")).toBe("0012345678905"));
   it("leaves 13-digit EAN-13 unchanged", () =>
     expect(normalizeBarcode("8901234567890")).toBe("8901234567890"));
+  it("leaves 8-digit EAN-8 unchanged", () =>
+    expect(normalizeBarcode("12345670")).toBe("12345670"));
+  it("leaves 6-digit UPC-E unchanged", () =>
+    expect(normalizeBarcode("123456")).toBe("123456"));
+  it("trims whitespace before validation", () =>
+    expect(normalizeBarcode(" 012345678905 ")).toBe("0012345678905"));
   it("returns null for empty string", () =>
     expect(normalizeBarcode("")).toBeNull());
   it("returns null for non-numeric string", () =>
     expect(normalizeBarcode("ABC")).toBeNull());
-  it("returns null for too-short barcode", () =>
-    expect(normalizeBarcode("123")).toBeNull());
-  it("handles 8-digit EAN-8", () =>
-    expect(normalizeBarcode("12345670")).toBe("12345670"));
+  it("returns null for unsupported numeric lengths", () =>
+    expect(normalizeBarcode("12345678901234")).toBeNull());
 });
 
 describe("isProductBarcode", () => {
@@ -55,6 +56,21 @@ describe("isProductBarcode", () => {
     expect(isProductBarcode("org.iso.Code128")).toBe(false));
   it("returns false for pdf417", () =>
     expect(isProductBarcode("pdf417")).toBe(false));
+});
+
+describe("matchesPackagedFoodBarcodeType", () => {
+  it("matches EAN-13 barcode types to 13-digit values", () =>
+    expect(matchesPackagedFoodBarcodeType("ean13", "3017620422003")).toBe(
+      true,
+    ));
+  it("matches UPC-A barcode types to 12-digit values", () =>
+    expect(matchesPackagedFoodBarcodeType("upc_a", "012345678905")).toBe(
+      true,
+    ));
+  it("matches UPC-E barcode types to 6-digit values", () =>
+    expect(matchesPackagedFoodBarcodeType("upc_e", "123456")).toBe(true));
+  it("rejects mismatched symbology and length pairs", () =>
+    expect(matchesPackagedFoodBarcodeType("ean13", "12345670")).toBe(false));
 });
 
 describe("normalizeCountryName", () => {

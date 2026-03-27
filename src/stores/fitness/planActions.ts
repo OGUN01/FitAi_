@@ -136,13 +136,19 @@ export const createPlanActions = (
       let activePlanRowId = (plan as any).databaseId || null;
       if (!activePlanRowId) {
         try {
-          const { data: activePlans } = await supabase
+          const { data: activePlans, error: activePlansError } = await supabase
             .from("weekly_workout_plans")
             .select("id")
             .eq("user_id", userId)
             .eq("is_active", true)
             .order("created_at", { ascending: false })
             .limit(1);
+          if (activePlansError) {
+            console.error(
+              "[planActions] Failed to look up active workout plan:",
+              activePlansError,
+            );
+          }
           activePlanRowId = activePlans?.[0]?.id || null;
         } catch (activePlanLookupError) {
           console.warn(

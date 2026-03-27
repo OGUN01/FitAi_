@@ -144,7 +144,18 @@ export const HealthKitSettingsScreen: React.FC<
           borderBottomColor: ResponsiveTheme.colors.border,
         }}
       >
-        <TouchableOpacity onPress={onBack} style={{ marginRight: rp(16) }}>
+        <TouchableOpacity
+          onPress={onBack}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          style={{
+            marginRight: rp(16),
+            minWidth: 44,
+            minHeight: 44,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           <Ionicons name="arrow-back" size={rs(24)} color={ResponsiveTheme.colors.text} />
         </TouchableOpacity>
         <Text
@@ -213,10 +224,13 @@ export const HealthKitSettingsScreen: React.FC<
         >
           <TouchableOpacity
             onPress={handleOpenHealthApp}
+            accessibilityRole="button"
+            accessibilityLabel="Manage permissions in Health app"
             style={{
               backgroundColor: ResponsiveTheme.colors.surface,
               borderRadius: rbr(12),
               padding: rp(16),
+              minHeight: 44,
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",

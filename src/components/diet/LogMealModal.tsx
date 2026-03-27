@@ -37,6 +37,32 @@ export interface LogMealScanResult {
   type: "food" | "label" | "barcode";
   mealName: string;
   suggestedMealType?: MealType;
+  packagedFood?: {
+    referenceId: string;
+    source: string;
+    serving: {
+      size?: number | null;
+      unit?: string | null;
+    };
+    per100g: {
+      calories: number;
+      protein: number;
+      carbs: number;
+      fat: number;
+      fiber: number;
+      sugar?: number;
+      sodium?: number;
+    };
+    perServing?: {
+      calories: number;
+      protein: number;
+      carbs: number;
+      fat: number;
+      fiber?: number;
+      sugar?: number;
+      sodium?: number;
+    };
+  };
   ingredients?: Array<{
     name: string;
     grams: string;
@@ -62,7 +88,9 @@ interface LogMealModalProps {
   visible: boolean;
   onClose: () => void;
   onRequestFoodScan?: () => void;
-  onRequestLabelScan?: () => void;
+  onRequestLabelScan?: (
+    mealType: "breakfast" | "lunch" | "dinner" | "snack",
+  ) => void;
   onRequestBarcodeScan?: () => void;
   pendingScanResult?: LogMealScanResult | null;
   onScanResultConsumed?: () => void;
@@ -121,6 +149,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
   const [simpleProtein, setSimpleProtein] = useState("");
   const [simpleCarbs, setSimpleCarbs] = useState("");
   const [simpleFat, setSimpleFat] = useState("");
+  const [simpleFiber, setSimpleFiber] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [scanProvenance, setScanProvenance] =
@@ -184,6 +213,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
       setSimpleProtein(pendingScanResult.directEntry.protein);
       setSimpleCarbs(pendingScanResult.directEntry.carbs);
       setSimpleFat(pendingScanResult.directEntry.fat);
+      setSimpleFiber(pendingScanResult.directEntry.fiber);
     }
 
     onScanResultConsumed?.();
@@ -198,6 +228,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
     setSimpleProtein((parseNum(baseDirectEntry.protein) * m).toFixed(1));
     setSimpleCarbs((parseNum(baseDirectEntry.carbs) * m).toFixed(1));
     setSimpleFat((parseNum(baseDirectEntry.fat) * m).toFixed(1));
+    setSimpleFiber((parseNum(baseDirectEntry.fiber) * m).toFixed(1));
     haptics.light();
   };
 
@@ -210,6 +241,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
     setSimpleProtein("");
     setSimpleCarbs("");
     setSimpleFat("");
+    setSimpleFiber("");
     setScanProvenance(null);
     setScanReviewNote(null);
     setScanType(null);
@@ -261,6 +293,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
     let finalCarbs = 0;
     let finalFat = 0;
     let finalCalories = 0;
+    let finalFiber = 0;
 
     if (mode === "ingredients") {
       const hasAnyIngredient = ingredients.some((i) => i.name.trim());
@@ -275,6 +308,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
       finalCarbs = totalCarbs;
       finalFat = totalFat;
       finalCalories = totalCalories;
+      finalFiber = totalFiber;
     } else {
       finalCalories = parseNum(simpleCalories);
       if (finalCalories <= 0) {
@@ -287,6 +321,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
       finalProtein = parseNum(simpleProtein);
       finalCarbs = parseNum(simpleCarbs);
       finalFat = parseNum(simpleFat);
+      finalFiber = parseNum(simpleFiber);
     }
 
     setIsSubmitting(true);
@@ -327,7 +362,36 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                 fiber: parseNum(i.fiber),
               },
             }))
-        : [];
+        : [
+            {
+              id: `item_${mealId}_0`,
+              name: trimmedName,
+              quantity: 1,
+              unit: "serving",
+              calories: finalCalories,
+              macros: {
+                protein: finalProtein,
+                carbohydrates: finalCarbs,
+                fat: finalFat,
+                fiber: finalFiber,
+              },
+            },
+          ];
+
+    const derivedMacros = items.reduce(
+      (acc, item) => ({
+        protein: acc.protein + (item.macros?.protein ?? 0),
+        carbohydrates: acc.carbohydrates + (item.macros?.carbohydrates ?? 0),
+        fat: acc.fat + (item.macros?.fat ?? 0),
+        fiber: acc.fiber + (item.macros?.fiber ?? 0),
+      }),
+      {
+        protein: 0,
+        carbohydrates: 0,
+        fat: 0,
+        fiber: 0,
+      },
+    );
 
     const newMeal = {
       id: mealId,
@@ -340,10 +404,10 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
       items,
       totalCalories: finalCalories,
       totalMacros: {
-        protein: finalProtein,
-        carbohydrates: finalCarbs,
-        fat: finalFat,
-        fiber: mode === "ingredients" ? totalFiber : 0,
+        protein: derivedMacros.protein,
+        carbohydrates: derivedMacros.carbohydrates,
+        fat: derivedMacros.fat,
+        fiber: derivedMacros.fiber,
       },
       preparationTime: 0,
       difficulty: "easy" as const,
@@ -413,6 +477,9 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
               <TouchableOpacity
                 onPress={handleClose}
                 style={styles.closeButton}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel="Close log meal"
               >
                 <Ionicons
                   name="close"
@@ -426,6 +493,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
               style={styles.scrollView}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
             >
               {/* Meal Name */}
               {scanReviewNote && (
@@ -567,7 +635,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                   {onRequestLabelScan && (
                     <TouchableOpacity
                       style={styles.scanChip}
-                      onPress={onRequestLabelScan}
+                      onPress={() => onRequestLabelScan(mealType)}
                     >
                       <Ionicons
                         name="document-text-outline"
@@ -614,8 +682,10 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                   {/* Horizontally scrollable ingredient table */}
                   <ScrollView
                     horizontal
-                    showsHorizontalScrollIndicator={false}
+                    showsHorizontalScrollIndicator={true}
                     keyboardShouldPersistTaps="handled"
+                    contentContainerStyle={{ paddingRight: rw(16) }}
+                    nestedScrollEnabled
                   >
                     <View>
                       {/* Column headers */}
@@ -890,6 +960,21 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                       />
                     </View>
                   </View>
+                  <View style={[styles.macroRow, { marginTop: rh(10) }]}>
+                    <View style={styles.macroField}>
+                      <Text style={styles.macroLabel}>Fiber (g)</Text>
+                      <TextInput
+                        style={styles.macroInput}
+                        value={simpleFiber}
+                        onChangeText={setSimpleFiber}
+                        placeholder="0"
+                        placeholderTextColor={
+                          ResponsiveTheme.colors.textSecondary
+                        }
+                        keyboardType="numeric"
+                      />
+                    </View>
+                  </View>
                 </View>
               )}
             </ScrollView>
@@ -953,6 +1038,10 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: rp(8),
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
   },
   scrollView: {
     maxHeight: rh(500),
@@ -1053,7 +1142,7 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.primary,
   },
   colFixed: {
-    width: rw(46),
+    width: rw(50),
   },
   ingredientColumnHeaders: {
     flexDirection: "row",

@@ -14,6 +14,7 @@ import {
   AdvancedReviewRow,
   OnboardingProgressRow,
 } from "../types/onboarding";
+import { resolveCurrentWeightForUser } from "./currentWeight";
 
 // ============================================================================
 // PERSONAL INFO SERVICE
@@ -310,12 +311,15 @@ export class DietPreferencesService {
 export class BodyAnalysisService {
   static async save(userId: string, data: BodyAnalysisData): Promise<boolean> {
     try {
+      const resolvedCurrentWeight = await resolveCurrentWeightForUser(userId, {
+        bodyAnalysisWeight: data.current_weight_kg,
+      });
       const bodyData: Partial<BodyAnalysisRow> = {
         user_id: userId,
 
         // Basic measurements
         height_cm: data.height_cm,
-        current_weight_kg: data.current_weight_kg,
+        current_weight_kg: resolvedCurrentWeight.value,
         target_weight_kg: data.target_weight_kg,
         target_timeline_weeks: data.target_timeline_weeks,
 

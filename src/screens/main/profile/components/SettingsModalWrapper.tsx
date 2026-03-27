@@ -85,7 +85,6 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
     >
       <StatusBar
         barStyle="light-content"
-        backgroundColor={ResponsiveTheme.colors.background}
       />
       <View style={styles.modalContainer}>
         <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
@@ -104,7 +103,7 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                 hapticFeedback={false}
                 style={styles.closeButton}
                 accessibilityRole="button"
-                accessibilityLabel="Close"
+                accessibilityLabel={`Close ${title}`}
               >
                 <Ionicons
                   name="close"
@@ -219,9 +218,9 @@ const styles = StyleSheet.create({
     paddingVertical: ResponsiveTheme.spacing.md,
   },
   closeButton: {
-    width: rw(40),
-    height: rw(40),
-    borderRadius: rw(20),
+    width: Math.max(rw(40), 44),
+    height: Math.max(rw(40), 44),
+    borderRadius: Math.max(rw(20), 22),
     backgroundColor: "rgba(255, 255, 255, 0.08)",
     justifyContent: "center",
     alignItems: "center",
@@ -249,7 +248,7 @@ const styles = StyleSheet.create({
     marginTop: rp(2),
   },
   headerSpacer: {
-    width: rw(40),
+    width: Math.max(rw(40), 44),
   },
   divider: {
     height: rp(1),
@@ -281,6 +280,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.md,
+    minHeight: 44,
     borderRadius: ResponsiveTheme.borderRadius.lg,
   },
   saveButtonDisabled: {

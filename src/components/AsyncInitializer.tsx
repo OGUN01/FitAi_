@@ -100,7 +100,7 @@ export const AsyncInitializer: React.FC<AsyncInitializerProps> = ({
   if (!isInitialized) {
     return (
       <View style={styles.loadingContainer}>
-        <StatusBar style="light" backgroundColor={ResponsiveTheme.colors.background} />
+        <StatusBar style="light" />
         <ActivityIndicator size="large" color={ResponsiveTheme.colors.primary} />
         <Text style={styles.loadingText}>Initializing FitAI...</Text>
         {initializationError && (

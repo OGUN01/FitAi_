@@ -17,7 +17,7 @@ import { useCalculatedMetrics } from "./useCalculatedMetrics";
 import { useNutritionData } from "./useNutritionData";
 import { useAuth } from "./useAuth";
 import { useSubscriptionStore } from "../stores/subscriptionStore";
-// usePaywall import removed — triggerPaywall now via subscriptionStore
+// usePaywall import removed â€” triggerPaywall now via subscriptionStore
 import { mealMotivationService } from "../features/nutrition/MealMotivation";
 import {
   buildLegacyDietPreferences,
@@ -36,35 +36,46 @@ export const useMealPlanning = (navigation: any) => {
   } | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const asyncJobPollingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastRemoteHydratedUserIdRef = useRef<string | null>(null);
 
   const [showMealPreparationModal, setShowMealPreparationModal] =
     useState(false);
   const [selectedMealForPreparation, setSelectedMealForPreparation] =
     useState<DayMeal | null>(null);
 
-  const {
-    weeklyMealPlan,
-    isGeneratingPlan,
-    mealProgress,
-    saveWeeklyMealPlan,
-    setWeeklyMealPlan,
-    setGeneratingPlan,
-    getMealProgress,
-    loadWeeklyMealPlan,
-    loadData: loadNutritionStoreData,
-  } = useNutritionStore();
+  const weeklyMealPlan = useNutritionStore((state) => state.weeklyMealPlan);
+  const isGeneratingPlan = useNutritionStore((state) => state.isGeneratingPlan);
+  const mealProgress = useNutritionStore((state) => state.mealProgress);
+  const dailyMeals = useNutritionStore((state) => state.dailyMeals);
+  const saveWeeklyMealPlan = useNutritionStore(
+    (state) => state.saveWeeklyMealPlan,
+  );
+  const setWeeklyMealPlan = useNutritionStore(
+    (state) => state.setWeeklyMealPlan,
+  );
+  const setGeneratingPlan = useNutritionStore(
+    (state) => state.setGeneratingPlan,
+  );
+  const mealProgressMap = useNutritionStore((state) => state.mealProgress);
+  const getMealProgress = (mealId: string) => mealProgressMap[mealId] ?? null;
+  const loadNutritionStoreData = useNutritionStore((state) => state.loadData);
   const profile = useUserStore((state) => state.profile);
 
-  const { selectedDay } = useAppStateStore();
+  const selectedDay = useAppStateStore((state) => state.selectedDay);
   const { user } = useAuth();
   // SSOT: profileStore is authoritative for all onboarding data
-  const {
-    bodyAnalysis,
-    personalInfo: profilePersonalInfo,
-    workoutPreferences: profileWorkoutPreferences,
-    dietPreferences: profileDietPreferences,
-  } = useProfileStore();
-  const { currentStreak: achievementStreak } = useAchievementStore();
+  const bodyAnalysis = useProfileStore((state) => state.bodyAnalysis);
+  const profilePersonalInfo = useProfileStore((state) => state.personalInfo);
+  const profileWorkoutPreferences = useProfileStore(
+    (state) => state.workoutPreferences,
+  );
+  const profileDietPreferences = useProfileStore(
+    (state) => state.dietPreferences,
+  );
+  const profileAdvancedReview = useProfileStore(
+    (state) => state.advancedReview,
+  );
+  const achievementStreak = useAchievementStore((state) => state.currentStreak);
 
   const legacyPersonalInfo = useMemo(
     () =>
@@ -85,8 +96,9 @@ export const useMealPlanning = (navigation: any) => {
   );
 
   const { getCalorieTarget } = useCalculatedMetrics();
-  const { canUseFeature, incrementUsage, triggerPaywall } =
-    useSubscriptionStore();
+  const canUseFeature = useSubscriptionStore((state) => state.canUseFeature);
+  const incrementUsage = useSubscriptionStore((state) => state.incrementUsage);
+  const triggerPaywall = useSubscriptionStore((state) => state.triggerPaywall);
 
   const { dietPreferences, loadDailyNutrition } = useNutritionData();
 
@@ -110,19 +122,39 @@ export const useMealPlanning = (navigation: any) => {
   }, [forceRefresh]);
 
   useEffect(() => {
-    const loadExistingMealPlan = async () => {
-      try {
-        await loadNutritionStoreData();
-        const existingPlan = await loadWeeklyMealPlan();
-        if (existingPlan) {
-          setWeeklyMealPlan(existingPlan);
-        }
-      } catch (error) {
-        console.error("[ERROR] Error loading meal plan:", error);
+    const authenticatedUserId =
+      user?.id && !user.id.startsWith("guest") ? user.id : null;
+
+    if (authenticatedUserId) {
+      if (lastRemoteHydratedUserIdRef.current === authenticatedUserId) {
+        return;
       }
-    };
-    loadExistingMealPlan();
-  }, []);
+
+      lastRemoteHydratedUserIdRef.current = authenticatedUserId;
+      loadNutritionStoreData().catch((error) => {
+        console.error("[ERROR] Error loading remote meal plan:", error);
+      });
+      return;
+    }
+
+    lastRemoteHydratedUserIdRef.current = null;
+    const hasHydratedDietData =
+      Boolean(weeklyMealPlan) ||
+      Object.keys(mealProgress).length > 0 ||
+      dailyMeals.length > 0;
+
+    if (!hasHydratedDietData) {
+      loadNutritionStoreData().catch((error) => {
+        console.error("[ERROR] Error loading meal plan:", error);
+      });
+    }
+  }, [
+    dailyMeals.length,
+    loadNutritionStoreData,
+    mealProgress,
+    user?.id,
+    weeklyMealPlan,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -292,10 +324,12 @@ export const useMealPlanning = (navigation: any) => {
         1,
         {
           bodyMetrics: bodyAnalysis || undefined,
-          dietPreferences: (mergedDietPreferences ||
+          dietPreferences: ((profileDietPreferences as any) ||
+            mergedDietPreferences ||
             dietPreferences ||
             undefined) as any,
           calorieTarget: userCalorieTarget,
+          advancedReview: profileAdvancedReview || undefined,
         },
       );
 
@@ -346,15 +380,14 @@ export const useMealPlanning = (navigation: any) => {
     setAiError(null);
   };
 
-  const getTodaysMeals = (): DayMeal[] => {
+  const getTodaysMeals = useMemo((): DayMeal[] => {
     if (!weeklyMealPlan?.meals) {
       return [];
     }
-    const filtered = weeklyMealPlan.meals.filter(
+    return weeklyMealPlan.meals.filter(
       (meal) => meal.dayOfWeek === selectedDay,
     );
-    return filtered;
-  };
+  }, [weeklyMealPlan?.meals, selectedDay]);
 
   const handleDeleteMeal = async (meal: DayMeal) => {
     try {
@@ -521,7 +554,7 @@ export const useMealPlanning = (navigation: any) => {
     selectedMealForPreparation,
     setSelectedMealForPreparation,
 
-    getTodaysMeals,
+    todaysMeals: getTodaysMeals,
     generateWeeklyMealPlan,
     cancelAsyncGeneration,
     handleDeleteMeal,

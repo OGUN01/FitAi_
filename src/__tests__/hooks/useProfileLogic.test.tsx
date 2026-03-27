@@ -130,10 +130,29 @@ describe("useProfileLogic", () => {
       await result.current.handleSettingItemPress({ id: "theme" } as any);
     });
 
-    expect(result.current.showThemeModal).toBe(false);
     expect(mockCrossPlatformAlert).toHaveBeenCalledWith(
       "Theme",
-      "FitAI currently uses a fixed dark theme. Additional theme options are coming soon.",
+      "FitAI uses a fixed dark theme right now. Theme switching is not available yet.",
+    );
+  });
+
+  it("marks non-configurable preference rows as non-actionable metadata", () => {
+    const { result } = renderHook(() => useProfileLogic());
+
+    expect(result.current.preferencesItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "theme",
+          disabled: true,
+          showChevron: false,
+        }),
+        expect.objectContaining({
+          id: "language",
+          disabled: true,
+          showChevron: false,
+          subtitle: "English only for now",
+        }),
+      ]),
     );
   });
 

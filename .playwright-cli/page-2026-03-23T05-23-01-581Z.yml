@@ -1,0 +1,28 @@
+- generic [ref=e16]:
+  - generic [ref=e17]:
+    - button "Go back" [ref=e53] [cursor=pointer]:
+      - generic [ref=e54]: 
+    - generic [ref=e55]:
+      - generic [ref=e56]: Welcome Back
+      - generic [ref=e57]: Sign in to continue your fitness journey
+  - generic [ref=e24]:
+    - button "Continue with Google" [ref=e59] [cursor=pointer]:
+      - generic [ref=e60]:
+        - img [ref=e61]
+        - generic [ref=e67]: Continue with Google
+    - generic [ref=e70]: or sign in with email
+    - generic [ref=e72]:
+      - generic [ref=e73]:
+        - generic [ref=e74]: Email Address
+        - textbox "Enter your email address" [active] [ref=e76]: test.home@fitai.dev
+      - generic [ref=e77]:
+        - generic [ref=e78]: Password
+        - generic [ref=e79]:
+          - textbox "Enter your password" [ref=e80]
+          - generic [ref=e91] [cursor=pointer]: 
+      - button "Sign In" [ref=e92] [cursor=pointer]:
+        - generic [ref=e94]: Sign In
+    - generic [ref=e86]:
+      - generic [ref=e87]: Don't have an account?
+      - button "Sign Up" [ref=e89] [cursor=pointer]:
+        - generic [ref=e90]: Sign Up

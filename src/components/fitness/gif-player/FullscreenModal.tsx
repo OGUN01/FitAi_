@@ -36,11 +36,17 @@ export const FullscreenModal: React.FC<FullscreenModalProps> = ({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <StatusBar backgroundColor="rgba(0,0,0,0.9)" barStyle="light-content" />
+      <StatusBar barStyle="light-content" />
       <View style={styles.fullscreenOverlay}>
         <View style={styles.fullscreenContainer}>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>✕</Text>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={onClose}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={`Close ${displayName} fullscreen view`}
+          >
+            <Text style={styles.closeButtonText}>X</Text>
           </TouchableOpacity>
 
           <Text style={styles.fullscreenTitle}>{displayName}</Text>
@@ -57,7 +63,7 @@ export const FullscreenModal: React.FC<FullscreenModalProps> = ({
           />
 
           <Text style={styles.fullscreenHint}>
-            🔍 Maximum quality view • Tap × to close
+            Maximum quality view - tap X to close
           </Text>
         </View>
       </View>
@@ -84,9 +90,9 @@ const styles = StyleSheet.create({
     right: rp(20),
     zIndex: 10,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: rbr(20),
-    width: rs(40),
-    height: rs(40),
+    borderRadius: Math.max(rbr(20), 22),
+    width: Math.max(rs(40), 44),
+    height: Math.max(rs(40), 44),
     justifyContent: "center",
     alignItems: "center",
   },

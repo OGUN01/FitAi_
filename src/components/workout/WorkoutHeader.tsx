@@ -48,7 +48,7 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
         activeOpacity={0.7}
         hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
       >
-        <Text style={styles.exitButtonText}>✕</Text>
+        <Text style={styles.exitButtonText}>X</Text>
       </TouchableOpacity>
 
       <View style={styles.headerInfo}>

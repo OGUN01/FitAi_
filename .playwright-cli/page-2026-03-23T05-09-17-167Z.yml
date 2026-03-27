@@ -1,0 +1,130 @@
+- generic [ref=e102]:
+  - generic "Continue as guest" [ref=e103]:
+    - generic [ref=e104]: Continue as guest
+  - generic [ref=e569]:
+    - generic [ref=e570]:
+      - generic [ref=e571]: Nutrition Plan
+      - generic [ref=e572]:
+        - button "Previous day" [ref=e574] [cursor=pointer]:
+          - generic [ref=e575]: ‹
+        - generic [ref=e577]:
+          - generic [ref=e578]: Today
+          - generic [ref=e579]: Mar 23
+        - button "Next day" [ref=e581] [cursor=pointer]:
+          - generic [ref=e582]: ›
+      - generic [ref=e583]:
+        - button "Generate weekly plan" [ref=e585] [cursor=pointer]:
+          - generic [ref=e586]:
+            - generic [ref=e587]: 
+            - generic [ref=e588]: Generate Week
+        - button "Log Meal" [ref=e590] [cursor=pointer]:
+          - generic [ref=e591]: 
+    - generic [ref=e593]:
+      - generic [ref=e594]:
+        - generic [ref=e596]: 
+        - generic [ref=e597]:
+          - generic [ref=e598]: Offline food database available
+          - generic [ref=e599]: ~300 MB · works without internet
+      - generic [ref=e600]:
+        - button "Download Now" [ref=e601] [cursor=pointer]:
+          - generic [ref=e602]: 
+          - generic [ref=e603]: Download Now
+        - button "Skip for Now" [ref=e604] [cursor=pointer]:
+          - generic [ref=e605]: Skip for Now
+    - generic [ref=e606]:
+      - generic [ref=e607]:
+        - generic [ref=e608]: 📋
+        - generic [ref=e609]: Using estimated targets — complete your profile for personalized goals
+      - generic [ref=e611]:
+        - progressbar [ref=e613]:
+          - img [ref=e614]
+          - generic [ref=e618]:
+            - generic [ref=e619]: "2000"
+            - generic [ref=e620]: Calories left
+            - generic [ref=e621]: of 2000
+        - generic [ref=e622]:
+          - generic [ref=e624]:
+            - generic [ref=e627]: Protein
+            - generic [ref=e628]:
+              - generic [ref=e629]: 0g
+              - generic [ref=e630]: / 150g
+          - generic [ref=e634]:
+            - generic [ref=e637]: Carbs
+            - generic [ref=e638]:
+              - generic [ref=e639]: 0g
+              - generic [ref=e640]: / 250g
+          - generic [ref=e644]:
+            - generic [ref=e647]: Fats
+            - generic [ref=e648]:
+              - generic [ref=e649]: 0g
+              - generic [ref=e650]: / 65g
+          - generic [ref=e654]:
+            - generic [ref=e657]: Fiber
+            - generic [ref=e658]:
+              - generic [ref=e659]: 0g
+              - generic [ref=e660]: / 25g
+    - generic [ref=e665]:
+      - button "Scan Food" [ref=e667] [cursor=pointer]:
+        - generic [ref=e669]: 
+        - generic [ref=e670]: Scan Food
+      - button "Barcode" [ref=e672] [cursor=pointer]:
+        - generic [ref=e674]: 
+        - generic [ref=e675]: Barcode
+      - button "Scan Label" [ref=e677] [cursor=pointer]:
+        - generic [ref=e679]: 
+        - generic [ref=e680]: Scan Label
+      - button "Log Meal" [ref=e682] [cursor=pointer]:
+        - generic [ref=e684]: 
+        - generic [ref=e685]: Log Meal
+      - button "AI Week" [ref=e687] [cursor=pointer]:
+        - generic [ref=e689]: 
+        - generic [ref=e690]: AI Week
+      - button "Log Water" [ref=e692] [cursor=pointer]:
+        - generic [ref=e694]: 
+        - generic [ref=e695]: Log Water
+      - button "Recipes" [ref=e697] [cursor=pointer]:
+        - generic [ref=e699]: 
+        - generic [ref=e700]: Recipes
+    - generic [ref=e701]:
+      - generic [ref=e702]: 
+      - generic [ref=e703]: No weekly plan yet
+      - generic [ref=e704]: Tap AI Week or Generate Week to build your plan
+    - generic [ref=e705]:
+      - generic [ref=e706]: Meal Suggestions
+      - generic [ref=e708]:
+        - generic [ref=e712]:
+          - generic [ref=e713]: Butter Chicken
+          - generic [ref=e714]: 490 cal | 30g P | 14g C | 34g F
+          - button "Add" [ref=e716] [cursor=pointer]:
+            - generic [ref=e718]: Add
+        - generic [ref=e722]:
+          - generic [ref=e723]: Dal Makhani
+          - generic [ref=e724]: 350 cal | 15g P | 42g C | 12g F
+          - button "Add" [ref=e726] [cursor=pointer]:
+            - generic [ref=e728]: Add
+        - generic [ref=e732]:
+          - generic [ref=e733]: Paneer Tikka
+          - generic [ref=e734]: 320 cal | 18g P | 10g C | 22g F
+          - button "Add" [ref=e736] [cursor=pointer]:
+            - generic [ref=e738]: Add
+        - generic [ref=e742]:
+          - generic [ref=e743]: Biryani (Chicken)
+          - generic [ref=e744]: 450 cal | 22g P | 55g C | 14g F
+          - button "Add" [ref=e746] [cursor=pointer]:
+            - generic [ref=e748]: Add
+        - generic [ref=e752]:
+          - generic [ref=e753]: Chole Bhature
+          - generic [ref=e754]: 520 cal | 14g P | 62g C | 24g F
+          - button "Add" [ref=e756] [cursor=pointer]:
+            - generic [ref=e758]: Add
+  - generic [ref=e450]:
+    - tab "Home" [ref=e451] [cursor=pointer]:
+      - generic [ref=e456]: Home
+    - tab "Workout" [ref=e458] [cursor=pointer]:
+      - generic [ref=e464]: Workout
+    - tab "Diet" [active] [ref=e465] [cursor=pointer]:
+      - generic [ref=e470]: Diet
+    - tab "Profile" [ref=e471] [cursor=pointer]:
+      - generic [ref=e476]: Profile
+    - tab "Analytics" [ref=e477] [cursor=pointer]:
+      - generic [ref=e485]: Analytics

@@ -7,6 +7,7 @@ import {
   ExerciseCalorieInput,
 } from "../services/calorieCalculator";
 import { useProfileStore } from "../stores/profileStore";
+import { resolveCurrentWeightFromStores } from "../services/currentWeight";
 
 interface ExerciseProgress {
   exerciseIndex: number;
@@ -108,10 +109,12 @@ export const useWorkoutSession = (
       }
     });
 
-    let caloriesBurned = 0;
-    if (completedInputs.length > 0) {
-      const userWeight =
-        useProfileStore.getState().bodyAnalysis?.current_weight_kg;
+      let caloriesBurned = 0;
+      if (completedInputs.length > 0) {
+      const userWeight = resolveCurrentWeightFromStores({
+        bodyAnalysisWeight:
+          useProfileStore.getState().bodyAnalysis?.current_weight_kg,
+      }).value;
       if (userWeight && userWeight > 0) {
         caloriesBurned = calculateWorkoutCalories(
           completedInputs,
@@ -139,7 +142,7 @@ export const useWorkoutSession = (
   workoutStatsRef.current = workoutStats;
 
   const handleSetComplete = useCallback(
-    async (setIndex: number, onMilestone?: (percentage: number) => void) => {
+    async (setIndex: number, onMilestone?: (percentage: number) => void, onAllSetsCompleted?: () => Promise<void> | void) => {
       try {
         if (Platform.OS !== "web") {
           Vibration.vibrate(50);
@@ -152,7 +155,7 @@ export const useWorkoutSession = (
           ...newProgress[currentExerciseIndex],
           completedSets: [...newProgress[currentExerciseIndex].completedSets],
         };
-        updated.completedSets[setIndex] = !updated.completedSets[setIndex];
+        updated.completedSets[setIndex] = true;
 
         const allSetsCompleted = updated.completedSets.every(Boolean);
         updated.isCompleted = allSetsCompleted;
@@ -163,6 +166,10 @@ export const useWorkoutSession = (
 
         newProgress[currentExerciseIndex] = updated;
         setExerciseProgress(newProgress);
+
+        if (allSetsCompleted && onAllSetsCompleted) {
+          await onAllSetsCompleted();
+        }
 
         const completedExercises = newProgress.filter(
           (ep) => ep?.isCompleted,
@@ -188,9 +195,13 @@ export const useWorkoutSession = (
 
         const currentSets = safeNumber(currentExercise.sets, 3);
         if (updated.completedSets[setIndex] && setIndex < currentSets - 1) {
+          // NOTE: Rest timer triggering is handled by the screen-level RestTimer
+          // (timestamp-based, more accurate). We only set restTimeRemaining here
+          // for the WorkoutTimer overlay that shows after rest completes.
           const restTime = safeNumber(currentExercise.restTime, 60);
-          setIsRestTime(true);
           setRestTimeRemaining(restTime);
+          // Do NOT set isRestTime=true here — the screen-level handleSetComplete
+          // manages rest via setRestTimerEndTime (RestTimer component).
         }
 
         if (allSetsCompleted && currentExerciseIndex < totalExercises - 1) {

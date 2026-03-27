@@ -19,11 +19,17 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({
           {displayName}
         </Text>
         <View style={styles.qualityBadge}>
-          <Text style={styles.qualityBadgeText}>✅ Verified</Text>
+          <Text style={styles.qualityBadgeText}>Verified</Text>
         </View>
       </View>
-      <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-        <Text style={styles.closeButtonText}>✕</Text>
+      <TouchableOpacity
+        style={styles.closeButton}
+        onPress={onClose}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        accessibilityRole="button"
+        accessibilityLabel={`Close ${displayName}`}
+      >
+        <Text style={styles.closeButtonText}>X</Text>
       </TouchableOpacity>
     </View>
   );
@@ -68,9 +74,9 @@ const styles = StyleSheet.create({
   },
 
   closeButton: {
-    width: rs(40),
-    height: rs(40),
-    borderRadius: rbr(20),
+    width: Math.max(rs(40), 44),
+    height: Math.max(rs(40), 44),
+    borderRadius: Math.max(rbr(20), 22),
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",

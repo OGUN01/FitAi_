@@ -25,6 +25,7 @@ export interface ConsumedNutrition {
   protein: number;
   carbs: number;
   fat: number;
+  fiber: number;
 }
 
 // Current meal session state
@@ -48,6 +49,7 @@ export interface NutritionState {
 
   // Meal progress tracking
   mealProgress: Record<string, MealProgress>;
+  lastMealResetDate: string;
 
   // Daily meal tracking
   dailyMeals: Meal[];
@@ -83,6 +85,9 @@ export interface NutritionState {
   startMealSession: (meal: DayMeal) => Promise<string>;
   endMealSession: (logId: string) => Promise<void>;
   updateIngredientProgress: (ingredientId: string, quantity: number) => void;
+
+  // Day-boundary cleanup
+  checkAndResetMealProgressIfNewDay: () => void;
 
   // Data persistence
   persistData: () => Promise<void>;

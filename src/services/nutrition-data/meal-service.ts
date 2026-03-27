@@ -1,11 +1,15 @@
 import { Platform } from "react-native";
-import * as crypto from "expo-crypto";
 import { supabase } from "../supabase";
 import { crudOperations } from "../crudOperations";
 import { analyticsDataService } from "../analyticsData";
 import { MealLog, SyncStatus } from "../../types/localData";
+import { generateUUID } from "../../utils/uuid";
 import { Meal, NutritionDataResponse } from "./types";
 import { FoodService } from "./food-service";
+import {
+  deriveMealLogFiber,
+  normalizeMealLogFoodItems,
+} from "../../utils/mealLogNutrition";
 
 export class MealService {
   private foodService: FoodService;
@@ -52,20 +56,24 @@ export class MealService {
       }
 
       const meals =
-        data?.map((mealLog: any) => ({
-          id: mealLog.id,
-          type: mealLog.meal_type,
-          name: mealLog.meal_name,
-          total_calories: mealLog.total_calories || 0,
-          total_protein: mealLog.total_protein || 0,
-          total_carbohydrates: mealLog.total_carbohydrates || 0,
-          total_carbs: mealLog.total_carbohydrates || 0,
-          total_fat: mealLog.total_fat || 0,
-          consumed_at: mealLog.logged_at,
-          logged_at: mealLog.logged_at,
-          food_items: mealLog.food_items || [],
-          foods: [],
-        })) || [];
+        data?.map((mealLog: any) => {
+          const foodItems = normalizeMealLogFoodItems(mealLog.food_items);
+          return {
+            id: mealLog.id,
+            type: mealLog.meal_type,
+            name: mealLog.meal_name,
+            total_calories: mealLog.total_calories || 0,
+            total_protein: mealLog.total_protein || 0,
+            total_carbohydrates: mealLog.total_carbohydrates || 0,
+            total_carbs: mealLog.total_carbohydrates || 0,
+            total_fat: mealLog.total_fat || 0,
+            total_fiber: deriveMealLogFiber(foodItems),
+            consumed_at: mealLog.logged_at,
+            logged_at: mealLog.logged_at,
+            food_items: foodItems,
+            foods: [],
+          };
+        }) || [];
 
       return {
         success: true,
@@ -98,7 +106,7 @@ export class MealService {
       );
 
       const mealLog: MealLog = {
-        id: `meal_${Date.now()}_${crypto.randomUUID().replace(/-/g, "").substring(0, 9)}`,
+        id: generateUUID(),
         userId,
         mealType: mealData.type,
         foods: mealData.foods.map((f) => ({
@@ -113,7 +121,7 @@ export class MealService {
           protein: nutritionTotals.protein,
           carbohydrates: nutritionTotals.carbs,
           fat: nutritionTotals.fat,
-          fiber: 0,
+          fiber: nutritionTotals.fiber,
         },
         loggedAt: new Date().toISOString(),
         notes: mealData.name,
@@ -177,6 +185,7 @@ export class MealService {
           total_protein: nutritionTotals.protein,
           total_carbs: nutritionTotals.carbs,
           total_fat: nutritionTotals.fat,
+          total_fiber: nutritionTotals.fiber,
           consumed_at: mealLog.loggedAt,
           created_at: data.created_at ?? mealLog.loggedAt,
           foods: [],

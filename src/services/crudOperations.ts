@@ -14,7 +14,6 @@ import {
   SyncStatus,
   UserPreferences,
 } from "../types/localData";
-import { useFitnessStore } from "../stores/fitnessStore";
 import { getPlanIdentityForWorkoutId } from "../utils/workoutIdentity";
 
 // ============================================================================
@@ -113,7 +112,6 @@ export class CrudOperationsService {
 
   async createWorkoutSession(session: LocalWorkoutSession): Promise<void> {
     try {
-
       // Ensure data layer is initialized before writing
       await this.initialize();
       await dataBridge.storeWorkoutSession(session);
@@ -127,8 +125,14 @@ export class CrudOperationsService {
       // Sync to Supabase for cloud persistence
       await this.syncWorkoutSessionToSupabase(session);
     } catch (error) {
-      console.error("❌ Failed to create workout session:", error);
-      console.error("Session data:", JSON.stringify(session, null, 2));
+      console.error(
+        "❌ Failed to create workout session:",
+        error,
+        "| id:",
+        session?.id,
+        "workoutId:",
+        session?.workoutId,
+      );
       throw error;
     }
   }
@@ -149,27 +153,34 @@ export class CrudOperationsService {
       }
       const planIdentity = getPlanIdentityForWorkoutId(
         session.workoutId,
-        useFitnessStore.getState().weeklyWorkoutPlan,
+        require("../stores/fitnessStore").useFitnessStore.getState()
+          .weeklyWorkoutPlan,
       );
 
-      const { error } = await supabase.from("workout_sessions").upsert({
-        id: session.id,
-        user_id: userId,
-        workout_id: session.workoutId || null,
-        planned_day_key: planIdentity.plannedDayKey || null,
-        plan_slot_key: planIdentity.planSlotKey || null,
-        started_at: session.startedAt,
-        completed_at: session.completedAt || null,
-        duration: session.duration ?? null,
-        total_duration_minutes: session.duration ?? null,
-        calories_burned: session.caloriesBurned ?? null,
-        exercises: session.exercises || [],
-        exercises_completed: session.exercises || [],
-        notes: session.notes || "",
-        // rating: null unless user explicitly rated (1-5); 0 violates check constraint
-        rating: (typeof session.rating === 'number' && session.rating > 0) ? session.rating : null,
-        is_completed: session.isCompleted || false,
-      }, { onConflict: 'id', ignoreDuplicates: false });
+      const { error } = await supabase.from("workout_sessions").upsert(
+        {
+          id: session.id,
+          user_id: userId,
+          workout_id: session.workoutId || null,
+          planned_day_key: planIdentity.plannedDayKey || null,
+          plan_slot_key: planIdentity.planSlotKey || null,
+          started_at: session.startedAt,
+          completed_at: session.completedAt || null,
+          duration: session.duration ?? 0,
+          total_duration_minutes: session.duration ?? 0,
+          calories_burned: session.caloriesBurned ?? 0,
+          exercises: session.exercises || [],
+          exercises_completed: session.exercises || [],
+          notes: session.notes || "",
+          // rating: null unless user explicitly rated (1-5); 0 violates check constraint
+          rating:
+            typeof session.rating === "number" && session.rating > 0
+              ? session.rating
+              : null,
+          is_completed: session.isCompleted || false,
+        },
+        { onConflict: "id", ignoreDuplicates: false },
+      );
 
       if (error) {
         console.warn(
@@ -198,7 +209,8 @@ export class CrudOperationsService {
       console.warn("⚠️ Supabase sync error (will retry later):", syncError);
       const planIdentity = getPlanIdentityForWorkoutId(
         session.workoutId,
-        useFitnessStore.getState().weeklyWorkoutPlan,
+        require("../stores/fitnessStore").useFitnessStore.getState()
+          .weeklyWorkoutPlan,
       );
       // Queue for later sync
       offlineService.queueAction({
@@ -282,7 +294,6 @@ export class CrudOperationsService {
 
   async createMealLog(mealLog: MealLog): Promise<void> {
     try {
-
       // Ensure data layer is initialized before writing
       await this.initialize();
       await dataBridge.storeMealLog(mealLog);
@@ -293,8 +304,14 @@ export class CrudOperationsService {
         console.warn("⚠️ Meal log was not found after creation");
       }
     } catch (error) {
-      console.error("❌ Failed to create meal log:", error);
-      console.error("Meal data:", JSON.stringify(mealLog, null, 2));
+      console.error(
+        "❌ Failed to create meal log:",
+        error,
+        "| id:",
+        mealLog?.id,
+        "type:",
+        mealLog?.mealType,
+      );
       throw error;
     }
   }
@@ -339,7 +356,9 @@ export class CrudOperationsService {
 
       const stored = await dataBridge.updateMealLog(logId, updated);
       if (!stored) {
-        throw new Error(`Meal log ${logId} could not be updated in local storage`);
+        throw new Error(
+          `Meal log ${logId} could not be updated in local storage`,
+        );
       }
     } catch (error) {
       console.error("Failed to update meal log:", error);

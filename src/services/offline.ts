@@ -39,7 +39,7 @@ function normalizeWorkoutSessionPayload(data: Record<string, unknown>) {
   const duration =
     (data.total_duration_minutes as number | null | undefined) ??
     (data.duration as number | null | undefined) ??
-    null;
+    0;
   const exercises =
     (data.exercises_completed as unknown[] | undefined) ??
     (data.exercises as unknown[] | undefined) ??
@@ -47,20 +47,26 @@ function normalizeWorkoutSessionPayload(data: Record<string, unknown>) {
   const rating =
     typeof data.rating === "number" && data.rating > 0 ? data.rating : null;
 
+  // Explicit allowlist — only snake_case columns that exist on workout_sessions.
+  // Using ...data would leak camelCase keys (caloriesBurned, workoutId, etc.)
+  // that PostgREST rejects with PGRST204.
   return {
-    ...data,
     id: data.id,
     user_id: data.user_id ?? data.userId,
     workout_id: data.workout_id ?? data.workoutId ?? null,
     workout_name: data.workout_name ?? data.workoutName ?? null,
     workout_type: data.workout_type ?? data.workoutType ?? null,
+    workout_plan_id: data.workout_plan_id ?? null,
     planned_day_key: data.planned_day_key ?? data.plannedDayKey ?? null,
     plan_slot_key: data.plan_slot_key ?? data.planSlotKey ?? null,
     started_at: data.started_at ?? data.startedAt,
     completed_at: data.completed_at ?? data.completedAt ?? null,
-    duration,
-    total_duration_minutes: duration,
-    calories_burned: data.calories_burned ?? data.caloriesBurned ?? null,
+    duration: duration ?? 0,
+    total_duration_minutes: duration ?? 0,
+    calories_burned:
+      (data.calories_burned as number | null | undefined) ??
+      (data.caloriesBurned as number | null | undefined) ??
+      0,
     exercises,
     exercises_completed: exercises,
     notes: data.notes || "",
@@ -71,7 +77,8 @@ function normalizeWorkoutSessionPayload(data: Record<string, unknown>) {
 }
 
 function normalizeMealLogPayload(data: Record<string, unknown>) {
-  const provenance = (data.provenance as Record<string, unknown> | undefined) || {};
+  const provenance =
+    (data.provenance as Record<string, unknown> | undefined) || {};
   const totalMacros =
     (data.totalMacros as Record<string, number | undefined> | undefined) || {};
 
@@ -95,8 +102,7 @@ function normalizeMealLogPayload(data: Record<string, unknown>) {
     truth_level: data.truth_level ?? provenance.truthLevel ?? "curated",
     confidence: data.confidence ?? provenance.confidence ?? null,
     country_context: data.country_context ?? provenance.countryContext ?? null,
-    requires_review:
-      data.requires_review ?? provenance.requiresReview ?? false,
+    requires_review: data.requires_review ?? provenance.requiresReview ?? false,
     source_metadata:
       data.source_metadata ??
       ({
@@ -105,7 +111,11 @@ function normalizeMealLogPayload(data: Record<string, unknown>) {
         conflict: provenance.conflict ?? null,
       } as Record<string, unknown>),
     notes: data.notes ?? null,
-    logged_at: data.logged_at ?? data.loggedAt ?? data.timestamp ?? new Date().toISOString(),
+    logged_at:
+      data.logged_at ??
+      data.loggedAt ??
+      data.timestamp ??
+      new Date().toISOString(),
   };
 }
 
@@ -113,7 +123,9 @@ function normalizeOfflineAction(action: OfflineAction): OfflineAction {
   if (action.table === "workout_sessions") {
     return {
       ...action,
-      data: normalizeWorkoutSessionPayload(action.data as Record<string, unknown>),
+      data: normalizeWorkoutSessionPayload(
+        action.data as Record<string, unknown>,
+      ),
     };
   }
 
@@ -453,7 +465,9 @@ class OfflineService {
           case "CREATE":
             const insertData =
               table === "workout_sessions"
-                ? normalizeWorkoutSessionPayload(data as Record<string, unknown>)
+                ? normalizeWorkoutSessionPayload(
+                    data as Record<string, unknown>,
+                  )
                 : table === "meal_logs"
                   ? normalizeMealLogPayload(data as Record<string, unknown>)
                   : data;
@@ -479,12 +493,12 @@ class OfflineService {
                 throw new Error(lookupValidation.error);
               }
 
-              const activePlanId = (activePlanLookup.data as any[] | undefined)?.[0]?.id;
+              const activePlanId = (
+                activePlanLookup.data as any[] | undefined
+              )?.[0]?.id;
               if (activePlanId) {
-                const { id: _ignoredId, ...activePlanUpdate } = insertData as Record<
-                  string,
-                  unknown
-                >;
+                const { id: _ignoredId, ...activePlanUpdate } =
+                  insertData as Record<string, unknown>;
                 createQuery = supabase
                   .from(table)
                   .update({
@@ -498,13 +512,11 @@ class OfflineService {
               }
             } else {
               createQuery = ["workout_sessions", "meal_logs"].includes(table)
-              ? supabase
-                  .from(table)
-                  .upsert([insertData], {
+                ? supabase.from(table).upsert([insertData], {
                     onConflict: "id",
                     ignoreDuplicates: false,
                   })
-              : supabase.from(table).insert([insertData]);
+                : supabase.from(table).insert([insertData]);
             }
             const createResponse = await createQuery;
             const createValidation = validateSupabaseResponse(
@@ -520,7 +532,9 @@ class OfflineService {
           case "UPDATE":
             const normalizedUpdateData =
               table === "workout_sessions"
-                ? normalizeWorkoutSessionPayload(data as Record<string, unknown>)
+                ? normalizeWorkoutSessionPayload(
+                    data as Record<string, unknown>,
+                  )
                 : table === "meal_logs"
                   ? normalizeMealLogPayload(data as Record<string, unknown>)
                   : data;
@@ -615,7 +629,8 @@ class OfflineService {
       (action) => action.table !== table,
     );
     this.syncQueue = this.syncQueue.filter(
-      (action) => !(action.table === table && action.retryCount >= action.maxRetries),
+      (action) =>
+        !(action.table === table && action.retryCount >= action.maxRetries),
     );
     const clearedCount =
       initialFailedCount -

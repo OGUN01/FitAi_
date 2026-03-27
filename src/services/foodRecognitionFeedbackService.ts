@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import { FoodFeedback } from "../components/diet/FoodRecognitionFeedback";
 import { RecognizedFood } from "./foodRecognitionService";
+import { getLocalDateString } from "../utils/weekUtils";
 
 /**
  * Service for collecting and managing user feedback on food recognition accuracy
@@ -263,7 +264,7 @@ export class FoodRecognitionFeedbackService {
       const { error: accError } = await supabase
         .from("recognition_accuracy_metrics")
         .insert({
-          date: new Date().toISOString().split("T")[0],
+          date: getLocalDateString(),
           feedback_count: stats.totalCount,
           correct_count: stats.correctCount,
           average_rating: stats.averageRating,

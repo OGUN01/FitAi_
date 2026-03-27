@@ -97,6 +97,7 @@ export class IntelligentSyncScheduler {
   private config: SchedulingConfig;
   private stats: SchedulingStats;
   private isActive = false;
+  private isEvaluating = false;
   private schedulingTimer: NodeJS.Timeout | null = null;
   private decisionCallbacks: ((decision: SyncDecision) => void)[] = [];
   private conditionsCallbacks: ((conditions: DeviceConditions) => void)[] = [];
@@ -176,8 +177,14 @@ export class IntelligentSyncScheduler {
         clearInterval(this.schedulingTimer);
       }
 
-      this.schedulingTimer = setInterval(() => {
-        this.evaluateConditions();
+      this.schedulingTimer = setInterval(async () => {
+        if (this.isEvaluating) return;
+        this.isEvaluating = true;
+        try {
+          await this.evaluateConditions();
+        } finally {
+          this.isEvaluating = false;
+        }
       }, 30000); // Every 30 seconds
 
       this.isActive = true;

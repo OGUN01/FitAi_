@@ -10,6 +10,12 @@ import { Env } from '../utils/types';
 import { APIError } from '../utils/errors';
 import { ErrorCode } from '../utils/errorCodes';
 
+interface CanonicalCurrentWeight {
+  weight_kg: number;
+  entry_date: string;
+  recorded_at?: string | null;
+}
+
 /**
  * User health metrics from advanced_review table
  * These are pre-calculated during onboarding using HealthCalculatorFacade
@@ -30,6 +36,7 @@ export interface UserHealthMetrics {
   daily_carbs_g: number;
   daily_fat_g: number;
   daily_water_ml: number;
+  daily_fiber_g?: number;
 
   // Advanced metrics
   heart_rate_zones?: {
@@ -100,6 +107,7 @@ export async function loadUserMetrics(
         daily_protein_g,
         daily_carbs_g,
         daily_fat_g,
+        daily_fiber_g,
         heart_rate_zones,
         vo2_max_estimate,
         vo2_max_classification,
@@ -207,7 +215,9 @@ export async function loadUserProfile(env: Env, userId: string) {
         gender,
         country,
         state,
-        occupation_type
+        occupation_type,
+        wake_time,
+        sleep_time
       `)
       .eq('id', userId)
       .single();
@@ -224,6 +234,59 @@ export async function loadUserProfile(env: Env, userId: string) {
   }
 }
 
+async function loadCanonicalCurrentWeight(
+  env: Env,
+  userId: string,
+): Promise<CanonicalCurrentWeight | null> {
+  const supabase = getSupabaseClient(env);
+
+  const { data: canonicalWeight, error: canonicalWeightError } = await supabase
+    .from('user_current_weight')
+    .select('weight_kg, entry_date, recorded_at')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (canonicalWeightError && canonicalWeightError.code !== 'PGRST116') {
+    console.warn(
+      '[UserMetrics] Canonical current-weight lookup failed, falling back to progress_entries:',
+      canonicalWeightError,
+    );
+  }
+
+  if (canonicalWeight?.weight_kg) {
+    return canonicalWeight as CanonicalCurrentWeight;
+  }
+
+  const { data: latestManualWeight, error: latestManualWeightError } =
+    await supabase
+      .from('progress_entries')
+      .select('weight_kg, entry_date, created_at')
+      .eq('user_id', userId)
+      .not('weight_kg', 'is', null)
+      .order('entry_date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+  if (latestManualWeightError) {
+    console.warn(
+      '[UserMetrics] Fallback current-weight lookup failed:',
+      latestManualWeightError,
+    );
+    return null;
+  }
+
+  if (!latestManualWeight?.weight_kg) {
+    return null;
+  }
+
+  return {
+    weight_kg: latestManualWeight.weight_kg,
+    entry_date: latestManualWeight.entry_date,
+    recorded_at: latestManualWeight.created_at ?? latestManualWeight.entry_date,
+  };
+}
+
 /**
  * Load user's body measurements
  * Used for workout customization
@@ -234,25 +297,42 @@ export async function loadBodyMeasurements(env: Env, userId: string) {
 
     const supabase = getSupabaseClient(env);
 
-    const { data, error } = await supabase
-      .from('body_analysis')
-      .select(`
-        height_cm,
-        current_weight_kg,
-        target_weight_kg,
-        body_fat_percentage,
-        medical_conditions,
-        physical_limitations
-      `)
-      .eq('user_id', userId)
-      .single();
+    const [{ data, error }, canonicalCurrentWeight] = await Promise.all([
+      supabase
+        .from('body_analysis')
+        .select(`
+          height_cm,
+          current_weight_kg,
+          target_weight_kg,
+          body_fat_percentage,
+          medical_conditions,
+          medications,
+          physical_limitations,
+          pregnancy_status,
+          pregnancy_trimester,
+          breastfeeding_status,
+          stress_level
+        `)
+        .eq('user_id', userId)
+        .maybeSingle(),
+      loadCanonicalCurrentWeight(env, userId),
+    ]);
 
-    if (error || !data) {
+    if (error && error.code !== 'PGRST116') {
       console.warn('[UserMetrics] Could not load body measurements:', error);
       return null;
     }
 
-    return data;
+    if (!data && !canonicalCurrentWeight) {
+      return null;
+    }
+
+    return {
+      ...(data || {}),
+      ...(canonicalCurrentWeight
+        ? { current_weight_kg: canonicalCurrentWeight.weight_kg }
+        : {}),
+    };
   } catch (error) {
     console.error('[UserMetrics] Error loading body measurements:', error);
     return null;

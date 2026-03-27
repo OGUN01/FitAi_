@@ -9,6 +9,7 @@ export interface AuthResponse {
   success: boolean;
   user?: AuthUser;
   error?: string;
+  source?: "cache" | "server";
 }
 
 export interface AuthSession {
@@ -22,19 +23,149 @@ class AuthService {
   private static instance: AuthService;
   private currentSession: AuthSession | null = null;
 
-  private constructor() {
-    // Initialize Google Sign-In configuration
-    this.initializeGoogleAuth();
+  private constructor() {}
+
+  private normalizeExpiresAt(expiresAt: number): number {
+    return expiresAt > 9999999999 ? expiresAt / 1000 : expiresAt;
   }
 
-  /**
-   * Initialize Google Authentication
-   */
-  private async initializeGoogleAuth(): Promise<void> {
+  private buildAuthUser(
+    user: {
+      id: string;
+      email?: string | null;
+      email_confirmed_at?: string | null;
+    },
+    fallbackLastLoginAt?: string,
+  ): AuthUser {
+    return {
+      id: user.id,
+      email: user.email || "",
+      isEmailVerified: user.email_confirmed_at !== null,
+      lastLoginAt: fallbackLastLoginAt || new Date().toISOString(),
+    };
+  }
+
+  private async persistSession(session: AuthSession): Promise<void> {
+    this.currentSession = session;
+    dataBridge.setUserId(session.user.id);
+    await AsyncStorage.setItem("auth_session", JSON.stringify(session));
+  }
+
+  private async getStoredSession(): Promise<AuthSession | null> {
+    const sessionData = await AsyncStorage.getItem("auth_session");
+    return sessionData ? JSON.parse(sessionData) : null;
+  }
+
+  private async restoreCachedSession(): Promise<AuthResponse | null> {
+    const storedSession = await this.getStoredSession();
+    if (!storedSession) {
+      return null;
+    }
+
+    const currentTime = Date.now() / 1000;
+    const expiresAt = this.normalizeExpiresAt(storedSession.expiresAt);
+
+    if (expiresAt <= currentTime) {
+      await this.clearLocalSession();
+      return {
+        success: false,
+        error: "Session expired",
+      };
+    }
+
+    this.currentSession = storedSession;
+    dataBridge.setUserId(storedSession.user.id);
+
+    return {
+      success: true,
+      user: storedSession.user,
+      source: "cache",
+    };
+  }
+
+  async revalidateSession(): Promise<AuthResponse> {
+    const storedSession = this.currentSession ?? (await this.getStoredSession());
+
     try {
-      await googleAuthService.configure();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (
+        session &&
+        session.user &&
+        (!storedSession || session.user.id === storedSession.user.id)
+      ) {
+        const authUser = this.buildAuthUser(
+          session.user,
+          storedSession?.user.lastLoginAt,
+        );
+
+        await this.persistSession({
+          user: authUser,
+          accessToken: session.access_token,
+          refreshToken: session.refresh_token,
+          expiresAt: session.expires_at || 0,
+        });
+
+        return {
+          success: true,
+          user: authUser,
+          source: "server",
+        };
+      }
+
+      if (storedSession) {
+        try {
+          const { data: refreshData, error: refreshError } =
+            await supabase.auth.refreshSession({
+              refresh_token: storedSession.refreshToken,
+            });
+
+          if (refreshData.session && !refreshError) {
+            const authUser = this.buildAuthUser(
+              refreshData.session.user,
+              storedSession.user.lastLoginAt,
+            );
+
+            await this.persistSession({
+              user: authUser,
+              accessToken: refreshData.session.access_token,
+              refreshToken: refreshData.session.refresh_token,
+              expiresAt: refreshData.session.expires_at || 0,
+            });
+
+            return {
+              success: true,
+              user: authUser,
+              source: "server",
+            };
+          }
+        } catch {
+          // Continue to hard failure below.
+        }
+
+        await this.clearLocalSession();
+        return {
+          success: false,
+          error: "Stored session is no longer valid",
+        };
+      }
+
+      await this.clearLocalSession();
+      return {
+        success: false,
+        error: "No valid session found",
+      };
     } catch (error) {
-      console.error('❌ Failed to initialize Google Auth:', error);
+      await this.clearLocalSession();
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Session restoration failed",
+      };
     }
   }
 
@@ -381,99 +512,12 @@ class AuthService {
    */
   async restoreSession(): Promise<AuthResponse> {
     try {
-      const sessionData = await AsyncStorage.getItem('auth_session');
-      const storedSession: AuthSession | null = sessionData ? JSON.parse(sessionData) : null;
-
-      if (storedSession) {
-        const currentTime = Date.now() / 1000;
-        const expiresAt =
-          storedSession.expiresAt > 9999999999
-            ? storedSession.expiresAt / 1000
-            : storedSession.expiresAt;
-
-        if (expiresAt <= currentTime) {
-          await this.clearLocalSession();
-          return {
-            success: false,
-            error: 'Session expired',
-          };
-        }
+      const cachedSession = await this.restoreCachedSession();
+      if (cachedSession) {
+        return cachedSession;
       }
 
-      // Prefer a server-validated session over the cached blob.
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session && session.user && (!storedSession || session.user.id === storedSession.user.id)) {
-        const authUser: AuthUser = {
-          id: session.user.id,
-          email: session.user.email!,
-          isEmailVerified: session.user.email_confirmed_at !== null,
-          lastLoginAt: new Date().toISOString(),
-        };
-
-        this.currentSession = {
-          user: authUser,
-          accessToken: session.access_token,
-          refreshToken: session.refresh_token,
-          expiresAt: session.expires_at || 0,
-        };
-
-        dataBridge.setUserId(authUser.id);
-        await AsyncStorage.setItem('auth_session', JSON.stringify(this.currentSession));
-
-        return {
-          success: true,
-          user: authUser,
-        };
-      }
-
-      if (storedSession) {
-        try {
-          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
-            refresh_token: storedSession.refreshToken,
-          });
-
-          if (refreshData.session && !refreshError) {
-            const authUser: AuthUser = {
-              id: refreshData.session.user.id,
-              email: refreshData.session.user.email!,
-              isEmailVerified: refreshData.session.user.email_confirmed_at !== null,
-              lastLoginAt: storedSession.user.lastLoginAt || new Date().toISOString(),
-            };
-
-            this.currentSession = {
-              user: authUser,
-              accessToken: refreshData.session.access_token,
-              refreshToken: refreshData.session.refresh_token,
-              expiresAt: refreshData.session.expires_at || 0,
-            };
-
-            dataBridge.setUserId(authUser.id);
-            await AsyncStorage.setItem('auth_session', JSON.stringify(this.currentSession));
-
-            return {
-              success: true,
-              user: authUser,
-            };
-          }
-        } catch (refreshError) {
-          // Continue to hard failure below.
-        }
-
-        await this.clearLocalSession();
-        return {
-          success: false,
-          error: 'Stored session is no longer valid',
-        };
-      }
-
-      await this.clearLocalSession();
-      return {
-        success: false,
-        error: 'No valid session found',
-      };
+      return await this.revalidateSession();
     } catch (error) {
       await this.clearLocalSession();
       return {
@@ -489,41 +533,28 @@ class AuthService {
   onAuthStateChange(callback: (user: AuthUser | null) => void) {
     return supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        const authUser: AuthUser = {
-          id: session.user.id,
-          email: session.user.email!,
-          isEmailVerified: session.user.email_confirmed_at !== null,
-          lastLoginAt: new Date().toISOString(),
-        };
+        const authUser = this.buildAuthUser(session.user);
 
-        this.currentSession = {
+        await this.persistSession({
           user: authUser,
           accessToken: session.access_token,
           refreshToken: session.refresh_token,
           expiresAt: session.expires_at || 0,
-        };
-
-        dataBridge.setUserId(authUser.id);
-        await AsyncStorage.setItem('auth_session', JSON.stringify(this.currentSession));
+        });
         callback(authUser);
       } else if (event === 'TOKEN_REFRESHED' && session) {
         // Update stored session with refreshed token data
-        const authUser: AuthUser = {
-          id: session.user.id,
-          email: session.user.email!,
-          isEmailVerified: session.user.email_confirmed_at !== null,
-          lastLoginAt: this.currentSession?.user.lastLoginAt || new Date().toISOString(),
-        };
+        const authUser = this.buildAuthUser(
+          session.user,
+          this.currentSession?.user.lastLoginAt,
+        );
 
-        this.currentSession = {
+        await this.persistSession({
           user: authUser,
           accessToken: session.access_token,
           refreshToken: session.refresh_token,
           expiresAt: session.expires_at || 0,
-        };
-
-        dataBridge.setUserId(authUser.id);
-        await AsyncStorage.setItem('auth_session', JSON.stringify(this.currentSession));
+        });
         // Don't call callback — user state hasn't changed, only the token refreshed
       } else if (event === 'SIGNED_OUT') {
         await this.clearLocalSession();

@@ -9,6 +9,7 @@ import { useUserStore } from "../stores/userStore";
 import { useUnifiedStats } from "./useUnifiedStats";
 import { clearAllUserData } from "../utils/clearUserData";
 import { useSubscriptionStore } from "../stores/subscriptionStore";
+import { useFitnessStore } from "../stores/fitnessStore";
 import { useHealthDataStore } from "../stores/healthDataStore";
 import { crudOperations } from "../services/crudOperations";
 import { userProfileService } from "../services/userProfile";
@@ -17,10 +18,7 @@ import { buildLegacyProfileAdapter } from "../utils/profileLegacyAdapter";
 import type { SettingItem } from "../screens/main/profile";
 
 // AsyncStorage keys for settings preferences
-const STORAGE_KEY_THEME = "@fitai_theme_preference";
 const STORAGE_KEY_UNITS = "@fitai_units_preference";
-
-export type ThemePreference = "dark" | "light" | "system";
 export type UnitsPreference = "metric" | "imperial";
 
 function getSubscriptionSubtitle(
@@ -28,22 +26,22 @@ function getSubscriptionSubtitle(
   status: string | null | undefined,
 ): string {
   if (!tier || tier === "free") {
-    return "Free tier — view plans and premium benefits";
+    return "Free tier - view plans and premium benefits";
   }
 
   if (status === "cancelled") {
-    return "Cancellation scheduled — review billing and access";
+    return "Cancellation scheduled - review billing and access";
   }
 
   if (status === "paused") {
-    return "Paused — resume or adjust your subscription";
+    return "Paused - resume or adjust your subscription";
   }
 
   if (status === "authenticated" || status === "pending") {
-    return "Payment received — premium access is still being confirmed";
+    return "Payment received - premium access is still being confirmed";
   }
 
-  return `Current tier: ${tier.charAt(0).toUpperCase() + tier.slice(1)} — manage billing and premium access`;
+  return `Current tier: ${tier.charAt(0).toUpperCase() + tier.slice(1)} - manage billing and premium access`;
 }
 
 export const useProfileLogic = () => {
@@ -59,6 +57,7 @@ export const useProfileLogic = () => {
   } = useProfileStore();
   const { currentPlan: subscriptionPlan, subscriptionStatus } =
     useSubscriptionStore();
+  const restTimerEnabled = useFitnessStore((s) => s.restTimerEnabled);
 
   // State
   const [currentSettingsScreen, setCurrentSettingsScreen] = useState<
@@ -69,14 +68,10 @@ export const useProfileLogic = () => {
   const [showEditModal, setShowEditModal] = useState<string | null>(null);
 
   // Settings modal state
-  const [showThemeModal, setShowThemeModal] = useState(false);
   const [showUnitsModal, setShowUnitsModal] = useState(false);
-  const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showClearCacheModal, setShowClearCacheModal] = useState(false);
 
   // Persisted preferences
-  const [themePreference, setThemePreference] =
-    useState<ThemePreference>("system");
   const [unitsPreference, setUnitsPreference] =
     useState<UnitsPreference>("metric");
 
@@ -105,17 +100,7 @@ export const useProfileLogic = () => {
   useEffect(() => {
     const loadPreferences = async () => {
       try {
-        const [savedTheme, savedUnits] = await Promise.all([
-          AsyncStorage.getItem(STORAGE_KEY_THEME),
-          AsyncStorage.getItem(STORAGE_KEY_UNITS),
-        ]);
-        if (
-          savedTheme === "dark" ||
-          savedTheme === "light" ||
-          savedTheme === "system"
-        ) {
-          setThemePreference(savedTheme);
-        }
+        const savedUnits = await AsyncStorage.getItem(STORAGE_KEY_UNITS);
         if (savedUnits === "metric" || savedUnits === "imperial") {
           setUnitsPreference(savedUnits);
         }
@@ -203,19 +188,6 @@ export const useProfileLogic = () => {
     setShowLogoutConfirmation(false);
   };
 
-  // Theme handler — persist and apply
-  const handleThemeSelect = useCallback(async (value: string) => {
-    const theme = value as ThemePreference;
-    setThemePreference(theme);
-    try {
-      await AsyncStorage.setItem(STORAGE_KEY_THEME, theme);
-      console.log("[useProfileLogic] Theme preference saved:", theme);
-    } catch (error) {
-      console.error("[useProfileLogic] Error saving theme:", error);
-    }
-    setShowThemeModal(false);
-  }, []);
-
   // Units handler — persist choice
   const handleUnitsSelect = useCallback(
     async (value: string) => {
@@ -260,12 +232,6 @@ export const useProfileLogic = () => {
     },
     [updatePersonalInfo, user?.id],
   );
-
-  // Language handler — currently single-language, just close
-  const handleLanguageSelect = useCallback((_value: string) => {
-    // English is currently the only supported language
-    setShowLanguageModal(false);
-  }, []);
 
   // Clear cache handler
   const handleClearCache = useCallback(async () => {
@@ -319,7 +285,7 @@ export const useProfileLogic = () => {
       case "theme": {
         crossPlatformAlert(
           "Theme",
-          "FitAI currently uses a fixed dark theme. Additional theme options are coming soon.",
+          "FitAI uses a fixed dark theme right now. Theme switching is not available yet.",
         );
         break;
       }
@@ -327,8 +293,16 @@ export const useProfileLogic = () => {
         setShowUnitsModal(true);
         break;
       case "language":
-        setShowLanguageModal(true);
+        crossPlatformAlert(
+          "Language",
+          "English is currently the only available language.",
+        );
         break;
+      case "rest-timer": {
+        const current = useFitnessStore.getState().restTimerEnabled;
+        useFitnessStore.getState().setRestTimerEnabled(!current);
+        break;
+      }
       case "privacy":
         setCurrentSettingsScreen("privacy");
         break;
@@ -378,7 +352,7 @@ export const useProfileLogic = () => {
         } = useHealthDataStore.getState();
         if (isHealthConnectAuthorized) {
           crossPlatformAlert(
-            "Syncing…",
+            "Syncing...",
             "Fetching latest data from Health Connect.",
           );
           syncFromHealthConnect(7).catch((e: any) =>
@@ -386,7 +360,7 @@ export const useProfileLogic = () => {
           );
         } else if (isHealthKitAuthorized) {
           crossPlatformAlert(
-            "Syncing…",
+            "Syncing...",
             "Fetching latest data from HealthKit.",
           );
           syncHealthData(true).catch((e: any) =>
@@ -395,7 +369,7 @@ export const useProfileLogic = () => {
         } else {
           crossPlatformAlert(
             "No Health App Connected",
-            "Connect a wearable or health app in Settings → Connect Wearables to enable sync.",
+            "Connect a wearable or health app in Settings > Connect Wearables to enable sync.",
           );
         }
         break;
@@ -421,7 +395,7 @@ export const useProfileLogic = () => {
         case "current-streak": {
           const streak = userStats?.currentStreak || 0;
           showAlert(
-            "🔥 Day Streak",
+            "Day Streak",
             `You're on a ${streak} day streak! Keep it up!`,
           );
           break;
@@ -429,7 +403,7 @@ export const useProfileLogic = () => {
         case "workouts": {
           const workouts = userStats?.totalWorkouts || 0;
           showAlert(
-            "💪 Workouts",
+            "Workouts",
             `You've completed ${workouts} workout${workouts === 1 ? "" : "s"}. ${workouts === 0 ? "Start your first workout!" : "Amazing progress!"}`,
           );
           break;
@@ -437,7 +411,7 @@ export const useProfileLogic = () => {
         case "calories": {
           const cals = userStats?.totalCaloriesBurned || 0;
           showAlert(
-            "🔥 Calories Burned",
+            "Calories Burned",
             `${cals} calories burned. Great progress!`,
           );
           break;
@@ -445,7 +419,7 @@ export const useProfileLogic = () => {
         case "best-streak": {
           const best = userStats?.longestStreak || 0;
           showAlert(
-            "🏆 Best Streak",
+            "Best Streak",
             `Your best streak is ${best} day${best === 1 ? "" : "s"}. Can you beat it?`,
           );
           break;
@@ -453,7 +427,7 @@ export const useProfileLogic = () => {
         case "achievements": {
           const count = userStats?.achievements || 0;
           showAlert(
-            "🎖️ Achievements",
+            "Achievements",
             `${count} achievement${count === 1 ? "" : "s"} earned. ${count === 0 ? "Complete workouts to unlock achievements!" : "Keep going!"}`,
           );
           break;
@@ -552,9 +526,11 @@ export const useProfileLogic = () => {
     {
       id: "theme",
       title: "Theme",
-      subtitle: "Fixed dark theme",
+      subtitle: "Dark theme only",
       icon: "color-palette-outline",
       iconColor: "#FF6B35",
+      showChevron: false,
+      disabled: true,
     },
     {
       id: "units",
@@ -566,9 +542,18 @@ export const useProfileLogic = () => {
     {
       id: "language",
       title: "Language",
-      subtitle: "English",
+      subtitle: "English only for now",
       icon: "globe-outline",
       iconColor: "#4CAF50",
+      showChevron: false,
+      disabled: true,
+    },
+    {
+      id: "rest-timer",
+      title: "Rest Timer",
+      subtitle: restTimerEnabled ? "On — vibrate between sets" : "Off",
+      icon: "timer-outline",
+      iconColor: "#9C27B0",
     },
   ];
 
@@ -673,23 +658,16 @@ export const useProfileLogic = () => {
     setShowEditModal,
 
     // Settings modals state
-    showThemeModal,
-    setShowThemeModal,
     showUnitsModal,
     setShowUnitsModal,
-    showLanguageModal,
-    setShowLanguageModal,
     showClearCacheModal,
     setShowClearCacheModal,
 
     // Persisted preferences
-    themePreference,
     unitsPreference,
 
     // Settings modal handlers
-    handleThemeSelect,
     handleUnitsSelect,
-    handleLanguageSelect,
     handleClearCache,
 
     // Handlers

@@ -26,6 +26,7 @@ import {
   WorkoutPreferencesData,
   AdvancedReviewData,
 } from '../types/onboarding';
+import { resolveCurrentWeightForUser } from './currentWeight';
 
 // ============================================================================
 // TYPES
@@ -160,13 +161,26 @@ export class UserMetricsService {
         hasAdvancedReview: !!advancedReview,
       });
 
+      const resolvedCurrentWeight = bodyAnalysis
+        ? await resolveCurrentWeightForUser(userId, {
+            bodyAnalysisWeight: bodyAnalysis.current_weight_kg,
+          })
+        : null;
+      const canonicalBodyAnalysis =
+        bodyAnalysis && resolvedCurrentWeight?.value != null
+          ? {
+              ...bodyAnalysis,
+              current_weight_kg: resolvedCurrentWeight.value,
+            }
+          : bodyAnalysis;
+
       const metrics: UserMetrics = {
         personalInfo,
         dietPreferences,
-        bodyAnalysis,
+        bodyAnalysis: canonicalBodyAnalysis,
         workoutPreferences,
         advancedReview,
-        hasCompletedOnboarding: !!(personalInfo && dietPreferences && bodyAnalysis && workoutPreferences),
+        hasCompletedOnboarding: !!(personalInfo && dietPreferences && canonicalBodyAnalysis && workoutPreferences),
         hasCalculatedMetrics: !!advancedReview,
       };
 

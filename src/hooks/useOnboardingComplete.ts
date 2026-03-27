@@ -22,7 +22,7 @@ export const useOnboardingComplete = ({
     if (visible) {
       haptics.success();
     }
-  }, [visible, screenWidth, modalWidth]);
+  }, [visible]);
 
   const handleGetStarted = () => {
     haptics.medium();

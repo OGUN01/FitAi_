@@ -23,19 +23,19 @@ export const showWorkoutCompleteAlert = (
   const durationMins = Math.max(1, Math.round(finalStats.totalDuration / 60));
   let completionMessage =
     `Outstanding performance! You completed "${safeString(workout.title, "Workout")}" in ${safeString(durationMins)} minute${durationMins !== 1 ? "s" : ""}.\n\n` +
-    `📊 Stats:\n` +
-    `• Exercises: ${safeString(finalStats.exercisesCompleted)}/${safeString(totalExercises)}\n` +
-    `• Sets: ${safeString(finalStats.setsCompleted)}\n` +
-    `• Calories: ~${safeString(finalStats.caloriesBurned)}`;
+    `Stats:\n` +
+    `- Exercises: ${safeString(finalStats.exercisesCompleted)}/${safeString(totalExercises)}\n` +
+    `- Sets: ${safeString(finalStats.setsCompleted)}\n` +
+    `- Calories: ~${safeString(finalStats.caloriesBurned)}`;
 
   if (recentAchievements.length > 0) {
-    completionMessage += `\n\n🏆 Achievements Earned:\n`;
+    completionMessage += `\n\nAchievements Earned:\n`;
     recentAchievements.forEach((achievement) => {
-      completionMessage += `• ${achievement.icon} ${achievement.title}\n`;
+      completionMessage += `- ${achievement.title}\n`;
     });
   }
 
-  crossPlatformAlert("🎉 Workout Complete!", completionMessage, [
+  crossPlatformAlert("Workout Complete!", completionMessage, [
     {
       text: "View Achievements",
       onPress: onViewAchievements,

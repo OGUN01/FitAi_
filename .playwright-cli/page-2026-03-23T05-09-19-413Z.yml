@@ -1,0 +1,188 @@
+- generic [ref=e102]:
+  - generic "Continue as guest" [ref=e103]:
+    - generic [ref=e104]: Continue as guest
+  - generic [ref=e766]:
+    - generic "Continue as guest"
+    - generic [ref=e768]:
+      - generic [ref=e771]: HT
+      - generic [ref=e772]:
+        - generic [ref=e773]: Home Tester
+        - generic [ref=e774]: Just joined today
+    - generic [ref=e777]:
+      - button " 0 Day Streak" [ref=e780] [cursor=pointer]:
+        - generic [ref=e781]:
+          - generic [ref=e783]: 
+          - generic [ref=e784]: "0"
+          - generic [ref=e785]: Day Streak
+      - button " 0 Workouts" [ref=e788] [cursor=pointer]:
+        - generic [ref=e789]:
+          - generic [ref=e791]: 
+          - generic [ref=e792]: "0"
+          - generic [ref=e793]: Workouts
+      - button " 0 Calories" [ref=e796] [cursor=pointer]:
+        - generic [ref=e797]:
+          - generic [ref=e799]: 
+          - generic [ref=e800]: "0"
+          - generic [ref=e801]: Calories
+      - button " 0 Best Streak" [ref=e804] [cursor=pointer]:
+        - generic [ref=e805]:
+          - generic [ref=e807]: 
+          - generic [ref=e808]: "0"
+          - generic [ref=e809]: Best Streak
+      - button " 0 Achievements" [ref=e812] [cursor=pointer]:
+        - generic [ref=e813]:
+          - generic [ref=e815]: 
+          - generic [ref=e816]: "0"
+          - generic [ref=e817]: Achievements
+    - generic [ref=e818]:
+      - generic [ref=e819]:
+        - generic [ref=e820]: 
+        - generic [ref=e821]: Account
+      - generic [ref=e823]:
+        - button " Personal Information Name, age, gender, activity level " [ref=e825] [cursor=pointer]:
+          - generic [ref=e826]:
+            - generic [ref=e828]: 
+            - generic [ref=e829]:
+              - generic [ref=e831]: Personal Information
+              - generic [ref=e832]: Name, age, gender, activity level
+            - generic [ref=e834]: 
+        - button " Goals & Preferences Fitness goals, activity level " [ref=e838] [cursor=pointer]:
+          - generic [ref=e839]:
+            - generic [ref=e841]: 
+            - generic [ref=e842]:
+              - generic [ref=e844]: Goals & Preferences
+              - generic [ref=e845]: Fitness goals, activity level
+            - generic [ref=e847]: 
+        - button " Body Measurements Track body composition " [ref=e851] [cursor=pointer]:
+          - generic [ref=e852]:
+            - generic [ref=e854]: 
+            - generic [ref=e855]:
+              - generic [ref=e857]: Body Measurements
+              - generic [ref=e859]: Track body composition
+            - generic [ref=e861]: 
+        - button " Manage Subscription Free tier - view plans and premium benefits " [ref=e865] [cursor=pointer]:
+          - generic [ref=e866]:
+            - generic [ref=e869]: 
+            - generic [ref=e870]:
+              - generic [ref=e872]: Manage Subscription
+              - generic [ref=e873]: Free tier - view plans and premium benefits
+            - generic [ref=e875]: 
+    - generic [ref=e876]:
+      - generic [ref=e877]:
+        - generic [ref=e878]: 
+        - generic [ref=e879]: Preferences
+      - generic [ref=e881]:
+        - button " Notifications Reminders and alerts " [ref=e883] [cursor=pointer]:
+          - generic [ref=e884]:
+            - generic [ref=e886]: 
+            - generic [ref=e887]:
+              - generic [ref=e889]: Notifications
+              - generic [ref=e890]: Reminders and alerts
+            - generic [ref=e892]: 
+        - button " Theme Fixed dark theme " [ref=e896] [cursor=pointer]:
+          - generic [ref=e897]:
+            - generic [ref=e899]: 
+            - generic [ref=e900]:
+              - generic [ref=e902]: Theme
+              - generic [ref=e903]: Fixed dark theme
+            - generic [ref=e905]: 
+        - button " Units Metric (kg, cm) " [ref=e909] [cursor=pointer]:
+          - generic [ref=e910]:
+            - generic [ref=e912]: 
+            - generic [ref=e913]:
+              - generic [ref=e915]: Units
+              - generic [ref=e916]: Metric (kg, cm)
+            - generic [ref=e918]: 
+        - button " Language English " [ref=e922] [cursor=pointer]:
+          - generic [ref=e923]:
+            - generic [ref=e925]: 
+            - generic [ref=e926]:
+              - generic [ref=e928]: Language
+              - generic [ref=e929]: English
+            - generic [ref=e931]: 
+    - generic [ref=e932]:
+      - generic [ref=e933]:
+        - generic [ref=e934]: 
+        - generic [ref=e935]: App
+      - generic [ref=e937]:
+        - button " Privacy & Security Data protection settings " [ref=e939] [cursor=pointer]:
+          - generic [ref=e940]:
+            - generic [ref=e942]: 
+            - generic [ref=e943]:
+              - generic [ref=e945]: Privacy & Security
+              - generic [ref=e946]: Data protection settings
+            - generic [ref=e948]: 
+        - button " Help & Support FAQ and contact us " [ref=e952] [cursor=pointer]:
+          - generic [ref=e953]:
+            - generic [ref=e955]: 
+            - generic [ref=e956]:
+              - generic [ref=e958]: Help & Support
+              - generic [ref=e959]: FAQ and contact us
+            - generic [ref=e961]: 
+        - button " About FitAI Version, legal " [ref=e965] [cursor=pointer]:
+          - generic [ref=e966]:
+            - generic [ref=e968]: 
+            - generic [ref=e969]:
+              - generic [ref=e971]: About FitAI
+              - generic [ref=e972]: Version, legal
+            - generic [ref=e974]: 
+    - generic [ref=e975]:
+      - generic [ref=e976]:
+        - generic [ref=e977]: 
+        - generic [ref=e978]: Data
+      - generic [ref=e980]:
+        - button " Connect Wearables Sync smartwatch & fitness bands " [ref=e982] [cursor=pointer]:
+          - generic [ref=e983]:
+            - generic [ref=e985]: 
+            - generic [ref=e986]:
+              - generic [ref=e988]: Connect Wearables
+              - generic [ref=e989]: Sync smartwatch & fitness bands
+            - generic [ref=e991]: 
+        - button " Export Data Download your fitness data " [ref=e995] [cursor=pointer]:
+          - generic [ref=e996]:
+            - generic [ref=e998]: 
+            - generic [ref=e999]:
+              - generic [ref=e1001]: Export Data
+              - generic [ref=e1002]: Download your fitness data
+            - generic [ref=e1004]: 
+        - button " Sync Settings Health app integration " [ref=e1008] [cursor=pointer]:
+          - generic [ref=e1009]:
+            - generic [ref=e1011]: 
+            - generic [ref=e1012]:
+              - generic [ref=e1014]: Sync Settings
+              - generic [ref=e1015]: Health app integration
+            - generic [ref=e1017]: 
+        - button " Clear Cache Free up storage " [ref=e1021] [cursor=pointer]:
+          - generic [ref=e1022]:
+            - generic [ref=e1024]: 
+            - generic [ref=e1025]:
+              - generic [ref=e1027]: Clear Cache
+              - generic [ref=e1028]: Free up storage
+            - generic [ref=e1030]: 
+    - generic [ref=e1033]:
+      - generic [ref=e1034]:
+        - generic [ref=e1036]: F
+        - generic [ref=e1037]:
+          - generic [ref=e1038]:
+            - generic [ref=e1039]: FitAI
+            - generic [ref=e1041]: v1.0.1
+          - generic [ref=e1042]: Your AI-powered fitness companion
+      - generic [ref=e1044]:
+        - generic [ref=e1045]: Made with
+        - generic [ref=e1046]: 
+        - generic [ref=e1047]: for fitness enthusiasts
+    - button " Sign Out" [ref=e1050] [cursor=pointer]:
+      - generic [ref=e1053]:
+        - generic [ref=e1055]: 
+        - generic [ref=e1056]: Sign Out
+  - generic [ref=e450]:
+    - tab "Home" [ref=e451] [cursor=pointer]:
+      - generic [ref=e456]: Home
+    - tab "Workout" [ref=e458] [cursor=pointer]:
+      - generic [ref=e464]: Workout
+    - tab "Diet" [ref=e465] [cursor=pointer]:
+      - generic [ref=e470]: Diet
+    - tab "Profile" [active] [ref=e471] [cursor=pointer]:
+      - generic [ref=e476]: Profile
+    - tab "Analytics" [ref=e477] [cursor=pointer]:
+      - generic [ref=e485]: Analytics

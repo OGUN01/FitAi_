@@ -121,23 +121,80 @@ export interface WorkersResponse<T> {
 
 export interface DietGenerationRequest {
   profile: {
-    age: number;
-    gender: string;
-    weight: number;
-    height: number;
-    activityLevel: string;
-    fitnessGoal: string;
+    age?: number;
+    gender?: string;
+    weight?: number;
+    height?: number;
+    activity_level?: string;
+    fitness_goal?: string;
+    country?: string;
+    state?: string;
+    occupation_type?: string;
+    wake_time?: string;
+    sleep_time?: string;
   };
   country?: string;
   dietPreferences?: {
-    dietType?: string;
+    diet_type?: string;
     allergies?: string[];
-    cuisinePreferences?: string[];
     restrictions?: string[];
+    cuisine_preferences?: string[];
     dislikes?: string[];
+    breakfast_enabled?: boolean;
+    lunch_enabled?: boolean;
+    dinner_enabled?: boolean;
+    snacks_enabled?: boolean;
+    cooking_skill_level?: string;
+    max_prep_time_minutes?: number | null;
+    budget_level?: string;
+    keto_ready?: boolean;
+    intermittent_fasting_ready?: boolean;
+    paleo_ready?: boolean;
+    mediterranean_ready?: boolean;
+    low_carb_ready?: boolean;
+    high_protein_ready?: boolean;
+    drinks_enough_water?: boolean;
+    limits_sugary_drinks?: boolean;
+    eats_regular_meals?: boolean;
+    avoids_late_night_eating?: boolean;
+    controls_portion_sizes?: boolean;
+    reads_nutrition_labels?: boolean;
+    eats_processed_foods?: boolean;
+    eats_5_servings_fruits_veggies?: boolean;
+    limits_refined_sugar?: boolean;
+    includes_healthy_fats?: boolean;
+    drinks_alcohol?: boolean;
+    smokes_tobacco?: boolean;
+    drinks_coffee?: boolean;
+    takes_supplements?: boolean;
+  };
+  bodyMetrics?: {
+    height_cm?: number;
+    current_weight_kg?: number;
+    target_weight_kg?: number;
+    body_fat_percentage?: number;
+    medical_conditions?: string[];
+    medications?: string[];
+    physical_limitations?: string[];
+    pregnancy_status?: boolean;
+    pregnancy_trimester?: 1 | 2 | 3;
+    breastfeeding_status?: boolean;
+    stress_level?: string;
+  };
+  advancedReview?: {
+    daily_calories?: number;
+    daily_protein_g?: number;
+    daily_carbs_g?: number;
+    daily_fat_g?: number;
+    daily_water_ml?: number;
+    daily_fiber_g?: number;
+    calculated_bmi?: number;
+    bmi_category?: string;
+    health_score?: number;
   };
   calorieTarget?: number;
   mealsPerDay?: number;
+  daysCount?: number;
   macros?: {
     protein: number;
     carbs: number;

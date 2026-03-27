@@ -22,7 +22,11 @@ import { buildNonVegPrompt } from './nonVeg';
 import { buildKetoPrompt } from './keto';
 
 // Import types from validation
-import { UserProfileContext, DietPreferences } from '../../utils/validation';
+import {
+	UserProfileContext,
+	DietPreferences,
+	BodyMetricsContext,
+} from '../../utils/validation';
 import { UserHealthMetrics } from '../../services/userMetricsService';
 
 // ============================================================================
@@ -38,6 +42,7 @@ export function buildPlaceholdersFromUserData(
 	metrics: UserHealthMetrics,
 	profile: UserProfileContext | null,
 	prefs: DietPreferences | null,
+	bodyContext: BodyMetricsContext | null,
 	daysCount: number = 1,
 ): DietPlaceholders {
 	const countryCode = profile?.country || 'US';
@@ -79,7 +84,13 @@ export function buildPlaceholdersFromUserData(
 		MEAL_EXCLUSION_INSTRUCTIONS: getMealExclusionInstructions(prefs ?? undefined),
 
 		// Medical conditions
-		MEDICAL_CONDITIONS: (prefs as any)?.medical_conditions || [],
+		MEDICAL_CONDITIONS: bodyContext?.medical_conditions || [],
+		MEDICATIONS: bodyContext?.medications || [],
+		PHYSICAL_LIMITATIONS: bodyContext?.physical_limitations || [],
+		PREGNANCY_STATUS: bodyContext?.pregnancy_status ?? false,
+		PREGNANCY_TRIMESTER: bodyContext?.pregnancy_trimester,
+		BREASTFEEDING_STATUS: bodyContext?.breastfeeding_status ?? false,
+		STRESS_LEVEL: bodyContext?.stress_level,
 
 		// ============================================
 		// ONBOARDING DATA - User's cooking & lifestyle
@@ -177,6 +188,61 @@ function getCountryName(code: string): string {
 	return names[code.toUpperCase()] || code;
 }
 
+function buildPlanStructureRequirements(
+	p: DietPlaceholders,
+	excludeIngredients: string[] = [],
+): string {
+	const isMultiDayPlan = p.DAYS_COUNT > 1;
+	const weekdayInstruction = isMultiDayPlan
+		? `- Every meal MUST include a dayOfWeek field using exactly one of: monday, tuesday, wednesday, thursday, friday, saturday, sunday
+- Cover each day in order starting at monday and keep meals grouped day-by-day`
+		: '- dayOfWeek is optional for a 1-day plan';
+	const additionalRestrictions =
+		p.RESTRICTIONS.length > 0
+			? `- Honor these additional nutrition guidelines across the full plan: ${p.RESTRICTIONS.join(', ')}`
+			: '';
+	const explicitExclusions =
+		excludeIngredients.length > 0
+			? `- NEVER include these explicitly excluded or disliked ingredients: ${excludeIngredients.join(', ')}`
+			: '';
+	const clinicalContext = [
+		p.MEDICATIONS.length > 0
+			? `- Check ingredient and timing conflicts for these medications/supplements: ${p.MEDICATIONS.join(', ')}`
+			: '',
+		p.PREGNANCY_STATUS
+			? `- This user is pregnant${p.PREGNANCY_TRIMESTER ? ` (trimester ${p.PREGNANCY_TRIMESTER})` : ''}; avoid unsafe foods, avoid aggressive calorie restriction, and prioritise iron, folate, calcium, choline, DHA, and hydration`
+			: '',
+		p.BREASTFEEDING_STATUS
+			? '- This user is breastfeeding; prioritise hydration, adequate calories, calcium, iodine, DHA, and protein'
+			: '',
+		p.PHYSICAL_LIMITATIONS.length > 0
+			? `- Keep meal prep realistic for these physical limitations: ${p.PHYSICAL_LIMITATIONS.join(', ')}`
+			: '',
+		p.STRESS_LEVEL === 'high'
+			? '- Stress level is high; avoid overly restrictive meals and favour stable energy, magnesium-rich foods, and recovery-friendly meal timing'
+			: '',
+	]
+		.filter(Boolean)
+		.join('\n');
+
+	return `
+========================================================================
+GLOBAL OUTPUT RULES:
+========================================================================
+- The plan must cover exactly ${p.DAYS_COUNT} day(s)
+${weekdayInstruction}
+- totalCalories and totalNutrition MUST represent totals for the FULL ${p.DAYS_COUNT}-day plan, not a single day
+- Keep daily calories and protein close to the user's daily targets while ensuring the full plan total matches ${p.DAYS_COUNT} days of nutrition
+- Spread meals realistically across the week and avoid repeating the same main dish on consecutive days
+- Across the full plan, rotate ingredients to cover key micronutrient sources such as iron, calcium, potassium, magnesium, omega-3, and vitamins A/C/B12/D when compatible with the diet type
+- Use vegetables, fruits, legumes, whole grains, dairy/fortified alternatives, seeds, nuts, and protein sources strategically so the weekly plan feels nutritionally complete
+- Respect allergies, restrictions, prep time, budget, enabled meal slots, and cooking skill for every day
+${additionalRestrictions}
+${explicitExclusions}
+${clinicalContext}
+`;
+}
+
 // ============================================================================
 // DIET PROMPT ROUTER
 // ============================================================================
@@ -195,10 +261,18 @@ export function buildDietPrompt(
 	metrics: UserHealthMetrics,
 	profile: UserProfileContext | null,
 	prefs: DietPreferences | null,
+	bodyContext: BodyMetricsContext | null,
 	daysCount: number = 3,
+	excludeIngredients: string[] = [],
 ): string {
 	// Build placeholders from user data
-	const placeholders = buildPlaceholdersFromUserData(metrics, profile, prefs, daysCount);
+	const placeholders = buildPlaceholdersFromUserData(
+		metrics,
+		profile,
+		prefs,
+		bodyContext,
+		daysCount,
+	);
 
 	// Get diet type (default to non-veg/omnivore)
 	const dietType = (prefs?.diet_type || 'non-veg').toLowerCase().trim();
@@ -212,26 +286,32 @@ export function buildDietPrompt(
 		allergies: placeholders.ALLERGIES.length,
 	});
 
+	let basePrompt: string;
+
 	// Route to specialized prompt based on diet type
 	switch (dietType) {
 		case 'vegan':
-			return buildVeganPrompt(placeholders);
+			basePrompt = buildVeganPrompt(placeholders);
+			break;
 
 		case 'vegetarian':
 		case 'lacto-vegetarian':
 		case 'ovo-vegetarian':
 		case 'lacto-ovo-vegetarian':
-			return buildVegetarianPrompt(placeholders);
+			basePrompt = buildVegetarianPrompt(placeholders);
+			break;
 
 		case 'pescatarian':
 		case 'pescetarian':
-			return buildPescatarianPrompt(placeholders);
+			basePrompt = buildPescatarianPrompt(placeholders);
+			break;
 
 		case 'keto':
 		case 'ketogenic':
 		case 'low-carb':
 		case 'lchf':
-			return buildKetoPrompt(placeholders);
+			basePrompt = buildKetoPrompt(placeholders);
+			break;
 
 		case 'non-veg':
 		case 'nonveg':
@@ -239,8 +319,11 @@ export function buildDietPrompt(
 		case 'omnivore':
 		case 'all':
 		default:
-			return buildNonVegPrompt(placeholders);
+			basePrompt = buildNonVegPrompt(placeholders);
+			break;
 	}
+
+	return `${basePrompt}\n${buildPlanStructureRequirements(placeholders, excludeIngredients)}`;
 }
 
 // ============================================================================

@@ -2,10 +2,9 @@ import { create } from "zustand";
 import {
   subscribeWithSelector,
   persist,
-  createJSONStorage,
 } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { safeAsyncStorage } from "../../utils/safeAsyncStorage";
+import { createDebouncedStorage } from "../../utils/safeAsyncStorage";
 import { analyticsEngine } from "../../services/analyticsEngine";
 import { logger } from "../../utils/logger";
 import {
@@ -264,7 +263,7 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
     })),
     {
       name: "analytics-storage",
-      storage: createJSONStorage(() => safeAsyncStorage),
+      storage: createDebouncedStorage(),
       partialize: (state) => ({
         metricsHistory: state.metricsHistory,
         analyticsSummary: state.analyticsSummary,

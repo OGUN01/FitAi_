@@ -4,6 +4,7 @@ import {
   BodyMetrics,
   DietPreferences,
 } from "../types/user";
+import { AdvancedReviewData } from "../types/onboarding";
 import { AIResponse } from "../types/ai";
 import { WeeklyMealPlan, AIServiceMetadata } from "./types";
 import { handleError } from "./utils";
@@ -13,6 +14,7 @@ import {
   isAsyncJobResponse,
 } from "../services/fitaiWorkersClient";
 import { transformForDietRequest } from "../services/aiRequestTransformers";
+import { resolveCurrentWeightFromStores } from "../services/currentWeight";
 
 import { transformDietResponseToWeeklyPlan } from "../services/aiRequestTransformers";
 
@@ -24,6 +26,7 @@ export async function generateWeeklyMealPlanAsync(
     bodyMetrics?: BodyMetrics;
     dietPreferences?: DietPreferences;
     calorieTarget?: number;
+    advancedReview?: AdvancedReviewData | null;
   } = {},
   updateMetadata: (metadata: AIServiceMetadata) => void,
 ): Promise<
@@ -40,6 +43,13 @@ export async function generateWeeklyMealPlanAsync(
       options.bodyMetrics,
       options.dietPreferences,
       options.calorieTarget,
+      {
+        daysCount: 7,
+        advancedReview: options.advancedReview,
+        currentWeightKg: resolveCurrentWeightFromStores({
+          bodyAnalysisWeight: options.bodyMetrics?.current_weight_kg,
+        }).value,
+      },
     );
 
     const response = await fitaiWorkersClient.generateDietPlanAsync(request);
@@ -61,6 +71,7 @@ export async function generateWeeklyMealPlanAsync(
       const weeklyPlan = transformDietResponseToWeeklyPlan(
         { ...response, data: response.data },
         weekNumber,
+        { requestedDaysCount: 7 },
       );
 
       if (!weeklyPlan) {
@@ -123,6 +134,7 @@ export async function checkMealPlanJobStatus(
       const weeklyPlan = transformDietResponseToWeeklyPlan(
         { success: true, data: jobData.result },
         weekNumber,
+        { requestedDaysCount: 7 },
       );
 
       return {

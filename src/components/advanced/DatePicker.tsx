@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -64,7 +64,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     }
   };
 
-  const generateDateOptions = () => {
+  const dateOptions = useMemo(() => {
     const options = [];
     const today = new Date();
     const start =
@@ -77,9 +77,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     }
 
     return options;
-  };
+  }, [minimumDate, maximumDate]);
 
-  const generateTimeOptions = () => {
+  const timeOptions = useMemo(() => {
     const options = [];
     for (let hour = 0; hour < 24; hour++) {
       for (let minute = 0; minute < 60; minute += 15) {
@@ -89,7 +89,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       }
     }
     return options;
-  };
+  }, []);
 
   const isDateSelected = (date: Date) => {
     if (mode === "date") {
@@ -115,7 +115,6 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   };
 
   const renderDatePicker = () => {
-    const dates = generateDateOptions();
     const today = new Date();
 
     return (
@@ -123,7 +122,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         style={styles.optionsContainer}
         showsVerticalScrollIndicator={false}
       >
-        {dates.map((date, index) => {
+        {dateOptions.map((date, index) => {
           const isSelected = isDateSelected(date);
           const isToday = date.toDateString() === today.toDateString();
           const isPast = date < today && !isToday;
@@ -138,6 +137,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               ]}
               onPress={() => setSelectedDate(date)}
               disabled={isPast}
+              accessibilityRole="button"
+              accessibilityLabel={formatDate(date)}
             >
               <View style={styles.optionContent}>
                 <Text
@@ -168,14 +169,12 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   };
 
   const renderTimePicker = () => {
-    const times = generateTimeOptions();
-
     return (
       <ScrollView
         style={styles.optionsContainer}
         showsVerticalScrollIndicator={false}
       >
-        {times.map((time, index) => {
+        {timeOptions.map((time, index) => {
           const isSelected = isDateSelected(time);
 
           return (
@@ -190,6 +189,16 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 newDate.setHours(time.getHours(), time.getMinutes(), 0, 0);
                 setSelectedDate(newDate);
               }}
+              accessibilityRole="button"
+              accessibilityLabel={time.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+              accessibilityRole="button"
+              accessibilityLabel={time.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
             >
               <Text
                 style={[
@@ -245,6 +254,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       <TouchableOpacity
         style={[styles.trigger, disabled && styles.triggerDisabled]}
         onPress={() => !disabled && setIsVisible(true)}
+        accessibilityRole="button"
+        accessibilityLabel={label || placeholder}
       >
         <Text style={[styles.triggerText, !value && styles.placeholderText]}>
           {value ? formatDate(value) : placeholder}
@@ -312,6 +323,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.sm,
+    minHeight: 44,
+    minHeight: 44,
     backgroundColor: ResponsiveTheme.colors.surface,
     borderRadius: ResponsiveTheme.borderRadius.md,
     borderWidth: 1,
@@ -372,6 +385,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
+    minHeight: 44,
+    minHeight: 44,
     marginVertical: ResponsiveTheme.spacing.xs / 2,
     borderRadius: ResponsiveTheme.borderRadius.md,
     backgroundColor: ResponsiveTheme.colors.surface,

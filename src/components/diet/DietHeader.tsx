@@ -81,6 +81,8 @@ export const DietHeader: React.FC<DietHeaderProps> = ({
             hapticFeedback={true}
             hapticType="light"
             style={styles.iconButton}
+            accessibilityRole="button"
+            accessibilityLabel="Open nutrition settings"
           >
             <Ionicons
               name="settings-outline"
@@ -136,9 +138,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   iconButton: {
-    width: rw(36),
-    height: rw(36),
-    borderRadius: rw(18),
+    width: Math.max(rw(44), 44),
+    height: Math.max(rw(44), 44),
+    borderRadius: Math.max(rw(22), 22),
     backgroundColor: ResponsiveTheme.colors.glassSurface,
     justifyContent: "center",
     alignItems: "center",

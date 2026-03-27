@@ -1,7 +1,7 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { persist } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { safeAsyncStorage } from "../utils/safeAsyncStorage";
+import { createDebouncedStorage } from "../utils/safeAsyncStorage";
 import { hydrationDataService } from "../services/hydrationData";
 import { getLocalDateString } from "../utils/weekUtils";
 
@@ -172,7 +172,7 @@ export const useHydrationStore = create<HydrationState>()(
     }),
     {
       name: "fitai-hydration-storage",
-      storage: createJSONStorage(() => safeAsyncStorage),
+      storage: createDebouncedStorage(),
       // Only persist these fields
       partialize: (state) => ({
         waterIntakeML: state.waterIntakeML,

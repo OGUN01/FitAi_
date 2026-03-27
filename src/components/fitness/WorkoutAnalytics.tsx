@@ -1,18 +1,9 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { Card } from "../ui";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rp } from "../../utils/responsive";
 import { useFitnessData } from "../../hooks/useFitnessData";
-
-const { width } = Dimensions.get("window");
 
 interface WorkoutAnalyticsProps {
   timeRange?: "week" | "month" | "year";
@@ -39,23 +30,23 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
   };
 
   const timeRanges = [
-    { id: "week", label: "Week", icon: "📅" },
-    { id: "month", label: "Month", icon: "🗓️" },
-    { id: "year", label: "Year", icon: "📆" },
+    { id: "week", label: "Week" },
+    { id: "month", label: "Month" },
+    { id: "year", label: "Year" },
   ] as const;
 
-  const getWorkoutTypeIcon = (type: string) => {
+  const getWorkoutTypeLabel = (type: string) => {
     switch (type.toLowerCase()) {
       case "strength":
-        return "💪";
+        return "Strength";
       case "cardio":
-        return "🏃";
+        return "Cardio";
       case "flexibility":
-        return "🧘";
+        return "Flexibility";
       case "hiit":
-        return "🔥";
+        return "HIIT";
       default:
-        return "🏋️";
+        return "Workout";
     }
   };
 
@@ -70,7 +61,7 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
   if (statsError) {
     return (
       <Card style={styles.container} variant="elevated">
-        <Text style={styles.errorText}>⚠️ {statsError}</Text>
+        <Text style={styles.errorText}>Error: {statsError}</Text>
       </Card>
     );
   }
@@ -80,7 +71,6 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
       <View style={styles.header}>
         <Text style={styles.title}>Workout Analytics</Text>
 
-        {/* Time Range Selector */}
         <View style={styles.timeRangeSelector}>
           {timeRanges.map((range) => (
             <TouchableOpacity
@@ -91,7 +81,6 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
               ]}
               onPress={() => handleRangeChange(range.id)}
             >
-              <Text style={styles.timeRangeIcon}>{range.icon}</Text>
               <Text
                 style={[
                   styles.timeRangeLabel,
@@ -106,7 +95,6 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Main Stats */}
         <View style={styles.statsGrid}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>
@@ -141,7 +129,6 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
           </View>
         </View>
 
-        {/* Workout Types Breakdown */}
         {workoutStats?.workoutsByType &&
           Object.keys(workoutStats.workoutsByType).length > 0 && (
             <View style={styles.section}>
@@ -151,10 +138,9 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
                   ([type, count]) => (
                     <View key={type} style={styles.workoutTypeItem}>
                       <View style={styles.workoutTypeHeader}>
-                        <Text style={styles.workoutTypeIcon}>
-                          {getWorkoutTypeIcon(type)}
+                        <Text style={styles.workoutTypeName}>
+                          {getWorkoutTypeLabel(type)}
                         </Text>
-                        <Text style={styles.workoutTypeName}>{type}</Text>
                       </View>
                       <Text style={styles.workoutTypeCount}>{count}</Text>
                     </View>
@@ -164,43 +150,42 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
             </View>
           )}
 
-        {/* Progress Insights */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Insights</Text>
           <View style={styles.insightsContainer}>
             {workoutStats?.totalWorkouts === 0 ? (
               <Text style={styles.insightText}>
-                🎯 Start your fitness journey by completing your first workout!
+                Start your fitness journey by completing your first workout.
               </Text>
             ) : (
               <>
                 {workoutStats && workoutStats.totalWorkouts > 0 && (
                   <Text style={styles.insightText}>
-                    🔥 You've completed {workoutStats.totalWorkouts} workout
+                    You've completed {workoutStats.totalWorkouts} workout
                     {workoutStats.totalWorkouts > 1 ? "s" : ""} this{" "}
-                    {selectedRange}!
+                    {selectedRange}.
                   </Text>
                 )}
 
                 {workoutStats && workoutStats.totalCalories > 500 && (
                   <Text style={styles.insightText}>
-                    💪 Great job burning{" "}
-                    {workoutStats.totalCalories.toLocaleString()} calories!
+                    Great job burning{" "}
+                    {workoutStats.totalCalories.toLocaleString()} calories.
                   </Text>
                 )}
 
                 {workoutStats && workoutStats.averageDuration > 30 && (
                   <Text style={styles.insightText}>
-                    ⏱️ Your average workout duration of{" "}
+                    Your average workout duration of{" "}
                     {Math.round(workoutStats.averageDuration)} minutes shows
-                    great consistency!
+                    great consistency.
                   </Text>
                 )}
 
                 {workoutStats &&
                   Object.keys(workoutStats.workoutsByType).length > 2 && (
                     <Text style={styles.insightText}>
-                      🎨 Excellent variety! You're training different muscle
+                      Excellent variety. You're training different muscle
                       groups and fitness aspects.
                     </Text>
                   )}
@@ -249,11 +234,6 @@ const styles = StyleSheet.create({
 
   timeRangeButtonActive: {
     backgroundColor: ResponsiveTheme.colors.primary,
-  },
-
-  timeRangeIcon: {
-    fontSize: rf(16),
-    marginRight: ResponsiveTheme.spacing.xs,
   },
 
   timeRangeLabel: {
@@ -318,11 +298,6 @@ const styles = StyleSheet.create({
   workoutTypeHeader: {
     flexDirection: "row",
     alignItems: "center",
-  },
-
-  workoutTypeIcon: {
-    fontSize: rf(20),
-    marginRight: ResponsiveTheme.spacing.sm,
   },
 
   workoutTypeName: {

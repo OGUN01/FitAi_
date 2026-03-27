@@ -63,6 +63,8 @@ export const buildRecentActivities = (limit: number = 200): any[] => {
 // Build today's data snapshot from canonical stores (no DataRetrievalService indirection).
 export const buildTodaysData = (): any => {
   const fitnessState = useFitnessStore.getState();
+  // Ensure stale partial progress from previous days is cleared before reading
+  fitnessState.checkAndResetProgressIfNewDay();
   const nutritionState = useNutritionStore.getState();
 
   const days = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
@@ -76,18 +78,17 @@ export const buildTodaysData = (): any => {
     (m) => m.dayOfWeek === todayName
   ) ?? [];
 
-  const workoutProgress = todaysWorkout
-    ? (
-        findCompletedSessionForWorkout({
-          completedSessions: fitnessState.completedSessions,
-          workout: todaysWorkout,
-          plan: fitnessState.weeklyWorkoutPlan,
-          weekStart: getCurrentWeekStart(),
-        })
-          ? 100
-          : fitnessState.getWorkoutProgress(todaysWorkout.id)?.progress ?? 0
-      )
-    : 0;
+  const sessionFound = todaysWorkout
+    ? !!findCompletedSessionForWorkout({
+        completedSessions: fitnessState.completedSessions,
+        workout: todaysWorkout,
+        plan: fitnessState.weeklyWorkoutPlan,
+        weekStart: getCurrentWeekStart(),
+      })
+    : false;
+  const workoutProgress = sessionFound
+    ? 100
+    : Math.min(fitnessState.getWorkoutProgress(todaysWorkout?.id || '')?.progress ?? 0, 99);
 
   const mealsCompleted = todaysMeals.filter(
     (m) => nutritionState.getMealProgress(m.id)?.progress === 100

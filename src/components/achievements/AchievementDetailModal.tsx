@@ -86,7 +86,13 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
             >
               <Text style={styles.icon}>{achievement.icon}</Text>
             </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity
+              onPress={onClose}
+              style={styles.closeButton}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="Close achievement details"
+            >
               <Ionicons
                 name="close"
                 size={24}
@@ -221,7 +227,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     top: 0,
-    padding: rp(4),
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
   },
   iconContainer: {
     width: rw(20),

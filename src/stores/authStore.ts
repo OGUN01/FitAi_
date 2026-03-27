@@ -312,6 +312,17 @@ export const useAuthStore = create<AuthState>()(
           authService.onAuthStateChange((user) => {
             get().setUser(user);
           });
+
+          if (response.success && response.user && response.source === "cache") {
+            void authService.revalidateSession().then((revalidated) => {
+              if (revalidated.success && revalidated.user) {
+                get().setUser(revalidated.user);
+                return;
+              }
+
+              get().setUser(null);
+            });
+          }
         } catch (error) {
           set({
             user: null,

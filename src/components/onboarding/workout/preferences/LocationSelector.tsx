@@ -24,6 +24,12 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
   onLocationChange,
   onInfoPress,
 }) => {
+  const handleInfoPress =
+    (title: string, description: string) => (event: any) => {
+      event.stopPropagation?.();
+      onInfoPress(title, description);
+    };
+
   return (
     <>
       <View style={styles.edgeToEdgeContentPadded}>
@@ -70,10 +76,13 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
                       }
                     />
                     <TouchableOpacity
-                      onPress={() =>
-                        onInfoPress(option.title, option.description)
-                      }
+                      onPress={handleInfoPress(
+                        option.title,
+                        option.description,
+                      )}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`More info about ${option.title}`}
                     >
                       <Ionicons
                         name="information-circle-outline"

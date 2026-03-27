@@ -48,6 +48,13 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       .slice(0, 2);
   };
 
+  const memberSinceLabel =
+    memberSince === null || memberSince === undefined
+      ? null
+      : /^\d+ (day|week)/.test(memberSince)
+        ? `Member for ${memberSince}`
+        : `Member since ${memberSince}`;
+
   return (
     <LinearGradient
       {...toLinearGradientProps(gradientAuroraSpace)}
@@ -72,13 +79,9 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         {/* User Info */}
         <Animated.View entering={FadeInDown.delay(200).duration(400)}>
           <Text style={styles.userName}>{userName || "Fitness Champion"}</Text>
-          <Text style={styles.memberSince}>
-            {memberSince === null || memberSince === undefined
-              ? "Just joined today"
-              : /^\d+ (day|week)/.test(memberSince)
-                ? `Member for ${memberSince}`
-                : `Member since ${memberSince}`}
-          </Text>
+          {memberSinceLabel ? (
+            <Text style={styles.memberSince}>{memberSinceLabel}</Text>
+          ) : null}
         </Animated.View>
       </View>
     </LinearGradient>

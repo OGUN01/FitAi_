@@ -37,6 +37,7 @@ export const clearAllUserData = async (): Promise<void> => {
     try {
       resetFn();
     } catch (e) {
+      console.error(`[clearUserData] Failed to reset ${storeName}:`, e);
       errors.push(storeName);
     }
   };
@@ -147,7 +148,10 @@ export const clearAllUserData = async (): Promise<void> => {
   try {
     const allKeys = await AsyncStorage.getAllKeys();
     for (const key of allKeys) {
-      if (key.startsWith("onboarding_") || key.startsWith("onboarding_partial_")) {
+      if (
+        key.startsWith("onboarding_") ||
+        key.startsWith("onboarding_partial_")
+      ) {
         storageKeysToRemove.push(key);
       }
     }
@@ -176,7 +180,10 @@ export const clearAllUserData = async (): Promise<void> => {
   );
 
   if (errors.length > 0) {
-    // errors occurred but we don't throw - best effort cleanup
+    console.error(
+      "[clearUserData] Some stores failed to reset, user data may persist:",
+      errors,
+    );
   }
 };
 

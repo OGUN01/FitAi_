@@ -35,11 +35,13 @@ export const ActivitiesModal: React.FC<ActivitiesModalProps> = ({
       <SafeAreaView style={styles.modalContainer}>
         <View style={styles.modalHeader}>
           <Text style={styles.modalTitle}>All Activities</Text>
-          <AnimatedPressable
-            onPress={onClose}
-            style={styles.modalCloseButton}
-            scaleValue={0.95}
-          >
+        <AnimatedPressable
+          onPress={onClose}
+          style={styles.modalCloseButton}
+          scaleValue={0.95}
+          accessibilityRole="button"
+          accessibilityLabel="Close activities"
+        >
             <Ionicons
               name="close"
               size={rf(20)}
@@ -156,9 +158,9 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.text,
   },
   modalCloseButton: {
-    width: rw(32),
-    height: rh(32),
-    borderRadius: rs(16),
+    width: Math.max(rw(32), 44),
+    height: Math.max(rh(32), 44),
+    borderRadius: Math.max(rs(16), 22),
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     justifyContent: "center",
     alignItems: "center",

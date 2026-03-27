@@ -3,6 +3,7 @@ import { RealtimeChannel } from "@supabase/supabase-js";
 import { NutritionState } from "./types";
 
 let mealLogsChannel: RealtimeChannel | null = null;
+let realtimeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const createRealtimeActions = (set: any, get: () => NutritionState) => ({
   setupRealtimeSubscription: (userId: string) => {
@@ -20,8 +21,12 @@ export const createRealtimeActions = (set: any, get: () => NutritionState) => ({
           table: "meal_logs",
           filter: `user_id=eq.${userId}`,
         },
-        (payload) => {
-          get().loadData();
+        () => {
+          // Debounce realtime updates to avoid rapid-fire loadData() calls
+          if (realtimeDebounceTimer) clearTimeout(realtimeDebounceTimer);
+          realtimeDebounceTimer = setTimeout(() => {
+            get().loadData();
+          }, 2000);
         },
       )
       .subscribe();

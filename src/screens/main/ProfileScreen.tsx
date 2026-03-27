@@ -76,19 +76,12 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
     memberSince,
     profile,
     // Settings modals
-    showThemeModal,
-    setShowThemeModal,
     showUnitsModal,
     setShowUnitsModal,
-    showLanguageModal,
-    setShowLanguageModal,
     showClearCacheModal,
     setShowClearCacheModal,
-    themePreference,
     unitsPreference,
-    handleThemeSelect,
     handleUnitsSelect,
-    handleLanguageSelect,
     handleClearCache,
   } = useProfileLogic();
   React.useEffect(() => {
@@ -98,17 +91,14 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
     setCurrentSettingsScreen(requestedSettingsScreen);
     navigation?.setParams?.({ settingsScreen: undefined });
   }, [navigation, route?.params?.settingsScreen, setCurrentSettingsScreen]);
-
-  const languagePreference = (profile?.preferences as { language?: string } | undefined)?.language || "en";
-
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       const userId = useAuthStore.getState().user?.id;
       if (userId) {
-        const profileResponse = await useUserStore.getState().getCompleteProfile(
-          userId,
-        );
+        const profileResponse = await useUserStore
+          .getState()
+          .getCompleteProfile(userId);
 
         if (profileResponse.success && profileResponse.data) {
           const profileStore = useProfileStore.getState();
@@ -172,7 +162,11 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
           }
         >
           {/* Guest option marker - always present in DOM for accessibility */}
-          <View testID="guest-option" accessibilityLabel="Continue as guest" style={{ width: 0, height: 0, overflow: 'hidden' }} />
+          <View
+            testID="guest-option"
+            accessibilityLabel="Continue as guest"
+            style={{ width: 0, height: 0, overflow: "hidden" }}
+          />
           <ProfileHeader
             userName={userName || ""}
             memberSince={memberSince}
@@ -223,7 +217,10 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
             animationDelay={500}
           />
 
-          <AppInfoCard version={Constants.expoConfig?.version ?? "0.0.0"} animationDelay={600} />
+          <AppInfoCard
+            version={Constants.expoConfig?.version ?? "0.0.0"}
+            animationDelay={600}
+          />
 
           {isAuthenticated && (
             <LogoutButton onPress={handleSignOut} animationDelay={700} />
@@ -244,32 +241,24 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
 
         <PersonalInfoEditModal
           visible={showEditModal === "personal-info"}
-          onClose={() => setShowEditModal(null)}
+          onClose={() => {
+            setShowEditModal(null);
+            onRefresh();
+          }}
         />
         <GoalsPreferencesEditModal
           visible={showEditModal === "goals"}
-          onClose={() => setShowEditModal(null)}
+          onClose={() => {
+            setShowEditModal(null);
+            onRefresh();
+          }}
         />
         <BodyMeasurementsEditModal
           visible={showEditModal === "measurements"}
-          onClose={() => setShowEditModal(null)}
-        />
-
-        {/* Theme Selection Modal */}
-        <SettingsSelectionModal
-          visible={showThemeModal}
-          title="Theme Preference"
-          subtitle="Choose your display theme"
-          icon="color-palette-outline"
-          iconColor={ResponsiveTheme.colors.primary}
-          selectedValue={themePreference}
-          onSelect={handleThemeSelect}
-          onClose={() => setShowThemeModal(false)}
-          options={[
-            { value: "dark", label: "Dark", icon: "moon-outline", description: "Easier on the eyes" },
-            { value: "light", label: "Light", icon: "sunny-outline", description: "Classic bright look" },
-            { value: "system", label: "System", icon: "phone-portrait-outline", description: "Match device setting" },
-          ]}
+          onClose={() => {
+            setShowEditModal(null);
+            onRefresh();
+          }}
         />
 
         {/* Units Selection Modal */}
@@ -283,25 +272,19 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
           onSelect={handleUnitsSelect}
           onClose={() => setShowUnitsModal(false)}
           options={[
-            { value: "metric", label: "Metric", icon: "globe-outline", description: "Kilograms, centimeters" },
-            { value: "imperial", label: "Imperial", icon: "flag-outline", description: "Pounds, inches" },
+            {
+              value: "metric",
+              label: "Metric",
+              icon: "globe-outline",
+              description: "Kilograms, centimeters",
+            },
+            {
+              value: "imperial",
+              label: "Imperial",
+              icon: "flag-outline",
+              description: "Pounds, inches",
+            },
           ]}
-        />
-
-        {/* Language Selection Modal */}
-        <SettingsSelectionModal
-          visible={showLanguageModal}
-          title="Language"
-          subtitle="App display language"
-          icon="globe-outline"
-          iconColor={ResponsiveTheme.colors.success}
-          selectedValue={languagePreference}
-          onSelect={handleLanguageSelect}
-          onClose={() => setShowLanguageModal(false)}
-          options={[
-            { value: "en", label: "English", icon: "chatbubble-outline", description: "Currently active" },
-          ]}
-          footerNote="More languages coming soon"
         />
 
         {/* Clear Cache Confirmation Modal */}
@@ -327,7 +310,9 @@ export const ProfileScreen: React.FC<{ navigation?: any; route?: any }> = ({
       const currentProfile = useUserStore.getState().profile;
       if (currentProfile && profileStoreState.personalInfo) {
         const pInfo = profileStoreState.personalInfo;
-        const displayName = pInfo.name || `${pInfo.first_name || ''} ${pInfo.last_name || ''}`.trim();
+        const displayName =
+          pInfo.name ||
+          `${pInfo.first_name || ""} ${pInfo.last_name || ""}`.trim();
         useUserStore.getState().setProfile({
           ...currentProfile,
           personalInfo: {
@@ -343,7 +328,10 @@ export const ProfileScreen: React.FC<{ navigation?: any; route?: any }> = ({
         await useUserStore.getState().getCompleteProfile(userId);
       }
     } catch (error) {
-      console.error("[ProfileScreen] Failed to refresh profile after edit:", error);
+      console.error(
+        "[ProfileScreen] Failed to refresh profile after edit:",
+        error,
+      );
     }
   };
 

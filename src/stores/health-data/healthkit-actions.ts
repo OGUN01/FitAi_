@@ -8,6 +8,7 @@ import type {
 } from "./types";
 import { healthKitService } from "../../services/healthKit";
 import { weightTrackingService } from "../../services/WeightTrackingService";
+import { useProfileStore } from "../profileStore";
 
 export const createHealthKitActions = (
   set: (
@@ -19,7 +20,6 @@ export const createHealthKitActions = (
 ) => ({
   initializeHealthKit: async (): Promise<boolean> => {
     try {
-
       const isAvailable = await healthKitService.initialize();
       const hasPermissions = await healthKitService.hasPermissions();
 
@@ -112,6 +112,11 @@ export const createHealthKitActions = (
         });
 
         if (syncResult.data.bodyWeight) {
+          useProfileStore
+            .getState()
+            .updateBodyAnalysis({
+              current_weight_kg: syncResult.data.bodyWeight,
+            });
           weightTrackingService.setWeight(syncResult.data.bodyWeight);
         }
 

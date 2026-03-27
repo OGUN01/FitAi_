@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rp, rbr, rw, rh, rs } from "../../utils/responsive";
+import { getLocalDateString } from "../../utils/weekUtils";
 
 export interface DayInfo {
   dayName: string;
@@ -78,7 +79,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       days.push({
         dayName,
         dayNumber: date.getDate(),
-        date: date.toISOString().split("T")[0],
+        date: getLocalDateString(date),
         isToday,
         hasWorkout: dayData.hasWorkout,
         isCompleted: dayData.isCompleted,

@@ -1,0 +1,229 @@
+- generic [ref=e102]:
+  - generic "Continue as guest" [ref=e103]:
+    - generic [ref=e104]: Continue as guest
+  - generic [ref=e112]:
+    - generic [ref=e114]:
+      - button "Profile" [ref=e116] [cursor=pointer]:
+        - generic [ref=e118]: H
+      - generic [ref=e119]:
+        - generic [ref=e120]:
+          - generic [ref=e121]: Good morning,
+          - generic [ref=e122]: 
+        - generic [ref=e123]: Home Tester
+        - generic [ref=e124]: Monday, Mar 23
+      - button "Notifications" [ref=e127] [cursor=pointer]:
+        - generic [ref=e128]: 
+    - button "Motivation" [ref=e131] [cursor=pointer]:
+      - generic [ref=e132]:
+        - generic [ref=e134]: 
+        - generic [ref=e135]:
+          - generic [ref=e136]: Make it count
+          - generic [ref=e137]: Every rep brings you closer to your goals
+    - button " Health Intelligence No Data  Connect Health Data Connect to Health Connect or Apple Health to see your recovery metrics and health insights." [ref=e140] [cursor=pointer]:
+      - generic [ref=e142]:
+        - generic [ref=e143]:
+          - generic [ref=e144]:
+            - generic [ref=e145]: 
+            - generic [ref=e146]: Health Intelligence
+          - generic [ref=e149]: No Data
+        - generic [ref=e150]:
+          - generic [ref=e151]: 
+          - generic [ref=e152]: Connect Health Data
+          - generic [ref=e153]: Connect to Health Connect or Apple Health to see your recovery metrics and health insights.
+    - generic [ref=e154]:
+      - button "Daily progress" [ref=e156] [cursor=pointer]:
+        - generic [ref=e159]:
+          - generic [ref=e160]:
+            - img [ref=e161]
+            - img [ref=e165]
+            - img [ref=e169]
+            - img [ref=e173]
+            - generic [ref=e176]:
+              - generic [ref=e177]: "0"
+              - generic [ref=e178]: "%"
+          - generic [ref=e179]:
+            - generic [ref=e180]:
+              - generic [ref=e182]: 
+              - generic [ref=e183]: Move
+              - generic [ref=e184]:
+                - text: "0"
+                - generic [ref=e185]: /500 cal
+            - generic [ref=e186]:
+              - generic [ref=e188]: 
+              - generic [ref=e189]: Exercise
+              - generic [ref=e190]:
+                - text: "0"
+                - generic [ref=e191]: /30 min
+            - generic [ref=e192]:
+              - generic [ref=e194]: 
+              - generic [ref=e195]: Nutrition
+              - generic [ref=e196]:
+                - text: "0"
+                - generic [ref=e197]: /2000 cal
+            - generic [ref=e198]:
+              - generic [ref=e200]: 
+              - generic [ref=e202]: Steps
+              - generic [ref=e203]:
+                - text: "0"
+                - generic [ref=e204]: /10,000
+      - generic [ref=e208]:
+        - generic [ref=e210]: 
+        - generic [ref=e211]: No meals logged today
+        - generic [ref=e212]: Track your nutrition to hit your daily goals
+        - button "Log your first meal" [ref=e213] [cursor=pointer]:
+          - generic [ref=e214]: 
+          - generic [ref=e215]: Log Meal
+    - button " Create Your Plan Generate a personalized workout plan " [ref=e218] [cursor=pointer]:
+      - generic [ref=e221]:
+        - generic [ref=e223]: 
+        - generic [ref=e224]:
+          - generic [ref=e225]: Create Your Plan
+          - generic [ref=e226]: Generate a personalized workout plan
+        - generic [ref=e228]: 
+    - generic [ref=e231]:
+      - button "Log Weight" [ref=e233] [cursor=pointer]:
+        - generic [ref=e235]: 
+        - generic [ref=e236]: Log Weight
+      - button "Scan Food" [ref=e238] [cursor=pointer]:
+        - generic [ref=e240]: 
+        - generic [ref=e241]: Scan Food
+      - button "Log Meal" [ref=e243] [cursor=pointer]:
+        - generic [ref=e245]: 
+        - generic [ref=e246]: Log Meal
+      - button "Water" [ref=e248] [cursor=pointer]:
+        - generic [ref=e250]: 
+        - generic [ref=e251]: Water
+      - button "Barcode" [ref=e253] [cursor=pointer]:
+        - generic [ref=e255]: 
+        - generic [ref=e256]: Barcode
+      - button "Scan Label" [ref=e258] [cursor=pointer]:
+        - generic [ref=e260]: 
+        - generic [ref=e261]: Scan Label
+      - button "Recipes" [ref=e263] [cursor=pointer]:
+        - generic [ref=e265]: 
+        - generic [ref=e266]: Recipes
+      - button "Sync" [ref=e268] [cursor=pointer]:
+        - generic [ref=e270]: 
+        - generic [ref=e271]: Sync
+    - generic [ref=e274]:
+      - button "Hydration details" [ref=e276] [cursor=pointer]:
+        - generic [ref=e277]:
+          - generic [ref=e278]:
+            - generic [ref=e279]: 
+            - generic [ref=e280]: Hydration
+          - generic [ref=e283]: Behind
+        - generic [ref=e284]:
+          - generic [ref=e285]:
+            - img [ref=e286]
+            - generic [ref=e291]: 0%
+          - generic [ref=e292]:
+            - generic [ref=e293]:
+              - generic [ref=e294]: 0.00L
+              - generic [ref=e295]: Consumed
+            - generic [ref=e297]:
+              - generic [ref=e298]: 0.00L
+              - generic [ref=e299]: Goal
+            - generic [ref=e301]:
+              - generic [ref=e302]: ✓
+              - generic [ref=e303]: Complete!
+        - generic [ref=e304]:
+          - generic [ref=e305]: 
+          - generic [ref=e306]: Drink more water
+      - generic [ref=e307]:
+        - generic [ref=e308]: Quick Add
+        - generic [ref=e309]:
+          - button "Add 250 milliliters Glass" [ref=e311] [cursor=pointer]:
+            - generic [ref=e313]: 
+            - generic [ref=e314]: 250ml
+            - generic [ref=e315]: Glass
+          - button "Add 500 milliliters Bottle" [ref=e317] [cursor=pointer]:
+            - generic [ref=e319]: 
+            - generic [ref=e320]: 500ml
+            - generic [ref=e321]: Bottle
+          - button "Add 750 milliliters Large" [ref=e323] [cursor=pointer]:
+            - generic [ref=e325]: 
+            - generic [ref=e326]: 750ml
+            - generic [ref=e327]: Large
+    - generic [ref=e331]:
+      - button "View Progress" [ref=e332] [cursor=pointer]:
+        - generic [ref=e333]:
+          - generic [ref=e334]: 
+          - generic [ref=e335]: Body Progress
+        - generic [ref=e336]:
+          - generic [ref=e337]: 
+          - generic [ref=e338]: Stable
+      - generic [ref=e339]:
+        - generic [ref=e340]:
+          - generic [ref=e341]:
+            - text: "72.1"
+            - generic [ref=e342]: kg
+          - generic [ref=e343]: Current
+        - img [ref=e345]
+        - generic [ref=e350]:
+          - generic [ref=e351]:
+            - text: —
+            - generic [ref=e352]: kg
+          - generic [ref=e353]: Goal
+      - generic [ref=e354]:
+        - generic [ref=e356]: Body Progress
+        - generic [ref=e359]: Set a goal weight
+      - generic [ref=e360]:
+        - button "Log weight" [ref=e362] [cursor=pointer]:
+          - generic [ref=e363]: 
+          - generic [ref=e364]: Log Weight
+        - button "Progress photo" [ref=e367] [cursor=pointer]:
+          - generic [ref=e368]: 
+          - generic [ref=e369]: Progress Photo
+    - generic [ref=e372]:
+      - generic [ref=e373]:
+        - button "Achievements" [ref=e375] [cursor=pointer]:
+          - generic [ref=e377]: 
+          - generic [ref=e378]: Achievements
+          - generic [ref=e380]: 0/116
+        - button "View all achievements" [ref=e382] [cursor=pointer]:
+          - generic [ref=e383]:
+            - generic [ref=e384]: View All
+            - generic [ref=e385]: 
+      - generic [ref=e387]:
+        - button "Beta Tester 0 percent" [ref=e389] [cursor=pointer]:
+          - generic [ref=e391]: 
+          - generic [ref=e394]: Beta Tester
+          - generic [ref=e395]: 0%
+        - button "Birthday Beast 0 percent" [ref=e397] [cursor=pointer]:
+          - generic [ref=e399]: 
+          - generic [ref=e402]: Birthday Beast
+          - generic [ref=e403]: 0%
+        - button "Endurance Master 0 percent" [ref=e405] [cursor=pointer]:
+          - generic [ref=e407]: 
+          - generic [ref=e410]: Endurance Master
+          - generic [ref=e411]: 0%
+        - button "Goal Crusher 0 percent" [ref=e413] [cursor=pointer]:
+          - generic [ref=e415]: 
+          - generic [ref=e418]: Goal Crusher
+          - generic [ref=e419]: 0%
+        - button "Holistic Health Master 0 percent" [ref=e421] [cursor=pointer]:
+          - generic [ref=e423]: 
+          - generic [ref=e426]: Holistic Health Master
+          - generic [ref=e427]: 0%
+        - button "Lifestyle Champion 0 percent" [ref=e429] [cursor=pointer]:
+          - generic [ref=e431]: 
+          - generic [ref=e434]: Lifestyle Champion
+          - generic [ref=e435]: 0%
+    - generic [ref=e440]:
+      - generic [ref=e442]: 
+      - generic [ref=e443]: No workouts scheduled
+      - generic [ref=e444]: Plan your week to stay on track with your fitness goals
+      - button "Plan your first workout" [ref=e445] [cursor=pointer]:
+        - generic [ref=e446]: 
+        - generic [ref=e447]: Plan Workout
+  - generic [ref=e450]:
+    - tab "Home" [ref=e451] [cursor=pointer]:
+      - generic [ref=e456]: Home
+    - tab "Workout" [ref=e458] [cursor=pointer]:
+      - generic [ref=e464]: Workout
+    - tab "Diet" [ref=e465] [cursor=pointer]:
+      - generic [ref=e470]: Diet
+    - tab "Profile" [ref=e471] [cursor=pointer]:
+      - generic [ref=e476]: Profile
+    - tab "Analytics" [ref=e477] [cursor=pointer]:
+      - generic [ref=e485]: Analytics

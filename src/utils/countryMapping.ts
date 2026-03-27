@@ -369,24 +369,45 @@ const GS1_PREFIX_MAP: Record<string, string> = {
 
 /** Product barcode types that should be scanned (iOS and Android formats) */
 const PRODUCT_BARCODE_TYPES = new Set([
-  // Standard names
   "ean13",
   "ean8",
   "upc_a",
   "upc_e",
   "upca",
   "upce",
-  // iOS format (org.gs1.*)
   "org.gs1.EAN-13",
   "org.gs1.EAN-8",
   "org.gs1.UPC-A",
   "org.gs1.UPC-E",
-  // Android numeric codes (BarcodeFormat)
-  "32", // EAN-13
-  "64", // EAN-8
-  "16", // UPC-A
-  "512", // UPC-E
+  "32",
+  "64",
+  "16",
+  "512",
 ]);
+
+type ProductBarcodeFamily = "ean13" | "ean8" | "upc_a" | "upc_e";
+
+const PRODUCT_BARCODE_FAMILY_RULES: Record<
+  ProductBarcodeFamily,
+  { aliases: string[]; rawLengths: number[] }
+> = {
+  ean13: {
+    aliases: ["ean13", "org.gs1.ean-13", "32"],
+    rawLengths: [13],
+  },
+  ean8: {
+    aliases: ["ean8", "org.gs1.ean-8", "64"],
+    rawLengths: [8],
+  },
+  upc_a: {
+    aliases: ["upc_a", "upca", "org.gs1.upc-a", "16"],
+    rawLengths: [12, 13],
+  },
+  upc_e: {
+    aliases: ["upc_e", "upce", "org.gs1.upc-e", "512"],
+    rawLengths: [6, 8],
+  },
+};
 
 /** Non-product barcode types to reject */
 const NON_PRODUCT_TYPES = new Set([
@@ -414,8 +435,8 @@ const NON_PRODUCT_TYPES = new Set([
   "CODE_93",
   "itf14",
   "ITF14",
-  "256", // Android QR
-  "1", // Android Code128
+  "256",
+  "1",
 ]);
 
 /** ISO 3166-1 alpha-2 country code mapping */
@@ -468,8 +489,6 @@ const COUNTRY_NAME_TO_ISO: Record<string, string> = {
 
 /**
  * Returns the country name for a given barcode based on its GS1 prefix.
- * @param barcode - The barcode string (EAN-13, UPC-A, etc.)
- * @returns Country name like "India", "USA", "Germany", or "Unknown"
  */
 export function getCountryFromBarcode(barcode: string): string {
   if (!barcode || barcode.length < 3) return "Unknown";
@@ -478,61 +497,72 @@ export function getCountryFromBarcode(barcode: string): string {
 }
 
 /**
- * Normalizes a barcode to standard EAN-13 format.
- * - Validates that barcode is numeric
+ * Normalizes a packaged-food barcode to the app's accepted format.
+ * - Validates numeric-only input
  * - Zero-pads 12-digit UPC-A barcodes to 13 digits
- * - Returns null for invalid barcodes
+ * - Accepts only UPC-E (6), EAN-8 (8), UPC-A (12), and EAN-13 (13)
+ * - Trims whitespace before validation
  */
 export function normalizeBarcode(barcode: string): string | null {
   if (!barcode || typeof barcode !== "string") return null;
-  if (!/^\d+$/.test(barcode)) return null; // must be all digits
 
-  const len = barcode.length;
+  const trimmedBarcode = barcode.trim();
+  if (!/^\d+$/.test(trimmedBarcode)) return null;
 
-  // UPC-A: 12 digits → zero-pad to EAN-13
-  if (len === 12) return "0" + barcode;
+  if (trimmedBarcode.length === 12) return `0${trimmedBarcode}`;
+  if (trimmedBarcode.length === 13) return trimmedBarcode;
+  if (trimmedBarcode.length === 8) return trimmedBarcode;
+  if (trimmedBarcode.length === 6) return trimmedBarcode;
 
-  // EAN-13: 13 digits — valid as-is
-  if (len === 13) return barcode;
-
-  // EAN-8: 8 digits — valid as-is
-  if (len === 8) return barcode;
-
-  // UPC-E: 6 digits — valid as-is
-  if (len === 6) return barcode;
-
-  // ITF-14: 14 digits — valid as-is
-  if (len === 14) return barcode;
-
-  // Anything else is invalid
   return null;
 }
 
 /**
- * Returns true if the barcode type string represents a product barcode
- * (EAN-13, EAN-8, UPC-A, UPC-E). Returns false for QR, Code128, etc.
- * Handles both iOS (org.gs1.*) and Android (numeric) formats.
+ * Returns true if the barcode type string represents a product barcode.
  */
 export function isProductBarcode(type: string): boolean {
   if (!type) return false;
 
-  // Explicit non-product check first
   if (NON_PRODUCT_TYPES.has(type)) return false;
-
-  // Explicit product type check
   if (PRODUCT_BARCODE_TYPES.has(type)) return true;
 
-  // Fuzzy match for common EAN/UPC patterns
   const lower = type.toLowerCase();
-  if (lower.includes("ean") || lower.includes("upc")) return true;
+  return lower.includes("ean") || lower.includes("upc");
+}
 
-  return false;
+function getProductBarcodeFamily(type: string): ProductBarcodeFamily | null {
+  if (!type) return null;
+
+  const normalizedType = type.toLowerCase();
+  for (const [family, rule] of Object.entries(PRODUCT_BARCODE_FAMILY_RULES)) {
+    if (
+      rule.aliases.includes(normalizedType) ||
+      rule.aliases.some((alias) => normalizedType.includes(alias))
+    ) {
+      return family as ProductBarcodeFamily;
+    }
+  }
+
+  return null;
+}
+
+export function matchesPackagedFoodBarcodeType(
+  type: string,
+  rawBarcode: string,
+): boolean {
+  const family = getProductBarcodeFamily(type);
+  if (!family || typeof rawBarcode !== "string") return false;
+
+  const trimmedBarcode = rawBarcode.trim();
+  if (!/^\d+$/.test(trimmedBarcode)) return false;
+
+  return PRODUCT_BARCODE_FAMILY_RULES[family].rawLengths.includes(
+    trimmedBarcode.length,
+  );
 }
 
 /**
  * Maps a country name (as stored in user profile) to its ISO 3166-1 alpha-2 code.
- * @param name - Country name like "India", "United States", "USA"
- * @returns ISO code like "IN", "US", or "XX" for unknown
  */
 export function normalizeCountryName(name: string): string {
   if (!name) return "XX";

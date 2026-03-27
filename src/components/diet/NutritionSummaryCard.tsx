@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { LargeProgressRing } from "../ui/aurora/ProgressRing";
 import { ResponsiveTheme } from "../../utils/constants";
@@ -15,7 +16,7 @@ interface NutritionSummaryCardProps {
   };
 }
 
-export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
+export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = React.memo(({
   nutritionTargets,
 }) => {
   // Use sensible defaults when targets are 0 (incomplete profile)
@@ -47,7 +48,11 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
     <View style={styles.section}>
       {showDefaultsNotice && (
         <View style={styles.defaultsNotice}>
-          <Text style={styles.defaultsNoticeIcon}>📋</Text>
+          <Ionicons
+            name="document-text-outline"
+            size={rf(12)}
+            color={ResponsiveTheme.colors.warning}
+          />
           <Text style={styles.defaultsNoticeText}>
             Using estimated targets — complete your profile for personalized goals
           </Text>
@@ -191,7 +196,7 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
       </GlassCard>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   section: {
@@ -209,9 +214,6 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.sm,
     borderWidth: 1,
     borderColor: `${ResponsiveTheme.colors.warning}30`,
-  },
-  defaultsNoticeIcon: {
-    fontSize: rf(12),
   },
   defaultsNoticeText: {
     flex: 1,

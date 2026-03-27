@@ -5,12 +5,12 @@ import { create } from "zustand";
 import {
   subscribeWithSelector,
   persist,
-  createJSONStorage,
 } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { safeAsyncStorage } from "../utils/safeAsyncStorage";
+import { createDebouncedStorage } from "../utils/safeAsyncStorage";
 import razorpayService from "../services/RazorpayService";
 import { getLocalDateString } from "../utils/weekUtils";
+import { API_CONFIG } from "../config/api";
 
 // ============================================================================
 // Types - aligned with backend GET /api/subscription/status response
@@ -178,6 +178,26 @@ function getCurrentDayKey(): string {
   return getLocalDateString(new Date());
 }
 
+function shouldSkipRemoteSubscriptionStatusOnLocalWeb(): boolean {
+  if (typeof window === "undefined" || !window.location) {
+    return false;
+  }
+
+  const isLocalHost = /^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/i.test(
+    window.location.hostname,
+  );
+  if (!isLocalHost) {
+    return false;
+  }
+
+  try {
+    const workerHost = new URL(API_CONFIG.WORKERS_BASE_URL).hostname;
+    return !/^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/i.test(workerHost);
+  } catch {
+    return true;
+  }
+}
+
 // ============================================================================
 // Store interface
 // ============================================================================
@@ -253,6 +273,31 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         fetchSubscriptionStatus: async (options) => {
           const preserveExistingOnError = options?.preserveExistingOnError ?? false;
           set({ isLoading: true });
+
+          if (shouldSkipRemoteSubscriptionStatusOnLocalWeb()) {
+            console.warn(
+              "[subscriptionStore] Skipping remote subscription status fetch on localhost web because the configured worker URL is cross-origin.",
+            );
+
+            if (preserveExistingOnError) {
+              set({ isLoading: false, usageIsFresh: false });
+              return;
+            }
+
+            set({
+              isLoading: false,
+              currentPlan: null,
+              subscriptionStatus: null,
+              features: FREE_FEATURES,
+              usage: EMPTY_USAGE,
+              usageIsFresh: false,
+              currentPeriodEnd: null,
+              usageResetMonth: getCurrentMonthKey(),
+              usageResetDay: getCurrentDayKey(),
+            });
+            return;
+          }
+
           try {
             const data =
               (await razorpayService.getSubscriptionStatus()) as unknown as BackendStatusData;
@@ -545,7 +590,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       }),
       {
         name: "subscription-storage",
-        storage: createJSONStorage(() => safeAsyncStorage),
+        storage: createDebouncedStorage(),
         partialize: (state) => ({
           currentPlan: state.currentPlan,
           subscriptionStatus: state.subscriptionStatus,
@@ -557,6 +602,29 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           // features intentionally excluded — always recomputed from server on fetch
           // isInitialized intentionally excluded — must always start false on app restart
         }),
+        onRehydrateStorage: () => (state) => {
+          if (!state) return;
+          // Reset daily usage counters if persisted usageResetDay is from a previous day.
+          // Prevents yesterday's AI-generation/scan count from blocking today's quota.
+          const today = getCurrentDayKey();
+          if (state.usageResetDay && state.usageResetDay !== today) {
+            const usage = state.usage;
+            if (usage) {
+              state.usage = {
+                ...usage,
+                ai_generation: {
+                  ...usage.ai_generation,
+                  daily: { ...usage.ai_generation.daily, current: 0 },
+                },
+                barcode_scan: {
+                  ...usage.barcode_scan,
+                  daily: { ...usage.barcode_scan.daily, current: 0 },
+                },
+              };
+              state.usageResetDay = today;
+            }
+          }
+        },
         version: 3, // bump to clear stale persisted state from v1/v2
         migrate: (_persistedState: unknown, _version: number) => {
           // v1/v2 state shapes are incompatible — discard and start fresh.

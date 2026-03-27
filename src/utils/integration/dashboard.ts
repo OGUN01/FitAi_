@@ -5,6 +5,7 @@ import { useOffline } from "../../hooks/useOffline";
 import { api } from "../../services/api";
 import { HealthMetrics } from "./types";
 import { buildLegacyProfileAdapter } from "../profileLegacyAdapter";
+import { resolveCurrentWeightFromStores } from "../../services/currentWeight";
 
 export const useDashboardIntegration = () => {
   const { user: authUser } = useAuth();
@@ -37,7 +38,9 @@ export const useDashboardIntegration = () => {
 
   const getHealthMetrics = (): HealthMetrics | null => {
     const heightCm = bodyAnalysis?.height_cm;
-    const weightKg = bodyAnalysis?.current_weight_kg;
+    const weightKg = resolveCurrentWeightFromStores({
+      bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
+    }).value;
 
     if (!heightCm || !weightKg) {
       return null;
@@ -60,7 +63,9 @@ export const useDashboardIntegration = () => {
     }
 
     const heightCm = bodyAnalysis?.height_cm;
-    const weightKg = bodyAnalysis?.current_weight_kg;
+    const weightKg = resolveCurrentWeightFromStores({
+      bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
+    }).value;
     const age = adaptedProfile.personalInfo.age;
     const gender = adaptedProfile.personalInfo.gender;
     const activityLevelValue =

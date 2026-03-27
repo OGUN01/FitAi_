@@ -111,6 +111,8 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
           onPress={onPress}
           disabled={isDisabled}
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={`${tab.title} step`}
         >
           {isCompleted ? (
             <View style={styles.checkmarkBg}>
@@ -284,7 +286,7 @@ const styles = StyleSheet.create({
   // Connection Lines
   connectionLine: {
     position: "absolute",
-    top: rw(11),
+    top: Math.max(rw(12), 22),
     height: rp(2),
     backgroundColor: ResponsiveTheme.colors.glassBorder,
     zIndex: 0,
@@ -293,13 +295,13 @@ const styles = StyleSheet.create({
   connectionLineLeft: {
     left: 0,
     right: "50%",
-    marginRight: rw(11),
+    marginRight: Math.max(rw(12), 22),
   },
 
   connectionLineRight: {
     left: "50%",
     right: 0,
-    marginLeft: rw(11),
+    marginLeft: Math.max(rw(12), 22),
   },
 
   connectionLineActive: {
@@ -308,9 +310,9 @@ const styles = StyleSheet.create({
 
   // Step Circle
   stepCircle: {
-    width: rw(24),
-    height: rw(24),
-    borderRadius: rbr(12),
+    width: Math.max(rw(24), 44),
+    height: Math.max(rw(24), 44),
+    borderRadius: Math.max(rbr(12), 22),
     backgroundColor: ResponsiveTheme.colors.glassSurface,
     borderWidth: 1.5,
     borderColor: ResponsiveTheme.colors.glassHighlight,

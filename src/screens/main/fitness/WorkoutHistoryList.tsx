@@ -246,7 +246,7 @@ const WorkoutHistoryCard: React.FC<{
                   {workout.title}
                 </Text>
                 <Text style={styles.meta}>
-                  {workout.duration || 0} min • {workout.caloriesBurned || 0} cal
+                  {workout.duration || 0} min - {workout.caloriesBurned || 0} cal
                 </Text>
               </View>
 

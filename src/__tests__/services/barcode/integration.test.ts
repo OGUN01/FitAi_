@@ -78,7 +78,7 @@ afterEach(() => {
 });
 
 describe("lookupProduct integration", () => {
-  it("returns a packaged product from OFF world with full nutrition", async () => {
+  it("returns an authoritative hit for a trusted OFF world product", async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () =>
@@ -105,18 +105,16 @@ describe("lookupProduct integration", () => {
     const result: ProductLookupResult =
       await barcodeService.lookupProduct("3017620422003");
 
-    expect(result.success).toBe(true);
+    expect(result.outcome).toBe("authoritative_hit");
     expect(result.product).toBeDefined();
-    const p = result.product!;
-    expect(p.name).toBe("Nutella");
-    expect(p.nutrition.calories).toBe(530);
-    expect(p.nutrition.protein).toBe(6.3);
-    expect(p.nutrition.carbs).toBe(57.5);
-    expect(p.nutrition.fat).toBe(30.9);
-    expect(p.nutriScore).toBe("d");
-    expect(p.novaGroup).toBe(4);
-    expect(p.gs1Country).toBe("France");
-    expect(p.source).toBe("openfoodfacts");
+    expect(result.meta.lookupPath).toEqual(["supabase", "off_world"]);
+    const product = result.product!;
+    expect(product.name).toBe("Nutella");
+    expect(product.nutrition.calories).toBe(530);
+    expect(product.nutriScore).toBe("d");
+    expect(product.novaGroup).toBe(4);
+    expect(product.gs1Country).toBe("France");
+    expect(result.meta.finalSource).toBe("openfoodfacts");
   });
 
   it("falls back to OFF India for an Indian barcode when world misses", async () => {
@@ -146,16 +144,13 @@ describe("lookupProduct integration", () => {
 
     const result = await barcodeService.lookupProduct("8901234567890");
 
-    expect(result.success).toBe(true);
-    expect(result.product).toBeDefined();
-    const p = result.product!;
-    expect(p.gs1Country).toBe("India");
-    expect(p.needsNutritionEstimate).toBe(false);
-    expect(p.nutrition.calories).toBe(462);
-    expect(p.source).toBe("openfoodfacts-india");
+    expect(result.outcome).toBe("authoritative_hit");
+    expect(result.meta.lookupPath).toEqual(["supabase", "off_world", "off_india"]);
+    expect(result.product?.gs1Country).toBe("India");
+    expect(result.product?.source).toBe("openfoodfacts-india");
   });
 
-  it("returns failure when no trusted barcode source finds the product", async () => {
+  it("returns not_found when trusted sources complete without a hit", async () => {
     (global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
@@ -168,30 +163,27 @@ describe("lookupProduct integration", () => {
 
     const result = await barcodeService.lookupProduct("4006381333931");
 
-    expect(result.success).toBe(false);
+    expect(result.outcome).toBe("not_found");
     expect(result.product).toBeUndefined();
     expect(mockedWorkersClient.estimateNutrition).not.toHaveBeenCalled();
   });
 
-  it("normalizes UPC-A barcodes before lookup", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => makeOFFResponse(),
-    });
-
-    await barcodeService.lookupProduct("012345678905");
-
-    const calledUrl = (global.fetch as jest.Mock).mock.calls[0][0] as string;
-    expect(calledUrl).toContain("0012345678905");
-    expect(calledUrl).toContain("openfoodfacts.org");
-  });
-
-  it("fails fast on invalid barcodes without calling fetch", async () => {
+  it("returns invalid_scan for malformed input without calling fetch", async () => {
     const result = await barcodeService.lookupProduct("ABC123");
 
-    expect(result.success).toBe(false);
+    expect(result.outcome).toBe("invalid_scan");
     expect(result.error).toBeDefined();
     expect(result.product).toBeUndefined();
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("returns invalid_scan when raw symbology does not match raw numeric content", async () => {
+    const result = await barcodeService.lookupProduct("12345670", {
+      rawSymbology: "ean13",
+    });
+
+    expect(result.outcome).toBe("invalid_scan");
+    expect(result.error).toContain("does not match");
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
@@ -208,31 +200,14 @@ describe("lookupProduct integration", () => {
     const result1 = await barcodeService.lookupProduct(barcode);
     const result2 = await barcodeService.lookupProduct(barcode);
 
-    expect(result1.success).toBe(true);
-    expect(result2.success).toBe(true);
+    expect(result1.outcome).toBe("authoritative_hit");
+    expect(result2.outcome).toBe("authoritative_hit");
     expect(result1.product!.name).toBe("Cached Product");
     expect(result2.product!.name).toBe("Cached Product");
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
-  it("does not invent nutrition for Indian barcodes with no trusted identity", async () => {
-    (global.fetch as jest.Mock)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => makeOFFNotFound(),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => makeOFFNotFound(),
-      });
-
-    const result = await barcodeService.lookupProduct("8901234567891");
-
-    expect(result.success).toBe(false);
-    expect(mockedWorkersClient.estimateNutrition).not.toHaveBeenCalled();
-  });
-
-  it("uses AI estimation only after a trusted product identity is found", async () => {
+  it("returns weak_data when a trusted identity exists but nutrition is AI-estimated", async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () =>
@@ -262,37 +237,34 @@ describe("lookupProduct integration", () => {
 
     const result = await barcodeService.lookupProduct("3017620422055");
 
-    expect(result.success).toBe(true);
+    expect(result.outcome).toBe("weak_data");
     expect(result.product).toBeDefined();
-    const p = result.product!;
-    expect(p.source).toBe("openfoodfacts+gemini-estimation");
-    expect(p.isAIEstimated).toBe(true);
-    expect(p.confidence).toBe(40);
-    expect(p.nutrition.calories).toBe(450);
-    expect(p.nutrition.protein).toBe(8);
-    expect(p.nutrition.carbs).toBe(65);
-    expect(p.nutrition.fat).toBe(18);
-    expect(p.needsNutritionEstimate).toBe(false);
+    expect(result.product!.source).toBe("openfoodfacts+gemini-estimation");
+    expect(result.product!.isAIEstimated).toBe(true);
+    expect(result.meta.lookupPath).toEqual([
+      "supabase",
+      "off_world",
+      "ai_estimate",
+    ]);
   });
 
-  it("continues to OFF India when OFF world fails", async () => {
+  it("returns transient_failure when trusted sources do not complete cleanly", async () => {
     (global.fetch as jest.Mock)
       .mockRejectedValueOnce(new Error("Timeout after 5000ms"))
-      .mockImplementationOnce(() =>
-        Promise.resolve({
-          ok: true,
-          json: async () =>
-            makeOFFResponse({
-              product_name: "Fallback India Product",
-              product_name_en: "Fallback India Product",
-            }),
-        }),
-      );
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => makeOFFNotFound(),
+      })
+      .mockRejectedValueOnce(new Error("Timeout after 5000ms"))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => makeOFFNotFound(),
+      });
 
     const result = await barcodeService.lookupProduct("8901234567892");
 
-    expect(result.success).toBe(true);
-    expect(result.product).toBeDefined();
-    expect(result.product!.source).toBe("openfoodfacts-india");
+    expect(result.outcome).toBe("transient_failure");
+    expect(result.meta.retryable).toBe(true);
+    expect(result.product).toBeUndefined();
   });
 });

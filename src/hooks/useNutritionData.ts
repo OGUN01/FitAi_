@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { InteractionManager } from "react-native";
 import {
   nutritionDataService,
   Food,
@@ -10,7 +11,7 @@ import { useAuth } from "./useAuth";
 import useTrackBIntegration from "./useTrackBIntegration";
 import { nutritionRefreshService } from "../services/nutritionRefreshService";
 import { useNutritionStore } from "../stores/nutritionStore";
-import { getLocalDateString, getLocalDayName } from "../utils/weekUtils";
+import { getLocalDateString } from "../utils/weekUtils";
 
 interface UseNutritionDataReturn {
   // Foods
@@ -47,6 +48,7 @@ interface UseNutritionDataReturn {
     protein: number;
     carbs: number;
     fat: number;
+    fiber: number;
     mealsCount: number;
   } | null;
   statsLoading: boolean;
@@ -76,7 +78,13 @@ interface UseNutritionDataReturn {
   clearErrors: () => void;
 }
 
-export const useNutritionData = (): UseNutritionDataReturn => {
+interface UseNutritionDataOptions {
+  autoRefresh?: boolean;
+}
+
+export const useNutritionData = ({
+  autoRefresh = true,
+}: UseNutritionDataOptions = {}): UseNutritionDataReturn => {
   const { user, isAuthenticated } = useAuth();
   const trackB = useTrackBIntegration();
 
@@ -105,24 +113,17 @@ export const useNutritionData = (): UseNutritionDataReturn => {
 
   // SSOT fix: dailyNutrition derived from nutritionStore.getTodaysConsumedNutrition()
   // instead of getUserMeals() which reads meal_templates (recipe catalogue), not meal_logs.
-  const getTodaysConsumedNutrition = useNutritionStore((s) => s.getTodaysConsumedNutrition);
-  const weeklyMealPlan = useNutritionStore((s) => s.weeklyMealPlan);
-  const mealProgress = useNutritionStore((s) => s.mealProgress);
+  const getTodaysConsumedNutrition = useNutritionStore(
+    (s) => s.getTodaysConsumedNutrition,
+  );
   const storeDailyMeals = useNutritionStore((s) => s.dailyMeals);
   const dailyNutrition = (() => {
     const n = getTodaysConsumedNutrition();
     const todayDate = getLocalDateString();
-    const todayName = getLocalDayName();
-    const completedPlannedMeals =
-      weeklyMealPlan?.meals.filter(
-        (meal) =>
-          meal.dayOfWeek === todayName &&
-          mealProgress[meal.id]?.progress === 100 &&
-          mealProgress[meal.id]?.completedAt &&
-          getLocalDateString(mealProgress[meal.id]?.completedAt) === todayDate,
-      ).length ?? 0;
     const completedLoggedMeals = storeDailyMeals.filter(
-      (meal) => meal.createdAt && getLocalDateString(meal.createdAt) === todayDate,
+      (meal) =>
+        typeof (meal as any).loggedAt === "string" &&
+        getLocalDateString((meal as any).loggedAt) === todayDate,
     ).length;
 
     return {
@@ -130,10 +131,11 @@ export const useNutritionData = (): UseNutritionDataReturn => {
       protein: n.protein,
       carbs: n.carbs,
       fat: n.fat,
-      mealsCount: completedPlannedMeals + completedLoggedMeals,
+      fiber: n.fiber,
+      mealsCount: completedLoggedMeals,
     };
   })();
-  // statsLoading and statsError are always false/null — dailyNutrition is derived synchronously from the store.
+  // statsLoading and statsError are always false/null â€” dailyNutrition is derived synchronously from the store.
   const statsLoading = false;
   const statsError: string | null = null;
 
@@ -262,8 +264,7 @@ export const useNutritionData = (): UseNutritionDataReturn => {
     }
   }, [user?.id]);
 
-  // loadDailyNutrition removed — dailyNutrition now auto-derived (Fix 14).
-
+  // loadDailyNutrition removed â€” dailyNutrition now auto-derived (Fix 14).
 
   // Log meal
   const logMeal = useCallback(
@@ -300,18 +301,34 @@ export const useNutritionData = (): UseNutritionDataReturn => {
     [user?.id, loadUserMeals],
   );
 
-  // Refresh all data
+  // Refresh all data â€” critical data first, deferred data after interactions
   const refreshAll = useCallback(async () => {
     if (!isAuthenticated || !user?.id) return;
 
+    // Critical: meal plan + daily meals (what user sees immediately)
     await Promise.all([
-      loadFoods(),
       loadUserMeals(),
-      loadDietPreferences(),
-      loadNutritionGoals(),
       useNutritionStore.getState().loadData(),
     ]);
-  }, [isAuthenticated, user?.id, loadFoods, loadUserMeals, loadDietPreferences, loadNutritionGoals]);
+
+    // Deferred: secondary data that doesn't block the UI
+    InteractionManager.runAfterInteractions(() => {
+      Promise.all([
+        loadFoods(),
+        loadDietPreferences(),
+        loadNutritionGoals(),
+      ]).catch((err) =>
+        console.warn("[NutritionData] Deferred refresh error:", err),
+      );
+    });
+  }, [
+    isAuthenticated,
+    user?.id,
+    loadFoods,
+    loadUserMeals,
+    loadDietPreferences,
+    loadNutritionGoals,
+  ]);
 
   // Clear all errors
   const clearErrors = useCallback(() => {
@@ -328,15 +345,25 @@ export const useNutritionData = (): UseNutritionDataReturn => {
   // Load initial data when user is authenticated
   useEffect(() => {
     // PERF-004 FIX: Only fetch once per user session
-    if (isAuthenticated && user?.id && trackB.integration.isInitialized) {
+    if (
+      autoRefresh &&
+      isAuthenticated &&
+      user?.id &&
+      trackB.integration.isInitialized
+    ) {
       // Only fetch if user changed or first time
       if (!initialFetchDoneRef.current || lastUserIdRef.current !== user.id) {
         initialFetchDoneRef.current = true;
         lastUserIdRef.current = user.id;
-        refreshAll();
+        void refreshAll();
       }
     }
-  }, [isAuthenticated, user?.id, trackB.integration.isInitialized]); // Removed refreshAll from deps
+  }, [
+    autoRefresh,
+    isAuthenticated,
+    user?.id,
+    trackB.integration.isInitialized,
+  ]); // Removed refreshAll from deps
 
   // Register with nutrition refresh service for automatic updates
   useEffect(() => {
@@ -385,7 +412,7 @@ export const useNutritionData = (): UseNutritionDataReturn => {
     dailyNutrition,
     statsLoading,
     statsError,
-    loadDailyNutrition: async (_date?: string) => {},
+    loadDailyNutrition: async () => {},
 
     // Actions
     logMeal,

@@ -92,6 +92,8 @@ export const RateComparisonCard: React.FC<RateComparisonCardProps> = ({
             style={styles.warningBanner}
             onPress={() => setShowBMRModal(true)}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Open BMR warning details"
           >
             <View style={styles.warningContent}>
               <Ionicons
@@ -108,6 +110,8 @@ export const RateComparisonCard: React.FC<RateComparisonCardProps> = ({
               style={styles.infoButton}
               onPress={() => setShowBMRModal(true)}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel="More info about BMR warning"
             >
               <Ionicons
                 name="information-circle"
@@ -142,6 +146,10 @@ export const RateComparisonCard: React.FC<RateComparisonCardProps> = ({
               style={styles.exerciseDivider}
               onPress={() => setShowExerciseOptions(!showExerciseOptions)}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={
+                showExerciseOptions ? "Hide exercise options" : "Show exercise options"
+              }
             >
               <View style={styles.dividerLine} />
               <View style={styles.dividerContent}>
@@ -251,6 +259,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    minHeight: 44,
     backgroundColor: "rgba(245, 158, 11, 0.12)",
     borderWidth: 1,
     borderColor: "rgba(245, 158, 11, 0.3)",
@@ -274,6 +283,10 @@ const styles = StyleSheet.create({
   },
   infoButton: {
     marginLeft: rp(8),
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
   },
   sectionHeader: {
     marginBottom: rp(12),
@@ -291,6 +304,7 @@ const styles = StyleSheet.create({
   exerciseDivider: {
     flexDirection: "row",
     alignItems: "center",
+    minHeight: 44,
     marginVertical: rp(16),
     gap: rp(12),
   },

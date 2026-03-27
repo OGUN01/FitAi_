@@ -150,14 +150,13 @@ export const EditProvider: React.FC<EditProviderProps> = ({
     (newData: any) => {
       if (!newData) return;
 
-      const dataChanged =
-        JSON.stringify(newData) !== JSON.stringify(currentData);
-      if (!dataChanged) return;
+      // Reference equality — skip if same object
+      if (newData === currentData) return;
 
       setCurrentData(newData);
 
-      const hasActualChanges =
-        JSON.stringify(newData) !== JSON.stringify(originalData);
+      // Reference check avoids expensive JSON.stringify on every keystroke
+      const hasActualChanges = newData !== originalData;
       setHasChanges(hasActualChanges);
 
       if (Object.keys(newData).length > 2) {

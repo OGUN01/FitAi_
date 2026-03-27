@@ -4,8 +4,10 @@ import { DayWorkout } from "../../ai";
 import { generateUUID } from "../../utils/uuid";
 import { FitnessState, CurrentWorkoutSession } from "./types";
 import { crudOperations } from "../../services/crudOperations";
-import { getUserIdOrGuest } from "../../services/authUtils";
+import { getUserIdOrGuest, getCurrentUserId } from "../../services/authUtils";
 import { LocalWorkoutSession, SyncStatus } from "../../types/localData";
+import { supabase } from "../../services/supabase";
+import type { WorkoutTemplate } from "../../services/workoutTemplateService";
 
 export const createSessionActions = (
   set: (
@@ -159,6 +161,102 @@ export const createSessionActions = (
       get().updateWorkoutProgress(
         state.currentWorkoutSession!.workoutId,
         progressPercent,
+      );
+
+      return {
+        ...state,
+        currentWorkoutSession: {
+          ...state.currentWorkoutSession,
+          exercises: updatedExercises,
+        },
+      };
+    });
+  },
+
+  startTemplateSession: async (
+    template: WorkoutTemplate,
+    userId?: string,
+  ): Promise<string> => {
+    const resolvedUserId = userId || getCurrentUserId();
+    const sessionId = generateUUID();
+    const now = new Date().toISOString();
+
+    try {
+      const { error } = await supabase.from("workout_sessions").insert({
+        id: sessionId,
+        user_id: resolvedUserId,
+        workout_name: template.name,
+        is_extra: true,
+        is_completed: false,
+        started_at: now,
+        exercises: template.exercises,
+        duration: template.estimatedDurationMinutes ?? null,
+      });
+
+      if (error) {
+        console.error("❌ Failed to insert template session:", error);
+      }
+
+      set({
+        currentWorkoutSession: {
+          workoutId: `template_${template.id}`,
+          sessionId,
+          startedAt: now,
+          exercises: template.exercises.map((ex) => ({
+            exerciseId: ex.exerciseId,
+            completed: false,
+            sets: Array.from({ length: ex.sets }, () => ({
+              reps: 0,
+              weight: ex.targetWeightKg ?? 0,
+              completed: false,
+            })),
+          })),
+        },
+      });
+
+      return sessionId;
+    } catch (error) {
+      console.error("❌ Failed to start template session:", error);
+      throw error;
+    }
+  },
+
+  updateSetData: (
+    exerciseId: string,
+    setIndex: number,
+    data: {
+      weightKg: number;
+      reps: number;
+      setType: string;
+      completed: boolean;
+    },
+  ) => {
+    set((state) => {
+      if (!state.currentWorkoutSession) return state;
+
+      const updatedExercises = state.currentWorkoutSession.exercises.map(
+        (exercise) => {
+          if (exercise.exerciseId !== exerciseId) return exercise;
+
+          const updatedSets = [...exercise.sets];
+          if (updatedSets[setIndex]) {
+            updatedSets[setIndex] = {
+              reps: data.reps,
+              weight: data.weightKg,
+              completed: data.completed,
+              setType: data.setType,
+            };
+          }
+
+          const allCompleted =
+            updatedSets.length > 0 && updatedSets.every((s) => s.completed);
+
+          return {
+            ...exercise,
+            sets: updatedSets,
+            completed: allCompleted,
+          };
+        },
       );
 
       return {

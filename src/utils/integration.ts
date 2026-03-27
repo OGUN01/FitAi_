@@ -13,6 +13,7 @@ import {
 } from "../types/profileData";
 import { api, supabase } from "../services/api";
 import { dataBridge } from "../services/DataBridge";
+import { resolveCurrentWeightFromStores } from "../services/currentWeight";
 import { logger } from "../utils/logger";
 import { buildLegacyProfileAdapter } from "./profileLegacyAdapter";
 
@@ -555,7 +556,9 @@ export const useDashboardIntegration = () => {
   const getHealthMetrics = () => {
     // SSOT: profileStore.bodyAnalysis is authoritative for body metrics here.
     const heightCm = bodyAnalysis?.height_cm;
-    const weightKg = bodyAnalysis?.current_weight_kg;
+    const weightKg = resolveCurrentWeightFromStores({
+      bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
+    }).value;
 
     if (!heightCm || !weightKg) {
       return null; // Explicit null when data missing
@@ -582,7 +585,9 @@ export const useDashboardIntegration = () => {
 
     // SSOT: profileStore.bodyAnalysis is authoritative for body metrics here.
     const heightCm = bodyAnalysis?.height_cm;
-    const weightKg = bodyAnalysis?.current_weight_kg;
+    const weightKg = resolveCurrentWeightFromStores({
+      bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
+    }).value;
     const age = adaptedProfile.personalInfo.age;
     const gender = adaptedProfile.personalInfo.gender;
     const activityLevelValue =
@@ -714,14 +719,6 @@ export const initializeBackend = async () => {
       await (await import("../services/DataBridge")).dataBridge.initialize();
     } catch (dmErr) {
       console.warn("Data Manager initialization warning:", dmErr);
-    }
-
-    try {
-      // Initialize CRUD layer (idempotent; will init Data Manager if needed)
-      const { crudOperations } = await import("../services/crudOperations");
-      await crudOperations.initialize();
-    } catch (crudErr) {
-      console.warn("CRUD Operations initialization warning:", crudErr);
     }
 
     logger.info("Backend initialized successfully");

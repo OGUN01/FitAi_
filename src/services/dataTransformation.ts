@@ -11,6 +11,10 @@ import {
   SyncStatus,
 } from "../types/localData";
 import { Database } from "./supabase";
+import {
+  deriveMealLogFiber,
+  normalizeMealLogFoodItems,
+} from "../utils/mealLogNutrition";
 
 // ============================================================================
 // TYPE DEFINITIONS FOR SUPABASE TABLES
@@ -156,21 +160,7 @@ export class DataTransformationService {
   }
 
   transformSupabaseToMealLog(supabaseMealLog: any): MealLog {
-    // Handle food_items - could be object, array, or string
-    let foods = [];
-    if (supabaseMealLog.food_items) {
-      if (typeof supabaseMealLog.food_items === "string") {
-        try {
-          foods = JSON.parse(supabaseMealLog.food_items);
-        } catch {
-          foods = [];
-        }
-      } else if (Array.isArray(supabaseMealLog.food_items)) {
-        foods = supabaseMealLog.food_items;
-      } else {
-        foods = [supabaseMealLog.food_items];
-      }
-    }
+    const foods = normalizeMealLogFoodItems(supabaseMealLog.food_items);
 
     return {
       id: supabaseMealLog.id,
@@ -179,13 +169,13 @@ export class DataTransformationService {
       fromPlan: supabaseMealLog.from_plan ?? false,
       portionMultiplier: supabaseMealLog.portion_multiplier ?? 1,
       mealType: supabaseMealLog.meal_type,
-      foods: foods,
+      foods: foods as any,
       totalCalories: supabaseMealLog.total_calories || 0,
       totalMacros: {
         protein: supabaseMealLog.total_protein || 0,
         carbohydrates: supabaseMealLog.total_carbohydrates || 0,
         fat: supabaseMealLog.total_fat || 0,
-        fiber: 0,
+        fiber: deriveMealLogFiber(foods),
       },
       loggedAt: supabaseMealLog.logged_at || new Date().toISOString(),
       notes: supabaseMealLog.notes || "",
@@ -196,7 +186,8 @@ export class DataTransformationService {
         countryContext: supabaseMealLog.country_context || null,
         requiresReview: supabaseMealLog.requires_review || false,
         source: supabaseMealLog.source_metadata?.source || null,
-        productIdentity: supabaseMealLog.source_metadata?.productIdentity || null,
+        productIdentity:
+          supabaseMealLog.source_metadata?.productIdentity || null,
         conflict: supabaseMealLog.source_metadata?.conflict || null,
       },
       photos: [],

@@ -1,4 +1,4 @@
-import { storeLogger } from '../../utils/logger';
+import { storeLogger } from "../../utils/logger";
 import {
   achievementEngine,
   Achievement,
@@ -9,7 +9,7 @@ import {
   achievementListenerAttached,
   setAchievementListenerAttached,
 } from "./state";
-import { useFitnessStore } from "@/stores/fitness";
+import { useFitnessStore } from "../fitnessStore";
 import { useNutritionStore } from "@/stores/nutritionStore";
 import { getLocalDateString } from "@/utils/weekUtils";
 
@@ -18,7 +18,6 @@ export const createActions = (set: any, get: any) => ({
     set({ isLoading: true });
 
     try {
-
       await achievementEngine.initialize();
 
       const achievements = achievementEngine.getAllAchievements();
@@ -47,7 +46,6 @@ export const createActions = (set: any, get: any) => ({
             });
           }
 
-
           achievementDataService.saveUserAchievement(userId, userAchievement);
         },
       );
@@ -63,11 +61,12 @@ export const createActions = (set: any, get: any) => ({
         isLoading: false,
       });
 
-
       get().updateCurrentStreak();
       get().loadFromSupabase(userId);
     } catch (error) {
-      storeLogger.error('Error initializing achievement store', { error: String(error) });
+      storeLogger.error("Error initializing achievement store", {
+        error: String(error),
+      });
       set({ isLoading: false });
     }
   },
@@ -92,10 +91,11 @@ export const createActions = (set: any, get: any) => ({
           completionRate: stats.completionRate,
           unlockedToday: [...state.unlockedToday, ...newlyUnlocked],
         });
-
       }
     } catch (error) {
-      storeLogger.error('Error checking achievement progress', { error: String(error) });
+      storeLogger.error("Error checking achievement progress", {
+        error: String(error),
+      });
     }
   },
 

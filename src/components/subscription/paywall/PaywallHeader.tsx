@@ -24,7 +24,12 @@ const PaywallHeader: React.FC<PaywallHeaderProps> = ({
           <Text style={styles.headerDescription}>{description}</Text>
         </View>
 
-        <Pressable onPress={onClose} style={styles.closeButton}>
+        <Pressable
+          onPress={onClose}
+          style={styles.closeButton}
+          accessibilityRole="button"
+          accessibilityLabel="Close paywall"
+        >
           <Text style={styles.closeButtonText}>×</Text>
         </Pressable>
       </View>
@@ -68,9 +73,9 @@ const styles = StyleSheet.create({
     lineHeight: rf(20),
   },
   closeButton: {
-    width: rp(32),
-    height: rp(32),
-    borderRadius: rbr(16),
+    width: Math.max(rp(32), 44),
+    height: Math.max(rp(32), 44),
+    borderRadius: Math.max(rbr(16), 22),
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     justifyContent: "center",
     alignItems: "center",

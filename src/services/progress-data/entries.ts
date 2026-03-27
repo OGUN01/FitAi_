@@ -6,6 +6,7 @@ import { crudOperations } from "../crudOperations";
 import { analyticsDataService } from "../analyticsData";
 import { offlineService } from "../offline/OfflineService";
 import { BodyMeasurement } from "../../types/localData";
+import { getLocalDateString } from "../../utils/weekUtils";
 import {
   ProgressEntry,
   ProgressDataResponse,
@@ -72,7 +73,7 @@ export async function createProgressEntry(
 ): Promise<ProgressDataResponse<ProgressEntry>> {
   try {
     const now = new Date();
-    const entryDate = now.toISOString().split("T")[0];
+    const entryDate = getLocalDateString(now);
     const bodyMeasurement: BodyMeasurement = {
       id: `progress_${Date.now()}_${crypto.randomUUID().replace(/-/g, "").substring(0, 9)}`,
       date: entryDate,

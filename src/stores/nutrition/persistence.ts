@@ -5,6 +5,7 @@ import { supabase } from "../../services/supabase";
 import { getCurrentUserId } from "../../services/authUtils";
 import { NutritionState } from "./types";
 import { toMealType, createLoggedFood } from "./helpers";
+import { getLocalDateString } from "../../utils/weekUtils";
 
 export const createPersistenceActions = (
   set: any,
@@ -104,6 +105,8 @@ export const createPersistenceActions = (
 
   loadData: async () => {
     try {
+      // Day-boundary reset BEFORE loading — ensures stale meal progress is gone
+      get().checkAndResetMealProgressIfNewDay();
       const currentMealProgress = get().mealProgress;
 
       const plan = await get().loadWeeklyMealPlan();
@@ -115,7 +118,7 @@ export const createPersistenceActions = (
       }
 
       const mealLogs = await crudOperations.readMealLogs(
-        new Date().toISOString().split("T")[0],
+        getLocalDateString(),
       );
     } catch (error) {
       console.error("❌ Failed to load nutrition data:", error);

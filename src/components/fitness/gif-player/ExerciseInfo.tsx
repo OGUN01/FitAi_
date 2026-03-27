@@ -34,7 +34,7 @@ export const ExerciseInfo: React.FC<ExerciseInfoProps> = ({
             {displayName}
           </Text>
           <View style={styles.qualityIndicator}>
-            <Text style={styles.qualityText}>🎬 Demo</Text>
+            <Text style={styles.qualityText}>Demo</Text>
           </View>
         </View>
       )}
@@ -43,14 +43,14 @@ export const ExerciseInfo: React.FC<ExerciseInfoProps> = ({
         {(exercise.equipments?.length ?? 0) > 0 && (
           <View style={styles.infoChip}>
             <Text style={styles.infoChipText}>
-              🏋️ {exercise.equipments?.[0] || "Equipment"}
+              Equipment: {exercise.equipments?.[0] || "Equipment"}
             </Text>
           </View>
         )}
         {(exercise.targetMuscles?.length ?? 0) > 0 && (
           <View style={styles.infoChip}>
             <Text style={styles.infoChipText}>
-              💪 {exercise.targetMuscles?.[0] || "Muscle"}
+              Target: {exercise.targetMuscles?.[0] || "Muscle"}
             </Text>
           </View>
         )}
@@ -62,7 +62,7 @@ export const ExerciseInfo: React.FC<ExerciseInfoProps> = ({
           onPress={onInstructionsPress}
         >
           <Text style={styles.instructionsButtonText}>
-            📋 View Instructions ({exercise.instructions?.length || 0} steps)
+            View Instructions ({exercise.instructions?.length || 0} steps)
           </Text>
         </TouchableOpacity>
       )}

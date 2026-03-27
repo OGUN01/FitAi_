@@ -83,6 +83,7 @@ export class SyncMonitoringService {
   private performanceHistory: SyncPerformance[] = [];
   private connectionHistory: ConnectionHealth[] = [];
   private isMonitoring = false;
+  private isMonitoringCycleRunning = false;
   private monitoringInterval: NodeJS.Timeout | null = null;
   private metricsCallbacks: ((metrics: SyncMetrics) => void)[] = [];
   private healthCallbacks: ((health: ConnectionHealth) => void)[] = [];
@@ -146,10 +147,16 @@ export class SyncMonitoringService {
       realTimeSyncService.onSyncResult(this.handleSyncResult.bind(this));
 
       // Start periodic monitoring
-      this.monitoringInterval = setInterval(() => {
-        this.updateNetworkStats();
-        this.updateConnectionHealth();
-        this.cleanupHistory();
+      this.monitoringInterval = setInterval(async () => {
+        if (this.isMonitoringCycleRunning) return;
+        this.isMonitoringCycleRunning = true;
+        try {
+          this.updateNetworkStats();
+          this.updateConnectionHealth();
+          this.cleanupHistory();
+        } finally {
+          this.isMonitoringCycleRunning = false;
+        }
       }, 10000); // Every 10 seconds
 
       this.isMonitoring = true;

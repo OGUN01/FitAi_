@@ -11,6 +11,7 @@ import type {
 } from "../fitaiWorkersClient";
 import type { WeeklyWorkoutPlan, Workout } from "../../types/ai";
 import { FITNESS_GOAL_MAP, EQUIPMENT_MAP } from "./mapping-constants";
+import { resolveCurrentWeight } from "../currentWeight";
 import {
   getWorkoutDaysFromPreferences,
   mapWorkoutCategory,
@@ -33,6 +34,7 @@ export function transformForWorkoutRequest(
     workoutType?: string;
     duration?: number;
     focusMuscles?: string[];
+    currentWeightKg?: number | null;
   },
 ): WorkoutGenerationRequest {
   const experienceLevel =
@@ -62,6 +64,13 @@ export function transformForWorkoutRequest(
   const pregnancyStatus = bodyMetrics?.pregnancy_status || false;
   const pregnancyTrimester = bodyMetrics?.pregnancy_trimester;
   const breastfeedingStatus = bodyMetrics?.breastfeeding_status || false;
+  const resolvedCurrentWeight = resolveCurrentWeight({
+    weightHistory:
+      typeof options?.currentWeightKg === "number"
+        ? [{ date: new Date().toISOString(), weight: options.currentWeightKg }]
+        : [],
+    bodyAnalysisWeight: bodyMetrics?.current_weight_kg ?? personalInfo.weight,
+  });
 
   const preferredWorkoutTime =
     workoutPreferences?.preferred_workout_times?.[0] || "morning";
@@ -85,7 +94,7 @@ export function transformForWorkoutRequest(
     profile: {
       age: personalInfo.age,
       gender: personalInfo.gender,
-      weight: (bodyMetrics?.current_weight_kg ?? personalInfo.weight) as number,
+      weight: resolvedCurrentWeight.value as number,
       height: (bodyMetrics?.height_cm ?? personalInfo.height) as number,
       fitnessGoal: primaryGoal,
       experienceLevel: experienceLevel,

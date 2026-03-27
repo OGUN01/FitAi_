@@ -10,6 +10,7 @@ import { HealthMonitor } from "./health";
 
 export class SyncMonitoringService {
   private isMonitoring = false;
+  private isMonitoringCycleRunning = false;
   private monitoringInterval: NodeJS.Timeout | null = null;
   private metricsManager: MetricsManager;
   private healthMonitor: HealthMonitor;
@@ -29,10 +30,16 @@ export class SyncMonitoringService {
       realTimeSyncService.onStatusChange(this.handleStatusChange.bind(this));
       realTimeSyncService.onSyncResult(this.handleSyncResult.bind(this));
 
-      this.monitoringInterval = setInterval(() => {
-        this.updateNetworkStats();
-        this.updateConnectionHealth();
-        this.cleanupHistory();
+      this.monitoringInterval = setInterval(async () => {
+        if (this.isMonitoringCycleRunning) return;
+        this.isMonitoringCycleRunning = true;
+        try {
+          this.updateNetworkStats();
+          this.updateConnectionHealth();
+          this.cleanupHistory();
+        } finally {
+          this.isMonitoringCycleRunning = false;
+        }
       }, 10000);
 
       this.isMonitoring = true;

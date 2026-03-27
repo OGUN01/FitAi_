@@ -1,4 +1,4 @@
-import { storeLogger } from '../../utils/logger';
+import { storeLogger } from "../../utils/logger";
 import type {
   HealthDataState,
   GoogleFitSyncResult,
@@ -10,6 +10,7 @@ import type {
 } from "./types";
 import { googleFitService } from "../../services/googleFit";
 import { weightTrackingService } from "../../services/WeightTrackingService";
+import { useProfileStore } from "../profileStore";
 
 export const createGoogleFitActions = (
   set: (
@@ -30,7 +31,9 @@ export const createGoogleFitActions = (
 
       return false;
     } catch (error) {
-      storeLogger.error('Failed to initialize Google Fit', { error: String(error) });
+      storeLogger.error("Failed to initialize Google Fit", {
+        error: String(error),
+      });
       return false;
     }
   },
@@ -82,15 +85,17 @@ export const createGoogleFitActions = (
         });
 
         if (result.data.weight) {
+          useProfileStore
+            .getState()
+            .updateBodyAnalysis({ current_weight_kg: result.data.weight });
           weightTrackingService.setWeight(result.data.weight);
         }
-
       } else {
         set({
           syncStatus: "error",
           syncError: result.error || "Unknown Google Fit sync error",
         });
-        storeLogger.error('Google Fit sync failed', { error: result.error });
+        storeLogger.error("Google Fit sync failed", { error: result.error });
       }
 
       return result;
@@ -101,7 +106,7 @@ export const createGoogleFitActions = (
         syncStatus: "error",
         syncError: errorMessage,
       });
-      storeLogger.error('Google Fit sync failed', { error: String(error) });
+      storeLogger.error("Google Fit sync failed", { error: String(error) });
       return {
         success: false,
         error: errorMessage,
@@ -115,7 +120,9 @@ export const createGoogleFitActions = (
     try {
       return await googleFitService.getHeartRateZones(age);
     } catch (error) {
-      storeLogger.error('Failed to get heart rate zones from Google Fit', { error: String(error) });
+      storeLogger.error("Failed to get heart rate zones from Google Fit", {
+        error: String(error),
+      });
       const maxHR = 220 - age;
       return {
         maxHR,
@@ -160,7 +167,9 @@ export const createGoogleFitActions = (
         workoutRecommendations: recommendations.recommendations,
       };
     } catch (error) {
-      storeLogger.error('Failed to get sleep recommendations from Google Fit', { error: String(error) });
+      storeLogger.error("Failed to get sleep recommendations from Google Fit", {
+        error: String(error),
+      });
       return {
         sleepQuality: "fair",
         sleepDuration: 7,
@@ -180,7 +189,10 @@ export const createGoogleFitActions = (
     try {
       return await googleFitService.getActivityAdjustedCalories(baseCalories);
     } catch (error) {
-      storeLogger.error('Failed to get activity-adjusted calories from Google Fit', { error: String(error) });
+      storeLogger.error(
+        "Failed to get activity-adjusted calories from Google Fit",
+        { error: String(error) },
+      );
       return {
         adjustedCalories: baseCalories,
         activityMultiplier: 1.0,
@@ -201,7 +213,9 @@ export const createGoogleFitActions = (
     try {
       return await googleFitService.detectAndLogActivities();
     } catch (error) {
-      storeLogger.error('Failed to detect activities from Google Fit', { error: String(error) });
+      storeLogger.error("Failed to detect activities from Google Fit", {
+        error: String(error),
+      });
       return {
         detectedActivities: [],
         autoLoggedCount: 0,

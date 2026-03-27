@@ -14,8 +14,10 @@ import { haptics } from "../../utils/haptics";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rw } from "../../utils/responsive";
 import { useProfileStore } from "../../stores/profileStore";
-import { getCuisineDataForCountry } from "../../data/regionalCuisineData";
-import type { CuisineFoodItem } from "../../data/regionalCuisineData";
+import {
+  getCuisineDataForCountry,
+  type CuisineFoodItem,
+} from "../../data/regionalCuisineData";
 import { colors } from "../../theme/aurora-tokens";
 import { useNutritionStore } from "../../stores";
 import type { Meal } from "../../types/diet/meal";
@@ -35,11 +37,11 @@ interface MealSuggestion {
 /**
  * Filter meals from the cuisine database based on the user's diet_type.
  *
- * - vegetarian / vegan → only isVegetarian items
- * - pescatarian → vegetarian items (fish items in the DB are tagged non-veg,
+ * - vegetarian / vegan â†’ only isVegetarian items
+ * - pescatarian â†’ vegetarian items (fish items in the DB are tagged non-veg,
  *   but the cuisine data doesn't have a separate "fish" flag, so we include
  *   all items whose name contains common fish keywords OR are vegetarian)
- * - non-veg → all items
+ * - non-veg â†’ all items
  */
 function filterMealsByDiet(
   meals: CuisineFoodItem[],
@@ -152,7 +154,8 @@ export const MealSuggestions: React.FC = () => {
 
     setAddedToPlan((prev) => new Set(prev).add(suggestionId));
 
-    // Actually add the meal to nutrition store so totals update
+    // Suggestions stay visible on today's plan, but they should not count as consumed
+    // nutrition until the user actually logs the meal.
     const now = new Date().toISOString();
     const meal: Meal = {
       id: `suggestion_${suggestionId}_${Date.now()}`,
@@ -166,7 +169,7 @@ export const MealSuggestions: React.FC = () => {
         fat: suggestion.fat,
         fiber: 0,
       },
-      tags: ['suggestion'],
+      tags: ["suggestion", "planned"],
       isPersonalized: false,
       aiGenerated: false,
       createdAt: now,
@@ -177,8 +180,8 @@ export const MealSuggestions: React.FC = () => {
     haptics.medium();
     setTimeout(() => {
       crossPlatformAlert(
-        "Added to Plan",
-        `${suggestion.name} has been added to your meal plan`,
+        "Added to Today's Plan",
+        `${suggestion.name} has been added as a planned meal suggestion`,
       );
     }, 500);
   };
@@ -310,7 +313,7 @@ export const MealSuggestions: React.FC = () => {
                         { backgroundColor: addBtnBg, borderRadius: ResponsiveTheme.borderRadius.md },
                       ]} />
                       <Text style={styles.addToPlanButtonText}>
-                        {isAdded ? "✓ Added" : "Add"}
+                        {isAdded ? "Logged" : "Log"}
                       </Text>
                     </AnimatedPressable>
                   </View>

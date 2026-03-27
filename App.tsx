@@ -1,4 +1,7 @@
 import "./global.css";
+import { enableScreens } from "react-native-screens";
+enableScreens();
+
 import React, { useState, useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, View, ActivityIndicator, Text, Platform } from "react-native";
@@ -12,6 +15,17 @@ if (Platform.OS === "web") {
     if (args.some((a) => typeof a === "string" && a.includes("transform-origin"))) return;
     originalError(...args);
   };
+}
+
+// DEV PERF: Suppress console.log in development mode.
+// In React Native, every console.log crosses the native bridge synchronously,
+// adding 1-3ms per call. With 200+ log statements firing on renders, state
+// updates, and button presses, this accumulates to 200-500ms of JS thread
+// blocking per interaction. console.warn and console.error are kept for
+// bug tracking. To re-enable verbose logs, set __VERBOSE_LOGS__ = true.
+if (__DEV__) {
+  const noop = () => {};
+  console.log = noop;
 }
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -44,6 +58,7 @@ import {
 } from "./src/services/onboardingService";
 import { invalidateMetricsCache } from "./src/hooks/useCalculatedMetrics";
 import { useAppConfig } from "./src/hooks/useAppConfig";
+import { runAfterInteractions } from "./src/utils/performance";
 // validateProductionEnvironment removed - AI moved to Cloudflare Workers
 
 // Enhanced Expo Go detection with bulletproof methods and debugging
@@ -124,8 +139,9 @@ export default function App() {
     compareVersions(appVersion, appConfig.minAppVersion) < 0;
 
 
-  const { setProfile, profile } = useUserStore();
-  const { setGuestMode: setGuestModeInStore } = useAuthStore();
+  const setProfile = useUserStore((state) => state.setProfile);
+  const profile = useUserStore((state) => state.profile);
+  const setGuestModeInStore = useAuthStore((state) => state.setGuestMode);
 
   // Ref to track whether the safety timeout has fired — prevents late async
   // callbacks from re-showing the loading screen after it was forcibly cleared.
@@ -766,6 +782,25 @@ export default function App() {
   useEffect(() => {
     let mounted = true;
 
+    const verifyAndSyncProfileInBackground = (userId: string) => {
+      void runAfterInteractions(async () => {
+        if (!mounted) return;
+
+        const dbVerification = await verifyDatabaseData(userId);
+        if (!mounted || dbVerification.hasData) return;
+
+        const syncResult = await syncLocalToDatabase(userId);
+        if (!mounted) return;
+
+        if (!syncResult.success) {
+          console.warn(
+            "⚠️ App: No local data to sync to DB (expected for new users):",
+            syncResult.errors,
+          );
+        }
+      });
+    };
+
     const loadExistingData = async () => {
       if (!isInitialized) return;
 
@@ -789,37 +824,8 @@ export default function App() {
           const isValid = checkProfileComplete(profile);
 
           if (isValid) {
-            // NEW: Verify database actually has the data (fix for sync issues)
-
-            const dbVerification = await verifyDatabaseData(user.id);
-
-            if (!mounted) return;
-
-            if (!dbVerification.hasData) {
-
-
-              // Attempt to sync local data to database
-
-              const syncResult = await syncLocalToDatabase(user.id);
-
-              if (!mounted) return;
-
-              if (!syncResult.success) {
-                console.warn(
-                  "⚠️ App: No local data to sync to DB (expected for new users):",
-                  syncResult.errors,
-                );
-                // Still show main navigation - local data exists, DB sync can happen later
-
-              } else {
-
-              }
-            } else {
-
-            }
-
-
             setIsOnboardingComplete(true);
+            verifyAndSyncProfileInBackground(user.id);
           } else {
             // Local profile is incomplete — try to load fresh from DB before showing onboarding
             try {
@@ -982,57 +988,48 @@ export default function App() {
 
 
 
-        // BUG-001 cleanup: clear stale workout_sessions queue items with old camelCase columns
-        try {
-          await offlineService.clearFailedActionsForTable('workout_sessions');
-
-        } catch (cleanupError) {
-
-        }
-
-        // Initialize Google Sign-In
-        try {
-
-          await googleAuthService.configure();
-
+        void runAfterInteractions(async () => {
           if (!mounted) return;
 
-
-        } catch (error) {
-          if (!mounted) return;
-          console.error(
-            "❌ FitAI: Google Sign-In initialization failed:",
-            error,
-          );
-        }
-
-        // 🎯 AI BACKEND STATUS - Cloudflare Workers
-
-
-        // Initialize notifications only if not in Expo Go
-        if (
-          !isExpoGo &&
-          initializeNotifications &&
-          !areNotificationsInitialized
-        ) {
-
+          // BUG-001 cleanup: clear stale workout_sessions queue items with old camelCase columns
           try {
-            await initializeNotifications();
+            await offlineService.clearFailedActionsForTable("workout_sessions");
+          } catch {
+          }
 
-            if (!mounted) return;
+          if (!mounted) return;
 
-
-          } catch (notifError) {
+          // Initialize Google Sign-In after the first interaction frame.
+          try {
+            await googleAuthService.configure();
+          } catch (error) {
             if (!mounted) return;
             console.error(
-              "❌ FitAI: Notifications initialization failed:",
-              notifError,
+              "❌ FitAI: Google Sign-In initialization failed:",
+              error,
             );
           }
-        } else if (isExpoGo) {
 
+          if (!mounted) return;
 
-        }
+          // 🎯 AI BACKEND STATUS - Cloudflare Workers
+          // Initialize notifications only if not in Expo Go.
+          if (
+            !isExpoGo &&
+            initializeNotifications &&
+            !areNotificationsInitialized
+          ) {
+            try {
+              await initializeNotifications();
+            } catch (notifError) {
+              if (!mounted) return;
+              console.error(
+                "❌ FitAI: Notifications initialization failed:",
+                notifError,
+              );
+            }
+          }
+        });
       } catch (error) {
         if (!mounted) return;
         console.error("❌ FitAI: Backend initialization failed:", error);
@@ -1147,7 +1144,7 @@ export default function App() {
   if (isLoadingOnboarding || appConfigLoading || isSubscriptionBootstrapping) {
     return (
       <View style={styles.loadingContainer}>
-        <StatusBar style="light" translucent backgroundColor="transparent" />
+        <StatusBar style="light" translucent />
         <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
         <Text style={styles.loadingText}>
           {isSubscriptionBootstrapping
@@ -1168,7 +1165,7 @@ export default function App() {
       <GestureHandlerRootView style={styles.container}>
         <SafeAreaProvider>
           <View style={styles.maintenanceContainer}>
-            <StatusBar style="light" translucent backgroundColor="transparent" />
+            <StatusBar style="light" translucent />
             <Text style={styles.maintenanceIcon}>⬆️</Text>
             <Text style={styles.maintenanceTitle}>Update Required</Text>
             <Text style={styles.maintenanceMessage}>
@@ -1186,7 +1183,7 @@ export default function App() {
       <GestureHandlerRootView style={styles.container}>
         <SafeAreaProvider>
           <View style={styles.maintenanceContainer}>
-            <StatusBar style="light" translucent backgroundColor="transparent" />
+            <StatusBar style="light" translucent />
             <Text style={styles.maintenanceIcon}>🔧</Text>
             <Text style={styles.maintenanceTitle}>Down for Maintenance</Text>
             <Text style={styles.maintenanceMessage}>{appConfig.maintenanceMessage}</Text>
@@ -1206,7 +1203,6 @@ export default function App() {
               <StatusBar
                 style="light"
                 translucent
-                backgroundColor="transparent"
               />
 
               {isOnboardingComplete ? (

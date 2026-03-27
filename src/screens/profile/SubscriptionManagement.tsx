@@ -86,13 +86,13 @@ function formatDate(value: string | number | null): string {
 
 const NEXT_TIER_BENEFITS: Record<string, string[]> = {
   free: [
-    "Unlimited food scans",
+    "Unlimited AI food scans",
     "10 AI generations per day",
     "Detailed analytics",
   ],
   basic: [
     "Unlimited AI generations",
-    "Unlimited food scans",
+    "Unlimited AI food scans",
     "Personal coaching",
     "Advanced analytics",
   ],
@@ -431,7 +431,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
               )}
 
               {renderProgressBar(
-                "Food Scans",
+                "AI Food Scans",
                 "scan-outline",
                 scanDaily.current,
                 scanDaily.limit,

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, useWindowDimensions } from "react-native";
 import Animated, {
   useSharedValue,
@@ -70,42 +70,30 @@ export const LineChart: React.FC<LineChartProps> = ({
   const chartAreaHeight = CHART_HEIGHT - PADDING_TOP - PADDING_BOTTOM;
 
   const hasData = data && data.length > 0;
-
-  const { chartMax, chartMin, chartRange } = calculateChartBounds(
-    hasData ? data : [],
+  const dataSignature = useMemo(
+    () => data.map(({ label, value }) => `${label}:${value}`).join("|"),
+    [data],
   );
+  const selectedDataPoint =
+    selectedPoint !== null ? data[selectedPoint] : undefined;
 
-  const getX = (index: number) => {
-    const divisor = hasData && data.length > 1 ? data.length - 1 : 1;
-    return PADDING_LEFT + (index / divisor) * chartAreaWidth;
-  };
-
-  const getY = (value: number) => {
-    return (
-      PADDING_TOP +
-      chartAreaHeight -
-      ((value - chartMin) / chartRange) * chartAreaHeight
+  const { chartMax, chartMin, chartRange, getX, getY, smoothPath, areaPath } = useMemo(() => {
+    const bounds = calculateChartBounds(hasData ? data : []);
+    const _getX = (index: number) => {
+      const divisor = hasData && data.length > 1 ? data.length - 1 : 1;
+      return PADDING_LEFT + (index / divisor) * chartAreaWidth;
+    };
+    const _getY = (value: number) => {
+      return PADDING_TOP + chartAreaHeight - ((value - bounds.chartMin) / bounds.chartRange) * chartAreaHeight;
+    };
+    const _smoothPath = generateSmoothPath(
+      hasData ? data : [], _getX, _getY, PADDING_LEFT, PADDING_TOP, chartAreaHeight,
     );
-  };
-
-  const smoothPath = generateSmoothPath(
-    hasData ? data : [],
-    getX,
-    getY,
-    PADDING_LEFT,
-    PADDING_TOP,
-    chartAreaHeight,
-  );
-
-  const areaPath = generateAreaPath(
-    hasData ? data : [],
-    smoothPath,
-    getX,
-    PADDING_LEFT,
-    PADDING_TOP,
-    chartAreaWidth,
-    chartAreaHeight,
-  );
+    const _areaPath = generateAreaPath(
+      hasData ? data : [], _smoothPath, _getX, PADDING_LEFT, PADDING_TOP, chartAreaWidth, chartAreaHeight,
+    );
+    return { ...bounds, getX: _getX, getY: _getY, smoothPath: _smoothPath, areaPath: _areaPath };
+  }, [data, PADDING_LEFT, PADDING_TOP, chartAreaWidth, chartAreaHeight, hasData]);
 
   useEffect(() => {
     if (hasData) {
@@ -116,6 +104,10 @@ export const LineChart: React.FC<LineChartProps> = ({
       glowIntensity.value = withDelay(800, withSpring(1, { damping: 12 }));
     }
   }, [data, hasData]);
+
+  useEffect(() => {
+    setSelectedPoint(null);
+  }, [dataSignature]);
 
   const animatedLineProps = useAnimatedProps(() => ({
     strokeDashoffset: interpolate(animationProgress.value, [0, 1], [1000, 0]),
@@ -152,7 +144,7 @@ export const LineChart: React.FC<LineChartProps> = ({
             color={ResponsiveTheme.colors.primary}
           />
           <Text style={styles.emptyChartHintText}>
-            Tap Profile → Log Weight
+            Open Progress to log weight
           </Text>
         </View>
       </View>
@@ -278,7 +270,7 @@ export const LineChart: React.FC<LineChartProps> = ({
           color={color}
         />
 
-        {selectedPoint !== null && (
+        {selectedPoint !== null && selectedDataPoint && (
           <SelectedPointTooltip
             selectedPoint={selectedPoint}
             data={data}

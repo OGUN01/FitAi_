@@ -63,10 +63,7 @@ describe("DataTransformationService meal log provenance", () => {
       },
     };
 
-    const transformed = service.transformMealLogToSupabase(
-      mealLog,
-      "user_1",
-    );
+    const transformed = service.transformMealLogToSupabase(mealLog, "user_1");
 
     expect(transformed.meal_name).toBe("Paneer Bowl");
     expect(transformed.meal_plan_id).toBe("plan_1");
@@ -98,7 +95,34 @@ describe("DataTransformationService meal log provenance", () => {
       from_plan: true,
       plan_meal_id: "tuesday_snack_1",
       portion_multiplier: 0.5,
-      food_items: [],
+      food_items: [
+        {
+          id: "food_2",
+          foodId: "food_db_2",
+          quantity: 1,
+          unit: "serving",
+          calories: 180,
+          macros: {
+            protein: 12,
+            carbohydrates: 14,
+            fat: 8,
+            fiber: 5.5,
+          },
+        },
+        {
+          id: "food_3",
+          foodId: "food_db_3",
+          quantity: 1,
+          unit: "serving",
+          calories: 60,
+          macros: {
+            protein: 0,
+            carbohydrates: 2,
+            fat: 0,
+            fiber: 1.5,
+          },
+        },
+      ],
       total_calories: 180,
       total_protein: 12,
       total_carbohydrates: 14,
@@ -128,6 +152,7 @@ describe("DataTransformationService meal log provenance", () => {
     expect(hydrated.planMealId).toBe("tuesday_snack_1");
     expect(hydrated.fromPlan).toBe(true);
     expect(hydrated.portionMultiplier).toBe(0.5);
+    expect(hydrated.totalMacros.fiber).toBe(7);
     expect(hydrated.provenance).toEqual({
       mode: "barcode",
       truthLevel: "curated",
@@ -145,5 +170,32 @@ describe("DataTransformationService meal log provenance", () => {
         chosenTruthSource: "barcode",
       },
     });
+  });
+
+  it("falls back to flat food-item fiber values when nested macros are absent", () => {
+    const hydrated = service.transformSupabaseToMealLog({
+      id: "meal_3",
+      meal_type: "lunch",
+      from_plan: false,
+      food_items: [
+        {
+          id: "food_4",
+          name: "Apple",
+          fiber: 3.4,
+        },
+        {
+          id: "food_5",
+          name: "Oats",
+          fiber: "4.1",
+        },
+      ],
+      total_calories: 250,
+      total_protein: 6,
+      total_carbohydrates: 42,
+      total_fat: 3,
+      logged_at: "2026-03-18T12:00:00.000Z",
+    });
+
+    expect(hydrated.totalMacros.fiber).toBe(7.5);
   });
 });

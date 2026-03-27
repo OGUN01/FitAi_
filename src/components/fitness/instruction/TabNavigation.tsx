@@ -23,7 +23,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
             activeTab === "instructions" && styles.activeTabText,
           ]}
         >
-          📋 Instructions
+          Instructions
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
@@ -36,7 +36,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
             activeTab === "details" && styles.activeTabText,
           ]}
         >
-          ℹ️ Details
+          Details
         </Text>
       </TouchableOpacity>
     </View>

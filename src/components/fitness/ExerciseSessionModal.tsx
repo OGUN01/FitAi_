@@ -142,7 +142,7 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
 
             {/* Motivational Text */}
             <Text style={styles.motivationText}>
-              💪 Focus on your form and breathing
+              Focus on your form and breathing
             </Text>
 
             {/* Controls */}

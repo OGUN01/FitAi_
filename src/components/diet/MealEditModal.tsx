@@ -240,7 +240,13 @@ export const MealEditModal: React.FC<MealEditModalProps> = ({
             {/* Header */}
             <View style={styles.header}>
               <Text style={styles.title}>Edit Meal</Text>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <TouchableOpacity
+                onPress={onClose}
+                style={styles.closeButton}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel="Close edit meal"
+              >
                 <Ionicons
                   name="close"
                   size={rf(24)}
@@ -454,6 +460,10 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: rp(8),
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
   },
   scrollView: {
     maxHeight: rh(500),

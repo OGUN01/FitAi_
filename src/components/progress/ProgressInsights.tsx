@@ -80,6 +80,8 @@ const InsightCard: React.FC<{
           style={styles.actionButton}
           onPress={() => onAction?.(insight)}
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={insight.actionText}
         >
           <Text style={styles.actionText}>{insight.actionText}</Text>
         </TouchableOpacity>
@@ -248,7 +250,7 @@ const generateDefaultInsights = (
   return insights;
 };
 
-export const ProgressInsights: React.FC<ProgressInsightsProps> = ({
+export const ProgressInsights: React.FC<ProgressInsightsProps> = React.memo(({
   insights,
   onInsightAction,
   progressStats,
@@ -309,7 +311,7 @@ export const ProgressInsights: React.FC<ProgressInsightsProps> = ({
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -362,8 +364,10 @@ const styles = StyleSheet.create({
     marginTop: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.xs,
+    minHeight: 44,
     backgroundColor: ResponsiveTheme.colors.primary,
     borderRadius: ResponsiveTheme.borderRadius.md,
+    justifyContent: "center",
   },
   actionText: {
     fontSize: ResponsiveTheme.fontSize.sm,

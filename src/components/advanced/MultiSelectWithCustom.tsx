@@ -244,6 +244,8 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
       <TouchableOpacity
         style={[styles.trigger, disabled && styles.triggerDisabled]}
         onPress={() => !disabled && setIsVisible(true)}
+        accessibilityRole="button"
+        accessibilityLabel={label || placeholder}
       >
         <Text
           style={[
@@ -367,6 +369,8 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
                             ]}
                             onPress={() => toggleOption(option)}
                             disabled={isDisabled && !option.isCustom}
+                            accessibilityRole="button"
+                            accessibilityLabel={option.label}
                           >
                             <View style={styles.optionContent}>
                               {option.icon && (
@@ -463,6 +467,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.sm,
+    minHeight: 44,
     backgroundColor: ResponsiveTheme.colors.surface,
     borderRadius: ResponsiveTheme.borderRadius.md,
     borderWidth: 1,
@@ -616,6 +621,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
+    minHeight: 44,
     marginVertical: ResponsiveTheme.spacing.xs / 2,
     borderRadius: ResponsiveTheme.borderRadius.md,
     backgroundColor: ResponsiveTheme.colors.surface,

@@ -5,7 +5,6 @@
  * Features:
  * - Mini weight trend graph (7-day)
  * - Goal progress indicator
- * - Photo comparison shortcut
  * - Trend analysis
  */
 
@@ -32,7 +31,7 @@ interface BodyProgressCardProps {
   onLogWeight?: () => void;
 }
 
-export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
+export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(({
   currentWeight,
   goalWeight,
   startingWeight,
@@ -132,7 +131,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
                   ? 'Set a goal weight'
                   : remaining > 0 && displayRemaining != null
                     ? `${displayRemaining.toFixed(1)} ${unit} to go`
-                    : '🎉 Goal reached!'}
+                    : 'Goal reached!'}
               </Text>
             </View>
 
@@ -154,24 +153,28 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
                 <Text style={styles.actionButtonText}>Log Weight</Text>
               </AnimatedPressable>
 
-              <View style={styles.actionDivider} />
+              {onPhotoPress ? (
+                <>
+                  <View style={styles.actionDivider} />
 
-              <AnimatedPressable
-                onPress={onPhotoPress}
-                scaleValue={0.95}
-                hapticFeedback={true}
-                hapticType="light"
-                style={styles.actionButton}
-                accessibilityRole="button"
-                accessibilityLabel="Progress photo"
-              >
-                <Ionicons
-                  name="camera-outline"
-                  size={rf(16)}
-                  color={ResponsiveTheme.colors.primary}
-                />
-                <Text style={styles.actionButtonText}>Progress Photo</Text>
-              </AnimatedPressable>
+                  <AnimatedPressable
+                    onPress={onPhotoPress}
+                    scaleValue={0.95}
+                    hapticFeedback={true}
+                    hapticType="light"
+                    style={styles.actionButton}
+                    accessibilityRole="button"
+                    accessibilityLabel="Progress photo"
+                  >
+                    <Ionicons
+                      name="camera-outline"
+                      size={rf(16)}
+                      color={ResponsiveTheme.colors.primary}
+                    />
+                    <Text style={styles.actionButtonText}>Progress Photo</Text>
+                  </AnimatedPressable>
+                </>
+              ) : null}
             </View>
           </>
         ) : (
@@ -201,7 +204,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
       </GlassCard>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   headerPressable: {

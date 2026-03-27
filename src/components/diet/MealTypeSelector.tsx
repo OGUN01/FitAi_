@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
+  ScrollView,
   } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MealType } from "../../services/foodRecognitionService";
@@ -170,94 +171,96 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
               </TouchableOpacity>
             </View>
 
-            {/* Time-based suggestion */}
-            <View style={styles.suggestionBanner}>
-              <Text style={styles.suggestionIcon}>💡</Text>
-              <Text style={styles.suggestionText}>
-                Based on current time, we suggest:{" "}
-                <Text style={styles.suggestionMeal}>
-                  {mealTypeOptions.find((m) => m.type === suggestedMeal)?.label}
+            <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
+              {/* Time-based suggestion */}
+              <View style={styles.suggestionBanner}>
+                <Text style={styles.suggestionIcon}>💡</Text>
+                <Text style={styles.suggestionText}>
+                  Based on current time, we suggest:{" "}
+                  <Text style={styles.suggestionMeal}>
+                    {mealTypeOptions.find((m) => m.type === suggestedMeal)?.label}
+                  </Text>
                 </Text>
-              </Text>
-            </View>
+              </View>
 
-            {/* Meal type options */}
-            <View style={styles.optionsContainer}>
-              {mealTypeOptions.map((option) => {
-                const isSelected = selectedType === option.type;
-                const isSuggested = option.type === suggestedMeal;
+              {/* Meal type options */}
+              <View style={styles.optionsContainer}>
+                {mealTypeOptions.map((option) => {
+                  const isSelected = selectedType === option.type;
+                  const isSuggested = option.type === suggestedMeal;
 
-                return (
-                  <TouchableOpacity
-                    key={option.type}
-                    style={[
-                      styles.optionCard,
-                      isSelected && styles.optionCardSelected,
-                      isSuggested && styles.optionCardSuggested,
-                    ]}
-                    onPress={() => handleSelect(option.type)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.optionContent}>
-                      <View
-                        style={[
-                          styles.optionEmoji,
-                          { backgroundColor: option.color + "20" },
-                        ]}
-                      >
-                        <Text style={styles.optionEmojiText}>
-                          {option.emoji}
-                        </Text>
-                      </View>
+                  return (
+                    <TouchableOpacity
+                      key={option.type}
+                      style={[
+                        styles.optionCard,
+                        isSelected && styles.optionCardSelected,
+                        isSuggested && styles.optionCardSuggested,
+                      ]}
+                      onPress={() => handleSelect(option.type)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.optionContent}>
+                        <View
+                          style={[
+                            styles.optionEmoji,
+                            { backgroundColor: option.color + "20" },
+                          ]}
+                        >
+                          <Text style={styles.optionEmojiText}>
+                            {option.emoji}
+                          </Text>
+                        </View>
 
-                      <View style={styles.optionInfo}>
-                        <View style={styles.optionHeader}>
-                          <Text style={styles.optionLabel}>{option.label}</Text>
-                          {isSuggested && (
-                            <View style={styles.suggestedBadge}>
-                              <Text style={styles.suggestedBadgeText}>
-                                Suggested
-                              </Text>
-                            </View>
+                        <View style={styles.optionInfo}>
+                          <View style={styles.optionHeader}>
+                            <Text style={styles.optionLabel}>{option.label}</Text>
+                            {isSuggested && (
+                              <View style={styles.suggestedBadge}>
+                                <Text style={styles.suggestedBadgeText}>
+                                  Suggested
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                          <Text style={styles.optionDescription}>
+                            {option.description}
+                          </Text>
+                          <Text style={styles.optionTime}>
+                            {option.suggestedTime}
+                          </Text>
+                        </View>
+
+                        <View
+                          style={[
+                            styles.selectIndicator,
+                            { borderColor: option.color },
+                          ]}
+                        >
+                          {isSelected && (
+                            <View
+                              style={[
+                                styles.selectIndicatorInner,
+                                { backgroundColor: option.color },
+                              ]}
+                            />
                           )}
                         </View>
-                        <Text style={styles.optionDescription}>
-                          {option.description}
-                        </Text>
-                        <Text style={styles.optionTime}>
-                          {option.suggestedTime}
-                        </Text>
                       </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
 
-                      <View
-                        style={[
-                          styles.selectIndicator,
-                          { borderColor: option.color },
-                        ]}
-                      >
-                        {isSelected && (
-                          <View
-                            style={[
-                              styles.selectIndicatorInner,
-                              { backgroundColor: option.color },
-                            ]}
-                          />
-                        )}
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {/* Footer tip */}
-            <View style={styles.footer}>
-              <Text style={styles.footerIcon}>🎯</Text>
-              <Text style={styles.footerText}>
-                Selecting the correct meal type helps our AI provide more
-                accurate nutrition analysis
-              </Text>
-            </View>
+              {/* Footer tip */}
+              <View style={styles.footer}>
+                <Text style={styles.footerIcon}>🎯</Text>
+                <Text style={styles.footerText}>
+                  Selecting the correct meal type helps our AI provide more
+                  accurate nutrition analysis
+                </Text>
+              </View>
+            </ScrollView>
           </Animated.View>
         </Animated.View>
       </SafeAreaView>

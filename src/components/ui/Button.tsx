@@ -19,6 +19,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 
+// Hoist outside component — expensive factory should only run once
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+
 interface ButtonProps {
   title: string;
   onPress: () => void;
@@ -33,7 +36,7 @@ interface ButtonProps {
   accessibilityLabel?: string;
 }
 
-export const Button: React.FC<ButtonProps> = ({
+export const Button: React.FC<ButtonProps> = React.memo(({
   title,
   onPress,
   variant = "primary",
@@ -108,8 +111,6 @@ export const Button: React.FC<ButtonProps> = ({
     }
   };
 
-  const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
-
   const buttonContent = loading ? (
     <ActivityIndicator
       color={
@@ -172,7 +173,7 @@ export const Button: React.FC<ButtonProps> = ({
       {buttonContent}
     </AnimatedTouchable>
   );
-};
+});
 
 const styles = StyleSheet.create({
   base: {

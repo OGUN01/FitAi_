@@ -1,35 +1,40 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
+  ActivityIndicator,
   Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { Modal } from '@/components/ui/Modal';
+import { ResponsiveTheme } from '../../utils/constants';
+import { HealthScoreIndicator } from './HealthScoreIndicator';
+import type { ScannedProduct } from '../../services/barcodeService';
+import { rf, rp } from '../../utils/responsive';
+import {
+  clampPackagedFoodGrams,
+  getDefaultPackagedFoodGrams,
+  scaleScannedProductNutrition,
+} from '../../utils/packagedFoodNutrition';
 
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Modal, Button } from "../ui";
-import { ResponsiveTheme } from "../../utils/constants";
-import { colors } from "../../theme/aurora-tokens";
-import { HealthScoreIndicator } from "./HealthScoreIndicator";
-import type { ScannedProduct } from "../../services/barcodeService";
-import { rf, rp, rbr } from "../../utils/responsive";
-
-import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 const NUTRI_SCORE_COLORS: Record<string, string> = {
-  a: "#038141",
-  b: "#85BB2F",
-  c: "#FECB02",
-  d: "#EE8100",
-  e: "#E63E11",
+  a: '#038141',
+  b: '#85BB2F',
+  c: '#FECB02',
+  d: '#EE8100',
+  e: '#E63E11',
 };
 
 const NOVA_LABELS: Record<number, string> = {
-  1: "Unprocessed or minimally processed",
-  2: "Processed culinary ingredients",
-  3: "Processed foods",
-  4: "Ultra-processed foods",
+  1: 'Unprocessed or minimally processed',
+  2: 'Processed culinary ingredients',
+  3: 'Processed foods',
+  4: 'Ultra-processed foods',
 };
 
 interface ProductDetailsModalProps {
@@ -38,7 +43,7 @@ interface ProductDetailsModalProps {
   product: ScannedProduct;
   healthAssessment?: {
     overallScore: number;
-    category: "excellent" | "good" | "moderate" | "poor" | "unhealthy";
+    category: 'excellent' | 'good' | 'moderate' | 'poor' | 'unhealthy';
     breakdown: {
       calories: { score: number; status: string; message: string };
       macros: { score: number; status: string; message: string };
@@ -51,8 +56,83 @@ interface ProductDetailsModalProps {
     concerns: string[];
     alternatives?: string[];
   };
-  onAddToMeal?: (product: ScannedProduct) => void;
+  // eslint-disable-next-line no-unused-vars
+  onAddToMeal?(product: ScannedProduct, grams: number): Promise<void> | void;
 }
+
+type ListTone = 'default' | 'warning' | 'positive';
+
+const formatNumber = (value: number | undefined, digits = 1): string => {
+  if (value === undefined || !Number.isFinite(value)) return '--';
+  return digits === 0 ? `${Math.round(value)}` : value.toFixed(digits);
+};
+
+const formatInputGrams = (grams: number): string => {
+  const rounded = clampPackagedFoodGrams(grams);
+  return Number.isInteger(rounded) ? `${rounded}` : `${rounded.toFixed(1)}`;
+};
+
+const sanitizeGramInput = (value: string): string => {
+  const cleanedValue = value.replace(/[^0-9.]/g, '');
+  const [wholePart, ...decimalParts] = cleanedValue.split('.');
+  if (!decimalParts.length) return wholePart;
+  return `${wholePart}.${decimalParts.join('')}`;
+};
+
+const isVisionLabelProduct = (product: ScannedProduct): boolean =>
+  product.source === 'vision-label';
+
+const getProductSourceLabel = (product: ScannedProduct): string =>
+  isVisionLabelProduct(product) ? 'Label scan' : product.source;
+
+const getBreakdownColor = (score: number) => {
+  if (score >= 80) return ResponsiveTheme.colors.successAlt;
+  if (score >= 60) return '#84cc16';
+  if (score >= 40) return '#eab308';
+  if (score >= 20) return '#f97316';
+  return ResponsiveTheme.colors.errorAlt;
+};
+
+const NutritionCard: React.FC<{
+  label: string;
+  value: string;
+  unit?: string;
+}> = ({ label, value, unit }) => (
+  <View style={styles.nutritionItem}>
+    <Text style={styles.nutritionLabel}>{label}</Text>
+    <Text style={styles.nutritionValue}>
+      {value}
+      {unit ?? ''}
+    </Text>
+  </View>
+);
+
+const ListSection: React.FC<{
+  title: string;
+  items: string[];
+  tone?: ListTone;
+}> = ({ title, items, tone = 'default' }) => {
+  if (!items.length) return null;
+
+  return (
+    <View style={styles.sectionBlock}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {items.map((item) => (
+        <View
+          key={`${title}-${item}`}
+          style={[
+            styles.listItem,
+            tone === 'warning' && styles.warningListItem,
+            tone === 'positive' && styles.positiveListItem,
+          ]}
+        >
+          <Text style={styles.listBullet}>-</Text>
+          <Text style={styles.listText}>{item}</Text>
+        </View>
+      ))}
+    </View>
+  );
+};
 
 export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   visible,
@@ -61,695 +141,677 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   healthAssessment,
   onAddToMeal,
 }) => {
-  const handleAddToMeal = () => {
-    if (onAddToMeal) {
-      onAddToMeal(product);
-      crossPlatformAlert(
-        "Added to Meal",
-        `${product.name} has been added to your current meal.`,
-        [{ text: "OK", onPress: onClose }],
-      );
+  const defaultGrams = useMemo(() => getDefaultPackagedFoodGrams(product), [product]);
+  const [amountText, setAmountText] = useState(formatInputGrams(defaultGrams));
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!visible) return;
+    setAmountText(formatInputGrams(defaultGrams));
+    setIsSubmitting(false);
+  }, [defaultGrams, product.barcode, visible]);
+
+  const parsedAmount = useMemo(() => {
+    const numericAmount = Number(amountText.trim());
+    return Number.isFinite(numericAmount) && numericAmount > 0
+      ? clampPackagedFoodGrams(numericAmount)
+      : defaultGrams;
+  }, [amountText, defaultGrams]);
+
+  const scaledNutrition = useMemo(
+    () => scaleScannedProductNutrition(product, parsedAmount),
+    [parsedAmount, product]
+  );
+
+  const amountValue = Number(amountText.trim());
+  const amountIsInvalid =
+    amountText.trim().length > 0 && (!Number.isFinite(amountValue) || amountValue <= 0);
+  const handleClose = () => {
+    if (!isSubmitting) {
+      onClose();
     }
   };
 
-  const renderNutritionFacts = () => (
-    <View style={styles.nutritionContainer}>
-      <Text style={styles.sectionTitle}>Nutrition Facts (per 100g)</Text>
-      <View style={styles.nutritionGrid}>
-        <View style={styles.nutritionItem}>
-          <Text style={styles.nutritionLabel}>Calories</Text>
-          <Text style={styles.nutritionValue}>
-            {product.nutrition.calories}
-          </Text>
-        </View>
-        <View style={styles.nutritionItem}>
-          <Text style={styles.nutritionLabel}>Protein</Text>
-          <Text style={styles.nutritionValue}>
-            {product.nutrition.protein}g
-          </Text>
-        </View>
-        <View style={styles.nutritionItem}>
-          <Text style={styles.nutritionLabel}>Carbs</Text>
-          <Text style={styles.nutritionValue}>{product.nutrition.carbs}g</Text>
-        </View>
-        <View style={styles.nutritionItem}>
-          <Text style={styles.nutritionLabel}>Fat</Text>
-          <Text style={styles.nutritionValue}>{product.nutrition.fat}g</Text>
-        </View>
-        <View style={styles.nutritionItem}>
-          <Text style={styles.nutritionLabel}>Fiber</Text>
-          <Text style={styles.nutritionValue}>{product.nutrition.fiber}g</Text>
-        </View>
-        {product.nutrition.sugar !== undefined && (
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionLabel}>Sugar</Text>
-            <Text style={styles.nutritionValue}>
-              {product.nutrition.sugar}g
-            </Text>
-          </View>
-        )}
-        {product.nutrition.sodium !== undefined && (
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionLabel}>Sodium</Text>
-            <Text style={styles.nutritionValue}>
-              {product.nutrition.sodium}g
-            </Text>
-          </View>
-        )}
-      </View>
-    </View>
-  );
-
-  const renderHealthBreakdown = () => {
-    if (!healthAssessment) return null;
-
-    const { breakdown } = healthAssessment;
-
-    return (
-      <View style={styles.breakdownContainer}>
-        <Text style={styles.sectionTitle}>Health Breakdown</Text>
-        {Object.entries(breakdown).map(([key, assessment]) => (
-          <View key={key} style={styles.breakdownItem}>
-            <View style={styles.breakdownHeader}>
-              <Text style={styles.breakdownLabel}>
-                {key.charAt(0).toUpperCase() + key.slice(1)}
-              </Text>
-              <View
-                style={[
-                  styles.breakdownScore,
-                  { backgroundColor: getScoreColor(assessment.score) },
-                ]}
-              >
-                <Text style={styles.breakdownScoreText}>
-                  {assessment.score}
-                </Text>
-              </View>
-            </View>
-            <Text style={styles.breakdownMessage}>{assessment.message}</Text>
-          </View>
-        ))}
-      </View>
-    );
-  };
-
-  const renderAlerts = () => {
-    if (!healthAssessment?.alerts.length) return null;
-
-    return (
-      <View style={styles.alertsContainer}>
-        <Text style={styles.sectionTitle}>⚠️ Health Alerts</Text>
-        {healthAssessment.alerts.map((alert) => (
-          <View key={alert} style={styles.alertItem}>
-            <Text style={styles.alertText}>{alert}</Text>
-          </View>
-        ))}
-      </View>
-    );
-  };
-
-  const renderRecommendations = () => {
-    if (!healthAssessment?.recommendations.length) return null;
-
-    return (
-      <View style={styles.recommendationsContainer}>
-        <Text style={styles.sectionTitle}>💡 Recommendations</Text>
-        {healthAssessment.recommendations.map((recommendation) => (
-          <View key={recommendation} style={styles.recommendationItem}>
-            <Text style={styles.recommendationText}>• {recommendation}</Text>
-          </View>
-        ))}
-      </View>
-    );
-  };
-
-  const renderAlternatives = () => {
-    if (!healthAssessment?.alternatives?.length) return null;
-
-    return (
-      <View style={styles.alternativesContainer}>
-        <Text style={styles.sectionTitle}>🔄 Healthier Alternatives</Text>
-        {healthAssessment.alternatives.map((alternative) => (
-          <View key={alternative} style={styles.alternativeItem}>
-            <Text style={styles.alternativeText}>• {alternative}</Text>
-          </View>
-        ))}
-      </View>
-    );
-  };
-
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return ResponsiveTheme.colors.successAlt;
-    if (score >= 60) return "#84cc16";
-    if (score >= 40) return "#eab308";
-    if (score >= 20) return "#f97316";
-    return ResponsiveTheme.colors.errorAlt;
+  const handleAddToMeal = async () => {
+    if (!onAddToMeal || isSubmitting || amountIsInvalid) return;
+    try {
+      setIsSubmitting(true);
+      await onAddToMeal(product, parsedAmount);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <Modal visible={visible} onClose={onClose} title="Product Details">
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
+    <Modal
+      visible={visible}
+      animationType="fade"
+      onClose={handleClose}
+      closeOnOverlayPress={!isSubmitting}
+      contentStyle={styles.sharedModalContent}
+    >
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* Product Header */}
-        <View style={styles.headerContainer}>
-          {product.additionalInfo?.imageUrl && (
-            <Image
-              source={{ uri: product.additionalInfo.imageUrl }}
-              style={styles.productImage}
-              resizeMode="contain"
-            />
-          )}
-          <View style={styles.productInfo}>
-            <Text style={styles.productName}>{product.name}</Text>
-            {product.brand && (
-              <Text style={styles.productBrand}>{product.brand}</Text>
-            )}
-            {product.category && (
-              <Text style={styles.productCategory}>{product.category}</Text>
-            )}
-            <Text style={styles.barcodeText}>Barcode: {product.barcode}</Text>
-          </View>
-        </View>
-
-        {/* AI Disclaimer Banner */}
-        {product.isAIEstimated && (
-          <View style={styles.aiDisclaimer}>
-            <Text style={styles.aiDisclaimerText}>
-              ⚠️ Nutrition data estimated by AI. Values may not be accurate.
-              Verify with product packaging.
-            </Text>
-          </View>
-        )}
-
-        {/* Nutri-Score & NOVA & Origin Row */}
-        {(product.nutriScore || product.novaGroup || product.gs1Country) && (
-          <View style={styles.qualityBadgesContainer}>
-            {product.nutriScore && (
-              <View
-                style={[
-                  styles.nutriScoreBadge,
-                  {
-                    backgroundColor:
-                      NUTRI_SCORE_COLORS[product.nutriScore.toLowerCase()] ??
-                      ResponsiveTheme.colors.neutral,
-                  },
-                ]}
-              >
-                <Text style={styles.nutriScoreLabel}>Nutri-Score</Text>
-                <Text style={styles.nutriScoreText}>
-                  {product.nutriScore.toUpperCase()}
-                </Text>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={true}
+          keyboardShouldPersistTaps="always"
+          keyboardDismissMode="on-drag"
+          nestedScrollEnabled={true}
+        >
+          <View style={styles.header}>
+            <View style={styles.headerContent}>
+              {product.additionalInfo?.imageUrl ? (
+                <Image
+                  source={{ uri: product.additionalInfo.imageUrl }}
+                  style={styles.productImage}
+                  resizeMode="contain"
+                />
+              ) : null}
+                <View style={styles.headerText}>
+                  <Text style={styles.productName}>{product.name}</Text>
+                  {product.brand ? <Text style={styles.productBrand}>{product.brand}</Text> : null}
+                  {product.category ? (
+                    <Text style={styles.productMeta}>{product.category}</Text>
+                  ) : null}
+                  <Text style={styles.productMeta}>
+                    {isVisionLabelProduct(product)
+                      ? 'Source: Label scan'
+                      : `Barcode: ${product.barcode}`}
+                  </Text>
+                </View>
               </View>
-            )}
+            <TouchableOpacity
+              onPress={handleClose}
+              style={styles.closeButton}
+              accessibilityRole="button"
+              accessibilityLabel="Close product details"
+              disabled={isSubmitting}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
 
-            {product.novaGroup && (
-              <View style={styles.novaContainer}>
-                <Text style={styles.novaTitle}>NOVA {product.novaGroup}</Text>
-                <Text
+          {product.isAIEstimated ? (
+            <View style={styles.disclaimerCard}>
+              <Text style={styles.disclaimerTitle}>Review before logging</Text>
+              <Text style={styles.disclaimerText}>
+                This packaged-food result includes estimated data. Compare it with the product label
+                if anything looks off.
+              </Text>
+            </View>
+          ) : null}
+
+          {product.nutriScore || product.novaGroup || product.gs1Country ? (
+            <View style={styles.badgesRow}>
+              {product.nutriScore ? (
+                <View
                   style={[
-                    styles.novaLabel,
+                    styles.scoreBadge,
                     {
-                      color:
-                        product.novaGroup <= 2
-                          ? "#038141"
-                          : product.novaGroup === 4
-                            ? "#E63E11"
-                            : "#EE8100",
+                      backgroundColor:
+                        NUTRI_SCORE_COLORS[product.nutriScore.toLowerCase()] ??
+                        ResponsiveTheme.colors.neutral,
                     },
                   ]}
                 >
-                  {NOVA_LABELS[product.novaGroup]}
-                </Text>
-              </View>
-            )}
+                  <Text style={styles.scoreBadgeLabel}>Nutri-Score</Text>
+                  <Text style={styles.scoreBadgeValue}>{product.nutriScore.toUpperCase()}</Text>
+                </View>
+              ) : null}
 
-            {product.gs1Country && (
-              <View style={styles.originContainer}>
-                <Text style={styles.originText}>
-                  🌍 Origin: {product.gs1Country}
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
+              {product.novaGroup ? (
+                <View style={styles.infoBadge}>
+                  <Text style={styles.infoBadgeTitle}>NOVA {product.novaGroup}</Text>
+                  <Text style={styles.infoBadgeText}>{NOVA_LABELS[product.novaGroup]}</Text>
+                </View>
+              ) : null}
 
-        {/* Health Score */}
-        {healthAssessment && (
-          <View style={styles.healthScoreContainer}>
-            <HealthScoreIndicator
-              score={healthAssessment.overallScore}
-              category={healthAssessment.category}
-              size="large"
-            />
-            <Text style={styles.confidenceText}>
-              Confidence: {product.confidence}% • Source: {product.source}
+              {product.gs1Country ? (
+                <View style={styles.infoBadge}>
+                  <Text style={styles.infoBadgeTitle}>Origin</Text>
+                  <Text style={styles.infoBadgeText}>{product.gs1Country}</Text>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+
+          {healthAssessment ? (
+            <View style={styles.healthCard}>
+              <HealthScoreIndicator
+                score={healthAssessment.overallScore}
+                category={healthAssessment.category}
+                size="large"
+              />
+              <Text style={styles.healthMeta}>
+                Confidence {product.confidence}% | Source {getProductSourceLabel(product)}
+              </Text>
+            </View>
+          ) : null}
+
+          <View style={styles.sectionBlock}>
+            <Text style={styles.sectionTitle}>Nutrition for {formatInputGrams(parsedAmount)}g</Text>
+            <Text style={styles.sectionCaption}>
+              Stored values are per 100g. We scale them live based on the amount you enter below.
             </Text>
+            <View style={styles.nutritionGrid}>
+              <NutritionCard label="Calories" value={formatNumber(scaledNutrition.calories, 0)} />
+              <NutritionCard
+                label="Protein"
+                value={formatNumber(scaledNutrition.protein)}
+                unit="g"
+              />
+              <NutritionCard label="Carbs" value={formatNumber(scaledNutrition.carbs)} unit="g" />
+              <NutritionCard label="Fat" value={formatNumber(scaledNutrition.fat)} unit="g" />
+              <NutritionCard label="Fiber" value={formatNumber(scaledNutrition.fiber)} unit="g" />
+              {scaledNutrition.sugar !== undefined ? (
+                <NutritionCard label="Sugar" value={formatNumber(scaledNutrition.sugar)} unit="g" />
+              ) : null}
+              {scaledNutrition.sodium !== undefined ? (
+                <NutritionCard
+                  label="Sodium"
+                  value={formatNumber(scaledNutrition.sodium, 2)}
+                  unit="g"
+                />
+              ) : null}
+            </View>
           </View>
-        )}
 
-        {/* Nutrition Facts */}
-        {renderNutritionFacts()}
-
-        {/* Health Breakdown */}
-        {renderHealthBreakdown()}
-
-        {/* Alerts */}
-        {renderAlerts()}
-
-        {/* Health Benefits */}
-        {healthAssessment?.healthBenefits &&
-          healthAssessment.healthBenefits.length > 0 && (
-            <View style={styles.benefitsContainer}>
-              <Text style={styles.sectionTitle}>✅ Health Benefits</Text>
-              {healthAssessment.healthBenefits.map((benefit) => (
-                <View key={benefit} style={styles.benefitItem}>
-                  <Text style={styles.benefitText}>• {benefit}</Text>
+          {healthAssessment ? (
+            <View style={styles.sectionBlock}>
+              <Text style={styles.sectionTitle}>Health breakdown</Text>
+              {Object.entries(healthAssessment.breakdown).map(([key, assessment]) => (
+                <View key={key} style={styles.breakdownItem}>
+                  <View style={styles.breakdownHeader}>
+                    <Text style={styles.breakdownLabel}>
+                      {key.charAt(0).toUpperCase() + key.slice(1)}
+                    </Text>
+                    <View
+                      style={[
+                        styles.breakdownScore,
+                        {
+                          backgroundColor: getBreakdownColor(assessment.score),
+                        },
+                      ]}
+                    >
+                      <Text style={styles.breakdownScoreText}>{assessment.score}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.breakdownMessage}>{assessment.message}</Text>
                 </View>
               ))}
             </View>
-          )}
+          ) : null}
 
-        {/* Concerns */}
-        {healthAssessment?.concerns && healthAssessment.concerns.length > 0 && (
-          <View style={styles.concernsContainer}>
-            <Text style={styles.sectionTitle}>⚠️ Concerns</Text>
-            {healthAssessment.concerns.map((concern) => (
-              <View key={concern} style={styles.concernItem}>
-                <Text style={styles.concernText}>• {concern}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Recommendations */}
-        {renderRecommendations()}
-
-        {/* Alternatives */}
-        {renderAlternatives()}
-
-        {/* Additional Information */}
-        {((product.additionalInfo?.ingredients &&
-          product.additionalInfo.ingredients.length > 0) ||
-          (product.additionalInfo?.allergens &&
-            product.additionalInfo.allergens.length > 0) ||
-          (product.additionalInfo?.labels &&
-            product.additionalInfo.labels.length > 0)) && (
-          <View style={styles.additionalInfoContainer}>
-            <Text style={styles.sectionTitle}>Additional Information</Text>
-
-            {product.additionalInfo?.ingredients &&
-              product.additionalInfo.ingredients.length > 0 && (
-                <View style={styles.infoSection}>
-                  <Text style={styles.infoTitle}>Ingredients:</Text>
-                  <Text style={styles.infoText}>
-                    {product.additionalInfo.ingredients.join(", ")}
-                  </Text>
-                </View>
-              )}
-
-            {product.additionalInfo?.allergens &&
-              product.additionalInfo.allergens.length > 0 && (
-                <View style={styles.infoSection}>
-                  <Text style={styles.infoTitle}>Allergens:</Text>
-                  <Text style={styles.alertText}>
-                    {product.additionalInfo.allergens.join(", ")}
-                  </Text>
-                </View>
-              )}
-
-            {product.additionalInfo?.labels &&
-              product.additionalInfo.labels.length > 0 && (
-                <View style={styles.infoSection}>
-                  <Text style={styles.infoTitle}>Labels:</Text>
-                  <Text style={styles.infoText}>
-                    {product.additionalInfo.labels.join(", ")}
-                  </Text>
-                </View>
-              )}
-          </View>
-        )}
-
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          {onAddToMeal && (
-            <Button
-              title="Add to Current Meal"
-              onPress={handleAddToMeal}
-              style={styles.addButton}
-            />
-          )}
-          <Button
-            title="Close"
-            onPress={onClose}
-            variant="outline"
-            style={styles.closeButton}
+          <ListSection
+            title="Health alerts"
+            items={healthAssessment?.alerts ?? []}
+            tone="warning"
           />
-        </View>
-      </ScrollView>
+          <ListSection
+            title="Health benefits"
+            items={healthAssessment?.healthBenefits ?? []}
+            tone="positive"
+          />
+          <ListSection title="Concerns" items={healthAssessment?.concerns ?? []} tone="warning" />
+          <ListSection title="Recommendations" items={healthAssessment?.recommendations ?? []} />
+          <ListSection title="Alternatives" items={healthAssessment?.alternatives ?? []} />
+
+          {product.additionalInfo?.ingredients?.length ||
+          product.additionalInfo?.allergens?.length ||
+          product.additionalInfo?.labels?.length ? (
+            <View style={styles.sectionBlock}>
+              <Text style={styles.sectionTitle}>Additional information</Text>
+
+              {product.additionalInfo?.ingredients?.length ? (
+                <View style={styles.infoSection}>
+                  <Text style={styles.infoSectionTitle}>Ingredients</Text>
+                  <Text style={styles.infoSectionText}>
+                    {product.additionalInfo.ingredients.join(', ')}
+                  </Text>
+                </View>
+              ) : null}
+
+              {product.additionalInfo?.allergens?.length ? (
+                <View style={styles.infoSection}>
+                  <Text style={styles.infoSectionTitle}>Allergens</Text>
+                  <Text style={styles.infoSectionText}>
+                    {product.additionalInfo.allergens.join(', ')}
+                  </Text>
+                </View>
+              ) : null}
+
+              {product.additionalInfo?.labels?.length ? (
+                <View style={styles.infoSection}>
+                  <Text style={styles.infoSectionTitle}>Labels</Text>
+                  <Text style={styles.infoSectionText}>
+                    {product.additionalInfo.labels.join(', ')}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+
+          <View style={styles.footer}>
+            <View style={styles.amountRow}>
+              <View style={styles.amountTextBlock}>
+                <Text style={styles.amountLabel}>Amount you are eating</Text>
+                <Text style={styles.amountHint}>
+                  Example: 50g will halve the calories, protein, and the rest of the nutrients.
+                </Text>
+              </View>
+              <View style={styles.amountInputWrap}>
+                <TextInput
+                  style={[styles.amountInput, amountIsInvalid && styles.amountInputInvalid]}
+                  value={amountText}
+                  onChangeText={(value) => setAmountText(sanitizeGramInput(value))}
+                  keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
+                  placeholder="100"
+                  placeholderTextColor={ResponsiveTheme.colors.textMuted}
+                  returnKeyType="done"
+                />
+                <Text style={styles.amountUnit}>g</Text>
+              </View>
+            </View>
+
+            {amountIsInvalid ? (
+              <Text style={styles.amountError}>
+                Enter a positive amount to calculate nutrients.
+              </Text>
+            ) : null}
+
+            <View style={styles.footerButtons}>
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={handleClose}
+                accessibilityRole="button"
+                disabled={isSubmitting}
+              >
+                <Text style={styles.secondaryButtonText}>Close</Text>
+              </TouchableOpacity>
+
+              {onAddToMeal ? (
+                <TouchableOpacity
+                  style={[
+                    styles.primaryButton,
+                    (isSubmitting || amountIsInvalid) && styles.primaryButtonDisabled,
+                  ]}
+                  disabled={isSubmitting || amountIsInvalid}
+                  onPress={() => {
+                    void handleAddToMeal();
+                  }}
+                  accessibilityRole="button"
+                >
+                  {isSubmitting ? (
+                    <ActivityIndicator color={ResponsiveTheme.colors.white} />
+                  ) : (
+                    <Text style={styles.primaryButtonText}>Add to meal</Text>
+                  )}
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
+  sharedModalContent: {
+    width: '94%',
+    maxHeight: '88%',
+    padding: 0,
+    overflow: 'hidden' as const,
   },
-
-  headerContainer: {
-    flexDirection: "row",
-    padding: ResponsiveTheme.spacing.md,
+  keyboardAvoid: {
+    width: '100%',
+    maxHeight: '100%',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingBottom: ResponsiveTheme.spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: ResponsiveTheme.colors.border,
+    gap: ResponsiveTheme.spacing.md,
   },
-
-  productImage: {
-    width: 80,
-    height: 80,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    marginRight: ResponsiveTheme.spacing.md,
-  },
-
-  productInfo: {
+  headerContent: {
     flex: 1,
-    justifyContent: "center",
+    flexDirection: 'row',
+    gap: ResponsiveTheme.spacing.md,
   },
-
+  productImage: {
+    width: rp(72),
+    height: rp(72),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.surface,
+  },
+  headerText: {
+    flex: 1,
+    gap: ResponsiveTheme.spacing.xs,
+  },
   productName: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
+    fontSize: rf(20),
+    fontWeight: ResponsiveTheme.fontWeight.bold as '700',
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
   },
-
   productBrand: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: rf(15),
+    fontWeight: '600',
     color: ResponsiveTheme.colors.primary,
-    marginBottom: ResponsiveTheme.spacing.xs,
   },
-
-  productCategory: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.xs,
-  },
-
-  barcodeText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    fontFamily: "monospace",
-  },
-
-  healthScoreContainer: {
-    alignItems: "center",
-    padding: ResponsiveTheme.spacing.lg,
-    backgroundColor: ResponsiveTheme.colors.surface,
-  },
-
-  confidenceText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.sm,
-  },
-
-  nutritionContainer: {
-    padding: ResponsiveTheme.spacing.md,
-  },
-
-  sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
-  },
-
-  nutritionGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
-
-  nutritionItem: {
-    width: "48%",
-    backgroundColor: ResponsiveTheme.colors.surface,
-    padding: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    marginBottom: ResponsiveTheme.spacing.sm,
-    alignItems: "center",
-  },
-
-  nutritionLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.xs,
-  },
-
-  nutritionValue: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
-    color: ResponsiveTheme.colors.text,
-  },
-
-  breakdownContainer: {
-    padding: ResponsiveTheme.spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
-  },
-
-  breakdownItem: {
-    marginBottom: ResponsiveTheme.spacing.md,
-  },
-
-  breakdownHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
-  },
-
-  breakdownLabel: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
-    color: ResponsiveTheme.colors.text,
-  },
-
-  breakdownScore: {
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
-  },
-
-  breakdownScoreText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
-    color: ResponsiveTheme.colors.white,
-  },
-
-  breakdownMessage: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+  productMeta: {
+    fontSize: rf(13),
     color: ResponsiveTheme.colors.textSecondary,
   },
-
-  alertsContainer: {
-    padding: ResponsiveTheme.spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
-  },
-
-  alertItem: {
-    backgroundColor: `${ResponsiveTheme.colors.error}1F`,
-    padding: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.error.DEFAULT,
-    marginBottom: ResponsiveTheme.spacing.sm,
-  },
-
-  alertText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: colors.error.light,
-  },
-
-  recommendationsContainer: {
-    padding: ResponsiveTheme.spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
-  },
-
-  recommendationItem: {
-    marginBottom: ResponsiveTheme.spacing.sm,
-  },
-
-  recommendationText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
-    lineHeight: rf(20),
-  },
-
-  benefitsContainer: {
-    padding: ResponsiveTheme.spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
-  },
-
-  benefitItem: {
-    marginBottom: ResponsiveTheme.spacing.sm,
-  },
-
-  benefitText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: colors.success.light,
-    lineHeight: rf(20),
-  },
-
-  concernsContainer: {
-    padding: ResponsiveTheme.spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
-  },
-
-  concernItem: {
-    marginBottom: ResponsiveTheme.spacing.sm,
-  },
-
-  concernText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: colors.warning.light,
-    lineHeight: rf(20),
-  },
-
-  alternativesContainer: {
-    padding: ResponsiveTheme.spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
-  },
-
-  alternativeItem: {
-    marginBottom: ResponsiveTheme.spacing.sm,
-  },
-
-  alternativeText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
-    lineHeight: rf(20),
-  },
-
-  additionalInfoContainer: {
-    padding: ResponsiveTheme.spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
-  },
-
-  infoSection: {
-    marginBottom: ResponsiveTheme.spacing.md,
-  },
-
-  infoTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
-  },
-
-  infoText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    lineHeight: rf(18),
-  },
-
-  actionButtons: {
-    padding: ResponsiveTheme.spacing.md,
-    gap: ResponsiveTheme.spacing.sm,
-  },
-
-  addButton: {
-    marginBottom: ResponsiveTheme.spacing.sm,
-  },
-
   closeButton: {
-    // Outline button styling handled by Button component
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: ResponsiveTheme.colors.surface,
   },
-
-  aiDisclaimer: {
-    backgroundColor: `${ResponsiveTheme.colors.warning}1F`,
-    borderRadius: rbr(8),
-    padding: rp(12),
-    marginHorizontal: ResponsiveTheme.spacing.md,
-    marginBottom: rp(12),
-    marginTop: ResponsiveTheme.spacing.sm,
+  closeButtonText: {
+    fontSize: rf(13),
+    fontWeight: '600',
+    color: ResponsiveTheme.colors.text,
+  },
+  scrollView: {
+    maxHeight: '100%',
+  },
+  scrollContent: {
+    paddingBottom: ResponsiveTheme.spacing.lg,
+    gap: ResponsiveTheme.spacing.md,
+  },
+  disclaimerCard: {
+    backgroundColor: 'rgba(245, 158, 11, 0.14)',
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    padding: ResponsiveTheme.spacing.md,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.warning}40`,
+    borderColor: 'rgba(245, 158, 11, 0.24)',
   },
-
-  aiDisclaimerText: {
-    color: ResponsiveTheme.colors.warning,
+  disclaimerTitle: {
+    fontSize: rf(14),
+    fontWeight: '700',
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+  disclaimerText: {
     fontSize: rf(13),
     lineHeight: rf(18),
-  },
-
-  qualityBadgesContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "flex-start",
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    gap: ResponsiveTheme.spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
-  },
-
-  nutriScoreBadge: {
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: rbr(8),
-    paddingHorizontal: rp(12),
-    paddingVertical: rp(8),
-    minWidth: rp(56),
-  },
-
-  nutriScoreLabel: {
-    fontSize: rf(9),
-    fontWeight: "700" as const,
-    color: ResponsiveTheme.colors.white,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: rp(2),
-  },
-
-  nutriScoreText: {
-    fontSize: rf(22),
-    fontWeight: "900" as const,
-    color: ResponsiveTheme.colors.white,
-    lineHeight: rf(26),
-  },
-
-  novaContainer: {
-    flex: 1,
-    justifyContent: "center",
-    paddingVertical: rp(4),
-  },
-
-  novaTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: rp(2),
-  },
-
-  novaLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    lineHeight: rf(16),
-  },
-
-  originContainer: {
-    justifyContent: "center",
-    paddingVertical: rp(4),
-  },
-
-  originText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
   },
+  badgesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: ResponsiveTheme.spacing.sm,
+  },
+  scoreBadge: {
+    minWidth: rp(104),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    padding: ResponsiveTheme.spacing.md,
+  },
+  scoreBadgeLabel: {
+    fontSize: rf(12),
+    fontWeight: '600',
+    color: '#fff',
+    opacity: 0.9,
+  },
+  scoreBadgeValue: {
+    fontSize: rf(24),
+    fontWeight: '800',
+    color: '#fff',
+    marginTop: ResponsiveTheme.spacing.xs,
+  },
+  infoBadge: {
+    flex: 1,
+    minWidth: rp(110),
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    padding: ResponsiveTheme.spacing.md,
+  },
+  infoBadgeTitle: {
+    fontSize: rf(12),
+    fontWeight: '700',
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+  infoBadgeText: {
+    fontSize: rf(12),
+    lineHeight: rf(16),
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+  healthCard: {
+    alignItems: 'center',
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: ResponsiveTheme.borderRadius.xl,
+    padding: ResponsiveTheme.spacing.lg,
+  },
+  healthMeta: {
+    marginTop: ResponsiveTheme.spacing.sm,
+    fontSize: rf(13),
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+  sectionBlock: {
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: ResponsiveTheme.borderRadius.xl,
+    padding: ResponsiveTheme.spacing.md,
+  },
+  sectionTitle: {
+    fontSize: rf(16),
+    fontWeight: '700',
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+  sectionCaption: {
+    fontSize: rf(13),
+    lineHeight: rf(18),
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+  nutritionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: ResponsiveTheme.spacing.sm,
+  },
+  nutritionItem: {
+    width: '48%',
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    padding: ResponsiveTheme.spacing.md,
+  },
+  nutritionLabel: {
+    fontSize: rf(12),
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+  nutritionValue: {
+    fontSize: rf(20),
+    fontWeight: '700',
+    color: ResponsiveTheme.colors.text,
+  },
+  breakdownItem: {
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    padding: ResponsiveTheme.spacing.md,
+    marginTop: ResponsiveTheme.spacing.sm,
+  },
+  breakdownHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+  breakdownLabel: {
+    fontSize: rf(14),
+    fontWeight: '600',
+    color: ResponsiveTheme.colors.text,
+  },
+  breakdownScore: {
+    minWidth: rp(36),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+  },
+  breakdownScoreText: {
+    fontSize: rf(12),
+    fontWeight: '700',
+    color: '#fff',
+  },
+  breakdownMessage: {
+    fontSize: rf(13),
+    lineHeight: rf(18),
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: ResponsiveTheme.colors.border,
+  },
+  warningListItem: {
+    backgroundColor: 'rgba(239, 68, 68, 0.04)',
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+  },
+  positiveListItem: {
+    backgroundColor: 'rgba(16, 185, 129, 0.05)',
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+  },
+  listBullet: {
+    width: rf(10),
+    fontSize: rf(14),
+    fontWeight: '700',
+    color: ResponsiveTheme.colors.text,
+    marginTop: 1,
+  },
+  listText: {
+    flex: 1,
+    fontSize: rf(13),
+    lineHeight: rf(18),
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+  infoSection: {
+    marginTop: ResponsiveTheme.spacing.md,
+  },
+  infoSectionTitle: {
+    fontSize: rf(13),
+    fontWeight: '700',
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+  infoSectionText: {
+    fontSize: rf(13),
+    lineHeight: rf(18),
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+  footer: {
+    borderTopWidth: 1,
+    borderTopColor: ResponsiveTheme.colors.border,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.md,
+    paddingBottom: Platform.OS === 'ios' ? ResponsiveTheme.spacing.lg : ResponsiveTheme.spacing.md,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    gap: ResponsiveTheme.spacing.sm,
+  },
+  amountRow: {
+    flexDirection: 'row',
+    gap: ResponsiveTheme.spacing.md,
+    alignItems: 'center',
+  },
+  amountTextBlock: {
+    flex: 1,
+  },
+  amountLabel: {
+    fontSize: rf(14),
+    fontWeight: '700',
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+  amountHint: {
+    fontSize: rf(12),
+    lineHeight: rf(17),
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+  amountInputWrap: {
+    minWidth: rp(108),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: ResponsiveTheme.spacing.sm,
+    borderWidth: 1,
+    borderColor: ResponsiveTheme.colors.border,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    backgroundColor: ResponsiveTheme.colors.surface,
+  },
+  amountInput: {
+    flex: 1,
+    minWidth: rp(40),
+    paddingVertical: 0,
+    fontSize: rf(18),
+    fontWeight: '700',
+    color: ResponsiveTheme.colors.text,
+    textAlign: 'right',
+  },
+  amountInputInvalid: {
+    color: ResponsiveTheme.colors.errorAlt,
+  },
+  amountUnit: {
+    fontSize: rf(14),
+    fontWeight: '600',
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+  amountError: {
+    fontSize: rf(12),
+    color: ResponsiveTheme.colors.errorAlt,
+  },
+  footerButtons: {
+    flexDirection: 'row',
+    gap: ResponsiveTheme.spacing.sm,
+  },
+  secondaryButton: {
+    flex: 1,
+    minHeight: rp(48),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderWidth: 1,
+    borderColor: ResponsiveTheme.colors.border,
+  },
+  secondaryButtonText: {
+    fontSize: rf(14),
+    fontWeight: '700',
+    color: ResponsiveTheme.colors.text,
+  },
+  primaryButton: {
+    flex: 1.4,
+    minHeight: rp(48),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.primary,
+  },
+  primaryButtonDisabled: {
+    opacity: 0.55,
+  },
+  primaryButtonText: {
+    fontSize: rf(14),
+    fontWeight: '700',
+    color: ResponsiveTheme.colors.white,
+  },
 });
-
-export default ProductDetailsModal;

@@ -92,6 +92,8 @@ export const CompactTogglePill: React.FC<CompactTogglePillProps> = ({
             }}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             style={styles.compactPillInfoBtn}
+            accessibilityRole="button"
+            accessibilityLabel={`More info about ${title}`}
           >
             <Ionicons
               name="information-circle-outline"
@@ -125,6 +127,8 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
+    minHeight: 44,
+    justifyContent: "center",
   },
   compactPillActive: {
     borderColor: ResponsiveTheme.colors.primary,

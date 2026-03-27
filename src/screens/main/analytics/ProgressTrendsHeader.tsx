@@ -22,6 +22,8 @@ export const ProgressTrendsHeader: React.FC<ProgressTrendsHeaderProps> = ({
             haptics.light();
             onBack();
           }}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
         >
           <Ionicons
             name="arrow-back"
@@ -51,9 +53,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   backButton: {
-    width: rw(40),
-    height: rw(40),
-    borderRadius: rw(12),
+    width: Math.max(rw(40), 44),
+    height: Math.max(rw(40), 44),
+    borderRadius: Math.max(rw(12), 12),
     backgroundColor: ResponsiveTheme.colors.surface,
     justifyContent: "center",
     alignItems: "center",

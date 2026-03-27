@@ -1,14 +1,15 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { persist } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { safeAsyncStorage } from "../../utils/safeAsyncStorage";
+import { createDebouncedStorage } from "../../utils/safeAsyncStorage";
 import type { HealthDataState } from "./types";
-import { initialState } from "./state";
+import { initialState, initialMetrics } from "./state";
 import { createHealthKitActions } from "./healthkit-actions";
 import { createHealthConnectActions } from "./healthconnect-actions";
 import { createGoogleFitActions } from "./googlefit-actions";
 import { createAdvancedFeatures } from "./advanced-features";
 import { createGeneralActions } from "./utils";
+import { getLocalDateString } from "../../utils/weekUtils";
 
 export const useHealthDataStore = create<HealthDataState>()(
   persist(
@@ -22,7 +23,7 @@ export const useHealthDataStore = create<HealthDataState>()(
     }),
     {
       name: "fitai-health-data-store",
-      storage: createJSONStorage(() => safeAsyncStorage),
+      storage: createDebouncedStorage(),
       partialize: (state) => ({
         metrics: state.metrics,
         settings: state.settings,
@@ -30,6 +31,15 @@ export const useHealthDataStore = create<HealthDataState>()(
         isHealthConnectAuthorized: state.isHealthConnectAuthorized,
         lastSyncTime: state.lastSyncTime,
       }),
+      onRehydrateStorage: () => (state, error) => {
+        if (!state || error) return;
+        // Reset daily metrics (steps, activeCalories) if lastSyncTime is from a previous day.
+        // Prevents yesterday's step count from showing as today's before HealthKit syncs.
+        const lastSync = state.lastSyncTime;
+        if (lastSync && getLocalDateString(lastSync) !== getLocalDateString()) {
+          state.metrics = { ...initialMetrics };
+        }
+      },
     },
   ),
 );

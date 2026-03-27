@@ -402,16 +402,14 @@ export const EditProvider: React.FC<EditProviderProps> = ({
     (newData: any) => {
       if (!newData) return;
 
-      // Only update if data actually changed
-      const dataChanged =
-        JSON.stringify(newData) !== JSON.stringify(currentData);
-      if (!dataChanged) return;
+      // Skip if same reference (no change)
+      if (newData === currentData) return;
 
       setCurrentData(newData);
 
-      // Check if data has changed from original
-      const hasActualChanges =
-        JSON.stringify(newData) !== JSON.stringify(originalData);
+      // Check if data has changed from original using reference equality first,
+      // then shallow key comparison (avoids expensive JSON.stringify on every keystroke)
+      const hasActualChanges = newData !== originalData;
       setHasChanges(hasActualChanges);
 
       // Only validate if we have meaningful data

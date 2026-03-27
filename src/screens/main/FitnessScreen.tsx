@@ -5,21 +5,34 @@
  * Refactored to use useFitnessLogic hook for better maintainability.
  */
 
-import React, { useMemo } from "react";
-import { View, StyleSheet, RefreshControl, Text, Platform } from "react-native";
+import React, { useMemo, useCallback } from "react";
+import {
+  View,
+  StyleSheet,
+  RefreshControl,
+  Text,
+  Platform,
+  Pressable,
+} from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
-import { WorkoutStartDialog, WorkoutDetailsDialog } from "../../components/ui/CustomDialog";
+import {
+  WorkoutStartDialog,
+  WorkoutDetailsDialog,
+} from "../../components/ui/CustomDialog";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rh, rf, rp, rbr } from "../../utils/responsive";
 import { useFitnessStore } from "../../stores/fitnessStore";
 import { DayWorkout } from "../../types/ai";
 import { findCompletedSessionForWorkout } from "../../utils/workoutIdentity";
-import { getCurrentWeekStart } from "../../utils/weekUtils";
+import {
+  getCurrentWeekStart,
+  getWeekStartForDate,
+} from "../../utils/weekUtils";
 
 // Hook
 import { useFitnessLogic } from "../../hooks/useFitnessLogic";
@@ -35,31 +48,147 @@ import {
 } from "./fitness";
 import { PlanSection } from "../../components/fitness/PlanSection";
 import { GuestSignUpScreen } from "./GuestSignUpScreen";
+import { DeloadModal } from "../../features/workouts/components/DeloadModal";
 
 import { FitnessNavigation } from "../../hooks/useFitnessLogic";
 import type { DayName } from "../../stores/appStateStore";
+import type { CompletedSession } from "../../stores/fitness/types";
+import type { WeeklyWorkoutPlan } from "../../types/ai";
+
+/** Memoized sub-component for each workout card inside the .map() loop */
+interface WorkoutCardItemProps {
+  workout: DayWorkout;
+  index: number;
+  isLast: boolean;
+  completedSessions: CompletedSession[];
+  weeklyWorkoutPlan: WeeklyWorkoutPlan | null;
+  currentWeekStart: string;
+  workoutProgress: Record<
+    string,
+    { progress?: number; caloriesBurned?: number; completedAt?: string }
+  >;
+  onStartWorkout: (workout: DayWorkout) => void;
+  onViewDetails: (workout: DayWorkout) => void;
+  onRecoveryTips: () => void;
+  selectedDay: DayName;
+  isToday: boolean;
+}
+
+const WorkoutCardItem = React.memo<WorkoutCardItemProps>(
+  ({
+    workout,
+    index,
+    isLast,
+    completedSessions,
+    weeklyWorkoutPlan,
+    currentWeekStart,
+    workoutProgress,
+    onStartWorkout,
+    onViewDetails,
+    onRecoveryTips,
+    selectedDay,
+    isToday,
+  }) => {
+    const completedSession = findCompletedSessionForWorkout({
+      completedSessions,
+      workout,
+      plan: weeklyWorkoutPlan,
+      weekStart: currentWeekStart,
+    });
+    const isCompleted = !!completedSession;
+    const progressEntry = workoutProgress[workout.id];
+    const hasStaleCompletedProgress =
+      progressEntry?.progress === 100 &&
+      !!progressEntry.completedAt &&
+      getWeekStartForDate(progressEntry.completedAt) !== currentWeekStart;
+    const progress = isCompleted
+      ? 100
+      : hasStaleCompletedProgress
+        ? 0
+        : Math.min(progressEntry?.progress || 0, 99);
+    const partialCalories =
+      progressEntry?.caloriesBurned ?? completedSession?.caloriesBurned;
+
+    const handleStart = useCallback(
+      () => onStartWorkout(workout),
+      [onStartWorkout, workout],
+    );
+    const handleViewDetails = useCallback(
+      () => onViewDetails(workout),
+      [onViewDetails, workout],
+    );
+
+    return (
+      <View style={{ marginBottom: isLast ? 0 : 16 }}>
+        <TodayWorkoutCard
+          workout={workout}
+          isRestDay={false}
+          isCompleted={isCompleted}
+          progress={progress}
+          displayCalories={progress > 0 ? partialCalories : undefined}
+          onStartWorkout={handleStart}
+          onViewDetails={handleViewDetails}
+          onRecoveryTips={onRecoveryTips}
+          selectedDay={selectedDay}
+          isToday={isToday}
+        />
+      </View>
+    );
+  },
+);
 
 interface FitnessScreenProps {
   navigation: FitnessNavigation;
 }
 
-export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
+const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { state, actions, setShowGuestSignUp } = useFitnessLogic(navigation);
   const planError = useFitnessStore((s) => s.planError);
   const quickWorkouts = useQuickWorkouts(navigation);
   const currentWeekStart = getCurrentWeekStart();
 
+  // useCallback for non-map inline callbacks
+  const handleRestDayStart = useCallback(
+    () => actions.handleStartSelectedDayWorkout(),
+    [actions],
+  );
+  const handleRestDayViewDetails = useCallback(
+    () => actions.handleViewWorkoutDetails(),
+    [actions],
+  );
+  const handleGuestBack = useCallback(
+    () => setShowGuestSignUp(false),
+    [setShowGuestSignUp],
+  );
+  const handleGuestSignUpSuccess = useCallback(
+    () => setShowGuestSignUp(false),
+    [setShowGuestSignUp],
+  );
+
   const calendarWorkoutData = useMemo(() => {
-    const data: Record<string, { hasWorkout: boolean; isCompleted: boolean; isRestDay: boolean }> = {};
-    const dayKeys = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+    const data: Record<
+      string,
+      { hasWorkout: boolean; isCompleted: boolean; isRestDay: boolean }
+    > = {};
+    const dayKeys = [
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+      "sunday",
+    ];
     const restDayIndices = state.weeklyWorkoutPlan?.restDays || [];
     for (const dayKey of dayKeys) {
-      const workout = state.weeklyWorkoutPlan?.workouts?.find((w) => w.dayOfWeek === dayKey);
+      const workout = state.weeklyWorkoutPlan?.workouts?.find(
+        (w) => w.dayOfWeek === dayKey,
+      );
       const dayIndex = dayKeys.indexOf(dayKey);
       // Handle both number indices (Monday=0) and string day names from AI
       const isRestDay = restDayIndices.some((d: number | string) =>
-        typeof d === "string" ? d === dayKey : d === dayIndex
+        typeof d === "string" ? d === dayKey : d === dayIndex,
       );
       const completedSession = workout
         ? findCompletedSessionForWorkout({
@@ -69,25 +198,25 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
             weekStart: currentWeekStart,
           })
         : null;
-      const progress = workout
-        ? completedSession
-          ? 100
-          : (state.workoutProgress[workout.id]?.progress ?? 0)
-        : 0;
       data[dayKey] = {
         hasWorkout: !!workout && !isRestDay,
-        isCompleted: progress === 100,
+        isCompleted: !!completedSession,
         isRestDay,
       };
     }
     return data;
-  }, [state.weeklyWorkoutPlan, state.workoutProgress, state.completedSessions, currentWeekStart]);
+  }, [
+    state.weeklyWorkoutPlan,
+    state.workoutProgress,
+    state.completedSessions,
+    currentWeekStart,
+  ]);
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top"]}>
         <Animated.View
-          entering={Platform.OS !== 'web' ? FadeIn.duration(300) : undefined}
+          entering={Platform.OS !== "web" ? FadeIn.duration(300) : undefined}
           style={styles.animatedContainer}
         >
           <Animated.ScrollView
@@ -115,45 +244,37 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
             {/* 2. Selected Day's Workout Card (syncs with calendar selection) */}
             {state.weeklyWorkoutPlan && (
               <View style={styles.section}>
-                {state.selectedDayWorkouts && state.selectedDayWorkouts.length > 0 ? (
-                  state.selectedDayWorkouts.map((workout: DayWorkout, index: number) => {
-                    const completedSession = findCompletedSessionForWorkout({
-                      completedSessions: state.completedSessions,
-                      workout,
-                      plan: state.weeklyWorkoutPlan,
-                      weekStart: currentWeekStart,
-                    });
-                    const progress = completedSession
-                      ? 100
-                      : (state.workoutProgress[workout.id]?.progress || 0);
-                    const partialCalories =
-                      state.workoutProgress[workout.id]?.caloriesBurned ??
-                      completedSession?.caloriesBurned;
-                    return (
-                      <View key={workout.id || index} style={{ marginBottom: index < state.selectedDayWorkouts.length - 1 ? 16 : 0 }}>
-                        <TodayWorkoutCard
-                          workout={workout}
-                          isRestDay={false}
-                          isCompleted={progress === 100}
-                          progress={progress}
-                          displayCalories={progress > 0 ? partialCalories : undefined}
-                          onStartWorkout={() => actions.handleStartSelectedDayWorkout(workout)}
-                          onViewDetails={() => actions.handleViewWorkoutDetails(workout)}
-                          onRecoveryTips={actions.handleRecoveryTips}
-                          selectedDay={state.selectedDay}
-                          isToday={state.isSelectedDayToday}
-                        />
-                      </View>
-                    );
-                  })
+                {state.selectedDayWorkouts &&
+                state.selectedDayWorkouts.length > 0 ? (
+                  state.selectedDayWorkouts.map(
+                    (workout: DayWorkout, index: number) => (
+                      <WorkoutCardItem
+                        key={workout.id || index}
+                        workout={workout}
+                        index={index}
+                        isLast={index === state.selectedDayWorkouts.length - 1}
+                        completedSessions={state.completedSessions}
+                        weeklyWorkoutPlan={state.weeklyWorkoutPlan}
+                        currentWeekStart={currentWeekStart}
+                        workoutProgress={state.workoutProgress}
+                        onStartWorkout={actions.handleStartSelectedDayWorkout}
+                        onViewDetails={actions.handleViewWorkoutDetails}
+                        onRecoveryTips={actions.handleRecoveryTips}
+                        selectedDay={state.selectedDay}
+                        isToday={state.isSelectedDayToday}
+                      />
+                    ),
+                  )
                 ) : (
                   <TodayWorkoutCard
                     workout={null}
-                    isRestDay={state.isSelectedDayRestDay || !!state.weeklyWorkoutPlan}
+                    isRestDay={
+                      state.isSelectedDayRestDay || !!state.weeklyWorkoutPlan
+                    }
                     isCompleted={false}
                     progress={0}
-                    onStartWorkout={() => actions.handleStartSelectedDayWorkout()}
-                    onViewDetails={() => actions.handleViewWorkoutDetails()}
+                    onStartWorkout={handleRestDayStart}
+                    onViewDetails={handleRestDayViewDetails}
                     onRecoveryTips={actions.handleRecoveryTips}
                     selectedDay={state.selectedDay}
                     isToday={state.isSelectedDayToday}
@@ -182,6 +303,18 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
               profile={state.profile}
               onGeneratePlan={actions.generateWeeklyWorkoutPlan}
             />
+
+            {/* Custom Workouts entry point */}
+            <View style={styles.section}>
+              <Pressable
+                style={styles.templateLibraryButton}
+                onPress={() => navigation.navigate("TemplateLibrary")}
+                testID="template-library-button"
+              >
+                <Text style={styles.templateLibraryText}>My Workouts</Text>
+                <Text style={styles.templateLibraryArrow}>→</Text>
+              </Pressable>
+            </View>
 
             {/* 4. Workout History (from real data) */}
             <View style={styles.section}>
@@ -215,8 +348,8 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
         {state.showGuestSignUp && (
           <View style={styles.guestSignUpOverlay}>
             <GuestSignUpScreen
-              onBack={() => setShowGuestSignUp(false)}
-              onSignUpSuccess={() => setShowGuestSignUp(false)}
+              onBack={handleGuestBack}
+              onSignUpSuccess={handleGuestSignUpSuccess}
             />
           </View>
         )}
@@ -224,7 +357,10 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
         <WorkoutStartDialog
           visible={state.showWorkoutStartDialog}
           workoutTitle={state.selectedWorkout?.title || ""}
-          isResuming={state.selectedWorkout?.isResuming ?? (state.selectedWorkout?.resumeExerciseIndex ?? 0) > 0}
+          isResuming={
+            state.selectedWorkout?.isResuming ??
+            (state.selectedWorkout?.resumeExerciseIndex ?? 0) > 0
+          }
           onCancel={actions.handleWorkoutStartCancel}
           onConfirm={actions.handleWorkoutStartConfirm}
         />
@@ -243,7 +379,8 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
           duration={state.workoutDetailsWorkout?.duration ?? 0}
           calories={
             state.workoutDetailsWorkout
-              ? (state.workoutProgress[state.workoutDetailsWorkout.id]?.caloriesBurned ??
+              ? (state.workoutProgress[state.workoutDetailsWorkout.id]
+                  ?.caloriesBurned ??
                 findCompletedSessionForWorkout({
                   completedSessions: state.completedSessions,
                   workout: state.workoutDetailsWorkout,
@@ -256,10 +393,22 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
           exerciseCount={state.workoutDetailsWorkout?.exercises?.length ?? 0}
           onClose={actions.handleCloseWorkoutDetails}
         />
+
+        {state.proactiveDeload && (
+          <DeloadModal
+            visible={state.proactiveDeload.visible}
+            variant="proactive"
+            message={state.proactiveDeload.message}
+            onAccept={actions.dismissProactiveDeload}
+            onDismiss={actions.dismissProactiveDeload}
+          />
+        )}
       </SafeAreaView>
     </AuroraBackground>
   );
 };
+
+export const FitnessScreen = React.memo(FitnessScreenInner);
 
 const styles = StyleSheet.create({
   container: {
@@ -303,12 +452,32 @@ const styles = StyleSheet.create({
     lineHeight: rf(18),
   },
   guestSignUpOverlay: {
-    position: 'absolute' as const,
+    position: "absolute" as const,
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
     zIndex: 100,
+  },
+  templateLibraryButton: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
+    backgroundColor: "rgba(76, 175, 80, 0.12)",
+    borderRadius: rbr(12),
+    paddingVertical: rp(14),
+    paddingHorizontal: rp(16),
+    borderWidth: 1,
+    borderColor: "rgba(76, 175, 80, 0.3)",
+  },
+  templateLibraryText: {
+    fontSize: rf(15),
+    fontWeight: "600" as const,
+    color: "#4CAF50",
+  },
+  templateLibraryArrow: {
+    fontSize: rf(18),
+    color: "#4CAF50",
   },
 });
 

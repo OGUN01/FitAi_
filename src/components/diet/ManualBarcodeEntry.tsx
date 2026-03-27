@@ -1,86 +1,68 @@
-import React, { useState, useRef } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  ActivityIndicator,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
+  View,
 } from "react-native";
-import { ScannedProduct } from "@/services/barcodeService";
-import barcodeService from "@/services/barcodeService";
+import barcodeService, {
+  ProductLookupResult,
+} from "@/services/barcodeService";
 import { getCountryFromBarcode } from "@/utils/countryMapping";
 import { ResponsiveTheme } from "@/utils/constants";
-import { rf, rp, rbr } from "@/utils/responsive";
-
-// ─── Country flag mapping ────────────────────────────────────────────────────
-
-const COUNTRY_FLAGS: Record<string, string> = {
-  India: "🇮🇳",
-  USA: "🇺🇸",
-  Canada: "🇨🇦",
-  UK: "🇬🇧",
-  France: "🇫🇷",
-  Germany: "🇩🇪",
-  Japan: "🇯🇵",
-  China: "🇨🇳",
-  "South Korea": "🇰🇷",
-  Korea: "🇰🇷",
-  Brazil: "🇧🇷",
-  Australia: "🇦🇺",
-  "New Zealand": "🇳🇿",
-  "Saudi Arabia": "🇸🇦",
-  UAE: "🇦🇪",
-  Israel: "🇮🇱",
-  Taiwan: "🇹🇼",
-  Philippines: "🇵🇭",
-  Thailand: "🇹🇭",
-  Indonesia: "🇮🇩",
-  "South Africa": "🇿🇦",
-};
-
-// ─── Props ───────────────────────────────────────────────────────────────────
+import { rbr, rf, rp } from "@/utils/responsive";
 
 interface ManualBarcodeEntryProps {
-  onProductFound: (product: ScannedProduct) => void;
+  onLookupResolved: (result: ProductLookupResult) => void;
+  onRequestLabelScan: () => void;
+  onContributeProduct: (barcode: string) => void;
   onClose: () => void;
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
+const SUPPORTED_LENGTHS = new Set([6, 8, 12, 13]);
 
 export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
-  onProductFound,
+  onLookupResolved,
+  onRequestLabelScan,
+  onContributeProduct,
   onClose,
 }) => {
-  const [barcode, setBarcode] = useState<string>("");
-  const [isLooking, setIsLooking] = useState<boolean>(false);
+  const [barcode, setBarcode] = useState("");
+  const [isLooking, setIsLooking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastOutcome, setLastOutcome] = useState<
+    ProductLookupResult["outcome"] | null
+  >(null);
   const inputRef = useRef<TextInput>(null);
 
-  // ── Derived state ──────────────────────────────────────────────────────────
-
+  const cleanBarcode = barcode.trim();
   const countryName =
-    barcode.length >= 3 ? getCountryFromBarcode(barcode) : "Unknown";
-  const countryHint =
-    countryName !== "Unknown" && COUNTRY_FLAGS[countryName]
-      ? `${COUNTRY_FLAGS[countryName]} ${countryName}`
-      : null;
-  const canLookUp = barcode.length >= 8 && !isLooking;
+    cleanBarcode.length >= 3 ? getCountryFromBarcode(cleanBarcode) : "Unknown";
+  const canLookUp =
+    SUPPORTED_LENGTHS.has(cleanBarcode.length) && !isLooking && cleanBarcode.length > 0;
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
+  const helperCopy = useMemo(() => {
+    if (cleanBarcode.length === 0) {
+      return "Supported lengths: 6, 8, 12, or 13 digits.";
+    }
+    return `${cleanBarcode.length} digits entered`;
+  }, [cleanBarcode.length]);
 
   const handleChangeText = (value: string) => {
-    // Only allow numeric characters
     const numeric = value.replace(/[^0-9]/g, "");
     setBarcode(numeric);
-    if (error) setError(null);
+    setError(null);
+    setLastOutcome(null);
   };
 
   const handleClear = () => {
     setBarcode("");
     setError(null);
+    setLastOutcome(null);
     inputRef.current?.focus();
   };
 
@@ -89,28 +71,51 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
 
     setIsLooking(true);
     setError(null);
+    setLastOutcome(null);
 
     try {
-      const result = await barcodeService.lookupProduct(barcode);
+      const result = await barcodeService.lookupProduct(cleanBarcode);
 
-      if (result.success && result.product) {
-        onProductFound(result.product);
-      } else {
-        setError("Product not found. Try a different barcode.");
+      if (
+        (result.outcome === "authoritative_hit" ||
+          result.outcome === "weak_data") &&
+        result.product
+      ) {
+        onLookupResolved(result);
+        return;
+      }
+
+      setLastOutcome(result.outcome);
+      switch (result.outcome) {
+        case "invalid_scan":
+          setError(
+            result.error ||
+              "That code is not a supported packaged-food barcode.",
+          );
+          break;
+        case "transient_failure":
+          setError(
+            result.error ||
+              "Lookup failed before trusted sources completed. Retry or use a fallback.",
+          );
+          break;
+        case "not_found":
+          setError("Product not found in trusted packaged-food sources.");
+          break;
+        default:
+          setError("Unable to resolve that barcode.");
+          break;
       }
     } catch (err) {
-      setError("Product not found. Try a different barcode.");
+      setLastOutcome("transient_failure");
+      setError("Barcode lookup failed unexpectedly. Please try again.");
     } finally {
       setIsLooking(false);
     }
   };
 
-  const handleRetry = () => {
-    setError(null);
-    inputRef.current?.focus();
-  };
-
-  // ── Render ─────────────────────────────────────────────────────────────────
+  const showFallbackActions =
+    lastOutcome === "not_found" || lastOutcome === "transient_failure";
 
   return (
     <KeyboardAvoidingView
@@ -118,35 +123,31 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
       style={styles.keyboardAvoid}
     >
       <View style={styles.container}>
-        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Enter Barcode</Text>
           <TouchableOpacity
             onPress={onClose}
             style={styles.closeButton}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityLabel="Close"
             accessibilityRole="button"
           >
-            <Text style={styles.closeButtonText}>✕</Text>
+            <Text style={styles.closeButtonText}>X</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Subtitle */}
         <Text style={styles.subtitle}>
-          Type the barcode number printed on the product packaging
+          Type the barcode number printed on the package.
         </Text>
 
-        {/* Input row */}
         <View style={styles.inputRow}>
           <TextInput
             ref={inputRef}
             style={[styles.input, error ? styles.inputError : null]}
             value={barcode}
             onChangeText={handleChangeText}
-            keyboardType="numeric"
+            keyboardType="number-pad"
             maxLength={13}
-            placeholder="Enter barcode number..."
+            placeholder="Enter barcode number"
             placeholderTextColor={ResponsiveTheme.colors.textMuted}
             autoFocus
             returnKeyType="search"
@@ -159,45 +160,49 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
             <TouchableOpacity
               onPress={handleClear}
               style={styles.clearButton}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityLabel="Clear barcode"
               accessibilityRole="button"
             >
-              <Text style={styles.clearButtonText}>×</Text>
+              <Text style={styles.clearButtonText}>X</Text>
             </TouchableOpacity>
           )}
         </View>
 
-        {/* Country hint */}
-        {countryHint !== null && (
-          <View style={styles.countryHintRow}>
-            <Text style={styles.countryHintLabel}>Origin: </Text>
-            <Text style={styles.countryHintValue}>{countryHint}</Text>
-          </View>
-        )}
+        <View style={styles.metaRow}>
+          <Text style={styles.helperText}>{helperCopy}</Text>
+          {countryName !== "Unknown" ? (
+            <Text style={styles.countryText}>Origin: {countryName}</Text>
+          ) : null}
+        </View>
 
-        {/* Digit count hint */}
-        <Text style={styles.digitHint}>
-          {barcode.length === 0
-            ? "8–13 digits (EAN-8, UPC-A, EAN-13)"
-            : `${barcode.length} / 13 digits`}
-        </Text>
-
-        {/* Error state */}
-        {error !== null && (
-          <View style={styles.errorContainer}>
+        {error ? (
+          <View style={styles.errorCard}>
             <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity
-              onPress={handleRetry}
-              accessibilityLabel="Try again"
-              accessibilityRole="button"
-            >
-              <Text style={styles.retryLink}>Try Again</Text>
+            <TouchableOpacity onPress={() => inputRef.current?.focus()}>
+              <Text style={styles.retryLink}>Edit barcode</Text>
             </TouchableOpacity>
           </View>
-        )}
+        ) : null}
 
-        {/* Look Up button */}
+        {showFallbackActions ? (
+          <View style={styles.fallbackActions}>
+            <TouchableOpacity
+              style={styles.secondaryAction}
+              onPress={onRequestLabelScan}
+              accessibilityRole="button"
+            >
+              <Text style={styles.secondaryActionText}>Scan Label</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.secondaryAction}
+              onPress={() => onContributeProduct(cleanBarcode)}
+              accessibilityRole="button"
+            >
+              <Text style={styles.secondaryActionText}>Contribute Product</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         <TouchableOpacity
           style={[
             styles.lookUpButton,
@@ -214,7 +219,7 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
                 size="small"
                 color={ResponsiveTheme.colors.white}
               />
-              <Text style={styles.lookUpButtonText}>Looking up…</Text>
+              <Text style={styles.lookUpButtonText}>Looking up...</Text>
             </View>
           ) : (
             <Text
@@ -228,7 +233,6 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
           )}
         </TouchableOpacity>
 
-        {/* Cancel link */}
         <TouchableOpacity
           onPress={onClose}
           style={styles.cancelButton}
@@ -242,13 +246,10 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
   );
 };
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
   keyboardAvoid: {
     flex: 1,
   },
-
   container: {
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     borderRadius: ResponsiveTheme.borderRadius.xl,
@@ -256,22 +257,18 @@ const styles = StyleSheet.create({
     marginHorizontal: ResponsiveTheme.spacing.md,
     marginVertical: ResponsiveTheme.spacing.md,
   },
-
-  // Header
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: ResponsiveTheme.spacing.sm,
   },
-
   title: {
     fontSize: rf(18),
     fontWeight: "700",
     color: ResponsiveTheme.colors.text,
     letterSpacing: 0.3,
   },
-
   closeButton: {
     width: 32,
     height: 32,
@@ -280,22 +277,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
   closeButtonText: {
     fontSize: rf(14),
     color: ResponsiveTheme.colors.textSecondary,
     lineHeight: 16,
   },
-
-  // Subtitle
   subtitle: {
     fontSize: rf(13),
     color: ResponsiveTheme.colors.textSecondary,
     marginBottom: ResponsiveTheme.spacing.md,
     lineHeight: 18,
   },
-
-  // Input row
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -306,7 +298,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.md,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
-
   input: {
     flex: 1,
     height: 48,
@@ -315,11 +306,9 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     fontVariant: ["tabular-nums"],
   },
-
   inputError: {
     borderColor: ResponsiveTheme.colors.error,
   },
-
   clearButton: {
     width: 28,
     height: 28,
@@ -329,47 +318,28 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginLeft: ResponsiveTheme.spacing.xs,
   },
-
   clearButtonText: {
-    fontSize: rf(18),
+    fontSize: rf(14),
     color: ResponsiveTheme.colors.textSecondary,
-    lineHeight: 20,
-    includeFontPadding: false,
+    lineHeight: 16,
   },
-
-  // Country hint
-  countryHintRow: {
+  metaRow: {
     flexDirection: "row",
-    alignItems: "center",
-    marginTop: ResponsiveTheme.spacing.xs,
-    marginBottom: ResponsiveTheme.spacing.xs,
-    paddingHorizontal: rp(2),
+    justifyContent: "space-between",
+    gap: ResponsiveTheme.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
-
-  countryHintLabel: {
-    fontSize: rf(12),
+  helperText: {
+    flex: 1,
+    fontSize: rf(11),
     color: ResponsiveTheme.colors.textMuted,
   },
-
-  countryHintValue: {
-    fontSize: rf(13),
+  countryText: {
+    fontSize: rf(12),
     color: ResponsiveTheme.colors.secondary,
     fontWeight: "600",
   },
-
-  // Digit hint
-  digitHint: {
-    fontSize: rf(11),
-    color: ResponsiveTheme.colors.textMuted,
-    marginBottom: ResponsiveTheme.spacing.md,
-    paddingHorizontal: rp(2),
-  },
-
-  // Error state
-  errorContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  errorCard: {
     backgroundColor: ResponsiveTheme.colors.errorTint,
     borderRadius: ResponsiveTheme.borderRadius.sm,
     borderWidth: 1,
@@ -377,23 +347,37 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.sm,
     marginBottom: ResponsiveTheme.spacing.md,
+    gap: ResponsiveTheme.spacing.xs,
   },
-
   errorText: {
-    flex: 1,
     fontSize: rf(13),
     color: ResponsiveTheme.colors.error,
     lineHeight: 18,
   },
-
   retryLink: {
     fontSize: rf(13),
     fontWeight: "600",
     color: ResponsiveTheme.colors.primary,
-    marginLeft: ResponsiveTheme.spacing.sm,
   },
-
-  // Look Up button
+  fallbackActions: {
+    flexDirection: "row",
+    gap: ResponsiveTheme.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+  secondaryAction: {
+    flex: 1,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    alignItems: "center",
+  },
+  secondaryActionText: {
+    fontSize: rf(13),
+    fontWeight: "600",
+    color: ResponsiveTheme.colors.text,
+  },
   lookUpButton: {
     backgroundColor: ResponsiveTheme.colors.primary,
     borderRadius: ResponsiveTheme.borderRadius.md,
@@ -402,36 +386,29 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: ResponsiveTheme.spacing.sm,
   },
-
   lookUpButtonDisabled: {
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
   },
-
   lookUpButtonText: {
     fontSize: rf(16),
     fontWeight: "700",
     color: ResponsiveTheme.colors.white,
     letterSpacing: 0.5,
   },
-
   lookUpButtonTextDisabled: {
     color: ResponsiveTheme.colors.textMuted,
   },
-
   loadingRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: rp(8),
   },
-
-  // Cancel
   cancelButton: {
     alignItems: "center",
     paddingVertical: ResponsiveTheme.spacing.sm,
   },
-
   cancelText: {
     fontSize: rf(14),
     color: ResponsiveTheme.colors.textSecondary,

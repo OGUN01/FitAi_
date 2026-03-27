@@ -1,5 +1,9 @@
 import React from "react";
-import { fireEvent, render } from "@testing-library/react-native";
+import { fireEvent, render, waitFor } from "@testing-library/react-native";
+
+const screenMountCounts = {
+  diet: 0,
+};
 
 jest.mock("react-native", () => ({
   View: "View",
@@ -52,7 +56,30 @@ jest.mock("../../components/icons/TabIcons", () => {
 });
 
 jest.mock("../../components/navigation/TabBar", () => ({
-  TabBar: () => null,
+  TabBar: ({
+    tabs,
+    onTabPress,
+  }: {
+    tabs: Array<{ key: string; title: string }>;
+    onTabPress: (tab: string) => void;
+  }) => {
+    const React = require("react");
+    return React.createElement(
+      "View",
+      null,
+      ...tabs.map((tab) =>
+        React.createElement(
+          "Pressable",
+          {
+            key: tab.key,
+            onPress: () => onTabPress(tab.key),
+            testID: `tab-${tab.key}`,
+          },
+          React.createElement("Text", null, tab.title),
+        ),
+      ),
+    );
+  },
 }));
 
 jest.mock("../../utils/responsive", () => ({
@@ -179,6 +206,9 @@ jest.mock("../../screens/main/DietScreen", () => ({
     };
   }) => {
     const React = require("react");
+    React.useEffect(() => {
+      screenMountCounts.diet += 1;
+    }, []);
     return React.createElement(
       "View",
       null,
@@ -254,6 +284,10 @@ jest.mock("../../screens/main/ProfileScreen", () => ({
 import { MainNavigation } from "../../components/navigation/MainNavigation";
 
 describe("MainNavigation", () => {
+  beforeEach(() => {
+    screenMountCounts.diet = 0;
+  });
+
   it("routes cooking completion back to Diet with route params", () => {
     const screen = render(<MainNavigation initialTab="diet" />);
 
@@ -264,13 +298,15 @@ describe("MainNavigation", () => {
     expect(screen.getByTestId("diet-state").props.children).toBe("Diet Completed");
   });
 
-  it("routes Settings navigation into the profile settings surface", () => {
+  it("routes Settings navigation into the profile settings surface", async () => {
     const screen = render(<MainNavigation initialTab="diet" />);
 
     fireEvent.press(screen.getByTestId("open-settings"));
-    expect(screen.getByTestId("profile-state").props.children).toBe(
-      "Profile Settings:notifications",
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId("profile-state").props.children).toBe(
+        "Profile Settings:notifications",
+      );
+    });
   });
 
   it("passes Home quick-action intent params through to the Diet screen", () => {
@@ -278,5 +314,56 @@ describe("MainNavigation", () => {
 
     fireEvent.press(screen.getByTestId("open-water-quick-action"));
     expect(screen.getByTestId("diet-state").props.children).toBe("Diet Water Modal");
+  });
+
+  it("switches tabs through the tab bar press handler", async () => {
+    const screen = render(<MainNavigation initialTab="home" />);
+
+    expect(screen.getByText("Home Screen")).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId("tab-diet"));
+    await waitFor(() => {
+      expect(screen.getByTestId("diet-state").props.children).toBe("Diet Screen");
+    });
+
+    fireEvent.press(screen.getByTestId("tab-profile"));
+    await waitFor(() => {
+      expect(screen.getByTestId("profile-state").props.children).toBe("Profile Screen");
+    });
+  });
+
+  it("keeps the Diet tab mounted after it has been visited", async () => {
+    const screen = render(<MainNavigation initialTab="home" />);
+
+    fireEvent.press(screen.getByTestId("tab-diet"));
+    await waitFor(() => {
+      expect(screenMountCounts.diet).toBe(1);
+    });
+
+    fireEvent.press(screen.getByTestId("tab-home"));
+    fireEvent.press(screen.getByTestId("tab-diet"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("diet-state").props.children).toBe("Diet Screen");
+      expect(screenMountCounts.diet).toBe(1);
+    });
+  });
+
+  it("clears stale profile settings params on a normal Profile tab open", async () => {
+    const screen = render(<MainNavigation initialTab="diet" />);
+
+    fireEvent.press(screen.getByTestId("open-settings"));
+    await waitFor(() => {
+      expect(screen.getByTestId("profile-state").props.children).toBe(
+        "Profile Settings:notifications",
+      );
+    });
+
+    fireEvent.press(screen.getByTestId("tab-home"));
+    fireEvent.press(screen.getByTestId("tab-profile"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("profile-state").props.children).toBe("Profile Screen");
+    });
   });
 });

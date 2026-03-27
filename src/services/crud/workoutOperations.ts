@@ -33,8 +33,14 @@ export async function createWorkoutSession(
 
     await syncWorkoutSessionToSupabase(session);
   } catch (error) {
-    console.error("❌ Failed to create workout session:", error);
-    console.error("Session data:", JSON.stringify(session, null, 2));
+    console.error(
+      "❌ Failed to create workout session:",
+      error,
+      "| id:",
+      session?.id,
+      "workoutId:",
+      session?.workoutId,
+    );
     throw error;
   }
 }
@@ -65,7 +71,7 @@ async function syncWorkoutSessionToSupabase(
         completed_at: session.completedAt,
         duration: session.duration ?? null,
         total_duration_minutes: session.duration ?? null,
-        calories_burned: session.caloriesBurned ?? null,
+        calories_burned: session.caloriesBurned ?? 0,
         exercises: session.exercises,
         exercises_completed: session.exercises,
         notes: session.notes || "",
@@ -94,9 +100,9 @@ async function syncWorkoutSessionToSupabase(
           plan_slot_key: planIdentity.planSlotKey || null,
           started_at: session.startedAt,
           completed_at: session.completedAt,
-          duration: session.duration ?? null,
-          total_duration_minutes: session.duration ?? null,
-          calories_burned: session.caloriesBurned ?? null,
+          duration: session.duration ?? 0,
+          total_duration_minutes: session.duration ?? 0,
+          calories_burned: session.caloriesBurned ?? 0,
           exercises: session.exercises,
           exercises_completed: session.exercises,
           notes: session.notes || "",
@@ -125,9 +131,9 @@ async function syncWorkoutSessionToSupabase(
         plan_slot_key: planIdentity.planSlotKey || null,
         started_at: session.startedAt,
         completed_at: session.completedAt,
-        duration: session.duration ?? null,
-        total_duration_minutes: session.duration ?? null,
-        calories_burned: session.caloriesBurned ?? null,
+        duration: session.duration ?? 0,
+        total_duration_minutes: session.duration ?? 0,
+        calories_burned: session.caloriesBurned ?? 0,
         exercises: session.exercises,
         exercises_completed: session.exercises,
         notes: session.notes || "",

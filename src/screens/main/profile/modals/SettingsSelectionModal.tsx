@@ -91,6 +91,8 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
                     onPress={onClose}
                     scaleValue={0.9}
                     style={styles.closeBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Close ${title}`}
                   >
                     <Ionicons
                       name="close"
@@ -233,9 +235,9 @@ const styles = StyleSheet.create({
     marginTop: rp(2),
   },
   closeBtn: {
-    width: rw(32),
-    height: rw(32),
-    borderRadius: rw(16),
+    width: Math.max(rw(32), 44),
+    height: Math.max(rw(32), 44),
+    borderRadius: Math.max(rw(16), 22),
     backgroundColor: "rgba(255, 255, 255, 0.08)",
     justifyContent: "center",
     alignItems: "center",
@@ -253,6 +255,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
+    minHeight: 44,
     borderRadius: ResponsiveTheme.borderRadius.lg,
     backgroundColor: "rgba(255, 255, 255, 0.03)",
   },

@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-import { safeAsyncStorage } from "../utils/safeAsyncStorage";
+import { persist } from "zustand/middleware";
+import { createDebouncedStorage } from "../utils/safeAsyncStorage";
 import { getLocalDateString, getLocalDayName } from "../utils/weekUtils";
 
 /**
@@ -112,7 +112,7 @@ export const useAppStateStore = create<AppStateState>()(
     }),
     {
       name: "fitai-app-state-storage",
-      storage: createJSONStorage(() => safeAsyncStorage),
+      storage: createDebouncedStorage(),
       // selectedDay is intentionally NOT persisted - always resets to today on app load
       partialize: (_state) => ({
       }),

@@ -79,6 +79,8 @@ export const BMRInfoModal: React.FC<BMRInfoModalProps> = ({
                 style={styles.closeButton}
                 onPress={onClose}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel="Close BMR info"
               >
                 <Ionicons
                   name="close"
@@ -176,7 +178,12 @@ export const BMRInfoModal: React.FC<BMRInfoModalProps> = ({
             </ScrollView>
 
             {/* Action Button */}
-            <TouchableOpacity style={styles.actionButton} onPress={onClose}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="I understand"
+            >
               <Text style={styles.actionButtonText}>I Understand</Text>
             </TouchableOpacity>
           </View>
@@ -230,7 +237,10 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.text,
   },
   closeButton: {
-    padding: rp(4),
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
   },
   scrollContent: {
     maxHeight: rh(400),
@@ -343,7 +353,9 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.primary,
     borderRadius: rbr(12),
     paddingVertical: rp(14),
+    minHeight: 44,
     alignItems: "center",
+    justifyContent: "center",
     marginTop: rp(16),
   },
   actionButtonText: {

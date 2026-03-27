@@ -54,20 +54,26 @@ export class FoodService {
     protein: number;
     carbs: number;
     fat: number;
+    fiber: number;
   }> {
     let totalCalories = 0;
     let totalProtein = 0;
     let totalCarbs = 0;
     let totalFat = 0;
+    let totalFiber = 0;
 
     for (const foodItem of foods) {
-      const { data: food } = await supabase
+      const { data: food, error: foodError } = await supabase
         .from("foods")
         .select(
-          "calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g",
+          "calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g",
         )
         .eq("id", foodItem.food_id)
         .maybeSingle();
+
+      if (foodError) {
+        console.error("[food-service] Failed to fetch food record:", foodError);
+      }
 
       if (food) {
         const multiplier = foodItem.quantity_grams / 100;
@@ -75,6 +81,7 @@ export class FoodService {
         totalProtein += food.protein_per_100g * multiplier;
         totalCarbs += food.carbs_per_100g * multiplier;
         totalFat += food.fat_per_100g * multiplier;
+        totalFiber += (food.fiber_per_100g || 0) * multiplier;
       }
     }
 
@@ -83,6 +90,7 @@ export class FoodService {
       protein: Math.round(totalProtein * 10) / 10,
       carbs: Math.round(totalCarbs * 10) / 10,
       fat: Math.round(totalFat * 10) / 10,
+      fiber: Math.round(totalFiber * 10) / 10,
     };
   }
 }

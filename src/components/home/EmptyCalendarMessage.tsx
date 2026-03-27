@@ -10,7 +10,7 @@ interface EmptyCalendarMessageProps {
   onPlanWorkout?: () => void;
 }
 
-export const EmptyCalendarMessage: React.FC<EmptyCalendarMessageProps> = ({
+export const EmptyCalendarMessage: React.FC<EmptyCalendarMessageProps> = React.memo(({
   weekCalendarData,
   onPlanWorkout,
 }) => {
@@ -35,6 +35,8 @@ export const EmptyCalendarMessage: React.FC<EmptyCalendarMessageProps> = ({
               style={styles.ctaButton}
               onPress={onPlanWorkout}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Plan your first workout"
             >
               <Ionicons name="calendar-outline" size={rf(16)} color={ResponsiveTheme.colors.white} />
               <Text style={styles.ctaText}>Plan Workout</Text>
@@ -45,7 +47,7 @@ export const EmptyCalendarMessage: React.FC<EmptyCalendarMessageProps> = ({
     );
   }
   return null;
-};
+});
 
 const styles = StyleSheet.create({
   card: {
@@ -80,10 +82,12 @@ const styles = StyleSheet.create({
   ctaButton: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: rp(6),
     backgroundColor: ResponsiveTheme.colors.primary,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingVertical: ResponsiveTheme.spacing.sm,
+    minHeight: 44,
     borderRadius: ResponsiveTheme.borderRadius.full,
   },
   ctaText: {

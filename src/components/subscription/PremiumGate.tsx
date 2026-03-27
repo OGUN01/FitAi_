@@ -23,7 +23,7 @@ interface PremiumGateProps {
 
 const FEATURE_MESSAGES: Record<FeatureKey, string> = {
   ai_generation: "You've reached your AI generation limit this month",
-  barcode_scan: "You've reached your daily food scan limit",
+  barcode_scan: "You've reached your daily AI food scan limit",
 };
 
 const PremiumGate: React.FC<PremiumGateProps> = ({

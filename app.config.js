@@ -109,7 +109,7 @@ export default {
     },
     plugins: [
       "expo-font",
-      "react-native-health-connect",
+      "./plugins/withFitAiHealthConnect",
       [
         "expo-notifications",
         {
@@ -135,7 +135,8 @@ export default {
           },
         },
       ],
-      ["expo-camera", { "cameraPermission": "Allow FitAI to use your camera for barcode scanning and food recognition", "recordAudioAndroid": false }]
+      ["expo-camera", { "cameraPermission": "Allow FitAI to use your camera for barcode scanning and food recognition", "recordAudioAndroid": false }],
+      ["expo-image-picker", { "cameraPermission": "Allow FitAI to use your camera to scan nutrition labels" }]
     ],
     extra: {
       eas: {

@@ -5,11 +5,11 @@ import {
   TouchableOpacity,
   Pressable,
   StyleSheet,
-  Animated,
   LayoutAnimation,
   StyleProp,
   ViewStyle,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../ui";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rp, rbr, rw, rs } from "../../utils/responsive";
@@ -29,7 +29,7 @@ interface ExerciseCardProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export const ExerciseCard: React.FC<ExerciseCardProps> = ({
+export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
   exercise,
   workoutSet,
   exerciseNumber,
@@ -78,16 +78,31 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
     return colors[group.toLowerCase()] || ResponsiveTheme.colors.primary;
   };
 
-  const getDifficultyIcon = (difficulty: string) => {
+  const getDifficultyIcon = (
+    difficulty: string,
+  ): keyof typeof Ionicons.glyphMap => {
     switch (difficulty) {
       case "beginner":
-        return "🟢";
+        return "ellipse";
       case "intermediate":
-        return "🟡";
+        return "ellipse";
       case "advanced":
-        return "🔴";
+        return "ellipse";
       default:
-        return "⚪";
+        return "ellipse-outline";
+    }
+  };
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "beginner":
+        return ResponsiveTheme.colors.success;
+      case "intermediate":
+        return ResponsiveTheme.colors.warning;
+      case "advanced":
+        return ResponsiveTheme.colors.error;
+      default:
+        return ResponsiveTheme.colors.textMuted;
     }
   };
 
@@ -102,10 +117,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
     >
       <View style={styles.cardContent}>
         <View style={styles.header}>
-          <Pressable
-            onPress={handleToggleExpand}
-            style={styles.headerPressable}
-          >
+          <Pressable onPress={handleToggleExpand} style={styles.headerPressable}>
             <View style={styles.exerciseNumber}>
               <Text style={styles.exerciseNumberText}>{exerciseNumber}</Text>
             </View>
@@ -121,15 +133,15 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               </Text>
               <View style={styles.metaRow}>
                 <Text style={styles.metaText}>
-                  {workoutSet.sets} sets × {formatReps(workoutSet.reps)} reps
+                  {workoutSet.sets} sets x {formatReps(workoutSet.reps)} reps
                 </Text>
                 {workoutSet.weight && (
-                  <Text style={styles.metaText}> • {workoutSet.weight}kg</Text>
+                  <Text style={styles.metaText}> - {workoutSet.weight}kg</Text>
                 )}
                 {workoutSet.duration && (
                   <Text style={styles.metaText}>
                     {" "}
-                    • {formatTime(workoutSet.duration)}
+                    - {formatTime(workoutSet.duration)}
                   </Text>
                 )}
               </View>
@@ -139,17 +151,24 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           <View style={styles.statusSection}>
             {isCompleted ? (
               <View style={styles.completedBadge}>
-                <Text style={styles.completedIcon}>✓</Text>
+                <Ionicons
+                  name="checkmark"
+                  size={rf(16)}
+                  color={ResponsiveTheme.colors.white}
+                />
               </View>
             ) : (
               <TouchableOpacity style={styles.playButton} onPress={onStart}>
-                <Text style={styles.playIcon}>▶️</Text>
+                <Ionicons
+                  name="play"
+                  size={rf(14)}
+                  color={ResponsiveTheme.colors.textSecondary}
+                />
               </TouchableOpacity>
             )}
           </View>
         </View>
 
-        {/* Timer Display */}
         {showTimer && remainingTime > 0 && (
           <View style={styles.timerSection}>
             <View style={styles.timerDisplay}>
@@ -160,22 +179,28 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           </View>
         )}
 
-        {/* Expanded Content */}
         {isExpanded && (
           <View style={styles.expandedContent}>
-            {/* Exercise Details */}
             <View style={styles.detailsSection}>
               <View style={styles.detailRow}>
-                <Text style={styles.detailIcon}>🎯</Text>
+                <Ionicons
+                  name={getDifficultyIcon(exercise.difficulty)}
+                  size={rf(14)}
+                  color={getDifficultyColor(exercise.difficulty)}
+                  style={styles.detailIcon}
+                />
                 <Text style={styles.detailLabel}>Difficulty:</Text>
-                <Text style={styles.detailValue}>
-                  {getDifficultyIcon(exercise.difficulty)} {exercise.difficulty}
-                </Text>
+                <Text style={styles.detailValue}>{exercise.difficulty}</Text>
               </View>
 
               {workoutSet.restTime && (
                 <View style={styles.detailRow}>
-                  <Text style={styles.detailIcon}>⏱️</Text>
+                  <Ionicons
+                    name="time-outline"
+                    size={rf(14)}
+                    color={ResponsiveTheme.colors.textSecondary}
+                    style={styles.detailIcon}
+                  />
                   <Text style={styles.detailLabel}>Rest time:</Text>
                   <Text style={styles.detailValue}>
                     {formatTime(workoutSet.restTime)}
@@ -185,7 +210,12 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
               {exercise.calories && (
                 <View style={styles.detailRow}>
-                  <Text style={styles.detailIcon}>🔥</Text>
+                  <Ionicons
+                    name="flame-outline"
+                    size={rf(14)}
+                    color={ResponsiveTheme.colors.textSecondary}
+                    style={styles.detailIcon}
+                  />
                   <Text style={styles.detailLabel}>Calories:</Text>
                   <Text style={styles.detailValue}>
                     {exercise.calories} per set
@@ -194,7 +224,6 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               )}
             </View>
 
-            {/* Muscle Groups */}
             {exercise.muscleGroups && exercise.muscleGroups.length > 0 && (
               <View style={styles.muscleGroupsSection}>
                 <Text style={styles.sectionTitle}>Target Muscles</Text>
@@ -216,16 +245,12 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               </View>
             )}
 
-            {/* Equipment */}
             {exercise.equipment && exercise.equipment.length > 0 && (
               <View style={styles.equipmentSection}>
                 <Text style={styles.sectionTitle}>Equipment Needed</Text>
                 <View style={styles.equipmentContainer}>
                   {exercise.equipment.map((item) => (
-                    <View
-                      key={`equipment-${item}`}
-                      style={styles.equipmentChip}
-                    >
+                    <View key={`equipment-${item}`} style={styles.equipmentChip}>
                       <Text style={styles.equipmentText}>
                         {item.replace("_", " ")}
                       </Text>
@@ -235,7 +260,6 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               </View>
             )}
 
-            {/* Instructions */}
             {exercise.instructions && exercise.instructions.length > 0 && (
               <View style={styles.instructionsSection}>
                 <Text style={styles.sectionTitle}>Instructions</Text>
@@ -251,22 +275,20 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               </View>
             )}
 
-            {/* Tips */}
             {exercise.tips && exercise.tips.length > 0 && (
               <View style={styles.tipsSection}>
-                <Text style={styles.sectionTitle}>💡 Tips</Text>
+                <Text style={styles.sectionTitle}>Tips</Text>
                 {exercise.tips.map((tip) => (
                   <Text
                     key={`tip-${tip.substring(0, 30)}`}
                     style={styles.tipText}
                   >
-                    • {tip}
+                    - {tip}
                   </Text>
                 ))}
               </View>
             )}
 
-            {/* Action Buttons */}
             <View style={styles.actionButtons}>
               {!isCompleted ? (
                 <TouchableOpacity
@@ -277,7 +299,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                 </TouchableOpacity>
               ) : (
                 <View style={styles.completedStatus}>
-                  <Text style={styles.completedStatusText}>✓ Completed</Text>
+                  <Text style={styles.completedStatusText}>Completed</Text>
                 </View>
               )}
             </View>
@@ -285,12 +307,16 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         )}
 
         <Pressable onPress={handleToggleExpand} style={styles.expandIndicator}>
-          <Text style={styles.expandIcon}>{isExpanded ? "▲" : "▼"}</Text>
+          <Ionicons
+            name={isExpanded ? "chevron-up" : "chevron-down"}
+            size={rf(14)}
+            color={ResponsiveTheme.colors.textMuted}
+          />
         </Pressable>
       </View>
     </Card>
   );
-};
+});
 
 const styles = StyleSheet.create({
   card: {
@@ -372,12 +398,6 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
   },
 
-  completedIcon: {
-    color: ResponsiveTheme.colors.white,
-    fontSize: rf(16),
-    fontWeight: "bold",
-  },
-
   playButton: {
     width: 44,
     height: 44,
@@ -385,10 +405,6 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: "center" as const,
     alignItems: "center" as const,
-  },
-
-  playIcon: {
-    fontSize: rf(14),
   },
 
   timerSection: {
@@ -427,7 +443,6 @@ const styles = StyleSheet.create({
   },
 
   detailIcon: {
-    fontSize: rf(16),
     marginRight: ResponsiveTheme.spacing.sm,
     width: rw(20),
   },
@@ -568,10 +583,5 @@ const styles = StyleSheet.create({
   expandIndicator: {
     alignItems: "center" as const,
     marginTop: ResponsiveTheme.spacing.sm,
-  },
-
-  expandIcon: {
-    fontSize: rf(12),
-    color: ResponsiveTheme.colors.textMuted,
   },
 });

@@ -18,7 +18,7 @@ export const ExerciseDetails: React.FC<ExerciseDetailsProps> = ({
   if (!exercise) {
     return (
       <View style={styles.noDataContainer}>
-        <Text style={styles.noDataEmoji}>❓</Text>
+        <Text style={styles.noDataEmoji}>?</Text>
         <Text style={styles.noDataText}>No exercise details available</Text>
       </View>
     );
@@ -26,10 +26,9 @@ export const ExerciseDetails: React.FC<ExerciseDetailsProps> = ({
 
   return (
     <View style={styles.detailsContainer}>
-      {/* Target Muscles */}
       {exercise.targetMuscles.length > 0 && (
         <View style={styles.detailSection}>
-          <Text style={styles.detailSectionTitle}>🎯 Primary Muscles</Text>
+          <Text style={styles.detailSectionTitle}>Primary Muscles</Text>
           <View style={styles.chipContainer}>
             {exercise.targetMuscles.map((muscle) => (
               <View
@@ -43,11 +42,10 @@ export const ExerciseDetails: React.FC<ExerciseDetailsProps> = ({
         </View>
       )}
 
-      {/* Secondary Muscles */}
       {exercise.secondaryMuscles?.length &&
         exercise.secondaryMuscles.length > 0 && (
           <View style={styles.detailSection}>
-            <Text style={styles.detailSectionTitle}>💪 Secondary Muscles</Text>
+            <Text style={styles.detailSectionTitle}>Secondary Muscles</Text>
             <View style={styles.chipContainer}>
               {exercise.secondaryMuscles.map((muscle) => (
                 <View
@@ -61,10 +59,9 @@ export const ExerciseDetails: React.FC<ExerciseDetailsProps> = ({
           </View>
         )}
 
-      {/* Equipment */}
       {exercise.equipments.length > 0 && (
         <View style={styles.detailSection}>
-          <Text style={styles.detailSectionTitle}>🏋️ Equipment Needed</Text>
+          <Text style={styles.detailSectionTitle}>Equipment Needed</Text>
           <View style={styles.chipContainer}>
             {exercise.equipments.map((equipment) => (
               <View
@@ -78,10 +75,9 @@ export const ExerciseDetails: React.FC<ExerciseDetailsProps> = ({
         </View>
       )}
 
-      {/* Body Parts */}
       {exercise.bodyParts.length > 0 && (
         <View style={styles.detailSection}>
-          <Text style={styles.detailSectionTitle}>🦴 Body Parts</Text>
+          <Text style={styles.detailSectionTitle}>Body Parts</Text>
           <View style={styles.chipContainer}>
             {exercise.bodyParts.map((bodyPart) => (
               <View
@@ -95,21 +91,20 @@ export const ExerciseDetails: React.FC<ExerciseDetailsProps> = ({
         </View>
       )}
 
-      {/* Exercise Tips */}
       <View style={styles.detailSection}>
-        <Text style={styles.detailSectionTitle}>💡 Tips</Text>
+        <Text style={styles.detailSectionTitle}>Tips</Text>
         <View style={styles.tipContainer}>
           <Text style={styles.tipText}>
-            • Focus on proper form over speed or weight
+            - Focus on proper form over speed or weight
           </Text>
           <Text style={styles.tipText}>
-            • Control the movement throughout the full range of motion
+            - Control the movement throughout the full range of motion
           </Text>
           <Text style={styles.tipText}>
-            • Breathe properly - exhale on exertion, inhale on release
+            - Breathe properly - exhale on exertion, inhale on release
           </Text>
           <Text style={styles.tipText}>
-            • Stop if you feel pain or discomfort
+            - Stop if you feel pain or discomfort
           </Text>
         </View>
       </View>

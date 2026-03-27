@@ -2,19 +2,32 @@ import React from "react";
 import { Modal, View, StyleSheet } from "react-native";
 import { FoodRecognitionPanel } from "./FoodRecognitionPanel";
 import MealTypeSelector from "./MealTypeSelector";
-import AIMealsPanel from "./AIMealsPanel";
 import JobStatusIndicator from "./JobStatusIndicator";
 import CreateRecipeModal from "./CreateRecipeModal";
-import { BarcodeScannerPanel } from "./BarcodeScannerPanel";
 import { ResponsiveTheme } from "../../utils/constants";
 
 interface DietModalsProps {
   showCamera: boolean;
-  cameraMode: "food" | "barcode" | "progress" | string;
+  cameraMode: "food" | "barcode" | "progress" | "label" | string;
   onHandleCameraCapture: (uri: string) => Promise<void>;
-  handleBarcodeScanned: (data: string) => Promise<void>;
+  onHandleLabelCapture: (uri: string) => Promise<void>;
+  handleBarcodeScanned: (
+    barcode: string,
+    rawSymbology?: string,
+    rawBarcode?: string,
+  ) => Promise<void>;
+  handleLabelLibraryPick: () => Promise<void>;
+  handleBarcodeCameraClose: () => void;
   setShowCamera: (show: boolean) => void;
   setCameraMode: (mode: any) => void;
+  barcodeCameraState?: "idle" | "decoding" | "lookup_in_progress" | "transient_retry" | "resolved";
+  barcodeStatusMessage?: string | null;
+  barcodeInlineActions?: Array<{
+    id: string;
+    label: string;
+    onPress: () => void;
+    variant?: "primary" | "secondary" | "ghost";
+  }>;
   portionData: any;
   showPortionAdjustment: boolean;
   setShowPortionAdjustment: (show: boolean) => void;
@@ -28,21 +41,12 @@ interface DietModalsProps {
   showMealTypeSelector: boolean;
   handleMealTypeSelected: (type: any) => void;
   setShowMealTypeSelector: (show: boolean) => void;
-  showAIMealsPanel: boolean;
-  setShowAIMealsPanel: (show: boolean) => void;
-  onGenerateAIMeal: (type: string, options?: any) => Promise<void>;
-  isGeneratingMeal: boolean;
   userProfile: any;
   asyncJob: any;
   cancelAsyncGeneration: () => void;
   showCreateRecipe: boolean;
   setShowCreateRecipe: (show: boolean) => void;
   handleRecipeCreated: (recipe: any) => void;
-  scannedProduct: any;
-  showProductModal: boolean;
-  setShowProductModal: (show: boolean) => void;
-  productHealthAssessment: any;
-  onHandleAddProductToMeal: (product: any) => Promise<void> | void;
   portionGrams?: number | null;
   setPortionGrams?: (grams: number | null) => void;
 }
@@ -54,9 +58,15 @@ export const DietModals: React.FC<DietModalsProps> = (props) => {
         showCamera={props.showCamera}
         cameraMode={props.cameraMode}
         onHandleCameraCapture={props.onHandleCameraCapture}
+        onHandleLabelCapture={props.onHandleLabelCapture}
         handleBarcodeScanned={props.handleBarcodeScanned}
+        handleLabelLibraryPick={props.handleLabelLibraryPick}
+        handleBarcodeCameraClose={props.handleBarcodeCameraClose}
         setShowCamera={props.setShowCamera}
         setCameraMode={props.setCameraMode}
+        barcodeCameraState={props.barcodeCameraState}
+        barcodeStatusMessage={props.barcodeStatusMessage}
+        barcodeInlineActions={props.barcodeInlineActions}
         portionData={props.portionData}
         showPortionAdjustment={props.showPortionAdjustment}
         setShowPortionAdjustment={props.setShowPortionAdjustment}
@@ -75,14 +85,6 @@ export const DietModals: React.FC<DietModalsProps> = (props) => {
         visible={props.showMealTypeSelector}
         onSelect={props.handleMealTypeSelected}
         onClose={() => props.setShowMealTypeSelector(false)}
-      />
-
-      <AIMealsPanel
-        visible={props.showAIMealsPanel}
-        onClose={() => props.setShowAIMealsPanel(false)}
-        onGenerateMeal={props.onGenerateAIMeal}
-        isGenerating={props.isGeneratingMeal}
-        profile={props.userProfile}
       />
 
       {props.asyncJob && (
@@ -114,14 +116,6 @@ export const DietModals: React.FC<DietModalsProps> = (props) => {
         onClose={() => props.setShowCreateRecipe(false)}
         onRecipeCreated={props.handleRecipeCreated}
         profile={props.userProfile}
-      />
-
-      <BarcodeScannerPanel
-        scannedProduct={props.scannedProduct}
-        showProductModal={props.showProductModal}
-        setShowProductModal={props.setShowProductModal}
-        productHealthAssessment={props.productHealthAssessment}
-        onHandleAddProductToMeal={props.onHandleAddProductToMeal}
       />
     </>
   );

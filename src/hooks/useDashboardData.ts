@@ -254,7 +254,7 @@ export const useTodaysWorkout = () => {
           total +
           (completedSession
             ? 100
-            : (workoutProgress[workout.id]?.progress ?? 0))
+            : Math.min(workoutProgress[workout.id]?.progress ?? 0, 99))
         );
       }, 0) / Math.max(todaysWorkouts.length, 1),
     );
@@ -289,7 +289,13 @@ export const useTodaysNutrition = () => {
     if (!weeklyMealPlan?.meals) {
       return {
         meals: [],
-        consumedNutrition: { calories: 0, protein: 0, carbs: 0, fat: 0 },
+        consumedNutrition: {
+          calories: 0,
+          protein: 0,
+          carbs: 0,
+          fat: 0,
+          fiber: 0,
+        },
         mealsCompleted: 0,
       };
     }

@@ -21,23 +21,14 @@
  * 11. Weekly Calendar
  */
 
-import React from "react";
-import {
-  View,
-  StyleSheet,
-  Animated,
-  RefreshControl,
-  Platform,
-} from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
-import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
-import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
-import { ResponsiveTheme } from "../../utils/constants";
-import { rh } from "../../utils/responsive";
-import { GuestSignUpScreen } from "./GuestSignUpScreen";
+import React, { useCallback } from 'react';
+import { View, StyleSheet, Animated, RefreshControl, Platform } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
+import { AuroraSpinner } from '../../components/ui/aurora/AuroraSpinner';
+import { ResponsiveTheme } from '../../utils/constants';
+import { rh } from '../../utils/responsive';
+import { GuestSignUpScreen } from './GuestSignUpScreen';
 import {
   HomeHeader,
   GuestPromptBanner,
@@ -55,28 +46,28 @@ import {
   EmptyCalendarMessage,
   createQuickActions,
   AchievementShowcase,
-} from "./home";
-import { WeightEntryModal } from "../../components/progress/WeightEntryModal";
-import { useHomeLogic } from "../../hooks/useHomeLogic";
-import { useAppStateStore, type DayName } from "../../stores/appStateStore";
-import { useAchievementStore } from "../../stores/achievementStore";
-import { buildAchievementViewModels } from "../../utils/achievementViewModel";
-import { getLocalDayName } from "../../utils/weekUtils";
+} from './home';
+import { WeightEntryModal } from '../../components/progress/WeightEntryModal';
+import { useHomeLogic } from '../../hooks/useHomeLogic';
+import { useAppStateStore, type DayName } from '../../stores/appStateStore';
+import { useAchievementStore } from '../../stores/achievementStore';
+import { buildAchievementViewModels } from '../../utils/achievementViewModel';
+import { getLocalDayName } from '../../utils/weekUtils';
 
-import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
+import { crossPlatformAlert } from '../../utils/crossPlatformAlert';
 interface HomeScreenProps {
   // eslint-disable-next-line no-unused-vars
   onNavigateToTab?: (tab: string, params?: Record<string, unknown>) => void;
 }
 
 const DAY_NAMES: DayName[] = [
-  "sunday",
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
+  'sunday',
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
 ];
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
@@ -94,10 +85,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     userName,
     isGuestMode,
     realStreak,
-    userAge,
     healthMetrics,
     wearableConnected,
     realCaloriesBurned,
+    currentSteps,
+    currentStepsSource,
     actualCaloriesGoal,
     todaysWorkoutInfo,
     todaysData,
@@ -120,17 +112,56 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   const userAchievements = useAchievementStore((s) => s.userAchievements);
   const achievementItems = React.useMemo(
     () => buildAchievementViewModels(achievements, userAchievements),
-    [achievements, userAchievements],
+    [achievements, userAchievements]
   );
-  const achievementPreview = React.useMemo(
-    () => achievementItems.slice(0, 6),
-    [achievementItems],
-  );
+  const achievementPreview = React.useMemo(() => achievementItems.slice(0, 6), [achievementItems]);
   const totalBadges = React.useMemo(
-    () =>
-      achievementItems.filter((achievement) => achievement.completed).length,
-    [achievementItems],
+    () => achievementItems.filter((achievement) => achievement.completed).length,
+    [achievementItems]
   );
+
+  // --- useCallback: child component prop callbacks ---
+  const handleGuestBack = useCallback(() => setShowGuestSignUp(false), []);
+  const handleGuestSignUpSuccess = useCallback(() => setShowGuestSignUp(false), []);
+  const handleProfilePress = useCallback(() => onNavigateToTab?.('profile'), [onNavigateToTab]);
+  const handleNotificationPress = useCallback(
+    () => onNavigateToTab?.('profile', { settingsScreen: 'notifications' }),
+    [onNavigateToTab]
+  );
+  const handleStreakPress = useCallback(() => onNavigateToTab?.('achievements'), [onNavigateToTab]);
+  const handleMotivationPress = useCallback(() => onNavigateToTab?.('analytics'), [onNavigateToTab]);
+  const handleGuestSignUpPress = useCallback(() => setShowGuestSignUp(true), []);
+  const handleHealthHubPress = useCallback(() => onNavigateToTab?.('analytics'), [onNavigateToTab]);
+  const handleRingsPress = useCallback(() => onNavigateToTab?.('analytics'), [onNavigateToTab]);
+  const handleLogMealPress = useCallback(
+    () => onNavigateToTab?.('diet', { openLogMeal: true }),
+    [onNavigateToTab]
+  );
+  const handleWorkoutPress = useCallback(() => onNavigateToTab?.('fitness'), [onNavigateToTab]);
+  const handleHydrationPress = useCallback(
+    () => onNavigateToTab?.('diet', { openWaterModal: true }),
+    [onNavigateToTab]
+  );
+  const handleBodyProgressPress = useCallback(() => onNavigateToTab?.('progress'), [onNavigateToTab]);
+  const handleLogWeight = useCallback(() => setShowWeightModal(true), []);
+  const handleViewAllAchievements = useCallback(() => onNavigateToTab?.('achievements'), [onNavigateToTab]);
+  const handlePlanWorkout = useCallback(() => onNavigateToTab?.('fitness'), [onNavigateToTab]);
+  const handleDayPress = useCallback(
+    (date: Date) => {
+      const dayName = getLocalDayName(date);
+      if (DAY_NAMES.includes(dayName as DayName)) {
+        setSelectedDay(dayName as DayName);
+      }
+      onNavigateToTab?.('fitness');
+    },
+    [setSelectedDay, onNavigateToTab]
+  );
+  const handleViewFullCalendar = useCallback(() => onNavigateToTab?.('fitness'), [onNavigateToTab]);
+  const handleWeightModalClose = useCallback(() => setShowWeightModal(false), []);
+  const handleWeightModalSuccess = useCallback(() => {
+    setShowWeightModal(false);
+    handleRefresh();
+  }, [handleRefresh]);
 
   const quickActions = React.useMemo(
     () =>
@@ -138,49 +169,41 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         isHealthKitAuthorized: healthMetrics?.sources ? true : false,
         isHealthConnectAuthorized: healthMetrics?.sources ? true : false,
         syncHealthData:
-          Platform.OS === "web"
+          Platform.OS === 'web'
             ? async () => {
                 crossPlatformAlert(
-                  "Health Sync",
-                  "Health sync is only available on iOS/Android. Open the app on your phone to sync.",
+                  'Health Sync',
+                  'Health sync is only available on iOS/Android. Open the app on your phone to sync.'
                 );
               }
             : syncHealthData,
         syncFromHealthConnect:
-          Platform.OS === "web"
+          Platform.OS === 'web'
             ? async () => {
                 crossPlatformAlert(
-                  "Health Sync",
-                  "Health sync is only available on iOS/Android. Open the app on your phone to sync.",
+                  'Health Sync',
+                  'Health sync is only available on iOS/Android. Open the app on your phone to sync.'
                 );
               }
             : async (days: number) => {
                 await syncFromHealthConnect(days);
               },
         onLogWeight: () => setShowWeightModal(true),
-        onScanFood: () => onNavigateToTab?.("diet", { openScanFood: true }),
-        onLogMeal: () => onNavigateToTab?.("diet", { openLogMeal: true }),
-        onLogWater: () => onNavigateToTab?.("diet", { openWaterModal: true }),
-        onBarcodeScan: () =>
-          onNavigateToTab?.("diet", { openBarcodeOptions: true }),
-        onScanLabel: () =>
-          onNavigateToTab?.("diet", { openLabelScanPrep: true }),
-        onRecipes: () => onNavigateToTab?.("diet", { openCreateRecipe: true }),
+        onScanFood: () => onNavigateToTab?.('diet', { openScanFood: true }),
+        onLogMeal: () => onNavigateToTab?.('diet', { openLogMeal: true }),
+        onLogWater: () => onNavigateToTab?.('diet', { openWaterModal: true }),
+        onBarcodeScan: () => onNavigateToTab?.('diet', { openBarcodeOptions: true }),
+        onScanLabel: () => onNavigateToTab?.('diet', { openLabelScanPrep: true }),
+        onRecipes: () => onNavigateToTab?.('diet', { openCreateRecipe: true }),
       }),
-    [
-      healthMetrics,
-      setShowWeightModal,
-      onNavigateToTab,
-      syncHealthData,
-      syncFromHealthConnect,
-    ],
+    [healthMetrics, setShowWeightModal, onNavigateToTab, syncHealthData, syncFromHealthConnect]
   );
 
   if (showGuestSignUp) {
     return (
       <GuestSignUpScreen
-        onBack={() => setShowGuestSignUp(false)}
-        onSignUpSuccess={() => setShowGuestSignUp(false)}
+        onBack={handleGuestBack}
+        onSignUpSuccess={handleGuestSignUpSuccess}
       />
     );
   }
@@ -188,9 +211,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   if (isLoading) {
     return (
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <AuroraSpinner size="lg" />
         </View>
       </AuroraBackground>
@@ -200,10 +221,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   return (
     <>
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
-        <SafeAreaView style={styles.container} edges={["top"]}>
-          <Animated.View
-            style={[styles.animatedContainer, { opacity: fadeAnim }]}
-          >
+        <SafeAreaView style={styles.container} edges={['top']}>
+          <Animated.View style={[styles.animatedContainer, { opacity: fadeAnim }]}>
             <Animated.ScrollView
               style={styles.scrollView}
               showsVerticalScrollIndicator={false}
@@ -222,16 +241,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 userName={userName} // SSOT: from profileStore via useHomeLogic
                 userInitial={userName.charAt(0)}
                 streak={realStreak}
-                onProfilePress={() => onNavigateToTab?.("profile")}
-                onNotificationPress={() =>
-                  crossPlatformAlert("Notifications", "No new notifications")
-                }
-                onStreakPress={() =>
-                  crossPlatformAlert(
-                    "Streak",
-                    `${realStreak} day streak! Keep going!`,
-                  )
-                }
+                onProfilePress={handleProfilePress}
+                onNotificationPress={handleNotificationPress}
+                onStreakPress={handleStreakPress}
               />
 
               {/* Error Banner */}
@@ -239,17 +251,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
 
               {/* 2. Motivation Banner */}
               <View style={styles.section}>
-                <MotivationBanner
-                  onPress={() => onNavigateToTab?.("analytics")}
-                />
+                <MotivationBanner onPress={handleMotivationPress} />
               </View>
 
               {/* Guest Banner */}
               {isGuestMode && (
                 <View style={styles.section}>
-                  <GuestPromptBanner
-                    onSignUpPress={() => setShowGuestSignUp(true)}
-                  />
+                  <GuestPromptBanner onSignUpPress={handleGuestSignUpPress} />
                 </View>
               )}
 
@@ -260,30 +268,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   sleepQuality={healthMetrics?.sleepQuality} // NO FALLBACK - single source
                   restingHeartRate={healthMetrics?.restingHeartRate}
                   hrTrend={
-                    healthMetrics?.restingHeartRate &&
-                    healthMetrics.restingHeartRate < 65
-                      ? "down"
-                      : "stable"
+                    healthMetrics?.restingHeartRate && healthMetrics.restingHeartRate < 65
+                      ? 'down'
+                      : 'stable'
                   }
                   steps={healthMetrics?.steps}
                   stepsGoal={healthMetrics?.stepsGoal} // NO HARDCODED - from healthDataStore
                   activeCalories={healthMetrics?.activeCalories} // NO FALLBACK - single source
-                  age={userAge}
-                  onPress={() => onNavigateToTab?.("analytics")}
-                  onDetailPress={(metric) => {
-                    if (metric === "heart")
-                      crossPlatformAlert(
-                        "Heart Rate",
-                        "Detailed heart rate data",
-                      );
-                    else if (metric === "sleep")
-                      crossPlatformAlert("Sleep", "Detailed sleep analysis");
-                    else if (metric === "quality")
-                      crossPlatformAlert(
-                        "Sleep Quality",
-                        "Sleep quality reflects your recovery readiness",
-                      );
-                  }}
+                  onPress={handleHealthHubPress}
+                  onDetailPress={handleHealthHubPress}
                 />
               </View>
 
@@ -291,9 +284,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
               <View style={styles.section}>
                 <DailyProgressRings
                   caloriesBurned={realCaloriesBurned}
-                  caloriesGoal={
-                    calculatedMetrics?.calculatedTDEE ?? actualCaloriesGoal
-                  } // TDEE for burn goal
+                  caloriesGoal={calculatedMetrics?.calculatedTDEE ?? actualCaloriesGoal} // TDEE for burn goal
                   workoutMinutes={workoutMinutes}
                   workoutGoal={
                     // Single source of truth: today's actual scheduled workout duration.
@@ -304,19 +295,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                     30
                   }
                   mealsLogged={caloriesConsumed}
-                  mealsGoal={
-                    calculatedMetrics?.dailyCalories ?? actualCaloriesGoal
-                  } // Intake target for nutrition goal
-                  steps={healthMetrics?.steps ?? 0} // From Health Connect/HealthKit - TODAY only
+                  mealsGoal={calculatedMetrics?.dailyCalories ?? actualCaloriesGoal} // Intake target for nutrition goal
+                  steps={currentSteps} // Only use wearable steps when the synced snapshot is from today
                   stepsGoal={healthMetrics?.stepsGoal ?? 10000} // Default 10k steps if not set
-                  stepsSource={healthMetrics?.sources?.steps} // Data source attribution
-                  onPress={() => onNavigateToTab?.("analytics")}
+                  stepsSource={currentStepsSource} // Hide stale source attribution with stale metrics
+                  onPress={handleRingsPress}
                 />
                 <EmptyMealsMessage
                   mealsLogged={caloriesConsumed}
-                  onLogMeal={() =>
-                    onNavigateToTab?.("diet", { openLogMeal: true })
-                  }
+                  onLogMeal={handleLogMealPress}
                 />
                 {/* Wearable Sync Status */}
                 {wearableConnected && (
@@ -338,28 +325,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                     workoutType: (() => {
                       const t = todaysWorkoutInfo.workoutType;
                       if (
-                        t === "strength" ||
-                        t === "cardio" ||
-                        t === "flexibility" ||
-                        t === "hiit" ||
-                        t === "mixed"
+                        t === 'strength' ||
+                        t === 'cardio' ||
+                        t === 'flexibility' ||
+                        t === 'hiit' ||
+                        t === 'mixed'
                       )
                         return t;
                       return undefined;
                     })(),
                     workout: todaysWorkoutInfo.workout
                       ? {
-                          title: todaysWorkoutInfo.workout.title ?? "",
+                          title: todaysWorkoutInfo.workout.title ?? '',
                           duration: todaysWorkoutInfo.workout.duration ?? 0,
-                          estimatedCalories:
-                            todaysWorkoutInfo.workout.estimatedCalories ?? 0,
-                          exercises:
-                            todaysWorkoutInfo.workout.exercises?.length,
+                          estimatedCalories: todaysWorkoutInfo.workout.estimatedCalories ?? 0,
+                          exercises: todaysWorkoutInfo.workout.exercises?.length,
                         }
                       : undefined,
                   }}
                   workoutProgress={todaysData?.progress?.workoutProgress} // NO FALLBACK
-                  onWorkoutPress={() => onNavigateToTab?.("fitness")}
+                  onWorkoutPress={handleWorkoutPress}
                 />
               </View>
               {/* 6. Quick Actions - Unique utilities */}
@@ -373,9 +358,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   currentIntake={waterIntakeML}
                   dailyGoal={waterGoal ?? 0}
                   onAddWater={handleAddWater}
-                  onPress={() =>
-                    onNavigateToTab?.("diet", { openWaterModal: true })
-                  }
+                  onPress={handleHydrationPress}
                 />
               </View>
 
@@ -387,14 +370,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   startingWeight={weightData.startingWeight}
                   weightHistory={weightData.weightHistory}
                   unit={weightUnit}
-                  onPress={() => onNavigateToTab?.("progress")}
-                  onPhotoPress={() =>
-                    crossPlatformAlert(
-                      "Progress Photo",
-                      "Take or view progress photos",
-                    )
-                  }
-                  onLogWeight={() => setShowWeightModal(true)}
+                  onPress={handleBodyProgressPress}
+                  onLogWeight={handleLogWeight}
                 />
               </View>
 
@@ -404,32 +381,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   achievements={achievementPreview}
                   totalBadges={totalBadges}
                   totalAchievements={achievementItems.length}
-                  onViewAll={() => onNavigateToTab?.("achievements")}
-                  onAchievementPress={(achievement) => {
-                    crossPlatformAlert("Achievement", achievement.title);
-                  }}
+                  onViewAll={handleViewAllAchievements}
+                  onAchievementPress={handleViewAllAchievements}
                 />
               </View>
 
               <View style={styles.section}>
                 <EmptyCalendarMessage
                   weekCalendarData={weekCalendarData}
-                  onPlanWorkout={() => onNavigateToTab?.("fitness")}
+                  onPlanWorkout={handlePlanWorkout}
                 />
-                {weekCalendarData &&
-                  !weekCalendarData.every((d) => !d.hasWorkout) && (
-                    <WeeklyMiniCalendar
-                      weekData={weekCalendarData}
-                      onDayPress={(date) => {
-                        const dayName = getLocalDayName(date);
-                        if (DAY_NAMES.includes(dayName as DayName)) {
-                          setSelectedDay(dayName as DayName);
-                        }
-                        onNavigateToTab?.("fitness");
-                      }}
-                      onViewFullCalendar={() => onNavigateToTab?.("fitness")}
-                    />
-                  )}
+                {weekCalendarData && !weekCalendarData.every((d) => !d.hasWorkout) && (
+                  <WeeklyMiniCalendar
+                    weekData={weekCalendarData}
+                    onDayPress={handleDayPress}
+                    onViewFullCalendar={handleViewFullCalendar}
+                  />
+                )}
               </View>
 
               {/* Bottom Spacing */}
@@ -442,13 +410,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
       {/* Weight Entry Modal */}
       <WeightEntryModal
         visible={showWeightModal}
-        onClose={() => setShowWeightModal(false)}
+        onClose={handleWeightModalClose}
         currentWeight={weightData.currentWeight}
         unit={weightUnit}
-        onSuccess={() => {
-          setShowWeightModal(false);
-          handleRefresh();
-        }}
+        onSuccess={handleWeightModalSuccess}
       />
     </>
   );

@@ -9,23 +9,19 @@ import { rf, rp, rh, rw, rs } from "../../utils/responsive";
 
 interface DietScreenHeaderProps {
   isGeneratingPlan: boolean;
-  isGeneratingMeal: boolean;
+  hasPlan?: boolean;
   onGenerateWeeklyPlan: () => void;
-  onGenerateDailyPlan: () => void;
   handleSearchFood: () => void;
-  trackBStatus: { isConnected: boolean };
   selectedDate: Date;
   onPrevDay: () => void;
   onNextDay: () => void;
 }
 
-export const DietScreenHeader: React.FC<DietScreenHeaderProps> = ({
+export const DietScreenHeader: React.FC<DietScreenHeaderProps> = React.memo(({
   isGeneratingPlan,
-  isGeneratingMeal,
+  hasPlan,
   onGenerateWeeklyPlan,
-  onGenerateDailyPlan,
   handleSearchFood,
-  trackBStatus,
   selectedDate,
   onPrevDay,
   onNextDay,
@@ -77,36 +73,21 @@ export const DietScreenHeader: React.FC<DietScreenHeaderProps> = ({
       {/* Action buttons row */}
       <View style={styles.headerButtons}>
         <AnimatedPressable
-          style={[styles.aiButton, styles.aiButtonSecondary, isGeneratingPlan ? styles.aiButtonDisabled : undefined] as any}
+          style={[styles.aiButton, isGeneratingPlan ? styles.aiButtonDisabled : undefined] as any}
           onPress={onGenerateWeeklyPlan}
           disabled={isGeneratingPlan}
           scaleValue={0.95}
           accessibilityRole="button"
-          accessibilityLabel="Generate weekly plan"
+          accessibilityLabel={hasPlan ? "Refresh weekly plan" : "Generate weekly plan"}
         >
           {isGeneratingPlan ? (
             <AuroraSpinner size="sm" theme="white" />
           ) : (
             <View style={styles.buttonInner}>
-              <Ionicons name="calendar-outline" size={rf(13)} color={ResponsiveTheme.colors.primary} />
-              <Text style={[styles.aiButtonText, styles.aiButtonTextSecondary]}>Week</Text>
-            </View>
-          )}
-        </AnimatedPressable>
-        <AnimatedPressable
-          style={[styles.aiButton, isGeneratingMeal ? styles.aiButtonDisabled : undefined] as any}
-          onPress={onGenerateDailyPlan}
-          disabled={isGeneratingMeal}
-          scaleValue={0.95}
-          accessibilityRole="button"
-          accessibilityLabel="Generate daily plan"
-        >
-          {isGeneratingMeal ? (
-            <AuroraSpinner size="sm" theme="white" />
-          ) : (
-            <View style={styles.buttonInner}>
-              <Ionicons name="today-outline" size={rf(13)} color={ResponsiveTheme.colors.white} />
-              <Text style={styles.aiButtonText}>Day</Text>
+              <Ionicons name="calendar-outline" size={rf(13)} color={ResponsiveTheme.colors.white} />
+              <Text style={styles.aiButtonText}>
+                {hasPlan ? "Refresh Week" : "Generate Week"}
+              </Text>
             </View>
           )}
         </AnimatedPressable>
@@ -122,7 +103,7 @@ export const DietScreenHeader: React.FC<DietScreenHeaderProps> = ({
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   header: {
@@ -146,8 +127,8 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
   },
   dateNavButton: {
-    width: rw(36),
-    height: rh(36),
+    width: Math.max(rw(44), 44),
+    height: Math.max(rh(44), 44),
     borderRadius: ResponsiveTheme.borderRadius.full,
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: "center",
@@ -187,6 +168,7 @@ const styles = StyleSheet.create({
   },
   aiButton: {
     flex: 1,
+    minHeight: 44,
     backgroundColor: ResponsiveTheme.colors.primary,
     paddingHorizontal: rp(14),
     paddingVertical: rp(8),
@@ -194,23 +176,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  aiButtonSecondary: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primary,
-  },
   aiButtonDisabled: { backgroundColor: ResponsiveTheme.colors.textMuted },
   aiButtonText: {
     color: ResponsiveTheme.colors.white,
     fontSize: rf(12),
     fontWeight: "600",
   },
-  aiButtonTextSecondary: {
-    color: ResponsiveTheme.colors.primary,
-  },
   addButton: {
-    width: rw(38),
-    height: rh(38),
+    width: Math.max(rw(44), 44),
+    height: Math.max(rh(44), 44),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     backgroundColor: ResponsiveTheme.colors.primary,
     justifyContent: "center",

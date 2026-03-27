@@ -3,7 +3,7 @@ import {
   Modal as RNModal,
   View,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   Dimensions,
   ViewStyle,
 } from "react-native";
@@ -55,24 +55,17 @@ export const Modal: React.FC<ModalProps> = ({
       statusBarTranslucent
     >
       <View style={[styles.overlay, overlayStyle, { paddingTop: insets.top }]}>
-        <TouchableOpacity
-          style={styles.overlayTouchable}
-          activeOpacity={1}
+        <Pressable
+          style={StyleSheet.absoluteFillObject}
           onPress={handleOverlayPress}
           accessibilityRole="button"
           accessibilityLabel="Dismiss modal"
-        >
-          <View style={[styles.container, style]}>
-            <TouchableOpacity
-              activeOpacity={1}
-              style={[styles.content, contentStyle]}
-              onPress={(e) => e.stopPropagation()}
-              accessibilityRole="none"
-            >
-              {children}
-            </TouchableOpacity>
+        />
+        <View style={[styles.container, style]} pointerEvents="box-none">
+          <View style={[styles.content, contentStyle]}>
+            {children}
           </View>
-        </TouchableOpacity>
+        </View>
       </View>
     </RNModal>
   );
@@ -109,31 +102,26 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
       statusBarTranslucent
     >
       <View style={[styles.overlay, overlayStyle, { paddingTop: insets.top }]}>
-        <TouchableOpacity
-          style={styles.overlayTouchable}
-          activeOpacity={1}
+        <Pressable
+          style={StyleSheet.absoluteFillObject}
           onPress={handleOverlayPress}
           accessibilityRole="button"
           accessibilityLabel="Dismiss modal"
-        >
-          <View style={styles.bottomSheetContainer}>
-            <TouchableOpacity
-              activeOpacity={1}
-              style={[
-                styles.bottomSheetContent,
-                {
-                  height: height as any,
-                  paddingBottom: insets.bottom + ResponsiveTheme.spacing.lg,
-                },
-              ]}
-              onPress={(e) => e.stopPropagation()}
-              accessibilityRole="none"
-            >
-              <View style={styles.bottomSheetHandle} />
-              {children}
-            </TouchableOpacity>
+        />
+        <View style={styles.bottomSheetContainer} pointerEvents="box-none">
+          <View
+            style={[
+              styles.bottomSheetContent,
+              {
+                height: height as any,
+                paddingBottom: insets.bottom + ResponsiveTheme.spacing.lg,
+              },
+            ]}
+          >
+            <View style={styles.bottomSheetHandle} />
+            {children}
           </View>
-        </TouchableOpacity>
+        </View>
       </View>
     </RNModal>
   );
@@ -144,11 +132,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: ResponsiveTheme.colors.overlayDark,
   },
-
-  overlayTouchable: {
-    flex: 1,
-  },
-
   container: {
     flex: 1,
     justifyContent: "center" as const,

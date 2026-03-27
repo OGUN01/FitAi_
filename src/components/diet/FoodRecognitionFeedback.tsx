@@ -137,7 +137,13 @@ export const FoodRecognitionFeedback: React.FC<
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Help Improve Recognition</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <TouchableOpacity
+            onPress={onClose}
+            style={styles.closeButton}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Close food recognition feedback"
+          >
             <Text style={styles.closeText}>✕</Text>
           </TouchableOpacity>
         </View>
@@ -362,9 +368,9 @@ const styles = StyleSheet.create({
   },
 
   closeButton: {
-    width: rw(32),
-    height: rh(32),
-    borderRadius: rbr(16),
+    width: Math.max(rw(32), 44),
+    height: Math.max(rh(32), 44),
+    borderRadius: Math.max(rbr(16), 22),
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",

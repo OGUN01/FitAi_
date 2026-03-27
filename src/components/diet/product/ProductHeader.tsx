@@ -7,6 +7,11 @@ interface ProductHeaderProps {
   product: ScannedProduct;
 }
 
+const getProductMetaLabel = (product: ScannedProduct): string =>
+  product.source === "vision-label"
+    ? "Source: Label scan"
+    : `Barcode: ${product.barcode}`;
+
 export const ProductHeader: React.FC<ProductHeaderProps> = ({ product }) => (
   <View style={styles.headerContainer}>
     {product.additionalInfo?.imageUrl && (
@@ -24,7 +29,7 @@ export const ProductHeader: React.FC<ProductHeaderProps> = ({ product }) => (
       {product.category && (
         <Text style={styles.productCategory}>{product.category}</Text>
       )}
-      <Text style={styles.barcodeText}>Barcode: {product.barcode}</Text>
+      <Text style={styles.barcodeText}>{getProductMetaLabel(product)}</Text>
     </View>
   </View>
 );

@@ -10,6 +10,7 @@ import {
   PersonalInfo,
   UserProfile,
 } from "../types/user";
+import { resolveCurrentWeightFromStores } from "../services/currentWeight";
 
 export interface LegacyDietPreferencesAdapter {
   allergies: string[];
@@ -59,7 +60,9 @@ export const buildLegacyPersonalInfo = ({
       personalInfo.name ||
       `${personalInfo.first_name || ""} ${personalInfo.last_name || ""}`.trim(),
     height: bodyAnalysis?.height_cm,
-    weight: bodyAnalysis?.current_weight_kg,
+    weight: resolveCurrentWeightFromStores({
+      bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
+    }).value ?? bodyAnalysis?.current_weight_kg,
     activityLevel: workoutPreferences?.activity_level,
   };
 };
