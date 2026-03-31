@@ -120,8 +120,6 @@ export {
 // Macro Calculator
 export {
   DietAdaptiveMacroCalculator,
-  getMinimumProtein,
-  getOptimalProteinForMuscleGain,
   macroCalculator,
 } from './calculators/macroCalculator';
 

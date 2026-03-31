@@ -86,6 +86,7 @@ export async function generateWeeklyWorkoutPlan(
   options: {
     bodyMetrics?: BodyMetrics;
     workoutPreferences?: WorkoutPreferences;
+    regenerationSeed?: number;
   } = {},
   updateMetadata: (metadata: AIServiceMetadata) => void,
 ): Promise<AIResponse<WeeklyWorkoutPlan>> {
@@ -102,6 +103,8 @@ export async function generateWeeklyWorkoutPlan(
         currentWeightKg: resolveCurrentWeightFromStores({
           bodyAnalysisWeight: options.bodyMetrics?.current_weight_kg,
         }).value,
+        weekNumber,
+        regenerationSeed: options.regenerationSeed,
       },
     );
 

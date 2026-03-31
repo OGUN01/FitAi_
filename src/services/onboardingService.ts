@@ -15,6 +15,7 @@ import {
   OnboardingProgressRow,
 } from "../types/onboarding";
 import { resolveCurrentWeightForUser } from "./currentWeight";
+import { normalizeCountryToISO } from "../utils/healthCalculations/autoDetection";
 
 // ============================================================================
 // PERSONAL INFO SERVICE
@@ -48,7 +49,7 @@ export class PersonalInfoService {
         name: fullName, // Computed full name with fallback
         age: data.age || 25, // NOT NULL - default to 25 if missing
         gender: data.gender || "prefer_not_to_say", // NOT NULL - safe default
-        country: data.country,
+        country: data.country ? normalizeCountryToISO(data.country) : data.country,
         state: data.state,
         region: data.region || null,
         wake_time: data.wake_time,
@@ -166,7 +167,7 @@ export class DietPreferencesService {
     try {
       const dietData: Partial<DietPreferencesRow> = {
         user_id: userId,
-        diet_type: data.diet_type || "omnivore", // NOT NULL - default to omnivore
+        diet_type: data.diet_type ?? "omnivore", // NOT NULL - only default if truly missing
         allergies: data.allergies || [], // NOT NULL - default to empty array
         restrictions: data.restrictions || [], // NOT NULL - default to empty array
 
@@ -255,7 +256,7 @@ export class DietPreferencesService {
       }
 
       const dietPreferences: DietPreferencesData = {
-        diet_type: data.diet_type || "non-veg",
+        diet_type: data.diet_type ?? "omnivore",
         allergies: data.allergies || [],
         restrictions: data.restrictions || [],
 
@@ -353,7 +354,11 @@ export class BodyAnalysisService {
         stress_level: data.stress_level || null,
 
         // Calculated values
-        bmi: data.bmi || null,
+        // BUG-49: bmi/bmr were always null because useReviewValidation stores them in
+        // calculatedData not bodyAnalysis. Compute BMI from measurements when not provided.
+        bmi: data.bmi || (data.current_weight_kg && data.height_cm
+          ? Math.round((data.current_weight_kg / Math.pow(data.height_cm / 100, 2)) * 10) / 10
+          : null),
         bmr: data.bmr || null,
         ideal_weight_min: data.ideal_weight_min || null,
         ideal_weight_max: data.ideal_weight_max || null,
@@ -418,8 +423,8 @@ export class BodyAnalysisService {
       const bodyAnalysis: BodyAnalysisData = {
         height_cm: data.height_cm, // NO FALLBACK - validation above ensures it exists
         current_weight_kg: data.current_weight_kg, // NO FALLBACK - validation above ensures it exists
-        target_weight_kg: data.target_weight_kg || undefined,
-        target_timeline_weeks: data.target_timeline_weeks || undefined,
+        target_weight_kg: data.target_weight_kg != null ? data.target_weight_kg : undefined,
+        target_timeline_weeks: data.target_timeline_weeks != null ? data.target_timeline_weeks : undefined,
 
         body_fat_percentage: data.body_fat_percentage || undefined,
         waist_cm: data.waist_cm || undefined,
@@ -577,7 +582,7 @@ export class WorkoutPreferencesService {
 export class AdvancedReviewService {
   /**
    * Calculate and save advanced review using Universal Health System
-   * This method integrates the HealthCalculatorFacade
+   * Uses ValidationEngine (SSOT) for all calorie/macro values and master-engine for body comp.
    */
   static async calculateAndSave(
     userId: string,
@@ -587,73 +592,78 @@ export class AdvancedReviewService {
     dietPreferences: DietPreferencesData,
   ): Promise<AdvancedReviewData | null> {
     try {
-      // Import facade dynamically to avoid circular dependencies
-      const { HealthCalculatorFacade } = await import(
-        "../utils/healthCalculations/HealthCalculatorFacade"
+      const { ValidationEngine } = await import("./validationEngine");
+      const { HealthCalculationEngine } = await import(
+        "../utils/healthCalculations/master-engine"
       );
 
-      // Build user profile from onboarding data
-      const userProfile = {
-        age: personalInfo.age,
-        gender: personalInfo.gender as
-          | "male"
-          | "female"
-          | "other"
-          | "prefer_not_to_say",
-        weight: bodyAnalysis.current_weight_kg,
-        height: bodyAnalysis.height_cm,
-        bodyFat: bodyAnalysis.body_fat_percentage,
-        country: personalInfo.country || "IN",
-        state: personalInfo.state,
-        fitnessLevel: workoutPreferences.intensity as
-          | "beginner"
-          | "intermediate"
-          | "advanced"
-          | "elite",
-        trainingYears: workoutPreferences.workout_experience_years,
-        activityLevel: workoutPreferences.activity_level,
-        dietType: dietPreferences.diet_type,
-        goal: workoutPreferences.primary_goals?.[0] || "maintenance",
-        restingHR: bodyAnalysis.body_fat_percentage ? undefined : undefined,
-      };
+      // Use ValidationEngine as SSOT for all calorie/macro values (mirrors useReviewValidation)
+      const validationResult = ValidationEngine.validateUserPlan(
+        personalInfo,
+        dietPreferences,
+        bodyAnalysis,
+        workoutPreferences,
+        { bypassDeficitLimit: true },
+      );
+      const m = validationResult.calculatedMetrics;
 
-      const metrics = HealthCalculatorFacade.calculateAllMetrics(
-        userProfile as any,
+      // Use master-engine for non-metabolic fields (HR zones, body comp, scores, etc.)
+      const extended = HealthCalculationEngine.calculateAllMetrics(
+        personalInfo,
+        dietPreferences,
+        bodyAnalysis,
+        workoutPreferences,
       );
 
-      // Map facade results to AdvancedReviewData
       const advancedReviewData: AdvancedReviewData = {
-        // Core metabolic calculations
-        calculated_bmi: metrics.bmi,
-        calculated_bmr: metrics.bmr,
-        calculated_tdee: metrics.tdee,
+        // Core metabolic — from ValidationEngine (SSOT)
+        calculated_bmi: extended.calculated_bmi,
+        calculated_bmr: m.bmr,
+        calculated_tdee: m.tdee,
+        metabolic_age: extended.metabolic_age,
+        daily_calories: Math.round(m.targetCalories),
+        daily_protein_g: m.protein,
+        daily_carbs_g: m.carbs,
+        daily_fat_g: m.fat,
+        daily_water_ml: extended.daily_water_ml,
 
-        // BMI classification
-        bmi_category: metrics.bmiClassification.category,
-        bmi_health_risk: metrics.bmiClassification.healthRisk,
+        // Body composition — from master-engine
+        healthy_weight_min: extended.healthy_weight_min,
+        healthy_weight_max: extended.healthy_weight_max,
+        weekly_weight_loss_rate: m.weeklyRate,
+        estimated_timeline_weeks: extended.estimated_timeline_weeks,
+        ideal_body_fat_min: extended.ideal_body_fat_min,
+        ideal_body_fat_max: extended.ideal_body_fat_max,
+        lean_body_mass: extended.lean_body_mass,
+        fat_mass: extended.fat_mass,
 
-        // Daily nutritional needs
-        daily_calories: Math.round(metrics.dailyCalories),
-        daily_protein_g: Math.round(metrics.protein),
-        daily_carbs_g: Math.round(metrics.carbs),
-        daily_fat_g: Math.round(metrics.fat),
-        daily_water_ml: Math.round(metrics.waterIntakeML),
+        // HR zones / fitness — from master-engine
+        estimated_vo2_max: extended.estimated_vo2_max,
+        target_hr_fat_burn_min: extended.target_hr_fat_burn_min,
+        target_hr_fat_burn_max: extended.target_hr_fat_burn_max,
+        target_hr_cardio_min: extended.target_hr_cardio_min,
+        target_hr_cardio_max: extended.target_hr_cardio_max,
+        target_hr_peak_min: extended.target_hr_peak_min,
+        target_hr_peak_max: extended.target_hr_peak_max,
+        recommended_workout_frequency: extended.recommended_workout_frequency,
+        recommended_cardio_minutes: extended.recommended_cardio_minutes,
+        recommended_strength_sessions: extended.recommended_strength_sessions,
 
-        // Auto-detection context
-        detected_climate: metrics.climate,
-        detected_ethnicity: metrics.ethnicity,
-        bmr_formula_used: metrics.bmrFormula,
+        // Scores — from master-engine
+        overall_health_score: extended.overall_health_score,
+        diet_readiness_score: extended.diet_readiness_score,
+        fitness_readiness_score: extended.fitness_readiness_score,
+        goal_realistic_score: extended.goal_realistic_score,
 
-        // Advanced metrics (if available)
-        heart_rate_zones: metrics.heartRateZones
-          ? JSON.parse(JSON.stringify(metrics.heartRateZones))
-          : undefined,
-        vo2_max_estimate: metrics.vo2max?.vo2max,
-        vo2_max_classification: metrics.vo2max?.classification,
-        health_score: metrics.healthScore?.totalScore,
+        // Sleep — from master-engine
+        recommended_sleep_hours: extended.recommended_sleep_hours,
+        current_sleep_duration: extended.current_sleep_duration,
+        sleep_efficiency_score: extended.sleep_efficiency_score,
+
+        // Flags
+        was_rate_capped: m.wasRateCapped,
       };
 
-      // Save to database
       const saved = await this.save(userId, advancedReviewData);
       if (!saved) {
         console.error("❌ [DB-SERVICE] Failed to save calculated metrics");
@@ -675,9 +685,54 @@ export class AdvancedReviewService {
     data: AdvancedReviewData,
   ): Promise<boolean> {
     try {
+      // Explicitly pick only DB columns — UI-only fields (bmi_health_risk, heart_rate_zones, etc.)
+      // must not be spread into the upsert (BUG-46)
       const reviewData: Partial<AdvancedReviewRow> = {
         user_id: userId,
-        ...data,
+        calculated_bmi: data.calculated_bmi,
+        calculated_bmr: data.calculated_bmr,
+        calculated_tdee: data.calculated_tdee,
+        metabolic_age: data.metabolic_age,
+        daily_calories: data.daily_calories,
+        daily_protein_g: data.daily_protein_g,
+        daily_carbs_g: data.daily_carbs_g,
+        daily_fat_g: data.daily_fat_g,
+        daily_water_ml: data.daily_water_ml,
+        daily_fiber_g: data.daily_fiber_g,
+        healthy_weight_min: data.healthy_weight_min,
+        healthy_weight_max: data.healthy_weight_max,
+        weekly_weight_loss_rate: data.weekly_weight_loss_rate,
+        estimated_timeline_weeks: data.estimated_timeline_weeks,
+        total_calorie_deficit: data.total_calorie_deficit,
+        ideal_body_fat_min: data.ideal_body_fat_min,
+        ideal_body_fat_max: data.ideal_body_fat_max,
+        lean_body_mass: data.lean_body_mass,
+        fat_mass: data.fat_mass,
+        estimated_vo2_max: data.estimated_vo2_max,
+        target_hr_fat_burn_min: data.target_hr_fat_burn_min,
+        target_hr_fat_burn_max: data.target_hr_fat_burn_max,
+        target_hr_cardio_min: data.target_hr_cardio_min,
+        target_hr_cardio_max: data.target_hr_cardio_max,
+        target_hr_peak_min: data.target_hr_peak_min,
+        target_hr_peak_max: data.target_hr_peak_max,
+        recommended_workout_frequency: data.recommended_workout_frequency,
+        recommended_cardio_minutes: data.recommended_cardio_minutes,
+        recommended_strength_sessions: data.recommended_strength_sessions,
+        overall_health_score: data.overall_health_score,
+        diet_readiness_score: data.diet_readiness_score,
+        fitness_readiness_score: data.fitness_readiness_score,
+        goal_realistic_score: data.goal_realistic_score,
+        recommended_sleep_hours: data.recommended_sleep_hours,
+        current_sleep_duration: data.current_sleep_duration,
+        sleep_efficiency_score: data.sleep_efficiency_score,
+        data_completeness_percentage: data.data_completeness_percentage,
+        reliability_score: data.reliability_score,
+        personalization_level: data.personalization_level,
+        validation_status: data.validation_status,
+        validation_errors: data.validation_errors,
+        validation_warnings: data.validation_warnings,
+        refeed_schedule: data.refeed_schedule,
+        medical_adjustments: data.medical_adjustments,
         updated_at: new Date().toISOString(),
       };
 
@@ -731,6 +786,23 @@ export class AdvancedReviewService {
       console.error("❌ AdvancedReviewService: Unexpected error:", error);
       return null;
     }
+  }
+
+  static validate(data: AdvancedReviewData | null): TabValidationResult {
+    const hasCalculations = !!(
+      data?.calculated_bmi ||
+      data?.calculated_bmr ||
+      data?.calculated_tdee
+    );
+
+    return {
+      is_valid: true,
+      errors: [],
+      warnings: hasCalculations
+        ? []
+        : ["Calculations pending - will be performed automatically"],
+      completion_percentage: hasCalculations ? 100 : 0,
+    };
   }
 }
 
@@ -1110,7 +1182,7 @@ export class OnboardingUtils {
 
     // Target weight and timeline are optional - only validate if provided
     if (
-      data.target_weight_kg &&
+      data.target_weight_kg != null && data.target_weight_kg !== 0 &&
       (data.target_weight_kg < 30 || data.target_weight_kg > 300)
     ) {
       warnings.push(

@@ -2,7 +2,8 @@ import { HeartRateZones } from "./shared-types";
 
 export class CardiovascularCalculations {
   static calculateMaxHeartRate(age: number): number {
-    return 220 - age;
+    // Tanaka (2001) meta-analysis formula — supersedes Fox-Haskell 1971 (220-age)
+    return Math.round(208 - 0.7 * age);
   }
 
   static calculateHeartRateZones(maxHeartRate: number): HeartRateZones {
@@ -34,7 +35,7 @@ export class CardiovascularCalculations {
 
     const baseVO2 = peakVO2 - ageAdjustment;
 
-    const runningBonus = canRunMinutes * 0.3;
+    const runningBonus = Math.max(0, Math.min(canRunMinutes, 60)) * 0.3;
 
     return Math.max(20, Math.min(80, baseVO2 + runningBonus));
   }

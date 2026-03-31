@@ -26,6 +26,7 @@ import { ContributeFood } from "../../screens/ContributeFood";
 import TemplateLibraryScreen from "../../screens/workouts/TemplateLibraryScreen";
 import CreateWorkoutScreen from "../../screens/workouts/CreateWorkoutScreen";
 import ExerciseHistoryScreen from "../../screens/workouts/ExerciseHistoryScreen";
+import ScheduleBuilderScreen from "../../screens/workouts/ScheduleBuilderScreen";
 import { ResponsiveTheme } from "../../utils/constants";
 import { DayWorkout, DayMeal } from "../../types/ai";
 import { useAppConfig } from "../../hooks/useAppConfig";
@@ -127,6 +128,11 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     exerciseId?: string;
     exerciseName?: string;
   }>({ isActive: false });
+
+  // Schedule Builder overlay state
+  const [scheduleBuilderSession, setScheduleBuilderSession] = useState<{
+    isActive: boolean;
+  }>({ isActive: false });
   const ensureTabMounted = (tab: MainTabKey) => {
     setMountedTabs((prev) => (prev[tab] ? prev : { ...prev, [tab]: true }));
   };
@@ -142,6 +148,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     setTemplateLibrarySession({ isActive: false });
     setCreateWorkoutSession({ isActive: false });
     setExerciseHistorySession({ isActive: false });
+    setScheduleBuilderSession({ isActive: false });
   };
   const resolveTabKey = (screen: string): MainTabKey | null => {
     switch (screen) {
@@ -241,10 +248,12 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       } else if (screen === "TemplateLibrary") {
         setCreateWorkoutSession({ isActive: false });
         setExerciseHistorySession({ isActive: false });
+        setScheduleBuilderSession({ isActive: false });
         setTemplateLibrarySession({ isActive: true });
       } else if (screen === "CreateWorkout") {
         setTemplateLibrarySession({ isActive: false });
         setExerciseHistorySession({ isActive: false });
+        setScheduleBuilderSession({ isActive: false });
         setCreateWorkoutSession({
           isActive: true,
           templateId: params?.templateId,
@@ -252,11 +261,17 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       } else if (screen === "ExerciseHistory") {
         setTemplateLibrarySession({ isActive: false });
         setCreateWorkoutSession({ isActive: false });
+        setScheduleBuilderSession({ isActive: false });
         setExerciseHistorySession({
           isActive: true,
           exerciseId: params?.exerciseId,
           exerciseName: params?.exerciseName,
         });
+      } else if (screen === "ScheduleBuilder") {
+        setTemplateLibrarySession({ isActive: false });
+        setCreateWorkoutSession({ isActive: false });
+        setExerciseHistorySession({ isActive: false });
+        setScheduleBuilderSession({ isActive: true });
       }
     },
     goBack: () => {
@@ -293,7 +308,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           contributeFoodSession.isActive ||
           templateLibrarySession.isActive ||
           createWorkoutSession.isActive ||
-          exerciseHistorySession.isActive
+          exerciseHistorySession.isActive ||
+          scheduleBuilderSession.isActive
         ) {
           navigation.goBack();
           return true; // Prevent default behavior
@@ -321,6 +337,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     templateLibrarySession.isActive,
     createWorkoutSession.isActive,
     exerciseHistorySession.isActive,
+    scheduleBuilderSession.isActive,
   ]);
 
   useEffect(() => {
@@ -387,7 +404,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     contributeFoodSession.isActive ||
     templateLibrarySession.isActive ||
     createWorkoutSession.isActive ||
-    exerciseHistorySession.isActive;
+    exerciseHistorySession.isActive ||
+    scheduleBuilderSession.isActive;
 
   const tabs = [
     {
@@ -581,6 +599,10 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
 
     if (templateLibrarySession.isActive) {
       return <TemplateLibraryScreen navigation={navigation} />;
+    }
+
+    if (scheduleBuilderSession.isActive) {
+      return <ScheduleBuilderScreen navigation={navigation} />;
     }
 
     if (createWorkoutSession.isActive) {

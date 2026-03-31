@@ -127,7 +127,7 @@ export const useWorkoutAchievements = () => {
         });
 
         showAchievementMiniToast(
-          `Exercise ${exerciseIndex + 1}/${totalExercises} Complete! 💪`,
+          `Exercise ${exerciseIndex + 1} of ${totalExercises} Complete! 💪`,
         );
       } catch (error) {
       }

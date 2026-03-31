@@ -117,6 +117,7 @@ export class HealthScoring {
     }
 
     const hasAmbitiousGoals =
+      workoutPreferences.primary_goals.includes("muscle-gain") ||
       workoutPreferences.primary_goals.includes("muscle_gain") ||
       workoutPreferences.primary_goals.includes("strength");
     const isExperienced = workoutPreferences.workout_experience_years > 1;

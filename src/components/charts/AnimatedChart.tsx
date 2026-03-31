@@ -100,6 +100,7 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
 
   // Convert value to Y coordinate - round to prevent precision errors
   const valueToY = (value: number): number => {
+    'worklet';
     const normalized = (value - minValue) / valueRange;
     return Math.round(paddingTop + chartHeight - normalized * chartHeight);
   };

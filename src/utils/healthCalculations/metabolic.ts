@@ -12,27 +12,13 @@ import {
 
 export class MetabolicCalculations {
   static calculateBMI(weightKg: number, heightCm: number): number {
-    // Guard clause: replace 0/negative with population defaults
-    let w = weightKg;
-    let h = heightCm;
-    if (w <= 0 || h <= 0) {
-      const fb = this.FALLBACK_BODY['default'];
-      if (w <= 0) w = fb.weight;
-      if (h <= 0) h = fb.height;
+    if (weightKg <= 0 || heightCm <= 0) {
+      throw new Error(
+        `[MetabolicCalculations.calculateBMI] Invalid inputs: weight=${weightKg}kg, height=${heightCm}cm`,
+      );
     }
-    return calculateBMICore(w, h);
+    return calculateBMICore(weightKg, heightCm);
   }
-
-  /**
-   * Population-average defaults used defensively when inputs are 0/negative.
-   * The master engine should apply fallbacks before calling this, but this
-   * guard clause provides a safety net.
-   */
-  private static readonly FALLBACK_BODY = {
-    male:   { weight: 75, height: 175 },
-    female: { weight: 62, height: 163 },
-    default: { weight: 70, height: 170 },
-  } as const;
 
   static calculateBMR(
     weightKg: number,
@@ -40,22 +26,12 @@ export class MetabolicCalculations {
     age: number,
     gender: string,
   ): number {
-    // Guard clause: replace 0/negative weight or height with population defaults
-    let w = weightKg;
-    let h = heightCm;
-    if (w <= 0 || h <= 0) {
-      const key = gender === 'male' || gender === 'female' ? gender : 'default';
-      const fb = this.FALLBACK_BODY[key];
-      if (w <= 0) {
-        console.warn(`⚠️ [MetabolicCalculations.calculateBMR] weight is ${w}, using fallback ${fb.weight}kg`);
-        w = fb.weight;
-      }
-      if (h <= 0) {
-        console.warn(`⚠️ [MetabolicCalculations.calculateBMR] height is ${h}, using fallback ${fb.height}cm`);
-        h = fb.height;
-      }
+    if (weightKg <= 0 || heightCm <= 0) {
+      throw new Error(
+        `[MetabolicCalculations.calculateBMR] Invalid inputs: weight=${weightKg}kg, height=${heightCm}cm`,
+      );
     }
-    return calculateBMRCore(w, h, age, gender);
+    return calculateBMRCore(weightKg, heightCm, age, gender);
   }
 
   static calculateTDEE(bmr: number, activityLevel: string): number {
@@ -328,8 +304,29 @@ export class MetabolicCalculations {
     return Math.max(0, Math.min(100, normalized));
   }
 
-  static calculateWaterIntake(weightKg: number): number {
-    return Math.round(weightKg * 35);
+  // BUG-13: Align with SSOT formula (ClimateAdaptiveWaterCalculator): base×35 + activityBonus, then climate×
+  static calculateWaterIntake(
+    weightKg: number,
+    activityLevel?: string,
+    climate?: string,
+  ): number {
+    const base = weightKg * 35;
+    const activityBonuses: Record<string, number> = {
+      sedentary: 0,
+      light: 500,
+      moderate: 1000,
+      active: 1500,
+      very_active: 2000,
+    };
+    const climateMultipliers: Record<string, number> = {
+      tropical: 1.5,
+      temperate: 1.0,
+      cold: 0.9,
+      arid: 1.7,
+    };
+    const bonus = activityBonuses[activityLevel ?? 'moderate'] ?? 1000;
+    const multiplier = climateMultipliers[climate ?? 'temperate'] ?? 1.0;
+    return Math.round(((base + bonus) * multiplier) / 50) * 50;
   }
 
   static calculateFiber(dailyCalories: number): number {
@@ -355,15 +352,17 @@ export class MetabolicCalculations {
   static applyAgeModifier(tdee: number, age: number, gender: string): number {
     let modifier = 1.0;
 
+    // Note: Mifflin-St Jeor already accounts for age via -5×age in BMR.
+    // Only apply additional modifier for ages ≥40 where metabolic slowdown
+    // exceeds what the linear age term captures.
     if (age >= 60) {
       modifier = 0.85;
     } else if (age >= 50) {
       modifier = 0.9;
     } else if (age >= 40) {
       modifier = 0.95;
-    } else if (age >= 30) {
-      modifier = 0.98;
     }
+    // No modifier for age < 40 — the Mifflin formula covers it.
 
     if (gender === "female" && age >= 45 && age <= 55) {
       modifier = modifier * 0.95;
@@ -391,10 +390,13 @@ export class MetabolicCalculations {
       gender,
     );
 
-    const bmrDifference = expectedBMR - bmr;
-
-    const calPerYear = gender === "male" ? 10 : 8;
-    const metabolicAgeAdjustment = bmrDifference / calPerYear;
+    // BUG-17: Use percentage-based comparison to avoid body-size bias.
+    // Absolute cal/year (10) caused large-framed users with high BMR to always
+    // hit the floor (18) because their absolute BMR difference is large even when
+    // metabolically healthy. Percentage comparison is body-weight-agnostic.
+    // Each 10% BMR deviation from the age-group reference = ~5 metabolic years.
+    const bmrDifferencePercent = (expectedBMR - bmr) / expectedBMR;
+    const metabolicAgeAdjustment = bmrDifferencePercent * 50;
 
     const metabolicAge = chronologicalAge + metabolicAgeAdjustment;
 
@@ -412,12 +414,12 @@ export class MetabolicCalculations {
     ];
 
     const femaleReferences = [
-      { ageRange: [18, 24], bmr: 1400 },
-      { ageRange: [25, 34], bmr: 1350 },
-      { ageRange: [35, 44], bmr: 1300 },
-      { ageRange: [45, 54], bmr: 1250 },
-      { ageRange: [55, 64], bmr: 1200 },
-      { ageRange: [65, 120], bmr: 1150 },
+      { ageRange: [18, 24], bmr: 1500 },
+      { ageRange: [25, 34], bmr: 1450 },
+      { ageRange: [35, 44], bmr: 1400 },
+      { ageRange: [45, 54], bmr: 1350 },
+      { ageRange: [55, 64], bmr: 1300 },
+      { ageRange: [65, 120], bmr: 1250 },
     ];
 
     const references = gender === "male" ? maleReferences : femaleReferences;

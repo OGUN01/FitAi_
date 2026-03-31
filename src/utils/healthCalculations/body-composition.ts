@@ -57,7 +57,7 @@ export class BodyCompositionCalculations {
       baseRate = baseRate * 0.925;
     }
 
-    return Math.max(0.3, Math.min(1.2, baseRate));
+    return Math.max(0.3, Math.min(1.0, baseRate));
   }
 
   static getHealthyBodyFatRange(

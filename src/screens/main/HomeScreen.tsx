@@ -100,6 +100,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     waterGoal,
     weightData,
     calculatedMetrics,
+    workoutPreferences,
     handleRefresh,
     handleAddWater,
     weightUnit,
@@ -284,12 +285,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
               <View style={styles.section}>
                 <DailyProgressRings
                   caloriesBurned={realCaloriesBurned}
-                  caloriesGoal={calculatedMetrics?.calculatedTDEE ?? actualCaloriesGoal} // TDEE for burn goal
+                  caloriesGoal={
+                    // Active calorie goal = TDEE - BMR (calories from activity only, not resting metabolism).
+                    // Using full TDEE as a Move goal is unachievable since BMR accounts for most of it.
+                    (calculatedMetrics?.calculatedTDEE && calculatedMetrics?.calculatedBMR)
+                      ? Math.round(calculatedMetrics.calculatedTDEE - calculatedMetrics.calculatedBMR)
+                      : actualCaloriesGoal
+                  }
                   workoutMinutes={workoutMinutes}
                   workoutGoal={
                     // Single source of truth: today's actual scheduled workout duration.
-                    // Falls back to onboarding preference, then AI recommendation, then 30 min.
+                    // Falls back to live profileStore preference, then AI recommendation, then 30 min.
                     todaysWorkoutInfo.workout?.duration ||
+                    workoutPreferences?.time_preference ||
                     calculatedMetrics?.workoutDurationMinutes ||
                     calculatedMetrics?.recommendedCardioMinutes ||
                     30

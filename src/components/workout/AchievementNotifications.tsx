@@ -145,13 +145,15 @@ const styles = StyleSheet.create({
 
   miniToast: {
     position: "absolute",
-    top: "50%",
+    top: rp(120),
     alignSelf: "center",
     backgroundColor: ResponsiveTheme.colors.primary + "E6",
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingVertical: ResponsiveTheme.spacing.md,
     borderRadius: rbr(20),
     zIndex: 999,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
     shadowColor: ResponsiveTheme.colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,

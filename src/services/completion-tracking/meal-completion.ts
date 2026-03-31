@@ -1,4 +1,5 @@
 import { useNutritionStore } from "../../stores/nutritionStore";
+import { useProfileStore } from "../../stores/profileStore";
 import crudOperations from "../crudOperations";
 import { MealLog, SyncStatus } from "../../types/localData";
 import { supabase } from "../supabase";
@@ -34,7 +35,7 @@ export async function completeMeal(
             mode: "manual",
             truthLevel: "curated",
             confidence: null,
-            countryContext: "IN",
+            countryContext: useProfileStore.getState().personalInfo?.country || "IN",
             requiresReview: false,
             source: "manual-log",
           };

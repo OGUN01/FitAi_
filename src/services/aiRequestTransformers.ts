@@ -8,6 +8,9 @@
  * but still needs a minimal profile context in the request for fallback/validation.
  */
 
+/** Single place to update the AI model used for all requests (BUG-59) */
+const DEFAULT_AI_MODEL = "google/gemini-2.5-flash";
+
 import type {
   PersonalInfo,
   FitnessGoals,
@@ -304,7 +307,9 @@ export function transformForDietRequest(
       : undefined,
 
     // REQUIRED: Fields that backend schema expects for cache key generation
-    calorieTarget: calorieTarget,
+    // BUG-92: When calorieTarget not explicitly passed, use advancedReview.daily_calories
+    // so AI plans at the user's actual deficit target, not the DB maintenance value
+    calorieTarget: calorieTarget ?? advancedReview?.daily_calories ?? undefined,
     mealsPerDay,
     daysCount,
 
@@ -317,7 +322,7 @@ export function transformForDietRequest(
       excludeIngredients.length > 0 ? excludeIngredients : undefined,
 
     // AI model configuration
-    model: "google/gemini-2.5-flash",
+    model: DEFAULT_AI_MODEL,
     temperature: 0.7,
   };
 }
@@ -332,7 +337,10 @@ export function transformForDietRequest(
  */
 const FITNESS_GOAL_MAP: Record<string, string> = {
   "weight-loss": "weight_loss",
-  "weight-gain": "muscle_gain", // Map weight gain to muscle gain
+  // BUG-55: weight-gain (health/recovery intent) ≠ muscle_gain (hypertrophy intent).
+  // Keep muscle_gain as it IS a weight-gain goal; muscle-gain explicitly selects bodybuilding.
+  // weight-gain users may be underweight/recovering — use maintenance (general programming).
+  "weight-gain": "maintenance",
   "muscle-gain": "muscle_gain",
   general_fitness: "maintenance", // Map general fitness to maintenance
   "general-fitness": "maintenance",
@@ -392,9 +400,9 @@ const WORKOUT_TYPE_MAP: Record<string, string> = {
   strength: "full_body",
   cardio: "cardio",
   hiit: "full_body", // HIIT is full body with intensity
-  yoga: "core", // Yoga → flexibility/core exercises
-  pilates: "core",
-  flexibility: "core", // Flexibility exercises
+  yoga: "full_body", // Yoga → full body, not just core
+  pilates: "full_body", // Pilates → full body functional movement
+  flexibility: "full_body", // Flexibility training → full body
   functional: "full_body",
   sports: "full_body",
   dance: "cardio",
@@ -433,6 +441,8 @@ export function transformForWorkoutRequest(
     duration?: number;
     focusMuscles?: string[];
     currentWeightKg?: number | null;
+    weekNumber?: number;
+    regenerationSeed?: number; // Varies exercise selection on regeneration
   },
 ): WorkoutGenerationRequest {
   // Get experience level
@@ -509,14 +519,20 @@ export function transformForWorkoutRequest(
       fitnessGoal: primaryGoal,
       experienceLevel: experienceLevel,
       availableEquipment: equipment,
+      workoutDuration: options?.duration ?? workoutPreferences?.time_preference ?? 45,
       injuries: injuries,
       medications: medications,
+      // GAP-04: medicalConditions and stressLevel were missing — Worker safety filter needs them
+      medicalConditions: bodyMetrics?.medical_conditions ?? [],
+      stressLevel: (bodyMetrics?.stress_level as 'low' | 'moderate' | 'high' | undefined),
       pregnancyStatus: pregnancyStatus,
       pregnancyTrimester: pregnancyTrimester,
       breastfeedingStatus: breastfeedingStatus,
     },
     weeklyPlan: weeklyPlan,
     focusMuscles: options?.focusMuscles,
+    weekNumber: options?.weekNumber,
+    regenerationSeed: options?.regenerationSeed,
   };
 }
 
@@ -527,30 +543,17 @@ function getWorkoutDaysFromPreferences(
   workoutPreferences?: WorkoutPreferences,
   workoutsPerWeek: number = 3,
 ): string[] {
-
-  // Otherwise, distribute evenly based on frequency
-  const allDays = [
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-    "sunday",
-  ];
-
-  if (workoutsPerWeek === 1) return ["wednesday"];
-  if (workoutsPerWeek === 2) return ["tuesday", "friday"];
-  if (workoutsPerWeek === 3) return ["monday", "wednesday", "friday"];
-  if (workoutsPerWeek === 4) return ["monday", "tuesday", "thursday", "friday"];
-  if (workoutsPerWeek === 5)
-    return ["monday", "tuesday", "wednesday", "thursday", "friday"];
-  if (workoutsPerWeek === 6)
-    return ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  // preferred_workout_times stores time-of-day values ('morning', 'evening'), not day names.
+  // Use frequency-based defaults to determine training days.
+  const allDays = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+  if (workoutsPerWeek === 1) return ['wednesday'];
+  if (workoutsPerWeek === 2) return ['tuesday', 'friday'];
+  if (workoutsPerWeek === 3) return ['monday', 'wednesday', 'friday'];
+  if (workoutsPerWeek === 4) return ['monday', 'tuesday', 'thursday', 'friday'];
+  if (workoutsPerWeek === 5) return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+  if (workoutsPerWeek === 6) return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   if (workoutsPerWeek === 7) return allDays;
-
-  // Default: 3 days
-  return ["monday", "wednesday", "friday"];
+  return ['monday', 'wednesday', 'friday'];
 }
 
 /**
@@ -631,13 +634,14 @@ export function transformWorkoutResponseToWeeklyPlan(
 /**
  * Transform backend diet response to frontend WeeklyMealPlan format
  *
- * Backend meals have: { name, mealType, foods: [{ name, quantity, nutrition: { calories, protein, carbs, fats, fiber } }], totalCalories, totalNutrition: { protein, carbs, fats, fiber } }
- * Frontend DayMeal expects: { type, items: MealItem[], totalCalories, totalMacros: { protein, carbohydrates, fat, fiber } }
+ * Backend meals have: { name, mealType, foods: [{ name, quantity, nutrition: { calories, protein, carbs, fats, fiber, sugar } }], totalCalories, totalNutrition: { protein, carbs, fats, fiber, sugar } }
+ * Frontend DayMeal expects: { type, items: MealItem[], totalCalories, totalMacros: { protein, carbohydrates, fat, fiber, sugar } }
  *
  * Key field mappings:
  *   backend 'fats' → frontend 'fat'
  *   backend 'carbs' → frontend 'carbohydrates'
  *   backend 'foods' → frontend 'items' (MealItem[])
+ *   backend 'sugar' → frontend 'sugar' (pass-through)
  */
 export function transformDietResponseToWeeklyPlan(
   response: WorkersResponse<DietPlan>,
@@ -693,6 +697,7 @@ export function transformDietResponseToWeeklyPlan(
               food.fat ||
               0,
             fiber: nutrition.fiber || food.fiber || 0,
+            sugar: nutrition.sugar || food.sugar || 0,
           };
 
           // Build a minimal Food object for the MealItem
@@ -733,6 +738,7 @@ export function transformDietResponseToWeeklyPlan(
           totalNutrition.carbs || totalNutrition.carbohydrates || 0,
         fat: totalNutrition.fats || totalNutrition.fat || 0,
         fiber: totalNutrition.fiber || 0,
+        sugar: totalNutrition.sugar || 0,
       };
 
       return {
@@ -834,11 +840,19 @@ function mapDifficulty(
   return diffMap[difficulty?.toLowerCase() || ""] || "intermediate";
 }
 
-function calculateEstimatedCalories(_workout: WorkoutPlan): number {
-  // NO DEFAULT VALUES - return 0 at generation time
-  // Actual calories calculated at workout completion using user's real weight from profile
-  // This prevents inaccurate data from fake default weights
-  return 0;
+function calculateEstimatedCalories(workout: WorkoutPlan): number {
+  // BUG-58: Use MET × duration estimate instead of always returning 0
+  // Actual calories are recalculated with real user weight at workout completion
+  const durationHours = ((workout.totalDuration || workout.duration || 30)) / 60;
+  const difficulty = workout.difficulty?.toLowerCase() || 'intermediate';
+  const metByDifficulty: Record<string, number> = {
+    beginner: 4,
+    intermediate: 6,
+    advanced: 8,
+  };
+  const met = metByDifficulty[difficulty] ?? 6;
+  // Use 70 kg as a reference weight for pre-generation estimates
+  return Math.round(met * 70 * durationHours);
 }
 
 function transformExercises(workout: WorkoutPlan): any[] {

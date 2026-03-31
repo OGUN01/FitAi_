@@ -371,6 +371,19 @@ export function generateCoachingTips(
   const goalAdjust = GOAL_ADJUSTMENTS[profile.fitnessGoal] || GOAL_ADJUSTMENTS.general_fitness;
   tips.push(`🎯 ${goalAdjust.intensityNote}`);
 
+  // VO2Max-based fitness tier tip (only when we have the metric)
+  if (profile.vo2MaxEstimate && profile.vo2MaxClassification) {
+    const vo2Tips: Record<string, string> = {
+      poor: `📊 Your VO₂Max is ${profile.vo2MaxEstimate.toFixed(1)} ml/kg/min. Build aerobic base first — keep workouts at conversational pace.`,
+      fair: `📊 Your VO₂Max is ${profile.vo2MaxEstimate.toFixed(1)} ml/kg/min. Steady-state cardio will raise this quickly.`,
+      good: `📊 Your VO₂Max is ${profile.vo2MaxEstimate.toFixed(1)} ml/kg/min — solid foundation. Mix intensity zones for continued improvement.`,
+      excellent: `📊 Your VO₂Max is ${profile.vo2MaxEstimate.toFixed(1)} ml/kg/min — excellent. Add HIIT intervals to push your ceiling higher.`,
+      superior: `📊 Your VO₂Max is ${profile.vo2MaxEstimate.toFixed(1)} ml/kg/min — elite level. Focus on sport-specific conditioning.`,
+    };
+    const tier = profile.vo2MaxClassification.toLowerCase();
+    if (vo2Tips[tier]) tips.push(vo2Tips[tier]);
+  }
+
   // Experience-level tips
   if (profile.experienceLevel === 'beginner') {
     tips.push('📚 Focus on learning proper form before increasing weight');
@@ -459,48 +472,67 @@ export function generateWarmup(
 ): WorkoutExercise[] {
 
   const warmup: WorkoutExercise[] = [];
+  const type = workoutType.toLowerCase();
 
-  // General mobility (always include)
+  // General dynamic warmup — mountain climber activates full body & elevates heart rate
+  // exerciseId 'RJgzwny' = mountain climber (body weight, verified in exerciseDatabase.json)
   warmup.push({
-    exerciseId: 'warmup_001',
-    name: 'General Cardio (Light)',
-    sets: 1,
-    reps: `${durationMinutes} minutes`,
-    restSeconds: 0,
-    notes: 'Treadmill, bike, or jumping jacks - get heart rate up',
+    exerciseId: 'RJgzwny',
+    name: 'Mountain Climber',
+    sets: 2,
+    reps: `${Math.max(30, durationMinutes * 10)} seconds`,
+    restSeconds: 15,
+    notes: 'Keep hips level, drive knees to chest alternately — elevates heart rate',
   });
 
-  // Specific warmup based on workout type
-  if (workoutType.toLowerCase().includes('upper') || workoutType.toLowerCase().includes('push')) {
+  // Inchworm — full-body mobility, always included
+  // exerciseId 'ZgsNQ6d' = inchworm (body weight, verified in exerciseDatabase.json)
+  warmup.push({
+    exerciseId: 'ZgsNQ6d',
+    name: 'Inchworm',
+    sets: 2,
+    reps: '6',
+    restSeconds: 15,
+    notes: 'Walk hands out to plank, walk feet in. Opens hamstrings and shoulders',
+  });
+
+  // Workout-type specific activation
+  if (type.includes('upper') || type.includes('push') || type.includes('chest') || type.includes('shoulders') || type.includes('arms')) {
+    // Dead bug — core + shoulder stability for upper body pressing sessions
+    // exerciseId 'iny3m5y' = dead bug (body weight, verified in exerciseDatabase.json)
     warmup.push({
-      exerciseId: 'warmup_002',
-      name: 'Arm Circles & Shoulder Rolls',
+      exerciseId: 'iny3m5y',
+      name: 'Dead Bug',
       sets: 2,
-      reps: '10',
+      reps: '8',
+      restSeconds: 20,
+      notes: 'Press lower back into floor, control opposite arm/leg — activates core for pressing',
+    });
+  }
+
+  if (type.includes('lower') || type.includes('legs') || type.includes('full')) {
+    // World greatest stretch — hip flexors, thoracic, hamstrings
+    // exerciseId 'DFGXwZr' = world greatest stretch (body weight, verified in exerciseDatabase.json)
+    warmup.push({
+      exerciseId: 'DFGXwZr',
+      name: 'World Greatest Stretch',
+      sets: 2,
+      reps: '5 per side',
       restSeconds: 0,
-      notes: 'Prepare shoulder joint for pressing movements',
+      notes: 'Lunge + thoracic rotation + hamstring — essential lower body prep',
     });
   }
 
-  if (workoutType.toLowerCase().includes('lower') || workoutType.toLowerCase().includes('legs')) {
+  if (type.includes('pull') || type.includes('back')) {
+    // Glute bridge march — activates posterior chain before pulling movements
+    // exerciseId 'GibBPPg' = glute bridge march (body weight, verified in exerciseDatabase.json)
     warmup.push({
-      exerciseId: 'warmup_003',
-      name: 'Bodyweight Squats',
+      exerciseId: 'GibBPPg',
+      name: 'Glute Bridge March',
       sets: 2,
-      reps: '10-15',
-      restSeconds: 30,
-      notes: 'Activate glutes and quads, practice squat pattern',
-    });
-  }
-
-  if (workoutType.toLowerCase().includes('pull') || workoutType.toLowerCase().includes('back')) {
-    warmup.push({
-      exerciseId: 'warmup_004',
-      name: 'Band Pull-Aparts',
-      sets: 2,
-      reps: '15',
-      restSeconds: 30,
-      notes: 'Activate upper back and rear delts',
+      reps: '10 per side',
+      restSeconds: 20,
+      notes: 'Activate glutes and stabilise SI joint before pulling movements',
     });
   }
 
@@ -512,27 +544,42 @@ export function generateWarmup(
  */
 export function generateCooldown(
   workoutType: string,
-  durationMinutes: number = 5
+  _durationMinutes: number = 5
 ): WorkoutExercise[] {
 
   const cooldown: WorkoutExercise[] = [];
 
+  // Inchworm reverse — brings heart rate down with controlled movement
+  // exerciseId 'ZgsNQ6d' = inchworm (body weight, verified in exerciseDatabase.json)
   cooldown.push({
-    exerciseId: 'cooldown_001',
-    name: 'Light Cardio (Cool Down)',
-    sets: 1,
-    reps: '3 minutes',
-    restSeconds: 0,
-    notes: 'Walk or easy bike to bring heart rate down',
+    exerciseId: 'ZgsNQ6d',
+    name: 'Inchworm (Slow)',
+    sets: 2,
+    reps: '5',
+    restSeconds: 20,
+    notes: 'Slow and controlled — brings heart rate down, opens hamstrings',
   });
 
+  // World greatest stretch — best all-in-one static/dynamic cooldown
+  // exerciseId 'DFGXwZr' = world greatest stretch (body weight, verified in exerciseDatabase.json)
   cooldown.push({
-    exerciseId: 'cooldown_002',
-    name: 'Static Stretching (Full Body)',
+    exerciseId: 'DFGXwZr',
+    name: 'World Greatest Stretch',
     sets: 1,
-    reps: '5-10 minutes',
+    reps: '30 seconds per side',
     restSeconds: 0,
-    notes: 'Hold each stretch 20-30 seconds, focus on trained muscles',
+    notes: 'Hold each position 3-5 seconds, focus on muscles just trained',
+  });
+
+  // Dead bug — gentle core deactivation, helps nervous system wind down
+  // exerciseId 'iny3m5y' = dead bug (body weight, verified in exerciseDatabase.json)
+  cooldown.push({
+    exerciseId: 'iny3m5y',
+    name: 'Dead Bug (Slow)',
+    sets: 1,
+    reps: '6 per side',
+    restSeconds: 0,
+    notes: 'Breathe deeply, controlled movement — deactivates core and calms nervous system',
   });
 
   return cooldown;
@@ -550,10 +597,24 @@ export function estimateCalories(
   durationMinutes: number,
   experienceLevel: 'beginner' | 'intermediate' | 'advanced',
   userWeight: number, // kg
-  fitnessGoal: string
+  fitnessGoal: string,
+  tdee?: number // kcal/day from advanced_review — used for precision when available
 ): number {
 
-  // Base metabolic rate during exercise (calories per minute)
+  // If we have the user's real TDEE, use it to derive session calorie burn:
+  // TDEE already accounts for activity multiplier, so workout calories ≈
+  // (TDEE - BMR) / active_minutes_per_day * session_duration
+  // Simpler and more accurate heuristic: workout burns ≈ 4.5–6.5% of TDEE per 45-min session
+  if (tdee && tdee > 0) {
+    const goalMultiplier = (fitnessGoal === 'weight_loss' || fitnessGoal === 'endurance') ? 1.15
+      : fitnessGoal === 'strength' ? 0.88
+      : 1.0;
+    const baseFraction = { beginner: 0.045, intermediate: 0.055, advanced: 0.065 }[experienceLevel];
+    const durationRatio = durationMinutes / 45; // normalise to a 45-min session
+    return Math.round(tdee * baseFraction * durationRatio * goalMultiplier);
+  }
+
+  // Fallback: flat-rate estimate when TDEE is unavailable
   const baseCaloriesPerMinute = {
     beginner: 5,
     intermediate: 6,

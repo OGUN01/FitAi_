@@ -10,7 +10,7 @@ import { PersonalInfoService } from "./personalInfoService";
 import { DietPreferencesService } from "./dietPreferencesService";
 import { BodyAnalysisService } from "./bodyAnalysisService";
 import { WorkoutPreferencesService } from "./workoutPreferencesService";
-import { AdvancedReviewService } from "./advancedReviewService";
+import { AdvancedReviewService } from "../onboardingService";
 
 export class OnboardingUtils {
   static calculateSleepDuration(wakeTime: string, sleepTime: string): number {

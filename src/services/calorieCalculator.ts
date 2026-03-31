@@ -89,31 +89,44 @@ export function estimateExerciseDuration(
   sets: number = 3,
   reps: number | string = 10,
   restTimeSeconds: number = 60,
-  durationSeconds?: number
+  durationSeconds?: number,
+  bodyParts?: string[]
 ): number {
   // If explicit duration is provided (for time-based exercises like planks)
   if (durationSeconds && durationSeconds > 0) {
     return (durationSeconds * sets + restTimeSeconds * (sets - 1)) / 60;
   }
-  
+
   // Parse reps (could be "8-12" format)
   let repCount: number;
   if (typeof reps === 'string') {
     // Handle ranges like "8-12" by taking the average
     const parts = reps.split('-').map(p => parseInt(p.trim(), 10));
-    repCount = parts.length === 2 
-      ? Math.round((parts[0] + parts[1]) / 2) 
+    repCount = parts.length === 2
+      ? Math.round((parts[0] + parts[1]) / 2)
       : parseInt(reps, 10) || 10;
   } else {
     repCount = reps || 10;
   }
-  
+
+  // BUG-67: Per-category seconds-per-rep (was always 3s for all exercise types)
+  const primaryPart = bodyParts?.[0]?.toLowerCase() ?? '';
+  let secondsPerRep: number;
+  if (primaryPart === 'cardio' || primaryPart === 'cardio exercise') {
+    secondsPerRep = 1.5; // Fast-tempo cardio moves (jumping jacks, mountain climbers)
+  } else if (primaryPart === 'upper legs' || primaryPart === 'lower legs') {
+    secondsPerRep = 4; // Compound lower-body (squats, lunges) — slower tempo
+  } else if (primaryPart === 'back' || primaryPart === 'chest') {
+    secondsPerRep = 4; // Compound upper-body (bench, rows, pull-ups) — controlled tempo
+  } else {
+    secondsPerRep = 3; // Default (isolation, shoulders, arms, core)
+  }
+
   // Calculate total time
-  const secondsPerRep = 3;
   const workTime = sets * repCount * secondsPerRep;
   const totalRestTime = restTimeSeconds * Math.max(0, sets - 1);
   const totalSeconds = workTime + totalRestTime;
-  
+
   return totalSeconds / 60; // Convert to minutes
 }
 
@@ -189,7 +202,8 @@ export function calculateWorkoutCalories(
       exercise.sets,
       exercise.reps,
       exercise.restTime,
-      exercise.duration
+      exercise.duration,
+      exerciseData.bodyParts
     );
     
     // Calculate MET and calories
@@ -213,7 +227,7 @@ export function calculateWorkoutCalories(
   return {
     totalCalories,
     exerciseBreakdown,
-    averageMET: exercises.length > 0 ? totalMET / exercises.length : DEFAULT_MET,
+    averageMET: exercises.length > 0 ? totalMET / exercises.length : 0,
     totalDurationMinutes,
   };
 }
@@ -273,7 +287,8 @@ export function calculateCompletedWorkoutCalories(
       completedSets,
       avgReps,
       exercise.restTime,
-      progress.actualDuration
+      progress.actualDuration,
+      exerciseData.bodyParts
     );
     
     // Calculate calories

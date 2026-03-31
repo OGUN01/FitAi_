@@ -233,9 +233,23 @@ const CUISINE_MAP: Record<string, string> = {
  * Detect cuisine type from country code
  * Returns "International" if country not found
  */
+const COUNTRY_NAME_TO_ISO_CUISINE: Record<string, string> = {
+	'india': 'IN', 'united states': 'US', 'usa': 'US', 'united kingdom': 'GB', 'uk': 'GB',
+	'china': 'CN', 'japan': 'JP', 'brazil': 'BR', 'mexico': 'MX', 'france': 'FR',
+	'germany': 'DE', 'italy': 'IT', 'spain': 'ES', 'australia': 'AU', 'canada': 'CA',
+	'pakistan': 'PK', 'bangladesh': 'BD', 'sri lanka': 'LK', 'thailand': 'TH',
+	'indonesia': 'ID', 'malaysia': 'MY', 'vietnam': 'VN', 'south korea': 'KR',
+	'nigeria': 'NG', 'egypt': 'EG', 'saudi arabia': 'SA', 'turkey': 'TR',
+};
+
 export function detectCuisine(countryCode?: string): string {
 	if (!countryCode) return 'International';
-	return CUISINE_MAP[countryCode.toUpperCase()] || 'International';
+	const upper = countryCode.trim().toUpperCase();
+	// ISO code path (normal post BUG-85 fix)
+	if (/^[A-Z]{2,3}$/.test(upper)) return CUISINE_MAP[upper] || 'International';
+	// Full-name fallback for legacy DB records storing "India" etc.
+	const iso = COUNTRY_NAME_TO_ISO_CUISINE[countryCode.trim().toLowerCase()];
+	return CUISINE_MAP[iso ?? upper] || 'International';
 }
 
 /**

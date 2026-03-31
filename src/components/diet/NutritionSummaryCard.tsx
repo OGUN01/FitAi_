@@ -13,6 +13,7 @@ interface NutritionSummaryCardProps {
     carbs: { current: number; target: number };
     fat: { current: number; target: number };
     fiber?: { current: number; target: number };
+    sugar?: { current: number; target: number };
   };
 }
 
@@ -186,6 +187,32 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = React.m
                     {
                       backgroundColor: "#9B59B6",
                       width: `${Math.min(100, nutritionTargets.fiber.target > 0 ? (nutritionTargets.fiber.current / nutritionTargets.fiber.target) * 100 : 0)}%` as any,
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+          )}
+          {/* Sugar */}
+          {nutritionTargets.sugar && (
+            <View style={styles.macroRow}>
+              <View style={styles.macroRowHeader}>
+                <View style={styles.macroLabelRow}>
+                  <View style={[styles.macroDot, { backgroundColor: "#E74C3C" }]} />
+                  <Text style={styles.macroLabel}>Sugar</Text>
+                </View>
+                <Text style={styles.macroAmount}>
+                  <Text style={styles.macroValue}>{Math.round(nutritionTargets.sugar.current)}g</Text>
+                  <Text style={styles.macroTarget}> / {nutritionTargets.sugar.target}g</Text>
+                </Text>
+              </View>
+              <View style={styles.progressTrack}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      backgroundColor: "#E74C3C",
+                      width: `${Math.min(100, nutritionTargets.sugar.target > 0 ? (nutritionTargets.sugar.current / nutritionTargets.sugar.target) * 100 : 0)}%` as any,
                     },
                   ]}
                 />

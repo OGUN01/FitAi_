@@ -15,7 +15,7 @@ import {
 import { useFitnessStore } from "../../stores/fitnessStore";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { getCurrentUserId } from "../../services/authUtils";
-import type { DayWorkout } from "../../types/ai";
+import { buildDayWorkoutFromTemplate } from "../../utils/workoutBuilders";
 
 interface Props {
   navigation: any;
@@ -28,47 +28,6 @@ export default function TemplateLibraryScreen({ navigation }: Props) {
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
 
   const startTemplateSession = useFitnessStore((s) => s.startTemplateSession);
-
-  function buildDayWorkoutFromTemplate(template: WorkoutTemplate): DayWorkout {
-    return {
-      id: `template_${template.id}`,
-      title: template.name,
-      description: template.description || `Custom workout: ${template.name}`,
-      category: "strength",
-      difficulty: "intermediate",
-      duration: template.estimatedDurationMinutes || 45,
-      estimatedCalories: 0,
-      exercises: template.exercises.map((ex) => ({
-        exerciseId: ex.exerciseId,
-        name: ex.name,
-        sets: ex.sets,
-        reps:
-          ex.repRange[0] === ex.repRange[1]
-            ? ex.repRange[0]
-            : `${ex.repRange[0]}-${ex.repRange[1]}`,
-        restTime: ex.restSeconds,
-        weight: ex.targetWeightKg,
-      })),
-      equipment: [],
-      targetMuscleGroups: template.targetMuscleGroups,
-      icon: "dumbbell",
-      tags: template.targetMuscleGroups,
-      isPersonalized: true,
-      aiGenerated: false,
-      createdAt: template.createdAt,
-      dayOfWeek: new Date()
-        .toLocaleDateString("en-US", { weekday: "long" })
-        .toLowerCase(),
-      subCategory: "custom",
-      intensityLevel: "moderate",
-      warmUp: [],
-      coolDown: [],
-      progressionNotes: [],
-      safetyConsiderations: [],
-      expectedBenefits: [],
-      isExtra: true,
-    };
-  }
 
   const loadTemplates = useCallback(async () => {
     const userId = getCurrentUserId();
@@ -170,9 +129,32 @@ export default function TemplateLibraryScreen({ navigation }: Props) {
         ))}
       </View>
 
-      <Text style={styles.exerciseCount}>
-        {item.exercises.length} exercise{item.exercises.length !== 1 ? "s" : ""}
-      </Text>
+      {/* GAP-14: Exercise list with View History tap per exercise */}
+      <View style={styles.exerciseListContainer}>
+        {item.exercises.slice(0, 4).map((ex, idx) => (
+          <Pressable
+            key={`${ex.exerciseId}-${idx}`}
+            style={styles.exerciseRow}
+            onPress={() =>
+              navigation.navigate('ExerciseHistory', {
+                exerciseId: ex.exerciseId,
+                exerciseName: ex.name,
+              } as any)
+            }
+            testID={`exercise-history-${item.id}-${idx}`}
+          >
+            <Text style={styles.exerciseRowName} numberOfLines={1}>
+              {ex.name}
+            </Text>
+            <Text style={styles.exerciseRowMeta}>
+              {ex.sets}×{ex.repRange[0] === ex.repRange[1] ? ex.repRange[0] : `${ex.repRange[0]}-${ex.repRange[1]}`} 📊
+            </Text>
+          </Pressable>
+        ))}
+        {item.exercises.length > 4 && (
+          <Text style={styles.moreExercises}>+{item.exercises.length - 4} more</Text>
+        )}
+      </View>
 
       {menuOpenId === item.id && (
         <View style={styles.menu} testID={`menu-${item.id}`}>
@@ -232,12 +214,21 @@ export default function TemplateLibraryScreen({ navigation }: Props) {
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
         <Text style={styles.headerTitle}>My Workouts</Text>
-        <Pressable
-          onPress={() => navigation.navigate("CreateWorkout")}
-          testID="add-template-button"
-        >
-          <Text style={styles.addButton}>+</Text>
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable
+            onPress={() => navigation.navigate("ScheduleBuilder")}
+            style={styles.scheduleBtn}
+            testID="schedule-builder-button"
+          >
+            <Text style={styles.scheduleBtnText}>Build Schedule</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => navigation.navigate("CreateWorkout")}
+            testID="add-template-button"
+          >
+            <Text style={styles.addButton}>+</Text>
+          </Pressable>
+        </View>
       </View>
 
       {templates.length === 0 ? (
@@ -272,6 +263,16 @@ const styles = StyleSheet.create({
     borderBottomColor: "#2A2A4E",
   },
   headerTitle: { fontSize: 20, fontWeight: "700", color: "#FFFFFF" },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 10 },
+  scheduleBtn: {
+    backgroundColor: "#2A2A4E",
+    borderWidth: 1,
+    borderColor: "#4CAF50",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  scheduleBtnText: { fontSize: 13, color: "#4CAF50", fontWeight: "600" },
   addButton: { fontSize: 28, color: "#4CAF50", fontWeight: "600" },
   list: { padding: 16 },
   card: {
@@ -329,4 +330,17 @@ const styles = StyleSheet.create({
     color: "#4CAF50",
     fontWeight: "600",
   },
+  // GAP-14: Exercise list styles
+  exerciseListContainer: { marginTop: 10 },
+  exerciseRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.06)",
+  },
+  exerciseRowName: { fontSize: 13, color: "#DDD", flex: 1 },
+  exerciseRowMeta: { fontSize: 12, color: "#4CAF50", marginLeft: 8 },
+  moreExercises: { fontSize: 12, color: "#666", marginTop: 5, textAlign: "right" },
 });

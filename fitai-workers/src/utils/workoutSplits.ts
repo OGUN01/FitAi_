@@ -583,10 +583,13 @@ function scoreSplit(split: WorkoutSplit, profile: UserProfile): { score: number;
 	}
 
 	// 2. GOAL ALIGNMENT (20 points)
-	const goalMatch = split.fitnessGoals.includes(profile.fitnessGoal);
+	// BUG-93: Normalize goal key: split definitions use underscore (weight_loss) but
+	// transformer may send hyphen (weight-loss). Normalize to underscore for lookup.
+	const normalizedGoal = profile.fitnessGoal.replace(/-/g, '_');
+	const goalMatch = split.fitnessGoals.includes(normalizedGoal);
 	if (goalMatch) {
 		score += 20;
-		breakdown.push(`✓ Goal alignment (${profile.fitnessGoal}) [+20]`);
+		breakdown.push(`✓ Goal alignment (${normalizedGoal}) [+20]`);
 	} else {
 		// Partial credit for compatible goals
 		const compatibleGoals: Record<string, string[]> = {
@@ -598,7 +601,7 @@ function scoreSplit(split: WorkoutSplit, profile: UserProfile): { score: number;
 			maintenance: ['general_fitness', 'flexibility'],
 		};
 
-		const userCompatibleGoals = compatibleGoals[profile.fitnessGoal] || [];
+		const userCompatibleGoals = compatibleGoals[normalizedGoal] || [];
 		const hasCompatible = split.fitnessGoals.some((g) => userCompatibleGoals.includes(g));
 
 		if (hasCompatible) {

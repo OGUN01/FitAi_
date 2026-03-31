@@ -105,7 +105,7 @@ export interface MacroCalculator {
    * @param dietType - Diet type
    * @returns Protein in grams/day
    */
-  calculateProtein(weight: number, goal: Goal, dietType: DietType): number;
+  calculateProtein(weight: number, goal: Goal, dietType: DietType, bodyFatPercent?: number, targetWeight?: number): number;
 
   /**
    * Calculate complete macro split

@@ -22,6 +22,8 @@ interface TodayWorkoutCardProps {
   /** When provided, overrides workout.estimatedCalories for the calories display.
    *  Pass actual burned calories when the workout is partially or fully complete. */
   displayCalories?: number;
+  /** GAP-15: ISO string of when this workout was last completed (any week). */
+  lastPerformedAt?: string;
   onStartWorkout: () => void;
   onViewDetails: () => void;
   onRecoveryTips?: () => void;
@@ -40,6 +42,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
   isCompleted,
   progress,
   displayCalories,
+  lastPerformedAt,
   onStartWorkout,
   onViewDetails,
   onRecoveryTips,
@@ -153,7 +156,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                   </View>
                 </View>
 
-                {!isRestDay && workout && (
+                  {!isRestDay && workout && (
                   <View style={styles.metaRow}>
                     <View style={styles.metaItem}>
                       <Ionicons
@@ -188,6 +191,13 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                       </Text>
                     </View>
                   </View>
+                )}
+
+                {/* GAP-15: Last performed context */}
+                {!isRestDay && !isCompleted && lastPerformedAt && (
+                  <Text style={styles.lastPerformedText}>
+                    Last done: {new Date(lastPerformedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </Text>
                 )}
 
                 {isRestDay && (
@@ -359,6 +369,13 @@ const styles = StyleSheet.create({
   bottomSection: {
     marginTop: ResponsiveTheme.spacing.lg,
     marginBottom: rh(4),
+  },
+  // GAP-15: last performed label
+  lastPerformedText: {
+    fontSize: rf(11),
+    color: 'rgba(255,255,255,0.4)',
+    marginTop: ResponsiveTheme.spacing.xs,
+    fontStyle: 'italic',
   },
   actionButton: {
     borderRadius: ResponsiveTheme.borderRadius.lg,

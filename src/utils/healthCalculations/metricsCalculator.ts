@@ -59,6 +59,7 @@ export class MetricsCalculator {
       user.weight,
       goalType,
       dietType,
+      user.bodyFat,
     );
 
 

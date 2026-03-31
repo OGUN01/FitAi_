@@ -22,6 +22,7 @@ export async function generateMeal(
   preferences: {
     bodyMetrics?: BodyMetrics;
     dietPreferences?: DietPreferences;
+    calorieTarget?: number;
   } = {},
   updateMetadata: (metadata: AIServiceMetadata) => void,
 ): Promise<AIResponse<Meal>> {
@@ -32,7 +33,7 @@ export async function generateMeal(
       fitnessGoals,
       preferences.bodyMetrics,
       preferences.dietPreferences,
-      undefined,
+      preferences.calorieTarget,
       {
         currentWeightKg: resolveCurrentWeightFromStores({
           bodyAnalysisWeight: preferences.bodyMetrics?.current_weight_kg,
@@ -81,6 +82,7 @@ export async function generateDailyMealPlan(
   preferences: {
     bodyMetrics?: BodyMetrics;
     dietPreferences?: DietPreferences;
+    calorieTarget?: number;
   } = {},
   updateMetadata: (metadata: AIServiceMetadata) => void,
 ): Promise<AIResponse<DailyMealPlan>> {
@@ -91,7 +93,7 @@ export async function generateDailyMealPlan(
       fitnessGoals,
       preferences.bodyMetrics,
       preferences.dietPreferences,
-      undefined,
+      preferences.calorieTarget,
       {
         currentWeightKg: resolveCurrentWeightFromStores({
           bodyAnalysisWeight: preferences.bodyMetrics?.current_weight_kg,
@@ -121,6 +123,7 @@ export async function generateDailyMealPlan(
         carbohydrates: response.data.dailyTotals?.carbs || 0,
         fat: response.data.dailyTotals?.fat || 0,
         fiber: 0,
+        sugar: response.data.dailyTotals?.sugar || 0,
       },
       waterIntake: 0,
     };

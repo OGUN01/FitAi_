@@ -172,30 +172,28 @@ class WorkoutTemplateService {
   }
 
   async incrementUsageCount(id: string, userId: string): Promise<void> {
-    const { data, error: fetchError } = await supabase
-      .from("workout_templates")
-      .select("usage_count")
-      .eq("id", id)
-      .eq("user_id", userId)
-      .single();
+    // GAP-17: Atomic increment — single UPDATE avoids read-then-write race condition
+    const { error } = await supabase.rpc("increment_template_usage_count", {
+      template_id: id,
+      owner_user_id: userId,
+    });
 
-    const currentCount =
-      (data as { usage_count?: number } | null)?.usage_count ?? 0;
-
-    const { error } = await supabase
-      .from("workout_templates")
-      .update({
-        usage_count: currentCount + 1,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id)
-      .eq("user_id", userId);
-
-    if (fetchError || error) {
-      console.error(
-        "Failed to increment template usage count:",
-        fetchError || error,
-      );
+    if (error) {
+      // Fallback: non-atomic but better than nothing
+      console.error("Failed to increment template usage count (rpc):", error);
+      const { data } = await supabase
+        .from("workout_templates")
+        .select("usage_count")
+        .eq("id", id)
+        .eq("user_id", userId)
+        .single();
+      const currentCount =
+        (data as { usage_count?: number } | null)?.usage_count ?? 0;
+      await supabase
+        .from("workout_templates")
+        .update({ usage_count: currentCount + 1, updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .eq("user_id", userId);
     }
   }
 }

@@ -368,6 +368,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     carbs: storeNutrition.carbs,
     fat: storeNutrition.fat,
     fiber: storeNutrition.fiber,
+    sugar: storeNutrition.sugar,
     mealsCount: dailyNutrition?.mealsCount ?? todaysConsumedMeals.length,
   };
 
@@ -396,6 +397,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     fiber: {
       current: currentNutrition.fiber,
       target: 25, // Standard daily fiber target (getMacroTargets does not include fiber)
+    },
+    sugar: {
+      current: currentNutrition.sugar,
+      target: 50, // WHO recommendation: <50g/day added sugar (10% of 2000 kcal diet)
     },
   };
 

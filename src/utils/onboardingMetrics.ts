@@ -40,6 +40,7 @@ export const calculateCompletionMetrics = (
         value !== null &&
         value !== undefined &&
         value !== "" &&
+        value !== false &&
         (Array.isArray(value) ? value.length > 0 : true),
     ).length;
   }
@@ -80,6 +81,7 @@ export const calculateCompletionMetrics = (
         value !== null &&
         value !== undefined &&
         value !== "" &&
+        value !== false &&
         (Array.isArray(value) ? value.length > 0 : true),
     ).length;
   }

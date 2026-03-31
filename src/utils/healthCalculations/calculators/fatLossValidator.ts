@@ -111,8 +111,9 @@ export class FatLossValidator {
     }
 
     // Tier 4: Extreme (>2 kg/week) - Low/Normal BMI
+    // valid: false so that core.ts:266-268 actually blocks plan generation
     return {
-      valid: true,
+      valid: false,
       severity: "error",
       message: `${weeklyRate.toFixed(1)}kg/week is extremely aggressive and likely unsustainable. Strong risk of muscle loss, metabolic damage, and rebound weight gain.`,
       achievementProbability: 10,

@@ -16,6 +16,7 @@ import { Card } from "../ui";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rp, rbr, rs } from "../../utils/responsive";
 import { exerciseFilterService } from "../../services/exerciseFilterService";
+import { getFallbackGifUrl } from "../../services/exercise-visual/urlUtils";
 
 interface ExerciseGifPlayerProps {
   exerciseId: string; // Direct exercise ID - no more complex matching!
@@ -26,6 +27,8 @@ interface ExerciseGifPlayerProps {
   showInstructions?: boolean;
   onInstructionsPress?: () => void;
   autoPlay?: boolean;
+  /** When false, hides the pause/play button and "Tap to zoom" hint. Use inside modals. */
+  showControls?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -38,12 +41,14 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
   showInstructions = true,
   onInstructionsPress,
   autoPlay = true,
+  showControls = true,
   style,
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
 
   const getFallbackDisplayName = (value: string) =>
     value
@@ -90,8 +95,10 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
     "Exercise";
 
   useEffect(() => {
+    // Reset fallback whenever exercise changes
+    setFallbackUrl(null);
     if (exercise?.gifUrl) {
-      setIsLoading(false);
+      setIsLoading(true);
       setHasError(false);
     } else {
       setIsLoading(false);
@@ -109,10 +116,21 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
 
   const handleImageError = () => {
     setIsLoading(false);
-    setHasError(true);
-    console.error(
-      `🚨 GIF LOAD ERROR: Failed to load GIF for exercise ID "${exerciseId}"`,
-    );
+    // If we haven't tried a fallback yet, swap to a Giphy-based fallback URL silently
+    if (!fallbackUrl) {
+      const fb = getFallbackGifUrl(displayName || exerciseId);
+      console.warn(
+        `⚠️ GIF load failed for "${exerciseId}", trying fallback: ${fb}`,
+      );
+      setFallbackUrl(fb);
+      setIsLoading(true); // show spinner while fallback loads
+    } else {
+      // Fallback also failed — show error UI
+      setHasError(true);
+      console.error(
+        `🚨 GIF LOAD ERROR: Both primary and fallback GIFs failed for exercise ID "${exerciseId}"`,
+      );
+    }
   };
 
   const togglePlayback = () => {
@@ -216,7 +234,7 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
             accessibilityLabel={`View ${displayName} instructions`}
           >
             <Text style={styles.instructionsButtonText}>
-              View Instructions ({exercise.instructions?.length || 0} steps)
+              View Instructions
             </Text>
           </TouchableOpacity>
         )}
@@ -279,7 +297,7 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
               style={styles.gifTouchArea}
             >
               <Image
-                source={{ uri: exercise.gifUrl }}
+                source={{ uri: fallbackUrl ?? exercise.gifUrl }}
                 style={[
                   styles.gif,
                   {
@@ -296,26 +314,30 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
                 cachePolicy="memory-disk" // Better caching for GIFs
               />
 
-              {/* Zoom hint overlay */}
-              <View style={styles.zoomHint}>
-                <Text style={styles.zoomHintText}>Tap to zoom</Text>
-              </View>
+              {/* Zoom hint overlay — hidden when showControls=false */}
+              {showControls && (
+                <View style={styles.zoomHint}>
+                  <Text style={styles.zoomHintText}>Tap to zoom</Text>
+                </View>
+              )}
             </TouchableOpacity>
 
-            {/* Playback controls overlay */}
-            <TouchableOpacity
-              style={styles.playbackOverlay}
-              onPress={togglePlayback}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={isPlaying ? "Pause exercise demonstration" : "Play exercise demonstration"}
-            >
-              <View style={styles.playbackButton}>
-                <Text style={styles.playbackIcon}>
-                  {isPlaying ? "||" : ">"}
-                </Text>
-              </View>
-            </TouchableOpacity>
+            {/* Playback controls overlay — hidden when showControls=false */}
+            {showControls && (
+              <TouchableOpacity
+                style={styles.playbackOverlay}
+                onPress={togglePlayback}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={isPlaying ? "Pause exercise demonstration" : "Play exercise demonstration"}
+              >
+                <View style={styles.playbackButton}>
+                  <Text style={styles.playbackIcon}>
+                    {isPlaying ? "||" : ">"}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
           </>
         )}
       </View>

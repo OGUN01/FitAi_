@@ -52,7 +52,12 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
       </TouchableOpacity>
 
       <View style={styles.headerInfo}>
-        <Text style={styles.workoutTitle} numberOfLines={1}>
+        <Text
+          style={styles.workoutTitle}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.7}
+        >
           {safeString(workoutTitle, "Workout")}
         </Text>
         <Text style={styles.progressText}>
@@ -61,8 +66,10 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
       </View>
 
       <View style={[styles.headerRight, { pointerEvents: "none" }]}>
+        <Text style={styles.statLabel}>TIME</Text>
         <Text style={styles.timerText}>{formatSeconds(duration)}</Text>
-        <Text style={styles.caloriesText}>{safeString(calories)} cal</Text>
+        <Text style={styles.statLabel}>CAL</Text>
+        <Text style={styles.caloriesText}>{safeString(calories)}</Text>
       </View>
     </View>
   );
@@ -128,9 +135,17 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textSecondary,
   },
 
+  statLabel: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: ResponsiveTheme.colors.textSecondary,
+    letterSpacing: 0.8,
+    opacity: 0.6,
+    marginTop: 2,
+  },
+
   caloriesText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
-    marginTop: rp(2),
   },
 });

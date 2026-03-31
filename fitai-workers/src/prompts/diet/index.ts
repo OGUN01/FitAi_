@@ -76,7 +76,8 @@ export function buildPlaceholdersFromUserData(
 		// Health context
 		BMI: metrics.calculated_bmi || 0,
 		BMI_CATEGORY: metrics.bmi_category || 'Unknown',
-		FITNESS_GOAL: (profile as any)?.fitness_goal || 'maintenance',
+		// BUG-95: UserProfileContext uses snake_case fitness_goal, not camelCase fitnessGoal
+		FITNESS_GOAL: profile?.fitness_goal || 'maintenance',
 
 		// Preferences
 		COOKING_METHODS: prefs?.cooking_methods || [],

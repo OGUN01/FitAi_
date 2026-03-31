@@ -89,13 +89,22 @@ export const WeightGoalsSection: React.FC<WeightGoalsSectionProps> = ({
             </View>
           </View>
 
-          {formData.weekly_weight_loss_goal && (
-            <View style={styles.weeklyRateInfo}>
-              <Text style={styles.weeklyRateText}>
-                Safe weekly rate: {formData.weekly_weight_loss_goal}kg/week
-              </Text>
-            </View>
-          )}
+          {bodyAnalysisData.current_weight_kg &&
+            bodyAnalysisData.target_weight_kg &&
+            bodyAnalysisData.target_timeline_weeks && (
+              <View style={styles.weeklyRateInfo}>
+                <Text style={styles.weeklyRateText}>
+                  Weekly rate:{" "}
+                  {(
+                    Math.abs(
+                      bodyAnalysisData.current_weight_kg -
+                        bodyAnalysisData.target_weight_kg,
+                    ) / bodyAnalysisData.target_timeline_weeks
+                  ).toFixed(2)}
+                  kg/week
+                </Text>
+              </View>
+            )}
         </GlassCard>
       </View>
       <View style={styles.sectionBottomPad} />

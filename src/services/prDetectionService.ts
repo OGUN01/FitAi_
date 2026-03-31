@@ -49,11 +49,13 @@ class PRDetectionService {
     prType: "weight" | "estimated_1rm",
     value: number,
     sessionId?: string,
+    exerciseName?: string,
   ): Promise<void> {
     const { error } = await supabase.from("exercise_prs").upsert(
       {
         user_id: userId,
         exercise_id: exerciseId,
+        exercise_name: exerciseName ?? null,
         pr_type: prType,
         value,
         session_id: sessionId ?? null,

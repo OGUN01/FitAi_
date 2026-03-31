@@ -1,3 +1,8 @@
+// DEPRECATED: This file is NOT imported by the canonical store (src/stores/fitnessStore.ts).
+// The actual implementations live inline in fitnessStore.ts.
+// Do NOT add new code here — it will never execute.
+// TODO: Remove this file once confirmed no references exist.
+
 import { Platform } from "react-native";
 import { storeLogger } from "../../utils/logger";
 import { DayWorkout } from "../../ai";
@@ -229,6 +234,8 @@ export const createSessionActions = (
       reps: number;
       setType: string;
       completed: boolean;
+      rpe?: 1 | 2 | 3;
+      isCalibration?: boolean;
     },
   ) => {
     set((state) => {
@@ -245,6 +252,8 @@ export const createSessionActions = (
               weight: data.weightKg,
               completed: data.completed,
               setType: data.setType,
+              rpe: data.rpe ?? null,
+              isCalibration: data.isCalibration ?? false,
             };
           }
 

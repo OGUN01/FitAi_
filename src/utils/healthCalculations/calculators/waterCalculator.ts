@@ -35,15 +35,16 @@ export class ClimateAdaptiveWaterCalculator implements WaterCalculator {
 
     waterML += activityBonus[activityLevel];
 
-    // Climate multipliers (research-backed)
-    const climateMultipliers: Record<ClimateType, number> = {
-      tropical: 1.5,    // +50% for humidity and heat
-      temperate: 1.0,   // Baseline (moderate climate)
-      cold: 0.9,        // -10% (less sweating, but still need hydration)
-      arid: 1.7,        // +70% for extreme dehydration risk
+    // Climate adjustments: additive (not multiplicative) to avoid compounding
+    // with already-elevated base for higher body weights.
+    const climateBonus: Record<ClimateType, number> = {
+      tropical: 700,    // +700ml for heat and humidity
+      temperate: 0,     // Baseline — no adjustment
+      cold: -200,       // -200ml (less sweat loss indoors)
+      arid: 1000,       // +1000ml for extreme dehydration risk
     };
 
-    waterML *= climateMultipliers[climate];
+    waterML += climateBonus[climate];
 
     // Round to nearest 50ml for practical measurement
     return Math.round(waterML / 50) * 50;
@@ -75,30 +76,28 @@ export class ClimateAdaptiveWaterCalculator implements WaterCalculator {
       very_active: 2000,
     };
 
-    const climateMultipliers: Record<ClimateType, number> = {
-      tropical: 1.5,
-      temperate: 1.0,
-      cold: 0.9,
-      arid: 1.7,
+    const climateBonus: Record<ClimateType, number> = {
+      tropical: 700,
+      temperate: 0,
+      cold: -200,
+      arid: 1000,
     };
 
     const bonus = activityBonus[activityLevel];
-    const mult = climateMultipliers[climate];
-    const beforeClimate = baseWater + bonus;
-    const totalWater = beforeClimate * mult;
+    const climateMl = climateBonus[climate];
+    const totalWater = baseWater + bonus + climateMl;
 
     const breakdown = [
       `Base (${weight}kg × 35ml): ${Math.round(baseWater)} ml`,
       `+ Activity (${activityLevel}): ${bonus} ml`,
-      `= ${Math.round(beforeClimate)} ml`,
-      `× Climate (${climate}): ${mult}`,
+      `+ Climate (${climate}): ${climateMl} ml`,
       `= ${Math.round(totalWater)} ml`,
     ].join('\n');
 
     return {
       baseWater: Math.round(baseWater),
       activityBonus: bonus,
-      climateMultiplier: mult,
+      climateMultiplier: climateMl,
       totalWater: Math.round(totalWater / 50) * 50,
       breakdown,
       cups: Math.round((totalWater / 237) * 10) / 10, // 1 cup = 237ml

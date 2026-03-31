@@ -206,19 +206,20 @@ class UserProfileService {
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        if (error.code === "PGRST116") {
-          // No fitness goals found
-          return {
-            success: false,
-            error: "No fitness goals found",
-          };
-        }
         return {
           success: false,
           error: error.message,
+        };
+      }
+
+      if (!data) {
+        // No fitness goals found for this user
+        return {
+          success: false,
+          error: "No fitness goals found",
         };
       }
 

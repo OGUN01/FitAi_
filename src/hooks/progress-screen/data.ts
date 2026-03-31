@@ -10,7 +10,7 @@ import { useFitnessStore } from "../../stores/fitnessStore";
 import { useNutritionStore } from "../../stores/nutritionStore";
 import { WeeklyDataPoint } from "./types";
 import { findCompletedSessionForWorkout } from "../../utils/workoutIdentity";
-import { getCurrentWeekStart } from "../../utils/weekUtils";
+import { getCurrentWeekStart, getWeekStartForDate } from "../../utils/weekUtils";
 
 export const ACTIVITIES_PER_PAGE = 10;
 
@@ -86,9 +86,14 @@ export const buildTodaysData = (): any => {
         weekStart: getCurrentWeekStart(),
       })
     : false;
+  const rawEntry = todaysWorkout ? fitnessState.getWorkoutProgress(todaysWorkout.id) : null;
+  const entryIsThisWeek =
+    rawEntry?.completedAt
+      ? getWeekStartForDate(rawEntry.completedAt) === getCurrentWeekStart()
+      : true; // partial (no completedAt) entries are always considered current
   const workoutProgress = sessionFound
     ? 100
-    : Math.min(fitnessState.getWorkoutProgress(todaysWorkout?.id || '')?.progress ?? 0, 99);
+    : Math.min((entryIsThisWeek ? rawEntry?.progress : 0) ?? 0, 99);
 
   const mealsCompleted = todaysMeals.filter(
     (m) => nutritionState.getMealProgress(m.id)?.progress === 100

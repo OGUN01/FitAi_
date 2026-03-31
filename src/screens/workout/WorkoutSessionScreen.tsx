@@ -6,20 +6,18 @@ import {
   SafeAreaView,
   ScrollView,
   Animated,
+  TouchableOpacity,
+  Pressable,
 } from "react-native";
 import { ResponsiveTheme } from "../../utils/constants";
 import { getLocalDateString } from "../../utils/weekUtils";
 import { DayWorkout } from "../../types/ai";
-import { WorkoutTimer } from "../../components/fitness/WorkoutTimer";
 import { ExerciseGifPlayer } from "../../components/fitness/ExerciseGifPlayer";
 import { ExerciseInstructionModal } from "../../components/fitness/ExerciseInstructionModal";
 import { ExerciseSessionModal } from "../../components/fitness/ExerciseSessionModal";
 import completionTrackingService from "../../services/completionTracking";
 import { completeExtraWorkout } from "../../services/extraWorkoutService";
 import { analyticsHelpers } from "../../stores/analyticsStore";
-// analyticsDataService removed: updateTodaysMetrics is already called inside
-// completionTrackingService.completeWorkout() and completeExtraWorkout().
-// Calling it again here would double-count calories/workouts in analytics_metrics.
 import { useFitnessStore } from "../../stores/fitnessStore";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { exerciseFilterService } from "../../services/exerciseFilterService";
@@ -29,12 +27,10 @@ import { useWorkoutAchievements } from "../../hooks/useWorkoutAchievements";
 import { useWorkoutAnimations } from "../../hooks/useWorkoutAnimations";
 import { WorkoutHeader } from "../../components/workout/WorkoutHeader";
 import { WorkoutProgressBar } from "../../components/workout/WorkoutProgressBar";
-import {
-  ExerciseCard,
-  SetCompletionData,
-} from "../../features/workouts/components/ExerciseCard";
+import { SetLogModal, SetLogData } from "../../components/workout/SetLogModal";
 import { RestTimer } from "../../features/workouts/components/RestTimer";
 import { DeloadModal } from "../../features/workouts/components/DeloadModal";
+import { parseTimedExercise } from "../../utils/exerciseDuration";
 import { startTimer } from "../../services/restTimerService";
 import {
   checkReactiveDeload,
@@ -42,7 +38,6 @@ import {
   DeloadSuggestion,
 } from "../../services/deloadService";
 import { exerciseHistoryService } from "../../services/exerciseHistoryService";
-import { WorkoutNavigation } from "../../components/workout/WorkoutNavigation";
 import { AchievementNotifications } from "../../components/workout/AchievementNotifications";
 import { WorkoutErrorState } from "../../components/workout/WorkoutErrorState";
 import { NextExercisePreview } from "../../components/workout/NextExercisePreview";
@@ -52,6 +47,8 @@ import {
   showExitWorkoutAlert,
 } from "./workoutAlerts";
 import { WorkoutCompleteDialog } from "../../components/ui/CustomDialog";
+import { getCalibrationStatus, CalibrationStatus } from "../../services/calibrationService";
+import { generateWarmupSets, classifyExercise, WarmupSet } from "../../services/warmupService";
 
 interface WorkoutSessionScreenProps {
   route: {
@@ -79,45 +76,6 @@ const safeString = (value: any, fallback: string = ""): string => {
   }
 };
 
-const parseDurationFromReps = (reps: any): number => {
-  if (!reps) return 0;
-  const str = String(reps).toLowerCase().trim();
-
-  if (
-    str.includes("-") ||
-    str.includes("to") ||
-    str.match(/^\d+\s*[-–]\s*\d+$/)
-  ) {
-    return 0;
-  }
-
-  const mmss = str.match(/^(\d+):(\d{1,2})$/);
-  if (mmss) {
-    const m = parseInt(mmss[1], 10);
-    const s = parseInt(mmss[2], 10);
-    if (!Number.isNaN(m) && !Number.isNaN(s)) return m * 60 + s;
-  }
-
-  const sec = str.match(/^(\d+)\s*(seconds|second|secs|sec|s)$/);
-  if (sec) {
-    const v = parseInt(sec[1], 10);
-    return Number.isNaN(v) ? 0 : v;
-  }
-
-  const min = str.match(/^(\d+)\s*(minutes|minute|mins|min|m)$/);
-  if (min) {
-    const v = parseInt(min[1], 10);
-    return Number.isNaN(v) ? 0 : v * 60;
-  }
-
-  const pure = parseInt(str, 10);
-  if (!Number.isNaN(pure) && str === pure.toString()) {
-    return pure;
-  }
-
-  return 0;
-};
-
 const safeNumber = (value: any, fallback: number = 0): number => {
   const num = Number(value);
   return isNaN(num) ? fallback : num;
@@ -139,7 +97,6 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   const achievements = useWorkoutAchievements();
   const animations = useWorkoutAnimations();
 
-  // Workout complete dialog state (replaces crossPlatformAlert on web)
   const [completeDialog, setCompleteDialog] = useState<{
     visible: boolean;
     durationMins: number;
@@ -151,29 +108,33 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   } | null>(null);
 
   const [restTimerEndTime, setRestTimerEndTime] = useState<number | null>(null);
+  // Total duration of the current rest period — for RestTimer progress bar
+  const [restTotalDuration, setRestTotalDuration] = useState<number>(60);
+  // When true, rest timer completion advances to next exercise (not next set)
+  const [isInterExerciseRest, setIsInterExerciseRest] = useState(false);
   const [deloadSuggestion, setDeloadSuggestion] =
     useState<DeloadSuggestion | null>(null);
 
+  // Calibration state: keyed by exerciseId
+  const [calibrationMap, setCalibrationMap] = useState<Record<string, CalibrationStatus>>({});
+  // Warm-up sets for current exercise
+  const [warmupSets, setWarmupSets] = useState<WarmupSet[]>([]);
+  const [warmupDoneMap, setWarmupDoneMap] = useState<Record<number, boolean>>({});
+
   const userId = getCurrentUserId() || undefined;
   const personalInfo = useProfileStore((s) => s.personalInfo);
+  const workoutPreferences = useProfileStore((s) => s.workoutPreferences);
   const userUnits: "kg" | "lbs" =
     personalInfo?.units === "imperial" ? "lbs" : "kg";
-
-  // All hooks must be declared before any early returns (Rules of Hooks).
-  // The guards below still run before the render JSX.
-
-  const derivedExerciseDuration = useMemo(() => {
-    const repsDuration = parseDurationFromReps(session.currentExercise.reps);
-    const restSeconds = safeNumber(session.currentExercise.restTime, 0);
-    return repsDuration || restSeconds || 30;
-  }, [session.currentExercise.reps, session.currentExercise.restTime]);
+  const bodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
+  const userWeightKg = bodyAnalysis?.current_weight_kg ?? 70;
+  const experienceLevel: 'beginner' | 'intermediate' | 'advanced' =
+    workoutPreferences?.intensity ?? 'beginner';
 
   const getExerciseName = useCallback((exerciseId: string): string => {
     if (!exerciseId) return "Exercise";
     const exercise = exerciseFilterService.getExerciseById(exerciseId);
-    if (exercise?.name) {
-      return exercise.name;
-    }
+    if (exercise?.name) return exercise.name;
     return safeString(exerciseId, "Exercise")
       .replace(/_/g, " ")
       .replace(/\b\w/g, (l) => l.toUpperCase());
@@ -186,6 +147,47 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     return () => clearInterval(interval);
   }, [session.setCurrentTime]);
 
+  // Load calibration status for each exercise once on mount
+  useEffect(() => {
+    if (!userId || !workout?.exercises) return;
+    for (const exercise of workout.exercises) {
+      if (!exercise.exerciseId) continue;
+      getCalibrationStatus(
+        exercise.exerciseId,
+        userId,
+        userWeightKg,
+        experienceLevel,
+      ).then((status) => {
+        setCalibrationMap((prev) => ({
+          ...prev,
+          [exercise.exerciseId!]: status,
+        }));
+      }).catch(() => { /* non-blocking — defaults to no calibration */ });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  // Load warm-up sets whenever exercise changes
+  useEffect(() => {
+    if (!userId || !session.currentExercise?.exerciseId) {
+      setWarmupSets([]);
+      return;
+    }
+    const exId = session.currentExercise.exerciseId;
+    const kind = classifyExercise(exId);
+    if (kind === 'bodyweight' || kind === 'time_based') {
+      setWarmupSets([]);
+      return;
+    }
+    exerciseHistoryService
+      .getBestEstimated1RM(exId, userId)
+      .then((e1rm) => {
+        setWarmupSets(generateWarmupSets(e1rm, kind));
+        setWarmupDoneMap({});
+      })
+      .catch(() => setWarmupSets([]));
+  }, [session.currentExerciseIndex, userId]);
+
   useEffect(() => {
     return () => {
       if (session.nextExercisePreviewTimeoutRef.current) {
@@ -194,8 +196,9 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     };
   }, []);
 
-  const handleSetComplete = useCallback(
-    async (setIndex: number, _setData?: SetCompletionData) => {
+  // Called after user submits weight/reps in SetLogModal
+  const handleSaveSetData = useCallback(
+    async (setIndex: number, setData: SetLogData) => {
       let wasAllSetsCompleted = false;
 
       await session.handleSetComplete(
@@ -213,7 +216,6 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           );
         },
         async () => {
-          // Called when ALL sets of the current exercise are completed
           wasAllSetsCompleted = true;
           await achievements.trackExerciseCompletion(
             session.currentExercise.name ||
@@ -227,21 +229,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         },
       );
 
-      // Rest timer: only fire when not the last set (i.e. not all sets completed).
-      // The hook-level rest timer (setIsRestTime) already fires inside handleSetComplete
-      // for the WorkoutTimer overlay. Here we fire the RestTimer overlay (timestamp-based)
-      // only when enabled and NOT all sets done.
+      // Per-set achievement tracking
       if (!wasAllSetsCompleted) {
-        const restTimerEnabled = useFitnessStore.getState().restTimerEnabled;
-        if (restTimerEnabled) {
-          session.setIsRestTime(false);
-          const restSecs = safeNumber(session.currentExercise.restTime, 60);
-          if (restSecs > 0) {
-            setRestTimerEndTime(startTimer(restSecs));
-          }
-        }
-
-        // Per-set achievement tracking (only fires when NOT all sets completed)
         const totalSets = session.currentProgress.completedSets.length;
         await achievements.trackSetCompletion(
           session.currentExercise.name ||
@@ -252,20 +241,85 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           workout.category || "General",
         );
       }
+
+      // Advance the phase state machine
+      session.advanceAfterLog(wasAllSetsCompleted);
+
+      if (wasAllSetsCompleted) {
+        // Between exercises: longer rest (1.5x normal, min 60s)
+        if (session.currentExerciseIndex < session.totalExercises - 1) {
+          const restSecs = Math.max(
+            60,
+            Math.round(safeNumber(session.currentExercise.restTime, 60) * 1.5),
+          );
+          setIsInterExerciseRest(true);
+          setRestTotalDuration(restSecs);
+          setRestTimerEndTime(startTimer(restSecs));
+        } else {
+          // Last exercise — go straight to workout complete
+          completeWorkout();
+        }
+      } else {
+        // Between sets: normal rest timer
+        const restSecs = safeNumber(session.currentExercise.restTime, 60);
+        setIsInterExerciseRest(false);
+        setRestTotalDuration(restSecs);
+        if (restSecs > 0) {
+          setRestTimerEndTime(startTimer(restSecs));
+        } else {
+          // No rest defined — go straight to next set
+          session.onRestComplete();
+        }
+      }
     },
     [session, achievements, workout.category],
   );
+
+  /**
+   * Called when a time-based set completes (no logging UI shown).
+   * Auto-logs a zero-data record so history still knows the exercise was done.
+   */
+  const handleTimeBasedSetComplete = useCallback(async () => {
+    const autoData: SetLogData = {
+      weightKg: 0,
+      reps: 0,
+      setType: "normal",
+      completed: true,
+      rpe: 2,              // neutral RPE for auto-logged time-based sets
+      isCalibration: false,
+    };
+    await handleSaveSetData(session.currentSetIndex, autoData);
+  }, [handleSaveSetData, session.currentSetIndex]);
+
+  const handleRestTimerExpire = useCallback(() => {
+    setRestTimerEndTime(null);
+    setIsInterExerciseRest((prevIsInter) => {
+      if (prevIsInter) {
+        animations.animateTransition(() => {
+          session.goToNextExercise();
+        });
+      } else {
+        session.onRestComplete();
+      }
+      return false;
+    });
+  }, [session, animations]);
 
   const completeWorkout = useCallback(async () => {
     try {
       const elapsedSeconds = Math.floor(
         (new Date().getTime() - session.workoutStartTime.getTime()) / 1000,
       );
+      // Pull actual logged set data (weight, reps) from store.
+      // currentWorkoutSession.exercises is updated by updateSetData() each time
+      // the user submits a set in SetLogModal — this is the authoritative source.
+      const loggedExercises =
+        useFitnessStore.getState().currentWorkoutSession?.exercises ?? [];
       const finalStats = {
         ...session.workoutStats,
         totalDuration: elapsedSeconds,
+        exercises: loggedExercises, // real weight/reps → _writeExerciseSets
       };
-      // completionTrackingService expects duration in minutes
       const durationMinutes = Math.max(1, Math.round(elapsedSeconds / 60));
 
       let success: boolean;
@@ -298,7 +352,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       if (success) {
         await achievements.trackWorkoutCompletion(
           workout.category || "General",
-          durationMinutes, // achievements expect minutes, not seconds
+          durationMinutes,
           finalStats.caloriesBurned,
           finalStats.exercisesCompleted,
           finalStats.setsCompleted,
@@ -306,19 +360,12 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           workout.title,
         );
 
-        // SSOT fix: feed analyticsStore so its metricsHistory and currentAnalytics
-        // are based on real completion data (analyticsEngine was previously never
-        // called on workout completion, leaving analyticsStore always empty).
         analyticsHelpers.trackWorkoutCompleted({
           date: getLocalDateString(),
           duration: durationMinutes,
           caloriesBurned: finalStats.caloriesBurned,
           type: workout.category || "general",
         });
-
-        // NOTE: analyticsDataService.updateTodaysMetrics() is already called by
-        // completionTrackingService.completeWorkout() and completeExtraWorkout().
-        // Do NOT call it again here — that would double-count calories/workoutsCompleted.
 
         if (userId) {
           for (const ex of workout.exercises) {
@@ -391,6 +438,9 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   }, [workout, sessionId, isExtra, session, achievements, navigation]);
 
   const goToNextExercise = useCallback(() => {
+    // Always clear the rest timer before navigating — prevents ghost onExpire
+    setRestTimerEndTime(null);
+    setIsInterExerciseRest(false);
     if (session.currentExerciseIndex < session.totalExercises - 1) {
       animations.animateTransition(() => {
         session.goToNextExercise();
@@ -401,6 +451,9 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   }, [session, animations, completeWorkout]);
 
   const goToPreviousExercise = useCallback(() => {
+    // Clear any running rest timer before going back
+    setRestTimerEndTime(null);
+    setIsInterExerciseRest(false);
     if (session.currentExerciseIndex > 0) {
       animations.animateTransition(() => {
         session.goToPreviousExercise();
@@ -423,14 +476,13 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         const progressPercentage =
           totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
 
-        // Never overwrite a higher prior progress with a lower value
-        // (e.g. user navigated but did no sets this session).
         const savedPrior =
           useFitnessStore.getState().getWorkoutProgress(workout.id || "unknown")
             ?.progress ?? 0;
         const progressToSave = Math.max(progressPercentage, savedPrior);
 
-        // 1. Emit event to subscribers (e.g. fitness screen refresh)
+        const loggedExercisesOnExit =
+          useFitnessStore.getState().currentWorkoutSession?.exercises ?? [];
         await completionTrackingService.updateWorkoutProgress(
           workout.id || "unknown",
           progressToSave,
@@ -438,14 +490,10 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             sessionId: sessionId || "unknown",
             partialCompletion: true,
             exitedAt: new Date().toISOString(),
-            stats: session.workoutStats,
+            stats: { ...session.workoutStats, exercises: loggedExercisesOnExit },
           },
         );
 
-        // 2. Always persist exerciseIndex so resume lands on the correct exercise.
-        //    Use the first incomplete exercise (not currentExerciseIndex) so that
-        //    if the user finished all sets on Exercise N but never tapped "Next",
-        //    resume jumps to Exercise N+1 instead of replaying N from scratch.
         const firstIncompleteIdx = session.exerciseProgress.findIndex(
           (ep) => !ep.isCompleted,
         );
@@ -461,21 +509,13 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             caloriesBurned: session.workoutStats.caloriesBurned,
           });
 
-        // 3. For extra workouts: update the persisted active session so the card
-        //    shows RESUME at the correct exercise index.
-        //    Use currentExerciseIndex (where user is now), not firstIncompleteIdx
-        //    — if no sets were completed, firstIncompleteIdx would be 0 regardless.
         if (isExtra === true || (isExtra as any) === "true") {
-          // updateActiveExtraProgress is an optional method — guard call in case
-          // the fitnessStore version in use hasn't implemented it yet.
           const storeState = useFitnessStore.getState() as any;
           if (typeof storeState.updateActiveExtraProgress === "function") {
             storeState.updateActiveExtraProgress(session.currentExerciseIndex);
           }
         }
 
-        // 4. Clear the in-memory session so next "Continue" uses the
-        //    persisted exerciseIndex (single source of truth).
         useFitnessStore.setState({ currentWorkoutSession: null });
       } catch (error) {
         console.error("❌ Failed to save progress:", error);
@@ -483,8 +523,6 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       navigation.goBack();
     };
 
-    // Always pass saveProgress for both paths so exerciseIndex is persisted
-    // even when the user navigated forward but completed no sets yet.
     showExitWorkoutAlert(
       hasProgress,
       session.workoutStats.exercisesCompleted,
@@ -495,7 +533,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     );
   }, [session, workout.id, sessionId, navigation]);
 
-  // Guard returns are placed HERE — after all hooks — to satisfy Rules of Hooks.
+  // Guard returns — after all hooks
   if (!workout) {
     return (
       <WorkoutErrorState
@@ -514,11 +552,32 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     );
   }
 
+  const exerciseName =
+    session.currentExercise.name ||
+    getExerciseName(session.currentExercise.exerciseId);
+
+  const totalSets = safeNumber(session.currentExercise.sets, 3);
+  const completedSetsCount =
+    session.currentProgress.completedSets.filter(Boolean).length;
+  // Is the current exercise time-based? Used to skip SetLogModal.
+  const isTimeBased = parseTimedExercise(session.currentExercise.reps ?? "").isTimeBased;
+  // Sets currently "in progress" index (0-based)
+  const activeSetIndex =
+    session.exercisePhase === "logging" || session.exercisePhase === "resting"
+      ? session.currentSetIndex
+      : session.currentSetIndex;
+
   return (
     <SafeAreaView style={styles.container}>
       <WorkoutHeader
         workoutTitle={workout.title}
-        currentExercise={session.currentExerciseIndex + 1}
+        currentExercise={
+          // During inter-exercise rest the CURRENT exercise is complete;
+          // show the next exercise number so the header matches context.
+          isInterExerciseRest
+            ? session.currentExerciseIndex + 2
+            : session.currentExerciseIndex + 1
+        }
         totalExercises={session.totalExercises}
         duration={session.workoutStats.totalDuration}
         calories={session.workoutStats.caloriesBurned}
@@ -531,39 +590,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         fadeAnim={animations.fadeAnim}
       />
 
-      <WorkoutTimer
-        isVisible={session.isRestTime}
-        duration={session.restTimeRemaining}
-        title="Rest Time"
-        onComplete={() => {
-          session.setIsRestTime(false);
-          if (parseDurationFromReps(session.currentExercise.reps) > 0) {
-            session.setShowExerciseTimer(true);
-          } else {
-            session.setShowExerciseSession(true);
-          }
-        }}
-        onCancel={() => session.setIsRestTime(false)}
-      />
-
-      <WorkoutTimer
-        isVisible={session.showExerciseTimer}
-        duration={derivedExerciseDuration}
-        title={safeString(session.currentExercise.name || "Exercise Timer")}
-        onComplete={session.completeSetAfterTimer}
-        onCancel={() => session.setShowExerciseTimer(false)}
-      >
-        <ExerciseGifPlayer
-          exerciseId={safeString(session.currentExercise.exerciseId, "")}
-          exerciseName={safeString(session.currentExercise.name, "")}
-          height={180}
-          width={220}
-          showTitle={false}
-          showInstructions={false}
-          style={{ marginBottom: ResponsiveTheme.spacing.md }}
-        />
-      </WorkoutTimer>
-
+      {/* Next exercise preview banner */}
       {session.showNextExercisePreview && session.nextExercise && (
         <NextExercisePreview
           exerciseName={safeString(
@@ -574,6 +601,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         />
       )}
 
+      {/* Main scroll content — always shows exercise preview */}
       <ScrollView
         style={styles.content}
         showsVerticalScrollIndicator={false}
@@ -588,7 +616,26 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             },
           ]}
         >
+          {/* Exercise GIF — hidden (opacity 0) during performing so it doesn't ghost behind the modal */}
+          {/* GAP-05: Exercise name is tappable — navigates to ExerciseHistoryScreen */}
+          <Pressable
+            onPress={() =>
+              navigation.navigate('ExerciseHistory', {
+                exerciseId: session.currentExercise.exerciseId ?? '',
+                exerciseName: exerciseName,
+              } as any)
+            }
+            style={styles.exerciseNameRow}
+            testID="exercise-name-history-tap"
+          >
+            <Text style={styles.exerciseNameTap} numberOfLines={1}>
+              {exerciseName}
+            </Text>
+            <Text style={styles.exerciseHistoryHint}>📊 History</Text>
+          </Pressable>
+
           <ExerciseGifPlayer
+            key={session.currentExerciseIndex}
             exerciseId={safeString(session.currentExercise.exerciseId, "")}
             exerciseName={safeString(session.currentExercise.name, "")}
             height={280}
@@ -596,70 +643,178 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             showTitle={false}
             showInstructions={true}
             onInstructionsPress={() => session.setShowInstructionModal(true)}
-            style={styles.exerciseGifPlayer}
+            style={[
+              styles.exerciseGifPlayer,
+              session.exercisePhase === "performing" && { opacity: 0 },
+            ]}
           />
 
-          <ExerciseCard
-            exercise={{
-              exerciseId: session.currentExercise.exerciseId || "",
-              exerciseName:
-                session.currentExercise.name ||
-                getExerciseName(session.currentExercise.exerciseId),
-              sets: safeNumber(session.currentExercise.sets, 3),
-              reps: session.currentExercise.reps ?? 0,
-              restTime: session.currentExercise.restTime,
-              weight: session.currentExercise.weight,
-            }}
-            exerciseIndex={session.currentExerciseIndex}
-            onSetComplete={handleSetComplete}
-            onExerciseNamePress={() => {
-              const exId = session.currentExercise.exerciseId;
-              if (!exId) return;
-              navigation.navigate("ExerciseHistory", {
-                exerciseId: exId,
-                exerciseName:
-                  session.currentExercise.name ||
-                  getExerciseName(session.currentExercise.exerciseId),
-              });
-            }}
-            userId={userId}
-            userUnits={userUnits}
-          />
+          {/* Warm-up sets UI — shown in preview phase when history exists */}
+          {session.exercisePhase === "preview" && warmupSets.length > 0 && !restTimerEndTime && (
+            <View style={styles.warmupContainer}>
+              <Text style={styles.warmupHeader}>WARM-UP (auto-generated)</Text>
+              {warmupSets.map((ws, idx) => (
+                <View key={idx} style={styles.warmupRow}>
+                  <View style={styles.warmupInfo}>
+                    <Text style={styles.warmupWeight}>
+                      {userUnits === 'lbs'
+                        ? `${(ws.weightKg * 2.2046).toFixed(1)} lbs`
+                        : `${ws.weightKg} kg`}{' '}
+                      × {ws.targetReps} reps
+                    </Text>
+                    <Text style={styles.warmupPercent}>{ws.percentLabel}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[
+                      styles.warmupDoneBtn,
+                      warmupDoneMap[idx] && styles.warmupDoneBtnActive,
+                    ]}
+                    onPress={() =>
+                      setWarmupDoneMap((prev) => ({ ...prev, [idx]: !prev[idx] }))
+                    }
+                  >
+                    <Text style={styles.warmupDoneText}>
+                      {warmupDoneMap[idx] ? '✓' : 'Done'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+              <View style={styles.warmupDivider} />
+              <Text style={styles.warmupWorkingLabel}>WORKING SETS</Text>
+            </View>
+          )}
+
+          {/* Set progress indicator in preview phase — hidden during rest */}
+          {session.exercisePhase === "preview" && totalSets > 1 && !restTimerEndTime && (
+            <View style={styles.setProgressRow}>
+              {Array.from({ length: totalSets }, (_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.setDot,
+                    i < completedSetsCount && styles.setDotCompleted,
+                  ]}
+                />
+              ))}
+            </View>
+          )}
+
+          {/* "Start Exercise" button in preview phase */}
+          {session.exercisePhase === "preview" && (
+            <TouchableOpacity
+              style={[
+                styles.startButton,
+                session.currentProgress.isCompleted && styles.completedButton,
+              ]}
+              onPress={
+                session.currentProgress.isCompleted
+                  ? goToNextExercise
+                  : session.startExercise
+              }
+            >
+              <Text style={styles.startButtonText}>
+                {session.currentProgress.isCompleted
+                  ? session.currentExerciseIndex < session.totalExercises - 1
+                    ? "Next Exercise →"
+                    : "Finish Workout"
+                  : completedSetsCount > 0
+                  ? `Continue — Set ${completedSetsCount + 1} of ${totalSets}`
+                  : "Start Exercise"}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Previous / Next Exercise nav (preview only) — Next link removed when isCompleted since main button already handles it */}
+          {session.exercisePhase === "preview" && (
+            <View style={styles.previewNav}>
+              {session.currentExerciseIndex > 0 && (
+                <TouchableOpacity
+                  style={styles.prevExButton}
+                  onPress={goToPreviousExercise}
+                >
+                  <Text style={styles.prevExText}>← Previous</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
         </Animated.View>
       </ScrollView>
 
+      {/* ── Modals / Overlays ── */}
+
+      {/* PERFORMING phase: Breathing card */}
+      <ExerciseSessionModal
+        isVisible={session.exercisePhase === "performing"}
+        onComplete={
+          isTimeBased
+            ? // Time-based: tap Complete Set → auto-log + skip SetLogModal
+              () => {
+                session.completeTimeBasedSet();
+                handleTimeBasedSetComplete();
+              }
+            : session.completeCurrentSet
+        }
+        onCancel={session.cancelPerforming}
+        exerciseId={safeString(session.currentExercise.exerciseId, "")}
+        exerciseName={safeString(exerciseName, "Current Exercise")}
+        reps={safeString(session.currentExercise.reps, "")}
+        currentSet={session.currentSetIndex + 1}
+        totalSets={totalSets}
+      />
+
+      {/* LOGGING phase: Data input — hidden for time-based exercises */}
+      {!isTimeBased && (() => {
+        const exId = safeString(session.currentExercise.exerciseId, '');
+        const cali = calibrationMap[exId];
+        return (
+          <SetLogModal
+            isVisible={session.exercisePhase === "logging"}
+            exerciseId={exId}
+            exerciseName={safeString(exerciseName, "Exercise")}
+            reps={session.currentExercise.reps ?? 0}
+            setIndex={activeSetIndex}
+            totalSets={totalSets}
+            userId={userId}
+            userUnits={userUnits}
+            calibrationMode={cali?.needsCalibration ?? false}
+            calibrationStartKg={cali?.estimatedStartKg ?? 0}
+            calibrationNote={cali?.referenceNote ?? ''}
+            onSave={(data) => handleSaveSetData(activeSetIndex, data)}
+            onCancel={session.cancelLogging}
+            onPRDetected={(name) =>
+              achievements.showAchievementMiniToast(`New PR! ${name}`)
+            }
+          />
+        );
+      })()}
+
+      {/* RESTING phase: Rest timer */}
+      <RestTimer
+        targetEndTime={restTimerEndTime}
+        onExpire={handleRestTimerExpire}
+        onSkip={handleRestTimerExpire}
+        isInterExercise={isInterExerciseRest}
+        exerciseName={exerciseName}
+        nextExerciseName={
+          session.nextExercise
+            ? safeString(
+                session.nextExercise.name ||
+                  getExerciseName(session.nextExercise.exerciseId),
+                "Next Exercise",
+              )
+            : undefined
+        }
+        currentSet={!isInterExerciseRest ? completedSetsCount : undefined}
+        totalSets={!isInterExerciseRest ? totalSets : undefined}
+        totalDuration={restTotalDuration}
+      />
+
+      {/* Instructions modal (accessible from preview via GIF player) */}
       <ExerciseInstructionModal
         isVisible={session.showInstructionModal}
         onClose={() => session.setShowInstructionModal(false)}
         exerciseId={safeString(session.currentExercise.exerciseId, "")}
         exerciseName={safeString(session.currentExercise.name, "")}
-      />
-
-      <ExerciseSessionModal
-        isVisible={session.showExerciseSession}
-        onComplete={session.completeSetFromSession}
-        onCancel={() => session.setShowExerciseSession(false)}
-        exerciseId={safeString(session.currentExercise.exerciseId, "")}
-        exerciseName={safeString(
-          session.currentExercise.name ||
-            getExerciseName(session.currentExercise.exerciseId),
-          "Current Exercise",
-        )}
-        reps={safeString(session.currentExercise.reps, "")}
-        currentSet={
-          (session.exerciseProgress[
-            session.currentExerciseIndex
-          ]?.completedSets?.filter(Boolean).length || 0) + 1
-        }
-        totalSets={safeNumber(session.currentExercise.sets, 3)}
-      />
-
-      <WorkoutNavigation
-        currentExercise={session.currentExerciseIndex}
-        totalExercises={session.totalExercises}
-        canAdvance={session.currentProgress.isCompleted}
-        onPrevious={goToPreviousExercise}
-        onNext={goToNextExercise}
       />
 
       <AchievementNotifications
@@ -686,12 +841,6 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           onDone={completeDialog.onDone}
         />
       )}
-
-      <RestTimer
-        targetEndTime={restTimerEndTime}
-        onExpire={() => setRestTimerEndTime(null)}
-        onSkip={() => setRestTimerEndTime(null)}
-      />
 
       {deloadSuggestion && (
         <DeloadModal
@@ -724,5 +873,150 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.lg,
     alignSelf: "center",
     elevation: 4,
+  },
+  setProgressRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: ResponsiveTheme.spacing.md,
+    justifyContent: "center",
+  },
+  setDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#333",
+    borderWidth: 1,
+    borderColor: "#555",
+  },
+  setDotCompleted: {
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderColor: ResponsiveTheme.colors.primary,
+  },
+  startButton: {
+    backgroundColor: ResponsiveTheme.colors.primary,
+    paddingVertical: 16,
+    paddingHorizontal: 48,
+    borderRadius: 30,
+    marginBottom: ResponsiveTheme.spacing.md,
+    alignSelf: "stretch",
+    alignItems: "center",
+  },
+  completedButton: {
+    backgroundColor: "#226F54", // distinct green — signals "done, advance" not "start/continue"
+  },
+  startButtonText: {
+    color: "#FFF",
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+  },
+  previewNav: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignSelf: "stretch",
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.xl,
+  },
+  prevExButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  prevExText: {
+    color: "#888",
+    fontSize: ResponsiveTheme.fontSize.sm,
+  },
+  nextExButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  nextExText: {
+    color: ResponsiveTheme.colors.primary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+  },
+  // GAP-05: styles for tappable exercise name → ExerciseHistory
+  exerciseNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    justifyContent: 'space-between',
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: 8,
+    marginBottom: 4,
+  },
+  exerciseNameTap: {
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
+    flex: 1,
+  },
+  exerciseHistoryHint: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: '#888',
+    marginLeft: 8,
+  },
+  // Warm-up sets panel
+  warmupContainer: {
+    alignSelf: 'stretch',
+    backgroundColor: 'rgba(255, 152, 0, 0.07)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 152, 0, 0.2)',
+    padding: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+  warmupHeader: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FF9800',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  warmupRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  warmupInfo: {
+    flex: 1,
+  },
+  warmupWeight: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: '#FFF',
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+  },
+  warmupPercent: {
+    fontSize: 10,
+    color: '#888',
+    marginTop: 1,
+  },
+  warmupDoneBtn: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  warmupDoneBtnActive: {
+    backgroundColor: 'rgba(255, 152, 0, 0.25)',
+    borderColor: '#FF9800',
+  },
+  warmupDoneText: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: '#CCC',
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+  },
+  warmupDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    marginVertical: 10,
+  },
+  warmupWorkingLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: ResponsiveTheme.colors.primary,
+    letterSpacing: 1,
+    marginBottom: 4,
   },
 });

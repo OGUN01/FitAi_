@@ -191,7 +191,8 @@ export function calculateSmartAlternatives(
       riskLevel,
       icon: exercise.icon,
       badge,
-      description: `Eat at BMR + burn ${exercise.caloriesBurn} cal through ${exercise.description}`,
+      // BUG-43: clarify dailyCalories is food intake, not net calories
+      description: `Food intake: ${Math.round(bmr)} cal/day (your BMR). Burn ${exercise.caloriesBurn} extra cal through ${exercise.description}. Net deficit created by exercise, not food restriction.`,
       isUserOriginal: false,
       isRecommended: false,
       isBlocked: false,

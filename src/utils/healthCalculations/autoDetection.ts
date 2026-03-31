@@ -19,6 +19,51 @@ import {
 } from './types';
 
 // ============================================================================
+// COUNTRY NAME → ISO CODE NORMALIZATION (BUG-85/BUG-11)
+// ============================================================================
+
+/**
+ * Common country full names to ISO 3166-1 alpha-2 codes.
+ * Callers may pass either a full name ("India") or ISO code ("IN").
+ * This lookup normalizes to ISO before any detection logic runs.
+ */
+const COUNTRY_NAME_TO_ISO: Record<string, string> = {
+  'india': 'IN', 'united states': 'US', 'usa': 'US', 'united states of america': 'US',
+  'united kingdom': 'GB', 'uk': 'GB', 'great britain': 'GB',
+  'australia': 'AU', 'canada': 'CA', 'germany': 'DE', 'france': 'FR',
+  'italy': 'IT', 'spain': 'ES', 'brazil': 'BR', 'china': 'CN',
+  'japan': 'JP', 'south korea': 'KR', 'korea': 'KR',
+  'pakistan': 'PK', 'bangladesh': 'BD', 'sri lanka': 'LK', 'nepal': 'NP',
+  'nigeria': 'NG', 'kenya': 'KE', 'south africa': 'ZA', 'ghana': 'GH',
+  'saudi arabia': 'SA', 'united arab emirates': 'AE', 'uae': 'AE',
+  'egypt': 'EG', 'turkey': 'TR', 'indonesia': 'ID', 'malaysia': 'MY',
+  'singapore': 'SG', 'thailand': 'TH', 'philippines': 'PH', 'vietnam': 'VN',
+  'mexico': 'MX', 'argentina': 'AR', 'colombia': 'CO', 'chile': 'CL',
+  'peru': 'PE', 'venezuela': 'VE', 'ecuador': 'EC',
+  'russia': 'RU', 'ukraine': 'UA', 'poland': 'PL', 'netherlands': 'NL',
+  'sweden': 'SE', 'norway': 'NO', 'denmark': 'DK', 'finland': 'FI',
+  'switzerland': 'CH', 'austria': 'AT', 'belgium': 'BE', 'portugal': 'PT',
+  'greece': 'GR', 'czech republic': 'CZ', 'hungary': 'HU', 'romania': 'RO',
+  'new zealand': 'NZ', 'ireland': 'IE', 'israel': 'IL',
+};
+
+/**
+ * Normalize a country string to ISO 3166-1 alpha-2 code.
+ * If already an ISO code (2 uppercase letters), returns as-is (uppercased).
+ * If a full country name, maps to ISO. Unknown inputs return the uppercased input.
+ */
+export function normalizeCountryToISO(country: string): string {
+  if (!country) return '';
+  const trimmed = country.trim();
+  const upper = trimmed.toUpperCase();
+  // Already an ISO code (2-3 chars, all letters)
+  if (/^[A-Z]{2,3}$/.test(upper)) return upper;
+  // Look up full name
+  const lower = trimmed.toLowerCase();
+  return COUNTRY_NAME_TO_ISO[lower]?.toUpperCase() ?? upper;
+}
+
+// ============================================================================
 // CLIMATE DETECTION
 // ============================================================================
 
@@ -35,8 +80,8 @@ import {
  * @returns Climate detection result with confidence score
  */
 export function detectClimate(country: string, state?: string): ClimateDetectionResult {
-  // Normalize inputs
-  const countryCode = country?.toUpperCase() || '';
+  // Normalize: accept both full names ("India") and ISO codes ("IN")
+  const countryCode = normalizeCountryToISO(country || '');
   const stateCode = state?.toUpperCase() || '';
 
   // TROPICAL COUNTRIES (Hot & Humid year-round)
@@ -70,7 +115,7 @@ export function detectClimate(country: string, state?: string): ClimateDetection
       characteristics: {
         avgTempC: 28,
         avgHumidity: 75,
-        tdeeModifier: 1.05,  // +5% for thermoregulation
+        tdeeModifier: 1.075,  // +7.5% for thermoregulation (matches CLIMATE_MULTIPLIERS SSOT)
         waterModifier: 1.50, // +50% for sweat loss
       },
     };
@@ -191,7 +236,7 @@ function getClimateCharacteristics(climate: ClimateType) {
     tropical: {
       avgTempC: 28,
       avgHumidity: 75,
-      tdeeModifier: 1.05,
+      tdeeModifier: 1.075, // matches CLIMATE_MULTIPLIERS SSOT
       waterModifier: 1.50,
     },
     temperate: {
@@ -239,7 +284,7 @@ function getClimateCharacteristics(climate: ClimateType) {
  * - Deurenberg et al. (1998) - Ethnic BMI differences
  */
 export function detectEthnicity(country: string, state?: string): EthnicityDetectionResult {
-  const countryCode = country?.toUpperCase() || '';
+  const countryCode = normalizeCountryToISO(country || '');
 
   // ASIAN POPULATIONS (Lower BMI cutoffs)
   // South Asia

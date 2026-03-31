@@ -56,11 +56,14 @@ export const useAdvancedReviewForm = ({
     onUpdate,
   });
 
-  // Calculate all metrics when component mounts or data changes
-  // Body analysis is optional — proceed even if it’s missing or has no data entered
+  // Calculate all metrics when component mounts or data changes.
+  // BUG-37 fix: ALWAYS bypass the deficit cap so the user sees their actual
+  // selected goal on first load. The engine still emits the DEFICIT_LIMITED_FOR_SAFETY
+  // warning (informational) but it no longer silently replaces their calorie target.
+  // The cap only floor is BMR — eating below your own metabolic rate is never allowed.
   useEffect(() => {
     if (personalInfo && dietPreferences && workoutPreferences) {
-      performCalculations();
+      performCalculations({ bypassDeficitLimit: true });
     }
   }, [
     personalInfo,
@@ -75,30 +78,10 @@ export const useAdvancedReviewForm = ({
     setWarningsAcknowledged(false);
   }, [validationResults?.warnings]);
 
-  // Auto-select the user's original rate if no selection yet
-  useEffect(() => {
-    if (
-      smartAlternatives &&
-      !selectedAlternativeId &&
-      smartAlternatives.alternatives.length > 0
-    ) {
-      const userOriginal = smartAlternatives.alternatives.find(
-        (alt) => alt.isUserOriginal,
-      );
-      if (userOriginal) {
-        setSelectedAlternativeId(userOriginal.id);
-      }
-    }
-  }, [smartAlternatives, selectedAlternativeId]);
 
   const handleRateSelection = useCallback(
     async (alternative: SmartAlternative) => {
       setSelectedAlternativeId(alternative.id);
-
-      // If it's the user's original selection, no changes needed
-      if (alternative.isUserOriginal) {
-        return;
-      }
 
       // Calculate the new timeline based on the selected rate
       const weightToLose = Math.abs(
@@ -109,24 +92,38 @@ export const useAdvancedReviewForm = ({
       const weeklyRate = alternative.weeklyRate || 0.5;
       const newTimelineWeeks = Math.ceil(weightToLose / weeklyRate);
 
+      // BUG-32: Always sync weekly rate to workout preferences (even for "KEEP MY GOAL")
+      // so the AI planner uses the confirmed value.
+      if (onUpdateWorkoutPreferences) {
+        onUpdateWorkoutPreferences({
+          weekly_weight_loss_goal: Math.round(weeklyRate * 100) / 100,
+        });
+      }
 
-      // Update body analysis with new timeline
-      if (onUpdateBodyAnalysis) {
+      // Only update timeline when user picks a different rate (not "KEEP MY GOAL")
+      if (!alternative.isUserOriginal && onUpdateBodyAnalysis) {
         onUpdateBodyAnalysis({
           target_timeline_weeks: newTimelineWeeks,
         });
       }
 
-      // If exercise option, update workout preferences
+      // If exercise option, also update workout frequency, type, duration, and intensity
       if (alternative.requiresExercise && onUpdateWorkoutPreferences) {
-        // Increase workout frequency if needed for exercise options
-        const currentFrequency =
-          workoutPreferences?.workout_frequency_per_week || 0;
-        if (currentFrequency < 3) {
-          onUpdateWorkoutPreferences({
-            workout_frequency_per_week: Math.max(3, currentFrequency),
-          });
-        }
+        const currentFrequency = workoutPreferences?.workout_frequency_per_week || 0;
+        const exerciseTypeMap: Record<string, { types: string[]; intensity: "beginner" | "intermediate" | "advanced" }> = {
+          light: { types: ["cardio"], intensity: "beginner" },
+          moderate: { types: ["cardio", "mixed"], intensity: "intermediate" },
+          intense: { types: ["hiit", "mixed"], intensity: "advanced" },
+        };
+        const exerciseMeta =
+          exerciseTypeMap[(alternative as any).exerciseType ?? "moderate"] ??
+          exerciseTypeMap.moderate;
+        onUpdateWorkoutPreferences({
+          workout_frequency_per_week: Math.max(3, currentFrequency),
+          workout_types: exerciseMeta.types,
+          time_preference: alternative.exerciseMinutes ?? workoutPreferences?.time_preference ?? 30,
+          intensity: exerciseMeta.intensity,
+        });
       }
 
       // Show success message

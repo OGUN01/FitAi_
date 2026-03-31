@@ -33,6 +33,7 @@ import {
 	estimateCalories,
 	type StructuredWorkout,
 } from '../utils/workoutStructure';
+import { shouldExcludeExercise, findSubstitute } from '../utils/injurySubstitutions';
 
 // Note: We handle filtering manually since we already have safety-filtered exercises
 
@@ -113,6 +114,44 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 	console.log(`[Rule-Based] Step 3: Equipment/experience filter ${safetyResult.safeExercises.length} → ${exercises.length} exercises`);
 
 	// ============================================================================
+	// STEP 3b: INJURY SUBSTITUTION
+	// Add injury-safe substitutes back into the pool so no muscle group is left
+	// untrainable. The safety filter removed injury-contraindicated exercises;
+	// here we ensure a safe equivalent is available for every excluded exercise.
+	// ============================================================================
+
+	const userLimitations = [
+		...(request.profile.injuries ?? []),
+		...(request.profile.restrictions ?? []),
+	].map((s) => s.toLowerCase());
+
+	if (userLimitations.length > 0) {
+		const exerciseIdsInPool = new Set(exercises.map((e) => e.exerciseId));
+		const substitutesAdded: string[] = [];
+
+		for (const excluded of safetyResult.excludedExercises) {
+			const excludedId = excluded.exercise?.exerciseId ?? (excluded as any);
+			if (typeof excludedId !== 'string') continue;
+			if (!shouldExcludeExercise(excludedId, userLimitations)) continue;
+			// Find a substitute in the full DB that's also safe (not excluded by safety filter)
+			const safeIds = exercises.map((e) => e.exerciseId);
+			const sub = findSubstitute(excludedId, userLimitations, safeIds);
+			if (sub && !exerciseIdsInPool.has(sub)) {
+				const subExercise = db.exercises.find((e) => e.exerciseId === sub);
+				if (subExercise) {
+					exercises.push(subExercise);
+					exerciseIdsInPool.add(sub);
+					substitutesAdded.push(`${excludedId} → ${sub}`);
+				}
+			}
+		}
+
+		if (substitutesAdded.length > 0) {
+			console.log(`[Rule-Based] Step 3b: Added ${substitutesAdded.length} injury substitutes`, substitutesAdded);
+		}
+	}
+
+	// ============================================================================
 	// STEP 4: CHECK MINIMUM EXERCISES
 	// ============================================================================
 
@@ -130,7 +169,19 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 	// STEP 5: SELECT OPTIMAL WORKOUT SPLIT
 	// ============================================================================
 
-	const splitResult = selectOptimalSplit(request.profile);
+	// BUG-FIX: Client sends workoutsPerWeek, prefersVariety, activityLevel inside
+	// request.weeklyPlan, but selectOptimalSplit reads them from profile.
+	// Zod defaults profile.workoutsPerWeek to 4 when not sent — so every user was
+	// getting Upper/Lower 4x regardless of their actual preference.
+	// Merge weeklyPlan fields into profile so the scoring engine sees real values.
+	const enrichedProfile = {
+		...request.profile,
+		workoutsPerWeek: request.weeklyPlan?.workoutsPerWeek ?? request.profile.workoutsPerWeek,
+		prefersVariety: request.weeklyPlan?.prefersVariety ?? request.profile.prefersVariety,
+		activityLevel: request.weeklyPlan?.activityLevel ?? request.profile.activityLevel,
+	};
+
+	const splitResult = selectOptimalSplit(enrichedProfile);
 	const selectedSplit = splitResult.selectedSplit;
 
 	console.log(`[Rule-Based] Step 5: Selected split "${selectedSplit.name}" (score: ${splitResult.score})`);
@@ -140,7 +191,8 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 	// ============================================================================
 
 	const weekNumber = request.weekNumber ?? 1;
-	const weeklyPlan = generateWeeklyExercisePlan(exercises, selectedSplit, request.profile, weekNumber);
+	const regenerationSeed = request.regenerationSeed ?? 0;
+	const weeklyPlan = generateWeeklyExercisePlan(exercises, selectedSplit, enrichedProfile, weekNumber, regenerationSeed);
 
 	console.log(`[Rule-Based] Step 6: Generated ${weeklyPlan.workouts.length} workouts, ${weeklyPlan.totalExercisesPerWeek} total exercises`);
 
@@ -157,7 +209,7 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 
 	const structuredWorkouts: StructuredWorkout[] = weeklyPlan.workouts.map((workoutDay) => {
 		// Assign parameters to exercises
-		const exercises = assignWorkoutParameters(workoutDay, request.profile, safetyProfile);
+		const exercises = assignWorkoutParameters(workoutDay, enrichedProfile, safetyProfile);
 
 		// Generate warmup
 		const warmup = generateWarmup(workoutDay.workoutType, 5);
@@ -166,29 +218,30 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 		const cooldown = generateCooldown(workoutDay.workoutType, 5);
 
 		// Generate coaching tips
-		const coachingTips = generateCoachingTips(request.profile, workoutDay.workoutType, safetyProfile);
+		const coachingTips = generateCoachingTips(enrichedProfile, workoutDay.workoutType, safetyProfile);
 
 		// Generate progression notes
-		const progressionNotes = generateProgressionNotes(request.profile, weekNumber);
+		const progressionNotes = generateProgressionNotes(enrichedProfile, weekNumber);
 
 		// Estimate calories
 		const estimatedCalories = estimateCalories(
 			exercises.length,
-			request.profile.workoutDuration || 45,
-			request.profile.experienceLevel,
-			request.profile.weight,
-			request.profile.fitnessGoal,
+			enrichedProfile.workoutDuration || 45,
+			enrichedProfile.experienceLevel,
+			enrichedProfile.weight,
+			enrichedProfile.fitnessGoal,
+			enrichedProfile.tdee, // TDEE from advanced_review — used for precision calorie estimates
 		);
 
 		// Calculate total duration
-		const totalDuration = request.profile.workoutDuration || 45;
+		const totalDuration = enrichedProfile.workoutDuration || 45;
 
 		// Generate title and description
 		const title = `${workoutDay.workoutType} - ${selectedSplit.name}`;
 		const description = generateWorkoutDescription(
 			workoutDay.workoutType,
 			selectedSplit.description,
-			request.profile.fitnessGoal,
+			enrichedProfile.fitnessGoal,
 			allWarnings,
 		);
 
@@ -196,7 +249,7 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 			title,
 			description,
 			totalDuration,
-			difficulty: request.profile.experienceLevel,
+			difficulty: enrichedProfile.experienceLevel,
 			estimatedCalories,
 			warmup,
 			exercises,
@@ -223,7 +276,9 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 	};
 
 	const workouts = structuredWorkouts.map((workout, index) => {
-		const suggestedDay = selectedSplit.workoutDays[index]?.suggestedDayOfWeek || dayOfWeekMap[index % 7];
+		// Prefer user's preferred days from request, fall back to split suggestion, then index-based
+		const preferredDays = request.weeklyPlan?.preferredDays || [];
+		const suggestedDay = preferredDays[index] || selectedSplit.workoutDays[index]?.suggestedDayOfWeek || dayOfWeekMap[index % 7];
 
 		return {
 			dayOfWeek: suggestedDay as 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday',
@@ -233,12 +288,17 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 
 	const totalEstimatedCalories = structuredWorkouts.reduce((sum, w) => sum + w.estimatedCalories, 0);
 
+	// Compute rest days from the actual workout days used (preferred or split-suggested)
+	const allDays: Array<'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'> = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+	const usedDays = new Set(workouts.map(w => w.dayOfWeek));
+	const computedRestDays = allDays.filter(d => !usedDays.has(d));
+
 	const response: WorkoutResponse = {
 		id: `rule-based-${Date.now()}-${request.userId || 'guest'}`,
 		planTitle: `${selectedSplit.name} - Week ${weekNumber}`,
-		planDescription: generatePlanDescription(selectedSplit, request.profile, allWarnings),
+		planDescription: generatePlanDescription(selectedSplit, enrichedProfile, allWarnings),
 		workouts,
-		restDays: selectedSplit.restDays,
+		restDays: computedRestDays,
 		totalEstimatedCalories,
 	};
 

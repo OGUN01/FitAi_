@@ -17,6 +17,7 @@ import {
 } from "../utils/weekUtils";
 import {
   deriveMealLogFiber,
+  deriveMealLogSugar,
   normalizeMealLogFoodItems,
 } from "../utils/mealLogNutrition";
 import {
@@ -66,6 +67,7 @@ function createLoggedFood(
       carbohydrates: item.macros?.carbohydrates ?? 0,
       fat: item.macros?.fat ?? 0,
       fiber: item.macros?.fiber ?? 0,
+      sugar: item.macros?.sugar ?? 0,
     },
   };
 }
@@ -84,6 +86,7 @@ interface ConsumedNutrition {
   carbs: number;
   fat: number;
   fiber: number;
+  sugar: number;
 }
 
 const EMPTY_CONSUMED_NUTRITION: ConsumedNutrition = {
@@ -92,6 +95,7 @@ const EMPTY_CONSUMED_NUTRITION: ConsumedNutrition = {
   carbs: 0,
   fat: 0,
   fiber: 0,
+  sugar: 0,
 };
 
 function clearConsumedNutritionCaches() {
@@ -127,6 +131,7 @@ function sumMealNutrition(meals: Meal[]): ConsumedNutrition {
       carbs: acc.carbs + (meal.totalMacros?.carbohydrates || 0),
       fat: acc.fat + (meal.totalMacros?.fat || 0),
       fiber: acc.fiber + (meal.totalMacros?.fiber || 0),
+      sugar: acc.sugar + (meal.totalMacros?.sugar || 0),
     }),
     { ...EMPTY_CONSUMED_NUTRITION },
   );
@@ -580,7 +585,7 @@ export const useNutritionStore = create<NutritionState>()(
 
       // Meal session actions
       startMealSession: async (meal) => {
-        const logId = `log_${meal.id}_${Date.now()}`;
+        const logId = generateUUID();
 
         try {
           // Create a proper MealLog object for active session
@@ -596,6 +601,7 @@ export const useNutritionStore = create<NutritionState>()(
               carbohydrates: meal.totalMacros?.carbohydrates ?? 0,
               fat: meal.totalMacros?.fat ?? 0,
               fiber: meal.totalMacros?.fiber ?? 0,
+              sugar: meal.totalMacros?.sugar ?? 0,
             },
             loggedAt: new Date().toISOString(),
             photos: [],
@@ -615,6 +621,7 @@ export const useNutritionStore = create<NutritionState>()(
             carbohydrates: meal.totalMacros?.carbohydrates ?? 0,
             fat: meal.totalMacros?.fat ?? 0,
             fiber: meal.totalMacros?.fiber ?? 0,
+            sugar: meal.totalMacros?.sugar ?? 0,
           } as const;
           const notes = `Active session: ${meal.dayOfWeek} - ${meal.description || meal.name}`;
           const timestamp = new Date().toISOString();
@@ -759,6 +766,7 @@ export const useNutritionStore = create<NutritionState>()(
                 carbohydrates: meal.totalMacros?.carbohydrates ?? 0,
                 fat: meal.totalMacros?.fat ?? 0,
                 fiber: meal.totalMacros?.fiber ?? 0,
+                sugar: meal.totalMacros?.sugar ?? 0,
               },
               loggedAt: new Date().toISOString(),
               photos: [],
@@ -792,9 +800,11 @@ export const useNutritionStore = create<NutritionState>()(
             const { data: authData, error: authError } =
               await supabase.auth.getUser();
             if (authError) {
-              console.error(
-                "[nutritionStore] Failed to get auth user for hydration:",
-                authError,
+              // AuthSessionMissingError is expected on cold start before the session is restored.
+              // loadData() will be called again after login via the auth listener.
+              console.warn(
+                "[nutritionStore] No auth session during hydration (expected on cold start):",
+                authError.message,
               );
             } else if (authData?.user?.id) {
               const authenticatedUserId = authData.user.id;
@@ -976,6 +986,7 @@ export const useNutritionStore = create<NutritionState>()(
                     carbohydrates: log.total_carbohydrates || 0,
                     fat: log.total_fat || 0,
                     fiber: deriveMealLogFiber(foodItems),
+                    sugar: deriveMealLogSugar(foodItems),
                   },
                   items: foodItems as any[],
                   loggedAt: log.logged_at,

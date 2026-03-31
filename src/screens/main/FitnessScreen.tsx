@@ -24,6 +24,7 @@ import {
   WorkoutStartDialog,
   WorkoutDetailsDialog,
 } from "../../components/ui/CustomDialog";
+import { SegmentedControl } from "../../components/ui/SegmentedControl";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rh, rf, rp, rbr } from "../../utils/responsive";
 import { useFitnessStore } from "../../stores/fitnessStore";
@@ -109,6 +110,16 @@ const WorkoutCardItem = React.memo<WorkoutCardItemProps>(
     const partialCalories =
       progressEntry?.caloriesBurned ?? completedSession?.caloriesBurned;
 
+    // GAP-15: Derive last-performed date across all weeks for this workout title
+    const lastPerformedAt = completedSessions
+      .filter(
+        (s) =>
+          s.workoutSnapshot?.title === workout.title &&
+          s.weekStart !== currentWeekStart,
+      )
+      .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
+      [0]?.completedAt;
+
     const handleStart = useCallback(
       () => onStartWorkout(workout),
       [onStartWorkout, workout],
@@ -126,6 +137,7 @@ const WorkoutCardItem = React.memo<WorkoutCardItemProps>(
           isCompleted={isCompleted}
           progress={progress}
           displayCalories={progress > 0 ? partialCalories : undefined}
+          lastPerformedAt={lastPerformedAt}
           onStartWorkout={handleStart}
           onViewDetails={handleViewDetails}
           onRecoveryTips={onRecoveryTips}
@@ -147,6 +159,23 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
   const planError = useFitnessStore((s) => s.planError);
   const quickWorkouts = useQuickWorkouts(navigation);
   const currentWeekStart = getCurrentWeekStart();
+
+  // Dual plan state
+  const activePlanSource = useFitnessStore((s) => s.activePlanSource);
+  const setActivePlanSource = useFitnessStore((s) => s.setActivePlanSource);
+  const customWeeklyPlan = useFitnessStore((s) => s.customWeeklyPlan);
+  const getActivePlan = useFitnessStore((s) => s.getActivePlan);
+
+  // Derive which plan to display based on toggle
+  const activePlan = getActivePlan();
+
+  const PLAN_TOGGLE_OPTIONS = useMemo(
+    () => [
+      { id: "ai", label: "AI Plan", value: "ai" },
+      { id: "custom", label: "My Plan", value: "custom" },
+    ],
+    [],
+  );
 
   // useCallback for non-map inline callbacks
   const handleRestDayStart = useCallback(
@@ -180,9 +209,9 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
       "saturday",
       "sunday",
     ];
-    const restDayIndices = state.weeklyWorkoutPlan?.restDays || [];
+    const restDayIndices = activePlan?.restDays || [];
     for (const dayKey of dayKeys) {
-      const workout = state.weeklyWorkoutPlan?.workouts?.find(
+      const workout = activePlan?.workouts?.find(
         (w) => w.dayOfWeek === dayKey,
       );
       const dayIndex = dayKeys.indexOf(dayKey);
@@ -194,7 +223,7 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
         ? findCompletedSessionForWorkout({
             completedSessions: state.completedSessions,
             workout,
-            plan: state.weeklyWorkoutPlan,
+            plan: activePlan,
             weekStart: currentWeekStart,
           })
         : null;
@@ -206,7 +235,7 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
     }
     return data;
   }, [
-    state.weeklyWorkoutPlan,
+    activePlan,
     state.workoutProgress,
     state.completedSessions,
     currentWeekStart,
@@ -235,14 +264,23 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
             {/* 1. Header */}
             <FitnessHeader
               userName={state.userName || ""}
-              weekNumber={state.weeklyWorkoutPlan?.weekNumber || 1}
+              weekNumber={activePlan?.weekNumber || 1}
               totalWorkouts={state.weekStats.totalWorkouts}
               completedWorkouts={state.weekStats.completedCount}
               onCalendarPress={actions.handleCalendarPress}
             />
 
+            {/* 1.5 Plan Source Toggle */}
+            <View style={styles.planToggleContainer}>
+              <SegmentedControl
+                options={PLAN_TOGGLE_OPTIONS}
+                selectedId={activePlanSource}
+                onSelect={(id) => setActivePlanSource(id as "ai" | "custom")}
+              />
+            </View>
+
             {/* 2. Selected Day's Workout Card (syncs with calendar selection) */}
-            {state.weeklyWorkoutPlan && (
+            {activePlan && (
               <View style={styles.section}>
                 {state.selectedDayWorkouts &&
                 state.selectedDayWorkouts.length > 0 ? (
@@ -254,7 +292,7 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
                         index={index}
                         isLast={index === state.selectedDayWorkouts.length - 1}
                         completedSessions={state.completedSessions}
-                        weeklyWorkoutPlan={state.weeklyWorkoutPlan}
+                        weeklyWorkoutPlan={activePlan}
                         currentWeekStart={currentWeekStart}
                         workoutProgress={state.workoutProgress}
                         onStartWorkout={actions.handleStartSelectedDayWorkout}
@@ -269,7 +307,7 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
                   <TodayWorkoutCard
                     workout={null}
                     isRestDay={
-                      state.isSelectedDayRestDay || !!state.weeklyWorkoutPlan
+                      state.isSelectedDayRestDay || !!activePlan
                     }
                     isCompleted={false}
                     progress={0}
@@ -283,26 +321,50 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
               </View>
             )}
 
+            {/* Custom Plan Empty State */}
+            {activePlanSource === "custom" && !customWeeklyPlan && (
+              <View style={styles.section}>
+                <Pressable
+                  style={styles.customPlanCta}
+                  onPress={() => navigation.navigate("ScheduleBuilder")}
+                  testID="build-custom-schedule-button"
+                >
+                  <Text style={styles.customPlanCtaTitle}>
+                    No Custom Schedule Yet
+                  </Text>
+                  <Text style={styles.customPlanCtaSubtitle}>
+                    Build your own weekly workout schedule with your saved
+                    templates or pick exercises for each day.
+                  </Text>
+                  <Text style={styles.customPlanCtaAction}>
+                    Build My Schedule →
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+
             {/* 3. Error State */}
-            {planError && !state.weeklyWorkoutPlan && (
+            {planError && !activePlan && (
               <View style={styles.errorCard}>
                 <Text style={styles.errorTitle}>Plan Generation Failed</Text>
                 <Text style={styles.errorMessage}>{planError}</Text>
               </View>
             )}
 
-            {/* 3. Weekly Plan Overview OR Empty State */}
-            <PlanSection
-              weeklyWorkoutPlan={state.weeklyWorkoutPlan}
-              workoutProgress={state.workoutProgress}
-              selectedDay={state.selectedDay}
-              onDayPress={actions.setSelectedDay}
-              onViewFullPlan={actions.handleViewFullPlan}
-              onRegeneratePlan={actions.handleRegeneratePlan}
-              isGeneratingPlan={state.isGeneratingPlan}
-              profile={state.profile}
-              onGeneratePlan={actions.generateWeeklyWorkoutPlan}
-            />
+            {/* 3. Weekly Plan Overview OR Empty State (AI plan only — custom plan has its own CTA above) */}
+            {activePlanSource === "ai" && (
+              <PlanSection
+                weeklyWorkoutPlan={activePlan}
+                workoutProgress={state.workoutProgress}
+                selectedDay={state.selectedDay}
+                onDayPress={actions.setSelectedDay}
+                onViewFullPlan={actions.handleViewFullPlan}
+                onRegeneratePlan={actions.handleRegeneratePlan}
+                isGeneratingPlan={state.isGeneratingPlan}
+                profile={state.profile}
+                onGeneratePlan={actions.generateWeeklyWorkoutPlan}
+              />
+            )}
 
             {/* Custom Workouts entry point */}
             <View style={styles.section}>
@@ -477,6 +539,37 @@ const styles = StyleSheet.create({
   },
   templateLibraryArrow: {
     fontSize: rf(18),
+    color: "#4CAF50",
+  },
+  planToggleContainer: {
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    marginBottom: rp(12),
+  },
+  customPlanCta: {
+    backgroundColor: "rgba(76, 175, 80, 0.08)",
+    borderRadius: rbr(16),
+    padding: rp(20),
+    borderWidth: 1,
+    borderColor: "rgba(76, 175, 80, 0.2)",
+    borderStyle: "dashed" as const,
+    alignItems: "center" as const,
+  },
+  customPlanCtaTitle: {
+    fontSize: rf(16),
+    fontWeight: "700" as const,
+    color: ResponsiveTheme.colors.textPrimary,
+    marginBottom: rp(8),
+  },
+  customPlanCtaSubtitle: {
+    fontSize: rf(13),
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: "center" as const,
+    lineHeight: rf(18),
+    marginBottom: rp(12),
+  },
+  customPlanCtaAction: {
+    fontSize: rf(15),
+    fontWeight: "600" as const,
     color: "#4CAF50",
   },
 });

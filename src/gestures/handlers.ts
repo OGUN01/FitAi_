@@ -5,6 +5,7 @@
  */
 
 import { Gesture } from 'react-native-gesture-handler';
+import { useCallback } from 'react';
 import {
   runOnJS,
   useSharedValue,
@@ -221,7 +222,13 @@ export const createLongPressGesture = (config: LongPressConfig) => {
 
 /**
  * Create a drag-to-reorder gesture
- * Returns gesture and animated values
+ * Returns gesture and animated values for use with GestureDetector + Animated.View
+ *
+ * Usage:
+ *   const { gesture, translateY, isDragging } = useDragToReorder(index, config);
+ *   <GestureDetector gesture={gesture}>
+ *     <Animated.View style={animatedStyle}>...</Animated.View>
+ *   </GestureDetector>
  */
 export const useDragToReorder = (
   itemIndex: number,
@@ -238,9 +245,15 @@ export const useDragToReorder = (
 
   const translateY = useSharedValue(0);
   const isDragging = useSharedValue(false);
-  const dragStarted = useSharedValue(false);
 
-  const gesture = Gesture.LongPress()
+  // Reset position must run on JS thread (setTimeout is a JS-thread API)
+  const resetPosition = useCallback(() => {
+    setTimeout(() => {
+      translateY.value = withSpring(0, animations.spring.default);
+    }, 100);
+  }, [translateY]);
+
+  const longPress = Gesture.LongPress()
     .minDuration(activationDelay)
     .onStart(() => {
       isDragging.value = true;
@@ -250,49 +263,46 @@ export const useDragToReorder = (
       if (onDragStart) {
         runOnJS(onDragStart)(itemIndex);
       }
+    });
+
+  const pan = Gesture.Pan()
+    .onUpdate((event) => {
+      if (!isDragging.value) return;
+      translateY.value = event.translationY;
+
+      // Calculate target index based on translation
+      const targetIndex = Math.round(event.translationY / itemHeight) + itemIndex;
+
+      if (onDragMove) {
+        runOnJS(onDragMove)(itemIndex, targetIndex);
+      }
     })
-    .simultaneousWithExternalGesture(
-      Gesture.Pan()
-        .enabled(isDragging.value)
-        .onUpdate((event) => {
-          if (isDragging.value) {
-            translateY.value = event.translationY;
+    .onEnd((event) => {
+      if (!isDragging.value) return;
 
-            // Calculate target index based on translation
-            const targetIndex = Math.round(event.translationY / itemHeight) + itemIndex;
+      const targetIndex = Math.round(event.translationY / itemHeight) + itemIndex;
 
-            if (onDragMove && !dragStarted.value) {
-              runOnJS(onDragMove)(itemIndex, targetIndex);
-            }
-          }
-        })
-        .onEnd((event) => {
-          if (isDragging.value) {
-            const targetIndex = Math.round(event.translationY / itemHeight) + itemIndex;
+      // Snap to target position
+      const snapPosition = (targetIndex - itemIndex) * itemHeight;
+      translateY.value = withSpring(snapPosition, animations.spring.snappy);
 
-            // Snap to target position
-            const snapPosition = (targetIndex - itemIndex) * itemHeight;
-            translateY.value = withSpring(snapPosition, animations.spring.snappy);
+      if (hapticFeedback) {
+        runOnJS(haptics.dragDrop)();
+      }
 
-            if (hapticFeedback) {
-              runOnJS(haptics.dragDrop)();
-            }
+      if (onDragEnd) {
+        runOnJS(onDragEnd)(itemIndex, targetIndex);
+      }
 
-            if (onDragEnd) {
-              runOnJS(onDragEnd)(itemIndex, targetIndex);
-            }
+      // Reset drag state
+      isDragging.value = false;
 
-            // Reset drag state
-            isDragging.value = false;
-            dragStarted.value = false;
+      // Reset position after snap animation completes (runs on JS thread)
+      runOnJS(resetPosition)();
+    });
 
-            // Reset position after animation
-            setTimeout(() => {
-              translateY.value = withSpring(0, animations.spring.default);
-            }, 100);
-          }
-        })
-    );
+  // Compose as simultaneous so pan tracking works while long-press is active
+  const gesture = Gesture.Simultaneous(longPress, pan);
 
   return { gesture, translateY, isDragging };
 };

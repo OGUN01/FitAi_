@@ -131,6 +131,9 @@ export interface Env {
 	// CORS allowlist (comma-separated origins, optional — defaults to *)
 	ALLOWED_ORIGINS?: string;
 
+	// Feature flags
+	RULE_BASED_ROLLOUT_PERCENTAGE?: string; // '0'–'100'
+
 	// Razorpay Subscription Secrets & Plan IDs
 	RAZORPAY_KEY_ID: string;
 	RAZORPAY_KEY_SECRET: string;

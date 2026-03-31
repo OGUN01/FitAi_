@@ -13,11 +13,12 @@ export class FacadeHelpers {
   }
 
   static getClimateModifier(climate: ClimateType): number {
+    // BUG-12: Align with CLIMATE_MULTIPLIERS SSOT in core/tdeeCalculation.ts
     const modifiers = {
-      tropical: 1.05,
+      tropical: 1.075,
       temperate: 1.0,
-      cold: 1.1,
-      arid: 1.03,
+      cold: 1.15,
+      arid: 1.05,
     };
     return modifiers[climate] || 1.0;
   }

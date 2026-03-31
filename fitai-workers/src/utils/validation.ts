@@ -171,6 +171,20 @@ export const UserProfileSchema = z.object({
 	prefersVariety: z.boolean().optional(),
 	stressLevel: z.enum(['low', 'moderate', 'high']).optional(),
 	activityLevel: z.enum(['sedentary', 'light', 'moderate', 'active', 'extreme']).optional(),
+
+	// ✅ Calculated health metrics (from advanced_review table, injected by worker before rule-based engine)
+	// Used to calibrate calorie estimates and coaching tips — NOT available on LLM path which reads them separately
+	bmr: z.number().optional(),   // kcal/day resting metabolism
+	tdee: z.number().optional(),  // kcal/day total daily energy expenditure
+	vo2MaxEstimate: z.number().optional(),  // ml/kg/min
+	vo2MaxClassification: z.string().optional(), // 'poor' | 'fair' | 'good' | 'excellent' | 'superior'
+	heartRateZones: z.object({
+		zone1_min: z.number(), zone1_max: z.number(),
+		zone2_min: z.number(), zone2_max: z.number(),
+		zone3_min: z.number(), zone3_max: z.number(),
+		zone4_min: z.number(), zone4_max: z.number(),
+		zone5_min: z.number(), zone5_max: z.number(),
+	}).optional(),
 });
 
 export type UserProfile = z.infer<typeof UserProfileSchema>;
@@ -202,9 +216,15 @@ export const WorkoutGenerationRequestSchema = z.object({
 	// Optional filters
 	focusMuscles: z.array(MuscleGroupSchema).optional(),
 	excludeExercises: z.array(z.string()).optional(), // Exercise IDs to exclude
+	difficultyOverride: ExperienceLevelSchema.optional(), // Override experience level for exercise filtering
 
 	// Mesocycle week (1-4), defaults handled at usage site
 	weekNumber: z.number().int().min(1).max(4).optional(),
+
+	// Regeneration seed — when provided, varies exercise selection for the same
+	// profile/weekNumber combination so "regenerate" produces a fresh plan.
+	// Client sends Date.now() or a counter; engine uses it as rotation offset.
+	regenerationSeed: z.number().int().optional(),
 
 	// AI parameters (optional)
 	model: z.string().default('google/gemini-2.5-flash'), // Vercel AI Gateway model ID (format: provider/model)

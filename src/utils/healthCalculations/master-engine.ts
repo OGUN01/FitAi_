@@ -6,59 +6,41 @@ import {
   AdvancedReviewData,
 } from "../../types/onboarding";
 import { MetabolicCalculations } from "./metabolic";
-import { NutritionalCalculations } from "./nutritional";
+import { NutritionalCalculations, resolveDietType } from "./nutritional";
 import { BodyCompositionCalculations } from "./body-composition";
 import { CardiovascularCalculations } from "./cardiovascular";
 import { FitnessRecommendations } from "./fitness-recommendations";
 import { HealthScoring } from "./health-scoring";
 import { SleepAnalysis } from "./sleep-analysis";
+import type { Goal } from "./types";
+
 
 export class HealthCalculationEngine {
-  /**
-   * Population-average defaults used when body measurements are missing.
-   * These allow the engine to produce reasonable (non-zero) calorie/macro targets
-   * even when a user skips entering height/weight during onboarding.
-   */
-  private static readonly FALLBACK_DEFAULTS = {
-    male:   { weight_kg: 75, height_cm: 175 },
-    female: { weight_kg: 62, height_cm: 163 },
-    default: { weight_kg: 70, height_cm: 170 },
-  } as const;
-
   static calculateAllMetrics(
     personalInfo: PersonalInfoData,
     dietPreferences: DietPreferencesData,
     bodyAnalysis: BodyAnalysisData,
     workoutPreferences: WorkoutPreferencesData,
   ): AdvancedReviewData {
-    // --- Fallback logic for missing body measurements ---
-    let weightKg = bodyAnalysis.current_weight_kg;
-    let heightCm = bodyAnalysis.height_cm;
-    let usedFallbackDefaults = false;
+    const weightKg = bodyAnalysis.current_weight_kg;
+    const heightCm = bodyAnalysis.height_cm;
 
-    // Use fallback defaults if measurements are missing OR out of the valid range for
-    // calculateBMR/calculateBMI (both throw for weight < 30 or height < 100).
-    // Partial mid-typing values (e.g. "9" before "93") fall through to here.
-    if (weightKg <= 0 || weightKg < 30 || weightKg > 300 || heightCm <= 0 || heightCm < 100 || heightCm > 250) {
-      const genderKey =
-        personalInfo.gender === 'male' || personalInfo.gender === 'female'
-          ? personalInfo.gender
-          : 'default';
-      const defaults = this.FALLBACK_DEFAULTS[genderKey];
+    if (weightKg < 30 || weightKg > 300) {
+      throw new Error(
+        `[HealthCalculationEngine] Invalid weight: ${weightKg}kg. Must be 30–300kg.`,
+      );
+    }
+    if (heightCm < 100 || heightCm > 250) {
+      throw new Error(
+        `[HealthCalculationEngine] Invalid height: ${heightCm}cm. Must be 100–250cm.`,
+      );
+    }
 
-      if (weightKg <= 0 || weightKg < 30 || weightKg > 300) {
-        console.warn(
-          `⚠️ [HealthCalculationEngine] current_weight_kg is ${weightKg} (out of valid range 30-300). Using fallback: ${defaults.weight_kg}kg (${genderKey})`,
-        );
-        weightKg = defaults.weight_kg;
-      }
-      if (heightCm <= 0 || heightCm < 100 || heightCm > 250) {
-        console.warn(
-          `⚠️ [HealthCalculationEngine] height_cm is ${heightCm} (out of valid range 100-250). Using fallback: ${defaults.height_cm}cm (${genderKey})`,
-        );
-        heightCm = defaults.height_cm;
-      }
-      usedFallbackDefaults = true;
+    const primaryGoal = workoutPreferences.primary_goals[0] as Goal;
+    if (!primaryGoal) {
+      throw new Error(
+        '[HealthCalculationEngine] primary_goals is empty — cannot calculate macros without a fitness goal.',
+      );
     }
     const bmi = MetabolicCalculations.calculateBMI(
       weightKg,
@@ -95,16 +77,23 @@ export class HealthCalculationEngine {
       ? bodyAnalysis.target_weight_kg
       : weightKg; // If no target set, assume maintenance
     const isWeightLoss = weightKg > targetWeightKg;
+    // BUG-79: cap the rate to 20% of TDEE-derived weekly loss before passing to calorie calculator
+    const requestedRate = workoutPreferences.weekly_weight_loss_goal || weeklyWeightLossRate;
+    const maxSafeRate = (tdee * 0.20) / 1100; // 20% deficit → max kg/week
+    const cappedRate = Math.min(requestedRate, Math.max(maxSafeRate, weeklyWeightLossRate));
     const dailyCalories = NutritionalCalculations.calculateDailyCaloriesForGoal(
       tdee,
-      workoutPreferences.weekly_weight_loss_goal || weeklyWeightLossRate,
+      cappedRate,
       isWeightLoss,
     );
 
     const macros = NutritionalCalculations.calculateMacronutrients(
       dailyCalories,
-      workoutPreferences.primary_goals,
-      dietPreferences,
+      weightKg,
+      primaryGoal,
+      resolveDietType(dietPreferences),
+      bodyAnalysis.body_fat_percentage,
+      bodyAnalysis.target_weight_kg,
     );
     const dailyWater = MetabolicCalculations.calculateWaterIntake(
       weightKg,
@@ -230,8 +219,6 @@ export class HealthCalculationEngine {
       data_completeness_percentage: 0,
       reliability_score: 0,
       personalization_level: 0,
-
-      usedFallbackDefaults,
     };
   }
 }

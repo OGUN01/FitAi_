@@ -14,7 +14,6 @@ import {
   WorkoutPreferencesData,
   AdvancedReviewData,
 } from "../../../types/onboarding";
-import { AdjustmentWizard } from "../../../components/onboarding/AdjustmentWizard";
 import { useAdvancedReviewForm } from "../../../hooks/onboarding/useAdvancedReviewForm";
 import { SmartAlternative } from "../../../services/validationEngine";
 import { DataSummarySection } from "../../../components/onboarding/review/DataSummarySection";
@@ -22,7 +21,7 @@ import { MetabolicProfileSection } from "../../../components/onboarding/review/M
 import { NutritionalNeedsSection } from "../../../components/onboarding/review/NutritionalNeedsSection";
 import { WeightManagementSection } from "../../../components/onboarding/review/WeightManagementSection";
 import { WarningCard } from "../../../components/onboarding/WarningCard";
-import { ValidationResult } from "../../../services/validationEngine";
+import { AdjustmentWizard } from "../../../components/onboarding/AdjustmentWizard";
 
 interface AdvancedReviewTabProps {
   personalInfo: PersonalInfoData | null;
@@ -64,8 +63,6 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
     calculationError,
     showErrorWizard,
     setShowErrorWizard,
-    showWarningWizard,
-    setShowWarningWizard,
     successMessage,
     smartAlternatives,
     selectedAlternativeId,
@@ -83,7 +80,6 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
     onUpdateWorkoutPreferences,
   });
 
-  const [selectedWarning, setSelectedWarning] = React.useState<ValidationResult | null>(null);
   return (
     <View style={styles.container}>
       <ScrollView
@@ -112,7 +108,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             />
             <Text style={styles.errorText}>{calculationError}</Text>
             <Pressable
-              onPress={performCalculations}
+              onPress={() => performCalculations()}
               style={{ paddingHorizontal: rp(12), paddingVertical: rp(6), borderRadius: rbr(8), borderWidth: 1, borderColor: ResponsiveTheme.colors.error }}
             >
               <Text style={{ color: ResponsiveTheme.colors.error, fontSize: rf(14) }}>Retry</Text>
@@ -147,23 +143,22 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         <WeightManagementSection
           calculatedData={calculatedData}
           bodyAnalysis={bodyAnalysis}
-          smartAlternatives={smartAlternatives}
-          selectedAlternativeId={selectedAlternativeId}
-          handleRateSelection={handleRateSelection}
           onNavigateToTab={onNavigateToTab}
         />
 
-        {!isCalculating && validationResults && validationResults.warnings.length > 0 && (
+        {!isCalculating && (
+          (validationResults && validationResults.warnings.length > 0) ||
+          smartAlternatives?.showRateComparison
+        ) && (
           <View style={{ paddingHorizontal: rp(20), marginTop: rp(16) }}>
             <WarningCard
-              warnings={validationResults.warnings}
+              warnings={validationResults?.warnings ?? []}
               onAcknowledgmentChange={(acknowledged) => {
                 setWarningsAcknowledged(acknowledged);
               }}
-              onAdjust={(warning) => {
-                setSelectedWarning(warning);
-                setShowWarningWizard(true);
-              }}
+              smartAlternatives={smartAlternatives}
+              selectedAlternativeId={selectedAlternativeId}
+              onSelectAlternative={handleRateSelection}
             />
           </View>
         )}
@@ -241,53 +236,6 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
           />
         )}
 
-      {showWarningWizard &&
-        selectedWarning && (
-          <AdjustmentWizard
-            visible={showWarningWizard}
-            onClose={() => {
-              setShowWarningWizard(false);
-              setSelectedWarning(null);
-            }}
-            error={selectedWarning}
-            currentData={{
-              bmr: calculatedData?.calculated_bmr || 0,
-              tdee: calculatedData?.calculated_tdee || 0,
-              currentWeight: bodyAnalysis?.current_weight_kg || 0,
-              targetWeight: bodyAnalysis?.target_weight_kg || 0,
-              currentTimeline: bodyAnalysis?.target_timeline_weeks || 0,
-              currentFrequency: workoutPreferences?.workout_frequency_per_week || 0,
-            }}
-            primaryGoals={workoutPreferences?.primary_goals || []}
-            onSelectAlternative={(alt) => {
-              const smartAlt = smartAlternatives?.alternatives.find(
-                (sa) =>
-                  Math.abs(sa.weeklyRate - alt.weeklyRate) < 0.005 &&
-                  Math.abs(sa.dailyCalories - alt.dailyCalories) < 5,
-              );
-              if (smartAlt) {
-                handleRateSelection(smartAlt);
-              } else {
-                handleRateSelection({
-                  id: "warning-adj-" + alt.name,
-                  label: alt.name,
-                  description: alt.approach,
-                  dailyCalories: alt.dailyCalories,
-                  weeklyRate: alt.weeklyRate,
-                  riskLevel: "moderate",
-                  isRecommended: false,
-                  isUserOriginal: false,
-                  bmrDifference: 0,
-                  isBlocked: false,
-                  requiresExercise: !!alt.newWorkoutFrequency,
-                  timelineWeeks: alt.newTimeline || 12,
-                } as SmartAlternative);
-              }
-              setSelectedWarning(null);
-              setShowWarningWizard(false);
-            }}
-          />
-        )}
     </View>
   );
 };

@@ -18,6 +18,7 @@ import {
   WorkoutGenerationRequestSchema,
   WorkoutResponseSchema,
   WorkoutResponse,
+  SingleWorkoutSchema,
   validateRequest,
 } from '../utils/validation';
 import { filterExercisesForWorkout, estimateTokenCount } from '../utils/exerciseFilter';
@@ -108,6 +109,11 @@ function buildWorkoutPrompt(
   const { profile, weeklyPlan } = request;
   const { workoutsPerWeek, preferredDays, workoutTypes, prefersVariety, activityLevel, preferredWorkoutTime } = weeklyPlan;
 
+  // MET derived from experience level — used for per-session and weekly calorie estimates in the prompt.
+  // beginner: light-moderate resistance (~4.5), intermediate: moderate (~6), advanced: vigorous (~7.5), elite: very vigorous (~9)
+  const estimatedMET: Record<string, number> = { beginner: 4.5, intermediate: 6.0, advanced: 7.5, elite: 9.0 };
+  const sessionMET = estimatedMET[profile.experienceLevel] ?? 6.0;
+
   // Build metrics section
   let metricsSection = '';
   if (calculatedMetrics) {
@@ -185,7 +191,7 @@ ${metricsSection}
 - Rest Days: ${restDays.join(', ')}
 ${workoutTypes && workoutTypes.length > 0 ? `- User Prefers: ${workoutTypes.join(', ')} style workouts` : ''}
 - Prefers Variety: ${prefersVariety ? 'YES - provide different muscle groups/workout styles each day' : 'NO - consistent routine is fine'}
-- Duration per Session: 30-45 minutes
+- Duration per Session: ${profile.workoutDuration || 45} minutes
 - Typical Workout Time: ${preferredWorkoutTime || 'morning'} ${timeGuidance}
 
 **Available Exercises (MUST ONLY USE THESE):**
@@ -237,9 +243,9 @@ Return a JSON object with this structure:
       "workout": {
         "title": "Push Day - Chest, Shoulders, Triceps",
         "description": "Focus on pushing movements...",
-        "totalDuration": 45,
+        "totalDuration": ${profile.workoutDuration || 45},
         "difficulty": "${profile.experienceLevel}",
-        "estimatedCalories": 300,
+        "estimatedCalories": ${Math.round(sessionMET * profile.weight * ((profile.workoutDuration || 45) / 60))},
         "warmup": [{"exerciseId": "...", "sets": 2, "reps": "10-12", "restSeconds": 30}],
         "exercises": [{"exerciseId": "...", "sets": 3, "reps": "8-12", "restSeconds": 60}, ...],
         "cooldown": [{"exerciseId": "...", "sets": 2, "reps": "30 seconds", "restSeconds": 30}],
@@ -265,7 +271,7 @@ Return a JSON object with this structure:
     }` : ''}
   ],
   "restDays": ${JSON.stringify(restDays)},
-  "totalEstimatedCalories": ${workoutsPerWeek * 300}
+  "totalEstimatedCalories": ${Math.round(workoutsPerWeek * sessionMET * profile.weight * ((profile.workoutDuration || 45) / 60))}
 }
 
 Generate ${workoutsPerWeek} unique, balanced workouts with proper variety and progression.`;
@@ -302,7 +308,9 @@ export async function handleWorkoutGeneration(
     const userId = user?.id;
 
     // 2. Check cache (3-tier: KV → Database → Fresh)
-    // ✅ NEW: Include weekly plan parameters in cache key
+    // Include weekly plan parameters + weekNumber in cache key
+    // weekNumber ensures different mesocycle weeks get different plans
+    // regenerationSeed ensures "regenerate" produces a fresh plan
     const cacheParams = {
       workoutsPerWeek: request.weeklyPlan.workoutsPerWeek,
       preferredDays: request.weeklyPlan.preferredDays?.sort().join(',') || '',
@@ -311,6 +319,8 @@ export async function handleWorkoutGeneration(
       equipment: request.profile.availableEquipment.sort().join(','),
       fitnessGoal: request.profile.fitnessGoal,
       focusMuscles: request.focusMuscles?.sort().join(',') || '',
+      weekNumber: request.weekNumber ?? 1,
+      regenerationSeed: request.regenerationSeed ?? 0,
     };
 
     const cacheResult = await getCachedData(c.env, 'workout', cacheParams, userId);
@@ -431,6 +441,40 @@ async function generateFreshWorkout(
   userId?: string
 ) {
   // ============================================================================
+  // STEP 0: LOAD USER HEALTH METRICS (for both rule-based AND LLM paths)
+  // ============================================================================
+
+  let calculatedMetrics: {
+    bmr?: number;
+    tdee?: number;
+    daily_calories?: number;
+    vo2_max_estimate?: number;
+    vo2_max_classification?: string;
+    heart_rate_zones?: any;
+  } | undefined;
+
+  if (userId) {
+    try {
+      const userMetrics = await loadUserMetrics(env, userId);
+      calculatedMetrics = {
+        bmr: userMetrics.calculated_bmr,
+        tdee: userMetrics.calculated_tdee,
+        daily_calories: userMetrics.daily_calories,
+        vo2_max_estimate: userMetrics.vo2_max_estimate,
+        vo2_max_classification: userMetrics.vo2_max_classification,
+        heart_rate_zones: userMetrics.heart_rate_zones,
+      };
+      console.log('[Workout Generation] Loaded health metrics:', {
+        bmr: calculatedMetrics.bmr,
+        tdee: calculatedMetrics.tdee,
+        vo2max: calculatedMetrics.vo2_max_estimate,
+      });
+    } catch (error) {
+      console.warn('[Workout Generation] Could not load user metrics, continuing without:', error);
+    }
+  }
+
+  // ============================================================================
   // FEATURE FLAG: ROUTE TO RULE-BASED OR LLM
   // ============================================================================
 
@@ -445,7 +489,23 @@ async function generateFreshWorkout(
 
     try {
       const startTime = Date.now();
-      const ruleBasedResult = await generateRuleBasedWorkout(request);
+
+      // Inject calculated health metrics into the profile so the rule-based engine
+      // can use TDEE for calorie calibration and VO2Max for coaching tips.
+      // These are optional — engine degrades gracefully if missing.
+      const enrichedRequest: WorkoutGenerationRequest = calculatedMetrics ? {
+        ...request,
+        profile: {
+          ...request.profile,
+          bmr: calculatedMetrics.bmr,
+          tdee: calculatedMetrics.tdee,
+          vo2MaxEstimate: calculatedMetrics.vo2_max_estimate,
+          vo2MaxClassification: calculatedMetrics.vo2_max_classification,
+          heartRateZones: calculatedMetrics.heart_rate_zones,
+        },
+      } : request;
+
+      const ruleBasedResult = await generateRuleBasedWorkout(enrichedRequest);
       const endTime = Date.now();
 
       console.log('[Workout Generation] ✅ Rule-based generation SUCCESS', {
@@ -479,35 +539,8 @@ async function generateFreshWorkout(
   // LLM GENERATION (ORIGINAL CODE)
   // ============================================================================
 
-  // 1. Load user's calculated metrics from database (if authenticated)
-  let calculatedMetrics;
+  // calculatedMetrics already loaded at top of generateFreshWorkout (shared between rule-based and LLM paths)
 
-  if (userId) {
-    try {
-      console.log('[Workout Generation] Loading user metrics for userId:', userId);
-      const userMetrics = await loadUserMetrics(env, userId);
-      const bodyMeasurements = await loadBodyMeasurements(env, userId);
-
-      calculatedMetrics = {
-        bmr: userMetrics.calculated_bmr,
-        tdee: userMetrics.calculated_tdee,
-        daily_calories: userMetrics.daily_calories,
-        vo2_max_estimate: userMetrics.vo2_max_estimate,
-        vo2_max_classification: userMetrics.vo2_max_classification,
-        heart_rate_zones: userMetrics.heart_rate_zones,
-      };
-
-      console.log('[Workout Generation] Using calculated metrics from database:', {
-        bmr: calculatedMetrics.bmr,
-        tdee: calculatedMetrics.tdee,
-        vo2max: calculatedMetrics.vo2_max_estimate,
-        hasHeartRateZones: !!calculatedMetrics.heart_rate_zones,
-      });
-    } catch (error) {
-      console.warn('[Workout Generation] Could not load user metrics, continuing without:', error);
-      calculatedMetrics = undefined;
-    }
-  }
 
   // 2. Filter exercises (1500 → 30-50)
     let filterResult;
@@ -605,7 +638,7 @@ async function generateFreshWorkout(
       schema: WorkoutResponseSchema,
       prompt,
       temperature: request.temperature,
-      maxTokens: 8192, // ✅ Increased for weekly plans (5-7 workouts)
+      maxOutputTokens: 8192, // ✅ Increased for weekly plans (5-7 workouts)
     });
     const aiGenerationTime = Date.now() - aiStartTime;
 
@@ -677,16 +710,49 @@ async function generateFreshWorkout(
       );
     }
 
-    // ✅ For weekly plans, skip detailed validation and enrichment for now
-    // (would need significant refactoring to validate/enrich each workout in the plan)
-    // Just verify exercise IDs exist in the filtered list
+    // GAP-09: Validate and replace hallucinated exercise IDs per workout in the weekly plan.
+    // Previously this just warned and continued — now we actually fix the plan.
     const uniqueExerciseIds = [...new Set(allExerciseIds)];
     const filteredExerciseIds = new Set(filteredExercises.map(ex => ex.exerciseId));
     const invalidExerciseIds = uniqueExerciseIds.filter(id => !filteredExerciseIds.has(id));
+    let totalReplacementsMade = 0;
 
     if (invalidExerciseIds.length > 0) {
-      console.warn('[Workout Generation] Some exercises not in filtered list:', invalidExerciseIds);
-      // Continue anyway - exercises might still be valid in database
+      console.warn('[Workout Generation] GAP-09: Hallucinated exercise IDs detected, running per-workout validation:', invalidExerciseIds);
+
+      // Apply validateExerciseIds to each workout's exercises
+      for (let i = 0; i < result.object.workouts.length; i++) {
+        const workoutEntry = result.object.workouts[i];
+        const w = workoutEntry.workout;
+        const exerciseIds = [
+          ...(w.warmup?.map((e) => e.exerciseId) || []),
+          ...(w.exercises?.map((e) => e.exerciseId) || []),
+          ...(w.cooldown?.map((e) => e.exerciseId) || []),
+        ];
+
+        const hasInvalid = exerciseIds.some(id => !filteredExerciseIds.has(id));
+        if (!hasInvalid) continue;
+
+        // w is already the single workout shape that validateExerciseIds expects
+        const validationResult = await validateExerciseIds(
+          exerciseIds,
+          filteredExercises,
+          w as any  // cast: w is SingleWorkout, validateExerciseIds expects WorkoutResponse (same shape)
+        );
+
+        if (validationResult.validatedWorkout) {
+          const vw = validationResult.validatedWorkout as any;
+          result.object.workouts[i].workout = {
+            ...w,
+            ...(vw.warmup !== undefined && { warmup: vw.warmup }),
+            exercises: vw.exercises ?? w.exercises,
+            ...(vw.cooldown !== undefined && { cooldown: vw.cooldown }),
+          };
+          totalReplacementsMade += validationResult.warnings.length;
+        }
+      }
+
+      console.log(`[Workout Generation] GAP-09: Validation complete. Replacements made: ${totalReplacementsMade}`);
     }
 
     console.log('[Workout Generation] Validation complete - returning weekly plan');
@@ -710,7 +776,8 @@ async function generateFreshWorkout(
         validation: {
           exercisesValidated: true,
           invalidExercisesFound: invalidExerciseIds.length,
-          warnings: invalidExerciseIds.length > 0 ? [`${invalidExerciseIds.length} exercises not in filtered list`] : [],
+          replacementsMade: totalReplacementsMade,
+          warnings: invalidExerciseIds.length > 0 ? [`${invalidExerciseIds.length} hallucinated IDs detected, ${totalReplacementsMade} replaced`] : [],
         },
       },
     };
@@ -732,7 +799,7 @@ interface ExerciseValidationResult {
   }>;
   errors: string[];
   warnings: string[];
-  validatedWorkout: WorkoutResponse;
+  validatedWorkout: SingleWorkout;
 }
 
 /**
@@ -750,10 +817,12 @@ interface ExerciseValidationResult {
  * @param aiWorkout - Original AI workout response
  * @returns Validation result with validated workout or errors
  */
+type SingleWorkout = z.infer<typeof SingleWorkoutSchema>;
+
 async function validateExerciseIds(
   aiExerciseIds: string[],
   filteredExercises: Exercise[],
-  aiWorkout: WorkoutResponse
+  aiWorkout: SingleWorkout
 ): Promise<ExerciseValidationResult> {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -813,12 +882,12 @@ async function validateExerciseIds(
 
   // Helper: Validate and replace exercise in section
   const validateSection = (
-    exercises: typeof aiWorkout.exercises | typeof aiWorkout.warmup | typeof aiWorkout.cooldown,
+    exercises: NonNullable<typeof aiWorkout.warmup> | typeof aiWorkout.exercises | undefined,
     sectionName: 'warmup' | 'exercises' | 'cooldown'
   ) => {
     if (!exercises || exercises.length === 0) return exercises;
 
-    return exercises.map((workoutEx) => {
+    return exercises.map((workoutEx: { exerciseId: string; [key: string]: any }) => {
       const exerciseId = workoutEx.exerciseId;
 
       // Check 1: Does exercise exist in filtered list? (IDEAL)
@@ -895,11 +964,11 @@ async function validateExerciseIds(
   const validatedCooldown = validateSection(aiWorkout.cooldown, 'cooldown');
 
   // Build validated workout
-  const validatedWorkout: WorkoutResponse = {
+  const validatedWorkout: SingleWorkout = {
     ...aiWorkout,
-    warmup: validatedWarmup,
-    exercises: validatedExercises,
-    cooldown: validatedCooldown,
+    warmup: validatedWarmup as SingleWorkout['warmup'],
+    exercises: (validatedExercises ?? aiWorkout.exercises) as SingleWorkout['exercises'],
+    cooldown: validatedCooldown as SingleWorkout['cooldown'],
   };
 
   // Determine if validation passed

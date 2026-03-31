@@ -327,6 +327,9 @@ export interface AdvancedReviewData {
   // Fallback indicator — true when population-average defaults were used
   // because the user did not provide height/weight during onboarding
   usedFallbackDefaults?: boolean;
+
+  // BUG-35: Rate cap indicator — true when the requested deficit was reduced for safety
+  was_rate_capped?: boolean;
 }
 
 // ============================================================================

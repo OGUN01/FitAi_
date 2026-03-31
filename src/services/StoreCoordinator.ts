@@ -145,7 +145,9 @@ export const completeWorkoutWithUser = async (
  */
 export const calculatePerformanceScore = (metrics: {
   waterIntake?: number;
+  waterGoalML?: number;
   steps?: number;
+  stepsGoal?: number;
   sleepHours?: number;
   workoutCount?: number;
   mood?: number;
@@ -162,21 +164,17 @@ export const calculatePerformanceScore = (metrics: {
   const sleepScore = Math.max(0, 25 - Math.abs(sleepHours - sleepOptimal) * 5);
   score += sleepScore;
 
-  // Water intake contribution (0-15 points)
-  const hydrationState = useHydrationStore.getState();
-  const waterGoalML = hydrationState.dailyGoalML;
+  // Water intake contribution (0-15 points) — BUG-61: use passed param, not store
+  const waterGoalML = metrics.waterGoalML;
   if (waterGoalML && metrics.waterIntake) {
     const waterScore = Math.min(15, (metrics.waterIntake / waterGoalML) * 15);
     score += waterScore;
   }
 
-  // Steps contribution (0-15 points)
-  const healthMetrics = useHealthDataStore.getState().metrics;
-  if (healthMetrics?.stepsGoal && metrics.steps) {
-    const stepsScore = Math.min(
-      15,
-      (metrics.steps / healthMetrics.stepsGoal) * 15,
-    );
+  // Steps contribution (0-15 points) — BUG-61: use passed param, not store
+  const stepsGoal = metrics.stepsGoal;
+  if (stepsGoal && metrics.steps) {
+    const stepsScore = Math.min(15, (metrics.steps / stepsGoal) * 15);
     score += stepsScore;
   }
 
@@ -254,9 +252,9 @@ export const getDashboardData = () => {
 // Export as default for convenience
 const StoreCoordinator = {
   getCurrentUserId: getAuthUserId,
-  requireUserId: require("./authUtils").requireUserId,
-  isAuthenticated: require("./authUtils").isAuthenticated,
-  getUserIdOrGuest: require("./authUtils").getUserIdOrGuest,
+  requireUserId: requireUserId,
+  isAuthenticated: isAuthenticated,
+  getUserIdOrGuest: getUserIdOrGuest,
   saveWeeklyMealPlanWithUser,
   completeMealWithUser,
   saveWeeklyWorkoutPlanWithUser,

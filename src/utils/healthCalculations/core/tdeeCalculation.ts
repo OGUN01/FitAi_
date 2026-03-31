@@ -257,12 +257,12 @@ export function getCalorieTarget(
 
   switch (goal) {
     case "fat_loss":
-      // Deficit for fat loss (max -1000 kcal/day = -1.3kg/week)
-      return Math.round(tdee - Math.min(dailyAdjustment, 1000));
+      // Cap at 25% of TDEE — consistent with ValidationEngine applyDeficitLimit
+      return Math.round(tdee - Math.min(dailyAdjustment, tdee * 0.25));
 
     case "muscle_gain":
-      // Surplus for muscle gain (recommended +300-500 kcal/day)
-      return Math.round(tdee + Math.min(dailyAdjustment, 500));
+      // Cap surplus at 15% of TDEE to prevent excessive fat gain
+      return Math.round(tdee + Math.min(dailyAdjustment, tdee * 0.15));
 
     case "maintenance":
     default:

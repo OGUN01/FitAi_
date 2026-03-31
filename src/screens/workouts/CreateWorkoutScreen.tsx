@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,8 +9,12 @@ import {
   SafeAreaView,
   ScrollView,
 } from "react-native";
+import { GestureDetector } from "react-native-gesture-handler";
+import Animated, { useAnimatedStyle, interpolate } from "react-native-reanimated";
+import { useDragToReorder } from "../../gestures/handlers";
 import {
   getCuratedExercises,
+  CURATED_EXERCISES,
   CuratedExercise,
 } from "../../data/curatedExercises";
 import {
@@ -18,7 +22,7 @@ import {
   TemplateExercise,
   WorkoutTemplate,
 } from "../../services/workoutTemplateService";
-import { DayWorkout } from "../../types/ai";
+import { buildDayWorkoutFromTemplate } from "../../utils/workoutBuilders";
 import { useFitnessStore } from "../../stores/fitnessStore";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { getCurrentUserId } from "../../services/authUtils";
@@ -35,48 +39,52 @@ type CategoryFilter =
   | "shoulders"
   | "arms"
   | "legs"
-  | "core";
+  | "core"
+  | "cardio"
+  | "full_body";
 
-function buildDayWorkoutFromTemplate(template: WorkoutTemplate): DayWorkout {
-  return {
-    id: `template_${template.id}`,
-    title: template.name,
-    description: `Custom workout: ${template.name}`,
-    category: "strength",
-    difficulty: "intermediate",
-    duration: template.estimatedDurationMinutes || 45,
-    estimatedCalories: 0,
-    exercises: template.exercises.map((ex) => ({
-      exerciseId: ex.exerciseId,
-      name: ex.name,
-      sets: ex.sets,
-      reps:
-        ex.repRange[0] === ex.repRange[1]
-          ? ex.repRange[0]
-          : `${ex.repRange[0]}-${ex.repRange[1]}`,
-      restTime: ex.restSeconds,
-      weight: ex.targetWeightKg,
-    })),
-    equipment: [],
-    targetMuscleGroups: template.targetMuscleGroups,
-    icon: "dumbbell",
-    tags: template.targetMuscleGroups,
-    isPersonalized: true,
-    aiGenerated: false,
-    createdAt: template.createdAt,
-    dayOfWeek: new Date()
-      .toLocaleDateString("en-US", { weekday: "long" })
-      .toLowerCase(),
-    subCategory: "custom",
-    intensityLevel: "moderate",
-    warmUp: [],
-    coolDown: [],
-    progressionNotes: [],
-    safetyConsiderations: [],
-    expectedBenefits: [],
-    isExtra: true,
-  };
-}
+const EXERCISE_ROW_HEIGHT = 90; // approximate height of each exercise row
+
+/** Wraps a child view with drag-to-reorder gesture support */
+const DraggableRow: React.FC<{
+  index: number;
+  totalCount: number;
+  onReorder: (fromIndex: number, toIndex: number) => void;
+  children: React.ReactNode;
+}> = React.memo(({ index, totalCount, onReorder, children }) => {
+  const handleDragEnd = useCallback(
+    (from: number, to: number) => {
+      const clampedTo = Math.max(0, Math.min(totalCount - 1, to));
+      if (from !== clampedTo) {
+        onReorder(from, clampedTo);
+      }
+    },
+    [totalCount, onReorder],
+  );
+
+  const { gesture, translateY, isDragging } = useDragToReorder(index, {
+    itemHeight: EXERCISE_ROW_HEIGHT,
+    onDragEnd: handleDragEnd,
+    activationDelay: 400,
+  });
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+    opacity: isDragging.value ? 0.85 : 1,
+    zIndex: isDragging.value ? 100 : 0,
+    elevation: isDragging.value ? 5 : 0,
+    shadowOpacity: isDragging.value ? 0.3 : 0,
+    shadowRadius: isDragging.value ? 8 : 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: isDragging.value ? 4 : 0 },
+  }));
+
+  return (
+    <GestureDetector gesture={gesture}>
+      <Animated.View style={animatedStyle}>{children}</Animated.View>
+    </GestureDetector>
+  );
+});
 
 const CATEGORY_TABS: { key: CategoryFilter; label: string }[] = [
   { key: "all", label: "All" },
@@ -86,16 +94,45 @@ const CATEGORY_TABS: { key: CategoryFilter; label: string }[] = [
   { key: "arms", label: "Arms" },
   { key: "legs", label: "Legs" },
   { key: "core", label: "Core" },
+  { key: "cardio", label: "Cardio" },
+  { key: "full_body", label: "Full Body" },
 ];
 
-export default function CreateWorkoutScreen({ navigation }: Props) {
+export default function CreateWorkoutScreen({ navigation, route }: Props) {
+  const templateId = route?.params?.templateId as string | undefined;
   const [workoutName, setWorkoutName] = useState("");
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryFilter>("all");
   const [addedExercises, setAddedExercises] = useState<TemplateExercise[]>([]);
   const [saving, setSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const startTemplateSession = useFitnessStore((s) => s.startTemplateSession);
+
+  // Load existing template when editing
+  useEffect(() => {
+    if (!templateId) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const userId = getCurrentUserId();
+        if (!userId) return;
+
+        const templates = await workoutTemplateService.getTemplates(userId);
+        const existing = templates.find((t) => t.id === templateId);
+        if (existing && !cancelled) {
+          setWorkoutName(existing.name);
+          setAddedExercises(existing.exercises);
+          setIsEditing(true);
+        }
+      } catch (err) {
+        console.error("Failed to load template for editing:", err);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [templateId]);
 
   const availableExercises = useMemo(() => {
     const all = getCuratedExercises(
@@ -136,8 +173,23 @@ export default function CreateWorkoutScreen({ navigation }: Props) {
     [],
   );
 
+  // Drag-and-drop reorder: moves exercise from one position to another
+  const handleDragReorder = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      setAddedExercises((prev) => {
+        const arr = [...prev];
+        const clamped = Math.max(0, Math.min(arr.length - 1, toIndex));
+        if (fromIndex === clamped) return prev;
+        const [moved] = arr.splice(fromIndex, 1);
+        arr.splice(clamped, 0, moved);
+        return arr;
+      });
+    },
+    [],
+  );
+
   const updateExerciseField = useCallback(
-    (index: number, field: keyof TemplateExercise, value: number) => {
+    (index: number, field: keyof TemplateExercise, value: number | [number, number]) => {
       setAddedExercises((prev) =>
         prev.map((ex, i) => (i === index ? { ...ex, [field]: value } : ex)),
       );
@@ -169,7 +221,7 @@ export default function CreateWorkoutScreen({ navigation }: Props) {
       const muscleGroups = [
         ...new Set(
           addedExercises.flatMap((ex) => {
-            const curated = availableExercises.find(
+            const curated = CURATED_EXERCISES.find(
               (c) => c.id === ex.exerciseId,
             );
             return curated?.muscleGroups ?? [];
@@ -177,13 +229,24 @@ export default function CreateWorkoutScreen({ navigation }: Props) {
         ),
       ];
 
-      await workoutTemplateService.createTemplate(userId, {
-        name: workoutName.trim(),
-        exercises: addedExercises,
-        targetMuscleGroups: muscleGroups,
-        estimatedDurationMinutes: addedExercises.length * 8,
-        isPublic: false,
-      });
+      if (isEditing && templateId) {
+        // Update existing template
+        await workoutTemplateService.updateTemplate(templateId, userId, {
+          name: workoutName.trim(),
+          exercises: addedExercises,
+          targetMuscleGroups: muscleGroups,
+          estimatedDurationMinutes: addedExercises.length * 8,
+        });
+      } else {
+        // Create new template
+        await workoutTemplateService.createTemplate(userId, {
+          name: workoutName.trim(),
+          exercises: addedExercises,
+          targetMuscleGroups: muscleGroups,
+          estimatedDurationMinutes: addedExercises.length * 8,
+          isPublic: false,
+        });
+      }
 
       navigation.navigate("TemplateLibrary");
     } catch (err) {
@@ -200,10 +263,16 @@ export default function CreateWorkoutScreen({ navigation }: Props) {
       return;
     }
 
+    const userId = getCurrentUserId();
+    if (!userId) {
+      crossPlatformAlert("Not Signed In", "Please sign in to start a workout.");
+      return;
+    }
+
     try {
       const template = {
         id: `temp_${Date.now()}`,
-        userId: getCurrentUserId() || "",
+        userId,
         name: workoutName.trim() || "Quick Workout",
         exercises: addedExercises,
         targetMuscleGroups: [],
@@ -249,14 +318,14 @@ export default function CreateWorkoutScreen({ navigation }: Props) {
         <Pressable onPress={() => navigation.goBack()} testID="back-button">
           <Text style={styles.headerButton}>Back</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>Create Workout</Text>
+        <Text style={styles.headerTitle}>{isEditing ? "Edit Workout" : "Create Workout"}</Text>
         <Pressable
           onPress={handleSaveTemplate}
           disabled={saving}
           testID="save-button"
         >
           <Text style={[styles.headerButton, styles.saveButton]}>
-            {saving ? "Saving..." : "Save"}
+            {saving ? "Saving..." : isEditing ? "Update" : "Save"}
           </Text>
         </Pressable>
       </View>
@@ -275,9 +344,18 @@ export default function CreateWorkoutScreen({ navigation }: Props) {
           <Text style={styles.sectionTitle}>
             Added ({addedExercises.length})
           </Text>
+          {addedExercises.length > 1 && (
+            <Text style={styles.dragHint}>Hold to drag & reorder</Text>
+          )}
           <ScrollView style={styles.addedList} nestedScrollEnabled>
             {addedExercises.map((ex, index) => (
-              <View key={`${ex.exerciseId}-${index}`} style={styles.addedRow}>
+              <DraggableRow
+                key={`${ex.exerciseId}-${index}`}
+                index={index}
+                totalCount={addedExercises.length}
+                onReorder={handleDragReorder}
+              >
+                <View style={styles.addedRow}>
                 <View style={styles.addedInfo}>
                   <Text style={styles.addedName}>{ex.name}</Text>
                   <View style={styles.inputRow}>
@@ -290,6 +368,28 @@ export default function CreateWorkoutScreen({ navigation }: Props) {
                         updateExerciseField(index, "sets", parseInt(v) || 1)
                       }
                       testID={`sets-input-${index}`}
+                    />
+                    <Text style={styles.inputLabel}>Reps:</Text>
+                    <TextInput
+                      style={styles.smallInput}
+                      keyboardType="numeric"
+                      value={String(ex.repRange[0])}
+                      onChangeText={(v) => {
+                        const min = parseInt(v) || 1;
+                        updateExerciseField(index, "repRange", [min, Math.max(min, ex.repRange[1])]);
+                      }}
+                      testID={`reps-min-input-${index}`}
+                    />
+                    <Text style={styles.inputLabel}>-</Text>
+                    <TextInput
+                      style={styles.smallInput}
+                      keyboardType="numeric"
+                      value={String(ex.repRange[1])}
+                      onChangeText={(v) => {
+                        const max = parseInt(v) || 1;
+                        updateExerciseField(index, "repRange", [Math.min(ex.repRange[0], max), max]);
+                      }}
+                      testID={`reps-max-input-${index}`}
                     />
                     <Text style={styles.inputLabel}>Rest:</Text>
                     <TextInput
@@ -304,6 +404,22 @@ export default function CreateWorkoutScreen({ navigation }: Props) {
                         )
                       }
                       testID={`rest-input-${index}`}
+                    />
+                    <Text style={styles.inputLabel}>kg:</Text>
+                    <TextInput
+                      style={styles.smallInput}
+                      keyboardType="decimal-pad"
+                      value={ex.targetWeightKg != null ? String(ex.targetWeightKg) : ""}
+                      onChangeText={(v) =>
+                        updateExerciseField(
+                          index,
+                          "targetWeightKg",
+                          parseFloat(v) || 0,
+                        )
+                      }
+                      placeholder="0"
+                      placeholderTextColor="#555"
+                      testID={`weight-input-${index}`}
                     />
                   </View>
                 </View>
@@ -328,6 +444,7 @@ export default function CreateWorkoutScreen({ navigation }: Props) {
                   </Pressable>
                 </View>
               </View>
+              </DraggableRow>
             ))}
           </ScrollView>
         </View>
@@ -416,7 +533,13 @@ const styles = StyleSheet.create({
     color: "#AAA",
     marginBottom: 8,
   },
-  addedList: { maxHeight: 160 },
+  dragHint: {
+    fontSize: 11,
+    color: "#666",
+    marginBottom: 6,
+    fontStyle: "italic",
+  },
+  addedList: { maxHeight: 200 },
   addedRow: {
     flexDirection: "row",
     alignItems: "center",

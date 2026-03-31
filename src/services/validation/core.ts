@@ -4,7 +4,9 @@ import {
   BodyAnalysisData,
   WorkoutPreferencesData,
 } from "../../types/onboarding";
-import { MetabolicCalculations } from "../../utils/healthCalculations";
+import { MetabolicCalculations, macroCalculator } from "../../utils/healthCalculations";
+import { resolveDietType } from "../../utils/healthCalculations/nutritional";
+import type { Goal, DietType } from "../../utils/healthCalculations/types";
 import {
   ValidationResult,
   ValidationResults,
@@ -54,6 +56,7 @@ export class ValidationEngine {
     dietPreferences: DietPreferencesData,
     bodyAnalysis: BodyAnalysisData,
     workoutPreferences: WorkoutPreferencesData,
+    opts?: { bypassDeficitLimit?: boolean },
   ): ValidationResults {
     const errors: ValidationResult[] = [];
     const warnings: ValidationResult[] = [];
@@ -149,13 +152,24 @@ export class ValidationEngine {
     if (isWeightLoss) {
       const dailyDeficit = (requiredWeeklyRate * 7700) / 7;
       const initialTargetCalories = tdee - dailyDeficit;
-      deficitLimitResult = this.applyDeficitLimit(
-        initialTargetCalories,
-        tdee,
-        bmr,
-        bodyAnalysis.stress_level || "moderate",
-        bodyAnalysis.medical_conditions.length > 0,
-      );
+      if (opts?.bypassDeficitLimit) {
+        // Show the user their actual selected goal — clamp only at BMR (absolute floor).
+        const floored = Math.max(initialTargetCalories, bmr);
+        deficitLimitResult = {
+          adjustedCalories: floored,
+          wasLimited: false,
+          originalDeficitPercent: dailyDeficit / tdee,
+          adjustedDeficitPercent: (tdee - floored) / tdee,
+        };
+      } else {
+        deficitLimitResult = this.applyDeficitLimit(
+          initialTargetCalories,
+          tdee,
+          bmr,
+          bodyAnalysis.stress_level || "moderate",
+          bodyAnalysis.medical_conditions.length > 0,
+        );
+      }
       targetCalories = deficitLimitResult.adjustedCalories;
 
       if (deficitLimitResult.wasLimited) {
@@ -178,8 +192,10 @@ export class ValidationEngine {
       }
     } else if (isWeightGain) {
       const dailySurplus = (requiredWeeklyRate * 7700) / 7;
-      targetCalories = tdee + dailySurplus;
-      weeklyRate = requiredWeeklyRate;
+      // Cap surplus at 15% of TDEE to prevent excessive fat gain (BUG-40)
+      const cappedSurplus = Math.min(dailySurplus, tdee * 0.15);
+      targetCalories = tdee + cappedSurplus;
+      weeklyRate = (cappedSurplus * 7) / 7700;
     } else {
       targetCalories = tdee;
       weeklyRate = 0;
@@ -192,8 +208,12 @@ export class ValidationEngine {
       );
       if (bodyFatCheck.status === "BLOCKED") errors.push(bodyFatCheck);
 
+      const computedBMI = bodyAnalysis.bmi ||
+        (bodyAnalysis.current_weight_kg && bodyAnalysis.height_cm
+          ? bodyAnalysis.current_weight_kg / Math.pow(bodyAnalysis.height_cm / 100, 2)
+          : 0);
       const bmiCheck = validateMinimumBMI(
-        bodyAnalysis.bmi || 0,
+        computedBMI,
         bodyAnalysis.target_weight_kg,
         bodyAnalysis.height_cm,
       );
@@ -221,6 +241,7 @@ export class ValidationEngine {
         bodyAnalysis.current_weight_kg,
         tdee,
         bmr,
+        targetCalories,
       );
       if (exerciseCheck.status === "BLOCKED") errors.push(exerciseCheck);
     }
@@ -287,6 +308,7 @@ export class ValidationEngine {
         workoutPreferences.primary_goals,
         workoutPreferences.workout_experience_years,
         bodyFatData.value,
+        bodyFatData.confidence,
       );
       if (recompWarn.status !== "OK") warnings.push(recompWarn);
 
@@ -373,9 +395,14 @@ export class ValidationEngine {
       );
       if (readinessWarn.status === "WARNING") warnings.push(readinessWarn);
 
-      const proteinTarget = this.calculateProtein(
+      const _warnGoalMap: Record<string, Goal> = { cutting: 'fat_loss', bulking: 'muscle_gain', maintenance: 'maintenance' };
+      const _warnGoal: Goal = _warnGoalMap[isWeightLoss ? 'cutting' : isWeightGain ? 'bulking' : 'maintenance'];
+      const proteinTarget = macroCalculator.calculateProtein(
         bodyAnalysis.current_weight_kg,
-        isWeightLoss ? "cutting" : isWeightGain ? "bulking" : "maintenance",
+        _warnGoal,
+        resolveDietType(dietPreferences),
+        bodyAnalysis.body_fat_percentage ?? undefined,
+        bodyAnalysis.target_weight_kg,
       );
       const veganWarn = warnVeganProteinLimitations(
         dietPreferences.diet_type,
@@ -403,20 +430,19 @@ export class ValidationEngine {
       if (habitsWarn.status === "WARNING") warnings.push(habitsWarn);
     }
 
-    const proteinGoal = isWeightLoss
-      ? "cutting"
-      : isWeightGain
-        ? "bulking"
-        : "maintenance";
-    const protein = this.calculateProtein(
+    const goalMap: Record<string, Goal> = { cutting: 'fat_loss', bulking: 'muscle_gain', maintenance: 'maintenance' };
+    const proteinGoalKey = isWeightLoss ? 'cutting' : isWeightGain ? 'bulking' : 'maintenance';
+    const protein = macroCalculator.calculateProtein(
       bodyAnalysis.current_weight_kg,
-      proteinGoal,
+      goalMap[proteinGoalKey],
+      resolveDietType(dietPreferences),
+      bodyAnalysis.body_fat_percentage ?? undefined,
+      bodyAnalysis.target_weight_kg,
     );
     const macros = this.calculateMacros(
       targetCalories,
       protein,
-      workoutPreferences.workout_frequency_per_week,
-      workoutPreferences.intensity,
+      resolveDietType(dietPreferences),
     );
 
     const { adjustedTDEE, adjustedMacros, notes } =
@@ -426,7 +452,15 @@ export class ValidationEngine {
         bodyAnalysis.medical_conditions,
       );
 
-    const deficitPercent = isWeightLoss ? (tdee - targetCalories) / tdee : 0;
+    // BUG-28: Re-anchor targetCalories to adjustedTDEE to preserve the deficit ratio.
+    // Without this, hypothyroid TDEE drops 10% but targetCalories stays the same,
+    // making the actual deficit only ~11% of adjustedTDEE instead of the intended 20%.
+    const medicallyAdjustedTargetCalories =
+      adjustedTDEE !== tdee && tdee > 0
+        ? Math.round(targetCalories * (adjustedTDEE / tdee))
+        : targetCalories;
+
+    const deficitPercent = isWeightLoss ? (adjustedTDEE - medicallyAdjustedTargetCalories) / adjustedTDEE : 0;
     const refeedSchedule = this.calculateRefeedSchedule(
       bodyAnalysis.target_timeline_weeks,
       deficitPercent,
@@ -449,7 +483,7 @@ export class ValidationEngine {
       calculatedMetrics: {
         bmr: Math.round(bmr),
         tdee: Math.round(adjustedTDEE || tdee),
-        targetCalories: Math.round(targetCalories),
+        targetCalories: Math.round(medicallyAdjustedTargetCalories),
         weeklyRate: Math.round(weeklyRate * 100) / 100,
         originalWeeklyRate: Math.round(requiredWeeklyRate * 100) / 100,
         wasRateCapped,
@@ -481,47 +515,13 @@ export class ValidationEngine {
     return durationMinutes / 60;
   }
 
-  private static calculateProtein(
-    weight: number,
-    goalDirection: string,
-  ): number {
-    const PROTEIN_REQUIREMENTS: Record<string, number> = {
-      cutting: 2.2,
-      recomp: 2.4,
-      maintenance: 1.6,
-      bulking: 1.8,
-      weight_gain: 1.6,
-    };
-    const multiplier = PROTEIN_REQUIREMENTS[goalDirection] || 1.6;
-    return Math.round(weight * multiplier);
-  }
 
   private static calculateMacros(
     dailyCalories: number,
     proteinGrams: number,
-    workoutFrequency: number,
-    intensity: string,
+    dietType: DietType,
   ): { protein: number; carbs: number; fat: number } {
-    const proteinCalories = proteinGrams * 4;
-    const remainingCalories = dailyCalories - proteinCalories;
-
-    let carbPercent: number;
-    if (intensity === "advanced" && workoutFrequency >= 4) {
-      carbPercent = 0.5;
-    } else if (workoutFrequency >= 3) {
-      carbPercent = 0.45;
-    } else {
-      carbPercent = 0.4;
-    }
-
-    const carbCalories = remainingCalories * carbPercent;
-    const fatCalories = remainingCalories - carbCalories;
-
-    return {
-      protein: proteinGrams,
-      carbs: Math.round(carbCalories / 4),
-      fat: Math.round(fatCalories / 9),
-    };
+    return macroCalculator.calculateMacroSplit(dailyCalories, proteinGrams, dietType);
   }
 
   private static applyMedicalAdjustments(

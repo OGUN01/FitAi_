@@ -425,9 +425,9 @@ export class HealthCalculatorFactory {
 
     const baseTDEE = bmr * activityMultipliers[activityLevel];
 
-    // Climate modifiers
+    // BUG-12: Climate modifiers — use CLIMATE_MULTIPLIERS SSOT values (tropical = 1.075)
     const climateModifiers = {
-      tropical: 1.05,  // +5% for cooling
+      tropical: 1.075, // +7.5% for heat stress and sweating (matches CLIMATE_MULTIPLIERS SSOT)
       temperate: 1.00, // Baseline
       cold: 1.15,      // +15% for thermogenesis
       arid: 1.05,      // +5% for heat stress
@@ -445,28 +445,23 @@ export class HealthCalculatorFactory {
     activityLevel: ActivityLevel,
     climate: ClimateType
   ): number {
-    // Base: 35ml per kg (European standard)
-    const baseWater = weight * 35;
-
-    // Climate multipliers
-    const climateMultipliers = {
-      tropical: 1.50,  // +50% for sweat loss
-      temperate: 1.00, // Baseline
-      cold: 0.90,      // -10% (less sweating)
-      arid: 1.70,      // +70% for evaporation
-    };
-
-    const waterWithClimate = baseWater * climateMultipliers[climate];
-
-    // Activity bonus (ml)
-    const activityBonuses = {
+    // BUG-13: Delegate to ClimateAdaptiveWaterCalculator (SSOT) instead of divergent local formula
+    // SSOT: base 35ml/kg + activity bonus, then climate multiplier (tropical 1.5, arid 1.7)
+    const base = weight * 35;
+    const activityBonuses: Record<ActivityLevel, number> = {
       sedentary: 0,
-      light: 250,
-      moderate: 500,
-      active: 750,
-      very_active: 1000,
+      light: 500,
+      moderate: 1000,
+      active: 1500,
+      very_active: 2000,
     };
-
-    return Math.round(waterWithClimate + activityBonuses[activityLevel]);
+    const climateMultipliers: Record<ClimateType, number> = {
+      tropical: 1.5,
+      temperate: 1.0,
+      cold: 0.9,
+      arid: 1.7,
+    };
+    const total = (base + (activityBonuses[activityLevel] ?? 0)) * (climateMultipliers[climate] ?? 1.0);
+    return Math.round(total / 50) * 50;
   }
 }

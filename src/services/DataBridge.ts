@@ -152,11 +152,11 @@ class DataBridge {
   }
 
   switchToOldSystem(): void {
-    this.config.USE_NEW_SYSTEM = true; // Always use new system
+    this.config.USE_NEW_SYSTEM = false;
   }
 
   setShadowMode(enabled: boolean): void {
-    this.config.SHADOW_MODE = false;
+    this.config.SHADOW_MODE = enabled;
   }
 
   getConfig(): DataBridgeConfig {
@@ -356,26 +356,15 @@ class DataBridge {
                 resolvedCurrentWeight.value ?? bodyAnalysis.current_weight_kg,
             }
           : bodyAnalysis;
-      if (
-        bodyAnalysis &&
-        canonicalBodyAnalysis &&
-        canonicalBodyAnalysis.current_weight_kg !== bodyAnalysis.current_weight_kg
-      ) {
-        try {
-          await BodyAnalysisService.save(
-            userId,
-            canonicalBodyAnalysis as BodyAnalysisData,
-          );
-        } catch (error) {
-          console.warn(
-            "[DataBridge] Failed to heal canonical current weight in body_analysis:",
-            error,
-          );
-        }
-      }
+      // BUG-53 fix: removed auto-save of full body_analysis on weight mismatch.
+      // Auto-saving re-persists stale null fields (bmi, bmr) and can overwrite newer server data.
+      // Weight reconciliation should happen via explicit user actions only.
 
       // Update ProfileStore with loaded data (SSOT for onboarding data)
+      // BUG-60 fix: mark as "syncing" before batch updates so SyncEngine doesn't push
+      // partially-loaded state, then mark "synced" when all updates are committed.
       const profileStore = useProfileStore.getState();
+      profileStore.setSyncStatus("syncing");
       if (personalInfo) profileStore.updatePersonalInfo(personalInfo);
       if (dietPreferences) profileStore.updateDietPreferences(dietPreferences);
       if (canonicalBodyAnalysis)
@@ -383,6 +372,7 @@ class DataBridge {
       if (workoutPreferences)
         profileStore.updateWorkoutPreferences(workoutPreferences);
       if (advancedReview) profileStore.updateAdvancedReview(advancedReview);
+      profileStore.setSyncStatus("synced");
       if (resolvedCurrentWeight?.value != null) {
         weightTrackingService.setWeight(resolvedCurrentWeight.value);
       }

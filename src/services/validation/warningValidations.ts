@@ -13,18 +13,22 @@ export function warnAggressiveTimeline(
   const conservative = currentWeight * 0.005;
   const weightDifference = Math.abs(currentWeight - targetWeight);
 
-  if (requiredRate > optimal && requiredRate <= extremeLimit) {
+  if (requiredRate > optimal) {
     const optimalWeeks = Math.ceil(weightDifference / optimal);
     const conservativeWeeks = Math.ceil(weightDifference / conservative);
     const aggressiveDeficit = (requiredRate * 7700) / 7;
     const optimalDeficit = (optimal * 7700) / 7;
     const conservativeDeficit = (conservative * 7700) / 7;
     const isVeryAggressive = requiredRate > moderateAggressive;
+    // BUG-22: extremeLimit was defined but never used — rates above it now get ERROR severity
+    const isExtreme = requiredRate > extremeLimit;
 
     return {
-      status: "WARNING",
-      code: "AGGRESSIVE_TIMELINE",
-      message: isVeryAggressive
+      status: isExtreme ? "BLOCKED" : "WARNING",
+      code: isExtreme ? "EXTREME_RATE" : "AGGRESSIVE_TIMELINE",
+      message: isExtreme
+        ? `Your goal rate (${requiredRate.toFixed(2)}kg/week) exceeds safe medical limits — health risk`
+        : isVeryAggressive
         ? `Your goal rate (${requiredRate.toFixed(2)}kg/week) is very aggressive`
         : `Your goal rate (${requiredRate.toFixed(2)}kg/week) is aggressive`,
       impact: `Recommended: ${optimal.toFixed(2)}kg/week for optimal muscle retention`,
@@ -94,7 +98,7 @@ export function warnAggressiveTimeline(
           cons: ["Slowest progress"],
         },
       ],
-      canProceed: true,
+      canProceed: !isExtreme,
     };
   }
   return { status: "OK" };
@@ -125,12 +129,7 @@ export function warnTeenAthlete(
   activityLevel: string,
   goalType: string,
 ): ValidationResult {
-  if (
-    age >= 13 &&
-    age <= 17 &&
-    activityLevel === "extreme" &&
-    goalType === "weight-loss"
-  ) {
+  if (age >= 13 && age <= 17 && goalType === "weight-loss") {
     return {
       status: "WARNING",
       code: "TEEN_ATHLETE_RESTRICTION",
@@ -178,7 +177,10 @@ export function warnHighTrainingVolume(
 ): ValidationResult {
   const totalWeeklyHours = (frequency * duration) / 60;
 
-  if (totalWeeklyHours > 12 && intensity === "advanced") {
+  const volumeThreshold =
+    intensity === "advanced" ? 12 : intensity === "intermediate" ? 10 : 8;
+
+  if (totalWeeklyHours > volumeThreshold) {
     return {
       status: "WARNING",
       code: "HIGH_TRAINING_VOLUME",
@@ -226,7 +228,10 @@ export function warnMenopause(gender: string, age: number): ValidationResult {
 
 export function warnLowSleep(sleepHours: number): ValidationResult {
   if (sleepHours < 7) {
-    const impactPercent = Math.round((7 - sleepHours) * 10);
+    const hoursUnder = 7 - sleepHours;
+    // Non-linear impact: each hour under 7 has increasing marginal cost
+    // Based on Nedeltcheva et al. (2010): 5.5h vs 8.5h reduces fat loss by ~55%
+    const impactPercent = hoursUnder <= 1 ? 15 : hoursUnder <= 2 ? 35 : 55;
     return {
       status: "WARNING",
       code: "INSUFFICIENT_SLEEP",
@@ -276,13 +281,16 @@ export function warnBodyRecomp(
   goals: string[],
   experience: number,
   bodyFat?: number,
+  bodyFatConfidence?: "high" | "medium" | "low",
 ): ValidationResult {
   const wantsMusclePlusFatLoss =
     goals.includes("muscle-gain") && goals.includes("weight-loss");
   if (!wantsMusclePlusFatLoss) return { status: "OK" };
 
   const isNovice = experience < 2;
-  const isOverweight = bodyFat ? bodyFat > 20 : false;
+  // Only trust BF% for overweight check when confidence is high or medium
+  const canTrustBodyFat = bodyFatConfidence === "high" || bodyFatConfidence === "medium";
+  const isOverweight = canTrustBodyFat && bodyFat ? bodyFat > 20 : false;
 
   if (isNovice || isOverweight) {
     return {
@@ -314,11 +322,13 @@ export function warnAlcoholImpact(
   alcohol: boolean,
   aggressive: boolean,
 ): ValidationResult {
-  if (alcohol && aggressive) {
+  if (alcohol) {
     return {
       status: "WARNING",
       code: "ALCOHOL_IMPACT",
-      message: "Alcohol will slow progress 10-15%",
+      message: aggressive
+        ? "Alcohol will slow progress 10-15% — critical with an aggressive goal"
+        : "Alcohol can impair recovery and slow fat loss",
       recommendations: ["Limit to 1-2 drinks/week maximum"],
       canProceed: true,
     };
@@ -396,19 +406,43 @@ export function warnObesitySpecialGuidance(
   bmi: number,
   weeklyRate: number,
   currentWeight: number,
+  ethnicity?: string,
 ): ValidationResult {
-  if (bmi >= 35) {
+  // BUG-10: Apply ethnic BMI cutoffs (WHO Asian-specific: obese ≥ 27.5, class II ≥ 32.5)
+  const isAsian = ethnicity === 'asian';
+  const classIIThreshold = isAsian ? 32.5 : 35;
+  const classILabel = isAsian ? 'BMI ≥ 27.5 (Asian obesity threshold)' : 'BMI ≥ 30';
+
+  if (bmi >= classIIThreshold) {
     const adjustedMaxRate = currentWeight * 0.015;
     return {
       status: "WARNING",
       code: "OBESITY_ADJUSTED_RATES",
-      message: "Higher BMI allows for faster initial weight loss",
+      message: isAsian
+        ? "Asian BMI guidelines indicate higher health risk at this weight"
+        : "Higher BMI allows for faster initial weight loss",
       recommendations: [
-        `Class II obesity (BMI ≥ 35) can tolerate larger deficits safely`,
+        `Class II obesity (${isAsian ? 'Asian' : 'standard'} scale: BMI ≥ ${classIIThreshold}) can tolerate larger deficits safely`,
         `Up to ${adjustedMaxRate.toFixed(2)}kg/week is safe for you`,
         "Rate will naturally slow as you lose weight",
         "Initial rapid loss is mostly water - expect slower after 2-4 weeks",
         "Consider medical supervision for best results",
+      ],
+      canProceed: true,
+    };
+  }
+  // BUG-10: Warn Asian users at BMI ≥ 27.5 (standard overweight starts at 30 for general pop)
+  if (isAsian && bmi >= 27.5) {
+    return {
+      status: "WARNING",
+      code: "ASIAN_BMI_ELEVATED",
+      message: "Your BMI is in the obese range by Asian-specific WHO guidelines",
+      recommendations: [
+        `${classILabel}`,
+        "Asian populations face higher metabolic risk at lower BMI",
+        "Consider moderate weight loss for cardiovascular health",
+        "Monitor blood pressure, blood sugar, and cholesterol",
+        "Consult a healthcare provider for personalised guidance",
       ],
       canProceed: true,
     };
@@ -480,12 +514,13 @@ export function warnLowDietReadiness(
   currentWeight: number,
 ): ValidationResult {
   const isAggressive = weeklyRate > currentWeight * 0.0075;
+  const belowThreshold = isAggressive ? dietReadinessScore < 50 : dietReadinessScore < 30;
 
-  if (dietReadinessScore < 40 && isAggressive) {
+  if (belowThreshold) {
     return {
       status: "WARNING",
       code: "LOW_DIET_READINESS",
-      message: `Low diet readiness score (${dietReadinessScore}/100) with aggressive goal`,
+      message: `Low diet readiness score (${dietReadinessScore}/100)${isAggressive ? " with aggressive goal" : ""}`,
       recommendations: [
         "Current habits indicate low adherence likelihood",
         "Option 1: Habit Building Phase First (4 weeks)",

@@ -37,6 +37,11 @@ export function adjustPortionsToTarget(
     return sum + meal.foods.reduce((mealSum, food) => mealSum + food.nutrition.calories, 0);
   }, 0);
 
+  // Guard against division by zero — return plan unchanged if all food has 0 calories
+  if (currentCalories === 0) {
+    return mealPlan;
+  }
+
   // Calculate scale factor
   const scaleFactor = targetCalories / currentCalories;
 

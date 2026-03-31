@@ -145,7 +145,7 @@ export async function loadUserMetrics(
       );
     }
 
-    // Validate critical fields
+    // Validate critical fields — enforce clinical minimum floor
     if (!data.daily_calories || data.daily_calories === 0) {
       throw new APIError(
         'Invalid daily calorie calculation. Please recomplete onboarding.',
@@ -153,6 +153,10 @@ export async function loadUserMetrics(
         ErrorCode.INVALID_PARAMETER,
         { field: 'daily_calories' }
       );
+    }
+    if (data.daily_calories < 1000) {
+      console.error('[UserMetrics] daily_calories below clinical minimum:', data.daily_calories, '— clamping to 1200');
+      data.daily_calories = 1200;
     }
 
     if (!data.calculated_bmr || data.calculated_bmr === 0) {

@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp } from "../../../utils/responsive";
 import { ResponsiveTheme } from "../../../utils/constants";
@@ -10,19 +10,11 @@ import {
   BodyAnalysisData,
   AdvancedReviewData,
 } from "../../../types/onboarding";
-import { RateComparisonCard } from "../../onboarding/RateComparisonCard";
-import {
-  SmartAlternative,
-  SmartAlternativesResult,
-} from "../../../services/validationEngine";
 import { isValidMetric } from "../../../utils/validationUtils";
 
 interface WeightManagementSectionProps {
   calculatedData: AdvancedReviewData | null;
   bodyAnalysis: BodyAnalysisData | null;
-  smartAlternatives: SmartAlternativesResult | null;
-  selectedAlternativeId: string | null;
-  handleRateSelection: (alternative: SmartAlternative) => Promise<void>;
   onNavigateToTab?: (tabNumber: number) => void;
 }
 
@@ -31,9 +23,6 @@ export const WeightManagementSection: React.FC<
 > = ({
   calculatedData,
   bodyAnalysis,
-  smartAlternatives,
-  selectedAlternativeId,
-  handleRateSelection,
   onNavigateToTab,
 }) => {
   if (!calculatedData) return null;
@@ -68,6 +57,15 @@ export const WeightManagementSection: React.FC<
           borderRadius="lg"
           style={styles.weightCardInline}
         >
+          {calculatedData.was_rate_capped && (
+            <View style={styles.capBanner}>
+              <Ionicons name="shield-checkmark-outline" size={rf(14)} color={ResponsiveTheme.colors.warning ?? '#f59e0b'} />
+              <Text style={styles.capBannerText}>
+                Your pace was reduced for safety. See warnings below.
+              </Text>
+            </View>
+          )}
+
           {isValidMetric(bodyAnalysis?.target_weight_kg) && (
           <View style={styles.weightHeader}>
             <Text style={styles.weightTitle}>Goal Timeline</Text>
@@ -108,14 +106,6 @@ export const WeightManagementSection: React.FC<
             )}
           </View>
 
-          {/* Smart Rate Alternatives Card */}
-          {smartAlternatives?.showRateComparison && (
-            <RateComparisonCard
-              alternativesResult={smartAlternatives}
-              selectedAlternativeId={selectedAlternativeId}
-              onSelectAlternative={handleRateSelection}
-            />
-          )}
         </GlassCard>
       </View>
       <View style={styles.sectionBottomPad} />
@@ -155,6 +145,20 @@ const styles = StyleSheet.create({
   },
   weightCardInline: {
     marginBottom: rp(4),
+  },
+  capBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: 'rgba(245,158,11,0.12)',
+    borderRadius: 8,
+    padding: rp(8),
+    marginBottom: rp(10),
+    gap: rp(6),
+  },
+  capBannerText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: '#f59e0b',
+    flex: 1,
   },
   weightHeader: {
     flexDirection: "row",

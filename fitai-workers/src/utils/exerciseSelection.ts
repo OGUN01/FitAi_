@@ -364,7 +364,8 @@ export function selectExercisesForDay(
   workoutDay: WorkoutDay,
   profile: UserProfile,
   totalExercisesTarget: number,
-  weekNumber: number = 1
+  weekNumber: number = 1,
+  regenerationSeed: number = 0
 ): WorkoutDayExercises {
 
   // 1. FILTER BY BODY PARTS AND MUSCLE GROUPS
@@ -409,7 +410,11 @@ export function selectExercisesForDay(
   const selectedExercises: ClassifiedExercise[] = [];
 
   // Apply weekly rotation offset (0-3 for 4-week mesocycle)
-  const rotationOffset = (weekNumber - 1) % 4;
+  // regenerationSeed adds extra offset so "regenerate" produces different exercises
+  // while keeping the same split structure and muscle group targets.
+  const totalPoolSize = Math.max(1, compounds.length + auxiliaries.length + isolations.length);
+  const seedOffset = regenerationSeed > 0 ? (regenerationSeed % totalPoolSize) : 0;
+  const rotationOffset = ((weekNumber - 1) % 4) + seedOffset;
 
   // Select compounds
   const selectedCompounds = selectWithVariety(
@@ -566,7 +571,8 @@ export function generateWeeklyExercisePlan(
   safeExercises: ExerciseWithMetadata[],
   split: WorkoutSplit,
   profile: UserProfile,
-  weekNumber: number = 1
+  weekNumber: number = 1,
+  regenerationSeed: number = 0
 ): WeeklyExercisePlan {
 
   // Determine exercises per workout based on time and experience
@@ -576,7 +582,7 @@ export function generateWeeklyExercisePlan(
     split.daysPerWeek
   );
 
-  console.log(`[Weekly Plan] Generating week ${weekNumber}, ${exercisesPerWorkout} exercises/workout`);
+  console.log(`[Weekly Plan] Generating week ${weekNumber}, ${exercisesPerWorkout} exercises/workout, seed=${regenerationSeed}`);
 
   // Generate exercises for each workout day
   const workouts: WorkoutDayExercises[] = split.workoutDays.map((day, index) => {
@@ -585,7 +591,8 @@ export function generateWeeklyExercisePlan(
       day,
       profile,
       exercisesPerWorkout,
-      weekNumber
+      weekNumber,
+      regenerationSeed
     );
   });
 

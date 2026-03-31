@@ -82,6 +82,7 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
 
   // Convert value to Y coordinate
   const valueToY = (value: number): number => {
+    'worklet';
     const normalized = (value - minValue) / valueRange;
     return padding + chartHeight - normalized * chartHeight;
   };

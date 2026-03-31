@@ -294,7 +294,7 @@ function isGlutenFreeException(foodName: string): boolean {
  * Check for diet type violations
  * Returns array of validation errors if violations found
  */
-function checkDietTypeViolations(meals: Meal[], dietType: string): DietValidationError[] {
+function checkDietTypeViolations(meals: Meal[], dietType: string, restrictions?: string[]): DietValidationError[] {
 	const errors: DietValidationError[] = [];
 
 	const meatKeywords = ['chicken', 'beef', 'pork', 'mutton', 'lamb', 'goat', 'turkey', 'duck', 'bacon', 'sausage', 'ham'];
@@ -372,6 +372,27 @@ function checkDietTypeViolations(meals: Meal[], dietType: string): DietValidatio
 						severity: 'CRITICAL',
 						code: 'DIET_TYPE_VIOLATION',
 						message: `Vegetarian diet cannot contain fish/seafood: "${food.name}"`,
+						meal: meal.name,
+						food: food.name,
+						dietType,
+					});
+				}
+				// BUG-74: Respect explicit egg_free / dairy_free restrictions for vegetarians
+				if (restrictions?.includes('egg_free') && eggKeywords.some((k) => foodLower.includes(k))) {
+					errors.push({
+						severity: 'CRITICAL',
+						code: 'DIET_TYPE_VIOLATION',
+						message: `Vegetarian (egg-free) diet cannot contain eggs: "${food.name}"`,
+						meal: meal.name,
+						food: food.name,
+						dietType,
+					});
+				}
+				if (restrictions?.includes('dairy_free') && dairyKeywords.some((k) => foodLower.includes(k))) {
+					errors.push({
+						severity: 'CRITICAL',
+						code: 'DIET_TYPE_VIOLATION',
+						message: `Vegetarian (dairy-free) diet cannot contain dairy: "${food.name}"`,
 						meal: meal.name,
 						food: food.name,
 						dietType,
@@ -552,11 +573,14 @@ function validateDietPlan(
 	}
 
 	// 2. DIET TYPE VIOLATION CHECK (CRITICAL)
-	const dietType = prefs?.diet_type || 'omnivore';
-	const dietViolations = checkDietTypeViolations(aiResponse.meals, dietType);
-	if (dietViolations.length > 0) {
-		errors.push(...dietViolations);
-		console.error('[DietValidation] DIET TYPE VIOLATIONS:', dietViolations.length);
+	if (!prefs?.diet_type) {
+		console.error('[DietValidation] diet_type missing — skipping diet violation check');
+	} else {
+		const dietViolations = checkDietTypeViolations(aiResponse.meals, prefs.diet_type, prefs.restrictions);
+		if (dietViolations.length > 0) {
+			errors.push(...dietViolations);
+			console.error('[DietValidation] DIET TYPE VIOLATIONS:', dietViolations.length);
+		}
 	}
 
 	// 3. EXTREME CALORIE DRIFT CHECK (CRITICAL - >30% off)
@@ -706,8 +730,9 @@ function mergeDietPreferences(
 	request: DietGenerationRequest,
 ): DietPreferences | null {
 	const override = request.dietPreferences;
+	const hasRestrictions = (request.dietaryRestrictions?.length ?? 0) > 0;
 
-	if (!storedPrefs && !override && !request.excludeIngredients?.length) {
+	if (!storedPrefs && !override && !request.excludeIngredients?.length && !hasRestrictions) {
 		return null;
 	}
 
@@ -716,9 +741,15 @@ function mergeDietPreferences(
 		...(request.excludeIngredients || []),
 	];
 
+	// Derive diet_type from dietaryRestrictions when not explicitly set (BUG-73)
+	const derivedDietType = request.dietaryRestrictions?.includes('vegan') ? 'vegan' :
+		request.dietaryRestrictions?.includes('vegetarian') ? 'vegetarian' :
+		request.dietaryRestrictions?.includes('pescatarian') ? 'pescatarian' : undefined;
+
 	return {
 		...(storedPrefs || {}),
 		...(override || {}),
+		diet_type: override?.diet_type ?? storedPrefs?.diet_type ?? derivedDietType,
 		dislikes: dislikes.length > 0 ? [...new Set(dislikes)] : storedPrefs?.dislikes,
 		restrictions:
 			override?.restrictions ??

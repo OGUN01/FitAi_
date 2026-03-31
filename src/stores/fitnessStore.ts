@@ -45,6 +45,8 @@ export const useFitnessStore = create<FitnessState>()(
       weeklyWorkoutPlan: null,
       isGeneratingPlan: false,
       planError: null,
+      customWeeklyPlan: null,
+      activePlanSource: 'ai' as const,
       workoutProgress: {},
       lastProgressDate: "", // empty = force cleanup on first rehydration
       currentWorkoutSession: null,
@@ -76,11 +78,17 @@ export const useFitnessStore = create<FitnessState>()(
         const state = get();
         if (state.lastProgressDate === today) return;
 
-        // New day: clear all partial progress (< 100).
-        // Completed entries (100) stay — they're backed by completedSessions.
+        // New day: clear partial progress (< 100).
+        // Completed entries (100) only stay if they belong to the current week —
+        // otherwise the same workout ID on a new week would still show as complete.
+        const currentWeekStart = getCurrentWeekStart();
         const cleaned: Record<string, WorkoutProgress> = {};
         for (const [id, entry] of Object.entries(state.workoutProgress)) {
-          if (entry.progress >= 100) {
+          if (
+            entry.progress >= 100 &&
+            entry.completedAt &&
+            getWeekStartForDate(entry.completedAt) === currentWeekStart
+          ) {
             cleaned[id] = entry;
           }
         }
@@ -126,11 +134,6 @@ export const useFitnessStore = create<FitnessState>()(
 
         // ALSO save the complete weekly plan to the new weekly_workout_plans table
         try {
-          // Clear any failed UUID attempts in the queue first
-          await offlineService.clearFailedActionsForTable(
-            "weekly_workout_plans",
-          );
-
           // Get authenticated user ID via StoreCoordinator (removes cross-store dependency)
           const userId = getCurrentUserId();
           const planId = generateUUID();
@@ -160,6 +163,7 @@ export const useFitnessStore = create<FitnessState>()(
                   .select("id")
                   .eq("user_id", userId)
                   .eq("is_active", true)
+                  .eq("plan_source", "ai")
                   .order("created_at", { ascending: false })
                   .limit(1);
               if (activePlansError) {
@@ -202,6 +206,7 @@ export const useFitnessStore = create<FitnessState>()(
             duration_range: plan.duration ? String(plan.duration) : "1 week",
             plan_data: planDataWithDbId, // Store complete plan as JSONB
             is_active: true,
+            plan_source: "ai",
           };
 
           await offlineService.queueAction({
@@ -240,6 +245,7 @@ export const useFitnessStore = create<FitnessState>()(
                 .select("*")
                 .eq("user_id", userId)
                 .eq("is_active", true)
+                .eq("plan_source", "ai")
                 .order("created_at", { ascending: false })
                 .limit(1);
 
@@ -285,7 +291,182 @@ export const useFitnessStore = create<FitnessState>()(
         set({ planError: error });
       },
 
-      // Workout progress actions
+      // ── Custom plan actions ─────────────────────────────────────────────
+      setActivePlanSource: (source) => {
+        set({ activePlanSource: source });
+
+        // Persist to Supabase via offline queue so preference syncs across devices
+        const userId = getCurrentUserId();
+        if (userId) {
+          offlineService.queueAction({
+            type: 'UPDATE',
+            table: 'profiles',
+            data: { id: userId, active_plan_source: source },
+            userId,
+            maxRetries: 3,
+          });
+        }
+      },
+
+      setCustomWeeklyPlan: (plan) => {
+        set({ customWeeklyPlan: plan });
+      },
+
+      getActivePlan: () => {
+        const state = get();
+        return state.activePlanSource === 'custom'
+          ? state.customWeeklyPlan
+          : state.weeklyWorkoutPlan;
+      },
+
+      saveCustomWeeklyPlan: async (plan) => {
+        try {
+          // Save to local storage via Zustand persist first
+          set({ customWeeklyPlan: plan });
+
+          if (!plan.workouts || plan.workouts.length === 0) {
+            return;
+          }
+        } catch (error) {
+          console.error("❌ Failed to save custom workout plan:", error);
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "Failed to save custom workout plan";
+          set({ planError: errorMessage });
+
+          if (!get().customWeeklyPlan) {
+            throw error;
+          }
+        }
+
+        // Persist to weekly_workout_plans with plan_source = 'custom'
+        try {
+          const userId = getCurrentUserId();
+          const planId = generateUUID();
+
+          if (!userId) {
+            console.error("❌ No authenticated user - cannot save custom plan to database");
+            throw new Error("User must be authenticated to save custom plans");
+          }
+
+          if (!isValidUUID(userId)) {
+            console.error("❌ Invalid user UUID format:", userId);
+            throw new Error("Invalid user UUID format");
+          }
+          if (!isValidUUID(planId)) {
+            console.error("❌ Invalid plan UUID format:", planId);
+            throw new Error("Invalid plan UUID format");
+          }
+
+          // Look for existing active custom plan
+          let activeCustomPlanRowId = (plan as any).databaseId || null;
+          if (!activeCustomPlanRowId) {
+            try {
+              const { data: customPlans, error: customPlansError } =
+                await supabase
+                  .from("weekly_workout_plans")
+                  .select("id")
+                  .eq("user_id", userId)
+                  .eq("is_active", true)
+                  .eq("plan_source", "custom")
+                  .order("created_at", { ascending: false })
+                  .limit(1);
+              if (customPlansError) {
+                console.error(
+                  "[fitnessStore] Failed to look up active custom plan:",
+                  customPlansError,
+                );
+              }
+              activeCustomPlanRowId = customPlans?.[0]?.id || null;
+            } catch (lookupError) {
+              console.warn(
+                "Failed to look up active custom plan; falling back to queued create:",
+                lookupError,
+              );
+            }
+          }
+
+          const planRowId = activeCustomPlanRowId || planId;
+          const hasConfirmedDatabaseId = Boolean(
+            activeCustomPlanRowId || (plan as any).databaseId,
+          );
+          const planDataWithDbId = hasConfirmedDatabaseId
+            ? { ...plan, databaseId: activeCustomPlanRowId || (plan as any).databaseId }
+            : plan;
+
+          set({ customWeeklyPlan: planDataWithDbId });
+
+          const weeklyPlanData = {
+            id: planRowId,
+            user_id: userId,
+            plan_title: plan.planTitle || "My Custom Schedule",
+            plan_description:
+              plan.planDescription ||
+              `${plan.workouts.length} custom workouts`,
+            week_number: plan.weekNumber || 1,
+            total_workouts: plan.workouts.length,
+            duration_range: plan.duration ? String(plan.duration) : "1 week",
+            plan_data: planDataWithDbId,
+            is_active: true,
+            plan_source: "custom",
+          };
+
+          await offlineService.queueAction({
+            type: activeCustomPlanRowId ? "UPDATE" : "CREATE",
+            table: "weekly_workout_plans",
+            data: weeklyPlanData,
+            userId: getUserIdOrGuest(),
+            maxRetries: 3,
+          });
+        } catch (customPlanError) {
+          console.error(
+            "❌ Failed to save custom workout plan to database:",
+            customPlanError,
+          );
+          const errorMessage =
+            customPlanError instanceof Error
+              ? customPlanError.message
+              : "Failed to save custom plan to database";
+          set({ planError: errorMessage });
+        }
+      },
+
+      loadCustomWeeklyPlan: async () => {
+        try {
+          const userId = getCurrentUserId();
+          if (!userId) return null;
+
+          const { data: customPlans, error } = await supabase
+            .from("weekly_workout_plans")
+            .select("*")
+            .eq("user_id", userId)
+            .eq("is_active", true)
+            .eq("plan_source", "custom")
+            .order("created_at", { ascending: false })
+            .limit(1);
+
+          if (!error && customPlans && customPlans.length > 0) {
+            const latestPlan = customPlans[0];
+            const planData = latestPlan.plan_data;
+            if (planData && planData.workouts) {
+              const planWithDbId = {
+                ...planData,
+                databaseId: latestPlan.id,
+              };
+              set({ customWeeklyPlan: planWithDbId });
+              return planWithDbId;
+            }
+          }
+
+          // No custom plan found (0 rows or no valid plan_data) — clear stale state
+          set({ customWeeklyPlan: null });
+          return null;
+        } catch (error) {
+          console.error("❌ Failed to load custom workout plan:", error);
+          return null;
+        }
+      },
       updateWorkoutProgress: (workoutId, progress, metadata?) => {
         set((state) => ({
           workoutProgress: {
@@ -308,6 +489,8 @@ export const useFitnessStore = create<FitnessState>()(
       completeWorkout: async (workoutId, sessionId, caloriesBurned) => {
         const completedAt = new Date().toISOString();
         const plannedDuration = get().weeklyWorkoutPlan?.workouts.find(
+          (w) => w.id === workoutId,
+        )?.duration ?? get().customWeeklyPlan?.workouts.find(
           (w) => w.id === workoutId,
         )?.duration;
 
@@ -705,6 +888,8 @@ export const useFitnessStore = create<FitnessState>()(
                   weight: data.weightKg,
                   completed: data.completed,
                   setType: data.setType,
+                  rpe: (data as any).rpe ?? null,
+                  isCalibration: (data as any).isCalibration ?? false,
                 };
               }
 
@@ -738,6 +923,9 @@ export const useFitnessStore = create<FitnessState>()(
           if (state.weeklyWorkoutPlan) {
             await get().saveWeeklyWorkoutPlan(state.weeklyWorkoutPlan);
           }
+          if (state.customWeeklyPlan) {
+            await get().saveCustomWeeklyPlan(state.customWeeklyPlan);
+          }
         } catch (error) {
           console.error("❌ Failed to persist fitness data:", error);
         }
@@ -753,16 +941,40 @@ export const useFitnessStore = create<FitnessState>()(
             set({ weeklyWorkoutPlan: plan });
           }
 
+          await get().loadCustomWeeklyPlan();
+
           // Hydrate workoutProgress + completedSessions from Supabase on login
           try {
             const { data: user, error: authError } =
               await supabase.auth.getUser();
             if (authError) {
-              console.error(
-                "[fitnessStore] Failed to get auth user for hydration:",
-                authError,
+              // AuthSessionMissingError is expected on cold start before the session is restored.
+              // loadData() will be called again after login via the auth listener.
+              console.warn(
+                "[fitnessStore] No auth session during hydration (expected on cold start):",
+                authError.message,
               );
             } else if (user?.user?.id) {
+              // Hydrate active_plan_source preference from profiles (multi-device sync)
+              try {
+                const { data: profile, error: profileError } = await supabase
+                  .from("profiles")
+                  .select("active_plan_source")
+                  .eq("id", user.user.id)
+                  .single();
+
+                if (profileError) {
+                  console.error("❌ Failed to fetch active_plan_source from profiles:", profileError);
+                } else if (profile?.active_plan_source) {
+                  const source = profile.active_plan_source as 'ai' | 'custom';
+                  if (source === 'ai' || source === 'custom') {
+                    set({ activePlanSource: source });
+                  }
+                }
+              } catch (prefError) {
+                console.error("❌ Error hydrating active_plan_source:", prefError);
+              }
+
               const { data: sessions, error } = await supabase
                 .from("workout_sessions")
                 .select(
@@ -781,6 +993,11 @@ export const useFitnessStore = create<FitnessState>()(
                 sessions.forEach((s) => {
                   const planWorkout = findPlanWorkoutBySessionIdentity({
                     plan: get().weeklyWorkoutPlan,
+                    workoutId: s.workout_id,
+                    plannedDayKey: s.planned_day_key,
+                    planSlotKey: s.plan_slot_key,
+                  }) || findPlanWorkoutBySessionIdentity({
+                    plan: get().customWeeklyPlan,
                     workoutId: s.workout_id,
                     plannedDayKey: s.planned_day_key,
                     planSlotKey: s.plan_slot_key,
@@ -812,6 +1029,11 @@ export const useFitnessStore = create<FitnessState>()(
                 const hydrated: CompletedSession[] = sessions.map((s) => {
                   const planWorkout = findPlanWorkoutBySessionIdentity({
                     plan: get().weeklyWorkoutPlan,
+                    workoutId: s.workout_id,
+                    plannedDayKey: s.planned_day_key,
+                    planSlotKey: s.plan_slot_key,
+                  }) || findPlanWorkoutBySessionIdentity({
+                    plan: get().customWeeklyPlan,
                     workoutId: s.workout_id,
                     plannedDayKey: s.planned_day_key,
                     planSlotKey: s.plan_slot_key,
@@ -946,6 +1168,45 @@ export const useFitnessStore = create<FitnessState>()(
               supabaseError,
             );
           }
+
+          // GAP-18: Reconcile workoutProgress vs completedSessions.
+          // If workoutProgress[id].progress === 100 but there is NO matching
+          // completedSession in the current week, reset progress to 0.
+          // This prevents stale "Completed" badges when the DB write failed.
+          try {
+            const currentWeekStart = getCurrentWeekStart();
+            const state = get();
+            const desyncedIds: string[] = [];
+
+            Object.entries(state.workoutProgress).forEach(([workoutId, entry]) => {
+              if (entry.progress < 100) return;
+              if (!entry.completedAt) return;
+              // Only check entries that are in the current week
+              if (getWeekStartForDate(entry.completedAt) !== currentWeekStart) return;
+
+              const hasSession = state.completedSessions.some(
+                (s) => s.sessionId === entry.sessionId ||
+                        s.workoutId === workoutId,
+              );
+              if (!hasSession) {
+                desyncedIds.push(workoutId);
+              }
+            });
+
+            if (desyncedIds.length > 0) {
+              set((state) => {
+                const cleaned = { ...state.workoutProgress };
+                desyncedIds.forEach((id) => {
+                  if (cleaned[id]) {
+                    cleaned[id] = { ...cleaned[id], progress: 0 };
+                  }
+                });
+                return { workoutProgress: cleaned };
+              });
+            }
+          } catch (reconcileError) {
+            console.error("[fitnessStore] GAP-18 reconcile error:", reconcileError);
+          }
         } catch (error) {
           console.error("❌ Failed to load fitness data:", error);
         }
@@ -954,6 +1215,8 @@ export const useFitnessStore = create<FitnessState>()(
       clearData: () => {
         set({
           weeklyWorkoutPlan: null,
+          customWeeklyPlan: null,
+          activePlanSource: 'ai' as const,
           workoutProgress: {},
           lastProgressDate: getLocalDateString(),
           currentWorkoutSession: null,
@@ -1025,6 +1288,8 @@ export const useFitnessStore = create<FitnessState>()(
         get().cleanupRealtimeSubscription();
         set({
           weeklyWorkoutPlan: null,
+          customWeeklyPlan: null,
+          activePlanSource: 'ai' as const,
           isGeneratingPlan: false,
           planError: null,
           workoutProgress: {},
@@ -1043,6 +1308,8 @@ export const useFitnessStore = create<FitnessState>()(
       storage: createDebouncedStorage(),
       partialize: (state) => ({
         weeklyWorkoutPlan: state.weeklyWorkoutPlan,
+        customWeeklyPlan: state.customWeeklyPlan,
+        activePlanSource: state.activePlanSource,
         workoutProgress: state.workoutProgress,
         lastProgressDate: state.lastProgressDate,
         completedSessions: state.completedSessions,

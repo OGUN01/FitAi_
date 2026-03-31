@@ -81,11 +81,12 @@ export class TDEECalculatorService {
   }
 
   private static getClimateModifier(climate: ClimateType): number {
+    // BUG-12: Aligned with CLIMATE_MULTIPLIERS SSOT in core/tdeeCalculation.ts
     const modifiers = {
-      tropical: 1.05,
+      tropical: 1.075,
       temperate: 1.0,
-      cold: 1.1,
-      arid: 1.03,
+      cold: 1.15,
+      arid: 1.05,
     };
     return modifiers[climate] || 1.0;
   }
@@ -156,8 +157,9 @@ export class MacroCalculatorService {
       | "endurance"
       | "strength",
     dietType: DietType,
+    bodyFatPercent?: number,
   ): MacroResult {
-    const protein = macroCalculator.calculateProtein(weight, goal, dietType);
+    const protein = macroCalculator.calculateProtein(weight, goal, dietType, bodyFatPercent);
     const macros = macroCalculator.calculateMacroSplit(tdee, protein, dietType);
 
     const protein_percent = Math.round(((macros.protein * 4) / tdee) * 100);
@@ -186,8 +188,9 @@ export class MacroCalculatorService {
       | "endurance"
       | "strength",
     dietType: DietType,
+    bodyFatPercent?: number,
   ): number {
-    return macroCalculator.calculateProtein(weight, goal, dietType);
+    return macroCalculator.calculateProtein(weight, goal, dietType, bodyFatPercent);
   }
 
   static getMacroPercentages(

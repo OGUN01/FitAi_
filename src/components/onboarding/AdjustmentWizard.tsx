@@ -63,170 +63,166 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      {/* OB-UX-011: Touchable backdrop to dismiss modal */}
-      <Pressable onPress={onClose}>
-        <View style={styles.modalOverlay}>
+      {/* Backdrop — fills screen, tap to dismiss */}
+      <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
+        <BlurView intensity={40} tint="dark" style={styles.blurOverlay}>
+          {/* Inner — stops propagation so taps inside don't dismiss */}
           <Pressable onPress={(e) => e.stopPropagation()}>
-            <View style={styles.modalTouchableContainer}>
-              <BlurView intensity={40} tint="dark" style={styles.blurOverlay}>
-                <View style={styles.modalContainer}>
-                  {/* Header */}
+            <View style={styles.modalContainer}>
+              {/* ── Header ── */}
+              <LinearGradient
+                colors={[
+                  ResponsiveTheme.colors.background,
+                  ResponsiveTheme.colors.backgroundSecondary,
+                ]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.header}
+              >
+                {/* Close Button */}
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={onClose}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close goal adjustment"
+                >
+                  <Ionicons
+                    name="close"
+                    size={rf(20)}
+                    color={ResponsiveTheme.colors.textSecondary}
+                  />
+                </TouchableOpacity>
+
+                {/* Header Icon */}
+                <View style={styles.headerIconContainer}>
                   <LinearGradient
-                    colors={[ResponsiveTheme.colors.background, ResponsiveTheme.colors.backgroundSecondary]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.header}
+                    colors={[
+                      ResponsiveTheme.colors.primary,
+                      ResponsiveTheme.colors.secondary,
+                    ]}
+                    style={styles.headerIconGradient}
                   >
-                    {/* Close Button */}
-                    <TouchableOpacity
-                      style={styles.closeButton}
-                      onPress={onClose}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      accessibilityRole="button"
-                      accessibilityLabel="Close goal adjustment"
-                    >
-                      <Ionicons
-                        name="close"
-                        size={rf(20)}
-                        color={ResponsiveTheme.colors.textSecondary}
-                      />
-                    </TouchableOpacity>
-
-                    {/* Header Icon */}
-                    <View style={styles.headerIconContainer}>
-                      <LinearGradient
-                        colors={[
-                          ResponsiveTheme.colors.primary,
-                          ResponsiveTheme.colors.secondary,
-                        ]}
-                        style={styles.headerIconGradient}
-                      >
-                        <Ionicons name="analytics" size={rf(24)} color={ResponsiveTheme.colors.white} />
-                      </LinearGradient>
-                    </View>
-
-                    <Text style={styles.title}>Goal Adjustment</Text>
-                    <Text style={styles.subtitle}>
-                      Your current plan needs optimization for safe, sustainable
-                      results
-                    </Text>
-
-                    {/* Error Alert */}
-                    <View style={styles.errorAlert}>
-                      <View style={styles.errorIconContainer}>
-                        <Ionicons
-                          name="warning"
-                          size={rf(16)}
-                          color={ResponsiveTheme.colors.errorAlt}
-                        />
-                      </View>
-                      <Text style={styles.errorMessage} numberOfLines={2}>
-                        {error.message}
-                      </Text>
-                    </View>
+                    <Ionicons
+                      name="analytics"
+                      size={rf(24)}
+                      color={ResponsiveTheme.colors.white}
+                    />
                   </LinearGradient>
-
-                  {/* Alternatives List */}
-                  <ScrollView
-                    style={styles.scrollView}
-                    contentContainerStyle={styles.scrollContent}
-                    showsVerticalScrollIndicator={false}
-                  >
-                    <Text style={styles.sectionLabel}>
-                      Choose a safe alternative
-                    </Text>
-
-                    {alternatives.map((alt, index) => (
-                      <AlternativeCard
-                        key={index}
-                        alternative={alt}
-                        index={index}
-                        isSelected={selectedIndex === index}
-                        isRecommended={index === 0}
-                        onSelect={() => setSelectedIndex(index)}
-                      />
-                    ))}
-
-                    <View style={styles.scrollPadding} />
-                  </ScrollView>
-
-                  {/* Footer */}
-                  <View style={styles.footer}>
-                    <TouchableOpacity
-                      style={styles.cancelButton}
-                      onPress={onClose}
-                      activeOpacity={0.7}
-                      accessibilityRole="button"
-                      accessibilityLabel="Cancel goal adjustment"
-                    >
-                      <Text style={styles.cancelButtonText}>Cancel</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={[
-                        styles.applyButton,
-                        selectedIndex === null && styles.applyButtonDisabled,
-                      ]}
-                      onPress={handleSelectAlternative}
-                      disabled={selectedIndex === null}
-                      activeOpacity={0.8}
-                      accessibilityRole="button"
-                      accessibilityLabel="Apply goal adjustment"
-                    >
-                      <LinearGradient
-                        colors={
-                          selectedIndex !== null
-                            ? [
-                                ResponsiveTheme.colors.primary,
-                                ResponsiveTheme.colors.secondary,
-                              ]
-                            : [ResponsiveTheme.colors.surfaceLight, ResponsiveTheme.colors.surfaceLight]
-                        }
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={styles.applyButtonGradient}
-                      >
-                        <Text style={styles.applyButtonText}>
-                          {isSaving ? "Saving..." : "Apply Changes"}
-                        </Text>
-                        {!isSaving && (
-                          <Ionicons
-                            name="checkmark-circle"
-                            size={rf(18)}
-                            color={ResponsiveTheme.colors.white}
-                          />
-                        )}
-                      </LinearGradient>
-                    </TouchableOpacity>
-                  </View>
                 </View>
-              </BlurView>
+
+                <Text style={styles.title}>Goal Adjustment</Text>
+                <Text style={styles.subtitle}>
+                  Your current plan needs optimization for safe, sustainable
+                  results
+                </Text>
+
+                {/* Error Alert */}
+                <View style={styles.errorAlert}>
+                  <View style={styles.errorIconContainer}>
+                    <Ionicons
+                      name="warning"
+                      size={rf(16)}
+                      color={ResponsiveTheme.colors.errorAlt}
+                    />
+                  </View>
+                  <Text style={styles.errorMessage} numberOfLines={2}>
+                    {error.message}
+                  </Text>
+                </View>
+              </LinearGradient>
+
+              {/* ── Alternatives List ── */}
+              <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+              >
+                <Text style={styles.sectionLabel}>
+                  Choose a safe alternative
+                </Text>
+
+                {alternatives.map((alt, index) => (
+                  <AlternativeCard
+                    key={index}
+                    alternative={alt}
+                    index={index}
+                    isSelected={selectedIndex === index}
+                    isRecommended={index === 0}
+                    onSelect={() => setSelectedIndex(index)}
+                  />
+                ))}
+
+                <View style={styles.scrollPadding} />
+              </ScrollView>
+
+              {/* ── Footer ── */}
+              <View style={styles.footer}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={onClose}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel goal adjustment"
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.applyButton,
+                    selectedIndex === null && styles.applyButtonDisabled,
+                  ]}
+                  onPress={handleSelectAlternative}
+                  disabled={selectedIndex === null}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Apply goal adjustment"
+                >
+                  <LinearGradient
+                    colors={
+                      selectedIndex !== null
+                        ? [
+                            ResponsiveTheme.colors.primary,
+                            ResponsiveTheme.colors.secondary,
+                          ]
+                        : [
+                            ResponsiveTheme.colors.surfaceLight,
+                            ResponsiveTheme.colors.surfaceLight,
+                          ]
+                    }
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.applyButtonGradient}
+                  >
+                    <Text style={styles.applyButtonText}>
+                      {isSaving ? "Saving..." : "Apply Changes"}
+                    </Text>
+                    {!isSaving && (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={rf(18)}
+                        color={ResponsiveTheme.colors.white}
+                      />
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
             </View>
           </Pressable>
-        </View>
+        </BlurView>
       </Pressable>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: ResponsiveTheme.colors.overlayDark,
-  },
-
-  modalTouchableContainer: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-
   blurOverlay: {
     flex: 1,
     justifyContent: "flex-end",
   },
 
   modalContainer: {
-    flex: 1,
     maxHeight: "92%",
     backgroundColor: ResponsiveTheme.colors.background,
     borderTopLeftRadius: rbr(24),
@@ -347,7 +343,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: ResponsiveTheme.spacing.md,
-    paddingBottom: ResponsiveTheme.spacing.xl, // Safe area
+    paddingBottom: ResponsiveTheme.spacing.xl,
   },
 
   cancelButton: {
@@ -372,17 +368,11 @@ const styles = StyleSheet.create({
     minHeight: 44,
     borderRadius: ResponsiveTheme.borderRadius.md,
     overflow: "hidden",
-    shadowColor: ResponsiveTheme.colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    boxShadow: `0px 4px 8px ${ResponsiveTheme.colors.primary}4D`,
     elevation: 4,
   },
 
   applyButtonDisabled: {
     opacity: 0.5,
-    shadowOpacity: 0,
   },
 
   applyButtonGradient: {

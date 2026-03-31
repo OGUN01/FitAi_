@@ -6,6 +6,8 @@ import {
   WorkoutPreferencesData,
   DietPreferencesData,
 } from "../../types/onboarding";
+import { waterCalculator } from "../../utils/healthCalculations/calculators/waterCalculator";
+import type { ActivityLevel, ClimateType } from "../../utils/healthCalculations/types";
 
 export function mapToCalculatedMetrics(
   advancedReview: AdvancedReviewData | null,
@@ -68,7 +70,15 @@ export function mapToCalculatedMetrics(
     dailyProteinG: advancedReview?.daily_protein_g ?? null,
     dailyCarbsG: advancedReview?.daily_carbs_g ?? null,
     dailyFatG: advancedReview?.daily_fat_g ?? null,
-    dailyWaterML: advancedReview?.daily_water_ml ?? null,
+    dailyWaterML: (() => {
+      const weight = bodyAnalysis?.current_weight_kg;
+      const activity = (workoutPreferences?.activity_level ?? "sedentary") as ActivityLevel;
+      const climate = ((advancedReview as any)?.detected_climate ?? "temperate") as ClimateType;
+      if (weight && weight > 0) {
+        return waterCalculator.calculate(weight, activity, climate);
+      }
+      return advancedReview?.daily_water_ml ?? null;
+    })(),
     dailyFiberG: advancedReview?.daily_fiber_g ?? null,
 
     calculatedBMI: advancedReview?.calculated_bmi ?? null,

@@ -4,6 +4,7 @@ import { supabase } from "./supabase";
 import { nutritionRefreshService } from "./nutritionRefreshService";
 import { MealLogProvenance } from "../types/nutritionLogging";
 import { normalizeMealLogFiberValue } from "../utils/mealLogNutrition";
+import { useProfileStore } from "../stores/profileStore";
 
 export interface RecognizedFoodLoggingOptions {
   provenance?: MealLogProvenance;
@@ -466,7 +467,7 @@ export class RecognizedFoodLogger {
       mode: "meal_photo",
       truthLevel: "estimated",
       confidence: avgConfidence,
-      countryContext: "IN",
+      countryContext: useProfileStore.getState().personalInfo?.country || "IN",
       requiresReview: true,
       source: "food-recognition",
     };

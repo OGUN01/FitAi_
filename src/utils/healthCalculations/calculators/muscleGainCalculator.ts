@@ -37,10 +37,11 @@ export class MuscleGainCalculator {
     if (trainingYears < 1) {
       monthlyKg = gender === "male" ? 1.0 : 0.5;
       category = "Beginner";
-    } else if (trainingYears < 3) {
+    } else if (trainingYears < 2) {
+      // 1-2 years: early intermediate (was < 3, incorrectly grouped 2yr with 1yr)
       monthlyKg = gender === "male" ? 0.5 : 0.25;
       category = "Intermediate";
-    } else if (trainingYears < 5) {
+    } else if (trainingYears < 4) {
       monthlyKg = gender === "male" ? 0.25 : 0.125;
       category = "Advanced";
     } else {

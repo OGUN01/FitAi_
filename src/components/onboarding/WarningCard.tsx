@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
@@ -16,6 +14,12 @@ import Animated, {
 import { rf, rw, rp, rbr } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { ValidationResult } from "../../services/validationEngine";
+import {
+  SmartAlternative,
+  SmartAlternativesResult,
+} from "../../services/validationEngine";
+import { AlternativeOption } from "./AlternativeOption";
+import { BMRInfoModal } from "./BMRInfoModal";
 
 // ============================================================================
 // TYPES
@@ -24,7 +28,10 @@ import { ValidationResult } from "../../services/validationEngine";
 interface WarningCardProps {
   warnings: ValidationResult[];
   onAcknowledgmentChange?: (acknowledged: boolean) => void;
-  onAdjust?: (warning: ValidationResult) => void; // NEW: For opening AdjustmentWizard
+  // SmartAlternatives data (previously in RateComparisonCard)
+  smartAlternatives?: SmartAlternativesResult | null;
+  selectedAlternativeId?: string | null;
+  onSelectAlternative?: (alternative: SmartAlternative) => void;
 }
 
 // ============================================================================
@@ -34,13 +41,17 @@ interface WarningCardProps {
 export const WarningCard: React.FC<WarningCardProps> = ({
   warnings,
   onAcknowledgmentChange,
-  onAdjust,
+  smartAlternatives,
+  selectedAlternativeId,
+  onSelectAlternative,
 }) => {
   const [acknowledged, setAcknowledged] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [showBMRModal, setShowBMRModal] = useState(false);
+  const [showExerciseOptions, setShowExerciseOptions] = useState(false);
   const checkScale = useSharedValue(1);
+  const autoAckFiredRef = useRef(false);
 
-  // Check if any warning has alternatives (actionable warnings)
+  // Split warnings: actionable (with alternatives) vs info-only
   const warningsWithAlternatives = warnings.filter(
     (w) => w.alternatives && w.alternatives.length > 0,
   );
@@ -48,14 +59,20 @@ export const WarningCard: React.FC<WarningCardProps> = ({
     (w) => !w.alternatives || w.alternatives.length === 0,
   );
   const hasActionableWarnings = warningsWithAlternatives.length > 0;
+  const noInfoWarnings = warningsWithoutAlternatives.length === 0;
+  const noWarningsAtAll = warnings.length === 0;
 
-  // Auto-acknowledge if no warnings require checkbox (all have alternatives)
+  // If no non-actionable warnings remain, auto-acknowledge — guard prevents re-fire on parent re-render
   useEffect(() => {
-    if (warningsWithoutAlternatives.length === 0 && hasActionableWarnings) {
-      // All warnings have alternatives, no checkbox needed
-      onAcknowledgmentChange?.(true);
+    if ((noInfoWarnings && hasActionableWarnings) || (noWarningsAtAll && smartAlternatives)) {
+      if (!autoAckFiredRef.current) {
+        autoAckFiredRef.current = true;
+        onAcknowledgmentChange?.(true);
+      }
+    } else {
+      autoAckFiredRef.current = false;
     }
-  }, [warningsWithoutAlternatives.length, hasActionableWarnings]);
+  }, [noInfoWarnings, hasActionableWarnings, noWarningsAtAll, !!smartAlternatives]);
 
   const handleAcknowledgmentToggle = () => {
     const newValue = !acknowledged;
@@ -66,44 +83,110 @@ export const WarningCard: React.FC<WarningCardProps> = ({
     });
   };
 
-  const handleAdjustPlan = async (warning: ValidationResult) => {
-    if (isLoading || !onAdjust) return;
-    setIsLoading(true);
-    try {
-      await onAdjust(warning);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const animatedCheckStyle = useAnimatedStyle(() => ({
     transform: [{ scale: checkScale.value }],
   }));
 
-  // Determine header based on warning types
-  const headerTitle = hasActionableWarnings
-    ? "Choose Your Pace"
-    : "Important Considerations";
-  const headerIcon = hasActionableWarnings ? "options" : "information-circle";
+  // Separate diet-only vs exercise alternatives
+  const dietOptions =
+    smartAlternatives?.alternatives.filter((alt) => !alt.requiresExercise) ??
+    [];
+  const exerciseOptions =
+    smartAlternatives?.alternatives.filter((alt) => alt.requiresExercise) ?? [];
+
+  const userOriginal = smartAlternatives?.alternatives.find(
+    (alt) => alt.isUserOriginal,
+  );
+  const belowBMR = userOriginal && userOriginal.bmrDifference < 0;
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* ── Header ── */}
       <View style={styles.header}>
         <View style={styles.headerIcon}>
-          <Ionicons name={headerIcon} size={rf(20)} color={ResponsiveTheme.colors.warningAlt} />
+          <Ionicons
+            name="options"
+            size={rf(20)}
+            color={ResponsiveTheme.colors.warningAlt}
+          />
         </View>
-        <Text style={styles.headerTitle}>{headerTitle}</Text>
+        <Text style={styles.headerTitle}>Choose Your Pace</Text>
       </View>
 
-      {/* Actionable Warnings (with alternatives) - Show "Adjust Plan" button */}
+      {/* ── Goal Summary (from RateComparisonCard) ── */}
+      {smartAlternatives && (
+        <View style={styles.goalSummary}>
+          <Text style={styles.goalText}>
+            Your Goal:{" "}
+            <Text style={styles.goalHighlight}>
+              {typeof smartAlternatives.originalRequestedRate === "number"
+                ? smartAlternatives.originalRequestedRate.toFixed(2)
+                : smartAlternatives.originalRequestedRate}{" "}
+              kg/week
+            </Text>
+            {"  •  "}Target:{" "}
+            <Text style={styles.goalHighlight}>
+              {smartAlternatives.targetWeight} kg
+            </Text>
+          </Text>
+          <Text style={styles.weightToLose}>
+            {smartAlternatives.weightToLose != null
+              ? smartAlternatives.weightToLose.toFixed(1)
+              : "--"}{" "}
+            kg to lose
+          </Text>
+        </View>
+      )}
+
+      {/* ── BMR Warning Banner (from RateComparisonCard) ── */}
+      {belowBMR && smartAlternatives && (
+        <TouchableOpacity
+          style={styles.warningBanner}
+          onPress={() => setShowBMRModal(true)}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Open BMR warning details"
+        >
+          <View style={styles.warningContent}>
+            <Ionicons
+              name="warning"
+              size={rf(18)}
+              color="#F59E0B"
+              style={styles.warningIcon}
+            />
+            <Text style={styles.warningBannerText}>
+              This pace requires eating below your BMR (
+              {smartAlternatives.userBMR} cal)
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.infoButton}
+            onPress={() => setShowBMRModal(true)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityRole="button"
+            accessibilityLabel="More info about BMR warning"
+          >
+            <Ionicons
+              name="information-circle"
+              size={rf(20)}
+              color={ResponsiveTheme.colors.primary}
+            />
+          </TouchableOpacity>
+        </TouchableOpacity>
+      )}
+
+      {/* ── Warning Context Messages ── */}
       {warningsWithAlternatives.map((warning, index) => (
         <View key={`actionable-${index}`} style={styles.warningItem}>
           <Text style={styles.warningMessage}>{warning.message}</Text>
 
           {warning.impact && (
             <View style={styles.impactContainer}>
-              <Ionicons name="flash-outline" size={rf(12)} color={ResponsiveTheme.colors.warningAlt} />
+              <Ionicons
+                name="flash-outline"
+                size={rf(12)}
+                color={ResponsiveTheme.colors.warningAlt}
+              />
               <Text style={styles.impactText}>{warning.impact}</Text>
             </View>
           )}
@@ -125,47 +208,105 @@ export const WarningCard: React.FC<WarningCardProps> = ({
               ))}
             </View>
           )}
-
-          {/* Adjust Plan Button for warnings with alternatives */}
-          <TouchableOpacity
-            style={[
-              styles.adjustButton,
-              isLoading && styles.adjustButtonDisabled,
-            ]}
-            onPress={() => handleAdjustPlan(warning)}
-            activeOpacity={0.8}
-            disabled={isLoading}
-          >
-            <LinearGradient
-              colors={
-                isLoading ? [ResponsiveTheme.colors.neutral, ResponsiveTheme.colors.textTertiary] : [ResponsiveTheme.colors.warningAlt, ResponsiveTheme.colors.warningAlt]
-              }
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.adjustButtonGradient}
-            >
-              {isLoading ? (
-                <ActivityIndicator size="small" color={ResponsiveTheme.colors.white} />
-              ) : (
-                <Ionicons name="options-outline" size={rf(16)} color={ResponsiveTheme.colors.white} />
-              )}
-              <Text style={styles.adjustButtonText}>
-                {isLoading ? "Loading..." : "Adjust Plan"}
-              </Text>
-              <Ionicons name="chevron-forward" size={rf(16)} color={ResponsiveTheme.colors.white} />
-            </LinearGradient>
-          </TouchableOpacity>
         </View>
       ))}
 
-      {/* Non-actionable Warnings (without alternatives) - Show info only */}
+      {/* ── Inline Rate Picker (from RateComparisonCard) ── */}
+      {smartAlternatives && dietOptions.length > 0 && (
+        <>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>SELECT YOUR RATE</Text>
+          </View>
+
+          <View style={styles.optionsList}>
+            {dietOptions.map((alternative) => (
+              <AlternativeOption
+                key={alternative.id}
+                alternative={alternative}
+                isSelected={selectedAlternativeId === alternative.id}
+                onSelect={onSelectAlternative ?? (() => {})}
+              />
+            ))}
+          </View>
+
+          {/* Exercise Options Toggle */}
+          {exerciseOptions.length > 0 && (
+            <>
+              <TouchableOpacity
+                style={styles.exerciseDivider}
+                onPress={() => setShowExerciseOptions(!showExerciseOptions)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  showExerciseOptions
+                    ? "Hide exercise options"
+                    : "Show exercise options"
+                }
+              >
+                <View style={styles.dividerLine} />
+                <View style={styles.dividerContent}>
+                  <Ionicons
+                    name="fitness-outline"
+                    size={rf(14)}
+                    color={ResponsiveTheme.colors.textSecondary}
+                  />
+                  <Text style={styles.dividerText}>
+                    {showExerciseOptions ? "HIDE" : "OR ADD"} EXERCISE
+                  </Text>
+                  <Ionicons
+                    name={showExerciseOptions ? "chevron-up" : "chevron-down"}
+                    size={rf(14)}
+                    color={ResponsiveTheme.colors.textSecondary}
+                  />
+                </View>
+                <View style={styles.dividerLine} />
+              </TouchableOpacity>
+
+              {showExerciseOptions && (
+                <View style={styles.optionsList}>
+                  {exerciseOptions.map((alternative) => (
+                    <AlternativeOption
+                      key={alternative.id}
+                      alternative={alternative}
+                      isSelected={selectedAlternativeId === alternative.id}
+                      onSelect={onSelectAlternative ?? (() => {})}
+                    />
+                  ))}
+                </View>
+              )}
+            </>
+          )}
+
+          {/* Safe Rate Footer */}
+          <View style={styles.safeRateInfo}>
+            <Ionicons
+              name="shield-checkmark"
+              size={rf(14)}
+              color="#22C55E"
+              style={styles.safeRateIcon}
+            />
+            <Text style={styles.safeRateText}>
+              Safe rate at your BMR:{" "}
+              <Text style={styles.safeRateValue}>
+                {smartAlternatives.rateAtBMR} kg/week
+              </Text>
+            </Text>
+          </View>
+        </>
+      )}
+
+      {/* ── Non-Actionable Warnings (info only) ── */}
       {warningsWithoutAlternatives.map((warning, index) => (
         <View key={`info-${index}`} style={styles.warningItem}>
           <Text style={styles.warningMessage}>{warning.message}</Text>
 
           {warning.impact && (
             <View style={styles.impactContainer}>
-              <Ionicons name="flash-outline" size={rf(12)} color={ResponsiveTheme.colors.warningAlt} />
+              <Ionicons
+                name="flash-outline"
+                size={rf(12)}
+                color={ResponsiveTheme.colors.warningAlt}
+              />
               <Text style={styles.impactText}>{warning.impact}</Text>
             </View>
           )}
@@ -205,7 +346,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
         </View>
       ))}
 
-      {/* Acknowledgment Checkbox - Only show if there are non-actionable warnings */}
+      {/* ── Acknowledgment Checkbox — only for non-actionable warnings ── */}
       {warningsWithoutAlternatives.length > 0 && (
         <TouchableOpacity
           style={styles.checkboxContainer}
@@ -220,13 +361,26 @@ export const WarningCard: React.FC<WarningCardProps> = ({
             ]}
           >
             {acknowledged && (
-              <Ionicons name="checkmark" size={rf(14)} color={ResponsiveTheme.colors.white} />
+              <Ionicons
+                name="checkmark"
+                size={rf(14)}
+                color={ResponsiveTheme.colors.white}
+              />
             )}
           </Animated.View>
           <Text style={styles.checkboxLabel}>
             I understand and will focus on consistency
           </Text>
         </TouchableOpacity>
+      )}
+
+      {/* ── BMR Info Modal ── */}
+      {smartAlternatives && (
+        <BMRInfoModal
+          visible={showBMRModal}
+          onClose={() => setShowBMRModal(false)}
+          userBMR={smartAlternatives.userBMR}
+        />
       )}
     </View>
   );
@@ -246,12 +400,12 @@ const styles = StyleSheet.create({
     marginBottom: rp(ResponsiveTheme.spacing.md),
   },
 
+  // Header
   header: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: rp(ResponsiveTheme.spacing.md),
   },
-
   headerIcon: {
     width: rw(32),
     height: rw(32),
@@ -261,7 +415,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: rp(ResponsiveTheme.spacing.sm),
   },
-
   headerTitle: {
     fontSize: rf(16),
     fontWeight: "700",
@@ -269,45 +422,98 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
 
+  // Goal Summary (from RateComparisonCard)
+  goalSummary: {
+    backgroundColor: "rgba(59, 130, 246, 0.08)",
+    borderRadius: rp(10),
+    padding: rp(12),
+    marginBottom: rp(12),
+  },
+  goalText: {
+    fontSize: rf(13),
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: "center",
+  },
+  goalHighlight: {
+    fontWeight: "700",
+    color: ResponsiveTheme.colors.text,
+  },
+  weightToLose: {
+    fontSize: rf(11),
+    color: ResponsiveTheme.colors.textMuted,
+    textAlign: "center",
+    marginTop: rp(4),
+  },
+
+  // BMR Warning Banner (from RateComparisonCard)
+  warningBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    minHeight: 44,
+    backgroundColor: "rgba(245, 158, 11, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(245, 158, 11, 0.3)",
+    borderRadius: rp(10),
+    padding: rp(12),
+    marginBottom: rp(12),
+  },
+  warningContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  warningIcon: {
+    marginRight: rp(8),
+  },
+  warningBannerText: {
+    fontSize: rf(12),
+    color: "#D97706",
+    flex: 1,
+    lineHeight: rf(18),
+  },
+  infoButton: {
+    marginLeft: rp(8),
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  // Warning Context
   warningItem: {
     marginBottom: rp(ResponsiveTheme.spacing.md),
   },
-
   warningMessage: {
     fontSize: rf(13),
     fontWeight: "500",
     color: ResponsiveTheme.colors.text,
     lineHeight: rf(18),
   },
-
   impactContainer: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: rp(ResponsiveTheme.spacing.xs),
     gap: rp(ResponsiveTheme.spacing.xs),
   },
-
   impactText: {
     flex: 1,
     fontSize: rf(12),
     color: ResponsiveTheme.colors.warning,
     fontWeight: "500",
   },
-
   risksContainer: {
     marginTop: rp(ResponsiveTheme.spacing.sm),
     backgroundColor: `${ResponsiveTheme.colors.warning}1A`,
     padding: rp(ResponsiveTheme.spacing.sm),
     borderRadius: rbr(ResponsiveTheme.borderRadius.sm),
   },
-
   riskHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: rp(ResponsiveTheme.spacing.xs),
     marginBottom: rp(ResponsiveTheme.spacing.xs),
   },
-
   risksTitle: {
     fontSize: rf(11),
     fontWeight: "600",
@@ -315,7 +521,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-
   riskText: {
     fontSize: rf(12),
     color: ResponsiveTheme.colors.textSecondary,
@@ -323,17 +528,76 @@ const styles = StyleSheet.create({
     marginLeft: rp(ResponsiveTheme.spacing.sm),
   },
 
+  // Inline Rate Picker (from RateComparisonCard)
+  sectionHeader: {
+    marginBottom: rp(10),
+    marginTop: rp(4),
+  },
+  sectionTitle: {
+    fontSize: rf(11),
+    fontWeight: "700",
+    color: ResponsiveTheme.colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  optionsList: {
+    gap: rp(0),
+  },
+  exerciseDivider: {
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 44,
+    marginVertical: rp(12),
+    gap: rp(12),
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+  },
+  dividerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(6),
+    paddingHorizontal: rp(8),
+  },
+  dividerText: {
+    fontSize: rf(10),
+    fontWeight: "600",
+    color: ResponsiveTheme.colors.textSecondary,
+    letterSpacing: 0.5,
+  },
+  safeRateInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(34, 197, 94, 0.08)",
+    borderRadius: rp(8),
+    padding: rp(10),
+    marginTop: rp(12),
+  },
+  safeRateIcon: {
+    marginRight: rp(6),
+  },
+  safeRateText: {
+    fontSize: rf(11),
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+  safeRateValue: {
+    fontWeight: "700",
+    color: "#22C55E",
+  },
+
+  // Recommendations (non-actionable warnings)
   recommendationsContainer: {
     marginTop: rp(ResponsiveTheme.spacing.sm),
     gap: rp(ResponsiveTheme.spacing.xs),
   },
-
   recommendationItem: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: rp(ResponsiveTheme.spacing.xs),
   },
-
   recommendationText: {
     flex: 1,
     fontSize: rf(12),
@@ -341,35 +605,7 @@ const styles = StyleSheet.create({
     lineHeight: rf(16),
   },
 
-  // Adjust Plan Button
-  adjustButton: {
-    marginTop: rp(ResponsiveTheme.spacing.md),
-    borderRadius: rbr(ResponsiveTheme.borderRadius.md),
-    overflow: "hidden",
-  },
-
-  adjustButtonDisabled: {
-    opacity: 0.7,
-  },
-
-  adjustButtonGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: rp(ResponsiveTheme.spacing.sm),
-    paddingHorizontal: rp(ResponsiveTheme.spacing.md),
-    gap: rp(ResponsiveTheme.spacing.xs),
-  },
-
-  adjustButtonText: {
-    flex: 1,
-    fontSize: rf(14),
-    fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
-    textAlign: "center",
-  },
-
-  // Checkbox
+  // Acknowledgment Checkbox
   checkboxContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -378,7 +614,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: `${ResponsiveTheme.colors.warning}33`,
   },
-
   checkboxBox: {
     width: rw(22),
     height: rw(22),
@@ -390,12 +625,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: rp(ResponsiveTheme.spacing.sm),
   },
-
   checkboxBoxChecked: {
     borderColor: ResponsiveTheme.colors.successAlt,
     backgroundColor: ResponsiveTheme.colors.successAlt,
   },
-
   checkboxLabel: {
     flex: 1,
     fontSize: rf(12),

@@ -198,7 +198,10 @@ export function validateTrainingVolume(
   occupation: string,
 ): ValidationResult {
   const totalWeeklyHours = (frequency * duration) / 60;
-  const ABSOLUTE_MAX_HOURS = occupation === "very_active" ? 20 : 15;
+  const ABSOLUTE_MAX_HOURS =
+    occupation === "very_active" ? 20
+    : occupation === "heavy_labor" ? 18
+    : 15;
 
   if (totalWeeklyHours > ABSOLUTE_MAX_HOURS) {
     return {
@@ -222,10 +225,11 @@ export function validateInsufficientExercise(
   currentWeight: number,
   tdee: number,
   bmr: number,
+  actualTargetCalories?: number,
 ): ValidationResult {
   const isAggressive = weeklyRate > currentWeight * 0.0075;
-  const dailyDeficit = (weeklyRate * 7700) / 7;
-  const targetCalories = tdee - dailyDeficit;
+  // Use actual post-cap calories if provided; otherwise compute from uncapped rate
+  const targetCalories = actualTargetCalories ?? tdee - (weeklyRate * 7700) / 7;
 
   if (frequency < 2 && isAggressive && targetCalories < bmr) {
     return {

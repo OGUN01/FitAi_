@@ -262,8 +262,11 @@ export interface WorkoutGenerationRequest {
     fitnessGoal: string;
     experienceLevel: string;
     availableEquipment: string[];
+    workoutDuration?: number;
     injuries?: string[];
     medications?: string[];
+    medicalConditions?: string[];      // GAP-04: added — Worker safety filter needs this
+    stressLevel?: 'low' | 'moderate' | 'high'; // GAP-04: added — for volume reduction under high stress
     pregnancyStatus?: boolean;
     pregnancyTrimester?: number;
     breastfeedingStatus?: boolean;
@@ -278,6 +281,8 @@ export interface WorkoutGenerationRequest {
   };
   focusMuscles?: string[];
   excludeExercises?: string[];
+  weekNumber?: number;
+  regenerationSeed?: number; // Varies exercise selection on regeneration
   model?: string;
   temperature?: number;
 }

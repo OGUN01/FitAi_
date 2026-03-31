@@ -93,8 +93,19 @@ export function mapDifficulty(
   return diffMap[difficulty?.toLowerCase() || ""] || "intermediate";
 }
 
-export function calculateEstimatedCalories(_workout: WorkoutPlan): number {
-  return 0;
+export function calculateEstimatedCalories(workout: WorkoutPlan): number {
+  // BUG-58: Use MET × duration estimate instead of always returning 0
+  // Actual calories are recalculated with real user weight at workout completion
+  const durationHours = ((workout.totalDuration || workout.duration || 30)) / 60;
+  const difficulty = workout.difficulty?.toLowerCase() || 'intermediate';
+  const metByDifficulty: Record<string, number> = {
+    beginner: 4,
+    intermediate: 6,
+    advanced: 8,
+  };
+  const met = metByDifficulty[difficulty] ?? 6;
+  // Use 70 kg as a reference weight for pre-generation estimates
+  return Math.round(met * 70 * durationHours);
 }
 
 export function transformExercises(workout: WorkoutPlan): any[] {
@@ -106,6 +117,9 @@ export function transformExercises(workout: WorkoutPlan): any[] {
 
   return allExercises.map((ex, index) => ({
     exerciseId: ex.exerciseId || `ex_${index}`,
+    // BUG-63: pass name and bodyParts so MET can be estimated when DB lookup fails
+    name: ex.name,
+    bodyParts: ex.bodyParts || (ex.targetMuscles ? [ex.targetMuscles[0]] : undefined),
     sets: ex.sets || 3,
     reps: ex.reps || ex.targetReps || "10-12",
     restTime: ex.restSeconds || ex.restTime || 60,
@@ -117,6 +131,8 @@ export function transformExercises(workout: WorkoutPlan): any[] {
 export function transformExerciseItem(ex: any) {
   return {
     exerciseId: ex.exerciseId,
+    name: ex.name,
+    bodyParts: ex.bodyParts || (ex.targetMuscles ? [ex.targetMuscles[0]] : undefined),
     sets: ex.sets || 1,
     reps: ex.reps || ex.targetReps || "30 seconds",
     restTime: ex.restSeconds || 30,

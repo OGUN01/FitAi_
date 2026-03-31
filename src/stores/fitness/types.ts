@@ -31,15 +31,25 @@ export interface CurrentWorkoutSession {
       weight: number;
       completed: boolean;
       setType?: string;
+      rpe?: 1 | 2 | 3 | null;
+      isCalibration?: boolean;
     }>;
   }>;
 }
 
+export type PlanSource = 'ai' | 'custom';
+
 export interface FitnessState {
-  // Weekly workout plan state
+  // Weekly workout plan state (AI-generated — single source of truth for AI plans)
   weeklyWorkoutPlan: WeeklyWorkoutPlan | null;
   isGeneratingPlan: boolean;
   planError: string | null;
+
+  // Custom workout plan (user-built via ScheduleBuilder — independent of AI plan)
+  customWeeklyPlan: WeeklyWorkoutPlan | null;
+
+  // Which plan is active on the Workout tab ('ai' or 'custom')
+  activePlanSource: PlanSource;
 
   // Workout progress tracking
   workoutProgress: Record<string, WorkoutProgress>;
@@ -59,6 +69,13 @@ export interface FitnessState {
   loadWeeklyWorkoutPlan: () => Promise<WeeklyWorkoutPlan | null>;
   setGeneratingPlan: (isGenerating: boolean) => void;
   setPlanError: (error: string | null) => void;
+
+  // Custom plan actions
+  setCustomWeeklyPlan: (plan: WeeklyWorkoutPlan | null) => void;
+  saveCustomWeeklyPlan: (plan: WeeklyWorkoutPlan) => Promise<void>;
+  loadCustomWeeklyPlan: () => Promise<WeeklyWorkoutPlan | null>;
+  setActivePlanSource: (source: PlanSource) => void;
+  getActivePlan: () => WeeklyWorkoutPlan | null;
 
   // Workout progress actions
   updateWorkoutProgress: (
@@ -98,6 +115,8 @@ export interface FitnessState {
       reps: number;
       setType: string;
       completed: boolean;
+      rpe?: 1 | 2 | 3;
+      isCalibration?: boolean;
     },
   ) => void;
 

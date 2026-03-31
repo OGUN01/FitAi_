@@ -9,6 +9,8 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logger } from "../utils/logger";
 import { createDebouncedStorage } from "../utils/safeAsyncStorage";
+import { supabase } from "../services/supabase";
+import { getCurrentUserId } from "../services/authUtils";
 import {
   analyticsEngine,
   ComprehensiveAnalytics,
@@ -72,6 +74,23 @@ interface AnalyticsStore {
   dailyMetricsHistory: import('../services/analyticsData').DailyMetrics[];
   dailyMetricsHistoryPeriod: number;
 
+  // GAP-06: Exercise-level analytics from exercise_sets + exercise_prs
+  exerciseVolumeHistory: Array<{
+    exerciseId: string;
+    exerciseName: string;
+    date: string;
+    totalVolume: number; // sets * reps * weight
+    maxWeight: number;
+    totalSets: number;
+  }>;
+  personalRecords: Array<{
+    exerciseId: string;
+    exerciseName: string;
+    weightKg: number;
+    reps: number;
+    achievedAt: string;
+  }>;
+
   // Actions
   initialize: () => Promise<void>;
   addDailyMetrics: (metrics: FitnessMetrics) => Promise<void>;
@@ -85,6 +104,8 @@ interface AnalyticsStore {
   getBodyCompositionAnalytics: () => BodyCompositionAnalytics | null;
   getSleepWellnessAnalytics: () => SleepWellnessAnalytics | null;
   getPredictiveInsights: () => PredictiveInsights | null;
+  // GAP-06: load exercise_sets + exercise_prs from Supabase
+  loadExerciseAnalytics: (days?: number) => Promise<void>;
 
   // Chart Data Generators
   generateChartData: () => void;
@@ -141,6 +162,9 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
       calorieHistory: [],
       dailyMetricsHistory: [],
       dailyMetricsHistoryPeriod: 0,
+      // GAP-06 initial state
+      exerciseVolumeHistory: [],
+      personalRecords: [],
 
       chartData: {
         workoutFrequency: [],
@@ -174,6 +198,9 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
 
           // Generate chart data
           get().generateChartData();
+
+          // GAP-06: Load exercise-level analytics from Supabase
+          await get().loadExerciseAnalytics(90);
 
           set({
             isInitialized: true,
@@ -517,6 +544,9 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
           // Fix 21: clear Supabase-fetched daily metrics cache on logout
           dailyMetricsHistory: [],
           dailyMetricsHistoryPeriod: 0,
+          // GAP-06: clear exercise analytics on logout
+          exerciseVolumeHistory: [],
+          personalRecords: [],
           chartData: {
             workoutFrequency: [],
             weightProgress: [],
@@ -538,6 +568,94 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
       // Fix 21: Cache DailyMetrics fetched from analytics_metrics Supabase table
       setDailyMetricsHistory: (data, periodDays) => {
         set({ dailyMetricsHistory: data, dailyMetricsHistoryPeriod: periodDays });
+      },
+
+      // GAP-06: Load exercise_sets + exercise_prs from Supabase
+      loadExerciseAnalytics: async (days = 90) => {
+        const userId = getCurrentUserId();
+        if (!userId) return;
+
+        const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+        // Load exercise volume from exercise_sets
+        try {
+          const { data: sets, error: setsError } = await supabase
+            .from('exercise_sets')
+            .select('exercise_id, exercise_name, weight_kg, reps, completed_at')
+            .eq('user_id', userId)
+            .eq('is_completed', true)
+            .gte('completed_at', since)
+            .order('completed_at', { ascending: false })
+            .limit(500);
+
+          if (setsError) {
+            console.error('[analyticsStore] Failed to load exercise_sets:', setsError);
+          } else if (sets && sets.length > 0) {
+            // Group by (exerciseId, date) and aggregate volume
+            const volumeMap = new Map<string, {
+              exerciseId: string;
+              exerciseName: string;
+              date: string;
+              totalVolume: number;
+              maxWeight: number;
+              totalSets: number;
+            }>();
+
+            sets.forEach((row: any) => {
+              const date = (row.completed_at || '').split('T')[0] || '';
+              const key = `${row.exercise_id}__${date}`;
+              const weight = Number(row.weight_kg) || 0;
+              const reps = Number(row.reps) || 0;
+              const existing = volumeMap.get(key);
+              if (existing) {
+                existing.totalVolume += weight * reps;
+                existing.maxWeight = Math.max(existing.maxWeight, weight);
+                existing.totalSets += 1;
+              } else {
+                volumeMap.set(key, {
+                  exerciseId: row.exercise_id || '',
+                  exerciseName: row.exercise_name || row.exercise_id || '',
+                  date,
+                  totalVolume: weight * reps,
+                  maxWeight: weight,
+                  totalSets: 1,
+                });
+              }
+            });
+
+            set({ exerciseVolumeHistory: Array.from(volumeMap.values()) });
+          }
+        } catch (err) {
+          console.error('[analyticsStore] Exception loading exercise_sets:', err);
+        }
+
+        // Load personal records from exercise_prs
+        try {
+          const { data: prs, error: prsError } = await supabase
+            .from('exercise_prs')
+            .select('exercise_id, exercise_name, pr_type, value, reps, achieved_at')
+            .eq('user_id', userId)
+            .order('achieved_at', { ascending: false })
+            .limit(200);
+
+          if (prsError) {
+            console.error('[analyticsStore] Failed to load exercise_prs:', prsError);
+          } else if (prs && prs.length > 0) {
+            set({
+              personalRecords: prs.map((pr: any) => ({
+                exerciseId: pr.exercise_id || '',
+                exerciseName: pr.exercise_name || pr.exercise_id || '',
+                weightKg: pr.pr_type === 'max_weight' ? Number(pr.value) || 0 : 0,
+                reps: Number(pr.reps) || 0,
+                prType: pr.pr_type || '',
+                value: Number(pr.value) || 0,
+                achievedAt: pr.achieved_at || '',
+              })),
+            });
+          }
+        } catch (err) {
+          console.error('[analyticsStore] Exception loading exercise_prs:', err);
+        }
       },
     })),
     {

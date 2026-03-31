@@ -110,6 +110,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
   // Fitness Store
   const {
     weeklyWorkoutPlan,
+    customWeeklyPlan,
     isGeneratingPlan,
     workoutProgress,
     setWeeklyWorkoutPlan,
@@ -120,8 +121,13 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     getWorkoutProgress,
     getCompletedWorkoutStats,
     updateWorkoutProgress,
+    getActivePlan,
   } = useFitnessStore();
+  const activePlanSource = useFitnessStore((state) => state.activePlanSource);
   const completedSessions = useFitnessStore((state) => state.completedSessions);
+
+  // The plan to display — follows the user's toggle between AI and Custom
+  const displayPlan = getActivePlan();
 
   const _hasHydrated = useFitnessStore((state) => state._hasHydrated);
   const completedSessionsHydrated = useFitnessStore(
@@ -191,12 +197,13 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     const {
       workoutProgress: wp,
       weeklyWorkoutPlan: plan,
+      customWeeklyPlan: customPlan,
       addCompletedSession,
       completedSessions: currentCompletedSessions,
     } = useFitnessStore.getState();
     Object.entries(wp).forEach(([workoutId, progress]) => {
       if (!progress.completedAt || progress.progress < 100) return;
-      const workout = plan?.workouts?.find((w) => w.id === workoutId);
+      const workout = plan?.workouts?.find((w) => w.id === workoutId) ?? customPlan?.workouts?.find((w) => w.id === workoutId);
       if (!workout) return;
       if (
         findCompletedSessionForWorkout({
@@ -312,11 +319,11 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
 
   // Get selected day's workouts (array, since there might be multiple per day)
   const selectedDayWorkouts = useMemo(() => {
-    if (!weeklyWorkoutPlan?.workouts) return [];
-    return weeklyWorkoutPlan.workouts.filter(
+    if (!displayPlan?.workouts) return [];
+    return displayPlan.workouts.filter(
       (w) => w.dayOfWeek === selectedDay,
     );
-  }, [weeklyWorkoutPlan, selectedDay]);
+  }, [displayPlan, selectedDay]);
 
   // Keep legacy single-workout selector for backwards compatibility
   const selectedDayWorkout = useMemo(() => {
@@ -327,7 +334,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
   // IMPORTANT: restDays uses Monday-based indices [0=monday, 1=tuesday, ..., 6=sunday]
   // This matches DAY_KEYS in WeeklyPlanOverview and calendarWorkoutData in FitnessScreen
   const isSelectedDayRestDay = useMemo(() => {
-    if (!weeklyWorkoutPlan?.restDays) return false;
+    if (!displayPlan?.restDays) return false;
     const DAY_KEYS_MON = [
       "monday",
       "tuesday",
@@ -339,10 +346,10 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     ];
     const dayIndex = DAY_KEYS_MON.indexOf(selectedDay);
     // restDays may contain number indices (Monday-based) or string day names
-    return weeklyWorkoutPlan.restDays.some((d: number | string) =>
+    return displayPlan.restDays.some((d: number | string) =>
       typeof d === "string" ? d === selectedDay : d === dayIndex,
     );
-  }, [weeklyWorkoutPlan, selectedDay]);
+  }, [displayPlan, selectedDay]);
 
   // Check if selected day is today - from appStateStore
   const isSelectedDayToday = useMemo(
@@ -378,12 +385,15 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
       );
   }, [completedSessions]);
 
-  // Calculate week stats — delegates to store's single source of truth
+  // Calculate week stats — filtered to only count sessions from the active display plan
   const weekStats = useMemo(() => {
-    const totalWorkouts = weeklyWorkoutPlan?.workouts?.length || 0;
-    const completedCount = getCompletedWorkoutStats().count;
+    const totalWorkouts = displayPlan?.workouts?.length || 0;
+    const displayPlanIds = new Set(displayPlan?.workouts?.map((w) => w.id) || []);
+    const completedCount = completedSessions.filter(
+      (s) => s.type === "planned" && displayPlanIds.has(s.workoutId)
+    ).length;
     return { totalWorkouts, completedCount };
-  }, [weeklyWorkoutPlan, completedSessions, getCompletedWorkoutStats]);
+  }, [displayPlan, completedSessions]);
 
   // Generate weekly workout plan
   const generateWeeklyWorkoutPlan = useCallback(async () => {
@@ -413,13 +423,19 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     haptics.medium();
 
     try {
+      // GAP-13: Use actual mesocycle week (1-4) rather than always sending 1.
+      // getMesocycleWeek() calculates weeks elapsed since first plan generation.
+      // Returns 0 if no start date set yet; we clamp to min 1 so Worker doesn't get 0.
+      const mesocycleWeek = Math.max(1, Math.min(4, useFitnessStore.getState().getMesocycleWeek() || 1));
+
       const response = await aiService.generateWeeklyWorkoutPlan(
         legacyPersonalInfo,
         mergedFitnessGoals,
-        1,
+        mesocycleWeek,
         {
           bodyMetrics: bodyAnalysis ?? undefined,
           workoutPreferences: profileWorkoutPreferences ?? undefined,
+          regenerationSeed: Date.now() % 1000000, // Varies exercise selection on each generation
         },
       );
 
@@ -582,9 +598,25 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
       const targetWorkout = workoutArg || selectedDayWorkout;
       if (targetWorkout) {
         handleStartWorkout(targetWorkout);
-      } else if (!weeklyWorkoutPlan) {
-        generateWeeklyWorkoutPlan();
+      } else if (!displayPlan) {
+        if (activePlanSource === 'ai') {
+          generateWeeklyWorkoutPlan();
+        } else {
+          crossPlatformAlert(
+            "No Plan",
+            "It's a rest day on your custom schedule.",
+            [{ text: "OK" }],
+          );
+        }
       } else {
+        if (activePlanSource !== 'ai') {
+          crossPlatformAlert(
+            "Rest Day",
+            "It's a rest day on your custom schedule.",
+            [{ text: "OK" }],
+          );
+          return;
+        }
         const dayOrder = [
           "sunday",
           "monday",
@@ -595,7 +627,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
           "saturday",
         ];
         const todayIndex = new Date().getDay();
-        const workoutDays = (weeklyWorkoutPlan.workouts ?? [])
+        const workoutDays = (displayPlan.workouts ?? [])
           .map((w) =>
             w.dayOfWeek ? dayOrder.indexOf(w.dayOfWeek.toLowerCase()) : -1,
           )
@@ -618,7 +650,8 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     },
     [
       selectedDayWorkout,
-      weeklyWorkoutPlan,
+      displayPlan,
+      activePlanSource,
       handleStartWorkout,
       generateWeeklyWorkoutPlan,
     ],
@@ -691,6 +724,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
       const normalizedCategory = normalizeWorkoutCategory(workout.category);
       const originalWorkout =
         weeklyWorkoutPlan?.workouts?.find((w) => w.id === workout.workoutId) ??
+        customWeeklyPlan?.workouts?.find((w) => w.id === workout.workoutId) ??
         ({
           id: workout.workoutId || `history-${workout.sessionId}`,
           title: workout.title,
@@ -730,7 +764,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
 
       handleStartWorkout(originalWorkout);
     },
-    [weeklyWorkoutPlan, handleStartWorkout, selectedDay],
+    [weeklyWorkoutPlan, customWeeklyPlan, handleStartWorkout, selectedDay],
   );
 
   const handleDeleteWorkout = useCallback(
@@ -817,13 +851,13 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
   }, []);
 
   const handleViewFullPlan = useCallback(() => {
-    if (weeklyWorkoutPlan) {
+    if (displayPlan) {
       crossPlatformAlert(
-        weeklyWorkoutPlan.planTitle || "",
-        `${weeklyWorkoutPlan.planDescription}\n\nTotal Workouts: ${weeklyWorkoutPlan.workouts?.length || 0}\nRest Days: ${weeklyWorkoutPlan.restDays?.length || 0}`,
+        displayPlan.planTitle || "",
+        `${displayPlan.planDescription}\n\nTotal Workouts: ${displayPlan.workouts?.length || 0}\nRest Days: ${displayPlan.restDays?.length || 0}`,
       );
     }
-  }, [weeklyWorkoutPlan]);
+  }, [displayPlan]);
 
   const handleRegeneratePlan = useCallback(() => {
     crossPlatformAlert(
@@ -856,7 +890,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
 
   return {
     state: {
-      weeklyWorkoutPlan,
+      weeklyWorkoutPlan: displayPlan,
       isGeneratingPlan,
       workoutProgress,
       selectedDay,

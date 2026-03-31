@@ -469,7 +469,7 @@ export class MetabolicCalculations {
     // Convert BMR difference to age equivalent (approximately 8-10 cal/year decline)
     // Higher BMR than expected = younger metabolic age
     // Lower BMR than expected = older metabolic age
-    const calPerYear = gender === "male" ? 10 : 8;
+    const calPerYear = 10;
     const metabolicAgeAdjustment = bmrDifference / calPerYear;
 
     const metabolicAge = chronologicalAge + metabolicAgeAdjustment;
@@ -483,7 +483,7 @@ export class MetabolicCalculations {
    * Uses age-adjusted reference values based on population norms
    */
   private static getExpectedBMRForAge(age: number, gender: string): number {
-    // Reference BMR values by age ranges (average for 70kg male, 60kg female)
+    // Reference BMR values by age ranges (calibrated to 70kg for both sexes)
     const maleReferences = [
       { ageRange: [18, 24], bmr: 1750 },
       { ageRange: [25, 34], bmr: 1700 },
@@ -494,12 +494,12 @@ export class MetabolicCalculations {
     ];
 
     const femaleReferences = [
-      { ageRange: [18, 24], bmr: 1400 },
-      { ageRange: [25, 34], bmr: 1350 },
-      { ageRange: [35, 44], bmr: 1300 },
-      { ageRange: [45, 54], bmr: 1250 },
-      { ageRange: [55, 64], bmr: 1200 },
-      { ageRange: [65, 120], bmr: 1150 },
+      { ageRange: [18, 24], bmr: 1500 },
+      { ageRange: [25, 34], bmr: 1450 },
+      { ageRange: [35, 44], bmr: 1400 },
+      { ageRange: [45, 54], bmr: 1350 },
+      { ageRange: [55, 64], bmr: 1300 },
+      { ageRange: [65, 120], bmr: 1250 },
     ];
 
     const references = gender === "male" ? maleReferences : femaleReferences;
@@ -662,8 +662,8 @@ export class BodyCompositionCalculations {
       baseRate = baseRate * 0.925; // Middle ground for other/prefer_not_to_say
     }
 
-    // Cap at safe limits (0.3-1.2 kg per week)
-    return Math.max(0.3, Math.min(1.2, baseRate));
+    // Cap at safe limits (0.3-1.0 kg per week — aligned with ValidationEngine deficit cap)
+    return Math.max(0.3, Math.min(1.0, baseRate));
   }
 
   /**
@@ -741,10 +741,10 @@ export class BodyCompositionCalculations {
 export class CardiovascularCalculations {
   /**
    * Calculate maximum heart rate
-   * Formula: 220 - age
+   * Formula: Tanaka (2001) — 208 - 0.7 × age
    */
   static calculateMaxHeartRate(age: number): number {
-    return 220 - age;
+    return Math.round(208 - 0.7 * age);
   }
 
   /**
@@ -792,8 +792,8 @@ export class CardiovascularCalculations {
 
     const baseVO2 = peakVO2 - ageAdjustment;
 
-    // Adjust based on running ability (0.3 points per minute of running)
-    const runningBonus = canRunMinutes * 0.3;
+    // Adjust based on running ability (clamped to [0,60] min to prevent absurd inputs)
+    const runningBonus = Math.max(0, Math.min(canRunMinutes, 60)) * 0.3;
 
     // Cap between realistic bounds (20-80 ml/kg/min)
     return Math.max(20, Math.min(80, baseVO2 + runningBonus));
@@ -816,9 +816,9 @@ export class FitnessRecommendations {
     let recommendedFrequency = 3; // Default 3x per week
 
     // Adjust based on goals
-    if (primaryGoals.includes("weight_loss"))
+    if (primaryGoals.includes("weight-loss") || primaryGoals.includes("weight_loss"))
       recommendedFrequency = Math.max(recommendedFrequency, 4);
-    if (primaryGoals.includes("muscle_gain"))
+    if (primaryGoals.includes("muscle-gain") || primaryGoals.includes("muscle_gain"))
       recommendedFrequency = Math.max(recommendedFrequency, 4);
     if (primaryGoals.includes("endurance"))
       recommendedFrequency = Math.max(recommendedFrequency, 5);
@@ -847,7 +847,7 @@ export class FitnessRecommendations {
   ): number {
     let baseMinutes = 150; // WHO recommendation
 
-    if (primaryGoals.includes("weight_loss")) baseMinutes = 250;
+    if (primaryGoals.includes("weight-loss") || primaryGoals.includes("weight_loss")) baseMinutes = 250;
     if (primaryGoals.includes("endurance")) baseMinutes = 300;
     if (intensity === "advanced") baseMinutes = Math.min(baseMinutes + 50, 400);
 
@@ -863,7 +863,7 @@ export class FitnessRecommendations {
   ): number {
     let sessions = 2; // Minimum recommendation
 
-    if (primaryGoals.includes("muscle_gain")) sessions = 4;
+    if (primaryGoals.includes("muscle-gain") || primaryGoals.includes("muscle_gain")) sessions = 4;
     if (primaryGoals.includes("strength")) sessions = 3;
     if (experienceYears > 2) sessions = Math.min(sessions + 1, 5);
 

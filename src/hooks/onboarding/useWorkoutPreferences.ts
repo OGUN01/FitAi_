@@ -181,10 +181,7 @@ export const useWorkoutPreferences = ({
 
       if (current_weight_kg && target_weight_kg && target_timeline_weeks) {
         const weightDifference = Math.abs(current_weight_kg - target_weight_kg);
-        const weeklyRate = Math.min(
-          1.0,
-          weightDifference / target_timeline_weeks,
-        );
+        const weeklyRate = weightDifference / target_timeline_weeks;
 
         setFormData((prev: WorkoutPreferencesData) => ({
           ...prev,

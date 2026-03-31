@@ -49,6 +49,7 @@ export const useHomeLogic = () => {
   const { user, isGuestMode } = useAuth();
   const bodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
   const personalInfo = useProfileStore((s) => s.personalInfo);
+  const workoutPreferences = useProfileStore((s) => s.workoutPreferences);
 
   // Derived weight unit from user preferences
   const weightUnit: WeightUnit =
@@ -572,6 +573,8 @@ export const useHomeLogic = () => {
     // Health sync functions
     syncHealthData,
     syncFromHealthConnect,
+    // Workout preferences (live SSOT for user-selected duration)
+    workoutPreferences,
     // Calculated metrics
     calculatedMetrics,
 

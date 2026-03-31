@@ -20,18 +20,40 @@ export class DietAdaptiveMacroCalculator implements MacroCalculator {
   /**
    * Calculate protein needs based on goal and diet type
    */
-  calculateProtein(weight: number, goal: Goal, dietType: DietType): number {
-    // Base protein multipliers by goal (g/kg body weight)
+  /**
+   * Reference weight priority (most → least accurate):
+   *   1. Lean body mass  — if bodyFatPercent is provided
+   *   2. min(current, target) — for overweight users without body fat data, protein
+   *      should be based on goal/target weight, not current weight, to avoid
+   *      inflating targets with fat mass that won't exist at goal
+   *   3. Current weight  — when current ≤ target (gaining) or target not set
+   */
+  calculateProtein(
+    weight: number,
+    goal: Goal,
+    dietType: DietType,
+    bodyFatPercent?: number,
+    targetWeight?: number,
+  ): number {
     const baseProteinMultipliers: Record<Goal, number> = {
-      fat_loss: 2.4,        // High protein preserves muscle during deficit
-      muscle_gain: 2.0,     // Optimal for muscle protein synthesis
-      maintenance: 1.8,     // Maintain current muscle mass
+      fat_loss: 2.2,        // Preserve muscle during deficit
+      muscle_gain: 1.8,     // Optimal for muscle protein synthesis
+      maintenance: 1.6,     // Maintain current muscle mass
       athletic: 2.2,        // Support high training volume
       endurance: 1.6,       // Lower needs for endurance athletes
-      strength: 2.2,        // Similar to athletic
+      strength: 2.2,
     };
 
-    let protein = weight * (baseProteinMultipliers[goal] || 2.0);
+    let referenceWeight: number;
+    if (bodyFatPercent != null && bodyFatPercent > 0 && bodyFatPercent < 60) {
+      referenceWeight = weight * (1 - bodyFatPercent / 100);
+    } else if (targetWeight != null && targetWeight > 0 && targetWeight < weight) {
+      referenceWeight = targetWeight;
+    } else {
+      referenceWeight = weight;
+    }
+
+    let protein = referenceWeight * (baseProteinMultipliers[goal] || 1.8);
 
     // Diet-type adjustments for bioavailability
     const dietMultipliers: Record<DietType, number> = {
@@ -295,34 +317,6 @@ export class DietAdaptiveMacroCalculator implements MacroCalculator {
 }
 
 /**
- * Calculate minimum protein to prevent muscle loss
- */
-export function getMinimumProtein(weight: number): number {
-  // Minimum 1.2 g/kg to prevent muscle wasting
-  return Math.round(weight * 1.2);
-}
-
-/**
- * Calculate optimal protein for muscle gain
- */
-export function getOptimalProteinForMuscleGain(weight: number, dietType: DietType): number {
-  const baseProtein = weight * 2.0;
-
-  const multipliers: Record<DietType, number> = {
-    omnivore: 1.0,
-    pescatarian: 1.0,
-    vegetarian: 1.15,
-    vegan: 1.25,
-    keto: 1.0,
-    low_carb: 1.0,
-    paleo: 1.0,
-    mediterranean: 1.0,
-  };
-
-  return Math.round(baseProtein * multipliers[dietType]);
-}
-
-/**
- * Singleton instance
+ * Singleton instance — use this everywhere. Do not instantiate DietAdaptiveMacroCalculator directly.
  */
 export const macroCalculator = new DietAdaptiveMacroCalculator();

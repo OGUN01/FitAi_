@@ -27,9 +27,11 @@ export class MifflinStJeorBMRCalculator implements BMRCalculator {
 
     if (gender === 'male') {
       return (10 * weight) + (6.25 * height) - (5 * age) + 5;
-    } else {
-      // Use female formula for 'female', 'other', 'prefer_not_to_say'
+    } else if (gender === 'female') {
       return (10 * weight) + (6.25 * height) - (5 * age) - 161;
+    } else {
+      // 'other' / 'prefer_not_to_say' — midpoint of male (+5) and female (-161) = -78
+      return (10 * weight) + (6.25 * height) - (5 * age) - 78;
     }
   }
 

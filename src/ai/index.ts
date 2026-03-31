@@ -382,6 +382,7 @@ class UnifiedAIService {
     options?: {
       bodyMetrics?: BodyMetrics;
       workoutPreferences?: WorkoutPreferences;
+      regenerationSeed?: number;
     },
   ): Promise<AIResponse<WeeklyWorkoutPlan>> {
 
@@ -394,10 +395,13 @@ class UnifiedAIService {
         options?.workoutPreferences,
         {
           requestWeeklyPlan: true, // ✅ Always request weekly plan
-          duration: options?.workoutPreferences?.time_preference || 30,
+          // BUG-86: workout_duration is the numeric field; time_preference is Morning/Evening string
+          duration: options?.workoutPreferences?.workout_duration ?? 45,
           currentWeightKg: resolveCurrentWeightFromStores({
             bodyAnalysisWeight: options?.bodyMetrics?.current_weight_kg,
           }).value,
+          weekNumber,
+          regenerationSeed: options?.regenerationSeed,
         },
       );
 

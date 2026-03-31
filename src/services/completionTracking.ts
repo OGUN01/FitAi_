@@ -139,9 +139,16 @@ class CompletionTrackingService {
       const fitnessStore = useFitnessStore.getState();
 
       // Get workout details before completing so we can calculate calories
-      const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find(
+      // Search BOTH AI plan and custom plan so custom workouts can complete
+      const workoutFromAIPlan = fitnessStore.weeklyWorkoutPlan?.workouts.find(
         (w) => w.id === workoutId,
       );
+      const workout = workoutFromAIPlan ?? fitnessStore.customWeeklyPlan?.workouts.find(
+        (w) => w.id === workoutId,
+      );
+      const workoutSourcePlan = workoutFromAIPlan
+        ? fitnessStore.weeklyWorkoutPlan
+        : fitnessStore.customWeeklyPlan;
 
       if (workout) {
         // Calculate actual calories using MET-based formula with user's weight
@@ -178,7 +185,7 @@ class CompletionTrackingService {
               planned_day_key: getWorkoutDayKey(workout),
               plan_slot_key: getWorkoutSlotKey(
                 workout,
-                fitnessStore.weeklyWorkoutPlan || undefined,
+                workoutSourcePlan || undefined,
               ),
               workout_name: workout.title,
               workout_type: workout.category || "general",
@@ -291,7 +298,7 @@ class CompletionTrackingService {
           plannedDayKey: getWorkoutDayKey(workout),
           planSlotKey: getWorkoutSlotKey(
             workout,
-            fitnessStore.weeklyWorkoutPlan || undefined,
+            workoutSourcePlan || undefined,
           ),
           workoutSnapshot: {
             title: workout.title,
@@ -363,12 +370,13 @@ class CompletionTrackingService {
       );
 
       if (meal) {
+        const userCountry = useProfileStore.getState().personalInfo?.country || "IN";
         const provenance: MealLogProvenance = logData?.provenance ||
           (meal as any).sourceMetadata || {
             mode: "manual",
             truthLevel: "curated",
             confidence: null,
-            countryContext: "IN",
+            countryContext: userCountry,
             requiresReview: false,
             source: "manual-log",
           };
@@ -565,8 +573,10 @@ class CompletionTrackingService {
       const fitnessStore = useFitnessStore.getState();
       fitnessStore.updateWorkoutProgress(workoutId, progress);
 
-      // Emit progress event
+      // Emit progress event — search both AI plan and custom plan
       const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find(
+        (w) => w.id === workoutId,
+      ) ?? fitnessStore.customWeeklyPlan?.workouts.find(
         (w) => w.id === workoutId,
       );
       if (workout) {
@@ -579,9 +589,12 @@ class CompletionTrackingService {
           data: {
             workout,
             exerciseData,
-            partialCalories: Math.round(
-              (workout.estimatedCalories || 0) * (progress / 100),
-            ),
+            partialCalories: (() => {
+              const base = workout.estimatedCalories && workout.estimatedCalories > 0
+                ? workout.estimatedCalories
+                : Math.round(6 * (useProfileStore.getState().bodyAnalysis?.current_weight_kg || 70) * ((workout.duration || 45) / 60));
+              return Math.round(base * (progress / 100));
+            })(),
           },
         };
 
@@ -672,7 +685,10 @@ class CompletionTrackingService {
     const caloriesBurned =
       plannedStats.totalCalories + extraStats.totalCalories;
 
-    const totalWorkouts = fitnessStore.weeklyWorkoutPlan?.workouts.length || 0;
+    const activePlan = fitnessStore.activePlanSource === 'custom'
+      ? fitnessStore.customWeeklyPlan
+      : fitnessStore.weeklyWorkoutPlan;
+    const totalWorkouts = activePlan?.workouts.length || 0;
 
     // Calculate meal stats
     const totalMeals = nutritionStore.weeklyMealPlan?.meals.length || 0;
@@ -729,8 +745,10 @@ class CompletionTrackingService {
     const fitnessStore = useFitnessStore.getState();
     const nutritionStore = useNutritionStore.getState();
 
-    // Today's workout
+    // Today's workout — search both AI plan and custom plan
     const todaysWorkout = fitnessStore.weeklyWorkoutPlan?.workouts.find(
+      (w) => w.dayOfWeek === todayName,
+    ) ?? fitnessStore.customWeeklyPlan?.workouts.find(
       (w) => w.dayOfWeek === todayName,
     );
     const workoutProgress = todaysWorkout
@@ -782,8 +800,10 @@ class CompletionTrackingService {
     const fitnessStore = useFitnessStore.getState();
     const nutritionStore = useNutritionStore.getState();
 
-    // Complete today's workout
+    // Complete today's workout — search both AI plan and custom plan
     const todaysWorkout = fitnessStore.weeklyWorkoutPlan?.workouts.find(
+      (w) => w.dayOfWeek === todayName,
+    ) ?? fitnessStore.customWeeklyPlan?.workouts.find(
       (w) => w.dayOfWeek === todayName,
     );
     if (todaysWorkout) {
@@ -802,6 +822,8 @@ class CompletionTrackingService {
   }
 
   // Dual-write per-set data to exercise_sets table (fire-and-forget)
+  // Also runs belt-and-suspenders PR detection for time-based exercises
+  // (SetLogModal handles PR detection for normal sets; this covers auto-logged sets)
   private async _writeExerciseSets(
     userId: string,
     sessionId: string,
@@ -809,10 +831,12 @@ class CompletionTrackingService {
   ): Promise<void> {
     if (!completedExercises?.length) return;
 
+    const now = new Date().toISOString();
     const rows: any[] = [];
 
     for (const exercise of completedExercises) {
       const exerciseId = exercise.exerciseId || exercise.id || "unknown";
+      const exerciseName = exercise.name || exercise.exerciseName || null;
       const sets = exercise.sets || exercise.completedSets || [];
 
       if (Array.isArray(sets) && sets.length > 0) {
@@ -823,12 +847,16 @@ class CompletionTrackingService {
             user_id: userId,
             session_id: sessionId,
             exercise_id: exerciseId,
+            exercise_name: exerciseName,
             set_number: i + 1,
             weight_kg: set.weight ?? set.weight_kg ?? null,
             reps: set.reps ?? null,
             duration_seconds: set.duration_seconds ?? null,
             set_type: set.setType ?? set.set_type ?? "normal",
             is_completed: set.completed ?? set.is_completed ?? true,
+            rpe: set.rpe ?? null,                          // NEW: RPE from three-tap UI
+            is_calibration: set.isCalibration ?? false,    // NEW: calibration session flag
+            completed_at: now,
           });
         }
       } else {
@@ -844,12 +872,16 @@ class CompletionTrackingService {
             user_id: userId,
             session_id: sessionId,
             exercise_id: exerciseId,
+            exercise_name: exerciseName,
             set_number: i + 1,
             weight_kg: null,
             reps: reps,
             duration_seconds: null,
             set_type: "normal",
             is_completed: true,
+            rpe: null,            // flat exercise path — no RPE available
+            is_calibration: false,
+            completed_at: now,
           });
         }
       }
@@ -861,6 +893,54 @@ class CompletionTrackingService {
 
     if (error) {
       console.error("⚠️ Failed to write exercise_sets:", error);
+      return;
+    }
+
+    // GAP-02/08: Belt-and-suspenders PR detection at session completion.
+    // SetLogModal already records PRs for normal sets logged live.
+    // This path catches time-based exercises (auto-logged, no modal shown).
+    try {
+      const { prDetectionService } = await import("./prDetectionService");
+      const { exerciseHistoryService } = await import("./exerciseHistoryService");
+      const { estimateOneRepMax } = await import("../utils/oneRepMax");
+
+      for (const exercise of completedExercises) {
+        const exerciseId = exercise.exerciseId || exercise.id || "unknown";
+        const exerciseName = exercise.name || exercise.exerciseName || undefined;
+        const sets = exercise.sets || exercise.completedSets || [];
+        if (!Array.isArray(sets) || sets.length === 0) continue;
+
+        // Only process sets with actual numeric weight/reps (time-based have duration_seconds)
+        const weightedSets = sets.filter(
+          (s: any) => (s.weight ?? s.weight_kg ?? 0) > 0 && (s.reps ?? 0) > 0
+        );
+        if (weightedSets.length === 0) continue;
+
+        // Find the best set from this session
+        let bestWeight = 0;
+        let bestE1RM = 0;
+        for (const s of weightedSets) {
+          const w = s.weight ?? s.weight_kg ?? 0;
+          const r = s.reps ?? 0;
+          if (w > bestWeight) bestWeight = w;
+          const e1rm = estimateOneRepMax(w, r);
+          if (e1rm > bestE1RM) bestE1RM = e1rm;
+        }
+
+        // Compare against stored PRs
+        const prs = await exerciseHistoryService.getPersonalRecords(exerciseId, userId);
+        const weightPR = prs.find((p) => p.prType === "weight");
+        const e1rmPR = prs.find((p) => p.prType === "estimated_1rm");
+
+        if (bestWeight > (weightPR?.value ?? 0)) {
+          await prDetectionService.recordPR(userId, exerciseId, "weight", bestWeight, sessionId, exerciseName);
+        }
+        if (bestE1RM > (e1rmPR?.value ?? 0)) {
+          await prDetectionService.recordPR(userId, exerciseId, "estimated_1rm", bestE1RM, sessionId, exerciseName);
+        }
+      }
+    } catch (prErr) {
+      console.error("[completionTracking] PR detection error:", prErr);
     }
   }
 }

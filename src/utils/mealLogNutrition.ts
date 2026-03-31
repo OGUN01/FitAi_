@@ -73,3 +73,32 @@ export function deriveMealLogFiber(foodItems: unknown): number {
 
   return roundToTenth(totalFiber);
 }
+
+export function getMealLogItemSugar(item: unknown): number {
+  if (!isRecord(item)) return 0;
+
+  const nestedSugar = isRecord(item.macros)
+    ? normalizeMealLogSugarValue(item.macros.sugar)
+    : null;
+  const flatSugar = normalizeMealLogSugarValue(item.sugar);
+
+  return nestedSugar ?? flatSugar ?? 0;
+}
+
+export function normalizeMealLogSugarValue(value: unknown): number | null {
+  const parsed = toFiniteNumber(value);
+  if (parsed === null || parsed < 0) {
+    return null;
+  }
+
+  return roundToTenth(parsed);
+}
+
+export function deriveMealLogSugar(foodItems: unknown): number {
+  const totalSugar = normalizeMealLogFoodItems(foodItems).reduce(
+    (sum, item) => sum + getMealLogItemSugar(item),
+    0,
+  );
+
+  return roundToTenth(totalSugar);
+}
