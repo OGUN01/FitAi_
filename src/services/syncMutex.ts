@@ -48,6 +48,10 @@ export class SyncMutex {
     return true;
   }
 
+  /**
+   * Non-blocking lock attempt. Returns false immediately if lock is held.
+   * Use withLock() for blocking mutual exclusion.
+   */
   async acquire(operationName: string): Promise<boolean> {
     if (this.tryAcquire(operationName)) {
       return true;

@@ -122,19 +122,19 @@ export class FoodRecognitionFeedbackService {
         .select()
         .single();
       if (error) {
-        // If that fails too, just log it locally and return success
-
+        console.error("❌ Fallback app_events insert also failed:", error);
         return {
-          data: { id: `local_${Date.now()}` },
-          error: null,
+          data: null,
+          error: { message: "Failed to save feedback — both primary and fallback storage unavailable" },
         };
       }
 
       return { data, error };
     } catch (error) {
+      console.error("❌ storeFeedbackAlternative threw:", error);
       return {
-        data: { id: `local_${Date.now()}` },
-        error: null,
+        data: null,
+        error: { message: "Failed to save feedback — both primary and fallback storage unavailable" },
       };
     }
   }
@@ -443,6 +443,35 @@ export class FoodRecognitionFeedbackService {
             ? error.message
             : "Failed to get meal feedback",
       };
+    }
+  }
+
+  /**
+   * Retrieve recent high-confidence corrections and format them as an AI prompt context string.
+   * Closes the learning loop — callers include this in future food recognition prompts.
+   */
+  async getPersonalizationContext(userId: string): Promise<string> {
+    try {
+      const { data, error } = await supabase
+        .from('food_recognition_feedback')
+        .select('original_food_name, corrected_food_name, corrected_calories, corrected_portion_grams')
+        .eq('user_id', userId)
+        .eq('is_correct', false) // Only corrections (not confirmations)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error || !data?.length) return '';
+
+      const corrections = data
+        .filter(fb => fb.corrected_food_name)
+        .map(fb => `"${fb.original_food_name}" → "${fb.corrected_food_name}"`)
+        .join(', ');
+
+      return corrections
+        ? `Based on this user's past corrections: ${corrections}. Prefer these corrections when recognizing similar foods.`
+        : '';
+    } catch {
+      return '';
     }
   }
 }

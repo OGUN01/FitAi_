@@ -30,7 +30,7 @@ class AchievementDataService {
   ): Promise<boolean> {
     try {
       if (!userId || userId.startsWith("guest") || userId === "local-user") {
-        return true;
+        return false; // Guest mode: no sync
       }
 
       const definition = achievementEngine
@@ -78,7 +78,7 @@ class AchievementDataService {
     };
 
     if (!userId || userId.startsWith("guest") || userId === "local-user") {
-      return result;
+      return { ...result, success: false }; // Guest mode: no sync
     }
 
     const achievementsArray = Array.from(achievements.values());

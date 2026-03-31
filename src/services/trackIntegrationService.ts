@@ -592,6 +592,7 @@ export class TrackIntegrationService {
 
   private log(message: string, ...args: any[]): void {
     if (this.config.debugMode) {
+      console.log(`[TrackIntegration] ${message}`, ...args);
     }
   }
 }

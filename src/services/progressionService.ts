@@ -106,6 +106,9 @@ class ProgressionService {
     }
 
     if (this.isTimeBased(exerciseId)) {
+      if (!lastSets || lastSets.length === 0) {
+        return { suggestedWeightKg: 0, action: 'hold', reason: 'Time-based exercise — no previous data' };
+      }
       return {
         suggestedWeightKg: lastSets[0].weight,
         action: 'hold',
@@ -215,6 +218,9 @@ class ProgressionService {
     }
 
     if (consecutiveFailures >= failureThreshold) {
+      if (!recentSessions[0]?.sets?.length) {
+        return { action: 'hold', consecutiveFailures, reason: 'Consecutive failures detected but no set data available' };
+      }
       const lastWeight = recentSessions[0].sets[0]?.weight ?? 0;
       return {
         action: 'deload',

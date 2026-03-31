@@ -45,7 +45,7 @@ function createLoggedFoodsFromMealItems(meal: DayMeal) {
       sugar: item.macros?.sugar ?? 0,
       sodium: item.macros?.sodium ?? 0,
     },
-    provenance: (meal as any).sourceMetadata,
+    provenance: (meal as DayMeal & { sourceMetadata?: MealLogProvenance }).sourceMetadata,
   }));
 }
 
@@ -153,7 +153,7 @@ class CompletionTrackingService {
       if (workout) {
         // Calculate actual calories using MET-based formula with user's weight
         const actualCaloriesBurned = await this.calculateActualCalories(
-          workout as any,
+          workout,
           sessionData,
           userId,
         );
@@ -372,7 +372,7 @@ class CompletionTrackingService {
       if (meal) {
         const userCountry = useProfileStore.getState().personalInfo?.country || "IN";
         const provenance: MealLogProvenance = logData?.provenance ||
-          (meal as any).sourceMetadata || {
+          (meal as DayMeal & { sourceMetadata?: MealLogProvenance }).sourceMetadata || {
             mode: "manual",
             truthLevel: "curated",
             confidence: null,
@@ -390,21 +390,6 @@ class CompletionTrackingService {
           const mealLogId = generateUUID();
 
           if (currentUserId) {
-            // Create meal log directly using CRUD operations
-            useNutritionStore.setState((state) => ({
-              mealProgress: {
-                ...state.mealProgress,
-                [mealId]: {
-                  ...state.mealProgress[mealId],
-                  mealId,
-                  planMealId,
-                  logId: mealLogId,
-                  progress: 100,
-                  completedAt,
-                },
-              },
-            }));
-
             const mealLog: MealLog = {
               id: mealLogId,
               planMealId,
@@ -523,7 +508,18 @@ class CompletionTrackingService {
                 `❌ Failed to sync to Supabase meal_logs:`,
                 supabaseError,
               );
-              // Continue - local storage succeeded
+              // Revert the optimistic completeMeal() state since DB write failed
+              useNutritionStore.setState((state) => ({
+                mealProgress: {
+                  ...state.mealProgress,
+                  [mealId]: {
+                    ...state.mealProgress[mealId],
+                    progress: 0,
+                    completedAt: undefined,
+                    logId: undefined,
+                  },
+                },
+              }));
             }
           } else {
             // Continue with completion even if no user
@@ -590,9 +586,12 @@ class CompletionTrackingService {
             workout,
             exerciseData,
             partialCalories: (() => {
+              const trackedW = weightTrackingService.getCurrentWeight();
+              const fallbackW = useProfileStore.getState().bodyAnalysis?.current_weight_kg;
+              const resolvedW = (trackedW && trackedW > 0) ? trackedW : (fallbackW ?? 0);
               const base = workout.estimatedCalories && workout.estimatedCalories > 0
                 ? workout.estimatedCalories
-                : Math.round(6 * (useProfileStore.getState().bodyAnalysis?.current_weight_kg || 70) * ((workout.duration || 45) / 60));
+                : Math.round(6 * resolvedW * ((workout.duration || 45) / 60));
               return Math.round(base * (progress / 100));
             })(),
           },
@@ -696,12 +695,13 @@ class CompletionTrackingService {
       (p) => p.progress === 100,
     ).length;
 
+    const mealMap = new Map(
+      (nutritionStore.weeklyMealPlan?.meals ?? []).map((m) => [m.id, m]),
+    );
     const caloriesConsumed = Object.values(nutritionStore.mealProgress)
       .filter((p) => p.progress === 100)
       .reduce((total, progress) => {
-        const meal = nutritionStore.weeklyMealPlan?.meals.find(
-          (m) => m.id === progress.mealId,
-        );
+        const meal = mealMap.get(progress.mealId);
         return total + (meal?.totalCalories || 0);
       }, 0);
 

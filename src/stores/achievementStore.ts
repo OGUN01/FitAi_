@@ -307,8 +307,8 @@ const achievementStorage = {
           name,
           typeof value === "string" ? value : JSON.stringify(value),
         );
-      } catch {
-        // Silently fail — data will be reloaded from Supabase on next login
+      } catch (error) {
+        console.error('[achievementStore] Failed to load achievements:', error);
       }
     }
   },
@@ -592,14 +592,14 @@ export const useAchievementStore = create<AchievementStore>()(
 
       getDailyProgress: () => {
         const state = get();
-        const today = new Date().toDateString();
+        const today = getLocalDateString(new Date()); // YYYY-MM-DD format
 
         const todayProgress = Array.from(
           state.userAchievements.values(),
         ).filter((ua) => {
           // Bug 7 fix: guard against undefined unlockedAt causing throws
           if (!ua.unlockedAt) return false;
-          const lastUpdate = new Date(ua.unlockedAt).toDateString();
+          const lastUpdate = getLocalDateString(new Date(ua.unlockedAt));
           return lastUpdate === today;
         });
 
@@ -670,7 +670,10 @@ export const useAchievementStore = create<AchievementStore>()(
         const checkDate = new Date();
         checkDate.setHours(0, 0, 0, 0);
 
-        while (true) {
+        const MAX_STREAK_DAYS = 3650; // 10 years max
+        let iterations = 0;
+        while (iterations < MAX_STREAK_DAYS) {
+          iterations++;
           const dateStr = getLocalDateString(checkDate);
           if (completedDates.has(dateStr)) {
             streak++;

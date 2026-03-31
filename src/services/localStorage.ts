@@ -62,6 +62,9 @@ const CryptoUtils = {
     };
   },
 
+  // NOTE: This is a placeholder encryption that does NOT provide real security.
+  // Data is stored as-is (no actual encryption). This exists for API compatibility only.
+  // TODO: Implement real encryption before storing sensitive user data.
   // AES encryption (simplified for web)
   AES: {
     encrypt: (data: string, key: string, options?: any) => {
@@ -522,7 +525,7 @@ export class EnhancedLocalStorageService {
   // ============================================================================
 
   async storeData<T>(key: string, data: T): Promise<void> {
-    this.ensureInitialized();
+    await this.ensureReady();
 
     try {
       let processedData = JSON.stringify(data);
@@ -571,7 +574,7 @@ export class EnhancedLocalStorageService {
   }
 
   async retrieveData<T>(key: string): Promise<T | null> {
-    this.ensureInitialized();
+    await this.ensureReady();
 
     try {
       let storedData = await AsyncStorage.getItem(key);
@@ -629,7 +632,7 @@ export class EnhancedLocalStorageService {
   }
 
   async removeData(key: string): Promise<void> {
-    this.ensureInitialized();
+    await this.ensureReady();
 
     try {
       await AsyncStorage.removeItem(key);
@@ -652,7 +655,7 @@ export class EnhancedLocalStorageService {
   }
 
   async clearAllData(): Promise<void> {
-    this.ensureInitialized();
+    await this.ensureReady();
 
     try {
       const keys = Object.values(STORAGE_KEYS);
@@ -853,6 +856,15 @@ export class EnhancedLocalStorageService {
     }
   }
 
+  private async ensureReady(): Promise<void> {
+    if (!this.isInitialized && EnhancedLocalStorageService.initializationPromise) {
+      await EnhancedLocalStorageService.initializationPromise;
+    }
+    if (!this.isInitialized) {
+      throw new Error('LocalStorage not initialized');
+    }
+  }
+
   async isQuotaExceeded(): Promise<boolean> {
     const storageInfo = await this.getStorageInfo();
     return storageInfo?.quotaExceeded || false;
@@ -870,7 +882,7 @@ export class EnhancedLocalStorageService {
 
   // Basic key-value setter used by migration
   async setItem(key: string, value: any): Promise<void> {
-    this.ensureInitialized();
+    await this.ensureReady();
     await AsyncStorage.setItem(
       key,
       typeof value === "string" ? value : JSON.stringify(value),

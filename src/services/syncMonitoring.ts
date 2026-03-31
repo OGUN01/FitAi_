@@ -403,6 +403,8 @@ export class SyncMonitoringService {
   }
 
   private updateNetworkStats(): void {
+    // TODO: Replace simulated stats with real network monitoring APIs.
+    // Current values are randomized placeholders — do NOT use for real health assessments.
     // Simulate network stats update
     // In real implementation, this would use actual network monitoring APIs
     this.metrics.networkStats = {

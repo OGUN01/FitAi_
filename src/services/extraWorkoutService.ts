@@ -153,7 +153,7 @@ export async function completeExtraWorkout(
       actualCaloriesBurned = result.totalCalories;
     }
 
-    const isGuest = !userId || userId.startsWith("guest");
+    const isGuest = !userId || userId.startsWith('guest') || userId === 'local-user' || userId.startsWith('local-');
 
     // Non-guest: sync to Supabase
     // Will be set to the Supabase-generated row ID after a successful insert

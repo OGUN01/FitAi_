@@ -368,8 +368,9 @@ class BarcodeService {
             );
           }
         } catch (sqliteErr) {
+          console.error('[barcodeService] SQLite lookup failed — local DB may be corrupted:', sqliteErr);
+          // Continue to remote lookup but signal degraded local DB state
           sawRetryableFailure = true;
-          console.warn("SQLite lookup failed, falling through:", sqliteErr);
         }
       }
 
@@ -438,6 +439,8 @@ class BarcodeService {
         await this.nutritionAPI.searchByBarcodeDetailed(normalizedBarcode);
 
       if (searchResult.outcome === "transient_failure") {
+        // 1s backoff before single retry — prevents hammering on transient network errors
+        await new Promise(resolve => setTimeout(resolve, 1000));
         searchResult = await this.nutritionAPI.searchByBarcodeDetailed(
           normalizedBarcode,
         );
@@ -580,9 +583,10 @@ class BarcodeService {
 
   private cacheProduct(barcode: string, product: ScannedProduct): void {
     if (this.scanCache.size >= this.maxCacheSize) {
-      const oldestBarcode = this.scanCache.keys().next().value;
-      if (oldestBarcode) {
-        this.scanCache.delete(oldestBarcode);
+      // JS Map iterates in insertion order, so keys().next().value is the oldest entry.
+      const oldestKey = this.scanCache.keys().next().value;
+      if (oldestKey !== undefined) {
+        this.scanCache.delete(oldestKey);
       }
     }
 

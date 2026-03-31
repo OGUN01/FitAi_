@@ -115,6 +115,10 @@ class AchievementEngine extends EventEmitter {
         userAchievement.progress = maxProgress;
         userAchievement.isCompleted = true;
         userAchievement.unlockedAt = new Date().toISOString();
+        // When unlocking, populate fitCoinsEarned from reward
+        if (achievement.reward?.type === 'fitcoins') {
+          userAchievement.fitCoinsEarned = achievement.reward.value as number;
+        }
         this.userAchievements.set(
           `${userId}-${achievement.id}`,
           userAchievement,
@@ -158,6 +162,7 @@ class AchievementEngine extends EventEmitter {
       maxProgress: found ? this.getMaxProgress(found) : 1,
       isCompleted: false,
       celebrationShown: false,
+      fitCoinsEarned: (found?.reward?.type === 'fitcoins') ? found.reward.value as number : undefined,
     };
 
     this.userAchievements.set(key, newUserAchievement);
