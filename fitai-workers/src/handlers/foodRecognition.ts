@@ -24,7 +24,7 @@ import { ErrorCode } from '../utils/errorCodes';
 
 // Request validation schema
 const FoodRecognitionRequestSchema = z.object({
-	imageBase64: z.string().min(100, 'Image data is too short'),
+	imageBase64: z.string().min(100, 'Image data is too short').max(10_000_000, 'Image data exceeds 10MB limit'),
 	mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
 	userContext: z
 		.object({
@@ -101,8 +101,13 @@ function createAIProvider(env: Env, modelId: string) {
 // ============================================================================
 
 function buildFoodRecognitionPrompt(mealType: string, userContext?: FoodRecognitionRequest['userContext']): string {
-	const restrictionsHint = userContext?.dietaryRestrictions?.length
-		? `User has dietary restrictions: ${userContext.dietaryRestrictions.join(', ')}.`
+	// FIX G — sanitize dietary restrictions before injecting into prompt
+	const safeDietaryRestrictions = (userContext?.dietaryRestrictions ?? [])
+		.map(r => r.replace(/[*_`#\[\]\{\}]/g, '').slice(0, 50))
+		.filter(r => r.length > 0);
+
+	const restrictionsHint = safeDietaryRestrictions.length
+		? `User has dietary restrictions: ${safeDietaryRestrictions.join(', ')}.`
 		: '';
 
 	return `You are an expert nutritionist analyzing a ${mealType} image. Identify all visible food items.
@@ -162,36 +167,44 @@ export async function handleFoodRecognition(c: Context<{ Bindings: Env }>) {
 		const request = parseResult.data;
 		console.log(`[Food Recognition] Processing ${request.mealType} image for user ${user.id}`);
 
-		// Validate image format
-		if (!request.imageBase64.startsWith('data:image/')) {
-			throw new APIError('Invalid image format. Expected base64 data URL (data:image/...)', 400, ErrorCode.VALIDATION_ERROR);
+		// Validate image format — only JPEG, PNG, WebP accepted (FIX F)
+		const ALLOWED_IMAGE_TYPES = ['data:image/jpeg', 'data:image/png', 'data:image/webp'];
+		if (!ALLOWED_IMAGE_TYPES.some(t => request.imageBase64.startsWith(t))) {
+			throw new APIError('Image must be JPEG, PNG, or WebP format', 400, ErrorCode.VALIDATION_ERROR);
 		}
 
 		// Build the prompt
 		const prompt = buildFoodRecognitionPrompt(request.mealType, request.userContext);
 
-		// Create AI provider
-		const model = createAIProvider(c.env, 'google/gemini-2.5-flash');
+		// FIX H — use env var with fallback instead of hardcoded model
+		const modelId = (c.env as any).FOOD_RECOGNITION_MODEL ?? 'google/gemini-2.5-flash';
+		const model = createAIProvider(c.env, modelId);
 
 		console.log('[Food Recognition] Calling Gemini Vision API...');
 
 		// Call Gemini Vision with structured output
-		const result = await generateObject({
-			model,
-			schema: FoodRecognitionResponseSchema,
-			messages: [
-				{
-					role: 'user',
-					content: [
-						{ type: 'text', text: prompt },
-						{
-							type: 'image',
-							image: request.imageBase64,
-						},
-					],
-				},
-			],
-		});
+		const timeoutPromise = new Promise<never>((_, reject) =>
+			setTimeout(() => reject(new Error('AI generation timed out after 25s')), 25000)
+		);
+		const result = await Promise.race([
+			generateObject({
+				model,
+				schema: FoodRecognitionResponseSchema,
+				messages: [
+					{
+						role: 'user',
+						content: [
+							{ type: 'text', text: prompt },
+							{
+								type: 'image',
+								image: request.imageBase64,
+							},
+						],
+					},
+				],
+			}),
+			timeoutPromise,
+		]) as Awaited<ReturnType<typeof generateObject<typeof FoodRecognitionResponseSchema>>>;
 
 		const processingTime = Date.now() - startTime;
 		console.log(`[Food Recognition] Completed in ${processingTime}ms with ${result.object.foods.length} foods detected`);
@@ -247,6 +260,17 @@ export async function handleFoodRecognition(c: Context<{ Bindings: Env }>) {
 
 		// Handle Gemini API errors
 		if (error instanceof Error) {
+			if (error.message.includes('timed out after 25s')) {
+				return c.json(
+					{
+						success: false,
+						error: 'Food recognition timed out. Please try again.',
+						code: ErrorCode.INTERNAL_ERROR,
+					},
+					408,
+				);
+			}
+
 			if (error.message.includes('quota') || error.message.includes('429')) {
 				return c.json(
 					{

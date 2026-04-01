@@ -101,7 +101,7 @@ async function checkRateLimit(kv: KVNamespace, identifier: string, config: RateL
 
 	// Calculate current count and remaining
 	const currentCount = requests.length;
-	const remaining = Math.max(0, config.maxRequests - currentCount - 1);
+	const remaining = Math.max(0, config.maxRequests - currentCount);
 
 	// Check if limit exceeded
 	if (currentCount >= config.maxRequests) {

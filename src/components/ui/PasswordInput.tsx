@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { ViewStyle, TextStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Input } from "./Input";
@@ -27,11 +27,11 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
 }) => {
   const [isVisible, setIsVisible] = useState(false);
 
-  const toggleVisibility = () => {
-    setIsVisible(!isVisible);
-  };
+  const toggleVisibility = useCallback(() => {
+    setIsVisible((prev) => !prev);
+  }, []);
 
-  const EyeIcon = () => (
+  const eyeIcon = (
     <Ionicons
       name={isVisible ? "eye-off-outline" : "eye-outline"}
       size={20}
@@ -50,7 +50,7 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
       secureTextEntry={!isVisible}
       style={style}
       inputStyle={inputStyle}
-      rightIcon={<EyeIcon />}
+      rightIcon={eyeIcon}
       onRightIconPress={toggleVisibility}
     />
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   fitnessDataService,
   Exercise,
@@ -464,19 +464,21 @@ export const useFitnessData = (): UseFitnessDataReturn => {
     }
   }, [isAuthenticated, user?.id, refreshAll]);
 
+  // Stable ref for refreshAll to avoid re-registering the subscription on every render
+  const refreshAllRef = useRef(refreshAll);
+  useEffect(() => { refreshAllRef.current = refreshAll; }, [refreshAll]);
+
   // Register with fitness refresh service for automatic updates
   // This ensures useFitnessData reacts to workout completions from other parts of the app
   useEffect(() => {
     if (isAuthenticated && user?.id) {
-      const unsubscribe = fitnessRefreshService.onRefreshNeeded(refreshAll);
-      console.log("📡 Registered fitness data hook with refresh service");
+      const unsubscribe = fitnessRefreshService.onRefreshNeeded(() => refreshAllRef.current());
 
       return () => {
         unsubscribe();
-        console.log("📡 Unregistered fitness data hook from refresh service");
       };
     }
-  }, [isAuthenticated, user?.id, refreshAll]);
+  }, [isAuthenticated, user?.id]);
 
   return {
     // Exercises

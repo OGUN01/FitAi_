@@ -49,15 +49,13 @@ export class ScreenErrorBoundary extends Component<Props, State> {
     console.error(
       `[ScreenErrorBoundary] Error in ${this.props.screenName || "Screen"}:`,
       error,
+      errorInfo,
     );
-    console.error("[ScreenErrorBoundary] Error Info:", errorInfo);
 
     this.setState({
       error,
       errorInfo,
     });
-
-    // Log to error tracking service (if configured)
   }
 
   handleReset = () => {

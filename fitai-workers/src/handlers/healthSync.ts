@@ -23,10 +23,10 @@ import { APIError, ValidationError, DatabaseError, handleSupabaseError } from '.
 const HealthSyncSchema = z.object({
 	log_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format. Must be YYYY-MM-DD'),
 	data_source: z.enum(['apple_health', 'google_fit', 'manual']).describe('Data source: apple_health, google_fit, or manual'),
-	steps: z.number().int().min(0).optional().nullable(),
+	steps: z.number().int().min(0).max(100000).optional().nullable(),
 	active_calories: z.number().min(0).optional().nullable(),
 	resting_calories: z.number().min(0).optional().nullable(),
-	heart_rate_avg: z.number().min(0).max(300).optional().nullable(),
+	heart_rate_avg: z.number().min(30).max(220).optional().nullable(),
 	resting_heart_rate: z.number().min(20).max(200).optional().nullable(),
 	sleep_hours: z.number().min(0).max(24).optional().nullable(),
 	water_intake_ml: z.number().int().min(0).optional().nullable(),

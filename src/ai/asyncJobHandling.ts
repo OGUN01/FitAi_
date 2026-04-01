@@ -68,18 +68,22 @@ export async function generateWeeklyMealPlanAsync(
         updateMetadata(response.metadata as AIServiceMetadata);
       }
 
-      const weeklyPlan = transformDietResponseToWeeklyPlan(
+      const transformed = transformDietResponseToWeeklyPlan(
         { ...response, data: response.data },
         weekNumber,
         { requestedDaysCount: 7 },
       );
 
-      if (!weeklyPlan) {
+      if (!transformed) {
+        console.error('[asyncJobHandling] transformDietResponseToWeeklyPlan returned null. Raw response:', JSON.stringify(response.data).slice(0, 500));
         return {
           success: false,
-          error: "Failed to transform diet response",
-        };
+          error: 'Received meal plan data could not be processed. Please try regenerating.',
+          rawDataAvailable: true,
+        } as any;
       }
+
+      const weeklyPlan = transformed;
 
       return {
         success: true,
@@ -107,9 +111,13 @@ export async function generateWeeklyMealPlanAsync(
   }
 }
 
+// MAX_POLL_ATTEMPTS = 30 (at 6s interval = 3 minutes max)
+const MAX_POLL_ATTEMPTS = 30;
+
 export async function checkMealPlanJobStatus(
   jobId: string,
   weekNumber: number = 1,
+  attempts: number = 0,
 ): Promise<
   AIResponse<{
     status: "pending" | "processing" | "completed" | "failed" | "cancelled";
@@ -119,6 +127,10 @@ export async function checkMealPlanJobStatus(
   }>
 > {
   try {
+    if (attempts >= MAX_POLL_ATTEMPTS) {
+      return { success: false, error: 'Meal plan generation timed out. Please try again.', timedOut: true } as any;
+    }
+
     const response = await fitaiWorkersClient.getJobStatus(jobId);
 
     if (!response.success || !response.data) {
@@ -131,17 +143,26 @@ export async function checkMealPlanJobStatus(
     const jobData = response.data;
 
     if (jobData.status === "completed" && jobData.result) {
-      const weeklyPlan = transformDietResponseToWeeklyPlan(
+      const transformed = transformDietResponseToWeeklyPlan(
         { success: true, data: jobData.result },
         weekNumber,
         { requestedDaysCount: 7 },
       );
 
+      if (!transformed) {
+        console.error('[asyncJobHandling] checkMealPlanJobStatus: transformDietResponseToWeeklyPlan returned null. Raw result:', JSON.stringify(jobData.result).slice(0, 500));
+        return {
+          success: false,
+          error: 'Received meal plan data could not be processed. Please try regenerating.',
+          rawDataAvailable: true,
+        } as any;
+      }
+
       return {
         success: true,
         data: {
           status: "completed",
-          plan: weeklyPlan || undefined,
+          plan: transformed,
           generationTimeMs: jobData.metadata?.generationTimeMs,
         },
       };

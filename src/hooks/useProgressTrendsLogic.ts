@@ -84,7 +84,7 @@ export const useProgressTrendsLogic = () => {
         setLoading(false);
       }
     },
-    [user?.id, periodDays, metricsHistory.length, cachedPeriod, setDailyMetricsHistory],
+    [user?.id, periodDays, cachedPeriod, setDailyMetricsHistory],
   );
 
   useEffect(() => {

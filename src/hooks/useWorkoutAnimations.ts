@@ -18,7 +18,7 @@ export const useWorkoutAnimations = () => {
         useNativeDriver: true,
       }),
     ]).start();
-  }, [fadeAnim, scaleAnim]);
+  }, []);
 
   const animateTransition = (callback: () => void) => {
     Animated.parallel([

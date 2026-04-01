@@ -228,7 +228,7 @@ export default function App() {
     // Onboarding stores: 15, 30, 45, 60, 75, 90, 120
     // Modal expects: '15-30', '30-45', '45-60', '60+'
     const timeMinutes =
-      (wp as any)?.time_preference || (wp as any)?.timePreference || 30;
+      (wp as any)?.time_preference ?? (wp as any)?.timePreference ?? 0;
     const getTimeRange = (minutes: number): string => {
       if (minutes <= 30) return "15-30";
       if (minutes <= 45) return "30-45";
@@ -251,9 +251,9 @@ export default function App() {
           : (data.fitnessGoals as any)?.primaryGoals || [], // Legacy alias for edit modals
       time_commitment: timeRange,
       timeCommitment: timeRange, // Legacy alias for edit modals
-      experience: wp?.intensity || data.fitnessGoals?.experience || "beginner",
+      experience: wp?.intensity ?? data.fitnessGoals?.experience ?? "beginner",
       experience_level:
-        wp?.intensity || data.fitnessGoals?.experience_level || "beginner", // Legacy alias
+        wp?.intensity ?? data.fitnessGoals?.experience_level ?? "beginner", // Legacy alias
       // Preserve other optional fields from data.fitnessGoals if they exist
       preferred_equipment: data.fitnessGoals?.preferred_equipment,
       target_areas: data.fitnessGoals?.target_areas,
@@ -277,30 +277,30 @@ export default function App() {
         wake_time: data.personalInfo.wake_time || "07:00",
         sleep_time: data.personalInfo.sleep_time || "23:00",
         occupation_type:
-          (data.personalInfo.occupation_type as any) || "moderate_active",
+          (data.personalInfo.occupation_type as any) ?? undefined,
       } as PersonalInfo,
       fitnessGoals: fitnessGoals as FitnessGoals,
       dietPreferences: data.dietPreferences
         ? {
             // Basic diet info
             diet_type:
-              (data.dietPreferences as any).diet_type ||
-              (data.dietPreferences as any).dietType ||
-              "non-veg",
+              (data.dietPreferences as any).diet_type ??
+              (data.dietPreferences as any).dietType ??
+              "balanced",
             allergies: data.dietPreferences.allergies || [],
             restrictions: data.dietPreferences.restrictions || [],
 
             // Diet readiness toggles (6) - defaults for backward compatibility
-            keto_ready: (data.dietPreferences as any).keto_ready || false,
+            keto_ready: (data.dietPreferences as any).keto_ready ?? false,
             intermittent_fasting_ready:
-              (data.dietPreferences as any).intermittent_fasting_ready || false,
-            paleo_ready: (data.dietPreferences as any).paleo_ready || false,
+              (data.dietPreferences as any).intermittent_fasting_ready ?? false,
+            paleo_ready: (data.dietPreferences as any).paleo_ready ?? false,
             mediterranean_ready:
-              (data.dietPreferences as any).mediterranean_ready || false,
+              (data.dietPreferences as any).mediterranean_ready ?? false,
             low_carb_ready:
-              (data.dietPreferences as any).low_carb_ready || false,
+              (data.dietPreferences as any).low_carb_ready ?? false,
             high_protein_ready:
-              (data.dietPreferences as any).high_protein_ready || false,
+              (data.dietPreferences as any).high_protein_ready ?? false,
 
             // Meal preferences (4)
             breakfast_enabled:
@@ -324,77 +324,89 @@ export default function App() {
 
             // Health habits (14)
             drinks_enough_water:
-              (data.dietPreferences as any).drinks_enough_water || false,
+              (data.dietPreferences as any).drinks_enough_water ?? false,
             limits_sugary_drinks:
-              (data.dietPreferences as any).limits_sugary_drinks || false,
+              (data.dietPreferences as any).limits_sugary_drinks ?? false,
             eats_regular_meals:
-              (data.dietPreferences as any).eats_regular_meals || false,
+              (data.dietPreferences as any).eats_regular_meals ?? false,
             avoids_late_night_eating:
-              (data.dietPreferences as any).avoids_late_night_eating || false,
+              (data.dietPreferences as any).avoids_late_night_eating ?? false,
             controls_portion_sizes:
-              (data.dietPreferences as any).controls_portion_sizes || false,
+              (data.dietPreferences as any).controls_portion_sizes ?? false,
             reads_nutrition_labels:
-              (data.dietPreferences as any).reads_nutrition_labels || false,
+              (data.dietPreferences as any).reads_nutrition_labels ?? false,
             eats_processed_foods:
-              (data.dietPreferences as any).eats_processed_foods !== false,
+              (data.dietPreferences as any).eats_processed_foods ?? false,
             eats_5_servings_fruits_veggies:
-              (data.dietPreferences as any).eats_5_servings_fruits_veggies ||
+              (data.dietPreferences as any).eats_5_servings_fruits_veggies ??
               false,
             limits_refined_sugar:
-              (data.dietPreferences as any).limits_refined_sugar || false,
+              (data.dietPreferences as any).limits_refined_sugar ?? false,
             includes_healthy_fats:
-              (data.dietPreferences as any).includes_healthy_fats || false,
+              (data.dietPreferences as any).includes_healthy_fats ?? false,
             drinks_alcohol:
-              (data.dietPreferences as any).drinks_alcohol || false,
+              (data.dietPreferences as any).drinks_alcohol ?? false,
             smokes_tobacco:
-              (data.dietPreferences as any).smokes_tobacco || false,
-            drinks_coffee: (data.dietPreferences as any).drinks_coffee || false,
+              (data.dietPreferences as any).smokes_tobacco ?? false,
+            drinks_coffee: (data.dietPreferences as any).drinks_coffee ?? false,
             takes_supplements:
-              (data.dietPreferences as any).takes_supplements || false,
+              (data.dietPreferences as any).takes_supplements ?? false,
           }
         : undefined,
       workoutPreferences: (() => {
         const wp = data.workoutPreferences;
         return wp
           ? {
-              location: wp.location || "home",
+              location: wp.location ?? "home",
               equipment: wp.equipment || [],
               time_preference:
-                (wp as any).time_preference || (wp as any).timePreference || 30,
-              intensity: wp.intensity || "beginner",
+                (wp as any).time_preference ?? (wp as any).timePreference ?? 0,
+              intensity: wp.intensity ?? "beginner",
               workout_types:
-                (wp as any).workout_types || (wp as any).workoutTypes || [],
+                (wp as any).workout_types ?? (wp as any).workoutTypes ?? [],
               primary_goals:
-                (wp as any).primary_goals || (wp as any).primaryGoals || [],
+                (wp as any).primary_goals ?? (wp as any).primaryGoals ?? [],
               activity_level:
-                (wp as any).activity_level ||
-                (wp as any).activityLevel ||
-                "moderate",
+                (wp as any).activity_level ??
+                (wp as any).activityLevel ??
+                undefined,
+              workout_frequency_per_week:
+                (wp as any).workout_frequency_per_week,
+              workout_experience_years:
+                (wp as any).workout_experience_years,
+              preferred_workout_times:
+                (wp as any).preferred_workout_times ?? [],
+              enjoys_cardio: (wp as any).enjoys_cardio,
+              enjoys_strength_training: (wp as any).enjoys_strength_training,
+              enjoys_group_classes: (wp as any).enjoys_group_classes,
+              prefers_outdoor_activities: (wp as any).prefers_outdoor_activities,
+              needs_motivation: (wp as any).needs_motivation,
+              prefers_variety: (wp as any).prefers_variety,
               // Backward compatibility
               timePreference:
-                (wp as any).time_preference || (wp as any).timePreference || 30,
+                (wp as any).time_preference ?? (wp as any).timePreference ?? 0,
               workoutTypes:
-                (wp as any).workout_types || (wp as any).workoutTypes || [],
+                (wp as any).workout_types ?? (wp as any).workoutTypes ?? [],
               primaryGoals:
-                (wp as any).primary_goals || (wp as any).primaryGoals || [],
+                (wp as any).primary_goals ?? (wp as any).primaryGoals ?? [],
               activityLevel:
-                (wp as any).activity_level ||
-                (wp as any).activityLevel ||
-                "moderate",
+                (wp as any).activity_level ??
+                (wp as any).activityLevel ??
+                undefined,
             }
           : {
               location: "home" as const,
               equipment: [],
-              time_preference: 30,
+              time_preference: 0,
               intensity: "beginner" as const,
               workout_types: [],
               primary_goals: [],
-              activity_level: "moderate",
+              activity_level: undefined,
               // Backward compatibility
-              timePreference: 30,
+              timePreference: 0,
               workoutTypes: [],
               primaryGoals: [],
-              activityLevel: "moderate",
+              activityLevel: undefined,
             };
       })(),
       // ✅ FIX: Map bodyAnalysis from onboarding to bodyMetrics in UserProfile
@@ -404,41 +416,47 @@ export default function App() {
             const ba = data.bodyAnalysis as any;
             const measurements = ba.measurements || {};
             return {
-              // Check both flat format and nested measurements format
+              // Check both flat format and nested measurements format, also check personalInfo
               height_cm:
-                ba.height_cm ||
-                measurements.height ||
-                measurements.height_cm ||
+                ba.height_cm ??
+                measurements.height ??
+                measurements.height_cm ??
+                data.personalInfo?.height ??
                 0,
               current_weight_kg:
-                ba.current_weight_kg ||
-                measurements.weight ||
-                measurements.current_weight_kg ||
+                ba.current_weight_kg ??
+                measurements.weight ??
+                measurements.current_weight_kg ??
+                data.personalInfo?.weight ??
                 0,
               target_weight_kg:
-                ba.target_weight_kg ||
-                measurements.targetWeight ||
+                ba.target_weight_kg ??
+                measurements.targetWeight ??
                 measurements.target_weight_kg,
               target_timeline_weeks:
-                ba.target_timeline_weeks || measurements.target_timeline_weeks,
+                ba.target_timeline_weeks ?? measurements.target_timeline_weeks,
               body_fat_percentage:
-                ba.body_fat_percentage ||
-                measurements.bodyFat ||
+                ba.body_fat_percentage ??
+                measurements.bodyFat ??
                 measurements.body_fat_percentage,
               waist_cm:
-                ba.waist_cm || measurements.waist || measurements.waist_cm,
-              hip_cm: ba.hip_cm || measurements.hips || measurements.hip_cm,
+                ba.waist_cm ?? measurements.waist ?? measurements.waist_cm,
+              hip_cm: ba.hip_cm ?? measurements.hips ?? measurements.hip_cm,
               chest_cm:
-                ba.chest_cm || measurements.chest || measurements.chest_cm,
+                ba.chest_cm ?? measurements.chest ?? measurements.chest_cm,
+              bmi: ba.bmi ?? null,
+              bmr: ba.bmr ?? null,
+              ideal_weight_min: ba.ideal_weight_min ?? null,
+              ideal_weight_max: ba.ideal_weight_max ?? null,
               front_photo_url: ba.front_photo_url,
               side_photo_url: ba.side_photo_url,
               back_photo_url: ba.back_photo_url,
               // Medical fields from onboarding
-              medical_conditions: ba.medical_conditions || [],
-              medications: ba.medications || [],
-              physical_limitations: ba.physical_limitations || [],
-              pregnancy_status: ba.pregnancy_status || false,
-              breastfeeding_status: ba.breastfeeding_status || false,
+              medical_conditions: ba.medical_conditions ?? [],
+              medications: ba.medications ?? [],
+              physical_limitations: ba.physical_limitations ?? [],
+              pregnancy_status: ba.pregnancy_status ?? false,
+              breastfeeding_status: ba.breastfeeding_status ?? false,
             };
           })()
         : undefined,
@@ -511,6 +529,7 @@ export default function App() {
     const missingTables: string[] = [];
 
     try {
+      console.warn(`\n🔍 [SYNC DEBUG] verifyDatabaseData START — userId=${userId}`);
 
 
       // Check profiles table
@@ -570,14 +589,14 @@ export default function App() {
       }
       if (!advancedReview) missingTables.push("advanced_review");
 
-
+      console.warn(`  🔍 [SYNC DEBUG] verifyDatabaseData RESULT — hasData=${missingTables.length === 0}, missing=[${missingTables.join(', ')}]`);
 
       return {
         hasData: missingTables.length === 0,
         missingTables,
       };
     } catch (error) {
-      console.error("❌ [DB-VERIFY] Verification failed:", error);
+      console.error("❌ [SYNC DEBUG] verifyDatabaseData FAILED:", error);
       return { hasData: false, missingTables: ["unknown"] };
     }
   };
@@ -587,9 +606,12 @@ export default function App() {
     userId: string,
   ): Promise<{ success: boolean; errors: string[] }> => {
     const errors: string[] = [];
-    const savedTables: string[] = []; // Track successful saves for rollback
+    const savedTables: string[] = [];
 
     try {
+      console.warn(`\n${'='.repeat(60)}`);
+      console.warn(`🔄 [SYNC DEBUG] syncLocalToDatabase START — userId=${userId}`);
+      console.warn(`${'='.repeat(60)}`);
 
 
       // Load from onboarding_data (primary source used by useOnboardingState)
@@ -601,6 +623,7 @@ export default function App() {
 
       const onboardingData = JSON.parse(onboardingDataStr);
 
+      console.warn(`  📋 Local data found: PI=${!!onboardingData.personalInfo} DP=${!!onboardingData.dietPreferences} BA=${!!onboardingData.bodyAnalysis} WP=${!!onboardingData.workoutPreferences} AR=${!!onboardingData.advancedReview}`);
 
       // CONFLICT RESOLUTION: Check if database already has data
       const existingProfile = await PersonalInfoService.load(userId);
@@ -616,6 +639,8 @@ export default function App() {
         existingWorkout ||
         existingAdvanced
       );
+
+      console.warn(`  🔍 Remote data exists: Profile=${!!existingProfile} Diet=${!!existingDiet} Body=${!!existingBody} Workout=${!!existingWorkout} Advanced=${!!existingAdvanced}`);
 
       if (hasRemoteData) {
 
@@ -731,6 +756,8 @@ export default function App() {
 
       // Success if personal info saved (minimum requirement)
       const hasMinimumData = savedTables.includes("profiles");
+      console.warn(`✅ [SYNC DEBUG] syncLocalToDatabase COMPLETE — saved=[${savedTables.join(', ')}], errors=${errors.length}, success=${hasMinimumData}`);
+      console.warn(`${'='.repeat(60)}\n`);
       return {
         success: hasMinimumData,
         errors,
@@ -803,6 +830,11 @@ export default function App() {
 
     const loadExistingData = async () => {
       if (!isInitialized) return;
+
+      console.warn(`\n${'='.repeat(60)}`);
+      console.warn(`🚀 [APP DEBUG] loadExistingData START`);
+      console.warn(`${'='.repeat(60)}`);
+      console.warn(`  👤 user=${user?.id || 'null'} | isGuestMode=${isGuestMode} | guestId=${guestId} | hasProfile=${!!profile}`);
 
       // Only show loading spinner for authenticated users who need profile checks.
       // Unauthenticated users resolve quickly — no need to re-show the spinner.
@@ -1073,6 +1105,12 @@ export default function App() {
 
   const handleOnboardingComplete = async (data: OnboardingReviewData) => {
 
+    console.warn(`\n${'='.repeat(60)}`);
+    console.warn(`📱 [APP DEBUG] handleOnboardingComplete called`);
+    console.warn(`${'='.repeat(60)}`);
+    console.warn(`👤 User: ${user?.id || 'guest'} | GuestMode: ${isGuestMode} | GuestId: ${guestId}`);
+    console.warn(`📋 Data received:`, JSON.stringify(data, null, 2));
+    console.warn(`${'='.repeat(60)}\n`);
 
     try {
       // Ensure guest mode is enabled if not authenticated
@@ -1086,6 +1124,14 @@ export default function App() {
 
       // Convert to profile format and store in userStore for persistence
       const userProfile = convertOnboardingToProfile(data);
+
+      console.warn(`\n📱 [APP DEBUG] Profile converted from onboarding:`);
+      console.warn(`  Name: ${userProfile.personalInfo?.name}`);
+      console.warn(`  Age: ${(userProfile.personalInfo as any)?.age} | Gender: ${(userProfile.personalInfo as any)?.gender}`);
+      console.warn(`  Goals: [${(userProfile.fitnessGoals as any)?.primary_goals?.join(', ') || 'none'}]`);
+      console.warn(`  Height: ${(userProfile.bodyMetrics as any)?.height_cm}cm | Weight: ${(userProfile.bodyMetrics as any)?.current_weight_kg}kg`);
+      console.warn(`  Diet: ${(userProfile.dietPreferences as any)?.diet_type}`);
+      console.warn(`  Workout: ${(userProfile.workoutPreferences as any)?.location} | ${(userProfile.workoutPreferences as any)?.intensity}`);
 
       setProfile(userProfile);
 
@@ -1126,6 +1172,7 @@ export default function App() {
       invalidateMetricsCache();
 
       // Set complete flag LAST after all async operations finish
+      console.warn(`✅ [APP DEBUG] Onboarding complete — transitioning to MainNavigation`);
       setIsOnboardingComplete(true);
     } catch (error) {
       console.error("❌ App: Failed to store onboarding data:", error);

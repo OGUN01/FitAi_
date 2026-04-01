@@ -191,6 +191,7 @@ class OfflineService {
   private constructor() {
     this.initializeNetworkListener();
     this.loadOfflineData();
+    this.initializeAuthListener();
   }
 
   static getInstance(): OfflineService {
@@ -224,6 +225,24 @@ class OfflineService {
       });
     } catch (error) {
       console.error("[Offline] Failed to setup network listener:", error);
+    }
+  }
+
+  /**
+   * Listen for auth sign-out to clear the offline queue.
+   * Prevents User A's queued actions from leaking to User B on shared devices.
+   */
+  private initializeAuthListener(): void {
+    try {
+      supabase.auth.onAuthStateChange((event) => {
+        if (event === "SIGNED_OUT") {
+          this.clearOfflineData().catch((err) =>
+            console.error("[Offline] Failed to clear queue on sign-out:", err),
+          );
+        }
+      });
+    } catch (error) {
+      console.error("[Offline] Failed to setup auth listener:", error);
     }
   }
 

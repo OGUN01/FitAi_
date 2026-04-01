@@ -30,12 +30,15 @@ export const useBodyProgressLogic = ({
     }
 
     const totalChange = Math.abs(startingWeight - goalWeight);
-    const currentChange = Math.abs(startingWeight - currentWeight);
-    const progressPercent =
-      totalChange > 0 ? (currentChange / totalChange) * 100 : 0;
-
-    // For weight loss: starting > goal, for weight gain: starting < goal
+    // Direction-aware progress: only count movement TOWARD the goal, not just any movement
     const isLosing = startingWeight > goalWeight;
+    const progressTowardGoal = isLosing
+      ? Math.max(startingWeight - currentWeight, 0) // For loss: how much weight lost (clamped to 0 if went up)
+      : Math.max(currentWeight - startingWeight, 0); // For gain: how much weight gained (clamped to 0 if went down)
+    const progressPercent =
+      totalChange > 0 ? (progressTowardGoal / totalChange) * 100 : 0;
+
+    // Remaining distance to goal
     const remainingWeight = isLosing
       ? Math.max(currentWeight - goalWeight, 0)
       : Math.max(goalWeight - currentWeight, 0);

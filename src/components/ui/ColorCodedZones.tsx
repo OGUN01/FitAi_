@@ -23,6 +23,58 @@ interface ColorCodedZonesProps {
   style?: StyleProp<ViewStyle>;
 }
 
+interface ZoneRowProps {
+  zone: HeartRateZone;
+  index: number;
+}
+
+const ZoneRow: React.FC<ZoneRowProps> = ({ zone, index }) => {
+  const animatedStyle = useAnimatedStyle(() => ({
+    width: withDelay(
+      index * 100,
+      withSpring(`${zone.percentage}%`, {
+        damping: 20,
+        stiffness: 90,
+      }),
+    ),
+  }));
+
+  return (
+    <View style={styles.zoneRow}>
+      {/* Zone info */}
+      <View style={styles.zoneInfo}>
+        <Text style={styles.zoneNumber}>Zone {zone.zone}</Text>
+        <Text style={styles.zoneName}>{zone.name}</Text>
+        <Text style={styles.zoneBPM}>{zone.bpm} bpm</Text>
+      </View>
+
+      {/* Zone bar */}
+      <View style={styles.zoneBarContainer}>
+        <Animated.View
+          style={[
+            styles.zoneBar,
+            { backgroundColor: zone.color },
+            animatedStyle,
+          ]}
+        >
+          {zone.percentage > 10 && (
+            <Text style={styles.zonePercentage}>
+              {zone.percentage}%
+            </Text>
+          )}
+        </Animated.View>
+      </View>
+
+      {/* Percentage label (if too small to show inside) */}
+      {zone.percentage <= 10 && zone.percentage > 0 && (
+        <Text style={styles.zonePercentageOutside}>
+          {zone.percentage}%
+        </Text>
+      )}
+    </View>
+  );
+};
+
 export const ColorCodedZones: React.FC<ColorCodedZonesProps> = ({
   zones,
   maxHR = 180,
@@ -32,52 +84,9 @@ export const ColorCodedZones: React.FC<ColorCodedZonesProps> = ({
     <View style={[styles.container, style]}>
       {/* Zone bars */}
       <View style={styles.zonesContainer}>
-        {zones.map((zone, index) => {
-          const animatedStyle = useAnimatedStyle(() => ({
-            width: withDelay(
-              index * 100,
-              withSpring(`${zone.percentage}%`, {
-                damping: 20,
-                stiffness: 90,
-              }),
-            ),
-          }));
-
-          return (
-            <View key={zone.zone} style={styles.zoneRow}>
-              {/* Zone info */}
-              <View style={styles.zoneInfo}>
-                <Text style={styles.zoneNumber}>Zone {zone.zone}</Text>
-                <Text style={styles.zoneName}>{zone.name}</Text>
-                <Text style={styles.zoneBPM}>{zone.bpm} bpm</Text>
-              </View>
-
-              {/* Zone bar */}
-              <View style={styles.zoneBarContainer}>
-                <Animated.View
-                  style={[
-                    styles.zoneBar,
-                    { backgroundColor: zone.color },
-                    animatedStyle,
-                  ]}
-                >
-                  {zone.percentage > 10 && (
-                    <Text style={styles.zonePercentage}>
-                      {zone.percentage}%
-                    </Text>
-                  )}
-                </Animated.View>
-              </View>
-
-              {/* Percentage label (if too small to show inside) */}
-              {zone.percentage <= 10 && zone.percentage > 0 && (
-                <Text style={styles.zonePercentageOutside}>
-                  {zone.percentage}%
-                </Text>
-              )}
-            </View>
-          );
-        })}
+        {zones.map((zone, index) => (
+          <ZoneRow key={zone.zone} zone={zone} index={index} />
+        ))}
       </View>
 
       {/* Legend */}

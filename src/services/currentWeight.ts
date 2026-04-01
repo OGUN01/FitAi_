@@ -55,6 +55,11 @@ export function getLatestManualWeightEntry(
   }, validEntries[0]);
 }
 
+/**
+ * SSOT weight resolver for components reading from store state.
+ * Priority: manual entry > body analysis > null
+ * Use this when you have weightHistory available.
+ */
 export function resolveCurrentWeight({
   weightHistory = [],
   bodyAnalysisWeight,
@@ -140,6 +145,11 @@ export async function fetchLatestManualWeightEntry(
   };
 }
 
+/**
+ * SSOT weight resolver for async contexts (DataBridge, DB operations).
+ * Priority: manual weight log > body analysis param
+ * Use this when you need to fetch from DB.
+ */
 export async function resolveCurrentWeightForUser(
   userId: string,
   fallback?: {
@@ -177,6 +187,11 @@ export function applyResolvedCurrentWeight<T extends { current_weight_kg?: numbe
   };
 }
 
+/**
+ * SSOT weight resolver for store-to-store calls (achievements, analytics).
+ * Priority: analyticsStore.weightHistory > weightTrackingService > profileStore.bodyAnalysis
+ * Use this for synchronous cross-store access only.
+ */
 export function resolveCurrentWeightFromStores(
   options?: {
     bodyAnalysisWeight?: number | null;
@@ -186,6 +201,16 @@ export function resolveCurrentWeightFromStores(
   const weightHistory = useAnalyticsStore.getState().weightHistory || [];
   const trackedWeight = weightTrackingService.getCurrentWeight();
   const profileBodyAnalysis = useProfileStore.getState().bodyAnalysis;
+
+  // AUDIT fix: if analyticsStore weightHistory is empty (not yet hydrated),
+  // fall back to profileStore.bodyAnalysis directly rather than returning null.
+  if (weightHistory.length === 0 && !isValidWeight(trackedWeight)) {
+    return {
+      value: profileBodyAnalysis?.current_weight_kg ?? null,
+      source: profileBodyAnalysis?.current_weight_kg != null ? "body_analysis" : "none",
+      asOf: null,
+    };
+  }
 
   if (isValidWeight(trackedWeight)) {
     return {

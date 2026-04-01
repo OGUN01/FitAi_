@@ -141,6 +141,12 @@ export interface AdvancedReviewRow {
   validation_warnings?: string[];
   refeed_schedule?: Record<string, unknown>;
   medical_adjustments?: string[] | null;
+  detected_climate?: string | null;
+  detected_ethnicity?: string | null;
+  was_rate_capped?: boolean | null;
+  bmi_category?: string | null;
+  health_score?: number | null;
+  health_grade?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 }

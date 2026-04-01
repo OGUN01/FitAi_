@@ -143,23 +143,7 @@ export const useMealEdit = (
         },
       };
 
-      // Update in weekly meal plan
-      if (weeklyMealPlan) {
-        const updatedMeals = weeklyMealPlan.meals.map((m) =>
-          m.id === meal.id ? updatedMeal : m,
-        );
-
-        const updatedPlan = {
-          ...weeklyMealPlan,
-          meals: updatedMeals,
-        };
-
-        // Save to store and database
-        setWeeklyMealPlan(updatedPlan);
-        await saveWeeklyMealPlan(updatedPlan);
-      }
-
-      // Update in database if meal has a log ID
+      // Update in database if meal has a log ID (DB write first, before store update)
       const { getMealProgress } = useNutritionStore.getState();
       const mealProgressData = getMealProgress(meal.id);
 
@@ -178,8 +162,25 @@ export const useMealEdit = (
           .eq("id", mealProgressData.logId);
 
         if (error) {
-          logger.error('Error updating meal in database', { error: String(error) });
+          logger.error('[MealEdit] Failed to update meal in DB', { error: String(error) });
+          crossPlatformAlert("Error", "Failed to save changes to the server. Please try again.");
+          return;
         }
+      }
+
+      // Update in weekly meal plan (store updated after successful DB write)
+      if (weeklyMealPlan) {
+        const updatedMeals = weeklyMealPlan.meals.map((m) =>
+          m.id === meal.id ? updatedMeal : m,
+        );
+
+        const updatedPlan = {
+          ...weeklyMealPlan,
+          meals: updatedMeals,
+        };
+
+        await saveWeeklyMealPlan(updatedPlan);
+        setWeeklyMealPlan(updatedPlan);
       }
 
       haptics.success();

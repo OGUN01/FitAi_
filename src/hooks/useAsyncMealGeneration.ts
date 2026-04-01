@@ -71,6 +71,7 @@ export function useAsyncMealGeneration(): UseAsyncMealGenerationResult {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastCompletedPlan, setLastCompletedPlan] = useState<any | null>(null);
+  // TODO: recentJobs tracking not yet implemented
   const [recentJobs, setRecentJobs] = useState<AsyncMealJob[]>([]);
 
   const pollingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -112,7 +113,9 @@ export function useAsyncMealGeneration(): UseAsyncMealGenerationResult {
         }
       }
     } catch (err) {
-      console.warn("[useAsyncMealGeneration] Failed to restore job:", err);
+      console.error('[AsyncMealGeneration] Failed to restore job from storage:', err);
+      setError('Failed to restore pending generation');
+      await AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
     }
   };
 
@@ -146,7 +149,6 @@ export function useAsyncMealGeneration(): UseAsyncMealGenerationResult {
           };
           setCurrentJob(completedJob);
           setLastCompletedPlan(response.data);
-          setIsLoading(false);
           return completedJob;
         }
 
@@ -177,8 +179,9 @@ export function useAsyncMealGeneration(): UseAsyncMealGenerationResult {
         const errorMessage =
           err instanceof Error ? err.message : "Failed to generate meal plan";
         setError(errorMessage);
-        setIsLoading(false);
         return null;
+      } finally {
+        setIsLoading(false);
       }
     },
     [],
@@ -281,7 +284,9 @@ export function useAsyncMealGeneration(): UseAsyncMealGenerationResult {
           // Timeout after max attempts
           setError("Generation timeout - please check your jobs later");
           setIsLoading(false);
-          AsyncStorage.removeItem(STORAGE_KEY);
+          await AsyncStorage.removeItem(STORAGE_KEY).catch(e =>
+            console.warn('[useAsyncMealGeneration] Failed to clear stale job ID:', e)
+          );
         }
       };
 

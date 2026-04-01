@@ -133,6 +133,17 @@ export interface Meal {
   preparationTime?: number;
   total_carbohydrates?: number; // in grams
   timing?: string; // meal timing
+  loggedAt?: string; // ISO timestamp set when this meal is logged from Supabase
+  sourceMetadata?: {
+    mode?: string;
+    truthLevel?: string;
+    confidence?: number | null;
+    countryContext?: string | null;
+    requiresReview?: boolean;
+    source?: string | null;
+    productIdentity?: string | null;
+    conflict?: unknown | null;
+  };
 }
 
 export type MealType =

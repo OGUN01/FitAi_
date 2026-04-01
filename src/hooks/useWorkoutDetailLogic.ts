@@ -33,6 +33,7 @@ export const useWorkoutDetailLogic = (workoutId: string) => {
     useFitnessStore();
   const [selectedExercise, setSelectedExercise] =
     React.useState<Exercise | null>(null);
+  // TODO: isFavorited state is local only, not persisted
   const [isFavorited, setIsFavorited] = React.useState(false);
 
   // Find the workout from the store by ID

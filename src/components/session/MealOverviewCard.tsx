@@ -49,7 +49,7 @@ export const MealOverviewCard: React.FC<MealOverviewCardProps> = ({
           <Text style={styles.statLabel}>Difficulty</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>{meal.items.length}</Text>
+          <Text style={styles.statValue}>{meal.items?.length ?? 0}</Text>
           <Text style={styles.statLabel}>Ingredients</Text>
         </View>
       </View>

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
 import { View, StyleSheet, StatusBar } from "react-native";
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { ResponsiveTheme } from "../../utils/constants";
@@ -59,6 +59,12 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = (
     logic.handleReturnToReview,
   ]);
 
+  useEffect(() => {
+    if (logic.currentTab === 5 && logic.isEditingFromReview && !logic.pendingEditingReset.current) {
+      logic.pendingEditingReset.current = true;
+    }
+  }, [logic.currentTab, logic.isEditingFromReview]);
+
   const renderTabContent = () => {
     switch (logic.currentTab) {
       case 1:
@@ -105,9 +111,6 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = (
         );
 
       case 5:
-        if (logic.isEditingFromReview && !logic.pendingEditingReset.current) {
-          logic.pendingEditingReset.current = true;
-        }
         return (
           <AdvancedReviewTab
             {...commonProps}
@@ -127,14 +130,8 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = (
         );
 
       default:
-        return (
-          <PersonalInfoTab
-            {...commonProps}
-            data={logic.personalInfo}
-            validationResult={logic.tabValidationStatus[1]}
-            onUpdate={logic.updatePersonalInfo}
-          />
-        );
+        if (__DEV__) console.warn('Unknown tab:', logic.currentTab);
+        return null;
     }
   };
 

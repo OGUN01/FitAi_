@@ -105,7 +105,12 @@ function mapSupportedDietaryRestriction(
     low_carb: "low_carb",
   };
 
-  return supportedRestrictions[normalized] ?? null;
+  const mappedValue = supportedRestrictions[normalized] ?? null;
+  // If diet_type doesn't map to a supported restriction, log and return null
+  if (!mappedValue) {
+    console.warn('[aiRequestTransformers] Unsupported diet_type — restriction will not be applied:', restriction);
+  }
+  return mappedValue;
 }
 
 function normalizeDayOfWeek(dayOfWeek: unknown): string | null {
@@ -218,6 +223,11 @@ export function transformForDietRequest(
 
   // Validate required profile data - NO FALLBACKS for critical values
   if (!personalInfo.age || !personalInfo.weight || !personalInfo.height) {
+    console.warn('[aiRequestTransformers] Missing critical user metrics:', {
+      age: personalInfo.age,
+      weight: personalInfo.weight,
+      height: personalInfo.height,
+    });
   }
 
   return {
@@ -227,8 +237,8 @@ export function transformForDietRequest(
       age: personalInfo.age, // NO FALLBACK - must come from onboarding
       gender: personalInfo.gender, // NO FALLBACK
       weight:
-        (resolvedCurrentWeight.value ?? personalInfo.weight) as number, // Type assertion
-      height: (bodyMetrics?.height_cm ?? personalInfo.height) as number, // Type assertion
+        (resolvedCurrentWeight.value ?? personalInfo.weight ?? null) as number | null, // null = explicitly missing, not 0
+      height: (bodyMetrics?.height_cm ?? personalInfo.height ?? null) as number | null, // null = explicitly missing, not 0
       activity_level: activityLevel,
       fitness_goal: primaryGoal,
       country: personalInfo.country,
@@ -309,7 +319,12 @@ export function transformForDietRequest(
     // REQUIRED: Fields that backend schema expects for cache key generation
     // BUG-92: When calorieTarget not explicitly passed, use advancedReview.daily_calories
     // so AI plans at the user's actual deficit target, not the DB maintenance value
-    calorieTarget: calorieTarget ?? advancedReview?.daily_calories ?? undefined,
+    calorieTarget: calorieTarget ?? advancedReview?.daily_calories ?? (() => {
+      const goal = primaryGoal ?? '';
+      if (goal.includes('loss') || goal.includes('cut')) return 1800;
+      if (goal.includes('gain') || goal.includes('bulk')) return 2800;
+      return 2200; // maintenance
+    })(),
     mealsPerDay,
     daysCount,
 
@@ -460,8 +475,10 @@ export function transformForWorkoutRequest(
   const primaryGoal = FITNESS_GOAL_MAP[rawGoal] || "maintenance";
 
   // Get available equipment and map to API format
-  const rawEquipment = workoutPreferences?.equipment ||
-    fitnessGoals.preferred_equipment || ["bodyweight"];
+  // Empty arrays are truthy, so check .length to ensure bodyweight fallback fires
+  const rawEquipment = (workoutPreferences?.equipment?.length ? workoutPreferences.equipment : null)
+    || (fitnessGoals.preferred_equipment?.length ? fitnessGoals.preferred_equipment : null)
+    || ["bodyweight"];
 
   const equipment = rawEquipment
     .map((eq) => EQUIPMENT_MAP[eq.toLowerCase()] || eq)
@@ -484,14 +501,14 @@ export function transformForWorkoutRequest(
     workoutPreferences?.preferred_workout_times?.[0] || "morning";
 
   // ✅ NEW: Build weekly plan object (ALWAYS REQUIRED - NO FALLBACK)
-  const workoutsPerWeek = workoutPreferences?.workout_frequency_per_week || 3;
+  const workoutsPerWeek = workoutPreferences?.workout_frequency_per_week ?? undefined;
   const preferredDays = getWorkoutDaysFromPreferences(
     workoutPreferences,
     workoutsPerWeek,
   );
 
   const weeklyPlan = {
-    workoutsPerWeek: workoutsPerWeek,
+    workoutsPerWeek: workoutsPerWeek ?? 3,
     preferredDays: preferredDays,
     workoutTypes: workoutPreferences?.workout_types || [],
     prefersVariety: workoutPreferences?.prefers_variety || false,
@@ -514,12 +531,12 @@ export function transformForWorkoutRequest(
     profile: {
       age: personalInfo.age,
       gender: mappedGender,
-      weight: resolvedCurrentWeight.value ?? personalInfo.weight ?? 70,
-      height: bodyMetrics?.height_cm ?? personalInfo.height ?? 170,
+      weight: resolvedCurrentWeight.value ?? personalInfo.weight ?? null,
+      height: bodyMetrics?.height_cm ?? personalInfo.height ?? null,
       fitnessGoal: primaryGoal,
       experienceLevel: experienceLevel,
       availableEquipment: equipment,
-      workoutDuration: options?.duration ?? workoutPreferences?.time_preference ?? 45,
+      workoutDuration: options?.duration ?? workoutPreferences?.time_preference ?? undefined,
       injuries: injuries,
       medications: medications,
       // GAP-04: medicalConditions and stressLevel were missing — Worker safety filter needs them
@@ -563,6 +580,7 @@ export function transformWorkoutResponseToWeeklyPlan(
   response: WorkersResponse<WorkoutPlan>,
   weekNumber: number = 1,
   workoutPreferences?: WorkoutPreferences,
+  userWeightKg?: number,
 ): WeeklyWorkoutPlan | null {
   if (!response.success || !response.data) {
     console.error("[Transformer] Workout response failed:", response.error);
@@ -573,7 +591,7 @@ export function transformWorkoutResponseToWeeklyPlan(
 
   // Create workout for multiple days based on the generated workout
   const workouts: Workout[] = [];
-  const workoutsPerWeek = workoutPreferences?.workout_frequency_per_week || 3;
+  const workoutsPerWeek = workoutPreferences?.workout_frequency_per_week ?? 3;
   const workoutDays = getWorkoutDaysFromPreferences(
     workoutPreferences,
     workoutsPerWeek,
@@ -597,8 +615,8 @@ export function transformWorkoutResponseToWeeklyPlan(
         | "pilates"
         | "hybrid",
       difficulty: mapDifficulty(workoutPlan.difficulty),
-      duration: workoutPlan.totalDuration || workoutPlan.duration || 30,
-      estimatedCalories: calculateEstimatedCalories(workoutPlan),
+      duration: workoutPlan.totalDuration ?? workoutPlan.duration ?? 0,
+      estimatedCalories: calculateEstimatedCalories(workoutPlan, userWeightKg),
       exercises: transformExercises(workoutPlan),
       equipment: extractEquipment(workoutPlan),
       targetMuscleGroups: extractTargetMuscles(workoutPlan),
@@ -682,14 +700,11 @@ export function transformDietResponseToWeeklyPlan(
           const nutrition = food.nutrition || {};
           const calories =
             nutrition.calories || food.calories || 0;
+          // Normalize carb field name at intake point (backend may send 'carbs' or 'carbohydrates')
+          const carbs = nutrition.carbohydrates ?? nutrition.carbs ?? food.carbohydrates ?? food.carbs ?? 0;
           const macros = {
             protein: nutrition.protein || food.protein || 0,
-            carbohydrates:
-              nutrition.carbs ||
-              nutrition.carbohydrates ||
-              food.carbs ||
-              food.carbohydrates ||
-              0,
+            carbohydrates: carbs,
             fat:
               nutrition.fats ||
               nutrition.fat ||
@@ -708,7 +723,7 @@ export function transformDietResponseToWeeklyPlan(
             nutrition: {
               calories,
               macros,
-              servingSize: parseFloat(String(food.quantity)) || 100,
+              servingSize: (() => { const rawQty = parseFloat(String(food.quantity)); return (!isNaN(rawQty) && rawQty > 0) ? rawQty : 100; })(),
               servingUnit: food.unit || "g",
             },
             allergens: [],
@@ -732,10 +747,11 @@ export function transformDietResponseToWeeklyPlan(
 
       // Map backend totalNutrition to frontend totalMacros
       const totalNutrition = meal.totalNutrition || {};
+      // Normalize carb field name at intake point (backend may send 'carbs' or 'carbohydrates')
+      const totalCarbs = totalNutrition.carbohydrates ?? totalNutrition.carbs ?? 0;
       const totalMacros = {
         protein: totalNutrition.protein || 0,
-        carbohydrates:
-          totalNutrition.carbs || totalNutrition.carbohydrates || 0,
+        carbohydrates: totalCarbs,
         fat: totalNutrition.fats || totalNutrition.fat || 0,
         fiber: totalNutrition.fiber || 0,
         sugar: totalNutrition.sugar || 0,
@@ -840,10 +856,10 @@ function mapDifficulty(
   return diffMap[difficulty?.toLowerCase() || ""] || "intermediate";
 }
 
-function calculateEstimatedCalories(workout: WorkoutPlan): number {
+function calculateEstimatedCalories(workout: WorkoutPlan, userWeightKg?: number): number {
   // BUG-58: Use MET × duration estimate instead of always returning 0
   // Actual calories are recalculated with real user weight at workout completion
-  const durationHours = ((workout.totalDuration || workout.duration || 30)) / 60;
+  const durationHours = ((workout.totalDuration ?? workout.duration ?? 0)) / 60;
   const difficulty = workout.difficulty?.toLowerCase() || 'intermediate';
   const metByDifficulty: Record<string, number> = {
     beginner: 4,
@@ -851,8 +867,8 @@ function calculateEstimatedCalories(workout: WorkoutPlan): number {
     advanced: 8,
   };
   const met = metByDifficulty[difficulty] ?? 6;
-  // Use 70 kg as a reference weight for pre-generation estimates
-  return Math.round(met * 70 * durationHours);
+  // 70kg = WHO reference weight when actual weight unavailable
+  return Math.round(met * (userWeightKg ?? 70) * durationHours);
 }
 
 function transformExercises(workout: WorkoutPlan): any[] {

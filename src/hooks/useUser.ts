@@ -140,6 +140,7 @@ export const useUser = (): UseUserReturn => {
  * Returns current profile or null
  */
 export const useUserProfile = (): AdaptedUserProfile | null => {
+  // PERF: could use store selector directly instead of full useUser()
   const { profile } = useUser();
   return profile;
 };

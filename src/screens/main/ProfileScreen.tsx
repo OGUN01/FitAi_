@@ -84,6 +84,26 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
     handleUnitsSelect,
     handleClearCache,
   } = useProfileLogic();
+
+  // ========== SCREEN DEBUG LOG ==========
+  React.useEffect(() => {
+    console.warn(`\n${'='.repeat(60)}`);
+    console.warn(`👤 [SCREEN DEBUG] ProfileScreen MOUNTED`);
+    console.warn(`${'='.repeat(60)}`);
+    console.warn(`👤 Name: ${userName} | Authenticated: ${isAuthenticated} | Guest: ${isGuestMode}`);
+    console.warn(`📅 Member Since: ${memberSince}`);
+    console.warn(`📊 Stats: Workouts=${userStats?.totalWorkouts ?? 0} | Calories=${userStats?.totalCaloriesBurned ?? 0} | Streak=${userStats?.currentStreak ?? 0}`);
+    console.warn(`📋 Profile loaded: ${!!profile}`);
+    if (profile) {
+      console.warn(`  PersonalInfo: Age=${(profile.personalInfo as any)?.age} | Gender=${(profile.personalInfo as any)?.gender}`);
+      console.warn(`  Goals: [${(profile.fitnessGoals as any)?.primary_goals?.join(', ') || 'none'}]`);
+      console.warn(`  Body: Height=${(profile.bodyMetrics as any)?.height_cm}cm | Weight=${(profile.bodyMetrics as any)?.current_weight_kg}kg`);
+      console.warn(`  Diet: ${(profile.dietPreferences as any)?.diet_type || '(none)'}`);
+      console.warn(`  Workout: Location=${(profile.workoutPreferences as any)?.location} | Intensity=${(profile.workoutPreferences as any)?.intensity}`);
+    }
+    console.warn(`${'='.repeat(60)}\n`);
+  }, []);
+
   React.useEffect(() => {
     const requestedSettingsScreen = route?.params?.settingsScreen;
     if (!requestedSettingsScreen) return;

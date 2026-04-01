@@ -32,12 +32,13 @@ interface State {
   hasError: boolean;
   error: Error | null;
   errorInfo: React.ErrorInfo | null;
+  retryCount: number;
 }
 
 export class ErrorBoundary extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
+    this.state = { hasError: false, error: null, errorInfo: null, retryCount: 0 };
   }
 
   static getDerivedStateFromError(error: Error): Partial<State> {
@@ -47,6 +48,26 @@ export class ErrorBoundary extends React.Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Store error info for display
     this.setState({ errorInfo });
+
+    // Auto-retry once for transient module-loading / Hermes ReferenceErrors
+    // (e.g. "Property 'rh' doesn't exist" from stale Metro cache)
+    // Use setTimeout(0) so React finishes the current error-commit cycle
+    // before we clear the error state and attempt a re-render.
+    if (
+      this.state.retryCount < 1 &&
+      error instanceof ReferenceError &&
+      error.message?.includes("doesn't exist")
+    ) {
+      setTimeout(() => {
+        this.setState((prev) => ({
+          hasError: false,
+          error: null,
+          errorInfo: null,
+          retryCount: prev.retryCount + 1,
+        }));
+      }, 0);
+      return;
+    }
 
     // Suppress Metro symbolication errors from console
     if (
@@ -72,7 +93,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   handleRestart = () => {
-    this.setState({ hasError: false, error: null, errorInfo: null });
+    this.setState({ hasError: false, error: null, errorInfo: null, retryCount: 0 });
   };
 
   render() {

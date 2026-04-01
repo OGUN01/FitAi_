@@ -37,12 +37,12 @@ export function mapToCalculatedMetrics(
         max: advancedReview.target_hr_fat_burn_max,
       },
       cardio: {
-        min: advancedReview.target_hr_cardio_min || 0,
-        max: advancedReview.target_hr_cardio_max || 0,
+        min: (advancedReview.target_hr_cardio_min ?? 0) as number,
+        max: (advancedReview.target_hr_cardio_max ?? 0) as number,
       },
       peak: {
-        min: advancedReview.target_hr_peak_min || 0,
-        max: advancedReview.target_hr_peak_max || 0,
+        min: (advancedReview.target_hr_peak_min ?? 0) as number,
+        max: (advancedReview.target_hr_peak_max ?? 0) as number,
       },
     };
   }
@@ -73,8 +73,8 @@ export function mapToCalculatedMetrics(
     dailyWaterML: (() => {
       const weight = bodyAnalysis?.current_weight_kg;
       const activity = (workoutPreferences?.activity_level ?? "sedentary") as ActivityLevel;
-      const climate = ((advancedReview as any)?.detected_climate ?? "temperate") as ClimateType;
-      if (weight && weight > 0) {
+      const climate = (advancedReview as any)?.detected_climate as ClimateType | undefined;
+      if (weight && weight > 0 && climate) {
         return waterCalculator.calculate(weight, activity, climate);
       }
       return advancedReview?.daily_water_ml ?? null;

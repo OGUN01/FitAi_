@@ -226,6 +226,7 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
 
         // Merge latest logged weight into bodyAnalysis so currentWeightKg
         // reflects actual tracked weight rather than the static onboarding value.
+        // SSOT: uses resolveCurrentWeightForUser for DB-backed resolution
         const resolvedCurrentWeight = await resolveCurrentWeightForUser(userId, {
           bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
         });

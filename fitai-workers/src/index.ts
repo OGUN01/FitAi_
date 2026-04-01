@@ -15,7 +15,6 @@ import { handleDietGeneration } from './handlers/dietGeneration';
 import { handleChat, handleGetConversationHistory, handleGetConversations } from './handlers/chatHandler';
 import { handleExerciseSearch } from './handlers/exerciseSearch';
 import { handleMediaServe, handleMediaUpload, handleMediaDelete } from './handlers/mediaHandler';
-import { handleDebugTest } from './handlers/debugTest';
 import { handleAnalytics } from './handlers/analytics';
 import { handleFoodRecognition } from './handlers/foodRecognition';
 import { handleNutritionEstimate } from './handlers/nutritionEstimate';
@@ -316,9 +315,6 @@ app.get('/test/rate-limit', rateLimitMiddleware(RATE_LIMITS.GUEST), (c) => {
 		},
 	});
 });
-// Debug endpoint to test Supabase connection
-app.get('/debug/supabase', handleDebugTest);
-
 // ============================================================================
 // API ENDPOINTS
 // ============================================================================

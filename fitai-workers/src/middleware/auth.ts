@@ -154,6 +154,7 @@ export async function optionalAuthMiddleware(
   } catch (error) {
     // Silently ignore auth errors for optional auth
     // Continue without user context
+    console.warn('[Auth] Optional auth failed:', error instanceof Error ? error.message : String(error));
   }
 
   // Continue to next handler

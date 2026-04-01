@@ -93,7 +93,7 @@ export function mapDifficulty(
   return diffMap[difficulty?.toLowerCase() || ""] || "intermediate";
 }
 
-export function calculateEstimatedCalories(workout: WorkoutPlan): number {
+export function calculateEstimatedCalories(workout: WorkoutPlan, userWeightKg?: number): number {
   // BUG-58: Use MET × duration estimate instead of always returning 0
   // Actual calories are recalculated with real user weight at workout completion
   const durationHours = ((workout.totalDuration || workout.duration || 30)) / 60;
@@ -104,8 +104,9 @@ export function calculateEstimatedCalories(workout: WorkoutPlan): number {
     advanced: 8,
   };
   const met = metByDifficulty[difficulty] ?? 6;
-  // Use 70 kg as a reference weight for pre-generation estimates
-  return Math.round(met * 70 * durationHours);
+  // Use actual user weight when available, fallback to 70 kg reference for pre-generation estimates
+  const weight = userWeightKg && userWeightKg > 0 ? userWeightKg : 70;
+  return Math.round(met * weight * durationHours);
 }
 
 export function transformExercises(workout: WorkoutPlan): any[] {

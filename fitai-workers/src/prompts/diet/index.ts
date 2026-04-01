@@ -30,6 +30,26 @@ import {
 import { UserHealthMetrics } from '../../services/userMetricsService';
 
 // ============================================================================
+// PROMPT INJECTION SANITIZATION HELPERS
+// ============================================================================
+
+/**
+ * Sanitize a free-text field before injecting into an AI prompt.
+ * Strips markdown control characters, newlines, and limits length.
+ */
+function sanitizePromptField(value: string | undefined | null): string {
+	if (!value) return '';
+	return value.replace(/[*_`#\[\]\{\}]/g, '').replace(/\n/g, ' ').slice(0, 150);
+}
+
+/**
+ * Sanitize an array of free-text strings before injecting into an AI prompt.
+ */
+function sanitizePromptArray(arr: string[] | undefined | null): string[] {
+	return (arr ?? []).map(sanitizePromptField).filter((s) => s.length > 0);
+}
+
+// ============================================================================
 // PLACEHOLDER BUILDER
 // ============================================================================
 
@@ -77,17 +97,18 @@ export function buildPlaceholdersFromUserData(
 		BMI: metrics.calculated_bmi || 0,
 		BMI_CATEGORY: metrics.bmi_category || 'Unknown',
 		// BUG-95: UserProfileContext uses snake_case fitness_goal, not camelCase fitnessGoal
-		FITNESS_GOAL: profile?.fitness_goal || 'maintenance',
+		// Sanitized to prevent prompt injection via user-supplied goal text
+		FITNESS_GOAL: sanitizePromptField(profile?.fitness_goal) || 'maintenance',
 
 		// Preferences
 		COOKING_METHODS: prefs?.cooking_methods || [],
 		MEALS_ENABLED: getEnabledMealsList(prefs ?? undefined),
 		MEAL_EXCLUSION_INSTRUCTIONS: getMealExclusionInstructions(prefs ?? undefined),
 
-		// Medical conditions
-		MEDICAL_CONDITIONS: bodyContext?.medical_conditions || [],
-		MEDICATIONS: bodyContext?.medications || [],
-		PHYSICAL_LIMITATIONS: bodyContext?.physical_limitations || [],
+		// Medical conditions (sanitized to prevent prompt injection)
+		MEDICAL_CONDITIONS: sanitizePromptArray(bodyContext?.medical_conditions),
+		MEDICATIONS: sanitizePromptArray(bodyContext?.medications),
+		PHYSICAL_LIMITATIONS: sanitizePromptArray(bodyContext?.physical_limitations),
 		PREGNANCY_STATUS: bodyContext?.pregnancy_status ?? false,
 		PREGNANCY_TRIMESTER: bodyContext?.pregnancy_trimester,
 		BREASTFEEDING_STATUS: bodyContext?.breastfeeding_status ?? false,
@@ -208,16 +229,18 @@ function buildPlanStructureRequirements(
 			: '';
 	const clinicalContext = [
 		p.MEDICATIONS.length > 0
-			? `- Check ingredient and timing conflicts for these medications/supplements: ${p.MEDICATIONS.join(', ')}`
+			? `- Check ingredient and timing conflicts for these medications/supplements: ${sanitizePromptArray(p.MEDICATIONS).join(', ')}`
 			: '',
-		p.PREGNANCY_STATUS
-			? `- This user is pregnant${p.PREGNANCY_TRIMESTER ? ` (trimester ${p.PREGNANCY_TRIMESTER})` : ''}; avoid unsafe foods, avoid aggressive calorie restriction, and prioritise iron, folate, calcium, choline, DHA, and hydration`
+		p.PREGNANCY_STATUS && p.PREGNANCY_TRIMESTER && [1, 2, 3].includes(Number(p.PREGNANCY_TRIMESTER))
+			? `- This user is pregnant (trimester ${Number(p.PREGNANCY_TRIMESTER)}); avoid unsafe foods, avoid aggressive calorie restriction, and prioritise iron, folate, calcium, choline, DHA, and hydration`
+			: p.PREGNANCY_STATUS
+			? `- This user is pregnant. Apply full pregnancy safety guidelines for all trimesters. Avoid high-mercury fish, raw foods, excess vitamin A, alcohol, and high-intensity exercises. Prioritise iron, folate, calcium, choline, DHA, and hydration.`
 			: '',
 		p.BREASTFEEDING_STATUS
 			? '- This user is breastfeeding; prioritise hydration, adequate calories, calcium, iodine, DHA, and protein'
 			: '',
 		p.PHYSICAL_LIMITATIONS.length > 0
-			? `- Keep meal prep realistic for these physical limitations: ${p.PHYSICAL_LIMITATIONS.join(', ')}`
+			? `- Keep meal prep realistic for these physical limitations: ${sanitizePromptArray(p.PHYSICAL_LIMITATIONS).join(', ')}`
 			: '',
 		p.STRESS_LEVEL === 'high'
 			? '- Stress level is high; avoid overly restrictive meals and favour stable energy, magnesium-rich foods, and recovery-friendly meal timing'

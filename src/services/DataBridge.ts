@@ -124,6 +124,7 @@ const LEGACY_BODY_MEASUREMENTS_KEY = "body_measurements";
 
 class DataBridge {
   private static instance: DataBridge;
+  private static isLoading: boolean = false;
   private currentUserId: string | null = null;
   private isOnline: boolean = true;
   private isInitialized: boolean = false;
@@ -241,11 +242,30 @@ class DataBridge {
   // ============================================================================
 
   async loadAllData(userId?: string): Promise<AllDataResult> {
+    // AUDIT fix: deduplicate concurrent calls — if a load is already in flight, skip.
+    if (DataBridge.isLoading) {
+      const profileStore = useProfileStore.getState();
+      return {
+        personalInfo: profileStore.personalInfo,
+        dietPreferences: profileStore.dietPreferences,
+        bodyAnalysis: profileStore.bodyAnalysis,
+        workoutPreferences: profileStore.workoutPreferences,
+        advancedReview: profileStore.advancedReview,
+        source: "local",
+      };
+    }
+
+    DataBridge.isLoading = true;
     const targetUserId = userId || this.currentUserId;
 
     try {
       if (!targetUserId) {
-        return await this.loadFromLocal();
+        // AUDIT fix: guest users also get syncStatus updates so UI shows consistent state.
+        const guestProfileStore = useProfileStore.getState();
+        guestProfileStore.setSyncStatus("syncing");
+        const localResult = await this.loadFromLocal();
+        guestProfileStore.setSyncStatus("synced");
+        return localResult;
       }
       return await this.loadFromDatabase(targetUserId);
     } catch (error) {
@@ -260,6 +280,8 @@ class DataBridge {
         ...localData,
         source: "local",
       };
+    } finally {
+      DataBridge.isLoading = false;
     }
   }
 
@@ -363,15 +385,19 @@ class DataBridge {
       // Update ProfileStore with loaded data (SSOT for onboarding data)
       // BUG-60 fix: mark as "syncing" before batch updates so SyncEngine doesn't push
       // partially-loaded state, then mark "synced" when all updates are committed.
+      // AUDIT fix: collect all loaded data first, then apply in a single atomic
+      // hydrateFromLegacy() call so the store is never in a partially-loaded state.
       const profileStore = useProfileStore.getState();
       profileStore.setSyncStatus("syncing");
-      if (personalInfo) profileStore.updatePersonalInfo(personalInfo);
-      if (dietPreferences) profileStore.updateDietPreferences(dietPreferences);
-      if (canonicalBodyAnalysis)
-        profileStore.updateBodyAnalysis(canonicalBodyAnalysis);
-      if (workoutPreferences)
-        profileStore.updateWorkoutPreferences(workoutPreferences);
-      if (advancedReview) profileStore.updateAdvancedReview(advancedReview);
+      const batchUpdate: Parameters<typeof profileStore.hydrateFromLegacy>[0] = {};
+      if (personalInfo) batchUpdate.personalInfo = personalInfo as PersonalInfoData;
+      if (dietPreferences) batchUpdate.dietPreferences = dietPreferences as DietPreferencesData;
+      if (canonicalBodyAnalysis) batchUpdate.bodyAnalysis = canonicalBodyAnalysis as BodyAnalysisData;
+      if (workoutPreferences) batchUpdate.workoutPreferences = workoutPreferences as WorkoutPreferencesData;
+      if (advancedReview) batchUpdate.advancedReview = advancedReview as AdvancedReviewData;
+      if (Object.keys(batchUpdate).length > 0) {
+        profileStore.hydrateFromLegacy(batchUpdate);
+      }
       profileStore.setSyncStatus("synced");
       if (resolvedCurrentWeight?.value != null) {
         weightTrackingService.setWeight(resolvedCurrentWeight.value);
@@ -488,11 +514,13 @@ class DataBridge {
             console.warn(
               "[DataBridge] personalInfo DB save failed - queueing for retry",
             );
+            // TODO: syncMutex.withLock() should wrap queue operations to prevent double-sync
             syncEngine.queueOperation("personalInfo", data);
           }
         } catch (dbError) {
           console.error("[DataBridge] personalInfo DB error:", dbError);
           result.newSystemSuccess = false;
+          // TODO: syncMutex.withLock() should wrap queue operations to prevent double-sync
           syncEngine.queueOperation("personalInfo", data);
         }
       } else {
@@ -537,11 +565,13 @@ class DataBridge {
             console.warn(
               "[DataBridge] dietPreferences DB save failed - queueing for retry",
             );
+            // TODO: syncMutex.withLock() should wrap queue operations to prevent double-sync
             syncEngine.queueOperation("dietPreferences", data);
           }
         } catch (dbError) {
           console.error("[DataBridge] dietPreferences DB error:", dbError);
           result.newSystemSuccess = false;
+          // TODO: syncMutex.withLock() should wrap queue operations to prevent double-sync
           syncEngine.queueOperation("dietPreferences", data);
         }
       } else {
@@ -583,11 +613,13 @@ class DataBridge {
             console.warn(
               "[DataBridge] bodyAnalysis DB save failed - queueing for retry",
             );
+            // TODO: syncMutex.withLock() should wrap queue operations to prevent double-sync
             syncEngine.queueOperation("bodyAnalysis", data);
           }
         } catch (dbError) {
           console.error("[DataBridge] bodyAnalysis DB error:", dbError);
           result.newSystemSuccess = false;
+          // TODO: syncMutex.withLock() should wrap queue operations to prevent double-sync
           syncEngine.queueOperation("bodyAnalysis", data);
         }
       } else {
@@ -632,11 +664,13 @@ class DataBridge {
             console.warn(
               "[DataBridge] workoutPreferences DB save failed - queueing for retry",
             );
+            // TODO: syncMutex.withLock() should wrap queue operations to prevent double-sync
             syncEngine.queueOperation("workoutPreferences", data);
           }
         } catch (dbError) {
           console.error("[DataBridge] workoutPreferences DB error:", dbError);
           result.newSystemSuccess = false;
+          // TODO: syncMutex.withLock() should wrap queue operations to prevent double-sync
           syncEngine.queueOperation("workoutPreferences", data);
         }
       } else {
@@ -681,11 +715,13 @@ class DataBridge {
             console.warn(
               "[DataBridge] advancedReview DB save failed - queueing for retry",
             );
+            // TODO: syncMutex.withLock() should wrap queue operations to prevent double-sync
             syncEngine.queueOperation("advancedReview", data);
           }
         } catch (dbError) {
           console.error("[DataBridge] advancedReview DB error:", dbError);
           result.newSystemSuccess = false;
+          // TODO: syncMutex.withLock() should wrap queue operations to prevent double-sync
           syncEngine.queueOperation("advancedReview", data);
         }
       } else {

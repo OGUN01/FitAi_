@@ -106,7 +106,7 @@ export const buildLegacyDietPreferences = (
     restrictions: dietPreferences.restrictions || [],
     diet_type: dietPreferences.diet_type,
     dietType: dietPreferences.diet_type,
-    dislikes: (legacyProfile?.dietPreferences as any)?.dislikes || [],
+    dislikes: (legacyProfile?.dietPreferences as (typeof legacyProfile.dietPreferences & { dislikes?: string[] }) | undefined)?.dislikes || [],
   };
 };
 

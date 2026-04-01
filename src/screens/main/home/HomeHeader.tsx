@@ -3,7 +3,7 @@
  * Premium header with greeting, date, weather-style summary
  */
 
-import React, { useMemo } from "react";
+import React from "react";
 import { View, Text, StyleSheet, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -38,8 +38,8 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
   onNotificationPress,
   notificationCount = 0,
 }) => {
-  const { greeting, icon, gradientColors } = useMemo(() => {
-    const hour = new Date().getHours();
+  const hour = new Date().getHours();
+  const { greeting, icon, gradientColors } = (() => {
     if (hour >= 5 && hour < 12) {
       return {
         greeting: "Good morning",
@@ -59,16 +59,13 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
       icon: "moon" as const,
       gradientColors: [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark] as [string, string],
     };
-  }, []);
+  })();
 
-  const todayDate = useMemo(() => {
-    const date = new Date();
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "short",
-      day: "numeric",
-    });
-  }, []);
+  const todayDate = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
 
   return (
     <View style={styles.container}>
@@ -89,7 +86,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
             end={{ x: 1, y: 1 }}
             style={[styles.avatarGradient, Platform.OS !== 'web' && avatarGradientShadow]}
           >
-            <Text style={styles.avatarText}>{userInitial.toUpperCase()}</Text>
+            <Text style={styles.avatarText}>{(userInitial || '').toUpperCase()}</Text>
           </LinearGradient>
         </AnimatedPressable>
 

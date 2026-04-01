@@ -146,7 +146,7 @@ export interface FitnessGoals {
 // Diet Preferences (from diet_preferences table)
 export interface DietPreferences {
   // Basic diet info
-  diet_type: "vegetarian" | "vegan" | "non-veg" | "pescatarian"; // REQUIRED (snake_case)
+  diet_type: "vegetarian" | "vegan" | "non-veg" | "pescatarian" | "balanced"; // REQUIRED (snake_case)
   allergies: string[]; // TEXT[] - REQUIRED (can be empty array)
   restrictions: string[]; // TEXT[] - REQUIRED (can be empty array)
   cuisine_preferences?: string[];
@@ -206,10 +206,20 @@ export interface WorkoutPreferences {
   intensity: "beginner" | "intermediate" | "advanced";
   workout_types: string[]; // TEXT[] - database field name
   primary_goals: string[]; // TEXT[] - database field name
-  activity_level: string; // TEXT - database field name
+  activity_level?: string; // TEXT - database field name
   workout_frequency_per_week?: number; // INTEGER - how many days per week
+  workout_experience_years?: number;
   preferred_workout_times?: string[]; // TEXT[] - e.g., ['monday', 'wednesday', 'friday']
+  enjoys_cardio?: boolean;
+  enjoys_strength_training?: boolean;
+  enjoys_group_classes?: boolean;
+  prefers_outdoor_activities?: boolean;
+  needs_motivation?: boolean;
   prefers_variety?: boolean; // Whether user prefers variety in workouts
+  can_do_pushups?: number;
+  can_run_minutes?: number;
+  flexibility_level?: string;
+  weekly_weight_loss_goal?: number;
 
   // Backward compatibility - computed from snake_case fields
   timePreference?: number;
@@ -277,7 +287,7 @@ export interface OnboardingData {
   personalInfo: PersonalInfo;
   fitnessGoals: FitnessGoals;
   dietPreferences?: {
-    dietType: "vegetarian" | "vegan" | "non-veg" | "pescatarian";
+    dietType: "vegetarian" | "vegan" | "non-veg" | "pescatarian" | "balanced";
     allergies: string[];
     cuisinePreferences: string[];
     restrictions: string[];
@@ -289,7 +299,7 @@ export interface OnboardingData {
     intensity: "beginner" | "intermediate" | "advanced";
     workout_types: string[];
     primary_goals: string[];
-    activity_level: string;
+    activity_level?: string;
   };
   bodyAnalysis?: {
     photos: {

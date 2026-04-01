@@ -15,10 +15,10 @@ export function useCookingTimer() {
     setCookingTimer(totalSeconds);
     endTimeRef.current = Date.now() + totalSeconds * 1000;
 
-    const interval = setInterval(() => {
+    timerIntervalRef.current = setInterval(() => {
       const remaining = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
       if (remaining <= 0) {
-        clearInterval(interval);
+        if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
         timerIntervalRef.current = null;
         setCookingTimer(null);
         crossPlatformAlert("Timer Complete!", "Your cooking step is ready.");
@@ -26,8 +26,6 @@ export function useCookingTimer() {
         setCookingTimer(remaining);
       }
     }, 1000);
-
-    timerIntervalRef.current = interval;
   };
 
   const stopTimer = () => {

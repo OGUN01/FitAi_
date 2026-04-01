@@ -56,10 +56,14 @@ export async function generateWorkout(
       };
     }
 
+    const userWeight = resolveCurrentWeightFromStores({
+      bodyAnalysisWeight: preferences.bodyMetrics?.current_weight_kg,
+    }).value;
     const weeklyPlan = transformWorkoutResponseToWeeklyPlan(
       response,
       1,
       preferences.workoutPreferences,
+      userWeight ?? undefined,
     );
     const workout = weeklyPlan?.workouts[0];
 
@@ -99,7 +103,7 @@ export async function generateWeeklyWorkoutPlan(
       options.workoutPreferences,
       {
         requestWeeklyPlan: true,
-        duration: options.workoutPreferences?.time_preference || 30,
+        duration: options.workoutPreferences?.time_preference ?? 30,
         currentWeightKg: resolveCurrentWeightFromStores({
           bodyAnalysisWeight: options.bodyMetrics?.current_weight_kg,
         }).value,

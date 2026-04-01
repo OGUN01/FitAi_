@@ -80,7 +80,7 @@ export const useMealCard = ({
   const pressed = useSharedValue(0);
 
   // Get meal type config
-  const mealConfig = mealTypeGradients[meal.type] || mealTypeGradients.lunch;
+  const mealConfig = mealTypeGradients[meal?.type] ?? mealTypeGradients.lunch;
 
   // Get food items (items or foods alias)
   const foodItems: MealItem[] = meal.items || meal.foods || [];

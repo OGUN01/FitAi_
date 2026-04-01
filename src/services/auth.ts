@@ -34,6 +34,7 @@ class AuthService {
       id: string;
       email?: string | null;
       email_confirmed_at?: string | null;
+      created_at?: string;
     },
     fallbackLastLoginAt?: string,
   ): AuthUser {
@@ -42,6 +43,7 @@ class AuthService {
       email: user.email || "",
       isEmailVerified: user.email_confirmed_at !== null,
       lastLoginAt: fallbackLastLoginAt || new Date().toISOString(),
+      createdAt: user.created_at,
     };
   }
 
@@ -188,6 +190,14 @@ class AuthService {
     } catch (error) {
       console.error('âŒ Failed to remove cached auth session:', error);
     }
+
+    // Reset all Zustand stores to prevent data leaking across user sessions.
+    try {
+      const { clearAllUserData } = await import('../utils/clearUserData');
+      await clearAllUserData();
+    } catch (error) {
+      console.error('❌ Failed to clear store data on session clear:', error);
+    }
   }
 
   /**
@@ -240,6 +250,7 @@ class AuthService {
           email: data.user.email!,
           isEmailVerified: data.user.email_confirmed_at !== null,
           lastLoginAt: new Date().toISOString(),
+          createdAt: data.user.created_at,
         };
 
         // Only save session if email is verified OR if no session exists (email confirmation required)
@@ -293,10 +304,11 @@ class AuthService {
 
         // Check if error is related to email verification
         if (
-          error.message.includes('email') ||
-          error.message.includes('confirm') ||
-          error.message.includes('verify') ||
-          error.message.includes('not confirmed')
+          error.code === 'email_not_confirmed' ||
+          error.message?.includes('email') ||
+          error.message?.includes('confirm') ||
+          error.message?.includes('verify') ||
+          error.message?.includes('not confirmed')
         ) {
           return {
             success: false,
@@ -307,8 +319,10 @@ class AuthService {
 
         // Check for invalid login credentials
         if (
-          error.message.includes('Invalid login credentials') ||
-          error.message.includes('invalid_credentials')
+          error.code === 'invalid_credentials' ||
+          error.code === 'invalid_grant' ||
+          error.message?.includes('Invalid login credentials') ||
+          error.message?.includes('invalid_credentials')
         ) {
           return {
             success: false,

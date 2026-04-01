@@ -113,6 +113,7 @@ export function transformWorkoutResponseToWeeklyPlan(
   response: WorkersResponse<WorkoutPlan>,
   weekNumber: number = 1,
   workoutPreferences?: WorkoutPreferences,
+  userWeightKg?: number,
 ): WeeklyWorkoutPlan | null {
   if (!response.success || !response.data) {
     console.error("[Transformer] Workout response failed:", response.error);
@@ -144,7 +145,7 @@ export function transformWorkoutResponseToWeeklyPlan(
         | "hybrid",
       difficulty: mapDifficulty(workoutPlan.difficulty),
       duration: workoutPlan.totalDuration || workoutPlan.duration || 30,
-      estimatedCalories: calculateEstimatedCalories(workoutPlan),
+      estimatedCalories: calculateEstimatedCalories(workoutPlan, userWeightKg),
       exercises: transformExercises(workoutPlan),
       equipment: extractEquipment(workoutPlan),
       targetMuscleGroups: extractTargetMuscles(workoutPlan),

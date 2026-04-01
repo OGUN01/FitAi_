@@ -58,6 +58,7 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
 
   const mountedRef = useRef(true);
   useEffect(() => () => { mountedRef.current = false; }, []);
+  const lastTapRef = useRef(0);
 
   // Filter data based on selected period
   const getFilteredData = () => {
@@ -150,8 +151,12 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
 
   const trend = getTrend();
 
-  // Handle data point click
+  // Handle data point click (debounced to 300ms to prevent rapid-tap duplicates)
   const handleDataPointClick = (data: any) => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 300) return;
+    lastTapRef.current = now;
+
     const { value, index, x, y } = data;
 
     hapticSelection();

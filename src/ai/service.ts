@@ -112,8 +112,8 @@ class UnifiedAIService {
     );
   }
 
-  async checkMealPlanJobStatus(jobId: string, weekNumber: number = 1) {
-    return asyncJob.checkMealPlanJobStatus(jobId, weekNumber);
+  async checkMealPlanJobStatus(jobId: string, weekNumber: number = 1, attempts: number = 0) {
+    return asyncJob.checkMealPlanJobStatus(jobId, weekNumber, attempts);
   }
 
   async generateMotivationalContent(

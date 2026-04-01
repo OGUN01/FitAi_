@@ -44,16 +44,20 @@ export const useWearableConnection = () => {
 
   // Initialize on mount and check native module availability
   useEffect(() => {
+    let isMounted = true;
     const init = async () => {
       if (isAndroid) {
         const result = await initializeHealthConnect();
+        if (!isMounted) return;
         setNativeModuleAvailable(result || isHealthConnectAvailable);
       } else if (isIOS) {
         const result = await initializeHealthKit();
+        if (!isMounted) return;
         setNativeModuleAvailable(result || isHealthKitAvailable);
       }
     };
     init();
+    return () => { isMounted = false; };
   }, []);
 
   // Handle connect/disconnect toggle
@@ -222,7 +226,7 @@ export const useWearableConnection = () => {
     } finally {
       setRefreshing(false);
     }
-  }, [isConnected, isAndroid]);
+  }, [isConnected, isAndroid, syncFromHealthConnect, syncHealthData]);
 
   // Handle data type toggle
   const handleDataTypeToggle = (dataType: string, enabled: boolean) => {

@@ -220,7 +220,7 @@ export const Slider: React.FC<SliderProps> = ({
   });
 
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.container, disabled && styles.containerDisabled, style]}>
       {label && <Text style={styles.label}>{label}</Text>}
 
       <View style={styles.sliderContainer}>
@@ -293,6 +293,10 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.sm, // Reduced from md
   },
 
+  containerDisabled: {
+    opacity: 0.4,
+  },
+
   label: {
     fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: ResponsiveTheme.fontWeight.medium,
@@ -327,8 +331,6 @@ const styles = StyleSheet.create({
 
   activeTrack: {
     backgroundColor: ResponsiveTheme.colors.primary,
-    // Subtle inner shadow for depth
-    boxShadow: '0px 0px 4px rgba(255,107,53,0.3)',
   },
 
   // Refined thumb - smaller and cleaner
@@ -345,7 +347,10 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: ResponsiveTheme.colors.white,
     // Subtle shadow
-    boxShadow: '0px 2px 4px rgba(0,0,0,0.2)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
     elevation: 4,
   },
 
@@ -388,7 +393,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.primary,
     // Subtle shadow
-    boxShadow: '0px 1px 2px rgba(0,0,0,0.15)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
     elevation: 2,
   },
 

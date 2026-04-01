@@ -94,6 +94,9 @@ export interface AIServiceMetadata {
 // UNIFIED AI SERVICE (Connected to Cloudflare Workers)
 // ============================================================================
 
+// MAX_POLL_ATTEMPTS = 30 (at 6s interval = 3 minutes max)
+const MAX_POLL_ATTEMPTS = 30;
+
 class UnifiedAIService {
   private lastMetadata: AIServiceMetadata | null = null;
 
@@ -150,30 +153,41 @@ class UnifiedAIService {
 
       const response = await fitaiWorkersClient.generateWorkoutPlan(request);
 
+      // NOTE: Schemas in src/ai/schemas.ts are JSON Schema format (not Zod).
+      // Full response validation against WORKOUT_SCHEMA is not yet implemented here.
+      // Unknown or extra fields from the AI backend are passed through as-is.
+
       // Store metadata
       if (response.metadata) {
         this.lastMetadata = response.metadata as AIServiceMetadata;
       }
 
       if (!response.success || !response.data) {
+        console.error('[AIService] Workout generation failed — no fallback available:', response.error);
         return {
           success: false,
-          error: response.error || "Failed to generate workout",
+          error: response.error || 'Failed to generate workout. Please try again.',
+          retryable: true,
         };
       }
 
       // Transform to single workout
+      const userWeight = resolveCurrentWeightFromStores({
+        bodyAnalysisWeight: preferences?.bodyMetrics?.current_weight_kg,
+      }).value;
       const weeklyPlan = transformWorkoutResponseToWeeklyPlan(
         response,
         1,
         preferences?.workoutPreferences,
+        userWeight ?? undefined,
       );
       const workout = weeklyPlan?.workouts[0];
 
       if (!workout) {
         return {
           success: false,
-          error: "No workout generated",
+          error: 'No workout generated. Please try again.',
+          retryable: true,
         };
       }
 
@@ -217,9 +231,11 @@ class UnifiedAIService {
         this.lastMetadata = response.metadata as AIServiceMetadata;
       }
       if (!response.success || !response.data) {
+        console.error('[AIService] Meal generation failed — no fallback available:', response.error);
         return {
           success: false,
-          error: response.error || "Failed to generate meal",
+          error: response.error || 'Failed to generate meal. Please try again.',
+          retryable: true,
         };
       }
 
@@ -287,9 +303,11 @@ class UnifiedAIService {
       }
 
       if (!response.success || !response.data) {
+        console.error('[AIService] Daily meal plan generation failed — no fallback available:', response.error);
         return {
           success: false,
-          error: response.error || "Failed to generate daily meal plan",
+          error: response.error || 'Failed to generate daily meal plan. Please try again.',
+          retryable: true,
         };
       }
 
@@ -395,8 +413,7 @@ class UnifiedAIService {
         options?.workoutPreferences,
         {
           requestWeeklyPlan: true, // ✅ Always request weekly plan
-          // BUG-86: workout_duration is the numeric field; time_preference is Morning/Evening string
-          duration: options?.workoutPreferences?.workout_duration ?? 45,
+          duration: options?.workoutPreferences?.time_preference ?? 0,
           currentWeightKg: resolveCurrentWeightFromStores({
             bodyAnalysisWeight: options?.bodyMetrics?.current_weight_kg,
           }).value,
@@ -416,7 +433,8 @@ class UnifiedAIService {
         console.error("❌ [aiService] Backend returned error:", response.error);
         return {
           success: false,
-          error: response.error || "Failed to generate workout plan",
+          error: response.error || 'Failed to generate workout plan. Please try again.',
+          retryable: true,
         };
       }
 
@@ -497,7 +515,8 @@ class UnifiedAIService {
         console.error("❌ [aiService] Backend returned error:", response.error);
         return {
           success: false,
-          error: response.error || "Failed to generate meal plan",
+          error: response.error || 'Failed to generate meal plan. Please try again.',
+          retryable: true,
         };
       }
 
@@ -511,7 +530,8 @@ class UnifiedAIService {
       if (!weeklyPlan) {
         return {
           success: false,
-          error: "Failed to transform diet response",
+          error: 'Received meal plan data could not be processed. Please try regenerating.',
+          retryable: true,
         };
       }
 
@@ -626,11 +646,14 @@ class UnifiedAIService {
   }
 
   /**
-   * Check async job status and get result when completed
+   * Check async job status and get result when completed.
+   * Callers should pass a monotonically incrementing `attempts` counter.
+   * When attempts >= MAX_POLL_ATTEMPTS (30 × 6s = 3 min) this returns a timeout error.
    */
   async checkMealPlanJobStatus(
     jobId: string,
     weekNumber: number = 1,
+    attempts: number = 0,
   ): Promise<
     AIResponse<{
       status: "pending" | "processing" | "completed" | "failed" | "cancelled";
@@ -640,6 +663,11 @@ class UnifiedAIService {
     }>
   > {
     try {
+      if (attempts >= MAX_POLL_ATTEMPTS) {
+        // Cast needed: AIResponse doesn't have timedOut but callers can inspect it
+        return { success: false, error: 'Meal plan generation timed out. Please try again.', timedOut: true } as any;
+      }
+
       const response = await fitaiWorkersClient.getJobStatus(jobId);
 
       if (!response.success || !response.data) {
@@ -841,7 +869,7 @@ function transformWorkoutData(
     description: workoutPlan.description || "",
     category: "strength", // Default category
     difficulty: difficulty,
-    duration: workoutPlan.totalDuration || 30,
+    duration: workoutPlan.totalDuration ?? 0,
     estimatedCalories: workoutPlan.estimatedCalories || 0, // 0 = will be calculated at completion with user's real weight
     exercises: exercises,
     warmup: warmup,

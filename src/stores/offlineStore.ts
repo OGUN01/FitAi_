@@ -157,7 +157,7 @@ export const useOfflineStore = create<OfflineState>()(
 
         // Auto-sync when coming back online (if enabled)
         if (!wasOnline && isOnline && get().autoSyncEnabled) {
-          get().syncNow();
+          get().syncNow().catch(err => console.error('[OfflineStore] Auto-sync failed:', err));
         }
       },
 

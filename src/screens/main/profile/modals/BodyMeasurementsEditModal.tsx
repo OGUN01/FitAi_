@@ -261,28 +261,37 @@ export const BodyMeasurementsEditModal: React.FC<
   ]);
 
   const hasChanges = useCallback(() => {
+    // Use epsilon comparison to avoid false positives from float-to-string round-tripping
+    // e.g. user enters "15.5", stored value is 15.500000001 → strings differ but values are equal
+    const EPSILON = 0.01;
+    const floatChanged = (local: string, stored: number | null | undefined): boolean => {
+      if (!local && !stored) return false;
+      if (!local || stored == null) return true;
+      return Math.abs(parseFloat(local) - stored) > EPSILON;
+    };
+
     const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
     if (!profile?.bodyMetrics) {
       if (!bodyAnalysisData) return true;
       return (
-        height !== (bodyAnalysisData.height_cm?.toString() || "") ||
-        weight !== (bodyAnalysisData.current_weight_kg?.toString() || "") ||
-        targetWeight !== (bodyAnalysisData.target_weight_kg?.toString() || "") ||
-        bodyFat !== (bodyAnalysisData.body_fat_percentage?.toString() || "") ||
-        chest !== ((bodyAnalysisData.chest_cm && bodyAnalysisData.chest_cm > 0) ? bodyAnalysisData.chest_cm.toString() : "") ||
-        waist !== ((bodyAnalysisData.waist_cm && bodyAnalysisData.waist_cm > 0) ? bodyAnalysisData.waist_cm.toString() : "") ||
-        hips !== ((bodyAnalysisData.hip_cm && bodyAnalysisData.hip_cm > 0) ? bodyAnalysisData.hip_cm.toString() : "")
+        floatChanged(height, bodyAnalysisData.height_cm) ||
+        floatChanged(weight, bodyAnalysisData.current_weight_kg) ||
+        floatChanged(targetWeight, bodyAnalysisData.target_weight_kg) ||
+        floatChanged(bodyFat, bodyAnalysisData.body_fat_percentage) ||
+        floatChanged(chest, bodyAnalysisData.chest_cm) ||
+        floatChanged(waist, bodyAnalysisData.waist_cm) ||
+        floatChanged(hips, bodyAnalysisData.hip_cm)
       );
     }
     const bodyMetrics = profile.bodyMetrics;
     return (
-      height !== ((bodyAnalysisData?.height_cm && bodyAnalysisData.height_cm > 0) ? bodyAnalysisData.height_cm.toString() : (bodyMetrics?.height_cm?.toString() || "")) ||
-      weight !== ((bodyAnalysisData?.current_weight_kg && bodyAnalysisData.current_weight_kg > 0) ? bodyAnalysisData.current_weight_kg.toString() : (bodyMetrics?.current_weight_kg?.toString() || "")) ||
-      targetWeight !== ((bodyAnalysisData?.target_weight_kg && bodyAnalysisData.target_weight_kg > 0) ? bodyAnalysisData.target_weight_kg.toString() : (bodyMetrics?.target_weight_kg?.toString() || "")) ||
-      bodyFat !== ((bodyAnalysisData?.body_fat_percentage && bodyAnalysisData.body_fat_percentage > 0) ? bodyAnalysisData.body_fat_percentage.toString() : (bodyMetrics?.body_fat_percentage?.toString() || "")) ||
-      chest !== ((bodyAnalysisData?.chest_cm && bodyAnalysisData.chest_cm > 0) ? bodyAnalysisData.chest_cm.toString() : "") ||
-      waist !== ((bodyAnalysisData?.waist_cm && bodyAnalysisData.waist_cm > 0) ? bodyAnalysisData.waist_cm.toString() : "") ||
-      hips !== ((bodyAnalysisData?.hip_cm && bodyAnalysisData.hip_cm > 0) ? bodyAnalysisData.hip_cm.toString() : "")
+      floatChanged(height, bodyAnalysisData?.height_cm ?? bodyMetrics?.height_cm) ||
+      floatChanged(weight, bodyAnalysisData?.current_weight_kg ?? bodyMetrics?.current_weight_kg) ||
+      floatChanged(targetWeight, bodyAnalysisData?.target_weight_kg ?? bodyMetrics?.target_weight_kg) ||
+      floatChanged(bodyFat, bodyAnalysisData?.body_fat_percentage ?? bodyMetrics?.body_fat_percentage) ||
+      floatChanged(chest, bodyAnalysisData?.chest_cm) ||
+      floatChanged(waist, bodyAnalysisData?.waist_cm) ||
+      floatChanged(hips, bodyAnalysisData?.hip_cm)
     );
   }, [height, weight, targetWeight, bodyFat, chest, waist, hips, profile]);
 
@@ -371,15 +380,15 @@ export const BodyMeasurementsEditModal: React.FC<
                     ]}
                   />
                 </View>
-                {/* BMI Position Indicator */}
-                {bmi && (() => {
+                {/* BMI Position Indicator — only render once the bar width is known */}
+                {bmi && scaleBarWidth > 0 && (() => {
                   const bmiVal = parseFloat(bmi);
                   const pct = Math.min(100, Math.max(0, ((bmiVal - 15) / (40 - 15)) * 100));
                   return (
                     <View
                       style={[
                         styles.bmiIndicator,
-                        { left: scaleBarWidth > 0 ? (scaleBarWidth * pct) / 100 : 0 },
+                        { left: (scaleBarWidth * pct) / 100 },
                       ]}
                     />
                   );

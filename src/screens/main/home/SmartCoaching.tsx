@@ -290,12 +290,10 @@ export const SmartCoaching: React.FC<SmartCoachingProps> = React.memo((props) =>
       props.currentStreak,
       props.waterIntake,
       props.waterGoal,
+      props.caloriesConsumed,
+      props.caloriesGoal,
     ],
   );
-
-  if (recommendations.length === 0) {
-    return null; // Don't render if no recommendations
-  }
 
   return (
     <GlassCard
@@ -322,17 +320,24 @@ export const SmartCoaching: React.FC<SmartCoachingProps> = React.memo((props) =>
         </AnimatedPressable>
       </View>
 
-      {/* Recommendations */}
-      <View style={styles.recommendationsList}>
-        {recommendations.map((rec, index) => (
-          <RecommendationCard
-            key={rec.id}
-            recommendation={rec}
-            onPress={() => onTipPress?.(rec)}
-            index={index}
-          />
-        ))}
-      </View>
+      {recommendations.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Ionicons name="checkmark-circle-outline" size={rf(20)} color={ResponsiveTheme.colors.success} />
+          <Text style={styles.emptyStateText}>Great job! No adjustments needed today.</Text>
+        </View>
+      ) : (
+        /* Recommendations */
+        <View style={styles.recommendationsList}>
+          {recommendations.map((rec, index) => (
+            <RecommendationCard
+              key={rec.id}
+              recommendation={rec}
+              onPress={() => onTipPress?.(rec)}
+              index={index}
+            />
+          ))}
+        </View>
+      )}
     </GlassCard>
   );
 });
@@ -411,6 +416,18 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: rf(11),
     fontWeight: "700",
+  },
+  emptyState: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+  },
+  emptyStateText: {
+    fontSize: rf(13),
+    fontWeight: "500",
+    color: ResponsiveTheme.colors.textSecondary,
+    flex: 1,
   },
 });
 

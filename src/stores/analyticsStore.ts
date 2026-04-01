@@ -95,7 +95,7 @@ interface AnalyticsStore {
   initialize: () => Promise<void>;
   addDailyMetrics: (metrics: FitnessMetrics) => Promise<void>;
   generateAnalytics: (
-    period?: "week" | "month" | "quarter" | "year",
+    targetPeriod?: "week" | "month" | "quarter" | "year",
   ) => Promise<void>;
   setPeriod: (period: "week" | "month" | "quarter" | "year") => void;
   refreshAnalytics: () => Promise<void>;
@@ -238,8 +238,13 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
           const updatedHistory = analyticsEngine.getMetricsHistory();
           const updatedSummary = await analyticsEngine.getAnalyticsSummary();
 
+          // Prune metricsHistory to keep only the last 365 entries to prevent unbounded growth
+          const prunedHistory = updatedHistory.length > 365
+            ? updatedHistory.slice(-365)
+            : updatedHistory;
+
           set({
-            metricsHistory: updatedHistory,
+            metricsHistory: prunedHistory,
             analyticsSummary: updatedSummary,
           });
 
@@ -254,22 +259,22 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
       },
 
       // Generate comprehensive analytics
-      generateAnalytics: async (period = get().selectedPeriod) => {
+      generateAnalytics: async (targetPeriod = get().selectedPeriod) => {
         set({ isLoading: true });
 
         try {
-          logger.debug(`🔄 Generating ${period} analytics...`);
+          logger.debug(`🔄 Generating ${targetPeriod} analytics...`);
 
-          const analytics = await analyticsEngine.generateAnalytics(period);
+          const analytics = await analyticsEngine.generateAnalytics(targetPeriod);
 
           set({
             currentAnalytics: analytics,
-            selectedPeriod: period,
+            selectedPeriod: targetPeriod,
             isLoading: false,
           });
 
           logger.info("Analytics generated", {
-            period,
+            period: targetPeriod,
             score: analytics.overallScore,
           });
         } catch (error) {
@@ -573,7 +578,10 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
       // GAP-06: Load exercise_sets + exercise_prs from Supabase
       loadExerciseAnalytics: async (days = 90) => {
         const userId = getCurrentUserId();
-        if (!userId) return;
+        if (!userId) {
+          console.warn('[AnalyticsStore] loadExerciseAnalytics: no userId, skipping');
+          return;
+        }
 
         const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 

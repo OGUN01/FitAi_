@@ -46,6 +46,9 @@ const getTodayDateString = (): string => {
   return getLocalDateString();
 };
 
+// Module-level ref to cancel any pending Supabase retry timeout
+let syncRetryTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
 export const useHydrationStore = create<HydrationState>()(
   persist(
     (set, get) => ({
@@ -83,11 +86,17 @@ export const useHydrationStore = create<HydrationState>()(
 
       // Set daily goal (called when calculatedMetrics loads)
       setDailyGoal: (goalML: number) => {
+        if (!goalML || goalML <= 0) return;
         set({ dailyGoalML: goalML });
       },
 
       // Manual reset (for testing/debugging)
       resetDaily: () => {
+        // Cancel any pending retry timeout to prevent stale data overwriting the reset
+        if (syncRetryTimeoutId !== null) {
+          clearTimeout(syncRetryTimeoutId);
+          syncRetryTimeoutId = null;
+        }
         set({
           waterIntakeML: 0,
           lastResetDate: getTodayDateString(),
@@ -152,8 +161,9 @@ export const useHydrationStore = create<HydrationState>()(
             "[HydrationStore] Sync failed:",
             error instanceof Error ? error.message : error,
           );
-          // Retry once after a short delay
-          setTimeout(async () => {
+          // Retry once after a short delay — store the timeout ID so resetDaily() can cancel it
+          syncRetryTimeoutId = setTimeout(async () => {
+            syncRetryTimeoutId = null;
             try {
               const retryResult =
                 await hydrationDataService.syncHydrationWithSupabase();

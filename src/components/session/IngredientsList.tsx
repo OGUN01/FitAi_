@@ -13,7 +13,7 @@ export const IngredientsList: React.FC<IngredientsListProps> = ({ meal }) => {
   return (
     <View style={styles.ingredientsSection}>
       <Text style={styles.sectionTitle}>Ingredients Needed</Text>
-      {meal.items.map((item, index) => (
+      {(meal.items ?? []).map((item, index) => (
         <Card key={index} style={styles.ingredientCard}>
           <View style={styles.ingredientHeader}>
             <Text style={styles.ingredientName}>{item.name}</Text>

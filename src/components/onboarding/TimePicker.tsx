@@ -46,19 +46,24 @@ const TimePickerWheel: React.FC<TimePickerWheelProps> = ({
 }) => {
   const selectedIndex = values.indexOf(selectedValue);
   const scrollViewRef = useRef<ScrollView>(null);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // OB-UX-005: Scroll to selected value when component mounts or selectedValue changes
   useEffect(() => {
     if (scrollViewRef.current && selectedIndex >= 0) {
       // Small delay to ensure layout is complete
-      const timeoutId = setTimeout(() => {
+      scrollTimeoutRef.current = setTimeout(() => {
         scrollViewRef.current?.scrollTo({
           y: selectedIndex * ITEM_HEIGHT,
           animated: false,
         });
       }, 100);
-      return () => clearTimeout(timeoutId);
     }
+    return () => {
+      if (scrollTimeoutRef.current !== null) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
   }, [selectedIndex]);
 
   return (

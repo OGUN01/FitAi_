@@ -78,7 +78,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
         {/* User Info */}
         <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-          <Text style={styles.userName}>{userName || "Fitness Champion"}</Text>
+          <Text style={styles.userName}>{userName || ""}</Text>
           {memberSinceLabel ? (
             <Text style={styles.memberSince}>{memberSinceLabel}</Text>
           ) : null}

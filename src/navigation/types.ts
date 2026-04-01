@@ -1,11 +1,13 @@
 // Navigation Types
 // This file contains TypeScript definitions for navigation
 
+import { DayWorkout, DayMeal } from "../types/ai";
+
 export type RootStackParamList = {
   Onboarding: undefined;
   Main: undefined;
-  WorkoutSession: { workout: any; sessionId?: string; resumeExerciseIndex?: number; isExtra?: boolean };
-  CookingSession: { meal: any };
+  WorkoutSession: { workout: DayWorkout; sessionId?: string; resumeExerciseIndex?: number; isExtra?: boolean };
+  CookingSession: { meal: DayMeal };
 };
 
 export type OnboardingStackParamList = {
@@ -45,12 +47,12 @@ export type DietStackParamList = {
   MealLog: { mealType?: string };
   FoodDetails: { foodId: string };
   Nutrition: undefined;
-  CookingSession: { meal: any };
+  CookingSession: { meal: DayMeal };
 };
 
 export type ProfileStackParamList = {
   ProfileMain: undefined;
-  Settings: { screen?: string } | undefined;
+  Settings: { screen?: string };
   Progress: undefined;
   BodyAnalysisHistory: undefined;
   HealthKitSettings: undefined;

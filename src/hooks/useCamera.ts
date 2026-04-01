@@ -1,5 +1,5 @@
 import { logger } from '../utils/logger';
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 
@@ -23,16 +23,25 @@ export const useCamera = ({
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const cameraRef = useRef<CameraView>(null);
+  const scanResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!visible) {
-      return;
-    }
+    if (!visible) return;
+    if (permission?.granted) return; // already granted
+    let isMounted = true;
+    requestPermission().then(() => {
+      if (!isMounted) return;
+      // permission updates reactively via useCameraPermissions
+    });
+    return () => { isMounted = false; };
+  // requestPermission is stable per expo-camera docs
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
 
-    if (!permission || !permission.granted) {
-      requestPermission();
-    }
-  }, [visible, permission, requestPermission]);
+  // Cleanup scan reset timeout on unmount
+  useEffect(() => () => {
+    if (scanResetTimeoutRef.current) clearTimeout(scanResetTimeoutRef.current);
+  }, []);
 
   const takePicture = async () => {
     if (cameraRef.current && !isCapturing && isCameraReady) {
@@ -61,7 +70,7 @@ export const useCamera = ({
     setFlashMode((current) => (current === "off" ? "on" : "off"));
   };
 
-  const handleBarcodeScanned = ({
+  const handleBarcodeScanned = useCallback(({
     type,
     data,
   }: {
@@ -73,11 +82,12 @@ export const useCamera = ({
       onBarcodeScanned(data, type);
 
       // Reset scanning state after a delay to prevent multiple scans
-      setTimeout(() => {
+      if (scanResetTimeoutRef.current) clearTimeout(scanResetTimeoutRef.current);
+      scanResetTimeoutRef.current = setTimeout(() => {
         setIsScanning(false);
       }, 2000);
     }
-  };
+  }, [isScanning, onBarcodeScanned]);
 
   const getModeTitle = () => {
     switch (mode) {

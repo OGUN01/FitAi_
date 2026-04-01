@@ -67,6 +67,26 @@ function shouldUseRuleBasedGeneration(userId?: string, rolloutPercentage: number
 }
 
 // ============================================================================
+// PROMPT SANITIZATION HELPERS
+// ============================================================================
+
+/**
+ * Strip prompt-injection characters from a single free-text field.
+ * Removes markdown/template control chars, collapses newlines, and truncates.
+ */
+function sanitizePromptField(value: string | undefined | null): string {
+  if (!value) return '';
+  return value
+    .replace(/[*_`#\[\]\{\}]/g, '')
+    .replace(/\n/g, ' ')
+    .slice(0, 150);
+}
+
+function sanitizePromptArray(arr: string[] | undefined | null): string[] {
+  return (arr ?? []).map(sanitizePromptField).filter(s => s.length > 0);
+}
+
+// ============================================================================
 // AI PROVIDER CONFIGURATION
 // ============================================================================
 
@@ -137,17 +157,19 @@ ${calculatedMetrics.heart_rate_zones ? `- Heart Rate Zones:
   const trainingDays = preferredDays && preferredDays.length > 0 ? preferredDays : allDays.slice(0, workoutsPerWeek);
   const restDays = allDays.filter(day => !trainingDays.includes(day));
 
-  // ✅ Build medical safety warnings section
+  // ✅ Build medical safety warnings section (sanitized to prevent prompt injection)
   let medicalWarnings = '';
 
   // Medical conditions
   if (profile.medicalConditions && profile.medicalConditions.length > 0) {
-    medicalWarnings += `\n🏥 MEDICAL CONDITIONS: ${profile.medicalConditions.join(', ')}\n   - Adjust intensity and avoid contraindicated exercises\n   - Prioritize safety over progression`;
+    const safeMedical = sanitizePromptArray(profile.medicalConditions);
+    medicalWarnings += `\n🏥 MEDICAL CONDITIONS: ${safeMedical.join(', ')}\n   - Adjust intensity and avoid contraindicated exercises\n   - Prioritize safety over progression`;
   }
 
   // Medications
   if (profile.medications && profile.medications.length > 0) {
-    medicalWarnings += `\n💊 MEDICATIONS: ${profile.medications.join(', ')}\n   - Consider potential side effects (fatigue, dizziness, etc.)`;
+    const safeMeds = sanitizePromptArray(profile.medications);
+    medicalWarnings += `\n💊 MEDICATIONS: ${safeMeds.join(', ')}\n   - Consider potential side effects (fatigue, dizziness, etc.)`;
   }
 
   // Pregnancy
@@ -174,6 +196,23 @@ ${calculatedMetrics.heart_rate_zones ? `- Heart Rate Zones:
   };
   const timeGuidance = preferredWorkoutTime ? workoutTimeGuidance[preferredWorkoutTime] : '';
 
+  // FIX A: Validate critical metrics before using them in prompt
+  if (!profile.weight || profile.weight <= 0) {
+    console.warn('[workoutGen] Missing user weight — calorie estimates will be inaccurate');
+  }
+  if (!profile.height || profile.height <= 0) {
+    console.warn('[workoutGen] Missing user height — BMR calculation affected');
+  }
+  if (!profile.age || profile.age <= 0) {
+    console.warn('[workoutGen] Missing user age — exercise intensity affected');
+  }
+
+  // FIX A: Safe duration divisor — prevents division-by-zero in calorie formulas
+  const safeDuration = Math.max(profile.workoutDuration ?? 30, 1);
+
+  // FIX B: Sanitize injury strings before embedding in prompt
+  const safeInjuries = sanitizePromptArray(profile.injuries);
+
   return `You are FitAI, an expert personal trainer and workout programmer.
 
 **User Profile:**
@@ -181,7 +220,7 @@ ${calculatedMetrics.heart_rate_zones ? `- Heart Rate Zones:
 - Fitness Goal: ${profile.fitnessGoal.replace('_', ' ')}
 - Experience Level: ${profile.experienceLevel}
 - Available Equipment: ${profile.availableEquipment.join(', ')}
-${profile.injuries && profile.injuries.length > 0 ? `- ⚠️ INJURIES/LIMITATIONS: ${profile.injuries.join(', ')} - AVOID exercises that stress these areas` : ''}
+${safeInjuries.length > 0 ? `- ⚠️ INJURIES/LIMITATIONS: ${safeInjuries.join(', ')} - AVOID exercises that stress these areas` : ''}
 ${activityLevel ? `- Activity Level: ${activityLevel}` : ''}
 ${medicalWarnings}
 ${metricsSection}
@@ -191,7 +230,7 @@ ${metricsSection}
 - Rest Days: ${restDays.join(', ')}
 ${workoutTypes && workoutTypes.length > 0 ? `- User Prefers: ${workoutTypes.join(', ')} style workouts` : ''}
 - Prefers Variety: ${prefersVariety ? 'YES - provide different muscle groups/workout styles each day' : 'NO - consistent routine is fine'}
-- Duration per Session: ${profile.workoutDuration || 45} minutes
+- Duration per Session: ${safeDuration} minutes
 - Typical Workout Time: ${preferredWorkoutTime || 'morning'} ${timeGuidance}
 
 **Available Exercises (MUST ONLY USE THESE):**
@@ -216,7 +255,7 @@ ${filteredExercises
      * 5+ days: Push/Pull/Legs/Upper/Lower or body-part splits
 
 3. **Respect Injuries:**
-${profile.injuries && profile.injuries.length > 0 ? `   ⚠️ User has: ${profile.injuries.join(', ')}
+${safeInjuries.length > 0 ? `   ⚠️ User has: ${safeInjuries.join(', ')}
    - EXCLUDE exercises that involve these areas
    - Provide SAFE alternatives only` : '   No injuries reported'}
 
@@ -243,9 +282,9 @@ Return a JSON object with this structure:
       "workout": {
         "title": "Push Day - Chest, Shoulders, Triceps",
         "description": "Focus on pushing movements...",
-        "totalDuration": ${profile.workoutDuration || 45},
+        "totalDuration": ${safeDuration},
         "difficulty": "${profile.experienceLevel}",
-        "estimatedCalories": ${Math.round(sessionMET * profile.weight * ((profile.workoutDuration || 45) / 60))},
+        "estimatedCalories": ${Math.round(sessionMET * (profile.weight || 70) * (safeDuration / 60))},
         "warmup": [{"exerciseId": "...", "sets": 2, "reps": "10-12", "restSeconds": 30}],
         "exercises": [{"exerciseId": "...", "sets": 3, "reps": "8-12", "restSeconds": 60}, ...],
         "cooldown": [{"exerciseId": "...", "sets": 2, "reps": "30 seconds", "restSeconds": 30}],
@@ -271,7 +310,7 @@ Return a JSON object with this structure:
     }` : ''}
   ],
   "restDays": ${JSON.stringify(restDays)},
-  "totalEstimatedCalories": ${Math.round(workoutsPerWeek * sessionMET * profile.weight * ((profile.workoutDuration || 45) / 60))}
+  "totalEstimatedCalories": ${Math.round(workoutsPerWeek * sessionMET * (profile.weight || 70) * (safeDuration / 60))}
 }
 
 Generate ${workoutsPerWeek} unique, balanced workouts with proper variety and progression.`;
@@ -311,6 +350,12 @@ export async function handleWorkoutGeneration(
     // Include weekly plan parameters + weekNumber in cache key
     // weekNumber ensures different mesocycle weeks get different plans
     // regenerationSeed ensures "regenerate" produces a fresh plan
+    // FIX C: If regenerationSeed is absent or 0 (default), generate a random seed so
+    // every "regenerate" call actually busts the cache rather than hitting the same key.
+    const effectiveSeed = (request.regenerationSeed && request.regenerationSeed !== 0)
+      ? request.regenerationSeed
+      : Math.floor(Math.random() * 1000000);
+
     const cacheParams = {
       workoutsPerWeek: request.weeklyPlan.workoutsPerWeek,
       preferredDays: request.weeklyPlan.preferredDays?.sort().join(',') || '',
@@ -320,7 +365,7 @@ export async function handleWorkoutGeneration(
       fitnessGoal: request.profile.fitnessGoal,
       focusMuscles: request.focusMuscles?.sort().join(',') || '',
       weekNumber: request.weekNumber ?? 1,
-      regenerationSeed: request.regenerationSeed ?? 0,
+      regenerationSeed: effectiveSeed,
     };
 
     const cacheResult = await getCachedData(c.env, 'workout', cacheParams, userId);
@@ -419,6 +464,15 @@ export async function handleWorkoutGeneration(
       throw error;
     }
 
+    if (error instanceof Error && error.message.includes('timed out after 25s')) {
+      throw new APIError(
+        'Workout generation timed out. Please try again.',
+        408,
+        ErrorCode.AI_GENERATION_FAILED,
+        { error: error.message }
+      );
+    }
+
     throw new APIError(
       'Failed to generate workout. Please try again.',
       500,
@@ -453,6 +507,9 @@ async function generateFreshWorkout(
     heart_rate_zones?: any;
   } | undefined;
 
+  // FIX D: Track whether metrics loaded successfully so we can surface a warning
+  let metricsAvailable = true;
+
   if (userId) {
     try {
       const userMetrics = await loadUserMetrics(env, userId);
@@ -471,6 +528,7 @@ async function generateFreshWorkout(
       });
     } catch (error) {
       console.warn('[Workout Generation] Could not load user metrics, continuing without:', error);
+      metricsAvailable = false;
     }
   }
 
@@ -516,7 +574,11 @@ async function generateFreshWorkout(
 
       // Wrap in same format as LLM response for consistent handling
       return {
-        workout: ruleBasedResult,
+        workout: {
+          ...ruleBasedResult,
+          // FIX D: surface metrics unavailability to the caller
+          warnings: metricsAvailable ? undefined : ['Workout personalization is limited — update your profile metrics for better results'],
+        },
         metadata: {
           model: 'rule-based-v1',
           aiGenerationTime: endTime - startTime,
@@ -633,13 +695,19 @@ async function generateFreshWorkout(
     console.log('[Workout Generation] Calling AI model:', aiConfig.model);
 
     const aiStartTime = Date.now();
-    const result = await generateObject({
-      model,
-      schema: WorkoutResponseSchema,
-      prompt,
-      temperature: request.temperature,
-      maxOutputTokens: 8192, // ✅ Increased for weekly plans (5-7 workouts)
-    });
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('AI generation timed out after 25s')), 25000)
+    );
+    const result = await Promise.race([
+      generateObject({
+        model,
+        schema: WorkoutResponseSchema,
+        prompt,
+        temperature: request.temperature,
+        maxOutputTokens: 8192, // ✅ Increased for weekly plans (5-7 workouts)
+      }),
+      timeoutPromise,
+    ]) as Awaited<ReturnType<typeof generateObject<typeof WorkoutResponseSchema>>>;
     const aiGenerationTime = Date.now() - aiStartTime;
 
     // Validate AI response structure
@@ -759,7 +827,11 @@ async function generateFreshWorkout(
 
     // Return weekly plan with metadata for deduplication/caching
     return {
-      workout: result.object,  // Return full weekly plan
+      workout: {
+        ...result.object,  // Return full weekly plan
+        // FIX D: surface metrics unavailability to the caller
+        warnings: metricsAvailable ? undefined : ['Workout personalization is limited — update your profile metrics for better results'],
+      },
       metadata: {
         model: request.model,
         aiGenerationTime,

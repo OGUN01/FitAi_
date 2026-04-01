@@ -121,7 +121,7 @@ export const useAdvancedReviewForm = ({
         onUpdateWorkoutPreferences({
           workout_frequency_per_week: Math.max(3, currentFrequency),
           workout_types: exerciseMeta.types,
-          time_preference: alternative.exerciseMinutes ?? workoutPreferences?.time_preference ?? 30,
+          time_preference: alternative.exerciseMinutes ?? workoutPreferences?.time_preference,
           intensity: exerciseMeta.intensity,
         });
       }

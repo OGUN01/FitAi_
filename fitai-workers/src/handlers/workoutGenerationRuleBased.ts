@@ -100,9 +100,11 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 	// Note: filterExercisesForWorkout expects WorkoutGenerationRequest
 	// We already have filtered exercises from safety filter, so we'll do simple filtering here
 
-	// Filter by available equipment
+	// FIX E: Pre-compute a lowercase Set so both sides of the comparison are
+	// normalised and the lookup is O(1) rather than O(n) per exercise.
+	const availableEquipmentLC = new Set(request.profile.availableEquipment.map((e) => e.toLowerCase()));
 	exercises = exercises.filter((ex) =>
-		ex.equipments.some((eq) => request.profile.availableEquipment.map((e) => e.toLowerCase()).includes(eq.toLowerCase())),
+		ex.equipments.some((eq) => availableEquipmentLC.has(eq.toLowerCase())),
 	);
 
 	// Filter by excluded exercises
@@ -129,6 +131,14 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 		const exerciseIdsInPool = new Set(exercises.map((e) => e.exerciseId));
 		const substitutesAdded: string[] = [];
 
+		// FIX F: Build a Set of all safety-excluded IDs so we can guard against
+		// circular substitution (substitute is itself contraindicated).
+		const safetyExcludedIds = new Set(
+			safetyResult.excludedExercises
+				.map((ex) => ex.exercise?.exerciseId ?? (ex as any))
+				.filter((id): id is string => typeof id === 'string'),
+		);
+
 		for (const excluded of safetyResult.excludedExercises) {
 			const excludedId = excluded.exercise?.exerciseId ?? (excluded as any);
 			if (typeof excludedId !== 'string') continue;
@@ -136,6 +146,13 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 			// Find a substitute in the full DB that's also safe (not excluded by safety filter)
 			const safeIds = exercises.map((e) => e.exerciseId);
 			const sub = findSubstitute(excludedId, userLimitations, safeIds);
+
+			// FIX F: Skip if the substitute is itself in the excluded set (circular substitution guard)
+			if (sub && safetyExcludedIds.has(sub)) {
+				console.warn(`[Rule-Based] Step 3b: Substitute "${sub}" for "${excludedId}" is also contraindicated — skipping`);
+				continue;
+			}
+
 			if (sub && !exerciseIdsInPool.has(sub)) {
 				const subExercise = db.exercises.find((e) => e.exerciseId === sub);
 				if (subExercise) {

@@ -149,6 +149,7 @@ export class CrudOperationsService {
 
       // Skip sync for guest users or missing userId
       if (!userId || userId.startsWith("guest") || userId === "local-user") {
+        console.warn('[CrudOps] Skipping Supabase sync for guest user — data is local only');
         return;
       }
       const planIdentity = getPlanIdentityForWorkoutId(

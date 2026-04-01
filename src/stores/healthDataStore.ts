@@ -45,22 +45,26 @@ function mergeRecentWorkouts(
 
 async function syncWeightToProfile(weight?: number) {
   if (!weight || weight <= 0) return;
-  const userId = useAuthStore.getState().user?.id;
-  const resolvedCurrentWeight = userId
-    ? await resolveCurrentWeightForUser(userId, {
-        bodyAnalysisWeight: weight,
-      })
-    : {
-        value: weight,
-        source: "body_analysis" as const,
-        asOf: null,
-      };
-  const canonicalWeight = resolvedCurrentWeight.value ?? weight;
+  try {
+    const userId = useAuthStore.getState().user?.id;
+    const resolvedCurrentWeight = userId
+      ? await resolveCurrentWeightForUser(userId, {
+          bodyAnalysisWeight: weight,
+        })
+      : {
+          value: weight,
+          source: "body_analysis" as const,
+          asOf: null,
+        };
+    const canonicalWeight = resolvedCurrentWeight.value ?? weight;
 
-  useProfileStore.getState().updateBodyAnalysis({
-    current_weight_kg: canonicalWeight,
-  });
-  weightTrackingService.setWeight(canonicalWeight);
+    useProfileStore.getState().updateBodyAnalysis({
+      current_weight_kg: canonicalWeight,
+    });
+    weightTrackingService.setWeight(canonicalWeight);
+  } catch (e) {
+    console.error('[HealthDataStore] syncWeightToProfile failed:', e);
+  }
 }
 
 // Re-export MetricSource for UI components
@@ -1344,6 +1348,8 @@ export const useHealthDataStore = create<HealthDataState>()(
             activeCalories: 0,
             recentWorkouts: [],
             lastUpdated: new Date().toISOString(),
+            sources: undefined,
+            dataOrigins: undefined,
           },
           syncStatus: "idle",
           lastSyncTime: undefined,

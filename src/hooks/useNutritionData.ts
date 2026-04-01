@@ -318,7 +318,7 @@ export const useNutritionData = ({
         loadDietPreferences(),
         loadNutritionGoals(),
       ]).catch((err) =>
-        console.warn("[NutritionData] Deferred refresh error:", err),
+        console.error("[NutritionData] Deferred refresh failed:", err),
       );
     });
   }, [
@@ -365,16 +365,20 @@ export const useNutritionData = ({
     trackB.integration.isInitialized,
   ]); // Removed refreshAll from deps
 
+  // Ref to hold latest refreshAll without causing subscription to re-register
+  const refreshAllRef = useRef(refreshAll);
+  useEffect(() => { refreshAllRef.current = refreshAll; }, [refreshAll]);
+
   // Register with nutrition refresh service for automatic updates
   useEffect(() => {
     if (isAuthenticated && user?.id) {
-      const unsubscribe = nutritionRefreshService.onRefreshNeeded(refreshAll);
+      const unsubscribe = nutritionRefreshService.onRefreshNeeded(() => refreshAllRef.current());
 
       return () => {
         unsubscribe();
       };
     }
-  }, [isAuthenticated, user?.id]); // Removed refreshAll from deps - it's stable via useCallback
+  }, [isAuthenticated, user?.id]); // refreshAllRef is stable (ref object); refreshAll kept current via effect above
 
   // Track B status
   const trackBStatus = {

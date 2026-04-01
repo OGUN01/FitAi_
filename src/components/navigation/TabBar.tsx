@@ -74,7 +74,6 @@ export const TabBar: React.FC<TabBarProps> = ({
               accessibilityLabel={tab.title}
               accessibilityState={{ selected: isActive }}
               testID={`tab-${tab.key}`}
-              aria-label={tab.title}
             >
 
               <View

@@ -67,7 +67,16 @@ export async function handleNutritionEstimate(c: Context<{ Bindings: Env; Variab
 		return c.json({ success: false, error: 'Validation failed', details: parsed.error.flatten() }, 400);
 	}
 
-	const { productName, brand, country } = parsed.data;
+	const { productName: rawProductName, brand, country } = parsed.data;
+
+	// FIX E — sanitize productName before injecting into prompt
+	function sanitizeForPrompt(value: string): string {
+		return value
+			.replace(/[*_`#\[\]]/g, '')  // strip markdown
+			.replace(/\{[^}]*\}/g, '')   // strip template-like braces
+			.slice(0, 200);              // hard limit
+	}
+	const productName = sanitizeForPrompt(rawProductName);
 
 	const prompt =
 		`You are a nutrition database. Estimate the nutritional content per 100g for:` +
@@ -87,7 +96,12 @@ export async function handleNutritionEstimate(c: Context<{ Bindings: Env; Variab
 			prompt,
 		});
 
-		const confidence = Math.min(object.confidence_0_to_100, 40);
+		// FIX D — cap confidence and attach disclaimer when AI exceeded the cap
+		const rawConfidence = object.confidence_0_to_100;
+		const cappedConfidence = Math.min(rawConfidence, 40);
+		const lowConfidenceWarning = rawConfidence > 40
+			? "Nutritional values are estimates only — product not found in database. Verify with actual packaging."
+			: undefined;
 
 		return c.json({
 			success: true,
@@ -98,9 +112,10 @@ export async function handleNutritionEstimate(c: Context<{ Bindings: Env; Variab
 				fat: Math.round(object.fat_g * 10) / 10,
 				fiber: Math.round(object.fiber_g * 10) / 10,
 				sugar: Math.round(object.sugar_g * 10) / 10,
-				sodium: Math.round(object.sodium_mg / 2.5) / 100,
-				confidence,
+				sodium: Math.round(object.sodium_mg / 10) / 100,
+				confidence: cappedConfidence,
 				isAIEstimated: true,
+				...(lowConfidenceWarning !== undefined && { lowConfidenceWarning }),
 			},
 			metadata: {
 				model: 'google/gemini-2.0-flash',

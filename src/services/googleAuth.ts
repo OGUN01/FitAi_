@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
-import { AuthResponse } from './auth';
-import { AuthUser } from '../types/user';
+import type { AuthResponse } from './auth';
+import type { AuthUser } from '../types/user';
 import { Platform } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
 import * as Crypto from 'expo-crypto';

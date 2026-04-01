@@ -552,7 +552,7 @@ export const useUserStore = create<UserState>()(
 
         // Also accept workoutPreferences as proof of completeness —
         // goals are saved to workout_preferences during onboarding, not fitness_goals table
-        const workoutPrefs = (profile as any).workoutPreferences;
+        const workoutPrefs = profile.workoutPreferences;
         const hasWorkoutPrefs = !!(workoutPrefs &&
           ((workoutPrefs.primary_goals?.length > 0) ||
            (workoutPrefs.primaryGoals?.length > 0) ||

@@ -10,7 +10,7 @@
 // ============================================================================
 export interface DietPreferencesData {
   // Existing diet data (enhanced)
-  diet_type: "vegetarian" | "vegan" | "non-veg" | "pescatarian";
+  diet_type: "vegetarian" | "vegan" | "non-veg" | "pescatarian" | "balanced";
   allergies: string[]; // TEXT[] in database
   restrictions: string[]; // TEXT[] in database
   cuisine_preferences?: string[]; // Cuisine preferences
@@ -103,7 +103,7 @@ export interface DietPreferencesFormState extends DietPreferencesData {
 export interface DietPreferencesRow {
   id: string;
   user_id: string;
-  diet_type?: "vegetarian" | "vegan" | "non-veg" | "pescatarian" | null;
+  diet_type?: "vegetarian" | "vegan" | "non-veg" | "pescatarian" | "balanced" | null;
   allergies?: string[] | null;
   restrictions?: string[] | null;
   keto_ready?: boolean | null;

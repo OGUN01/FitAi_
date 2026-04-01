@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { Button } from "../../components/ui";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rp, rbr, rh } from '../../utils/responsive';
@@ -39,8 +40,10 @@ export const MealSession: React.FC<MealSessionProps> = ({
         <TouchableOpacity
           style={styles.backButton}
           onPress={actions.handleQuit}
+          accessibilityLabel="Go back"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={styles.backIcon}>←</Text>
+          <Ionicons name="chevron-back" size={24} color={ResponsiveTheme.colors.primary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Meal Preparation</Text>
@@ -51,8 +54,14 @@ export const MealSession: React.FC<MealSessionProps> = ({
         <TouchableOpacity
           style={styles.pauseButton}
           onPress={actions.handlePauseResume}
+          accessibilityLabel={state.isPaused ? "Resume session" : "Pause session"}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={styles.pauseIcon}>{state.isPaused ? "▶️" : "⏸️"}</Text>
+          <Ionicons
+            name={state.isPaused ? "play" : "pause"}
+            size={24}
+            color={ResponsiveTheme.colors.primary}
+          />
         </TouchableOpacity>
       </View>
 
@@ -121,11 +130,10 @@ const styles = StyleSheet.create({
     borderBottomColor: ResponsiveTheme.colors.border,
   },
   backButton: {
-    padding: ResponsiveTheme.spacing.sm,
-  },
-  backIcon: {
-    fontSize: rf(24),
-    color: ResponsiveTheme.colors.primary,
+    width: 44,
+    height: 44,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   headerCenter: {
     flex: 1,
@@ -142,10 +150,10 @@ const styles = StyleSheet.create({
     marginTop: rp(2),
   },
   pauseButton: {
-    padding: ResponsiveTheme.spacing.sm,
-  },
-  pauseIcon: {
-    fontSize: rf(20),
+    width: 44,
+    height: 44,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   progressContainer: {
     paddingHorizontal: ResponsiveTheme.spacing.md,

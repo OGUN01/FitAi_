@@ -395,6 +395,8 @@ export class ConflictResolutionService {
       case "use_latest_timestamp":
         if (conflict.context?.lastModified) {
           const { local, remote } = conflict.context.lastModified;
+          // NOTE: uses device-local timestamps; vulnerable to clock skew. Prefer server-generated updated_at.
+          console.warn('[ConflictResolution] Using device timestamp for conflict resolution — may be inaccurate');
           return local > remote ? conflict.localValue : conflict.remoteValue;
         }
         return conflict.remoteValue; // Default to remote if no timestamp info

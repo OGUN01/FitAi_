@@ -741,6 +741,11 @@ function mergeDietPreferences(
 		...(request.excludeIngredients || []),
 	];
 
+	// Warn on conflicting restrictions before deriving diet type (FIX-D)
+	if (request.dietaryRestrictions?.includes('vegan') && request.dietaryRestrictions?.includes('vegetarian')) {
+		console.warn('[dietGen] Conflicting restrictions: both vegan and vegetarian specified. Using vegan.');
+	}
+
 	// Derive diet_type from dietaryRestrictions when not explicitly set (BUG-73)
 	const derivedDietType = request.dietaryRestrictions?.includes('vegan') ? 'vegan' :
 		request.dietaryRestrictions?.includes('vegetarian') ? 'vegetarian' :
@@ -871,6 +876,9 @@ export async function handleDietGeneration(c: Context<{ Bindings: Env; Variables
 
 		console.log('[Diet Generation] Cache MISS - generating fresh diet plan');
 
+		// Safe cache key — cacheResult.cacheKey may be undefined on cache miss (FIX-C)
+		const cacheKey = cacheResult?.cacheKey ?? `diet_${userId}_${Date.now()}`;
+
 		// 3. Check if async mode is enabled (default: true)
 		if (request.async !== false) {
 			console.log('[Diet Generation] Async mode enabled - creating job');
@@ -878,7 +886,7 @@ export async function handleDietGeneration(c: Context<{ Bindings: Env; Variables
 			const { createJob } = await import('../services/jobService');
 
 			// Create job in database + KV
-			const { jobId, isExisting } = await createJob(c.env, userId, cacheResult.cacheKey!, {
+			const { jobId, isExisting } = await createJob(c.env, userId, cacheKey, {
 				calorieTarget: request.calorieTarget,
 				mealsPerDay: request.mealsPerDay,
 				daysCount: request.daysCount,
@@ -903,7 +911,7 @@ export async function handleDietGeneration(c: Context<{ Bindings: Env; Variables
 						await c.env.DIET_GENERATION_QUEUE.send({
 							jobId,
 							userId,
-							cacheKey: cacheResult.cacheKey!,
+							cacheKey: cacheKey,
 							params: {
 								calorieTarget: request.calorieTarget,
 								mealsPerDay: request.mealsPerDay,
@@ -972,7 +980,7 @@ export async function handleDietGeneration(c: Context<{ Bindings: Env; Variables
 		console.log('[Diet Generation] Sync mode - generating immediately');
 
 		// 4. Use deduplication to prevent duplicate AI calls during burst traffic
-		const deduplicationResult = await withDeduplication(c.env, cacheResult.cacheKey!, async () => {
+		const deduplicationResult = await withDeduplication(c.env, cacheKey, async () => {
 			// This function will only execute if no identical request is in-flight
 			return await generateFreshDiet(request, c.env, userId);
 		});
@@ -1009,7 +1017,7 @@ export async function handleDietGeneration(c: Context<{ Bindings: Env; Variables
 			costUsd: dietResult.metadata.costUsd,
 		};
 
-		await saveCachedData(c.env, 'meal', cacheResult.cacheKey!, dietResult.diet, cacheMetadata, userId);
+		await saveCachedData(c.env, 'meal', cacheKey, dietResult.diet, cacheMetadata, userId);
 
 		console.log('[Diet Generation] Cached successfully');
 
@@ -1034,6 +1042,12 @@ export async function handleDietGeneration(c: Context<{ Bindings: Env; Variables
 
 		if (error instanceof ValidationError || error instanceof APIError) {
 			throw error;
+		}
+
+		if (error instanceof Error && error.message.includes('timed out after 25s')) {
+			throw new APIError('Diet generation timed out. Please try again.', 408, ErrorCode.AI_GENERATION_FAILED, {
+				error: error.message,
+			});
 		}
 
 		throw new APIError('Failed to generate diet plan. Please try again.', 500, ErrorCode.AI_GENERATION_FAILED, {
@@ -1108,13 +1122,19 @@ export async function generateFreshDiet(request: DietGenerationRequest, env: Env
 	console.log('[Diet Generation] Calling AI model:', aiConfig.model);
 
 	const aiStartTime = Date.now();
-	const result = await generateObject({
-		model,
-		schema: DietResponseSchema,
-		prompt,
-		temperature: request.temperature || 0.7,
-		// Note: maxTokens may not be supported by all models via AI Gateway
-	});
+	const timeoutPromise = new Promise<never>((_, reject) =>
+		setTimeout(() => reject(new Error('AI generation timed out after 25s')), 25000)
+	);
+	const result = await Promise.race([
+		generateObject({
+			model,
+			schema: DietResponseSchema,
+			prompt,
+			temperature: request.temperature || 0.7,
+			// Note: maxTokens may not be supported by all models via AI Gateway
+		}),
+		timeoutPromise,
+	]) as Awaited<ReturnType<typeof generateObject<typeof DietResponseSchema>>>;
 	const aiGenerationTime = Date.now() - aiStartTime;
 
 	// Validate AI response structure

@@ -511,7 +511,8 @@ export const ChatRequestSchema = z.object({
 				content: z.string(),
 			}),
 		)
-		.min(1),
+		.min(1)
+		.max(100),
 
 	// Context (optional)
 	context: z

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
-import { LoginCredentials, RegisterCredentials, AuthUser } from '../types/user';
-import { AuthResponse } from '../services/auth';
+import type { LoginCredentials, RegisterCredentials, AuthUser } from '../types/user';
+import type { AuthResponse } from '../services/auth';
 
 export interface UseAuthReturn {
   // State
@@ -58,10 +58,9 @@ export const useAuth = (): UseAuthReturn => {
 
   // Initialize auth on first use
   useEffect(() => {
-    if (!isInitialized) {
-      initialize();
-    }
-  }, [isInitialized, initialize]);
+    if (isInitialized || isLoading) return;
+    initialize();
+  }, [isInitialized, isLoading, initialize]);
 
   return {
     user,

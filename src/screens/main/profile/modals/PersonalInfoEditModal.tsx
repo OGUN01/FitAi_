@@ -21,6 +21,7 @@ import { useUser } from "../../../../hooks/useUser";
 import { useAuth } from "../../../../hooks/useAuth";
 import { useUserStore } from "../../../../stores/userStore";
 import { userProfileService } from "../../../../services/userProfile";
+import { supabase } from "../../../../services/supabase";
 import { buildLegacyProfileAdapter } from "../../../../utils/profileLegacyAdapter";
 import { ResponsiveTheme } from "../../../../utils/constants";
 import { rf, rp, rbr } from "../../../../utils/responsive";
@@ -307,6 +308,29 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
             );
           } else {
             console.log("✅ Personal info synced to Supabase");
+          }
+
+          // ✅ Sync activity_level to workout_preferences table
+          if (activityLevel) {
+            try {
+              const { error: wpError } = await supabase
+                .from("workout_preferences")
+                .update({ activity_level: activityLevel })
+                .eq("user_id", user.id);
+              if (wpError) {
+                console.error(
+                  "[PersonalInfoModal] Activity level sync error:",
+                  wpError,
+                );
+              } else {
+                console.log("✅ Activity level synced to workout_preferences");
+              }
+            } catch (activitySyncError) {
+              console.error(
+                "[PersonalInfoModal] Activity level sync error:",
+                activitySyncError,
+              );
+            }
           }
         } catch (syncError) {
           console.error("[PersonalInfoModal] Sync error:", syncError);

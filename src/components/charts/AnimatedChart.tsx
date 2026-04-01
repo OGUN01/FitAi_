@@ -6,6 +6,7 @@ import Animated, {
   withSpring,
   interpolate,
   Extrapolate,
+  cancelAnimation,
 } from "react-native-reanimated";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 import Svg, { Line, Circle, Path, G, Text as SvgText } from "react-native-svg";
@@ -70,7 +71,14 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
   });
 
   const mountedRef = useRef(true);
-  useEffect(() => () => { mountedRef.current = false; }, []);
+  const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current);
+      cancelAnimation(progress);
+    };
+  }, []);
 
   useEffect(() => {
     progress.value = withSpring(1, {
@@ -204,7 +212,8 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
     })
     .onEnd(() => {
       // Hide tooltip after a delay
-      setTimeout(() => {
+      if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current);
+      tooltipTimeoutRef.current = setTimeout(() => {
         if (mountedRef.current) {
           setTooltipData((prev) => ({ ...prev, visible: false }));
         }
@@ -365,7 +374,10 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
             {showProgress &&
               milestones.map((milestone, index) => {
                 const x = Math.round(
-                  paddingLeft + (chartWidth / (milestones.length - 1)) * index,
+                  paddingLeft +
+                    (milestones.length > 1
+                      ? (chartWidth / (milestones.length - 1)) * index
+                      : chartWidth / 2),
                 );
                 const y = valueToY(milestone.value);
 

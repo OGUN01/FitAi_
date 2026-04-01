@@ -109,15 +109,15 @@ function clearConsumedNutritionCaches() {
 }
 
 function isLoggedMeal(meal: Meal | null | undefined): meal is Meal {
-  return Boolean(meal && typeof (meal as any).loggedAt === "string");
+  return Boolean(meal && typeof meal.loggedAt === "string");
 }
 
 function getMealLocalDate(meal: Meal | null | undefined): string | null {
   if (!meal) return null;
 
   const dateValue =
-    typeof (meal as any).loggedAt === "string"
-      ? (meal as any).loggedAt
+    typeof meal.loggedAt === "string"
+      ? meal.loggedAt
       : meal.createdAt;
 
   return typeof dateValue === "string" ? getLocalDateString(dateValue) : null;
@@ -607,7 +607,7 @@ export const useNutritionStore = create<NutritionState>()(
             photos: [],
             syncStatus: SyncStatus.PENDING,
             syncMetadata: {
-              lastSyncedAt: undefined,
+              lastSyncedAt: null,
               lastModifiedAt: new Date().toISOString(),
               syncVersion: 1,
               deviceId: Platform.OS ?? "unknown",
@@ -750,9 +750,12 @@ export const useNutritionStore = create<NutritionState>()(
             await get().saveWeeklyMealPlan(state.weeklyMealPlan);
           }
 
-          // Save daily meals as individual logs
+          // Save daily meals as individual logs — dedup within this call by meal ID
+          const persistedInThisCall = new Set<string>();
           for (const meal of state.dailyMeals) {
             const mealId = meal.id || String(Date.now());
+            if (persistedInThisCall.has(mealId)) continue;
+            persistedInThisCall.add(mealId);
             const mealItems = meal.items || [];
             const mealLog: import("../types/localData").MealLog = {
               id: `daily_meal_${mealId}`,
@@ -772,7 +775,7 @@ export const useNutritionStore = create<NutritionState>()(
               photos: [],
               syncStatus: SyncStatus.PENDING,
               syncMetadata: {
-                lastSyncedAt: undefined,
+                lastSyncedAt: null,
                 lastModifiedAt: new Date().toISOString(),
                 syncVersion: 1,
                 deviceId: Platform.OS ?? "unknown",
@@ -838,7 +841,7 @@ export const useNutritionStore = create<NutritionState>()(
                       .eq("from_plan", true)
                       .in("plan_meal_id", planMealIds)
                       .order("logged_at", { ascending: false })
-                  : ({ data: [], error: null } as any);
+                  : { data: [] as Array<Record<string, unknown>>, error: null };
 
               const runTodaysConsumedLogsQuery = async (selectColumns: string) =>
                 supabase
@@ -877,7 +880,7 @@ export const useNutritionStore = create<NutritionState>()(
                 const remoteProgressKeys = new Set<string>();
                 const remoteLogIds = new Set<string>();
                 const restoredProgress: Record<string, any> = {};
-                (plannedLogs as any[]).forEach((log) => {
+                (plannedLogs ?? []).forEach((log) => {
                   const progressKey = log.plan_meal_id || log.id;
 
                   if (progressKey) {
@@ -926,7 +929,7 @@ export const useNutritionStore = create<NutritionState>()(
               const authoritativeRemoteProgressKeys = new Set<string>();
               const authoritativeRemoteLogIds = new Set<string>();
               const authoritativeRestoredProgress: Record<string, any> = {};
-              (plannedLogs as any[]).forEach((log) => {
+              (plannedLogs ?? []).forEach((log) => {
                 const progressKey = log.plan_meal_id || log.id;
 
                 if (progressKey) {
@@ -973,7 +976,7 @@ export const useNutritionStore = create<NutritionState>()(
               });
 
               const hydratedMeals: import("../types/ai").Meal[] = (
-                todaysConsumedLogs as any[]
+                todaysConsumedLogs ?? []
               ).map((log) => {
                 const foodItems = normalizeMealLogFoodItems(log.food_items);
                 return {
@@ -1125,3 +1128,7 @@ export const useNutritionStore = create<NutritionState>()(
 );
 
 export default useNutritionStore;
+
+export const selectMealProgress = (state: NutritionState) => state.mealProgress;
+export const selectWeeklyMealPlan = (state: NutritionState) => state.weeklyMealPlan;
+export const selectConsumedNutrition = (state: NutritionState) => state.dailyMeals;

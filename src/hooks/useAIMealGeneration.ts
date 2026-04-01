@@ -41,7 +41,7 @@ const buildMealPhotoProvenance = (confidence?: number): MealLogProvenance => ({
   mode: "meal_photo",
   truthLevel: "estimated",
   confidence: confidence ?? null,
-  countryContext: "IN",
+  countryContext: useProfileStore.getState().personalInfo?.country ?? "IN",
   requiresReview: true,
   source: "food-recognition",
 });
@@ -155,7 +155,7 @@ export const useAIMealGeneration = (options?: {
         experience: profileWorkoutPreferences.intensity || "beginner",
         experience_level: profileWorkoutPreferences.intensity || "beginner",
         time_commitment: String(
-          profileWorkoutPreferences.time_preference || 45,
+          profileWorkoutPreferences.time_preference ?? 45,
         ),
         preferred_equipment: profileWorkoutPreferences.equipment,
         target_areas: undefined,
@@ -165,15 +165,13 @@ export const useAIMealGeneration = (options?: {
   // SSOT: Build merged dietPreferences â€” profileStore.dietPreferences is authoritative
   const mergedDietPrefs = profileDietPreferencesStore
     ? {
-        allergies: profileDietPreferencesStore.allergies || [],
-        diet_type: profileDietPreferencesStore.diet_type,
-        restrictions: profileDietPreferencesStore.restrictions || [],
-        dislikes: [],
+        ...profileDietPreferencesStore,
       }
     : null;
 
   const [isGeneratingMeal, setIsGeneratingMeal] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [generationWarning, setGenerationWarning] = useState<string | null>(null);
 
   const [showCamera, setShowCamera] = useState(false);
   const [cameraMode, setCameraMode] = useState<DietCameraMode>("food");
@@ -533,13 +531,15 @@ export const useAIMealGeneration = (options?: {
       setAiError(null);
 
       const dietaryRestrictions = mergedDietPrefs?.allergies || undefined;
+      const userCountry = useProfileStore.getState().personalInfo?.country ?? "IN";
+      const userCuisine = useProfileStore.getState().dietPreferences?.cuisine_preferences?.[0] ?? userCountry;
       const result = await foodRecognitionService.recognizeFood(
         imageUri,
         selectedMealType,
         dietaryRestrictions,
         weightGrams ?? portionGrams ?? undefined,
-        "IN",
-        "indian",
+        userCountry,
+        userCuisine,
       );
       setPortionGrams(null);
 
@@ -551,13 +551,17 @@ export const useAIMealGeneration = (options?: {
         );
 
         if (logMealCallbackRef.current) {
-          logMealCallbackRef.current(
-            mapRecognizedFoodsToScanResult(
-              recognizedFoods,
-              selectedMealType,
-              result.overallConfidence,
-            ),
-          );
+          try {
+            await (logMealCallbackRef.current(
+              mapRecognizedFoodsToScanResult(
+                recognizedFoods,
+                selectedMealType,
+                result.overallConfidence,
+              ),
+            ) ?? Promise.resolve());
+          } catch (err) {
+            console.error('[AIMealGeneration] logMealCallback failed:', err);
+          }
           logMealCallbackRef.current = null;
           setIsGeneratingMeal(false);
           return;
@@ -1200,6 +1204,34 @@ export const useAIMealGeneration = (options?: {
     }
   };
 
+  // Post-generation allergen safety check — called after any AI meal response
+  const checkAllergenViolations = (meals: any[]): void => {
+    if (!mergedDietPrefs?.allergies?.length || !meals?.length) return;
+    const allergyKeywords = mergedDietPrefs.allergies.map((a: string) => a.toLowerCase());
+    const violations: string[] = [];
+
+    for (const meal of meals) {
+      const mealName = (meal?.name ?? meal?.title ?? '').toLowerCase();
+      const ingredients = (meal?.ingredients ?? []).map((i: any) =>
+        (typeof i === 'string' ? i : i.name ?? '').toLowerCase()
+      );
+      const allText = [mealName, ...ingredients].join(' ');
+
+      for (const allergen of allergyKeywords) {
+        if (allText.includes(allergen)) {
+          violations.push(`"${meal?.name ?? 'Unknown meal'}" may contain ${allergen}`);
+        }
+      }
+    }
+
+    if (violations.length > 0) {
+      console.warn('[useAIMealGeneration] Potential allergen violations in generated meals:', violations);
+      setGenerationWarning(
+        `Generated meal may conflict with your dietary restrictions. Please review: ${violations.slice(0, 3).join('; ')}`
+      );
+    }
+  };
+
   const generateAIMeal = async (
     mealType: string,
     setShowGuestSignUp: (show: boolean) => void,
@@ -1240,11 +1272,19 @@ export const useAIMealGeneration = (options?: {
       const calorieTarget = getCalorieTarget();
       if (!calorieTarget) throw new Error("Calorie target not calculated.");
 
+      // Snapshot profile state upfront before any await to avoid mid-async stale reads
+      const { bodyAnalysis: snapshotBodyAnalysis, dietPreferences: snapshotDietPreferences } = useProfileStore.getState();
       const preferences = {
+        bodyMetrics: snapshotBodyAnalysis,
+        // NOTE: dietPreferences already contains allergies. dietaryRestrictions is a
+        // convenience field used by some AI prompt builders. The AI service should treat
+        // dietPreferences.allergies as authoritative; dietaryRestrictions is a redundant
+        // copy kept for legacy prompt templates that only read the top-level field.
+        dietPreferences: snapshotDietPreferences,
+        calorieTarget: calorieTarget,
         dietaryRestrictions: mergedDietPrefs?.allergies || [],
         cuisinePreference: options?.cuisinePreference || "any",
         prepTimeLimit: options?.quickEasy ? 20 : 30,
-        calorieTarget: calorieTarget,
         dietType: mergedDietPrefs?.diet_type || [],
         dislikes: (mergedDietPrefs as any)?.dislikes || [],
         customOptions: options?.customOptions || {},
@@ -1273,6 +1313,9 @@ export const useAIMealGeneration = (options?: {
       );
 
       if (response.success && response.data) {
+        // Post-generation allergen check
+        checkAllergenViolations([response.data]);
+
         // Push generated meal to Zustand nutrition store so DietScreen renders it
         const currentMeals = weeklyMealPlan?.meals || [];
         const updatedPlan: WeeklyMealPlan = {
@@ -1356,7 +1399,14 @@ export const useAIMealGeneration = (options?: {
       const userCalorieTarget = getCalorieTarget();
       if (!userCalorieTarget) throw new Error("Calorie target not calculated.");
 
+      // Snapshot profile state upfront before any await to avoid mid-async stale reads
+      const { bodyAnalysis: snapshotBodyAnalysis2, dietPreferences: snapshotDietPreferences2 } = useProfileStore.getState();
       const preferences = {
+        bodyMetrics: snapshotBodyAnalysis2,
+        // NOTE: dietPreferences already contains allergies; dietaryRestrictions is a
+        // redundant convenience copy for legacy prompt templates. dietPreferences.allergies
+        // is authoritative.
+        dietPreferences: snapshotDietPreferences2,
         calorieTarget: userCalorieTarget,
         dietaryRestrictions: mergedDietPrefs?.allergies || [],
         cuisinePreferences: ["any"],
@@ -1370,6 +1420,9 @@ export const useAIMealGeneration = (options?: {
 
       if (response.success && response.data) {
         const generatedMeals = response.data.meals as unknown as DayMeal[];
+
+        // Post-generation allergen check
+        checkAllergenViolations(generatedMeals);
 
         // Push to weeklyMealPlan store so MealPlanView renders the new meals immediately
         const currentPlan = weeklyMealPlan || {
@@ -1659,6 +1712,7 @@ export const useAIMealGeneration = (options?: {
   return {
     isGeneratingMeal,
     aiError,
+    generationWarning,
 
     showCamera,
     setShowCamera,

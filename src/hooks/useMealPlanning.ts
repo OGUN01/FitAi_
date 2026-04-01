@@ -122,19 +122,23 @@ export const useMealPlanning = (navigation: any) => {
   }, [forceRefresh]);
 
   useEffect(() => {
+    let isMounted = true;
+
     const authenticatedUserId =
       user?.id && !user.id.startsWith("guest") ? user.id : null;
 
     if (authenticatedUserId) {
       if (lastRemoteHydratedUserIdRef.current === authenticatedUserId) {
-        return;
+        return () => { isMounted = false; };
       }
 
       lastRemoteHydratedUserIdRef.current = authenticatedUserId;
-      loadNutritionStoreData().catch((error) => {
-        console.error("[ERROR] Error loading remote meal plan:", error);
-      });
-      return;
+      if (isMounted) {
+        loadNutritionStoreData().catch((error) => {
+          console.error("[ERROR] Error loading remote meal plan:", error);
+        });
+      }
+      return () => { isMounted = false; };
     }
 
     lastRemoteHydratedUserIdRef.current = null;
@@ -143,17 +147,19 @@ export const useMealPlanning = (navigation: any) => {
       Object.keys(mealProgress).length > 0 ||
       dailyMeals.length > 0;
 
-    if (!hasHydratedDietData) {
+    if (!hasHydratedDietData && isMounted) {
       loadNutritionStoreData().catch((error) => {
         console.error("[ERROR] Error loading meal plan:", error);
       });
     }
+
+    return () => { isMounted = false; };
   }, [
     dailyMeals.length,
     loadNutritionStoreData,
-    mealProgress,
+    Object.keys(mealProgress).length,
     user?.id,
-    weeklyMealPlan,
+    weeklyMealPlan?.id,
   ]);
 
   useEffect(() => {
@@ -344,6 +350,10 @@ export const useMealPlanning = (navigation: any) => {
       }
 
       if (response.data.type === "job_started") {
+        if (asyncJobPollingRef.current) {
+          clearTimeout(asyncJobPollingRef.current);
+          asyncJobPollingRef.current = null;
+        }
         setAsyncJob({
           jobId: response.data.jobId,
           status: "pending",
@@ -405,9 +415,13 @@ export const useMealPlanning = (navigation: any) => {
         await crudOperations.deleteMealLog(mealProgressData.logId);
       }
 
-      const currentProgress = { ...mealProgress };
-      delete currentProgress[meal.id];
-      useNutritionStore.setState({ mealProgress: currentProgress });
+      try {
+        const currentProgress = { ...mealProgress };
+        delete currentProgress[meal.id];
+        useNutritionStore.setState({ mealProgress: currentProgress });
+      } catch (progressError) {
+        console.error('[MealPlanning] Failed to remove meal progress from store:', progressError);
+      }
 
       await loadNutritionStoreData();
       forceRefresh();

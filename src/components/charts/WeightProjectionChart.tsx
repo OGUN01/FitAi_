@@ -13,6 +13,7 @@ import Animated, {
   useAnimatedProps,
   withTiming,
   Easing,
+  cancelAnimation,
 } from "react-native-reanimated";
 import Svg, { Path, Circle, Line, G, Text as SvgText } from "react-native-svg";
 import { rf, rp, rh } from "../../utils/responsive";
@@ -108,6 +109,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
       duration: 1500,
       easing: Easing.out(Easing.cubic),
     });
+    return () => { cancelAnimation(progress); };
   }, []);
 
   const animatedProps = useAnimatedProps(() => {

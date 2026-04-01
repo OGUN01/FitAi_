@@ -584,6 +584,10 @@ export async function handleVerifyPayment(c: Context<{ Bindings: Env; Variables:
 		throw new APIError('Subscription not found for this user', 404, ErrorCode.SUBSCRIPTION_NOT_FOUND);
 	}
 
+	if (subscription.user_id !== userId) {
+		return c.json({ success: false, error: 'Subscription does not belong to this user' }, 403);
+	}
+
 	if (!['created', 'pending', 'authenticated'].includes(subscription.status)) {
 		throw new APIError('Subscription is not in a verifiable state', 409, ErrorCode.SUBSCRIPTION_INACTIVE);
 	}
@@ -694,9 +698,11 @@ export async function handleWebhook(c: Context<{ Bindings: Env }>): Promise<Resp
 		return c.json({ success: false, error: 'Missing webhook signature' }, 200);
 	}
 
+	const webhookTimestamp = c.req.header('x-razorpay-webhook-timestamp') || undefined;
+
 	let isValidSignature: boolean;
 	try {
-		isValidSignature = await verifyWebhookSignature(rawBody, signature, env.RAZORPAY_WEBHOOK_SECRET);
+		isValidSignature = await verifyWebhookSignature(rawBody, signature, env.RAZORPAY_WEBHOOK_SECRET, webhookTimestamp);
 	} catch {
 		return c.json({ success: false, error: 'Signature verification error' }, 200);
 	}

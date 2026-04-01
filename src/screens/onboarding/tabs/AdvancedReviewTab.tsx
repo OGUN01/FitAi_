@@ -183,6 +183,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
           ]}
           onPress={onComplete}
           disabled={!isComplete || isCalculating || !!calculationError || ((validationResults?.warnings?.length ?? 0) > 0 && !warningsAcknowledged)}
+          accessibilityHint="Complete all required sections to enable"
         >
           <Text style={styles.completeButtonText}>
             {isLoading || isCalculating ? 'Processing...' : 'Complete Setup'}

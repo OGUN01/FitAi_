@@ -212,6 +212,7 @@ export const useNotificationStore = create<NotificationState>()(
         const raw = get().preferences;
         // Guard against stale/partial persisted state by merging with defaults
         const defaults = getDefaultPreferences();
+        const TIME_PATTERN = /^\d{2}:\d{2}$/;
         const preferences = {
           water: { ...defaults.water, ...(raw?.water ?? {}) },
           workout: { ...defaults.workout, ...(raw?.workout ?? {}) },
@@ -219,6 +220,16 @@ export const useNotificationStore = create<NotificationState>()(
           sleep: { ...defaults.sleep, ...(raw?.sleep ?? {}) },
           progress: { ...defaults.progress, ...(raw?.progress ?? {}) },
         };
+        // Validate time strings; fall back to defaults if malformed
+        if (!TIME_PATTERN.test(preferences.water.wakeUpTime)) {
+          preferences.water.wakeUpTime = defaults.water.wakeUpTime;
+        }
+        if (!TIME_PATTERN.test(preferences.water.sleepTime)) {
+          preferences.water.sleepTime = defaults.water.sleepTime;
+        }
+        if (!TIME_PATTERN.test(preferences.sleep.bedtime)) {
+          preferences.sleep.bedtime = defaults.sleep.bedtime;
+        }
 
         try {
           const notificationService = getNotificationService();

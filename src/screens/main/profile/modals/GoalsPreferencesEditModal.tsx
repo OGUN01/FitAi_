@@ -401,8 +401,18 @@ export const GoalsPreferencesEditModal: React.FC<
       currentGoals = rawGoals.map((g: string) => g.replace(/-/g, "_"));
       currentExperience =
         profileGoals.experience || profileGoals.experience_level || "";
-      currentTime =
+      // Apply the same numeric-to-range conversion used during load so the
+      // comparison is apples-to-apples with the timeCommitment state value.
+      const rawTime =
         profileGoals.timeCommitment || profileGoals.time_commitment || "";
+      if (/^\d+-/.test(rawTime) || rawTime === "60+") {
+        currentTime = rawTime;
+      } else if (/^\d+$/.test(rawTime)) {
+        const minutes = parseInt(rawTime);
+        currentTime = minutes <= 30 ? "15-30" : minutes <= 45 ? "30-45" : minutes <= 60 ? "45-60" : "60+";
+      } else {
+        currentTime = rawTime;
+      }
     } else {
       return true; // No saved data yet, always allow save
     }

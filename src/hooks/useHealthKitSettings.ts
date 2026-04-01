@@ -2,7 +2,7 @@ import { logger } from '../utils/logger';
 // Custom hook for HealthKit settings logic
 // Extracted from HealthKitSettingsScreen.tsx
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import { useHealthKitSync } from "./useHealthKitSync";
 
@@ -25,12 +25,15 @@ export const useHealthKitSettings = () => {
   const [summary, setSummary] = useState<any>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
 
+  const getHealthSummaryRef = useRef(getHealthSummary);
+  useEffect(() => { getHealthSummaryRef.current = getHealthSummary; }, [getHealthSummary]);
+
   useEffect(() => {
     const loadSummary = async () => {
       if (isAuthorized) {
         setLoadingSummary(true);
         try {
-          const summaryData = await getHealthSummary();
+          const summaryData = await getHealthSummaryRef.current();
           setSummary(summaryData);
         } catch (error) {
           logger.error('Failed to load health summary', { error: String(error) });
@@ -41,7 +44,7 @@ export const useHealthKitSettings = () => {
     };
 
     loadSummary();
-  }, [isAuthorized, getHealthSummary]);
+  }, [isAuthorized]);
 
   const handleToggleHealthKit = async (enabled: boolean) => {
     if (enabled) {
@@ -89,14 +92,18 @@ export const useHealthKitSettings = () => {
         "Sync Complete",
         "Your health data has been synchronized successfully.",
       );
-
-      const summaryData = await getHealthSummary();
-      setSummary(summaryData);
-    } catch (error) {
+    } catch (syncErr) {
+      logger.error('[HealthKitSettings] Sync failed:', { error: String(syncErr) });
       crossPlatformAlert(
         "Sync Failed",
         "Failed to sync health data. Please try again.",
       );
+    }
+    try {
+      const summaryData = await getHealthSummaryRef.current();
+      setSummary(summaryData);
+    } catch (summaryErr) {
+      logger.error('[HealthKitSettings] Summary refresh failed:', { error: String(summaryErr) });
     }
   };
 

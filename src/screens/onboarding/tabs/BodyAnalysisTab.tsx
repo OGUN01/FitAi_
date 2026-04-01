@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   View,
   Text,
@@ -55,6 +55,8 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
   isEditingFromReview = false,
   onReturnToReview,
 }) => {
+  const isSubmittingRef = useRef(false);
+
   const {
     formData,
     showCamera,
@@ -109,7 +111,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: rh(100) }}
         >
           {/* Hero Section */}
           <HeroSection
@@ -209,13 +211,19 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
           <AnimatedPressable
             style={styles.nextButtonCompact}
             onPress={() => {
-              onUpdate(formData);
-              if (isEditingFromReview && onReturnToReview) {
-                onReturnToReview();
-              } else {
-                setTimeout(() => {
-                  onNext(formData);
-                }, 100);
+              if (isSubmittingRef.current) return;
+              isSubmittingRef.current = true;
+              try {
+                onUpdate(formData);
+                if (isEditingFromReview && onReturnToReview) {
+                  onReturnToReview();
+                } else {
+                  setTimeout(() => {
+                    onNext(formData);
+                  }, 100);
+                }
+              } finally {
+                isSubmittingRef.current = false;
               }
             }}
             scaleValue={0.96}

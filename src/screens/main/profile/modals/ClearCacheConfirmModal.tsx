@@ -22,6 +22,7 @@ import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPres
 import { ResponsiveTheme } from "../../../../utils/constants";
 import { rf, rp, rbr } from "../../../../utils/responsive";
 import { gradients, toLinearGradientProps } from "../../../../theme/gradients";
+import { crossPlatformAlert } from "../../../../utils/crossPlatformAlert";
 
 interface ClearCacheConfirmModalProps {
   visible: boolean;
@@ -40,6 +41,13 @@ export const ClearCacheConfirmModal: React.FC<ClearCacheConfirmModalProps> = ({
     setIsClearing(true);
     try {
       await onConfirm();
+    } catch (error) {
+      console.error("ClearCacheConfirmModal: cache clear failed:", error);
+      setIsClearing(false);
+      crossPlatformAlert(
+        "Error",
+        "Failed to clear cache. Please try again.",
+      );
     } finally {
       setIsClearing(false);
     }

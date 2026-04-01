@@ -84,7 +84,7 @@ export class WorkoutPreferencesService {
       const workoutPreferences: WorkoutPreferencesData = {
         location: data.location || "both",
         equipment: data.equipment || [],
-        time_preference: data.time_preference || 30,
+        time_preference: data.time_preference ?? 30,
         intensity: data.intensity || "beginner",
         workout_types: data.workout_types || [],
         primary_goals: data.primary_goals || [],

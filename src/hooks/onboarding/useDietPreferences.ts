@@ -48,17 +48,17 @@ export const useDietPreferences = ({
   // Form state
   const [formData, setFormData] = useState<DietPreferencesData>({
     // Existing diet data
-    diet_type: data?.diet_type || "non-veg",
+    diet_type: data?.diet_type ?? "balanced",
     allergies: data?.allergies || [],
     restrictions: data?.restrictions || [],
 
     // Diet readiness toggles
-    keto_ready: data?.keto_ready || false,
-    intermittent_fasting_ready: data?.intermittent_fasting_ready || false,
-    paleo_ready: data?.paleo_ready || false,
-    mediterranean_ready: data?.mediterranean_ready || false,
-    low_carb_ready: data?.low_carb_ready || false,
-    high_protein_ready: data?.high_protein_ready || false,
+    keto_ready: data?.keto_ready ?? false,
+    intermittent_fasting_ready: data?.intermittent_fasting_ready ?? false,
+    paleo_ready: data?.paleo_ready ?? false,
+    mediterranean_ready: data?.mediterranean_ready ?? false,
+    low_carb_ready: data?.low_carb_ready ?? false,
+    high_protein_ready: data?.high_protein_ready ?? false,
 
     // Meal preferences
     breakfast_enabled: data?.breakfast_enabled ?? true,
@@ -72,21 +72,21 @@ export const useDietPreferences = ({
     budget_level: data?.budget_level || "medium",
 
     // Health habits
-    drinks_enough_water: data?.drinks_enough_water || false,
-    limits_sugary_drinks: data?.limits_sugary_drinks || false,
-    eats_regular_meals: data?.eats_regular_meals || false,
-    avoids_late_night_eating: data?.avoids_late_night_eating || false,
-    controls_portion_sizes: data?.controls_portion_sizes || false,
-    reads_nutrition_labels: data?.reads_nutrition_labels || false,
+    drinks_enough_water: data?.drinks_enough_water ?? false,
+    limits_sugary_drinks: data?.limits_sugary_drinks ?? false,
+    eats_regular_meals: data?.eats_regular_meals ?? false,
+    avoids_late_night_eating: data?.avoids_late_night_eating ?? false,
+    controls_portion_sizes: data?.controls_portion_sizes ?? false,
+    reads_nutrition_labels: data?.reads_nutrition_labels ?? false,
     eats_processed_foods: data?.eats_processed_foods ?? true,
     eats_5_servings_fruits_veggies:
-      data?.eats_5_servings_fruits_veggies || false,
-    limits_refined_sugar: data?.limits_refined_sugar || false,
-    includes_healthy_fats: data?.includes_healthy_fats || false,
-    drinks_alcohol: data?.drinks_alcohol || false,
-    smokes_tobacco: data?.smokes_tobacco || false,
-    drinks_coffee: data?.drinks_coffee || false,
-    takes_supplements: data?.takes_supplements || false,
+      data?.eats_5_servings_fruits_veggies ?? false,
+    limits_refined_sugar: data?.limits_refined_sugar ?? false,
+    includes_healthy_fats: data?.includes_healthy_fats ?? false,
+    drinks_alcohol: data?.drinks_alcohol ?? false,
+    smokes_tobacco: data?.smokes_tobacco ?? false,
+    drinks_coffee: data?.drinks_coffee ?? false,
+    takes_supplements: data?.takes_supplements ?? false,
   });
 
   // Sync formData with data prop when it changes
@@ -95,15 +95,15 @@ export const useDietPreferences = ({
   useEffect(() => {
     if (data && !isSyncingFromProps.current) {
       const newFormData = {
-        diet_type: data.diet_type || "non-veg",
+        diet_type: data.diet_type ?? "balanced",
         allergies: data.allergies || [],
         restrictions: data.restrictions || [],
-        keto_ready: data.keto_ready || false,
-        intermittent_fasting_ready: data.intermittent_fasting_ready || false,
-        paleo_ready: data.paleo_ready || false,
-        mediterranean_ready: data.mediterranean_ready || false,
-        low_carb_ready: data.low_carb_ready || false,
-        high_protein_ready: data.high_protein_ready || false,
+        keto_ready: data.keto_ready ?? false,
+        intermittent_fasting_ready: data.intermittent_fasting_ready ?? false,
+        paleo_ready: data.paleo_ready ?? false,
+        mediterranean_ready: data.mediterranean_ready ?? false,
+        low_carb_ready: data.low_carb_ready ?? false,
+        high_protein_ready: data.high_protein_ready ?? false,
         breakfast_enabled: data.breakfast_enabled ?? true,
         lunch_enabled: data.lunch_enabled ?? true,
         dinner_enabled: data.dinner_enabled ?? true,
@@ -111,21 +111,21 @@ export const useDietPreferences = ({
         cooking_skill_level: data.cooking_skill_level || "beginner",
         max_prep_time_minutes: data.max_prep_time_minutes ?? 30,
         budget_level: data.budget_level || "medium",
-        drinks_enough_water: data.drinks_enough_water || false,
-        limits_sugary_drinks: data.limits_sugary_drinks || false,
-        eats_regular_meals: data.eats_regular_meals || false,
-        avoids_late_night_eating: data.avoids_late_night_eating || false,
-        controls_portion_sizes: data.controls_portion_sizes || false,
-        reads_nutrition_labels: data.reads_nutrition_labels || false,
+        drinks_enough_water: data.drinks_enough_water ?? false,
+        limits_sugary_drinks: data.limits_sugary_drinks ?? false,
+        eats_regular_meals: data.eats_regular_meals ?? false,
+        avoids_late_night_eating: data.avoids_late_night_eating ?? false,
+        controls_portion_sizes: data.controls_portion_sizes ?? false,
+        reads_nutrition_labels: data.reads_nutrition_labels ?? false,
         eats_processed_foods: data.eats_processed_foods ?? true,
         eats_5_servings_fruits_veggies:
-          data.eats_5_servings_fruits_veggies || false,
-        limits_refined_sugar: data.limits_refined_sugar || false,
-        includes_healthy_fats: data.includes_healthy_fats || false,
-        drinks_alcohol: data.drinks_alcohol || false,
-        smokes_tobacco: data.smokes_tobacco || false,
-        drinks_coffee: data.drinks_coffee || false,
-        takes_supplements: data.takes_supplements || false,
+          data.eats_5_servings_fruits_veggies ?? false,
+        limits_refined_sugar: data.limits_refined_sugar ?? false,
+        includes_healthy_fats: data.includes_healthy_fats ?? false,
+        drinks_alcohol: data.drinks_alcohol ?? false,
+        smokes_tobacco: data.smokes_tobacco ?? false,
+        drinks_coffee: data.drinks_coffee ?? false,
+        takes_supplements: data.takes_supplements ?? false,
       };
 
       isSyncingFromProps.current = true;

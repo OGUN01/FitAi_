@@ -95,20 +95,20 @@ export const useMealSessionLogic = ({
         source: "meal_session",
         sessionTime,
       });
+      crossPlatformAlert(
+        "🎉 Meal Completed!",
+        `Congratulations! You've successfully prepared "${meal.name}". Enjoy your meal!`,
+        [
+          {
+            text: "Finish",
+            onPress: () => navigation.goBack(),
+          },
+        ],
+      );
     } catch (error) {
-      console.error("❌ Failed to persist meal completion:", error);
+      console.error("[MealSession] completeMeal failed:", error);
+      crossPlatformAlert("Error", "Failed to record meal completion. Please try again.");
     }
-
-    crossPlatformAlert(
-      "🎉 Meal Completed!",
-      `Congratulations! You've successfully prepared "${meal.name}". Enjoy your meal!`,
-      [
-        {
-          text: "Finish",
-          onPress: () => navigation.goBack(),
-        },
-      ],
-    );
   };
 
   const handlePauseResume = () => {

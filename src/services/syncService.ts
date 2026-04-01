@@ -425,12 +425,14 @@ export class RealTimeSyncService {
     let uploaded = 0;
 
     try {
-      // Process queued operations in batches
-      const batches = this.chunkArray(this.syncQueue, this.config.batchSize);
+      // Process queued operations in batches.
+      // Snapshot the queue first so splices during processing don't corrupt iteration.
+      const batches = this.chunkArray([...this.syncQueue], this.config.batchSize);
 
       for (const batch of batches) {
         for (const operation of batch) {
           try {
+            // TODO: add idempotency check — operation may already be applied on retry
             await this.executeUploadOperation(operation);
             uploaded++;
 

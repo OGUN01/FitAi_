@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   View,
   Text,
@@ -52,6 +52,8 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
   isEditingFromReview = false,
   onReturnToReview,
 }) => {
+  const isSubmittingRef = useRef(false);
+
   const {
     formData,
     tooltipModal,
@@ -86,7 +88,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
       >
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: rh(100) }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -199,13 +201,19 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
           <AnimatedPressable
             style={styles.nextButtonCompact}
             onPress={() => {
-              onUpdate(formData);
-              if (isEditingFromReview && onReturnToReview) {
-                onReturnToReview();
-              } else {
-                setTimeout(() => {
-                  onNext(formData);
-                }, 100);
+              if (isSubmittingRef.current) return;
+              isSubmittingRef.current = true;
+              try {
+                onUpdate(formData);
+                if (isEditingFromReview && onReturnToReview) {
+                  onReturnToReview();
+                } else {
+                  setTimeout(() => {
+                    onNext(formData);
+                  }, 100);
+                }
+              } finally {
+                isSubmittingRef.current = false;
               }
             }}
             scaleValue={0.96}

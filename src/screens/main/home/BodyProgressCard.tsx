@@ -82,7 +82,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(({
             <View style={styles.mainStats}>
               <View style={styles.currentWeight}>
                 <Text style={styles.weightValue}>
-                  {displayCurrentWeight?.toFixed(1)}
+                  {displayCurrentWeight != null ? displayCurrentWeight.toFixed(1) : '--'}
                   <Text style={styles.weightUnit}> {unit}</Text>
                 </Text>
                 <Text style={styles.weightLabel}>Current</Text>

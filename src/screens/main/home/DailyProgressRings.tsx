@@ -134,7 +134,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
   mealsLogged,
   mealsGoal,
   steps = 0,
-  stepsGoal = 10000,
+  stepsGoal = 0,
   stepsSource,
   onPress,
 }) => {
@@ -183,9 +183,12 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
     mealsGoal > 0 ? Math.min((mealsLogged / mealsGoal) * 100, 100) : 0;
   const stepsProgress =
     stepsGoal > 0 ? Math.min((steps / stepsGoal) * 100, 100) : 0;
+  // Only include steps in overall score if user has wearable data (steps > 0 or stepsGoal > 0)
+  const hasStepsData = steps > 0 || stepsGoal > 0;
+  const activeRingCount = hasStepsData ? 4 : 3;
   const overallScore =
     Math.round(
-      (moveProgress + exerciseProgress + nutritionProgress + stepsProgress) / 4,
+      (moveProgress + exerciseProgress + nutritionProgress + (hasStepsData ? stepsProgress : 0)) / activeRingCount,
     ) || 0;
 
   // Ring sizes (compact) - 4 rings
@@ -312,7 +315,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
               <Text style={styles.statLabel}>Move</Text>
               <Text style={styles.statValue}>
                 {caloriesBurned}
-                <Text style={styles.statUnit}>/{caloriesGoal > 0 ? caloriesGoal : 500} cal</Text>
+                <Text style={styles.statUnit}>/{caloriesGoal} cal</Text>
               </Text>
             </View>
             <View style={styles.statRow}>
@@ -348,7 +351,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
               <Text style={styles.statLabel}>Nutrition</Text>
               <Text style={styles.statValue}>
                 {mealsLogged}
-                <Text style={styles.statUnit}>/{mealsGoal > 0 ? mealsGoal : 2000} cal</Text>
+                <Text style={styles.statUnit}>/{mealsGoal} meals</Text>
               </Text>
             </View>
             {/* Steps from Health Connect/HealthKit */}
@@ -363,9 +366,9 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
               />
               <View style={styles.statLabelContainer}>
                 <Text style={styles.statLabel}>Steps</Text>
-                {stepsSource && (
+                {stepsSource?.name ? (
                   <Text style={styles.sourceLabel}>via {stepsSource.name}</Text>
-                )}
+                ) : null}
               </View>
               <Text style={styles.statValue}>
                 {steps.toLocaleString()}

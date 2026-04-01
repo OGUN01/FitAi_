@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { TabValidationResult } from "../types/onboarding";
 
 export const TAB_TITLES: Record<number, string> = {
@@ -22,18 +22,18 @@ export const useOnboardingProgress = ({
   completedTabs,
   tabValidationStatus,
 }: UseOnboardingProgressProps) => {
-  const getTabAccessibility = (tabNumber: number): boolean => {
+  const getTabAccessibility = useCallback((tabNumber: number): boolean => {
     if (tabNumber === 1) return true;
     return completedTabs.includes(tabNumber - 1) || tabNumber === currentTab;
-  };
+  }, [completedTabs, currentTab]);
 
-  const calculateTabCompletion = (tabNumber: number): number => {
+  const calculateTabCompletion = useCallback((tabNumber: number): number => {
     if (completedTabs.includes(tabNumber)) return 100;
     if (tabNumber === currentTab) {
       return tabValidationStatus[tabNumber]?.completion_percentage || 0;
     }
     return 0;
-  };
+  }, [completedTabs, currentTab, tabValidationStatus]);
 
   const totalErrors = useMemo(
     () =>

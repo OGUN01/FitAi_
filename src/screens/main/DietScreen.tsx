@@ -184,6 +184,24 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   );
   const setSelectedDay = useAppStateStore((state) => state.setSelectedDay);
 
+  // ========== SCREEN DEBUG LOG ==========
+  React.useEffect(() => {
+    const consumed = getTodaysConsumedNutrition();
+    const calorieTarget = getCalorieTarget();
+    const macros = getMacroTargets();
+    console.warn(`\n${'='.repeat(60)}`);
+    console.warn(`🥗 [SCREEN DEBUG] DietScreen MOUNTED`);
+    console.warn(`${'='.repeat(60)}`);
+    console.warn(`👤 Authenticated: ${isAuthenticated} | Guest: ${isGuestMode}`);
+    console.warn(`📋 Has Meal Plan: ${!!weeklyMealPlan} | Generating: ${isGeneratingPlan}`);
+    console.warn(`🍽️  Today's Meals: ${todaysMeals?.length || 0}`);
+    console.warn(`🎯 Calorie Target: ${calorieTarget} | Consumed: ${consumed?.calories || 0}`);
+    console.warn(`📊 Macros Target: P=${macros?.protein || '?'}g C=${macros?.carbs || '?'}g F=${macros?.fat || '?'}g`);
+    console.warn(`💧 Water: ${waterIntakeML}/${waterGoalML}ml`);
+    console.warn(`📊 Calculated Metrics: TDEE=${calculatedMetrics?.calculatedTDEE ?? '?'} | CalTarget=${calculatedMetrics?.dailyCalories ?? '?'}`);
+    console.warn(`${'='.repeat(60)}\n`);
+  }, []);
+
   // Day name â†’ index mapping for date navigation
   const selectedDate = React.useMemo(
     () => new Date(`${selectedDateKey}T12:00:00`),
@@ -246,7 +264,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     ],
   );
 
-  const canAccessMealFeatures = isAuthenticated || isGuestMode;
+  const canAccessMealFeatures = isAuthenticated;
 
   useEffect(() => {
     if (route?.params?.mealCompleted) {
@@ -355,20 +373,25 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   );
 
   const storeNutrition = getTodaysConsumedNutrition();
+  // Date-aware nutrition: when user swipes to a different day, show that day's data
+  const selectedDateNutrition = useNutritionStore((s) => s.getConsumedNutritionForDate)(selectedDateKey);
+  const isSelectedDateToday = selectedDateKey === getLocalDateString();
+  // Use optimized today cache when viewing today, date-filtered query otherwise
+  const displayNutrition = isSelectedDateToday ? storeNutrition : selectedDateNutrition;
   // SSOT fix: nutritionStore.getTodaysConsumedNutrition() is the single source
   // for all today's calories. It aggregates:
   //   (a) completed weekly-plan meals via mealProgress
   //   (b) manually-logged daily meals hydrated into dailyMeals from meal_logs
   // We no longer fall back to a separate Supabase dailyNutrition fetch because
-  // that fetch and the store fetch target the same meal_logs table â€” merging them
+  // that fetch and the store fetch target the same meal_logs table \u2014 merging them
   // caused different calorie numbers on different screens.
   const currentNutrition = {
-    calories: storeNutrition.calories,
-    protein: storeNutrition.protein,
-    carbs: storeNutrition.carbs,
-    fat: storeNutrition.fat,
-    fiber: storeNutrition.fiber,
-    sugar: storeNutrition.sugar,
+    calories: displayNutrition.calories,
+    protein: displayNutrition.protein,
+    carbs: displayNutrition.carbs,
+    fat: displayNutrition.fat,
+    fiber: displayNutrition.fiber,
+    sugar: displayNutrition.sugar,
     mealsCount: dailyNutrition?.mealsCount ?? todaysConsumedMeals.length,
   };
 
@@ -396,11 +419,11 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     },
     fiber: {
       current: currentNutrition.fiber,
-      target: 25, // Standard daily fiber target (getMacroTargets does not include fiber)
+      target: (calculatedMetrics?.dailyFiberG ?? 0) as number, // From onboarding calculation (14g per 1000 cal)
     },
     sugar: {
       current: currentNutrition.sugar,
-      target: 50, // WHO recommendation: <50g/day added sugar (10% of 2000 kcal diet)
+      target: Math.round((calorieTarget * 0.1) / 4) || 0, // 10% of daily calories from sugar (WHO guideline), personalized
     },
   };
 
@@ -929,7 +952,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             onClose={handleCloseWaterIntake}
             onAddWater={hydrationAddWater}
             currentIntakeML={waterIntakeML || 0}
-            goalML={waterGoalML || 2500}
+            goalML={waterGoalML ?? 0}
           />
         )}
 

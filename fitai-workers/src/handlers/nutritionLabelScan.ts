@@ -27,7 +27,7 @@ import { ErrorCode } from '../utils/errorCodes';
 // ============================================================================
 
 const LabelScanRequestSchema = z.object({
-	imageBase64: z.string().min(100, 'Image data is too short'),
+	imageBase64: z.string().min(100, 'Image data is too short').max(10_000_000, 'Image data exceeds 10MB limit'),
 	productName: z.string().max(300).optional(),
 });
 
@@ -53,7 +53,7 @@ const NutritionLabelSchema = z.object({
 	fatPerServing: z.number().describe('Total Fat in grams per serving as printed'),
 	fiberPerServing: z.number().optional().describe('Dietary fiber in grams per serving if printed, otherwise omit'),
 	sugarPerServing: z.number().optional().describe('Total sugars in grams per serving if printed, otherwise omit'),
-	sodiumPerServing: z.number().optional().describe('Sodium in grams PER SERVING (convert mg to g by dividing by 1000)'),
+	sodiumPerServing: z.number().optional().describe('Sodium in milligrams (mg) PER SERVING exactly as printed — do NOT convert to grams'),
 
 	// Per-100g values if explicitly printed on the label (many Indian/EU labels have both)
 	caloriesPer100g: z.number().optional().describe('Calories per 100g if EXPLICITLY printed on label, otherwise omit'),
@@ -106,7 +106,7 @@ INSTRUCTIONS:
 1. Find the nutrition table in the image (even if it is on a colorful background)
 2. Read EVERY NUMBER verbatim — do not estimate
 3. If the table has TWO columns (e.g., per 100g AND per serving), fill in BOTH sets of fields
-4. For sodiumPerServing: convert mg → g (divide by 1000). E.g. 6.7mg → 0.0067
+4. For sodiumPerServing: report the value in milligrams (mg) exactly as printed — do NOT divide or convert
 5. For serving size: extract the NUMBER only (e.g., if it says "40g serving", servingSize=40, servingUnit="g")
 6. If you can read the numbers clearly, set confidence 80-100
 7. Set productName from what you can see on the package
@@ -147,10 +147,11 @@ export async function handleNutritionLabelScan(c: Context<{ Bindings: Env; Varia
 
 		const request: LabelScanRequest = parsed.data;
 
-		// Validate image format
-		if (!request.imageBase64.startsWith('data:image/')) {
+		// Validate image format — only JPEG, PNG, WebP accepted (FIX C)
+		const ALLOWED_IMAGE_TYPES = ['data:image/jpeg', 'data:image/png', 'data:image/webp'];
+		if (!ALLOWED_IMAGE_TYPES.some(t => request.imageBase64.startsWith(t))) {
 			throw new APIError(
-				'Invalid image format. Expected base64 data URL (data:image/...)',
+				'Image must be JPEG, PNG, or WebP format',
 				400,
 				ErrorCode.VALIDATION_ERROR,
 			);
@@ -182,8 +183,23 @@ export async function handleNutritionLabelScan(c: Context<{ Bindings: Env; Varia
 		// ── Normalise to per-100g ──────────────────────────────────────────────
 		// If label only gives per-serving, we scale to per-100g for consistency
 		// with ScannedProduct.nutrition which the app always stores as per-100g.
-		const servingG = object.servingSize; // treat as grams (covers "g" and "ml" for practical purposes)
-		const scale = servingG > 0 ? 100 / servingG : 1;
+
+		// FIX A — unit-aware serving size conversion
+		const UNIT_TO_GRAMS: Record<string, number> = {
+			g: 1, ml: 1, oz: 28.3495, cup: 240, tbsp: 15, tsp: 5, piece: 1,
+		};
+		const servingUnitKey = object.servingUnit?.toLowerCase() ?? '';
+		if (object.servingUnit && !(servingUnitKey in UNIT_TO_GRAMS)) {
+			console.warn(`[LabelScan] Unknown serving unit "${object.servingUnit}" — treating as grams`);
+		}
+		const unitMultiplier = UNIT_TO_GRAMS[servingUnitKey] ?? 1;
+		const servingGrams = object.servingSize * unitMultiplier;
+		const scale = servingGrams > 0 ? 100 / servingGrams : 1;
+
+		// FIX B — sodium defence: if Gemini still returned grams (value < 1), convert to mg
+		const sodiumPerServingMg = object.sodiumPerServing != null
+			? (object.sodiumPerServing < 1 ? Math.round(object.sodiumPerServing * 1000) : object.sodiumPerServing)
+			: undefined;
 
 		const per100g = {
 			calories: object.caloriesPer100g ?? Math.round(object.caloriesPerServing * scale),
@@ -192,7 +208,8 @@ export async function handleNutritionLabelScan(c: Context<{ Bindings: Env; Varia
 			fat:      object.fatPer100g      ?? Math.round(object.fatPerServing      * scale * 10) / 10,
 			fiber:    object.fiberPerServing  != null ? Math.round(object.fiberPerServing  * scale * 10) / 10 : undefined,
 			sugar:    object.sugarPerServing  != null ? Math.round(object.sugarPerServing  * scale * 10) / 10 : undefined,
-			sodium:   object.sodiumPerServing != null ? Math.round(object.sodiumPerServing * scale * 100) / 100 : undefined,
+			// sodium stored as mg/100g (consistent with nutritionEstimate handler)
+			sodium:   sodiumPerServingMg != null ? Math.round(sodiumPerServingMg * scale) : undefined,
 		};
 
 		return c.json({
@@ -214,7 +231,7 @@ export async function handleNutritionLabelScan(c: Context<{ Bindings: Env; Varia
 					fat:      object.fatPerServing,
 					fiber:    object.fiberPerServing,
 					sugar:    object.sugarPerServing,
-					sodium:   object.sodiumPerServing,
+					sodium:   sodiumPerServingMg, // always in mg
 				},
 
 				// Per-100g (what ScannedProduct.nutrition expects)

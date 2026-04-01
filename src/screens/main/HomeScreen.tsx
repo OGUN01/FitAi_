@@ -108,6 +108,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     syncFromHealthConnect,
   } = useHomeLogic();
 
+  // ========== SCREEN DEBUG LOG ==========
+  React.useEffect(() => {
+    console.warn(`\n${'='.repeat(60)}`);
+    console.warn(`🏠 [SCREEN DEBUG] HomeScreen MOUNTED`);
+    console.warn(`${'='.repeat(60)}`);
+    console.warn(`👤 User: ${userName || '(unknown)'} | Guest: ${isGuestMode}`);
+    console.warn(`🔥 Streak: ${realStreak} | Calories Burned: ${realCaloriesBurned} | Consumed: ${caloriesConsumed}`);
+    console.warn(`🎯 Calories Goal: ${actualCaloriesGoal} | Workout Mins: ${workoutMinutes}`);
+    console.warn(`💧 Water: ${waterIntakeML}/${waterGoal}ml`);
+    console.warn(`⚖️  Weight: ${JSON.stringify(weightData)}`);
+    console.warn(`📊 Calculated Metrics: TDEE=${calculatedMetrics?.calculatedTDEE ?? '?'} | BMR=${calculatedMetrics?.calculatedBMR ?? '?'} | WaterGoal=${calculatedMetrics?.dailyWaterML ?? '?'}`);
+    console.warn(`🏋️ Today's Workout: ${todaysWorkoutInfo?.workout?.title || 'None'}`);
+    console.warn(`📋 Workout Prefs: Location=${workoutPreferences?.location} | Intensity=${workoutPreferences?.intensity}`);
+    console.warn(`${'='.repeat(60)}\n`);
+  }, []); // Only on mount
+
   // Achievement data
   const achievements = useAchievementStore((s) => s.achievements);
   const userAchievements = useAchievementStore((s) => s.userAchievements);
@@ -288,24 +304,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   caloriesGoal={
                     // Active calorie goal = TDEE - BMR (calories from activity only, not resting metabolism).
                     // Using full TDEE as a Move goal is unachievable since BMR accounts for most of it.
+                    // No hardcoded fallback — 0 reveals missing data.
                     (calculatedMetrics?.calculatedTDEE && calculatedMetrics?.calculatedBMR)
                       ? Math.round(calculatedMetrics.calculatedTDEE - calculatedMetrics.calculatedBMR)
-                      : actualCaloriesGoal
+                      : 0
                   }
                   workoutMinutes={workoutMinutes}
                   workoutGoal={
-                    // Single source of truth: today's actual scheduled workout duration.
-                    // Falls back to live profileStore preference, then AI recommendation, then 30 min.
-                    todaysWorkoutInfo.workout?.duration ||
-                    workoutPreferences?.time_preference ||
-                    calculatedMetrics?.workoutDurationMinutes ||
-                    calculatedMetrics?.recommendedCardioMinutes ||
-                    30
+                    // Single source of truth: today's actual scheduled workout duration,
+                    // then profileStore preference, then calculated metric. No hardcoded fallback.
+                    todaysWorkoutInfo.workout?.duration ??
+                    workoutPreferences?.time_preference ??
+                    calculatedMetrics?.workoutDurationMinutes ??
+                    calculatedMetrics?.recommendedCardioMinutes ??
+                    0
                   }
                   mealsLogged={caloriesConsumed}
-                  mealsGoal={calculatedMetrics?.dailyCalories ?? actualCaloriesGoal} // Intake target for nutrition goal
+                  mealsGoal={calculatedMetrics?.dailyCalories ?? 0} // Intake target for nutrition goal — no fallback
                   steps={currentSteps} // Only use wearable steps when the synced snapshot is from today
-                  stepsGoal={healthMetrics?.stepsGoal ?? 10000} // Default 10k steps if not set
+                  stepsGoal={healthMetrics?.stepsGoal ?? 0} // No hardcoded fallback - 0 reveals missing data
                   stepsSource={currentStepsSource} // Hide stale source attribution with stale metrics
                   onPress={handleRingsPress}
                 />

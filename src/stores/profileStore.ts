@@ -268,6 +268,7 @@ export const useProfileStore = create<ProfileStore>()(
         // Handle rehydration from storage
         onRehydrateStorage: () => (state) => {
           if (state) {
+            state.isHydrated = true;
           }
         },
       },

@@ -262,18 +262,18 @@ export const EditProvider: React.FC<EditProviderProps> = ({
               const dp = (profileStoreDP || profile?.dietPreferences) as any;
               sectionData = {
                 // Basic diet info
-                diet_type: dp?.diet_type || dp?.dietType || "non-veg",
+                diet_type: dp?.diet_type ?? dp?.dietType ?? "balanced",
                 allergies: dp?.allergies || [],
                 restrictions: dp?.restrictions || [],
 
                 // Diet readiness toggles (6)
-                keto_ready: dp?.keto_ready || false,
+                keto_ready: dp?.keto_ready ?? false,
                 intermittent_fasting_ready:
-                  dp?.intermittent_fasting_ready || false,
-                paleo_ready: dp?.paleo_ready || false,
-                mediterranean_ready: dp?.mediterranean_ready || false,
-                low_carb_ready: dp?.low_carb_ready || false,
-                high_protein_ready: dp?.high_protein_ready || false,
+                  dp?.intermittent_fasting_ready ?? false,
+                paleo_ready: dp?.paleo_ready ?? false,
+                mediterranean_ready: dp?.mediterranean_ready ?? false,
+                low_carb_ready: dp?.low_carb_ready ?? false,
+                high_protein_ready: dp?.high_protein_ready ?? false,
 
                 // Meal preferences (4)
                 breakfast_enabled: dp?.breakfast_enabled !== false,
@@ -288,21 +288,21 @@ export const EditProvider: React.FC<EditProviderProps> = ({
                 budget_level: dp?.budget_level || "medium",
 
                 // Health habits (14)
-                drinks_enough_water: dp?.drinks_enough_water || false,
-                limits_sugary_drinks: dp?.limits_sugary_drinks || false,
-                eats_regular_meals: dp?.eats_regular_meals || false,
-                avoids_late_night_eating: dp?.avoids_late_night_eating || false,
-                controls_portion_sizes: dp?.controls_portion_sizes || false,
-                reads_nutrition_labels: dp?.reads_nutrition_labels || false,
+                drinks_enough_water: dp?.drinks_enough_water ?? false,
+                limits_sugary_drinks: dp?.limits_sugary_drinks ?? false,
+                eats_regular_meals: dp?.eats_regular_meals ?? false,
+                avoids_late_night_eating: dp?.avoids_late_night_eating ?? false,
+                controls_portion_sizes: dp?.controls_portion_sizes ?? false,
+                reads_nutrition_labels: dp?.reads_nutrition_labels ?? false,
                 eats_processed_foods: dp?.eats_processed_foods !== false,
                 eats_5_servings_fruits_veggies:
-                  dp?.eats_5_servings_fruits_veggies || false,
-                limits_refined_sugar: dp?.limits_refined_sugar || false,
-                includes_healthy_fats: dp?.includes_healthy_fats || false,
-                drinks_alcohol: dp?.drinks_alcohol || false,
-                smokes_tobacco: dp?.smokes_tobacco || false,
-                drinks_coffee: dp?.drinks_coffee || false,
-                takes_supplements: dp?.takes_supplements || false,
+                  dp?.eats_5_servings_fruits_veggies ?? false,
+                limits_refined_sugar: dp?.limits_refined_sugar ?? false,
+                includes_healthy_fats: dp?.includes_healthy_fats ?? false,
+                drinks_alcohol: dp?.drinks_alcohol ?? false,
+                smokes_tobacco: dp?.smokes_tobacco ?? false,
+                drinks_coffee: dp?.drinks_coffee ?? false,
+                takes_supplements: dp?.takes_supplements ?? false,
               };
               break;
             }

@@ -7,6 +7,8 @@ import { VERIFIED_EXERCISE_NAMES } from './constants/exerciseDatabase';
 import { Workout } from '../types/ai';
 import { WorkoutSet } from '../types/workout';
 
+const MIN_FUZZY_MATCH_SCORE = 0.9; // was 0.8 — raised to reduce false matches
+
 /**
  * Comprehensive exercise validation with multiple safety layers
  */
@@ -87,7 +89,7 @@ export class ExerciseValidationService {
 
     // Check for keyword-based intelligent mapping
     const intelligentSuggestion = this.getIntelligentSuggestion(exerciseName);
-    if (intelligentSuggestion && bestScore < 0.8) {
+    if (intelligentSuggestion && bestScore < MIN_FUZZY_MATCH_SCORE) {
       return {
         isValid: false,
         suggestedName: intelligentSuggestion,
@@ -96,7 +98,7 @@ export class ExerciseValidationService {
     }
 
     return {
-      isValid: bestScore > 0.9,
+      isValid: bestScore >= MIN_FUZZY_MATCH_SCORE,
       suggestedName: bestMatch,
       confidence: Math.round(bestScore * 100),
     };
@@ -297,6 +299,63 @@ export class ExerciseValidationService {
       ],
     };
   }
+}
+
+/**
+ * Validates exercises against user safety constraints.
+ * Returns a list of exercises that should be removed with reasons.
+ * NOTE: Not yet wired into the generation pipeline — define only for future use.
+ */
+export function validateExerciseSafety(
+  exercises: Array<{ id: string; name: string; category?: string; tags?: string[] }>,
+  constraints: {
+    pregnancyStatus?: boolean;
+    pregnancyTrimester?: 1 | 2 | 3;
+    injuries?: string[];
+    medicalConditions?: string[];
+  }
+): Array<{ exerciseId: string; reason: string }> {
+  const violations: Array<{ exerciseId: string; reason: string }> = [];
+
+  for (const exercise of exercises) {
+    const name = exercise.name.toLowerCase();
+    const tags = (exercise.tags ?? []).map(t => t.toLowerCase());
+
+    // Pregnancy restrictions
+    if (constraints.pregnancyStatus) {
+      const highImpact = ['jump', 'box jump', 'burpee', 'sprint', 'plyometric', 'contact'];
+      const prone = ['prone', 'face down', 'stomach'];
+      if (highImpact.some(kw => name.includes(kw) || tags.includes(kw))) {
+        violations.push({ exerciseId: exercise.id, reason: 'High-impact exercise not recommended during pregnancy' });
+        continue;
+      }
+      if (constraints.pregnancyTrimester && constraints.pregnancyTrimester >= 2) {
+        if (prone.some(kw => name.includes(kw) || tags.includes(kw))) {
+          violations.push({ exerciseId: exercise.id, reason: 'Prone position not recommended after first trimester' });
+          continue;
+        }
+      }
+    }
+
+    // Injury-based restrictions (keyword matching)
+    for (const injury of constraints.injuries ?? []) {
+      const injuryLower = injury.toLowerCase();
+      if (injuryLower.includes('knee') && (name.includes('lunge') || name.includes('squat') || name.includes('jump'))) {
+        violations.push({ exerciseId: exercise.id, reason: `Knee injury: ${exercise.name} may aggravate condition` });
+        break;
+      }
+      if (injuryLower.includes('back') && (name.includes('deadlift') || name.includes('good morning') || name.includes('hyperextension'))) {
+        violations.push({ exerciseId: exercise.id, reason: `Back injury: ${exercise.name} may aggravate condition` });
+        break;
+      }
+      if (injuryLower.includes('shoulder') && (name.includes('overhead') || name.includes('military press') || name.includes('upright row'))) {
+        violations.push({ exerciseId: exercise.id, reason: `Shoulder injury: ${exercise.name} may aggravate condition` });
+        break;
+      }
+    }
+  }
+
+  return violations;
 }
 
 // Export singleton instance

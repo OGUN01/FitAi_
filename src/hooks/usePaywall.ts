@@ -140,6 +140,8 @@ export const usePaywall = () => {
   );
   const [planLoadError, setPlanLoadError] = useState<string | null>(null);
   const inFlightRef = useRef(false);
+  const isMountedRef = useRef(true);
+  useEffect(() => () => { isMountedRef.current = false; }, []);
 
   const {
     currentPlan,
@@ -156,6 +158,7 @@ export const usePaywall = () => {
    * Maps each paid row into one or two PlanConfig entries (monthly + yearly).
    */
   useEffect(() => {
+    if (plans.length > 0) return; // already loaded, don't refetch
     let cancelled = false;
 
     const fetchPlans = async () => {
@@ -188,7 +191,7 @@ export const usePaywall = () => {
     return () => {
       cancelled = true;
     };
-  }, [showPaywall]);
+  }, [plans.length]);
 
   const dismiss = () => {
     dismissPaywall();
@@ -220,7 +223,7 @@ export const usePaywall = () => {
     }
 
     inFlightRef.current = true;
-    setIsLoading(true);
+    if (isMountedRef.current) setIsLoading(true);
     try {
       // Parse composite ID: "<uuid>_monthly" or "<uuid>_yearly"
       const plan = plans.find((p) => p.id === planId);
@@ -255,7 +258,7 @@ export const usePaywall = () => {
 
       // Step 2: Get user info for checkout
       const userInfo = {
-        name: user.user_metadata?.name || user.email?.split("@")[0] || "",
+        name: user?.user_metadata?.name ?? user?.email?.split("@")[0] ?? "",
         email: user.email || "",
         phone: user.user_metadata?.phone || "",
       };
@@ -296,16 +299,17 @@ export const usePaywall = () => {
       await fetchSubscriptionStatus({ preserveExistingOnError: true });
 
       // Step 6: Success! Dismiss paywall and show success message
+      if (!isMountedRef.current) return true;
       dismiss();
       crossPlatformAlert(
         "🎉 Welcome to Premium!",
         "Your subscription is now active. Enjoy all premium features!",
         [{ text: "Get Started" }],
       );
-      setIsLoading(false);
+      if (isMountedRef.current) setIsLoading(false);
       return true;
     } catch (error) {
-      setIsLoading(false);
+      if (isMountedRef.current) setIsLoading(false);
 
       // Always log the real error for debugging
       console.error("[usePaywall] subscribe error:", error);
@@ -362,7 +366,7 @@ export const usePaywall = () => {
       return false;
     } finally {
       inFlightRef.current = false;
-      setIsLoading(false);
+      if (isMountedRef.current) setIsLoading(false);
     }
   };
 

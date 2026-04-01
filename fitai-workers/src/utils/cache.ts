@@ -176,14 +176,10 @@ export async function getFromDatabase(
     }
 
     // Increment hit count (fire and forget - don't wait)
-    Promise.resolve(
-      supabase.rpc('increment_cache_hit', {
-        p_table: tableName,
-        p_cache_key: cacheKey,
-      })
-    ).catch((err: Error) => {
-      console.error('[Hit Count Error]', err);
-    });
+    supabase.rpc('increment_cache_hit', {
+      p_table: tableName,
+      p_cache_key: cacheKey,
+    }).catch((err: Error) => console.error('[Cache] RPC failed:', err));
 
     // Extract the actual data
     const cachedData = type === 'workout'

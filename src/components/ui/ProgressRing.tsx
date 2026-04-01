@@ -127,8 +127,9 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
   duration = 1000,
   children,
 }) => {
-  // Round all numeric props to avoid precision errors on Android native
-  const progress = Math.round(rawProgress);
+  // Clamp to [0, 100] and round to avoid out-of-range values and precision errors on Android native
+  const clampedProgress = Math.max(0, Math.min(100, rawProgress));
+  const progress = Math.round(clampedProgress);
   const size = Math.round(rawSize);
   const strokeWidth = Math.round(rawStrokeWidth);
 

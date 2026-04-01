@@ -90,6 +90,22 @@ export const useOnboardingLogic = ({
   const [isSaving, setIsSaving] = useState(false);
   const pendingEditingReset = useRef(false);
 
+  // Refs to stabilize data values in callbacks without causing re-creation
+  const personalInfoRef = useRef(personalInfo);
+  useEffect(() => { personalInfoRef.current = personalInfo; }, [personalInfo]);
+  const dietPreferencesRef = useRef(dietPreferences);
+  useEffect(() => { dietPreferencesRef.current = dietPreferences; }, [dietPreferences]);
+  const bodyAnalysisRef = useRef(bodyAnalysis);
+  useEffect(() => { bodyAnalysisRef.current = bodyAnalysis; }, [bodyAnalysis]);
+  const workoutPreferencesRef = useRef(workoutPreferences);
+  useEffect(() => { workoutPreferencesRef.current = workoutPreferences; }, [workoutPreferences]);
+  const advancedReviewRef = useRef(advancedReview);
+  useEffect(() => { advancedReviewRef.current = advancedReview; }, [advancedReview]);
+
+  // Stable ref for saveToLocal so auto-save interval doesn't restart on identity change
+  const saveToLocalRef = useRef(saveToLocal);
+  useEffect(() => { saveToLocalRef.current = saveToLocal; }, [saveToLocal]);
+
   // ============================================================================
   // EFFECTS
   // ============================================================================
@@ -104,25 +120,27 @@ export const useOnboardingLogic = ({
 
   // Reset editing state
   useEffect(() => {
+    let isMounted = true;
     if (pendingEditingReset.current && currentTab === 5) {
-      pendingEditingReset.current = false;
-      setIsEditingFromReview(false);
-      setPreviousTab(null);
+      if (isMounted) {
+        pendingEditingReset.current = false;
+        setIsEditingFromReview(false);
+        setPreviousTab(null);
+      }
     }
+    return () => { isMounted = false; };
   }, [currentTab]);
 
-  // Auto-save
+  // Auto-save — saveToLocalRef prevents interval from restarting on saveToLocal identity change
   useEffect(() => {
-    if (hasUnsavedChanges) {
-      const saveInterval = setInterval(() => {
-        saveToLocal();
-      }, 30000);
-
-      return () => {
-        clearInterval(saveInterval);
-      };
-    }
-  }, [hasUnsavedChanges, saveToLocal]);
+    if (!hasUnsavedChanges) return;
+    const saveInterval = setInterval(() => {
+      saveToLocalRef.current();
+    }, 30000);
+    return () => {
+      clearInterval(saveInterval);
+    };
+  }, [hasUnsavedChanges]);
 
   // ============================================================================
   // NAVIGATION HANDLERS
@@ -183,7 +201,7 @@ export const useOnboardingLogic = ({
           {
             text: "Save & Continue",
             onPress: async () => {
-              await saveToLocal();
+              await saveToLocalRef.current();
               setCurrentTab(tabNumber);
             },
           },
@@ -193,7 +211,7 @@ export const useOnboardingLogic = ({
     } else {
       setCurrentTab(tabNumber);
     }
-  }, [getTabAccessibility, hasUnsavedChanges, currentTab, setCurrentTab, saveToLocal]);
+  }, [getTabAccessibility, hasUnsavedChanges, currentTab, setCurrentTab]);
 
   const handleNextTab = useCallback(async (currentTabData?: any) => {
     if (isNavigating || isSaving) {
@@ -219,7 +237,7 @@ export const useOnboardingLogic = ({
       if (editMode) {
         setIsSaving(true);
         try {
-          await saveToLocal();
+          await saveToLocalRef.current();
         } finally {
           setIsSaving(false);
         }
@@ -251,7 +269,7 @@ export const useOnboardingLogic = ({
     } finally {
       setIsNavigating(false);
     }
-  }, [isNavigating, isSaving, validateTab, currentTab, markTabCompleted, editMode, saveToLocal, onEditComplete, setCurrentTab, completeOnboarding]);
+  }, [isNavigating, isSaving, validateTab, currentTab, markTabCompleted, editMode, onEditComplete, setCurrentTab, completeOnboarding]);
 
   const handlePreviousTab = useCallback(() => {
     if (editMode) {
@@ -270,7 +288,7 @@ export const useOnboardingLogic = ({
           {
             text: "Save & Exit",
             onPress: async () => {
-              await saveToLocal();
+              await saveToLocalRef.current();
               onExit?.();
             },
           },
@@ -284,7 +302,7 @@ export const useOnboardingLogic = ({
     } else {
       onExit?.();
     }
-  }, [editMode, onEditCancel, currentTab, setCurrentTab, hasUnsavedChanges, saveToLocal, onExit]);
+  }, [editMode, onEditCancel, currentTab, setCurrentTab, hasUnsavedChanges, onExit]);
 
   const handleBackPress = useCallback(() => {
     if (hasUnsavedChanges) {
@@ -296,7 +314,7 @@ export const useOnboardingLogic = ({
           {
             text: "Save & Exit",
             onPress: async () => {
-              await saveToLocal();
+              await saveToLocalRef.current();
               onExit?.();
             },
           },
@@ -310,7 +328,7 @@ export const useOnboardingLogic = ({
     } else {
       onExit?.();
     }
-  }, [hasUnsavedChanges, saveToLocal, onExit]);
+  }, [hasUnsavedChanges, onExit]);
 
   // Handle hardware back button
   useEffect(() => {
@@ -349,69 +367,81 @@ export const useOnboardingLogic = ({
   const handleCompletionGetStarted = useCallback(() => {
     setShowCompletionModal(false);
 
-    // Validate required data
-    if (!personalInfo?.age || !personalInfo?.gender) {
+    const pi = personalInfoRef.current;
+    const ba = bodyAnalysisRef.current;
+    const wp = workoutPreferencesRef.current;
+    const dp = dietPreferencesRef.current;
+    const ar = advancedReviewRef.current;
+
+    // Validate required data — surface error via dialog instead of throwing
+    if (!pi?.age || !pi?.gender) {
       console.error("❌ useOnboardingLogic: Missing required personal info");
-      throw new Error("Please complete Personal Info tab with age and gender");
+      setCompletionDialog({
+        visible: true,
+        title: "Incomplete Information",
+        message: "Please complete Personal Info tab with age and gender.",
+        type: "error",
+        onConfirm: () => {
+          setCompletionDialog((prev) => ({ ...prev, visible: false }));
+        },
+      });
+      return;
     }
-    // Body analysis is optional — only validate if we have partial data
-    const hasBodyData =
-      !!bodyAnalysis?.height_cm && !!bodyAnalysis?.current_weight_kg;
 
     const completeData: OnboardingReviewData = {
       personalInfo: {
-        first_name: personalInfo?.first_name || "User",
-        last_name: personalInfo?.last_name || "",
-        email: personalInfo?.email || "",
-        age: personalInfo.age,
-        gender: personalInfo.gender,
-        height: bodyAnalysis?.height_cm || 0,
-        weight: bodyAnalysis?.current_weight_kg || 0,
-        occupation_type: personalInfo?.occupation_type || "moderate_active",
-        country: personalInfo?.country || "",
-        state: personalInfo?.state || "",
+        first_name: pi?.first_name || "User",
+        last_name: pi?.last_name || "",
+        email: pi?.email || "",
+        age: pi.age,
+        gender: pi.gender,
+        height: ba?.height_cm || 0,
+        weight: ba?.current_weight_kg || 0,
+        occupation_type: pi?.occupation_type || "moderate_active",
+        country: pi?.country || "",
+        state: pi?.state || "",
       } as any,
       fitnessGoals: {
-        primary_goals: workoutPreferences?.primary_goals || [],
-        time_commitment: `${workoutPreferences?.session_duration_minutes || 45} minutes`,
+        primary_goals: wp?.primary_goals || [],
+        time_commitment: `${wp?.session_duration_minutes || 45} minutes`,
         experience:
-          workoutPreferences?.intensity === "beginner"
+          wp?.intensity === "beginner"
             ? "beginner"
-            : workoutPreferences?.intensity === "advanced"
+            : wp?.intensity === "advanced"
               ? "advanced"
               : "intermediate",
         experience_level:
-          workoutPreferences?.intensity === "beginner"
+          wp?.intensity === "beginner"
             ? "beginner"
-            : workoutPreferences?.intensity === "advanced"
+            : wp?.intensity === "advanced"
               ? "advanced"
               : "intermediate",
       } as any,
       dietPreferences: {
-        dietType: (dietPreferences?.diet_type || "balanced") as
+        dietType: (dp?.diet_type || "balanced") as
           | "vegetarian"
           | "vegan"
           | "non-veg"
           | "pescatarian",
-        allergies: dietPreferences?.allergies || [],
-        restrictions: dietPreferences?.cuisine_preferences || [],
-        calorieTarget: advancedReview?.daily_calories || 2000,
+        allergies: dp?.allergies || [],
+        restrictions: dp?.cuisine_preferences || [],
+        calorieTarget: ar?.daily_calories || 2000,
       } as any,
       workoutPreferences: {
-        location: workoutPreferences?.location || "gym",
-        equipment: workoutPreferences?.available_equipment || [],
-        workoutTypes: workoutPreferences?.workout_types || [],
-        timePreference: workoutPreferences?.time_preference || 45,
-        intensity: workoutPreferences?.intensity || "intermediate",
+        location: wp?.location || "gym",
+        equipment: wp?.available_equipment || [],
+        workoutTypes: wp?.workout_types || [],
+        timePreference: wp?.time_preference || 45,
+        intensity: wp?.intensity || "intermediate",
       },
       bodyAnalysis: {
         photos: {},
-        analysis: bodyAnalysis?.ai_body_type
+        analysis: ba?.ai_body_type
           ? {
-              bodyType: bodyAnalysis.ai_body_type,
+              bodyType: ba.ai_body_type,
               muscleMass: "Unknown",
               bodyFat:
-                bodyAnalysis?.body_fat_percentage?.toString() || "Unknown",
+                ba?.body_fat_percentage?.toString() || "Unknown",
               fitnessLevel: "Unknown",
               recommendations: [],
             }
@@ -420,7 +450,7 @@ export const useOnboardingLogic = ({
     };
 
     onComplete(completeData);
-  }, [personalInfo, bodyAnalysis, workoutPreferences, dietPreferences, advancedReview, onComplete]);
+  }, [onComplete]);
 
 
   const handleDismissDialog = useCallback(() => {

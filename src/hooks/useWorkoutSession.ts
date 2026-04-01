@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { Platform, Vibration } from "react-native";
 import { DayWorkout } from "../types/ai";
 import completionTrackingService from "../services/completionTracking";
@@ -154,7 +154,9 @@ export const useWorkoutSession = (
   }, [currentExerciseIndex, totalExercises, workout.exercises]);
 
   const workoutStatsRef = useRef(workoutStats);
-  workoutStatsRef.current = workoutStats;
+  useEffect(() => {
+    workoutStatsRef.current = workoutStats;
+  }, [workoutStats]);
 
   // Internal: marks a set as completed in exerciseProgress and persists progress
   const handleSetComplete = useCallback(

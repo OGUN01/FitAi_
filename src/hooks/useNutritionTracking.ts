@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import Constants from "expo-constants";
 import { useHydrationStore, useNutritionStore } from "../stores";
@@ -22,6 +22,7 @@ if (!isExpoGo) {
 
 export const useNutritionTracking = (navigation: any) => {
   const [showWaterIntakeModal, setShowWaterIntakeModal] = useState(false);
+  const addWaterTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
     waterIntakeML,
@@ -48,6 +49,7 @@ export const useNutritionTracking = (navigation: any) => {
 
   useEffect(() => {
     if (calculatedMetrics?.dailyWaterML) {
+      // SSOT: this is the authoritative setter for hydration goal from calculatedMetrics
       setHydrationGoal(calculatedMetrics.dailyWaterML);
     }
     checkAndResetIfNewDay();
@@ -57,9 +59,15 @@ export const useNutritionTracking = (navigation: any) => {
     checkAndResetIfNewDay,
   ]);
 
+  useEffect(() => {
+    return () => {
+      if (addWaterTimeoutRef.current) clearTimeout(addWaterTimeoutRef.current);
+    };
+  }, []);
+
   const waterConsumedLiters = waterIntakeML / 1000;
   const DEFAULT_WATER_GOAL_ML = 2500; // 2.5L default when no profile metrics available
-  const waterGoalLiters = (waterGoalML || DEFAULT_WATER_GOAL_ML) / 1000;
+  const waterGoalLiters = (waterGoalML ?? 0) / 1000;
 
   const handleAddWater = () => {
     const incrementAmountML = 250;
@@ -81,7 +89,8 @@ export const useNutritionTracking = (navigation: any) => {
       previousIntake + incrementAmountML >= waterGoalML &&
       previousIntake < waterGoalML
     ) {
-      setTimeout(() => {
+      if (addWaterTimeoutRef.current) clearTimeout(addWaterTimeoutRef.current);
+      addWaterTimeoutRef.current = setTimeout(() => {
         crossPlatformAlert(
           "Hydration Goal Achieved!",
           `Congratulations! You've reached your daily water goal of ${waterGoalLiters?.toFixed(2)}L!`,

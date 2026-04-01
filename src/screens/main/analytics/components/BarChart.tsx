@@ -40,8 +40,8 @@ export const BarChart: React.FC<BarChartProps> = ({
                 />
               </View>
             </View>
-            <Text style={styles.barLabel}>{item.label}</Text>
-            <Text style={styles.barValue}>{item.value}</Text>
+            <Text style={styles.barLabel} numberOfLines={1} ellipsizeMode="tail">{item.label}</Text>
+            <Text style={styles.barValue} numberOfLines={1} ellipsizeMode="tail">{item.value}</Text>
           </View>
         );
       })}

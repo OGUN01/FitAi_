@@ -336,7 +336,7 @@ export class FitAIWorkersClient {
   }
 
   /**
-   * Get authentication token from Supabase
+   * Get authentication token from Supabase, refreshing if within 5 minutes of expiry.
    */
   private async getAuthToken(): Promise<string> {
     try {
@@ -353,6 +353,28 @@ export class FitAIWorkersClient {
 
       if (!session?.access_token) {
         throw new AuthenticationError("No active session found");
+      }
+
+      // Refresh proactively if the token expires within 5 minutes.
+      const expiresAt = session.expires_at ?? 0;
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      if (expiresAt > 0 && expiresAt < nowSeconds + 300) {
+        try {
+          const { data: refreshData, error: refreshError } =
+            await supabase.auth.refreshSession();
+          if (!refreshError && refreshData.session?.access_token) {
+            return refreshData.session.access_token;
+          }
+          console.error(
+            "[WorkersClient] Token refresh failed, using current token:",
+            refreshError?.message,
+          );
+        } catch (refreshErr) {
+          console.error(
+            "[WorkersClient] Token refresh threw, using current token:",
+            refreshErr,
+          );
+        }
       }
 
       return session.access_token;
@@ -491,6 +513,9 @@ export class FitAIWorkersClient {
   async generateDietPlan(
     request: DietGenerationRequest,
   ): Promise<WorkersResponse<DietPlan>> {
+    if (!(await this.isAuthenticated())) {
+      return { success: false, error: "Sign up to generate AI diet plans" };
+    }
     const token = await this.getAuthToken();
 
     return this.makeRequest<DietPlan>("/diet/generate", {
@@ -510,6 +535,9 @@ export class FitAIWorkersClient {
   async generateDietPlanAsync(
     request: Omit<DietGenerationRequest, "async">,
   ): Promise<WorkersResponse<AsyncDietGenerationResponse>> {
+    if (!(await this.isAuthenticated())) {
+      return { success: false, error: "Sign up to generate AI diet plans" };
+    }
     const token = await this.getAuthToken();
 
     return this.makeRequest<AsyncDietGenerationResponse>("/diet/generate", {
@@ -528,6 +556,9 @@ export class FitAIWorkersClient {
   async generateWorkoutPlan(
     request: WorkoutGenerationRequest,
   ): Promise<WorkersResponse<WorkoutPlan>> {
+    if (!(await this.isAuthenticated())) {
+      return { success: false, error: "Sign up to generate AI workout plans" };
+    }
     const token = await this.getAuthToken();
 
     return this.makeRequest<WorkoutPlan>("/workout/generate", {

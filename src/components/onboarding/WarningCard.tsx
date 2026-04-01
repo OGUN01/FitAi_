@@ -224,7 +224,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
                 key={alternative.id}
                 alternative={alternative}
                 isSelected={selectedAlternativeId === alternative.id}
-                onSelect={onSelectAlternative ?? (() => {})}
+                onSelect={onSelectAlternative ?? (() => { if (__DEV__) console.warn('WarningCard: onSelectAlternative not provided'); })}
               />
             ))}
           </View>
@@ -269,7 +269,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
                       key={alternative.id}
                       alternative={alternative}
                       isSelected={selectedAlternativeId === alternative.id}
-                      onSelect={onSelectAlternative ?? (() => {})}
+                      onSelect={onSelectAlternative ?? (() => { if (__DEV__) console.warn('WarningCard: onSelectAlternative not provided'); })}
                     />
                   ))}
                 </View>

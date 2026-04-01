@@ -20,7 +20,16 @@ export async function verifyPaymentSignature(
 	return computedSignature === signature;
 }
 
-export async function verifyWebhookSignature(rawBody: string, signature: string, webhookSecret: string): Promise<boolean> {
+export async function verifyWebhookSignature(rawBody: string, signature: string, webhookSecret: string, webhookTimestamp?: string): Promise<boolean> {
+	if (webhookTimestamp) {
+		const ts = parseInt(webhookTimestamp, 10);
+		if (!isNaN(ts) && Math.abs(Date.now() / 1000 - ts) > 300) {
+			return false;
+		}
+	} else {
+		console.warn('[Razorpay] X-Razorpay-Webhook-Timestamp header missing; skipping replay protection');
+	}
+
 	const encoder = new TextEncoder();
 
 	const key = await crypto.subtle.importKey('raw', encoder.encode(webhookSecret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);

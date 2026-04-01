@@ -101,7 +101,7 @@ export const createHealthConnectActions = (
           metrics: {
             ...state.metrics,
             steps: healthData.data?.steps ?? state.metrics.steps,
-            stepsGoal: state.metrics.stepsGoal ?? 10000,
+            stepsGoal: state.metrics.stepsGoal,
             heartRate: healthData.data?.heartRate ?? state.metrics.heartRate,
             activeCalories:
               healthData.data?.activeCalories ?? state.metrics.activeCalories,

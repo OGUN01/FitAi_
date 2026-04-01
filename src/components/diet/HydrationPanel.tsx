@@ -36,8 +36,8 @@ export const HydrationPanel: React.FC<HydrationPanelProps> = ({
     }).start();
   };
 
-  const effectiveGoalML = waterGoalML || 2500;
-  const effectiveGoalLiters = waterGoalLiters || 2.5;
+  const effectiveGoalML = waterGoalML ?? 0;
+  const effectiveGoalLiters = waterGoalLiters ?? 0;
 
   const waterProgress =
     effectiveGoalLiters > 0

@@ -2,9 +2,10 @@
  * Constrained Workout Generation with Optimized System Prompts
  * Based on comprehensive testing results - uses best performing system prompt approach
  *
- * NOTE: This file is deprecated and should not be used.
+ * @deprecated This entire module is deprecated and should not be used.
  * AI generation is now handled by Cloudflare Workers backend.
  * See: https://fitai-workers.sharmaharsh9887.workers.dev
+ * Use src/ai/workoutGeneration.ts instead.
  */
 
 import { PersonalInfo, FitnessGoals } from '../types/user';
@@ -162,6 +163,12 @@ const VERIFIED_EXERCISE_NAMES = [
 
 import { exerciseValidator } from './exerciseValidationService';
 
+// Deprecation guard — warns in production if this module is loaded
+const IS_DEPRECATED = true;
+if (IS_DEPRECATED && process.env.NODE_ENV === 'production') {
+  console.error('[constrainedWorkoutGeneration] DEPRECATED: This module should not be used. Use src/ai/workoutGeneration.ts instead.');
+}
+
 // DATABASE-VERIFIED SYSTEM PROMPT (100% GIF coverage guaranteed)
 const OPTIMIZED_SYSTEM_PROMPT = `
 You are a fitness trainer with access to a verified exercise database. Use ONLY these exact exercise names that are guaranteed to have visual demonstrations:
@@ -226,7 +233,7 @@ APPROVED EXERCISES: Push-ups, Squats, Lunges, Plank, Burpees, Mountain Climbers,
 /**
  * Generate workout with constrained exercise names (100% accuracy tested)
  *
- * @deprecated This function is deprecated. Use Cloudflare Workers backend instead.
+ * @deprecated Use workoutGeneration.ts instead. This module will be removed.
  * @see https://fitai-workers.sharmaharsh9887.workers.dev/workout/generate
  */
 export const generateConstrainedWorkout = async (
@@ -452,7 +459,7 @@ const levenshteinDistance = (str1: string, str2: string): number => {
 /**
  * Test the constrained workout generation with various scenarios
  *
- * @deprecated This function is deprecated. Use Cloudflare Workers backend instead.
+ * @deprecated Use workoutGeneration.ts instead. This module will be removed.
  */
 export const testConstrainedGeneration = async (): Promise<void> => {
   console.log('⚠️ This test is deprecated. Use Cloudflare Workers backend instead.');

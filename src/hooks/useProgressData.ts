@@ -148,6 +148,7 @@ export const useProgressData = (): UseProgressDataReturn => {
         setProgressLoading(false);
       }
     },
+    // AsyncStorage and progressDataService are singletons — stable references, intentionally omitted from deps
     [user?.id],
   );
 

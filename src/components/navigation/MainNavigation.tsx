@@ -53,6 +53,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     ? initialTab
     : DEFAULT_TAB;
   const [activeTab, setActiveTab] = useState<MainTabKey>(initialResolvedTab);
+
   const [mountedTabs, setMountedTabs] = useState<Record<MainTabKey, boolean>>({
     home: initialResolvedTab === "home",
     fitness: initialResolvedTab === "fitness",
@@ -500,7 +501,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
   );
 
   const renderOverlayScreen = () => {
-    // If onboarding edit session is active, show OnboardingContainer in edit mode
+    // Mutually exclusive if/else if chain — only one overlay renders at a time
     if (onboardingEditSession.isActive) {
       return (
         <OnboardingContainer
@@ -519,10 +520,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           }}
         />
       );
-    }
-
-    // If workout session is active, show workout session screen
-    if (workoutSession.isActive && workoutSession.workout) {
+    } else if (workoutSession.isActive && workoutSession.workout) {
       return (
         <WorkoutSessionScreen
           route={{
@@ -536,10 +534,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           navigation={navigation}
         />
       );
-    }
-
-    // If cooking session is active, show cooking session screen
-    if (cookingSession.isActive && cookingSession.meal) {
+    } else if (cookingSession.isActive && cookingSession.meal) {
       return (
         <CookingSessionScreen
           route={{
@@ -550,35 +545,20 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           navigation={navigation}
         />
       );
-    }
-
-    // If meal session is active, show meal session screen
-    if (mealSession.isActive && mealSession.meal) {
+    } else if (mealSession.isActive && mealSession.meal) {
       return (
         <MealSession
           route={{ params: { meal: mealSession.meal } }}
           navigation={navigation}
         />
       );
-    }
-
-    // If progress session is active, show progress screen
-    if (progressSession.isActive) {
+    } else if (progressSession.isActive) {
       return <ProgressScreen navigation={navigation} />;
-    }
-
-    // If progress trends session is active, show progress trends screen
-    if (progressTrendsSession.isActive) {
+    } else if (progressTrendsSession.isActive) {
       return <ProgressTrendsScreen navigation={navigation} />;
-    }
-
-    // If achievements session is active, show achievements screen
-    if (achievementsSession.isActive) {
+    } else if (achievementsSession.isActive) {
       return <AchievementsScreen navigation={navigation} />;
-    }
-
-    // If contribute food session is active, show ContributeFood screen
-    if (contributeFoodSession.isActive) {
+    } else if (contributeFoodSession.isActive) {
       if (!appConfig.featureFoodContributions) {
         return (
           <View style={styles.unavailableContainer}>
@@ -595,17 +575,11 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           navigation={navigation}
         />
       );
-    }
-
-    if (templateLibrarySession.isActive) {
+    } else if (templateLibrarySession.isActive) {
       return <TemplateLibraryScreen navigation={navigation} />;
-    }
-
-    if (scheduleBuilderSession.isActive) {
+    } else if (scheduleBuilderSession.isActive) {
       return <ScheduleBuilderScreen navigation={navigation} />;
-    }
-
-    if (createWorkoutSession.isActive) {
+    } else if (createWorkoutSession.isActive) {
       return (
         <CreateWorkoutScreen
           navigation={navigation}
@@ -616,9 +590,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           }
         />
       );
-    }
-
-    if (exerciseHistorySession.isActive && exerciseHistorySession.exerciseId) {
+    } else if (exerciseHistorySession.isActive && exerciseHistorySession.exerciseId) {
       return (
         <ExerciseHistoryScreen
           route={{
@@ -639,23 +611,13 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Hidden accessibility marker — always in DOM for guest-mode detection */}
+      {/* Hidden accessibility marker for guest-mode detection */}
       <View
         testID="guest-option"
         accessibilityLabel="Continue as guest"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: 1,
-          height: 1,
-          opacity: 0.01,
-          overflow: "hidden",
-          zIndex: -1,
-        }}
-      >
-        <Text>Continue as guest</Text>
-      </View>
+        accessible={false}
+        style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}
+      />
       <View style={styles.screenContainer}>
         {renderRootScreens()}
         {hasActiveOverlay ? (

@@ -154,7 +154,7 @@ export const useFitnessStore = create<FitnessState>()(
             throw new Error("Invalid plan UUID format");
           }
 
-          let activePlanRowId = (plan as any).databaseId || null;
+          let activePlanRowId = plan.databaseId || null;
           if (!activePlanRowId) {
             try {
               const { data: activePlans, error: activePlansError } =
@@ -183,12 +183,12 @@ export const useFitnessStore = create<FitnessState>()(
 
           const planRowId = activePlanRowId || planId;
           const hasConfirmedDatabaseId = Boolean(
-            activePlanRowId || (plan as any).databaseId,
+            activePlanRowId || plan.databaseId,
           );
           const planDataWithDbId = hasConfirmedDatabaseId
             ? {
                 ...plan,
-                databaseId: activePlanRowId || (plan as any).databaseId,
+                databaseId: activePlanRowId || plan.databaseId,
               }
             : plan;
 
@@ -360,7 +360,7 @@ export const useFitnessStore = create<FitnessState>()(
           }
 
           // Look for existing active custom plan
-          let activeCustomPlanRowId = (plan as any).databaseId || null;
+          let activeCustomPlanRowId = plan.databaseId || null;
           if (!activeCustomPlanRowId) {
             try {
               const { data: customPlans, error: customPlansError } =
@@ -389,10 +389,10 @@ export const useFitnessStore = create<FitnessState>()(
 
           const planRowId = activeCustomPlanRowId || planId;
           const hasConfirmedDatabaseId = Boolean(
-            activeCustomPlanRowId || (plan as any).databaseId,
+            activeCustomPlanRowId || plan.databaseId,
           );
           const planDataWithDbId = hasConfirmedDatabaseId
-            ? { ...plan, databaseId: activeCustomPlanRowId || (plan as any).databaseId }
+            ? { ...plan, databaseId: activeCustomPlanRowId || plan.databaseId }
             : plan;
 
           set({ customWeeklyPlan: planDataWithDbId });
@@ -607,7 +607,9 @@ export const useFitnessStore = create<FitnessState>()(
           ) {
             return state;
           }
-          return { completedSessions: [...state.completedSessions, session] };
+          let newSessions = [...state.completedSessions, session];
+          if (newSessions.length > 90) newSessions = newSessions.slice(-90);
+          return { completedSessions: newSessions };
         });
       },
 
@@ -712,7 +714,7 @@ export const useFitnessStore = create<FitnessState>()(
               isCompleted: false,
               syncStatus: "pending" as import("../types/localData").SyncStatus,
               syncMetadata: {
-                lastSyncedAt: undefined,
+                lastSyncedAt: null,
                 lastModifiedAt: new Date().toISOString(),
                 syncVersion: 1,
                 deviceId: Platform.OS ?? "unknown",
@@ -1299,7 +1301,7 @@ export const useFitnessStore = create<FitnessState>()(
           completedSessionsHydrated: false,
           activeExtraSession: null,
           mesocycleStartDate: null,
-          // _hasHydrated intentionally NOT reset — stays true once hydrated
+          _hasHydrated: false,
         });
       },
     }),
@@ -1330,3 +1332,8 @@ export const useFitnessStore = create<FitnessState>()(
 );
 
 export default useFitnessStore;
+
+export const selectWorkoutProgress = (state: FitnessState) => state.workoutProgress;
+export const selectWeeklyWorkoutPlan = (state: FitnessState) => state.weeklyWorkoutPlan;
+export const selectCompletedSessions = (state: FitnessState) => state.completedSessions;
+export const selectCurrentWorkoutSession = (state: FitnessState) => state.currentWorkoutSession;

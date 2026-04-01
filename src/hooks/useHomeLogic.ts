@@ -116,6 +116,11 @@ export const useHomeLogic = () => {
   );
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const isLoadingDataRef = useRef(false);
+  // Keep a ref to the current user id so the subscription callback always reads
+  // the latest value without needing to re-subscribe when user changes.
+  const userIdRef = useRef(user?.id);
+  useEffect(() => { userIdRef.current = user?.id; }, [user?.id]);
   const [isLoading, setIsLoading] = useState(true);
   const [showGuestSignUp, setShowGuestSignUp] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -124,7 +129,8 @@ export const useHomeLogic = () => {
   const weightHistory = useAnalyticsStore((s) => s.weightHistory);
 
   // SSOT Fix 17: todaysData computed reactively from stores, not snapshotted
-  // Include getLocalDateString() so this recomputes if the date changes (e.g., midnight boundary)
+  // Include todayDateString so this recomputes if the date changes (e.g., midnight boundary)
+  const todayDateString = getLocalDateString();
   const todaysData = useMemo(
     () => buildTodaysData(),
     [
@@ -132,10 +138,11 @@ export const useHomeLogic = () => {
       workoutProgress,
       weeklyMealPlan,
       mealProgress,
-      getLocalDateString(),
+      todayDateString,
     ],
   );
   // Sync hydration goal
+  // NOTE: useNutritionTracking.ts also sets hydration goal — one of these should be removed
   useEffect(() => {
     if (calculatedMetrics?.dailyWaterML) {
       setHydrationGoal(calculatedMetrics.dailyWaterML);
@@ -165,11 +172,10 @@ export const useHomeLogic = () => {
 
   useEffect(() => {
     let cancelled = false;
-    let isLoadingData = false;
 
     const loadData = async () => {
-      if (isLoadingData) return; // deduplicate concurrent loads
-      isLoadingData = true;
+      if (isLoadingDataRef.current) return; // deduplicate concurrent loads
+      isLoadingDataRef.current = true;
       try {
         if (!cancelled) {
           setIsLoading(true);
@@ -189,7 +195,7 @@ export const useHomeLogic = () => {
           );
         }
       } finally {
-        isLoadingData = false;
+        isLoadingDataRef.current = false;
         if (!cancelled) {
           setIsLoading(false);
         }
@@ -208,12 +214,12 @@ export const useHomeLogic = () => {
     }).start();
     // Completion events update the stores; useMemo consumers re-render automatically.
     const unsubscribe = completionTrackingService.subscribe(() => {
-      if (!isLoadingData) {
+      if (!isLoadingDataRef.current) {
         useFitnessStore.getState().loadData();
         useNutritionStore.getState().loadData();
       }
-      if (user?.id) {
-        useAchievementStore.getState().reconcileWithCurrentData(user.id);
+      if (userIdRef.current) {
+        useAchievementStore.getState().reconcileWithCurrentData(userIdRef.current);
       }
     });
     return () => {

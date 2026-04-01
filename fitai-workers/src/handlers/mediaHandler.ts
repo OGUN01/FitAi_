@@ -328,16 +328,14 @@ export async function handleMediaDelete(
       );
     }
 
-    // Verify ownership (only for user uploads)
-    if (category === 'user') {
-      const uploadedBy = object.customMetadata?.uploadedBy;
-      if (uploadedBy && uploadedBy !== user.id) {
-        throw new APIError(
-          'Unauthorized to delete this file',
-          403,
-          'FORBIDDEN' as any
-        );
-      }
+    // Verify ownership for all user-uploaded content
+    const uploadedBy = object.customMetadata?.uploadedBy;
+    if (uploadedBy && uploadedBy !== user.id) {
+      throw new APIError(
+        'Unauthorized to delete this file',
+        403,
+        'FORBIDDEN' as any
+      );
     }
 
     // 4. Delete from R2

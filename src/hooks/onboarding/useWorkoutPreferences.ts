@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   WorkoutPreferencesData,
   BodyAnalysisData,
@@ -63,12 +63,18 @@ export const useWorkoutPreferences = ({
     reasoning: string;
   } | null>(null);
 
+  // Track whether user has manually set intensity / workout types / goals
+  // Prevents useEffect auto-overrides from clobbering explicit user choices
+  const hasUserSetIntensity = useRef(false);
+  const hasUserSetWorkoutTypes = useRef(false);
+  const hasUserSetGoals = useRef(false);
+
   // Form state
   const [formData, setFormData] = useState<WorkoutPreferencesData>({
     // Existing data
     location: data?.location || "both",
     equipment: data?.equipment || [],
-    time_preference: data?.time_preference || 30,
+    time_preference: data?.time_preference ?? 30,
     intensity: data?.intensity || "beginner",
     workout_types: data?.workout_types || [],
 
@@ -104,7 +110,7 @@ export const useWorkoutPreferences = ({
       const newFormData = {
         location: data.location || "both",
         equipment: data.equipment || [],
-        time_preference: data.time_preference || 30,
+        time_preference: data.time_preference ?? 30,
         intensity: data.intensity || "beginner",
         workout_types: data.workout_types || [],
         primary_goals: data.primary_goals || [],
@@ -191,7 +197,8 @@ export const useWorkoutPreferences = ({
 
       if (
         bodyAnalysisData.ai_body_type &&
-        formData.primary_goals.length === 0
+        formData.primary_goals.length === 0 &&
+        !hasUserSetGoals.current
       ) {
         let suggestedGoals: string[] = [];
 
@@ -222,6 +229,11 @@ export const useWorkoutPreferences = ({
     field: K,
     value: WorkoutPreferencesData[K],
   ) => {
+    // Track explicit user intent so auto-calculate effects don't overwrite
+    if (field === "intensity") hasUserSetIntensity.current = true;
+    if (field === "workout_types") hasUserSetWorkoutTypes.current = true;
+    if (field === "primary_goals") hasUserSetGoals.current = true;
+
     let updated = { ...formData, [field]: value };
 
     if (field === "location") {
@@ -240,6 +252,7 @@ export const useWorkoutPreferences = ({
   };
 
   const toggleGoal = (goalId: string) => {
+    hasUserSetGoals.current = true; // Mark user intent before update
     const currentGoals = formData.primary_goals;
     const newGoals = currentGoals.includes(goalId)
       ? currentGoals.filter((id: string) => id !== goalId)
@@ -278,15 +291,18 @@ export const useWorkoutPreferences = ({
         reasoning,
       });
 
-      setFormData((prev: WorkoutPreferencesData) => {
-        if (prev.intensity !== recommendedIntensity) {
-          return {
-            ...prev,
-            intensity: recommendedIntensity,
-          };
-        }
-        return prev;
-      });
+      // Only auto-set intensity if user hasn't manually chosen one
+      if (!hasUserSetIntensity.current) {
+        setFormData((prev: WorkoutPreferencesData) => {
+          if (prev.intensity !== recommendedIntensity) {
+            return {
+              ...prev,
+              intensity: recommendedIntensity,
+            };
+          }
+          return prev;
+        });
+      }
     }
   }, [
     formData.workout_experience_years,
@@ -374,11 +390,14 @@ export const useWorkoutPreferences = ({
   ]);
 
   useEffect(() => {
-    const recommendedTypes = calculateRecommendedWorkoutTypes();
-    setFormData((prev: WorkoutPreferencesData) => ({
-      ...prev,
-      workout_types: recommendedTypes,
-    }));
+    // Only auto-recommend workout types if user hasn't manually set them
+    if (!hasUserSetWorkoutTypes.current) {
+      const recommendedTypes = calculateRecommendedWorkoutTypes();
+      setFormData((prev: WorkoutPreferencesData) => ({
+        ...prev,
+        workout_types: recommendedTypes,
+      }));
+    }
   }, [calculateRecommendedWorkoutTypes]);
 
   const getFieldError = (fieldName: string): string | undefined => {

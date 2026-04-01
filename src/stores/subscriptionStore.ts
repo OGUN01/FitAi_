@@ -327,11 +327,18 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             let usage: UsageSummary;
             let usageIsFresh = false;
             if (data.usage) {
+              // Server provided live usage counts — use them authoritatively
               usage = data.usage;
               usageIsFresh = true;
             } else if (shouldResetMonthly) {
+              // New billing month or tier change — reset counts, mark fresh so
+              // features are not blocked while waiting for a dedicated usage endpoint
               usage = get().usage;
+              usageIsFresh = true;
             } else {
+              // Server omitted usage — keep persisted counts, mark fresh so
+              // existing quota is honoured without blocking features
+              usageIsFresh = true;
               // Preserve persisted counts, update limits from server
               usage = {
                 ai_generation: {
@@ -445,8 +452,9 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         },
 
         isPremium: () => {
-          const { subscriptionStatus, currentPlan, isInitialized } = get();
-          if (!isInitialized) return false;
+          const { subscriptionStatus, currentPlan } = get();
+          // Use persisted state even before isInitialized to avoid flash of free-tier UI.
+          // If currentPlan is null (no persisted data) we default to false.
           return (
             (subscriptionStatus === "active" ||
               subscriptionStatus === "authenticated") &&
@@ -580,8 +588,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         },
         applyLifecycleUpdate: ({ status, current_period_end }) => {
           set((state) => ({
-            currentPlan: state.currentPlan,
-            features: state.features,
+            ...state,
             subscriptionStatus: status,
             usageIsFresh: false,
             currentPeriodEnd: normalizePeriodEnd(current_period_end),
@@ -604,6 +611,22 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         }),
         onRehydrateStorage: () => (state) => {
           if (!state) return;
+          // Fill any missing usage fields from old app versions with safe defaults
+          state.usage = {
+            ...EMPTY_USAGE,
+            ...(state.usage ?? {}),
+            ai_generation: {
+              ...EMPTY_USAGE.ai_generation,
+              ...(state.usage?.ai_generation ?? {}),
+              daily: { ...EMPTY_USAGE.ai_generation.daily, ...(state.usage?.ai_generation?.daily ?? {}) },
+              monthly: { ...EMPTY_USAGE.ai_generation.monthly, ...(state.usage?.ai_generation?.monthly ?? {}) },
+            },
+            barcode_scan: {
+              ...EMPTY_USAGE.barcode_scan,
+              ...(state.usage?.barcode_scan ?? {}),
+              daily: { ...EMPTY_USAGE.barcode_scan.daily, ...(state.usage?.barcode_scan?.daily ?? {}) },
+            },
+          };
           // Reset daily usage counters if persisted usageResetDay is from a previous day.
           // Prevents yesterday's AI-generation/scan count from blocking today's quota.
           const today = getCurrentDayKey();
@@ -626,17 +649,21 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           }
         },
         version: 3, // bump to clear stale persisted state from v1/v2
-        migrate: (_persistedState: unknown, _version: number) => {
-          // v1/v2 state shapes are incompatible — discard and start fresh.
+        migrate: (persistedState: unknown, version: number) => {
+          // v1/v2 state shapes are incompatible — discard and start fresh only when migrating from them.
           // The store will re-fetch from the server on next initializeSubscription().
-          return {
-            currentPlan: null,
-            subscriptionStatus: null,
-            currentPeriodEnd: null,
-            usage: EMPTY_USAGE,
-            usageResetMonth: null,
-            usageResetDay: null,
-          };
+          if (!version || version < 2) {
+            return {
+              currentPlan: null,
+              subscriptionStatus: null,
+              currentPeriodEnd: null,
+              usage: EMPTY_USAGE,
+              usageResetMonth: null,
+              usageResetDay: null,
+            };
+          }
+          // For version 2→3 keep whatever was persisted (shape is compatible).
+          return persistedState as any;
         },
       },
     ),

@@ -18,35 +18,40 @@ export const CurrentStepCard: React.FC<CurrentStepCardProps> = ({
   completedSteps,
   onStepComplete,
 }) => {
-  const currentItem = meal.items[currentStep];
+  const items = meal.items ?? [];
+  const currentItem = items[currentStep];
+
+  if (!currentItem) {
+    return <View />;
+  }
 
   return (
     <Card style={styles.currentStepCard} variant="elevated">
       <View style={styles.stepHeader}>
         <Text style={styles.stepNumber}>
-          Step {currentStep + 1} of {meal.items.length}
+          Step {currentStep + 1} of {items.length}
         </Text>
-        <Text style={styles.stepTitle}>Prepare {currentItem?.name}</Text>
+        <Text style={styles.stepTitle}>Prepare {currentItem.name}</Text>
       </View>
 
       <View style={styles.stepContent}>
         <View style={styles.stepDetails}>
           <Text style={styles.stepQuantity}>
-            {currentItem?.quantity} {currentItem?.unit}
+            {currentItem.quantity} {currentItem.unit}
           </Text>
           <Text style={styles.stepCalories}>
-            {currentItem?.calories} calories
+            {currentItem.calories} calories
           </Text>
           <Text style={styles.stepTime}>
-            ~{currentItem?.preparationTime} minutes
+            ~{currentItem.preparationTime} minutes
           </Text>
         </View>
 
-        {currentItem?.instructions && (
+        {currentItem.instructions && (
           <View style={styles.instructionsContainer}>
             <Text style={styles.instructionsTitle}>Instructions:</Text>
             <Text style={styles.instructionsText}>
-              {currentItem?.instructions}
+              {currentItem.instructions}
             </Text>
           </View>
         )}

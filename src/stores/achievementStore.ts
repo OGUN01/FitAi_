@@ -176,6 +176,9 @@ interface AchievementStore {
   isLoading: boolean;
   isInitialized: boolean;
   achievements: Achievement[];
+  // NOTE: Map causes all subscribers to re-render on any mutation because Zustand
+  // compares by reference. This is a known limitation; a Record<string,...> would
+  // be more granular but would require a larger refactor.
   userAchievements: Map<string, UserAchievement>;
   unlockedToday: UserAchievement[];
   showCelebration: boolean;
@@ -307,8 +310,8 @@ const achievementStorage = {
           name,
           typeof value === "string" ? value : JSON.stringify(value),
         );
-      } catch (error) {
-        console.error('[achievementStore] Failed to load achievements:', error);
+      } catch {
+        // Silently fail — data will be reloaded from Supabase on next login
       }
     }
   },
@@ -449,6 +452,9 @@ export const useAchievementStore = create<AchievementStore>()(
         userId: string,
         activityData: Record<string, any>,
       ) => {
+        // Guest users must not write achievements to Supabase
+        if (!userId || userId === 'guest') return;
+
         try {
           const newlyUnlocked = await achievementEngine.checkAchievements(
             userId,
@@ -592,14 +598,14 @@ export const useAchievementStore = create<AchievementStore>()(
 
       getDailyProgress: () => {
         const state = get();
-        const today = getLocalDateString(new Date()); // YYYY-MM-DD format
+        const today = new Date().toDateString();
 
         const todayProgress = Array.from(
           state.userAchievements.values(),
         ).filter((ua) => {
           // Bug 7 fix: guard against undefined unlockedAt causing throws
           if (!ua.unlockedAt) return false;
-          const lastUpdate = getLocalDateString(new Date(ua.unlockedAt));
+          const lastUpdate = new Date(ua.unlockedAt).toDateString();
           return lastUpdate === today;
         });
 
@@ -670,10 +676,7 @@ export const useAchievementStore = create<AchievementStore>()(
         const checkDate = new Date();
         checkDate.setHours(0, 0, 0, 0);
 
-        const MAX_STREAK_DAYS = 3650; // 10 years max
-        let iterations = 0;
-        while (iterations < MAX_STREAK_DAYS) {
-          iterations++;
+        while (true) {
           const dateStr = getLocalDateString(checkDate);
           if (completedDates.has(dateStr)) {
             streak++;
@@ -948,13 +951,20 @@ export const useAchievementStore = create<AchievementStore>()(
       name: "achievement-storage",
       storage: achievementStorage as any,
       partialize: (state) => ({
-        // Persist critical state - userAchievements handled by custom storage
-        userAchievements: state.userAchievements,
+        // Persist critical state - convert Map to Array for JSON serialization
+        userAchievements: Array.from(state.userAchievements.entries()) as any,
         totalFitCoinsEarned: state.totalFitCoinsEarned,
         completionRate: state.completionRate,
         currentStreak: state.currentStreak,
         isInitialized: state.isInitialized,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        // Convert Array back to Map after rehydration (JSON cannot serialize Map natively)
+        if (state.userAchievements && !(state.userAchievements instanceof Map)) {
+          state.userAchievements = new Map(state.userAchievements as any);
+        }
+      },
     },
   ),
 );

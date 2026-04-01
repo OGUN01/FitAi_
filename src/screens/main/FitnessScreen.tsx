@@ -160,6 +160,18 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
   const quickWorkouts = useQuickWorkouts(navigation);
   const currentWeekStart = getCurrentWeekStart();
 
+  // ========== SCREEN DEBUG LOG ==========
+  React.useEffect(() => {
+    console.warn(`\n${'='.repeat(60)}`);
+    console.warn(`🏋️ [SCREEN DEBUG] FitnessScreen MOUNTED`);
+    console.warn(`${'='.repeat(60)}`);
+    console.warn(`📋 Has Plan: ${!!state.weeklyWorkoutPlan} | Plan Error: ${planError || 'None'}`);
+    console.warn(`📅 Selected Day: ${state.selectedDay} | Is Generating: ${state.isGeneratingPlan}`);
+    console.warn(`📊 Completed Sessions: ${state.completedSessions?.length || 0}`);
+    console.warn(`💪 Workout Progress Keys: [${Object.keys(state.workoutProgress || {}).join(', ')}]`);
+    console.warn(`${'='.repeat(60)}\n`);
+  }, []);
+
   // Dual plan state
   const activePlanSource = useFitnessStore((s) => s.activePlanSource);
   const setActivePlanSource = useFitnessStore((s) => s.setActivePlanSource);
@@ -306,9 +318,7 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
                 ) : (
                   <TodayWorkoutCard
                     workout={null}
-                    isRestDay={
-                      state.isSelectedDayRestDay || !!activePlan
-                    }
+                    isRestDay={state.isSelectedDayRestDay}
                     isCompleted={false}
                     progress={0}
                     onStartWorkout={handleRestDayStart}

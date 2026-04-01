@@ -12,11 +12,13 @@ export function useCookingFlow(meal: DayMeal) {
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const scrollViewRef = useRef<ScrollView | null>(null);
 
+  const mealId = meal?.id;
   useEffect(() => {
+    if (!meal) return;
     const flow = cookingFlowGenerator.generateCookingFlow(meal);
     setCookingFlow(flow);
-
-  }, [meal]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mealId]);
 
   useEffect(() => {
     if (scrollViewRef.current && currentStepIndex >= 0) {

@@ -31,9 +31,10 @@ export class PersonalInfoService {
       const userEmail = session?.user?.email || "";
 
       if (!userEmail) {
-        console.warn(
-          "⚠️ [DB-SERVICE] PersonalInfoService: No email found in auth session",
+        console.error(
+          "❌ [DB-SERVICE] PersonalInfoService: No email in session — aborting profile save to prevent empty-email row",
         );
+        return false;
       }
 
       // Ensure NOT NULL fields have fallback values
@@ -47,7 +48,7 @@ export class PersonalInfoService {
         first_name: firstName,
         last_name: lastName,
         name: fullName, // Computed full name with fallback
-        age: data.age || 25, // NOT NULL - default to 25 if missing
+        age: data.age ?? 0, // NOT NULL - 0 reveals missing data instead of fabricating age
         gender: data.gender || "prefer_not_to_say", // NOT NULL - safe default
         country: data.country ? normalizeCountryToISO(data.country) : data.country,
         state: data.state,
@@ -167,7 +168,7 @@ export class DietPreferencesService {
     try {
       const dietData: Partial<DietPreferencesRow> = {
         user_id: userId,
-        diet_type: data.diet_type ?? "omnivore", // NOT NULL - only default if truly missing
+        diet_type: data.diet_type ?? "balanced", // NOT NULL - only default if truly missing
         allergies: data.allergies || [], // NOT NULL - default to empty array
         restrictions: data.restrictions || [], // NOT NULL - default to empty array
 
@@ -256,7 +257,7 @@ export class DietPreferencesService {
       }
 
       const dietPreferences: DietPreferencesData = {
-        diet_type: data.diet_type ?? "omnivore",
+        diet_type: data.diet_type ?? "balanced",
         allergies: data.allergies || [],
         restrictions: data.restrictions || [],
 
@@ -479,7 +480,7 @@ export class WorkoutPreferencesService {
         location: data.location || "home", // NOT NULL - default to home
         equipment: data.equipment || ["bodyweight"], // NOT NULL - default to bodyweight
         time_preference: data.time_preference,
-        intensity: data.intensity || "moderate", // NOT NULL - default to moderate
+        intensity: data.intensity || "intermediate", // NOT NULL - default to intermediate
         workout_types: data.workout_types,
         primary_goals: data.primary_goals || ["general-fitness"], // NOT NULL - default goal
         activity_level: data.activity_level,
@@ -547,7 +548,7 @@ export class WorkoutPreferencesService {
       const workoutPreferences: WorkoutPreferencesData = {
         location: data.location || "both",
         equipment: data.equipment || [],
-        time_preference: data.time_preference || 30,
+        time_preference: data.time_preference ?? 30,
         intensity: data.intensity || "beginner",
         workout_types: data.workout_types || [],
         primary_goals: data.primary_goals || [],
@@ -733,6 +734,12 @@ export class AdvancedReviewService {
         validation_warnings: data.validation_warnings,
         refeed_schedule: data.refeed_schedule,
         medical_adjustments: data.medical_adjustments,
+        detected_climate: data.detected_climate ?? null,
+        detected_ethnicity: data.detected_ethnicity ?? null,
+        was_rate_capped: data.was_rate_capped ?? false,
+        bmi_category: data.bmi_category ?? null,
+        health_score: data.health_score ?? null,
+        health_grade: data.health_grade ?? null,
         updated_at: new Date().toISOString(),
       };
 

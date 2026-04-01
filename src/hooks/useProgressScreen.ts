@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Animated, Platform, Share } from "react-native";
 import { useAuth } from "./useAuth";
 import { useProgressData } from "./useProgressData";
@@ -88,7 +88,7 @@ export const useProgressScreen = (navigation: unknown) => {
   // Keep ref to avoid stale closure in completionTracking callback
   const refreshRef = useRef<() => Promise<void>>(async () => {});
 
-  const refreshProgressData = async () => {
+  const refreshProgressData = useCallback(async () => {
     try {
       await refreshAll();
       if (user?.id) {
@@ -97,7 +97,7 @@ export const useProgressScreen = (navigation: unknown) => {
     } catch (error) {
       console.error("Failed to load progress data:", error);
     }
-  };
+  }, [refreshAll, user?.id]);
 
   useEffect(() => {
     refreshRef.current = refreshProgressData;

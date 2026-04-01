@@ -170,6 +170,8 @@ export function transformWorkoutResponse(
     estimatedCalories,
     exercises: allExercises.map((ex: any) => ({
       exerciseId: ex.exerciseId,
+      name: ex.exerciseData?.name ?? ex.name,
+      bodyParts: ex.exerciseData?.targetMuscles ?? ex.bodyParts ?? ex.bodyPart ?? [],
       sets: ex.sets || 3,
       reps: ex.reps || 10,
       restTime: ex.restSeconds || 60,
@@ -177,18 +179,42 @@ export function transformWorkoutResponse(
     })),
     warmup: (workoutResponse.warmup || []).map((ex: WorkoutExercise) => ({
       exerciseId: ex.exerciseId,
+      name: ex.exerciseData?.name ?? ex.exerciseId,
+      bodyParts: ex.exerciseData?.targetMuscles ?? [],
       sets: ex.sets || 1,
       reps: ex.reps || 10,
       restTime: ex.restSeconds || 30,
     })),
     cooldown: (workoutResponse.cooldown || []).map((ex: WorkoutExercise) => ({
       exerciseId: ex.exerciseId,
+      name: ex.exerciseData?.name ?? ex.exerciseId,
+      bodyParts: ex.exerciseData?.targetMuscles ?? [],
       sets: ex.sets || 1,
       reps: ex.reps || 10,
       restTime: ex.restSeconds || 30,
     })),
-    equipment: [],
-    targetMuscleGroups: [],
+    equipment: (() => {
+      const allEx = [
+        ...(workoutResponse.warmup || []),
+        ...(workoutResponse.exercises || []),
+        ...(workoutResponse.cooldown || []),
+      ];
+      const eq = new Set<string>();
+      allEx.forEach(ex => (ex.exerciseData?.equipments || []).forEach((e: string) => eq.add(e)));
+      return eq.size > 0 ? Array.from(eq) : [];
+    })(),
+    targetMuscleGroups: (() => {
+      const allEx = [
+        ...(workoutResponse.warmup || []),
+        ...(workoutResponse.exercises || []),
+        ...(workoutResponse.cooldown || []),
+      ];
+      const muscles = new Set<string>();
+      allEx.forEach(ex => {
+        (ex.exerciseData?.targetMuscles || []).forEach((m: string) => muscles.add(m));
+      });
+      return muscles.size > 0 ? Array.from(muscles) : [];
+    })(),
     icon: "💪",
     tags: ["ai-generated"],
     isPersonalized: true,

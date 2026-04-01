@@ -27,14 +27,15 @@ export const useWaterReminderEdit = (
   const [sleepTime, setSleepTime] = useState(waterReminders.config.sleepTime);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Reset form when modal opens
+  // Reset form when modal opens — use granular config fields to avoid resetting on unrelated config changes
+  const { dailyGoalLiters, wakeUpTime: configWakeUpTime, sleepTime: configSleepTime } = waterReminders.config ?? {};
   useEffect(() => {
     if (visible) {
-      setDailyGoal(waterReminders.config.dailyGoalLiters.toString());
-      setWakeUpTime(waterReminders.config.wakeUpTime);
-      setSleepTime(waterReminders.config.sleepTime);
+      setDailyGoal(dailyGoalLiters?.toString() ?? "");
+      setWakeUpTime(configWakeUpTime ?? "");
+      setSleepTime(configSleepTime ?? "");
     }
-  }, [visible, waterReminders.config]);
+  }, [visible, dailyGoalLiters, configWakeUpTime, configSleepTime]);
 
   const isValidTimeFormat = (time: string): boolean => {
     const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
@@ -76,7 +77,6 @@ export const useWaterReminderEdit = (
       sleepTime,
     });
 
-    setIsLoading(false);
     crossPlatformAlert(
       "Settings Saved!",
       "Your water reminder settings have been updated. Smart notifications will be rescheduled accordingly.",
@@ -96,7 +96,6 @@ export const useWaterReminderEdit = (
           "Invalid Goal",
           "Please enter a daily water goal between 1 and 10 liters.",
         );
-        setIsLoading(false);
         return;
       }
 
@@ -105,7 +104,6 @@ export const useWaterReminderEdit = (
           "Invalid Time",
           "Please enter times in HH:MM format (e.g., 07:30).",
         );
-        setIsLoading(false);
         return;
       }
 
@@ -122,7 +120,6 @@ export const useWaterReminderEdit = (
             { text: "Save Anyway", onPress: () => saveTimes() },
           ],
         );
-        setIsLoading(false);
         return;
       }
 
@@ -133,6 +130,7 @@ export const useWaterReminderEdit = (
         "Error",
         "Failed to save water reminder settings. Please try again.",
       );
+    } finally {
       setIsLoading(false);
     }
   };

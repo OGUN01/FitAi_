@@ -21,7 +21,7 @@ const supabaseUrl = getEnvVar(
 );
 const supabaseAnonKey = getEnvVar(
   "EXPO_PUBLIC_SUPABASE_ANON_KEY",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xZnJ3dG1rb2tpdm94Z3VrZ3N6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MTE4ODcsImV4cCI6MjA2ODQ4Nzg4N30.8As2juloSC89Pjql1_85757e8z4uGUqQHuzhVCY7M08",
+  "",
 );
 
 if (!supabaseUrl || !supabaseAnonKey) {

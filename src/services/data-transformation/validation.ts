@@ -17,18 +17,16 @@ export function validateTransformationData(
       if (!data.id || !data.user_id || !data.workout_id) {
         errors.push("Workout session must have id, user_id, and workout_id");
       }
-      if (
-        (typeof data.duration !== "number" || data.duration <= 0) &&
-        (typeof data.total_duration_minutes !== "number" ||
-          data.total_duration_minutes <= 0)
-      ) {
-        errors.push("Workout session must have valid duration");
+      const hasDuration = (typeof data.duration === 'number' && data.duration > 0);
+      const hasTotalDuration = (typeof data.total_duration_minutes === 'number' && data.total_duration_minutes > 0);
+      if (!hasDuration && !hasTotalDuration) {
+        errors.push("Workout session must have a positive duration");
       }
       break;
 
     case "meal":
-      if (!data.id || !data.user_id || !data.date) {
-        errors.push("Meal log must have id, user_id, and date");
+      if (!data.id || !data.user_id || !data.logged_at) {
+        errors.push("Meal log must have id, user_id, and logged_at timestamp");
       }
       if (
         !data.meal_type ||

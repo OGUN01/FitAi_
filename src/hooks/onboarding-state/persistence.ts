@@ -27,8 +27,13 @@ export const usePersistence = (
 ) => {
   const saveToDatabase = useCallback(async (): Promise<boolean> => {
     if (!isAuthenticated || !userId) {
+      console.warn(`⚠️ [SYNC DEBUG] saveToDatabase SKIPPED — auth=${isAuthenticated}, userId=${userId}`);
       return false;
     }
+
+    console.warn(`\n${'='.repeat(60)}`);
+    console.warn(`💾 [SYNC DEBUG] saveToDatabase START — userId=${userId}`);
+    console.warn(`${'='.repeat(60)}`);
 
     setState((prev) => ({ ...prev, isAutoSaving: true }));
 
@@ -44,12 +49,13 @@ export const usePersistence = (
           if (!success) {
             throw new Error("PersonalInfoService.save returned false");
           }
+          console.warn(`  ✅ PersonalInfo saved`);
         } catch (error) {
           const message =
             error instanceof Error
               ? error.message
               : "Failed to save personal info";
-          console.error("❌ [ONBOARDING] PersonalInfo save error:", error);
+          console.error("❌ [SYNC DEBUG] PersonalInfo save FAILED:", error);
           setState((prev) => ({
             ...prev,
             isAutoSaving: false,
@@ -68,12 +74,13 @@ export const usePersistence = (
           if (!success) {
             throw new Error("DietPreferencesService.save returned false");
           }
+          console.warn(`  ✅ DietPreferences saved`);
         } catch (error) {
           const message =
             error instanceof Error
               ? error.message
               : "Failed to save diet preferences";
-          console.error("❌ [ONBOARDING] DietPreferences save error:", error);
+          console.error("❌ [SYNC DEBUG] DietPreferences save FAILED:", error);
           setState((prev) => ({
             ...prev,
             isAutoSaving: false,
@@ -92,12 +99,13 @@ export const usePersistence = (
           if (!success) {
             throw new Error("BodyAnalysisService.save returned false");
           }
+          console.warn(`  ✅ BodyAnalysis saved`);
         } catch (error) {
           const message =
             error instanceof Error
               ? error.message
               : "Failed to save body analysis";
-          console.error("❌ [ONBOARDING] BodyAnalysis save error:", error);
+          console.error("❌ [SYNC DEBUG] BodyAnalysis save FAILED:", error);
           setState((prev) => ({
             ...prev,
             isAutoSaving: false,
@@ -116,15 +124,13 @@ export const usePersistence = (
           if (!success) {
             throw new Error("WorkoutPreferencesService.save returned false");
           }
+          console.warn(`  ✅ WorkoutPreferences saved`);
         } catch (error) {
           const message =
             error instanceof Error
               ? error.message
               : "Failed to save workout preferences";
-          console.error(
-            "❌ [ONBOARDING] WorkoutPreferences save error:",
-            error,
-          );
+          console.error("❌ [SYNC DEBUG] WorkoutPreferences save FAILED:", error);
           setState((prev) => ({
             ...prev,
             isAutoSaving: false,
@@ -143,12 +149,13 @@ export const usePersistence = (
           if (!success) {
             throw new Error("AdvancedReviewService.save returned false");
           }
+          console.warn(`  ✅ AdvancedReview saved`);
         } catch (error) {
           const message =
             error instanceof Error
               ? error.message
               : "Failed to save advanced review";
-          console.error("❌ [ONBOARDING] AdvancedReview save error:", error);
+          console.error("❌ [SYNC DEBUG] AdvancedReview save FAILED:", error);
           setState((prev) => ({
             ...prev,
             isAutoSaving: false,
@@ -173,6 +180,7 @@ export const usePersistence = (
         if (!progressSuccess) {
           throw new Error("OnboardingProgressService.save returned false");
         }
+        console.warn(`  ✅ OnboardingProgress saved`);
       } catch (error) {
         const message =
           error instanceof Error
@@ -188,6 +196,8 @@ export const usePersistence = (
       }
 
       const now = new Date();
+      console.warn(`✅ [SYNC DEBUG] saveToDatabase COMPLETE — all tables saved at ${now.toISOString()}`);
+      console.warn(`${'='.repeat(60)}\n`);
       setState((prev) => ({
         ...prev,
         isAutoSaving: false,
@@ -214,23 +224,36 @@ export const usePersistence = (
 
   const loadFromDatabase = useCallback(async (): Promise<boolean> => {
     if (!isAuthenticated || !userId) {
+      console.warn(`⚠️ [SYNC DEBUG] loadFromDatabase SKIPPED — auth=${isAuthenticated}, userId=${userId}`);
       return false;
     }
+
+    console.warn(`\n${'='.repeat(60)}`);
+    console.warn(`📥 [SYNC DEBUG] loadFromDatabase START — userId=${userId}`);
+    console.warn(`${'='.repeat(60)}`);
 
     setState((prev) => ({ ...prev, isLoading: true }));
 
     try {
       const personalInfo = await PersonalInfoService.load(userId);
+      console.warn(`  📋 PersonalInfo: ${personalInfo ? `loaded (name=${(personalInfo as any).first_name})` : 'NULL'}`);
 
       const dietPreferences = await DietPreferencesService.load(userId);
+      console.warn(`  📋 DietPreferences: ${dietPreferences ? `loaded (type=${(dietPreferences as any).diet_type})` : 'NULL'}`);
 
       const bodyAnalysis = await BodyAnalysisService.load(userId);
+      console.warn(`  📋 BodyAnalysis: ${bodyAnalysis ? `loaded (h=${(bodyAnalysis as any).height_cm}cm, w=${(bodyAnalysis as any).current_weight_kg}kg)` : 'NULL'}`);
 
       const workoutPreferences = await WorkoutPreferencesService.load(userId);
+      console.warn(`  📋 WorkoutPreferences: ${workoutPreferences ? `loaded (location=${(workoutPreferences as any).location})` : 'NULL'}`);
 
       const advancedReview = await AdvancedReviewService.load(userId);
+      console.warn(`  📋 AdvancedReview: ${advancedReview ? `loaded (tdee=${(advancedReview as any).calculated_tdee}, cal=${(advancedReview as any).daily_calories})` : 'NULL'}`);
 
       const progress = await OnboardingProgressService.load(userId);
+      console.warn(`  📋 Progress: ${progress ? `tab=${progress.current_tab}, completed=[${progress.completed_tabs}], ${progress.total_completion_percentage}%` : 'NULL'}`);
+      console.warn(`✅ [SYNC DEBUG] loadFromDatabase COMPLETE`);
+      console.warn(`${'='.repeat(60)}\n`);
 
       setState((prev) => {
         const finalState = {
@@ -288,6 +311,8 @@ export const usePersistence = (
         lastSavedAt: new Date().toISOString(),
       };
 
+      console.warn(`💾 [SYNC DEBUG] saveToLocal — tab=${dataToSave.currentTab}, completed=[${dataToSave.completedTabs}], has: PI=${!!dataToSave.personalInfo} DP=${!!dataToSave.dietPreferences} BA=${!!dataToSave.bodyAnalysis} WP=${!!dataToSave.workoutPreferences} AR=${!!dataToSave.advancedReview}`);
+
       await AsyncStorage.setItem(
         STORAGE_KEYS.ONBOARDING_DATA,
         JSON.stringify(dataToSave),
@@ -321,6 +346,8 @@ export const usePersistence = (
 
       if (savedData) {
         const parsedData = JSON.parse(savedData);
+
+        console.warn(`📥 [SYNC DEBUG] loadFromLocal — tab=${parsedData.currentTab}, completed=[${parsedData.completedTabs}], has: PI=${!!parsedData.personalInfo} DP=${!!parsedData.dietPreferences} BA=${!!parsedData.bodyAnalysis} WP=${!!parsedData.workoutPreferences} AR=${!!parsedData.advancedReview}, savedAt=${parsedData.lastSavedAt}`);
 
         setState((prev) => {
           const finalState: OnboardingState = {

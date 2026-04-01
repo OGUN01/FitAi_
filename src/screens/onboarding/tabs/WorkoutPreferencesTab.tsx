@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   View,
   Text,
@@ -57,6 +57,8 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
   onUpdate,
   isAutoSaving = false,
 }) => {
+  const isSubmittingRef = useRef(false);
+
   const {
     formData,
     tooltipModal,
@@ -98,7 +100,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: rh(100) }}
         >
           {/* Hero Section */}
           <HeroSection
@@ -203,10 +205,16 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
           <AnimatedPressable
             style={styles.nextButtonCompact}
             onPress={() => {
-              onUpdate(formData);
-              setTimeout(() => {
-                onNext(formData);
-              }, 100);
+              if (isSubmittingRef.current) return;
+              isSubmittingRef.current = true;
+              try {
+                onUpdate(formData);
+                setTimeout(() => {
+                  onNext(formData);
+                }, 100);
+              } finally {
+                isSubmittingRef.current = false;
+              }
             }}
             scaleValue={0.96}
           >

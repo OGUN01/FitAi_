@@ -84,12 +84,13 @@ export const useHealthKitSync = (
     lastSyncTime,
     initializeHealthKit,
     requestHealthKitPermissions,
-    syncHealthData,
     updateSettings,
     exportWorkoutToHealthKit,
     exportNutritionToHealthKit,
     getHealthInsights,
   } = useHealthDataStore();
+  // Use selector for syncHealthData to guarantee a stable reference (Zustand actions are stable when selected individually)
+  const syncHealthData = useHealthDataStore((state) => state.syncHealthData);
 
   // Local loading state for initialization
   const [isLoading, setIsLoading] = useState(false);
@@ -193,7 +194,7 @@ export const useHealthKitSync = (
     settings.autoSyncEnabled,
     isHealthKitAuthorized,
     syncIntervalMinutes,
-    // PERF-009 FIX: Removed syncHealthData from deps - it's a stable store function
+    syncHealthData,
   ]);
 
   // Action handlers

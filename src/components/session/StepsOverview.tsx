@@ -19,7 +19,7 @@ export const StepsOverview: React.FC<StepsOverviewProps> = ({
   return (
     <View style={styles.stepsOverview}>
       <Text style={styles.sectionTitle}>All Ingredients</Text>
-      {meal.items.map((item, index) => {
+      {(meal.items ?? []).map((item, index) => {
         const isCurrentAndCompleted =
           index === currentStep && completedSteps[index];
         const isCurrent = index === currentStep;

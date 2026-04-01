@@ -46,7 +46,10 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
             <View style={styles.trendStatItem}>
               <Text style={styles.trendStatLabel}>Current</Text>
               <Text style={styles.trendStatValue}>
-                {trend.data[trend.data.length - 1]?.toFixed(1)} {unit}
+                {trend.data.length > 0
+                  ? trend.data[trend.data.length - 1]?.toFixed(1)
+                  : null}{" "}
+                {unit}
               </Text>
             </View>
             <View style={styles.trendStatItem}>

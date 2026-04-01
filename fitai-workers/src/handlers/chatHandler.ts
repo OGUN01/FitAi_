@@ -46,6 +46,15 @@ function createAIProvider(env: Env, modelId: string) {
 // ============================================================================
 
 /**
+ * Sanitize a profile field before injecting into the system prompt.
+ * Strips markdown control characters, newlines, and limits length.
+ */
+function sanitizeProfileField(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  return String(value).replace(/[*_`#\[\]\{\}]/g, '').replace(/\n/g, ' ').slice(0, 100);
+}
+
+/**
  * Build system prompt for FitAI coach
  */
 function buildSystemPrompt(request: ChatRequest): string {
@@ -55,13 +64,13 @@ function buildSystemPrompt(request: ChatRequest): string {
   if (request.context?.userProfile) {
     const profile = request.context.userProfile;
     contextInfo.push(`**User Profile:**`);
-    contextInfo.push(`- Age: ${profile.age} years`);
-    contextInfo.push(`- Gender: ${profile.gender}`);
-    contextInfo.push(`- Experience Level: ${profile.experienceLevel}`);
-    contextInfo.push(`- Fitness Goal: ${profile.fitnessGoal}`);
-    if (profile.height) contextInfo.push(`- Height: ${profile.height} cm`);
-    if (profile.weight) contextInfo.push(`- Weight: ${profile.weight} kg`);
-    if (profile.availableEquipment) contextInfo.push(`- Available Equipment: ${profile.availableEquipment.join(', ')}`);
+    contextInfo.push(`- Age: ${sanitizeProfileField(profile.age)} years`);
+    contextInfo.push(`- Gender: ${sanitizeProfileField(profile.gender)}`);
+    contextInfo.push(`- Experience Level: ${sanitizeProfileField(profile.experienceLevel)}`);
+    contextInfo.push(`- Fitness Goal: ${sanitizeProfileField(profile.fitnessGoal)}`);
+    if (profile.height) contextInfo.push(`- Height: ${sanitizeProfileField(profile.height)} cm`);
+    if (profile.weight) contextInfo.push(`- Weight: ${sanitizeProfileField(profile.weight)} kg`);
+    if (profile.availableEquipment) contextInfo.push(`- Available Equipment: ${profile.availableEquipment.map(sanitizeProfileField).join(', ')}`);
   }
 
   // Add current workout context
@@ -152,10 +161,12 @@ export async function handleChat(
     const systemPrompt = buildSystemPrompt(request);
 
     // 3. Prepare messages array (system + conversation history)
+    const ALLOWED_ROLES = new Set(['user', 'assistant', 'system'] as const);
+    type AllowedRole = 'user' | 'assistant' | 'system';
     const messages = [
       { role: 'system' as const, content: systemPrompt },
       ...request.messages.map((msg) => ({
-        role: msg.role as 'user' | 'assistant' | 'system',
+        role: (ALLOWED_ROLES.has(msg.role as AllowedRole) ? msg.role : 'user') as AllowedRole,
         content: msg.content,
       })),
     ];
@@ -174,6 +185,7 @@ export async function handleChat(
         messages,
         temperature: request.temperature,
         maxTokens: request.maxTokens,
+        abortSignal: c.req.raw.signal,
       });
 
       // Return SSE stream
@@ -204,29 +216,30 @@ export async function handleChat(
       });
 
       // Save conversation to database (if user is authenticated)
+      let conversationSaveError: Error | undefined;
       if (user) {
-        try {
-          await saveConversationMessages(
-            c.env,
-            conversationId,
-            user.id,
-            request.messages[request.messages.length - 1], // Last user message
-            {
-              role: 'assistant',
-              content: result.text,
-            },
-            {
-              model: request.model,
-              tokensUsed: result.usage?.totalTokens || 0,
-              generationTimeMs: totalTime,
-              costUsd: calculateCost(request.model, result.usage?.totalTokens || 0),
-            }
-          );
+        conversationSaveError = await saveConversationMessages(
+          c.env,
+          conversationId,
+          user.id,
+          request.messages[request.messages.length - 1], // Last user message
+          {
+            role: 'assistant',
+            content: result.text,
+          },
+          {
+            model: request.model,
+            tokensUsed: result.usage?.totalTokens || 0,
+            generationTimeMs: totalTime,
+            costUsd: calculateCost(request.model, result.usage?.totalTokens || 0),
+          }
+        ).then(() => {
           console.log('[Chat] Conversation saved to database');
-        } catch (saveError) {
+          return undefined;
+        }).catch((saveError: unknown) => {
           console.error('[Chat] Failed to save conversation:', saveError);
-          // Don't fail the request if saving fails
-        }
+          return saveError instanceof Error ? saveError : new Error(String(saveError));
+        });
       }
 
       // Return JSON response
@@ -246,6 +259,8 @@ export async function handleChat(
             generationTime: totalTime,
             tokensUsed: result.usage?.totalTokens,
             costUsd: calculateCost(request.model, result.usage?.totalTokens || 0),
+            conversationSaved: !conversationSaveError,
+            conversationSaveWarning: conversationSaveError ? 'Chat history may not be saved' : undefined,
           },
         },
         200
@@ -323,7 +338,9 @@ async function saveConversationMessages(
     ? existingMessages[0].message_index + 1
     : 0;
 
-  // Save both messages
+  // Save both messages using upsert to handle concurrent requests gracefully.
+  // ON CONFLICT (conversation_id, message_index) → update content so duplicate indexes
+  // don't cause hard errors under burst/race conditions (FIX-I).
   const messages = [
     {
       conversation_id: conversationId,
@@ -349,7 +366,9 @@ async function saveConversationMessages(
     },
   ];
 
-  const { error } = await supabase.from('chat_messages').insert(messages);
+  const { error } = await supabase
+    .from('chat_messages')
+    .upsert(messages, { onConflict: 'conversation_id,message_index', ignoreDuplicates: false });
 
   if (error) {
     throw error;

@@ -21,6 +21,21 @@ import { loadExerciseDatabase, Exercise } from '../utils/exerciseDatabase';
 import { ValidationError, APIError } from '../utils/errors';
 
 // ============================================================================
+// SAFE PARSE HELPER
+// ============================================================================
+
+/**
+ * FIX G: Parse an integer query param safely.
+ * Returns defaultVal when the string is absent, empty, or non-numeric.
+ * Clamps the result to [min, max].
+ */
+function safeParseInt(value: string | undefined | null, defaultVal: number, min: number, max: number): number {
+  const parsed = parseInt(value ?? '', 10);
+  if (isNaN(parsed)) return defaultVal;
+  return Math.min(max, Math.max(min, parsed));
+}
+
+// ============================================================================
 // SEARCH AND FILTER LOGIC
 // ============================================================================
 
@@ -170,10 +185,11 @@ export async function handleExerciseSearch(
     const queryParams = c.req.query();
 
     // Convert query params to proper types
+    // FIX G: Use safeParseInt to avoid NaN propagating when params are non-numeric
     const parsedParams: any = {
       query: queryParams.query,
-      limit: queryParams.limit ? parseInt(queryParams.limit) : 20,
-      offset: queryParams.offset ? parseInt(queryParams.offset) : 0,
+      limit: safeParseInt(queryParams.limit, 20, 1, 100),
+      offset: safeParseInt(queryParams.offset, 0, 0, 10000),
     };
 
     // Parse array parameters
@@ -212,7 +228,17 @@ export async function handleExerciseSearch(
     });
 
     // 2. Load exercise database
-    const database = await loadExerciseDatabase();
+    // FIX H: Wrap in try-catch and return 503 if the database fails to load
+    let database;
+    try {
+      database = await loadExerciseDatabase();
+    } catch (err) {
+      console.error('[exerciseSearch] Failed to load exercise database:', err);
+      return new Response(
+        JSON.stringify({ error: 'Exercise database temporarily unavailable', exercises: [] }),
+        { status: 503, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
     const allExercises = database.exercises;
 
     console.log('[Exercise Search] Database loaded:', {

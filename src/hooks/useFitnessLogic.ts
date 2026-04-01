@@ -187,7 +187,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     return () => {
       unsubscribe();
     };
-  }, [loadFitnessData]);
+  }, [loadFitnessData, isGuestMode]);
 
   // Backfill completedSessions from workoutProgress for users upgrading from older versions.
   // Guards: _hasHydrated (Zustand hydration complete) + completedSessionsHydrated (run once per session)
@@ -482,6 +482,9 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     } finally {
       setGeneratingPlan(false);
     }
+  // NOTE: 11 deps are justified — each one guards a distinct branch of the
+  // generation flow (auth gate, profile completeness, subscription gate,
+  // store writes). Splitting would lose memoization benefits.
   }, [
     user,
     legacyPersonalInfo,

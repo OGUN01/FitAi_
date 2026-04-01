@@ -202,39 +202,19 @@ export function subscriptionGateMiddleware(featureKey: FeatureKey, periodType: P
 			);
 		}
 
-		// Increment usage BEFORE proceeding to keep backend enforcement authoritative.
-		try {
-			const incrementResult = await incrementUsage(c.env, userId, featureKey, periodType);
-			if (!incrementResult.success) {
-				return c.json(
-					{
-						success: false,
-						error: {
-							code: ErrorCode.INTERNAL_ERROR,
-							message: 'Failed to update usage limits',
-						},
-					},
-					500,
-				);
-			}
-		} catch {
-			return c.json(
-				{
-					success: false,
-					error: {
-						code: ErrorCode.INTERNAL_ERROR,
-						message: 'Failed to update usage limits',
-					},
-				},
-				500,
-			);
-		}
-
 		c.set('subscription', {
 			plan: planRow,
 			features: planFeatures!,
 			usage: limitCheck,
 		});
+
+		// Increment usage before the handler runs to avoid race conditions where
+		// the response is returned before the increment completes.
+		try {
+			await incrementUsage(c.env, userId, featureKey, periodType);
+		} catch {
+			console.error(`[SubscriptionGate] Failed to increment usage for ${featureKey}`);
+		}
 
 		await next();
 	};

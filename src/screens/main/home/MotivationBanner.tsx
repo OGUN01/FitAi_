@@ -85,7 +85,7 @@ export const MotivationBanner: React.FC<MotivationBannerProps> = ({
     (state) => state.workoutPreferences,
   );
 
-  const { quote, gradient, icon } = useMemo(() => {
+  const quoteData = useMemo(() => {
     const hour = new Date().getHours();
     const dayOfYear = Math.floor(
       (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
@@ -121,12 +121,22 @@ export const MotivationBanner: React.FC<MotivationBannerProps> = ({
       }
     }
 
+    if (filteredQuotes.length === 0) {
+      return null;
+    }
+
     return {
       quote: filteredQuotes[dayOfYear % filteredQuotes.length],
       gradient: GRADIENTS[period],
       icon: iconName,
     };
   }, [workoutPreferences]);
+
+  if (!quoteData) {
+    return null;
+  }
+
+  const { quote, gradient, icon } = quoteData;
 
   return (
     <AnimatedPressable

@@ -65,7 +65,7 @@ export const useHealthIntelligenceLogic = ({
 
     // Activity contribution (30% of score) - guard against undefined/NaN
     const actualSteps = steps ?? 0;
-    const actualStepsGoal = stepsGoal ?? 10000;
+    const actualStepsGoal = stepsGoal ?? 0;
     const activityScore =
       actualStepsGoal > 0 ? Math.min(actualSteps / actualStepsGoal, 1) * 30 : 0;
     score += activityScore * 0.7; // Not overdoing it is good for recovery

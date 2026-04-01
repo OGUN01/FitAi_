@@ -207,6 +207,108 @@ function filterByExperienceLevel(
 }
 
 // ============================================================================
+// LAYER 3b: PREGNANCY & MEDICAL CONDITION SAFETY FILTER
+// ============================================================================
+
+/**
+ * Hard-exclude exercises that are unsafe for pregnant users or users with
+ * specific medical conditions.  These are absolute exclusions (not score
+ * penalties) because the risk profile is too high.
+ */
+
+const PREGNANCY_EXCLUDED_PATTERNS: RegExp[] = [
+  /\bjump\b/i,
+  /\bplyometric\b/i,
+  /\bbox jump\b/i,
+  /\bbounding\b/i,
+  /\bburpee\b/i,
+  /\bsnatch\b/i,
+  /\bclean and jerk\b/i,
+  /\bheavy deadlift\b/i,
+  /\bsupine\b/i,
+  /\blying\b/i,          // lying on back (supine) after 1st trimester
+  /\bcrunch\b/i,
+  /\bsit[\s-]?up\b/i,
+  /\bleg raise\b/i,      // supine ab exercises
+  /\bhigh impact\b/i,
+  /\bsprints?\b/i,
+  /\bkettlebell swing\b/i,
+  /\boverhead squat\b/i,
+  /\bmuscle[\s-]?up\b/i,
+  /\bhandstand\b/i,
+  /\bfront lever\b/i,
+  /\bdragon flag\b/i,
+];
+
+const HEART_CONDITION_EXCLUDED_PATTERNS: RegExp[] = [
+  /\bsprints?\b/i,
+  /\bplyometric\b/i,
+  /\bburpee\b/i,
+  /\bhigh intensity\b/i,
+  /\bheavy deadlift\b/i,
+  /\bvalsalva\b/i,
+  /\bsnatch\b/i,
+  /\bclean and jerk\b/i,
+];
+
+const HYPERTENSION_EXCLUDED_PATTERNS: RegExp[] = [
+  /\bheavy deadlift\b/i,
+  /\bleg press\b/i,
+  /\boverhead press\b/i,
+  /\binverted\b/i,
+  /\bhandstand\b/i,
+];
+
+function filterByMedicalSafety(
+  exercises: Exercise[],
+  profile: { pregnancyStatus?: boolean; pregnancyTrimester?: string | number; medicalConditions?: string[] },
+): Exercise[] {
+  let filtered = exercises;
+
+  // --- Pregnancy exclusion ---
+  if (profile.pregnancyStatus) {
+    filtered = filtered.filter((ex) => {
+      const name = ex.name.toLowerCase();
+      return !PREGNANCY_EXCLUDED_PATTERNS.some((pat) => pat.test(name));
+    });
+  }
+
+  // --- Medical condition exclusions ---
+  if (profile.medicalConditions && profile.medicalConditions.length > 0) {
+    const conditionsLower = profile.medicalConditions.map((c) => c.toLowerCase());
+
+    if (conditionsLower.some((c) => c.includes('heart') || c.includes('cardiac') || c.includes('arrhythmia'))) {
+      filtered = filtered.filter((ex) => {
+        const name = ex.name.toLowerCase();
+        return !HEART_CONDITION_EXCLUDED_PATTERNS.some((pat) => pat.test(name));
+      });
+    }
+
+    if (conditionsLower.some((c) => c.includes('hypertension') || c.includes('high blood pressure'))) {
+      filtered = filtered.filter((ex) => {
+        const name = ex.name.toLowerCase();
+        return !HYPERTENSION_EXCLUDED_PATTERNS.some((pat) => pat.test(name));
+      });
+    }
+
+    if (conditionsLower.some((c) => c.includes('hernia'))) {
+      filtered = filtered.filter((ex) => {
+        const name = ex.name.toLowerCase();
+        return !(
+          /\bheavy/i.test(name) ||
+          /\bdeadlift\b/i.test(name) ||
+          /\bsquat\b/i.test(name) ||
+          /\bcrunch\b/i.test(name) ||
+          /\bleg raise\b/i.test(name)
+        );
+      });
+    }
+  }
+
+  return filtered;
+}
+
+// ============================================================================
 // LAYER 4: SMART SCORING & RANKING
 // ============================================================================
 
@@ -333,13 +435,6 @@ function selectTopExercises(
   // Select top N
   const selected = sorted.slice(0, targetCount);
 
-  // Log top exercises for debugging
-  console.log('[Exercise Filter] Top 5 exercises:');
-  selected.slice(0, 5).forEach((se, idx) => {
-    console.log(`  ${idx + 1}. ${se.exercise.name} (score: ${se.score})`);
-    console.log(`     Reasons: ${se.reasons.join(', ')}`);
-  });
-
   return selected.map((se) => se.exercise);
 }
 
@@ -369,7 +464,6 @@ export async function filterExercisesForWorkout(
   // Layer 1: Equipment filter
   exercises = filterByEquipment(exercises, request.profile.availableEquipment);
   stats.afterEquipment = exercises.length;
-  console.log(`[Filter Layer 1] Equipment: ${stats.total} → ${stats.afterEquipment} exercises`);
 
   // Layer 2: Body parts filter
   exercises = filterByBodyParts(
@@ -378,26 +472,25 @@ export async function filterExercisesForWorkout(
     request.workoutType
   );
   stats.afterBodyParts = exercises.length;
-  console.log(`[Filter Layer 2] Body parts: ${stats.afterEquipment} → ${stats.afterBodyParts} exercises`);
 
   // Layer 3: Experience level filter
   const experienceLevel = request.difficultyOverride || request.profile.experienceLevel;
   exercises = filterByExperienceLevel(exercises, experienceLevel);
   stats.afterExperience = exercises.length;
-  console.log(`[Filter Layer 3] Experience: ${stats.afterBodyParts} → ${stats.afterExperience} exercises`);
+
+  // Layer 3b: Pregnancy & medical condition safety filter
+  exercises = filterByMedicalSafety(exercises, request.profile);
 
   // Layer 4: Smart scoring and ranking
   const scoredExercises = exercises.map((ex) => scoreExercise(ex, request));
   const finalExercises = selectTopExercises(scoredExercises, targetCount);
   stats.final = finalExercises.length;
-  console.log(`[Filter Layer 4] Ranking: ${stats.afterExperience} → ${stats.final} exercises`);
 
   // Exclude specific exercises if requested
   let filteredFinal = finalExercises;
   if (request.excludeExercises && request.excludeExercises.length > 0) {
     const excludeSet = new Set(request.excludeExercises);
     filteredFinal = finalExercises.filter((ex) => !excludeSet.has(ex.exerciseId));
-    console.log(`[Filter] Excluded ${finalExercises.length - filteredFinal.length} user-specified exercises`);
     stats.final = filteredFinal.length;
   }
 

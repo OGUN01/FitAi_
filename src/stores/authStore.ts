@@ -6,6 +6,8 @@ import { authService, AuthResponse } from "../services/auth";
 import { generateGuestId, migrateGuestId } from "../utils/uuid";
 import { authEvents } from "../services/authEvents";
 
+const SESSION_RESTORE_TIMEOUT_MS = 10000;
+
 interface AuthState {
   // State
   user: AuthUser | null;
@@ -285,7 +287,7 @@ export const useAuthStore = create<AuthState>()(
           const timeoutPromise = new Promise<AuthResponse>((resolve) =>
             setTimeout(() => {
               resolve({ success: false, error: "Session restore timeout" });
-            }, 10000),
+            }, SESSION_RESTORE_TIMEOUT_MS),
           );
 
           const response = await Promise.race([restorePromise, timeoutPromise]);
@@ -435,30 +437,23 @@ export const useAuthStore = create<AuthState>()(
       },
 
       setGuestMode: (enabled: boolean) => {
-        const currentState = get();
+        set((state) => {
+          let guestId: string | null = null;
 
-        let guestId: string | null = null;
-
-        if (enabled) {
-          // Migrate existing guest ID to proper UUID format if needed
-          if (currentState.guestId) {
-            guestId = migrateGuestId(currentState.guestId);
-            if (guestId !== currentState.guestId) {
+          if (enabled) {
+            if (state.guestId) {
+              guestId = migrateGuestId(state.guestId);
             } else {
-              guestId = currentState.guestId;
+              guestId = generateGuestId();
             }
-          } else {
-            // Generate new proper UUID-based guest ID
-            guestId = generateGuestId();
           }
-        }
 
-        set({
-          isGuestMode: enabled,
-          guestId,
-          isAuthenticated: false, // Guest mode means not authenticated
+          return {
+            isGuestMode: enabled,
+            guestId,
+            isAuthenticated: false,
+          };
         });
-
       },
 
       exitGuestMode: () => {
@@ -484,12 +479,14 @@ export const useAuthStore = create<AuthState>()(
           try {
             await AsyncStorage.setItem(name, value);
           } catch (e) {
+            console.error('[AuthStore] Failed to persist auth state:', e);
           }
         },
         removeItem: async (name: string) => {
           try {
             await AsyncStorage.removeItem(name);
           } catch (e) {
+            console.error('[AuthStore] Failed to clear auth state:', e);
           }
         },
       })),

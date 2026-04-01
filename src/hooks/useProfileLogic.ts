@@ -192,6 +192,8 @@ export const useProfileLogic = () => {
   const handleUnitsSelect = useCallback(
     async (value: string) => {
       const units = value as UnitsPreference;
+      // Snapshot user id before any async ops to guard against auth state changes mid-flight
+      const currentUserId = user?.id;
       setUnitsPreference(units);
       try {
         await AsyncStorage.setItem(STORAGE_KEY_UNITS, units);
@@ -212,8 +214,9 @@ export const useProfileLogic = () => {
           });
         }
 
-        if (user?.id) {
-          const result = await userProfileService.updateProfile(user.id, {
+        if (currentUserId) {
+          if (user?.id !== currentUserId) return; // user changed mid-operation
+          const result = await userProfileService.updateProfile(currentUserId, {
             units,
           });
           if (!result.success) {
