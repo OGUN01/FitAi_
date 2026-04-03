@@ -4,6 +4,7 @@ import {
   BodyMetrics,
   WorkoutPreferences,
 } from "../types/user";
+import type { AdvancedReviewData } from "../types/onboarding";
 import { Workout, AIResponse } from "../types/ai";
 import { WeeklyWorkoutPlan, AIServiceMetadata } from "./types";
 import { transformWorkoutData, handleError } from "./utils";
@@ -91,6 +92,7 @@ export async function generateWeeklyWorkoutPlan(
     bodyMetrics?: BodyMetrics;
     workoutPreferences?: WorkoutPreferences;
     regenerationSeed?: number;
+    advancedReview?: AdvancedReviewData | null; // H13: Wire health-based recommendations
   } = {},
   updateMetadata: (metadata: AIServiceMetadata) => void,
 ): Promise<AIResponse<WeeklyWorkoutPlan>> {
@@ -109,6 +111,7 @@ export async function generateWeeklyWorkoutPlan(
         }).value,
         weekNumber,
         regenerationSeed: options.regenerationSeed,
+        advancedReview: options.advancedReview, // H13: Pass to transformer
       },
     );
 

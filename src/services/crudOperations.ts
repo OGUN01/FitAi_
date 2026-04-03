@@ -170,7 +170,6 @@ export class CrudOperationsService {
           duration: session.duration ?? 0,
           total_duration_minutes: session.duration ?? 0,
           calories_burned: session.caloriesBurned ?? 0,
-          exercises: session.exercises || [],
           exercises_completed: session.exercises || [],
           notes: session.notes || "",
           // rating: null unless user explicitly rated (1-5); 0 violates check constraint

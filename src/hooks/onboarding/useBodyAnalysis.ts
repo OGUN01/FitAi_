@@ -128,9 +128,10 @@ export const useBodyAnalysis = ({
 
   // Memoize BMR calculation function
   const calculateBMRMemo = useCallback(
-    (weightKg: number, heightCm: number): number => {
+    (weightKg: number, heightCm: number): number | null => {
       if (!personalInfoData?.age || !personalInfoData?.gender) {
-        return 10 * weightKg + 6.25 * heightCm - 5 * 25;
+        console.warn('BMR preview skipped: age or gender not available');
+        return null;
       }
 
       return MetabolicCalculations.calculateBMR(
@@ -180,7 +181,7 @@ export const useBodyAnalysis = ({
       setFormData((prev: BodyAnalysisData) => ({
         ...prev,
         bmi: Math.round(bmi * 100) / 100,
-        bmr: Math.round(bmr),
+        bmr: bmr != null ? Math.round(bmr) : undefined,
         ideal_weight_min: Math.round(idealWeightRange.min * 100) / 100,
         ideal_weight_max: Math.round(idealWeightRange.max * 100) / 100,
       }));

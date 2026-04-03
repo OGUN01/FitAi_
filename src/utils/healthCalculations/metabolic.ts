@@ -304,7 +304,12 @@ export class MetabolicCalculations {
     return Math.max(0, Math.min(100, normalized));
   }
 
-  // BUG-13: Align with SSOT formula (ClimateAdaptiveWaterCalculator): base×35 + activityBonus, then climate×
+  /**
+   * @deprecated Use waterCalculator.calculate() from calculators/waterCalculator.ts instead.
+   * This legacy formula uses MULTIPLICATIVE climate adjustment which over-inflates results.
+   * SSOT: ClimateAdaptiveWaterCalculator uses ADDITIVE climate bonuses.
+   * Kept only for master-engine backward compatibility; its output is stripped by useReviewValidation.
+   */
   static calculateWaterIntake(
     weightKg: number,
     activityLevel?: string,
@@ -317,6 +322,7 @@ export class MetabolicCalculations {
       moderate: 1000,
       active: 1500,
       very_active: 2000,
+      extreme: 2000, // Alias for very_active (onboarding uses "extreme")
     };
     const climateMultipliers: Record<string, number> = {
       tropical: 1.5,
@@ -324,7 +330,7 @@ export class MetabolicCalculations {
       cold: 0.9,
       arid: 1.7,
     };
-    const bonus = activityBonuses[activityLevel ?? 'moderate'] ?? 1000;
+    const bonus = activityBonuses[activityLevel ?? 'sedentary'] ?? 1000;
     const multiplier = climateMultipliers[climate ?? 'temperate'] ?? 1.0;
     return Math.round(((base + bonus) * multiplier) / 50) * 50;
   }

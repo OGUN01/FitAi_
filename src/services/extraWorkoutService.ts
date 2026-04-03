@@ -176,7 +176,7 @@ export async function completeExtraWorkout(
             completed_at: new Date().toISOString(),
             is_completed: true,
             is_extra: true,
-            enjoyment_rating: sessionData?.rating || null,
+            rating: sessionData?.rating || null, // H18: canonical — read by dataTransformation.ts
             notes: sessionData?.notes || `Extra workout: ${workout.title}`,
           })
           .select("id")

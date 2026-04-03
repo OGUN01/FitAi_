@@ -5,6 +5,8 @@ import type { OnboardingReviewData } from "../types/onboarding";
 import type { TabConfig } from "../components/onboarding/OnboardingTabBar";
 import { ONBOARDING_TABS } from "../components/onboarding/OnboardingTabBar";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
+import { calculatePersonalizedStepGoal } from "../utils/healthCalculations/calculators/stepGoalCalculator";
+import { useHealthDataStore } from "../stores/healthDataStore";
 
 // ============================================================================
 // TYPES
@@ -397,13 +399,12 @@ export const useOnboardingLogic = ({
         gender: pi.gender,
         height: ba?.height_cm || 0,
         weight: ba?.current_weight_kg || 0,
-        occupation_type: pi?.occupation_type || "moderate_active",
         country: pi?.country || "",
         state: pi?.state || "",
       } as any,
       fitnessGoals: {
         primary_goals: wp?.primary_goals || [],
-        time_commitment: `${wp?.session_duration_minutes || 45} minutes`,
+        time_commitment: `${wp?.time_preference || wp?.session_duration_minutes || 45} minutes`,
         experience:
           wp?.intensity === "beginner"
             ? "beginner"
@@ -429,10 +430,26 @@ export const useOnboardingLogic = ({
       } as any,
       workoutPreferences: {
         location: wp?.location || "gym",
-        equipment: wp?.available_equipment || [],
+        equipment: wp?.equipment || wp?.available_equipment || [],
         workoutTypes: wp?.workout_types || [],
         timePreference: wp?.time_preference || 45,
         intensity: wp?.intensity || "intermediate",
+        // Extended fields from onboarding Tab 4
+        primary_goals: wp?.primary_goals || [],
+        activity_level: wp?.activity_level || "sedentary",
+        workout_frequency_per_week: wp?.workout_frequency_per_week || 0,
+        workout_experience_years: wp?.workout_experience_years || 0,
+        can_do_pushups: wp?.can_do_pushups || 0,
+        can_run_minutes: wp?.can_run_minutes || 0,
+        flexibility_level: wp?.flexibility_level || "fair",
+        weekly_weight_loss_goal: wp?.weekly_weight_loss_goal,
+        preferred_workout_times: wp?.preferred_workout_times || [],
+        enjoys_cardio: wp?.enjoys_cardio ?? true,
+        enjoys_strength_training: wp?.enjoys_strength_training ?? true,
+        enjoys_group_classes: wp?.enjoys_group_classes ?? false,
+        prefers_outdoor_activities: wp?.prefers_outdoor_activities ?? false,
+        needs_motivation: wp?.needs_motivation ?? false,
+        prefers_variety: wp?.prefers_variety ?? true,
       },
       bodyAnalysis: {
         photos: {},
@@ -446,8 +463,39 @@ export const useOnboardingLogic = ({
               recommendations: [],
             }
           : undefined,
+        // Extended fields from onboarding Tab 3
+        height_cm: ba?.height_cm || 0,
+        current_weight_kg: ba?.current_weight_kg || 0,
+        target_weight_kg: ba?.target_weight_kg || 0,
+        target_timeline_weeks: ba?.target_timeline_weeks || 12,
+        body_fat_percentage: ba?.body_fat_percentage,
+        waist_cm: ba?.waist_cm,
+        hip_cm: ba?.hip_cm,
+        chest_cm: ba?.chest_cm,
+        medical_conditions: ba?.medical_conditions || [],
+        medications: ba?.medications || [],
+        physical_limitations: ba?.physical_limitations || [],
+        pregnancy_status: ba?.pregnancy_status || false,
+        breastfeeding_status: ba?.breastfeeding_status || false,
+        stress_level: ba?.stress_level,
+        bmi: ba?.bmi,
+        bmr: ba?.bmr,
+        ideal_weight_min: ba?.ideal_weight_min,
+        ideal_weight_max: ba?.ideal_weight_max,
+        ai_body_type: ba?.ai_body_type,
+        ai_estimated_body_fat: ba?.ai_estimated_body_fat,
+        ai_confidence_score: ba?.ai_confidence_score,
       },
     };
+
+    // Calculate and set personalized step goal from onboarding data
+    const personalizedStepGoal = calculatePersonalizedStepGoal({
+      activityLevel: wp?.activity_level,
+      primaryGoals: wp?.primary_goals,
+      age: pi?.age,
+      experienceLevel: wp?.intensity,
+    });
+    useHealthDataStore.getState().setStepsGoal(personalizedStepGoal);
 
     onComplete(completeData);
   }, [onComplete]);

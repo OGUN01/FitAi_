@@ -42,13 +42,13 @@ export interface PersonalInfo {
   wake_time: string; // TIME format "HH:MM" - REQUIRED
   sleep_time: string; // TIME format "HH:MM" - REQUIRED
 
-  // Occupation (for activity level guidance)
-  occupation_type:
+  // Deprecated: occupation_type removed — activity_level lives in WorkoutPreferences (SSOT)
+  occupation_type?:
     | "desk_job"
     | "light_active"
     | "moderate_active"
     | "heavy_labor"
-    | "very_active"; // REQUIRED
+    | "very_active";
 
   // Legacy/UI preferences
   profile_picture?: string;
@@ -150,6 +150,7 @@ export interface DietPreferences {
   allergies: string[]; // TEXT[] - REQUIRED (can be empty array)
   restrictions: string[]; // TEXT[] - REQUIRED (can be empty array)
   cuisine_preferences?: string[];
+  snacks_count?: number; // Number of snacks per day (default: 2)
 
   // Diet readiness toggles (6 specialized diets)
   keto_ready: boolean;

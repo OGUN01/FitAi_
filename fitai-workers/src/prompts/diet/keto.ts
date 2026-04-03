@@ -105,9 +105,14 @@ This means NO high-carb foods AT ALL.
 ════════════════════════════════════════════════════════════════════════════════
 🌍 GENERATE FOR: ${p.CUISINE} CUISINE
 📍 LOCATION: ${p.STATE}, ${p.COUNTRY}
-════════════════════════════════════════════════════════════════════════════════
+${p.CUISINE_PREFERENCES ? `🍽️ USER'S PREFERRED CUISINES: ${p.CUISINE_PREFERENCES}` : ''}
+═════════════════════════���══════════════════════════════════════════════════════
 
-Create authentic ${p.CUISINE} KETO dishes using:
+${p.CUISINE_PREFERENCES ? `The user has specifically requested these cuisine styles: ${p.CUISINE_PREFERENCES}.
+Prioritize their preferred cuisines over the auto-detected regional cuisine (${p.CUISINE}).
+Blend their preferences naturally — e.g. if they prefer Mediterranean but live in India, use Mediterranean-inspired dishes with locally available ingredients.
+
+` : ''}Create authentic ${p.CUISINE} KETO dishes using:
 - Traditional ${p.CUISINE} flavors adapted for keto
 - Keto-friendly ingredients available in ${p.STATE}
 - Low-carb alternatives to traditional high-carb dishes

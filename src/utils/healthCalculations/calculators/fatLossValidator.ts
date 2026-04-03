@@ -162,6 +162,7 @@ export class FatLossValidator {
       moderate: 1.0,
       active: 1.1,
       very_active: 1.15,
+      extreme: 1.15, // Alias for very_active (onboarding uses "extreme")
     };
     const activityMultiplier: number =
       activityFactors[activityLevel as string] || 1.0;

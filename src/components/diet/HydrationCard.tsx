@@ -148,11 +148,11 @@ export const HydrationCard: React.FC<HydrationCardProps> = React.memo(({
             <View style={styles.statsContainer}>
               <View style={styles.mainStat}>
                 <Text style={styles.intakeValue}>
-                  {(currentIntake / 1000).toFixed(2)}
+                  {(currentIntake / 1000).toFixed(1)}
                   <Text style={styles.intakeUnit}>L</Text>
                 </Text>
                 <Text style={styles.goalText}>
-                  of {(dailyGoal / 1000).toFixed(2)}L goal
+                  of {(dailyGoal / 1000).toFixed(1)}L goal
                 </Text>
               </View>
 

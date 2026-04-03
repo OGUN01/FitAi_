@@ -217,6 +217,9 @@ export interface HealthDataState {
     baseCalories: number,
   ) => Promise<ActivityAdjustedCalories>;
 
+  // Actions - Step Goal
+  setStepsGoal: (goal: number) => void;
+
   // Actions - General
   updateHealthMetrics: (metrics: Partial<HealthMetrics>) => void;
   updateSettings: (settings: Partial<HealthIntegrationSettings>) => void;

@@ -76,8 +76,10 @@ export interface AdvancedReviewData {
   bmi_category?: string;
   bmi_health_risk?: string;
   detected_climate?: string;
+  /** @computed Not yet implemented — always null. Could be derived from country. */
   detected_ethnicity?: string;
   bmr_formula_used?: string;
+  /** @deprecated Use overall_health_score instead — health_score is not a DB column */
   health_score?: number;
   health_grade?: string;
   vo2_max_estimate?: number;
@@ -145,6 +147,7 @@ export interface AdvancedReviewRow {
   detected_ethnicity?: string | null;
   was_rate_capped?: boolean | null;
   bmi_category?: string | null;
+  /** @deprecated Use overall_health_score instead — health_score is not a DB column */
   health_score?: number | null;
   health_grade?: string | null;
   created_at?: string | null;

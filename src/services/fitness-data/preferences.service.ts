@@ -51,27 +51,41 @@ export class PreferencesService {
     }
   }
 
+  /**
+   * @deprecated fitness_goals table is deprecated. Reads from workout_preferences instead.
+   */
   async getUserFitnessGoals(
     userId: string,
   ): Promise<FitnessDataResponse<FitnessGoals>> {
     try {
+      // Read from workout_preferences (SSOT) instead of deprecated fitness_goals table
       const { data, error } = await supabase
-        .from("fitness_goals")
+        .from("workout_preferences")
         .select("*")
         .eq("user_id", userId)
         .maybeSingle();
 
       if (error) {
-        console.error("Error fetching fitness goals:", error);
+        console.error("Error fetching workout preferences for goals:", error);
         return {
           success: false,
           error: error.message,
         };
       }
 
+      if (!data) {
+        return { success: true, data: null as any };
+      }
+
+      // Map workout_preferences fields to FitnessGoals shape
       return {
         success: true,
-        data,
+        data: {
+          primary_goals: (data as any).primary_goals || [],
+          time_commitment: (data as any).time_commitment || '',
+          experience: (data as any).experience_level || '',
+          experience_level: (data as any).experience_level || '',
+        } as any,
       };
     } catch (error) {
       console.error("Error in getUserFitnessGoals:", error);

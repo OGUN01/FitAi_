@@ -63,6 +63,7 @@ npx wrangler deploy
 ### APK: `bash build-both-apks.sh`
 
 ## Key File Map
+- **Data Architecture:** `src/docs/FITAI_DATA_ARCHITECTURE.md` — master reference for all data flow, fields, formulas, persistence, generation pipelines
 - Stores: `src/stores/` — fitness, nutrition, user, profile, subscription
 - AI generation: `src/ai/index.ts`, schemas in `src/ai/schemas.ts`
 - Completion logic: `src/services/completionTracking.ts`
@@ -70,6 +71,16 @@ npx wrangler deploy
 - DB migrations: `supabase/migrations/` (timestamp-named `.sql` files)
 - Workers API: `fitai-workers/src/handlers/`
 - Supabase client: `src/services/supabase.ts`
+- Type transformers: `src/utils/typeTransformers.ts` — enum mapping (activity_level, diet_type) + snake↔camel conversion
+- Health calculations: `src/utils/healthCalculations/` — BMR, TDEE, macros, water, HR zones, health scores
+
+## Architecture Doc Rules
+
+1. **Always start from the architecture doc** — Read `src/docs/FITAI_DATA_ARCHITECTURE.md` before touching any data flow. It maps every field, every formula, every persistence path, every generation pipeline.
+2. **For new features** — Follow the pattern: define field in `types/onboarding.ts` → add migration (`IF NOT EXISTS`) → update service save/load in `onboardingService.ts` → wire through transformer in `aiRequestTransformers.ts` → update worker Zod schema + prompt → update the architecture doc.
+3. **For debugging** — Section E tells you which hook reads what from where. Section F tells you exactly what reaches AI generation. Section C has every formula. Trace the doc first, then the code.
+4. **Keep the doc updated** — When you add a field, change a formula, modify persistence, or resolve a tech debt item, update the architecture doc in the same change. Stale docs are worse than no docs.
+5. **Enum boundaries** — Activity level (`extreme` ↔ `very_active`) and diet type (`non-veg`/`balanced` ↔ `omnivore`) have mapping functions in `typeTransformers.ts`. Always map at the boundary between onboarding types and health calculation types.
 
 ## What Not To Do
 - Do not use `Alert.alert` directly — use `crossPlatformAlert` from `src/utils/crossPlatformAlert.ts`

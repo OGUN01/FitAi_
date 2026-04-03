@@ -3,14 +3,12 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
 } from "react-native";
-import { GlassCard, AnimatedPressable } from "../../components/ui/aurora";
+import { GlassCard } from "../../components/ui/aurora";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rw, rh } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
-import { OCCUPATION_OPTIONS } from "./PersonalInfoConstants";
 import { PersonalInfoData } from "../../types/onboarding";
 import TimePicker from "./TimePicker";
 
@@ -62,97 +60,6 @@ export const LifestyleFields: React.FC<LifestyleFieldsProps> = ({
 
   return (
     <>
-      <GlassCard
-        style={styles.sectionEdgeToEdge}
-        elevation={2}
-        blurIntensity="default"
-        padding="none"
-        borderRadius="none"
-      >
-        <View style={styles.sectionTitlePadded}>
-          <Text style={styles.sectionTitle} numberOfLines={1}>
-            Daily Activity
-          </Text>
-          <Text
-            style={styles.sectionSubtitle}
-            numberOfLines={2}
-            ellipsizeMode="tail"
-          >
-            This helps us understand your daily movement beyond exercise
-          </Text>
-        </View>
-
-        <View style={styles.scrollContainerInset}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContentInset}
-            decelerationRate="fast"
-            snapToInterval={rw(105) + rw(10)}
-            snapToAlignment="start"
-          >
-            {OCCUPATION_OPTIONS.map((option) => {
-              const isSelected = formData.occupation_type === option.value;
-
-              return (
-                <AnimatedPressable
-                  key={option.value}
-                  style={styles.activityCardItem}
-                  onPress={() =>
-                    updateField(
-                      "occupation_type",
-                      option.value as PersonalInfoData["occupation_type"],
-                    )
-                  }
-                  scaleValue={0.95}
-                >
-                  <View
-                    style={[
-                      styles.activityCard,
-                      isSelected && styles.activityCardSelected,
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.activityIconContainer,
-                        isSelected && styles.activityIconContainerSelected,
-                      ]}
-                    >
-                      <Ionicons
-                        name={option.iconName as any}
-                        size={rf(24)}
-                        color={
-                          isSelected
-                            ? ResponsiveTheme.colors.primary
-                            : ResponsiveTheme.colors.textSecondary
-                        }
-                      />
-                    </View>
-                    <Text
-                      style={[
-                        styles.activityCardTitle,
-                        isSelected && styles.activityCardTitleSelected,
-                      ]}
-                      numberOfLines={2}
-                      ellipsizeMode="tail"
-                    >
-                      {option.label}
-                    </Text>
-                  </View>
-                </AnimatedPressable>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        <View style={styles.edgeToEdgeContentPadded}>
-          {hasFieldError("occupation") && (
-            <Text style={styles.errorText}>{getFieldError("occupation")}</Text>
-          )}
-        </View>
-        <View style={styles.sectionBottomPad} />
-      </GlassCard>
-
       <GlassCard
         style={styles.sectionEdgeToEdge}
         elevation={2}

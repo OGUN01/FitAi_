@@ -80,9 +80,14 @@ FISH, SEAFOOD, DAIRY, and EGGS ARE ALL ALLOWED.
 ════════════════════════════════════════════════════════════════════════════════
 🌍 GENERATE FOR: ${p.CUISINE} CUISINE
 📍 LOCATION: ${p.STATE}, ${p.COUNTRY}
+${p.CUISINE_PREFERENCES ? `🍽️ USER'S PREFERRED CUISINES: ${p.CUISINE_PREFERENCES}` : ''}
 ════════════════════════════════════════════════════════════════════════════════
 
-Create authentic ${p.CUISINE} PESCATARIAN dishes using:
+${p.CUISINE_PREFERENCES ? `The user has specifically requested these cuisine styles: ${p.CUISINE_PREFERENCES}.
+Prioritize their preferred cuisines over the auto-detected regional cuisine (${p.CUISINE}).
+Blend their preferences naturally — e.g. if they prefer Mediterranean but live in India, use Mediterranean-inspired dishes with locally available ingredients.
+
+` : ''}Create authentic ${p.CUISINE} PESCATARIAN dishes using:
 - Traditional ${p.CUISINE} seafood preparations
 - Locally available fish and seafood in ${p.STATE}
 - Regional flavors from ${p.COUNTRY}

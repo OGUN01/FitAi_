@@ -102,6 +102,39 @@ export const useWorkoutPreferences = ({
     prefers_variety: data?.prefers_variety ?? true,
   });
 
+  // Sync time_preference from time_commitment if the data prop carries a
+  // time_commitment string (written by GoalsPreferencesEditModal) and
+  // time_preference is still the default 30.  This ensures the SSOT
+  // (time_preference, numeric minutes) reflects the user's chosen range.
+  const hasInitializedTimeFromCommitment = useRef(false);
+
+  useEffect(() => {
+    if (hasInitializedTimeFromCommitment.current) return;
+    const wpData = data as Record<string, unknown> | null;
+    const tc = wpData?.time_commitment as string | undefined;
+    // Only sync if there IS a time_commitment AND time_preference was never
+    // explicitly set (still at default 30 or missing).
+    if (tc && (!data?.time_preference || data.time_preference === 30)) {
+      let minutes = 0;
+      if (tc === "60+") {
+        minutes = 60;
+      } else {
+        const rangeMatch = tc.match(/(\d+)\s*-\s*(\d+)/);
+        if (rangeMatch) {
+          minutes = parseInt(rangeMatch[2], 10); // upper bound
+        } else {
+          const single = tc.match(/(\d+)/);
+          if (single) minutes = parseInt(single[1], 10);
+        }
+      }
+      if (minutes > 0 && minutes !== formData.time_preference) {
+        hasInitializedTimeFromCommitment.current = true;
+        setFormData((prev) => ({ ...prev, time_preference: minutes }));
+        onUpdate({ time_preference: minutes });
+      }
+    }
+  }, [data]);
+
   // Sync formData with data prop when it changes
   const isSyncingFromProps = useRef(false);
 
@@ -152,32 +185,6 @@ export const useWorkoutPreferences = ({
       }));
     }
   }, [formData.location, formData.equipment.length]);
-
-  // Auto-calculate activity level from occupation type
-  useEffect(() => {
-    if (personalInfoData?.occupation_type) {
-      const OCCUPATION_TO_ACTIVITY: Record<
-        string,
-        WorkoutPreferencesData["activity_level"]
-      > = {
-        desk_job: "sedentary",
-        light_active: "light",
-        moderate_active: "moderate",
-        heavy_labor: "active",
-        very_active: "extreme",
-      };
-
-      const calculatedActivityLevel =
-        OCCUPATION_TO_ACTIVITY[personalInfoData.occupation_type] || "sedentary";
-
-      if (formData.activity_level !== calculatedActivityLevel) {
-        setFormData((prev: WorkoutPreferencesData) => ({
-          ...prev,
-          activity_level: calculatedActivityLevel,
-        }));
-      }
-    }
-  }, [personalInfoData?.occupation_type, formData.activity_level]);
 
   // Auto-populate from body analysis data
   useEffect(() => {

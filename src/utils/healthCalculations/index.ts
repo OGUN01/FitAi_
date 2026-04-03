@@ -151,6 +151,9 @@ export {
   type GoalValidationResult,
 } from './HealthCalculatorFacade';
 
+// Step Goal Calculator
+export { calculatePersonalizedStepGoal } from './calculators/stepGoalCalculator';
+
 // ============================================================================
 // VERSION INFO
 // ============================================================================

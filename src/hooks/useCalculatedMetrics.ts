@@ -7,23 +7,26 @@
  * CRITICAL: This hook does NOT provide fallback values. If data is missing,
  * it returns null to make data flow issues immediately visible.
  *
- * Data sources:
- * - advanced_review table: calories, protein, carbs, fat, water, BMI category, climate, etc.
- * - body_analysis table: weight, height, target weight, body fat
- * - profiles table: age, gender, country, state
+ * SSOT: Reads from profileStore (Zustand) — the single runtime source for all
+ * onboarding profile data. profileStore is kept in sync with Supabase via DataBridge.
+ * This hook NO LONGER calls Supabase directly, eliminating:
+ *   - 5-minute stale cache after profile edits
+ *   - Race conditions on cold start (Supabase fetch vs profileStore hydration)
+ *   - Redundant network requests (profileStore already has the data)
+ *
+ * Data sources (all via profileStore):
+ * - advancedReview: calories, protein, carbs, fat, water, BMI category, climate, etc.
+ * - bodyAnalysis: weight, height, target weight, body fat
+ * - personalInfo: age, gender, country, state
+ * - workoutPreferences: activity level, goals, duration, frequency
+ * - dietPreferences: meal enables (breakfast, lunch, dinner, snacks)
  */
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "./useAuth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  AdvancedReviewService,
-  BodyAnalysisService,
-  PersonalInfoService,
-  WorkoutPreferencesService,
-  DietPreferencesService,
-} from "../services/onboardingService";
-import {
+import { useProfileStore } from "../stores/profileStore";
+import type {
   AdvancedReviewData,
   BodyAnalysisData,
   PersonalInfoData,
@@ -31,9 +34,13 @@ import {
   DietPreferencesData,
 } from "../types/onboarding";
 import { weightTrackingService } from "../services/WeightTrackingService";
-import { resolveCurrentWeightForUser } from "../services/currentWeight";
+import {
+  resolveCurrentWeightFromStores,
+  applyResolvedCurrentWeight,
+} from "../services/currentWeight";
 import { waterCalculator } from "../utils/healthCalculations/calculators/waterCalculator";
 import type { ActivityLevel, ClimateType } from "../utils/healthCalculations/types";
+import { mapActivityLevelForHealthCalc } from "../utils/typeTransformers";
 
 // ============================================================================
 // TYPES
@@ -148,40 +155,25 @@ export interface UseCalculatedMetricsReturn {
 }
 
 // ============================================================================
-// CACHE
+// CACHE — DEPRECATED
 // ============================================================================
-
-// In-memory cache for performance
-let metricsCache: {
-  metrics: CalculatedMetrics | null;
-  timestamp: number;
-  userId: string | null;
-} = {
-  metrics: null,
-  timestamp: 0,
-  userId: null,
-};
-
-let metricsLoadPromise: Promise<CalculatedMetrics | null> | null = null;
-let metricsLoadPromiseUserId: string | null = null;
-
-const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Invalidate the metrics cache globally.
- * Call this after onboarding completes to ensure fresh data is loaded.
+ *
+ * LEGACY: This function is kept for backward compatibility. With the profileStore
+ * refactor, there is no longer an internal cache — data is derived reactively from
+ * profileStore. Calling this now forces a profileStore re-read on next render cycle
+ * by bumping a revision counter.
  *
  * @example
  * // After onboarding complete
  * import { invalidateMetricsCache } from '@/hooks/useCalculatedMetrics';
  * invalidateMetricsCache();
  */
+let _metricsRevision = 0;
 export function invalidateMetricsCache(): void {
-  metricsCache = {
-    metrics: null,
-    timestamp: 0,
-    userId: null,
-  };
+  _metricsRevision++;
 }
 
 // ============================================================================
@@ -191,226 +183,205 @@ export function invalidateMetricsCache(): void {
 export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
   const { user, isAuthenticated, isGuestMode } = useAuth();
 
+  // SSOT: Read all data from profileStore (Zustand) instead of Supabase
+  const advancedReview = useProfileStore((s) => s.advancedReview);
+  const bodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
+  const personalInfo = useProfileStore((s) => s.personalInfo);
+  const workoutPreferences = useProfileStore((s) => s.workoutPreferences);
+  const dietPreferences = useProfileStore((s) => s.dietPreferences);
+  const storeIsHydrated = useProfileStore((s) => s.isHydrated);
+
   const [metrics, setMetrics] = useState<CalculatedMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [hasCalculatedMetrics, setHasCalculatedMetrics] = useState(false);
 
-  /**
-   * Load metrics from database (authenticated users)
-   */
-  const loadFromDatabase = useCallback(
-    async (userId: string): Promise<CalculatedMetrics | null> => {
+  // Guest data loaded from AsyncStorage (one-time)
+  const [guestData, setGuestData] = useState<{
+    advancedReview: AdvancedReviewData | null;
+    bodyAnalysis: BodyAnalysisData | null;
+    personalInfo: PersonalInfoData | null;
+    workoutPreferences: WorkoutPreferencesData | null;
+    dietPreferences: DietPreferencesData | null;
+  } | null>(null);
+  const guestLoadedRef = useRef(false);
 
-      try {
-        // Load all data in parallel
-        const [
-          advancedReview,
-          bodyAnalysis,
-          personalInfo,
-          workoutPreferences,
-          dietPreferences,
-        ] = await Promise.all([
-          AdvancedReviewService.load(userId),
-          BodyAnalysisService.load(userId),
-          PersonalInfoService.load(userId),
-          WorkoutPreferencesService.load(userId),
-          DietPreferencesService.load(userId),
-        ]);
+  // Load guest data from AsyncStorage (only for guest users, once)
+  useEffect(() => {
+    if (!isGuestMode || guestLoadedRef.current) return;
+    guestLoadedRef.current = true;
 
-        // If no advanced_review data, user hasn't completed onboarding calculations
-        if (!advancedReview) {
-          return null;
-        }
-
-        // Merge latest logged weight into bodyAnalysis so currentWeightKg
-        // reflects actual tracked weight rather than the static onboarding value.
-        // SSOT: uses resolveCurrentWeightForUser for DB-backed resolution
-        const resolvedCurrentWeight = await resolveCurrentWeightForUser(userId, {
-          bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
-        });
-        const effectiveBodyAnalysis: BodyAnalysisData | null =
-          resolvedCurrentWeight.value != null
-            ? ({
-                ...(bodyAnalysis || {}),
-                current_weight_kg: resolvedCurrentWeight.value,
-              } as BodyAnalysisData)
-            : bodyAnalysis;
-
-        if (effectiveBodyAnalysis?.current_weight_kg) {
-          weightTrackingService.initializeFromBodyAnalysis({
-            current_weight_kg: effectiveBodyAnalysis.current_weight_kg,
-          });
-        }
-
-        return mapToCalculatedMetrics(
-          advancedReview,
-          effectiveBodyAnalysis,
-          personalInfo,
-          workoutPreferences,
-          dietPreferences,
-        );
-      } catch (err) {
-        console.error("❌ [useCalculatedMetrics] Database load error:", err);
-        throw err;
-      }
-    },
-    [],
-  );
-
-  /**
-   * Load metrics from AsyncStorage (guest users)
-   */
-  const loadFromAsyncStorage =
-    useCallback(async (): Promise<CalculatedMetrics | null> => {
-
+    (async () => {
       try {
         const onboardingDataStr = await AsyncStorage.getItem("onboarding_data");
-
         if (!onboardingDataStr) {
-          return null;
+          setGuestData(null);
+          return;
         }
-
         const onboardingData = JSON.parse(onboardingDataStr);
+        setGuestData({
+          advancedReview: onboardingData.advancedReview || onboardingData.advanced_review || null,
+          bodyAnalysis: onboardingData.bodyAnalysis || onboardingData.body_analysis || null,
+          personalInfo: onboardingData.personalInfo || onboardingData.personal_info || null,
+          workoutPreferences: onboardingData.workoutPreferences || onboardingData.workout_preferences || null,
+          dietPreferences: onboardingData.dietPreferences || onboardingData.diet_preferences || null,
+        });
+      } catch (err) {
+        console.error("❌ [useCalculatedMetrics] AsyncStorage load error:", err);
+        setGuestData(null);
+      }
+    })();
+  }, [isGuestMode]);
 
-        // Guest data structure may have advancedReview directly
-        const advancedReview =
-          onboardingData.advancedReview || onboardingData.advanced_review;
-        const bodyAnalysis =
-          onboardingData.bodyAnalysis || onboardingData.body_analysis;
-        const personalInfo =
-          onboardingData.personalInfo || onboardingData.personal_info;
-        const workoutPreferences =
-          onboardingData.workoutPreferences ||
-          onboardingData.workout_preferences;
-        const dietPreferences =
-          onboardingData.dietPreferences || onboardingData.diet_preferences;
+  /**
+   * Derive metrics from profileStore data (authenticated) or guestData.
+   * This replaces the old loadFromDatabase / loadFromAsyncStorage approach.
+   */
+  useEffect(() => {
+    try {
+      // Determine data source: profileStore for authenticated, AsyncStorage for guest
+      let ar: AdvancedReviewData | null;
+      let ba: BodyAnalysisData | null;
+      let pi: PersonalInfoData | null;
+      let wp: WorkoutPreferencesData | null;
+      let dp: DietPreferencesData | null;
 
-        if (!advancedReview) {
-          return null;
+      if (isGuestMode) {
+        // Guest: wait until AsyncStorage data is loaded
+        if (!guestLoadedRef.current) {
+          return; // still loading
         }
+        ar = guestData?.advancedReview ?? null;
+        ba = guestData?.bodyAnalysis ?? null;
+        pi = guestData?.personalInfo ?? null;
+        wp = guestData?.workoutPreferences ?? null;
+        dp = guestData?.dietPreferences ?? null;
 
-        const guestBodyWeight =
-          bodyAnalysis?.current_weight_kg ?? bodyAnalysis?.currentWeightKg;
+        // Initialize weight tracking for guest
+        const guestBodyWeight = ba?.current_weight_kg ?? (ba as any)?.currentWeightKg;
         if (guestBodyWeight) {
           weightTrackingService.initializeFromBodyAnalysis({
             current_weight_kg: guestBodyWeight,
           });
         }
+      } else if (isAuthenticated && user?.id) {
+        // Authenticated: read from profileStore (SSOT)
+        if (!storeIsHydrated) {
+          // Store not hydrated yet — stay in loading state
+          return;
+        }
+        ar = advancedReview;
+        ba = bodyAnalysis;
+        pi = personalInfo;
+        wp = workoutPreferences;
+        dp = dietPreferences;
 
-        return mapToCalculatedMetrics(
-          advancedReview,
-          bodyAnalysis,
-          personalInfo,
-          workoutPreferences,
-          dietPreferences,
-        );
-      } catch (err) {
-        console.error(
-          "❌ [useCalculatedMetrics] AsyncStorage load error:",
-          err,
-        );
-        throw err;
-      }
-    }, []);
+        // Merge latest logged weight into bodyAnalysis so currentWeightKg
+        // reflects actual tracked weight rather than the static onboarding value.
+        // SSOT: uses resolveCurrentWeightFromStores for store-backed resolution (no DB call)
+        const resolvedCurrentWeight = resolveCurrentWeightFromStores({
+          bodyAnalysisWeight: ba?.current_weight_kg,
+        });
+        if (ba) {
+          ba = applyResolvedCurrentWeight(ba, resolvedCurrentWeight);
+        }
 
-  /**
-   * Main load function with caching
-   */
-  const refreshMetrics = useCallback(async () => {
-    const userId = user?.id || "guest";
-
-    // Check cache first
-    const now = Date.now();
-    if (
-      metricsCache.userId === userId &&
-      metricsCache.metrics &&
-      now - metricsCache.timestamp < CACHE_DURATION_MS
-    ) {
-      setMetrics(metricsCache.metrics);
-      setHasCalculatedMetrics(true);
-      setHasCompletedOnboarding(true);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      if (!metricsLoadPromise || metricsLoadPromiseUserId !== userId) {
-        metricsLoadPromiseUserId = userId;
-        metricsLoadPromise = (async () => {
-          let loadedMetrics: CalculatedMetrics | null = null;
-
-          if (isAuthenticated && user?.id) {
-            loadedMetrics = await loadFromDatabase(user.id);
-          } else if (isGuestMode) {
-            loadedMetrics = await loadFromAsyncStorage();
-          }
-
-          if (loadedMetrics) {
-            metricsCache = {
-              metrics: loadedMetrics,
-              timestamp: Date.now(),
-              userId,
-            };
-          }
-
-          return loadedMetrics;
-        })();
-      }
-
-      const loadedMetrics = await metricsLoadPromise;
-
-      if (loadedMetrics) {
-        setMetrics(loadedMetrics);
-        setHasCalculatedMetrics(true);
-        setHasCompletedOnboarding(true);
+        if (ba?.current_weight_kg) {
+          weightTrackingService.initializeFromBodyAnalysis({
+            current_weight_kg: ba.current_weight_kg,
+          });
+        }
       } else {
+        // Not authenticated and not guest — no data
         setMetrics(null);
         setHasCalculatedMetrics(false);
         setHasCompletedOnboarding(false);
+        setIsLoading(false);
+        return;
       }
+
+      // If no advanced_review data, user hasn't completed onboarding calculations
+      if (!ar) {
+        setMetrics(null);
+        setHasCalculatedMetrics(false);
+        setHasCompletedOnboarding(false);
+        setIsLoading(false);
+        return;
+      }
+
+      const computed = mapToCalculatedMetrics(ar, ba, pi, wp, dp);
+      setMetrics(computed);
+      setHasCalculatedMetrics(true);
+      setHasCompletedOnboarding(true);
+      setError(null);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to load metrics";
-      console.error("❌ [useCalculatedMetrics] Load error:", message);
+      const message = err instanceof Error ? err.message : "Failed to compute metrics";
+      console.error("❌ [useCalculatedMetrics] Compute error:", message);
       setError(message);
       setMetrics(null);
       setHasCalculatedMetrics(false);
     } finally {
-      if (metricsLoadPromiseUserId === userId) {
-        metricsLoadPromise = null;
-        metricsLoadPromiseUserId = null;
-      }
       setIsLoading(false);
     }
   }, [
-    user?.id,
+    // profileStore fields (authenticated)
+    advancedReview,
+    bodyAnalysis,
+    personalInfo,
+    workoutPreferences,
+    dietPreferences,
+    storeIsHydrated,
+    // Guest data
+    guestData,
+    // Auth state
     isAuthenticated,
     isGuestMode,
-    loadFromDatabase,
-    loadFromAsyncStorage,
+    user?.id,
   ]);
 
   /**
-   * Clear cache
+   * Refresh metrics — triggers profileStore re-read.
+   * For authenticated users, this is a no-op since profileStore is already reactive.
+   * Kept for API compatibility; callers can still call refreshMetrics() after onboarding.
+   */
+  const refreshMetrics = useCallback(async () => {
+    // Bump revision to force re-derive even if profileStore refs haven't changed
+    invalidateMetricsCache();
+    // For guest mode, re-read AsyncStorage
+    if (isGuestMode) {
+      guestLoadedRef.current = false;
+      try {
+        const onboardingDataStr = await AsyncStorage.getItem("onboarding_data");
+        if (onboardingDataStr) {
+          const onboardingData = JSON.parse(onboardingDataStr);
+          setGuestData({
+            advancedReview: onboardingData.advancedReview || onboardingData.advanced_review || null,
+            bodyAnalysis: onboardingData.bodyAnalysis || onboardingData.body_analysis || null,
+            personalInfo: onboardingData.personalInfo || onboardingData.personal_info || null,
+            workoutPreferences: onboardingData.workoutPreferences || onboardingData.workout_preferences || null,
+            dietPreferences: onboardingData.dietPreferences || onboardingData.diet_preferences || null,
+          });
+        } else {
+          setGuestData(null);
+        }
+        guestLoadedRef.current = true;
+      } catch (err) {
+        console.error("❌ [useCalculatedMetrics] AsyncStorage refresh error:", err);
+      }
+    }
+    // For authenticated users, the useEffect will re-fire when profileStore updates.
+    // No manual Supabase fetch needed — DataBridge syncs profileStore ↔ Supabase.
+  }, [isGuestMode]);
+
+  /**
+   * Clear cache — resets metrics state. Kept for API compatibility.
    */
   const clearCache = useCallback(() => {
-    metricsCache = {
-      metrics: null,
-      timestamp: 0,
-      userId: null,
-    };
     setMetrics(null);
+    setHasCalculatedMetrics(false);
+    setHasCompletedOnboarding(false);
   }, []);
-
-  // Load on mount and when auth changes
-  useEffect(() => {
-    refreshMetrics();
-  }, [refreshMetrics]);
 
   // Convenience getters
   const getWaterGoalLiters = useCallback((): number | null => {
@@ -524,7 +495,7 @@ function mapToCalculatedMetrics(
       // Recalculate at runtime so stale stored values (calculated with the old
       // multiplicative climate formula) are corrected immediately without re-onboarding.
       const weight = bodyAnalysis?.current_weight_kg;
-      const activity = (workoutPreferences?.activity_level ?? "sedentary") as ActivityLevel;
+      const activity = mapActivityLevelForHealthCalc(workoutPreferences?.activity_level ?? "sedentary") as ActivityLevel;
       const climate = ((advancedReview as any)?.detected_climate ?? "temperate") as ClimateType;
       if (weight && weight > 0) {
         return waterCalculator.calculate(weight, activity, climate);

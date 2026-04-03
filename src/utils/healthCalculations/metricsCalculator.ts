@@ -39,7 +39,7 @@ export class MetricsCalculator {
       ethnicityResult.ethnicity,
     );
 
-    const activityLevel: ActivityLevel = user.activityLevel || "moderate";
+    const activityLevel: ActivityLevel = user.activityLevel || "sedentary";
     const tdeeResult = TDEECalculatorService.calculate(
       bmrResult.value,
       activityLevel,

@@ -4,7 +4,7 @@ iteration: 1
 session_id: 
 max_iterations: 0
 completion_promise: null
-started_at: "2026-03-29T11:39:32Z"
+started_at: "2026-04-03T05:21:02Z"
 ---
 
-so now you have all the issues fix everything what ever you finded
+fix all make sure of what we have finded should everything complete end to end not even a single thing left

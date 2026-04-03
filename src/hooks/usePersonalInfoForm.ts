@@ -23,7 +23,6 @@ export const usePersonalInfoForm = ({
     region: data?.region ?? "",
     wake_time: data?.wake_time ?? "07:00",
     sleep_time: data?.sleep_time ?? "23:00",
-    occupation_type: data?.occupation_type ?? "desk_job",
   });
 
   const [availableStates, setAvailableStates] = useState<string[]>([]);
@@ -47,7 +46,6 @@ export const usePersonalInfoForm = ({
         region: data.region ?? "",
         wake_time: data.wake_time ?? "07:00",
         sleep_time: data.sleep_time ?? "23:00",
-        occupation_type: data.occupation_type ?? "desk_job",
       };
 
       const hasChanged =
@@ -59,8 +57,7 @@ export const usePersonalInfoForm = ({
         formData.state !== newFormData.state ||
         formData.region !== newFormData.region ||
         formData.wake_time !== newFormData.wake_time ||
-        formData.sleep_time !== newFormData.sleep_time ||
-        formData.occupation_type !== newFormData.occupation_type;
+        formData.sleep_time !== newFormData.sleep_time;
 
       if (hasChanged) {
         isSyncingFromProps.current = true;

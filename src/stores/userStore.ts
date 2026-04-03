@@ -518,21 +518,27 @@ export const useUserStore = create<UserState>()(
         }
       },
 
-      // Helper function to check if profile is complete
+      /**
+       * Check if profile is complete.
+       *
+       * SSOT: Uses workoutPreferences (from workout_preferences table) as the
+       * authoritative source for goal/fitness data. The legacy fitness_goals
+       * table is NO LONGER consulted here — onboarding saves goals to
+       * workout_preferences, not fitness_goals.
+       *
+       * @deprecated fitness_goals (fitnessGoals) is legacy and should not be
+       * used for completeness checks. workout_preferences is the new system.
+       */
       checkProfileComplete: (profile: UserProfile): boolean => {
         // Guard: Check if profile exists
         if (!profile) {
           return false;
         }
 
-        const { personalInfo, fitnessGoals } = profile;
+        const { personalInfo } = profile;
 
         // Guard: Check if required nested objects exist
         if (!personalInfo) {
-          return false;
-        }
-
-        if (!fitnessGoals) {
           return false;
         }
 
@@ -544,14 +550,8 @@ export const useUserStore = create<UserState>()(
           personalInfo.occupation_type
         );
 
-        const primaryGoals =
-          fitnessGoals.primary_goals || fitnessGoals.primaryGoals;
-        const timeCommitment =
-          fitnessGoals.time_commitment || fitnessGoals.timeCommitment;
-        const hasFitnessGoals = !!(primaryGoals?.length > 0 && timeCommitment && fitnessGoals.experience);
-
-        // Also accept workoutPreferences as proof of completeness —
-        // goals are saved to workout_preferences during onboarding, not fitness_goals table
+        // SSOT: Read from workoutPreferences (workout_preferences table)
+        // instead of fitnessGoals (legacy fitness_goals table)
         const workoutPrefs = profile.workoutPreferences;
         const hasWorkoutPrefs = !!(workoutPrefs &&
           ((workoutPrefs.primary_goals?.length > 0) ||
@@ -560,7 +560,10 @@ export const useUserStore = create<UserState>()(
            (workoutPrefs.workoutTypes?.length > 0) ||
            (workoutPrefs.location && workoutPrefs.intensity)));
 
-        const hasSufficientGoalData = hasFitnessGoals || hasWorkoutPrefs;
+        // fitness_goals table is fully deprecated. If a user only has data in
+        // fitness_goals but not workout_preferences, their profile is NOT
+        // considered complete — they need to re-onboard.
+        const hasSufficientGoalData = hasWorkoutPrefs;
 
         const isComplete = hasPersonalInfo && hasSufficientGoalData;
 

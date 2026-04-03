@@ -304,10 +304,9 @@ class UserProfileService {
 
     const promise = (async (): Promise<UserProfileResponse> => {
       try {
-        const [profileResponse, goalsResponse, dietResponse, workoutResponse] =
+        const [profileResponse, dietResponse, workoutResponse] =
           await Promise.all([
             this.getProfile(userId),
-            this.getFitnessGoals(userId),
             this.getDietPreferences(userId),
             this.getWorkoutPreferences(userId),
           ]);
@@ -318,19 +317,22 @@ class UserProfileService {
 
         const userProfile = profileResponse.data!;
 
-        // Add fitness goals if available
-        if (goalsResponse.success && goalsResponse.data) {
-          userProfile.fitnessGoals = goalsResponse.data;
-        }
-
         // Add diet preferences if available
         if (dietResponse.success && dietResponse.data) {
           userProfile.dietPreferences = dietResponse.data;
         }
 
-        // Add workout preferences if available
+        // Add workout preferences if available (SSOT for goals)
         if (workoutResponse.success && workoutResponse.data) {
           userProfile.workoutPreferences = workoutResponse.data;
+          // Synthesize fitnessGoals from workout_preferences (deprecated fitness_goals table)
+          const wp = workoutResponse.data as any;
+          userProfile.fitnessGoals = {
+            primary_goals: wp.primary_goals || wp.primaryGoals || [],
+            time_commitment: wp.time_commitment || '',
+            experience: wp.experience_level || wp.experienceLevel || '',
+            experience_level: wp.experience_level || wp.experienceLevel || '',
+          };
         }
 
         return {

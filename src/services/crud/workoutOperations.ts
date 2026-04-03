@@ -72,7 +72,6 @@ async function syncWorkoutSessionToSupabase(
         duration: session.duration ?? null,
         total_duration_minutes: session.duration ?? null,
         calories_burned: session.caloriesBurned ?? 0,
-        exercises: session.exercises,
         exercises_completed: session.exercises,
         notes: session.notes || "",
         rating:
@@ -103,7 +102,6 @@ async function syncWorkoutSessionToSupabase(
           duration: session.duration ?? 0,
           total_duration_minutes: session.duration ?? 0,
           calories_burned: session.caloriesBurned ?? 0,
-          exercises: session.exercises,
           exercises_completed: session.exercises,
           notes: session.notes || "",
           rating:
@@ -134,7 +132,6 @@ async function syncWorkoutSessionToSupabase(
         duration: session.duration ?? 0,
         total_duration_minutes: session.duration ?? 0,
         calories_burned: session.caloriesBurned ?? 0,
-        exercises: session.exercises,
         exercises_completed: session.exercises,
         notes: session.notes || "",
         rating:

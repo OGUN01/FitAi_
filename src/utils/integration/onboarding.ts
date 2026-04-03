@@ -133,37 +133,28 @@ export const useOnboardingIntegration = () => {
       if (isAuthenticated && authUser) {
         updateFitnessGoalsLocal(fitnessGoals as any);
 
-        const goalsData = {
-          primary_goals:
-            fitnessGoals.primary_goals || fitnessGoals.primaryGoals || [],
-          time_commitment:
-            fitnessGoals.time_commitment || fitnessGoals.timeCommitment || "",
-          experience: fitnessGoals.experience as any,
-          experience_level:
-            fitnessGoals.experience_level || fitnessGoals.experience,
-          user_id: authUser.id,
-        };
+        // Save to workout_preferences (SSOT) instead of deprecated fitness_goals table
+        const { error: wpError } = await supabase
+          .from("workout_preferences")
+          .upsert(
+            {
+              user_id: authUser.id,
+              primary_goals:
+                fitnessGoals.primary_goals || fitnessGoals.primaryGoals || [],
+              time_commitment:
+                fitnessGoals.time_commitment || fitnessGoals.timeCommitment || "",
+              experience_level:
+                fitnessGoals.experience_level || fitnessGoals.experience || "",
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id" },
+          );
 
-        let response = await updateFitnessGoals(authUser.id, goalsData);
-
-        if (!response.success) {
-          const createData = {
-            primary_goals:
-              fitnessGoals.primary_goals || fitnessGoals.primaryGoals || [],
-            time_commitment:
-              fitnessGoals.time_commitment || fitnessGoals.timeCommitment || "",
-            experience: fitnessGoals.experience as any,
-            experience_level:
-              fitnessGoals.experience_level || fitnessGoals.experience,
-            user_id: authUser.id,
-          };
-          response = await createFitnessGoals(createData);
-        }
-
-        if (!response.success) {
+        if (wpError) {
           console.warn(
-            "[INTEGRATION] Fitness goals save/create both failed for user:",
+            "[INTEGRATION] Workout preferences save failed for user:",
             authUser.id,
+            wpError.message,
           );
         }
       }

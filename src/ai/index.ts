@@ -401,6 +401,7 @@ class UnifiedAIService {
       bodyMetrics?: BodyMetrics;
       workoutPreferences?: WorkoutPreferences;
       regenerationSeed?: number;
+      advancedReview?: AdvancedReviewData | null; // H13: Wire health-based recommendations
     },
   ): Promise<AIResponse<WeeklyWorkoutPlan>> {
 
@@ -419,6 +420,7 @@ class UnifiedAIService {
           }).value,
           weekNumber,
           regenerationSeed: options?.regenerationSeed,
+          advancedReview: options?.advancedReview, // H13: Pass to transformer
         },
       );
 

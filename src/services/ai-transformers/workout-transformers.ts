@@ -4,6 +4,7 @@ import type {
   WorkoutPreferences,
   BodyMetrics,
 } from "../../types/user";
+import type { AdvancedReviewData } from "../../types/onboarding";
 import type {
   WorkoutGenerationRequest,
   WorkersResponse,
@@ -35,6 +36,8 @@ export function transformForWorkoutRequest(
     duration?: number;
     focusMuscles?: string[];
     currentWeightKg?: number | null;
+    // H13: Advanced review data for health-based recommendations
+    advancedReview?: AdvancedReviewData | null;
   },
 ): WorkoutGenerationRequest {
   const experienceLevel =
@@ -90,6 +93,7 @@ export function transformForWorkoutRequest(
     preferredWorkoutTime: preferredWorkoutTime,
   };
 
+  const advancedReview = options?.advancedReview;
   return {
     profile: {
       age: personalInfo.age,
@@ -105,6 +109,24 @@ export function transformForWorkoutRequest(
       pregnancyTrimester: pregnancyTrimester,
       breastfeedingStatus: breastfeedingStatus,
     } as any,
+    // H13: Fitness Assessment (Priority 1 - concrete ability indicators)
+    fitnessAssessment: {
+      pushupCount: workoutPreferences?.can_do_pushups ?? 0,
+      runningMinutes: workoutPreferences?.can_run_minutes ?? 0,
+      flexibilityLevel: workoutPreferences?.flexibility_level ?? 'fair',
+      experienceYears: workoutPreferences?.workout_experience_years ?? 0,
+    },
+    // H13: Location preference (Priority 2)
+    workoutLocation: workoutPreferences?.location ?? 'both',
+    // H13: Preference booleans (Priority 3)
+    enjoysCardio: workoutPreferences?.enjoys_cardio ?? true,
+    enjoysStrength: workoutPreferences?.enjoys_strength_training ?? true,
+    // H13: Advanced Review Recommendations (Priority 4)
+    recommendations: advancedReview ? {
+      frequency: advancedReview.recommended_workout_frequency ?? null,
+      cardioMinutes: advancedReview.recommended_cardio_minutes ?? null,
+      strengthSessions: advancedReview.recommended_strength_sessions ?? null,
+    } : undefined,
     focusMuscles: options?.focusMuscles,
   } as any;
 }

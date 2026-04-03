@@ -39,4 +39,25 @@ export class CardiovascularCalculations {
 
     return Math.max(20, Math.min(80, baseVO2 + runningBonus));
   }
+
+  /**
+   * Classify VO2 max into a fitness tier.
+   * Simplified from the full age×gender table in vo2MaxCalculator.ts.
+   */
+  static classifyVO2Max(
+    vo2max: number,
+    gender: string,
+  ): string {
+    // Gender-adjusted thresholds (mid-range across age groups)
+    const thresholds =
+      gender === "male"
+        ? { excellent: 52, good: 45, aboveAvg: 38, average: 32 }
+        : { excellent: 47, good: 40, aboveAvg: 33, average: 27 };
+
+    if (vo2max >= thresholds.excellent) return "Excellent";
+    if (vo2max >= thresholds.good) return "Good";
+    if (vo2max >= thresholds.aboveAvg) return "Above Average";
+    if (vo2max >= thresholds.average) return "Average";
+    return "Below Average";
+  }
 }

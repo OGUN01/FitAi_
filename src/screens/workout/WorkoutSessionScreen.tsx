@@ -23,6 +23,7 @@ import { useFitnessStore } from "../../stores/fitnessStore";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { exerciseFilterService } from "../../services/exerciseFilterService";
 import { getCurrentUserId } from "../../services/authUtils";
+import { supabase } from "../../services/supabase";
 import { useWorkoutSession } from "../../hooks/useWorkoutSession";
 import { useWorkoutAchievements } from "../../hooks/useWorkoutAchievements";
 import { useWorkoutAnimations } from "../../hooks/useWorkoutAnimations";
@@ -121,7 +122,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     exercisesCompleted: number;
     setsCompleted: number;
     onViewProgress: () => void;
-    onDone: () => void;
+    onDone: (rating?: number, notes?: string) => void;
   } | null>(null);
 
   const [restTimerEndTime, setRestTimerEndTime] = useState<number | null>(null);
@@ -439,7 +440,25 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             setCompleteDialog(null);
             navigation.navigate("Progress");
           },
-          onDone: () => {
+          onDone: async (rating?: number, notes?: string) => {
+            // H24: Save user-provided rating and notes to the workout session
+            if ((rating || notes) && sessionId) {
+              try {
+                const userId = getCurrentUserId();
+                if (userId) {
+                  const updatePayload: Record<string, unknown> = {};
+                  if (rating) updatePayload.rating = rating;
+                  if (notes) updatePayload.notes = notes;
+                  await supabase
+                    .from("workout_sessions")
+                    .update(updatePayload)
+                    .eq("id", sessionId)
+                    .eq("user_id", userId);
+                }
+              } catch (err) {
+                console.error("[WorkoutSession] Failed to save rating/notes:", err);
+              }
+            }
             setCompleteDialog(null);
             navigation.goBack();
           },

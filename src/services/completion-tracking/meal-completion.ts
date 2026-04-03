@@ -35,7 +35,11 @@ export async function completeMeal(
             mode: "manual",
             truthLevel: "curated",
             confidence: null,
-            countryContext: useProfileStore.getState().personalInfo?.country || "IN",
+            countryContext: (() => {
+              const country = useProfileStore.getState().personalInfo?.country || null;
+              if (!country) console.warn('meal-completion: country not set in profile');
+              return country;
+            })(),
             requiresReview: false,
             source: "manual-log",
           };

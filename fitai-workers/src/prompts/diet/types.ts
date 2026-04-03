@@ -19,12 +19,17 @@ export interface DietPlaceholders {
 	COUNTRY_CODE: string;
 	STATE: string;
 	CUISINE: string;
+	CUISINE_PREFERENCES: string; // User-selected cuisine preferences from onboarding (comma-separated)
 
 	// User profile
 	DIET_TYPE: string;
 	AGE: number;
 	GENDER: string;
 	OCCUPATION: string;
+
+	// Schedule (for meal timing personalization)
+	WAKE_TIME: string; // HH:MM format, e.g. "07:00"
+	SLEEP_TIME: string; // HH:MM format, e.g. "23:00"
 
 	// Allergies and restrictions
 	ALLERGIES: string[];
@@ -376,6 +381,7 @@ export function getEnabledMealsList(prefs?: {
 	lunch_enabled?: boolean;
 	dinner_enabled?: boolean;
 	snacks_enabled?: boolean;
+	snacks_count?: number;
 }): string[] {
 	if (!prefs) return ['Breakfast', 'Lunch', 'Dinner', '2 Snacks'];
 
@@ -383,7 +389,10 @@ export function getEnabledMealsList(prefs?: {
 	if (prefs.breakfast_enabled !== false) meals.push('Breakfast');
 	if (prefs.lunch_enabled !== false) meals.push('Lunch');
 	if (prefs.dinner_enabled !== false) meals.push('Dinner');
-	if (prefs.snacks_enabled !== false) meals.push('2 Snacks');
+	if (prefs.snacks_enabled !== false) {
+		const snackCount = prefs.snacks_count ?? 2;
+		meals.push(`${snackCount} Snack${snackCount !== 1 ? 's' : ''}`);
+	}
 
 	return meals.length > 0 ? meals : ['Breakfast', 'Lunch', 'Dinner'];
 }
@@ -397,6 +406,7 @@ export function getMealExclusionInstructions(prefs?: {
 	lunch_enabled?: boolean;
 	dinner_enabled?: boolean;
 	snacks_enabled?: boolean;
+	snacks_count?: number;
 }): string {
 	if (!prefs) return '';
 

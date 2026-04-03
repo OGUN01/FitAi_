@@ -24,6 +24,7 @@ import {
 } from "../../services/workoutTemplateService";
 import { buildDayWorkoutFromTemplate } from "../../utils/workoutBuilders";
 import { useFitnessStore } from "../../stores/fitnessStore";
+import { useProfileStore } from "../../stores/profileStore";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { getCurrentUserId } from "../../services/authUtils";
 
@@ -109,6 +110,17 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
 
   const startTemplateSession = useFitnessStore((s) => s.startTemplateSession);
 
+  // Read user's equipment & location from onboarding SSOT (profileStore)
+  const workoutPreferences = useProfileStore((s) => s.workoutPreferences);
+  const userEquipment = useMemo(() => {
+    const eq = workoutPreferences?.equipment;
+    // Fallback to all common equipment if user hasn't set preferences
+    return eq && eq.length > 0
+      ? eq
+      : ["body weight", "dumbbell", "barbell", "cable", "machine", "band"];
+  }, [workoutPreferences?.equipment]);
+  const userLocation = workoutPreferences?.location ?? "any";
+
   // Load existing template when editing
   useEffect(() => {
     if (!templateId) return;
@@ -136,12 +148,12 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
 
   const availableExercises = useMemo(() => {
     const all = getCuratedExercises(
-      ["body weight", "dumbbell", "barbell", "cable", "machine", "band"],
-      "any",
+      userEquipment,
+      userLocation === "both" ? "any" : userLocation,
     );
     if (selectedCategory === "all") return all;
     return all.filter((ex) => ex.category === selectedCategory);
-  }, [selectedCategory]);
+  }, [selectedCategory, userEquipment, userLocation]);
 
   const addExercise = useCallback((exercise: CuratedExercise) => {
     setAddedExercises((prev) => [

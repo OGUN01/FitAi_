@@ -23,7 +23,7 @@ export const WaterProgressSection: React.FC<WaterProgressSectionProps> = ({
       <View style={styles.progressInfo}>
         <Text style={styles.progressLabel}>Today's Progress</Text>
         <Text style={styles.progressValue}>
-          {currentLiters.toFixed(2)}L / {goalLiters.toFixed(2)}L
+          {currentLiters.toFixed(1)}L / {goalLiters.toFixed(1)}L
         </Text>
       </View>
       <View style={styles.progressBar}>

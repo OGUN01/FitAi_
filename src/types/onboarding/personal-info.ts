@@ -24,8 +24,8 @@ export interface PersonalInfoData {
   wake_time: string; // TIME format "HH:MM"
   sleep_time: string; // TIME format "HH:MM"
 
-  // Occupation (for activity level guidance)
-  occupation_type:
+  // Deprecated: occupation_type removed — activity_level lives in WorkoutPreferences (SSOT)
+  occupation_type?:
     | "desk_job"
     | "light_active"
     | "moderate_active"

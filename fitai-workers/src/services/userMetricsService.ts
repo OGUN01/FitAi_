@@ -361,6 +361,8 @@ export async function loadUserPreferences(env: Env, userId: string) {
           diet_type,
           allergies,
           restrictions,
+          cuisine_preferences,
+          snacks_count,
           breakfast_enabled,
           lunch_enabled,
           dinner_enabled,

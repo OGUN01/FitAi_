@@ -8,6 +8,19 @@ import { Slider } from "../../../components/ui";
 import { COOKING_SKILL_LEVELS } from "../../../screens/onboarding/tabs/DietPreferencesConstants";
 import { DietPreferencesData } from "../../../types/onboarding";
 
+const COOKING_METHODS = [
+  { value: "grilling", label: "Grilling", icon: "flame-outline" },
+  { value: "steaming", label: "Steaming", icon: "water-outline" },
+  { value: "air_frying", label: "Air Frying", icon: "flash-outline" },
+  { value: "sauteing", label: "Sauteing", icon: "restaurant-outline" },
+  { value: "baking", label: "Baking", icon: "cube-outline" },
+  { value: "boiling", label: "Boiling", icon: "beaker-outline" },
+  { value: "stir_frying", label: "Stir Frying", icon: "bonfire-outline" },
+  { value: "slow_cooking", label: "Slow Cooking", icon: "time-outline" },
+  { value: "pressure_cooking", label: "Pressure Cook", icon: "speedometer-outline" },
+  { value: "raw_no_cook", label: "Raw / No Cook", icon: "leaf-outline" },
+];
+
 interface CookingPreferencesSectionProps {
   formData: DietPreferencesData;
   updateField: <K extends keyof DietPreferencesData>(
@@ -210,6 +223,69 @@ export const CookingPreferencesSection: React.FC<
           }}
         />
       </View>
+
+      {/* Preferred Cooking Methods */}
+      {formData.cooking_skill_level !== "not_applicable" && (
+        <View style={styles.edgeToEdgeContentPadded}>
+          <Text style={styles.fieldLabel} numberOfLines={1}>
+            Preferred Cooking Methods
+          </Text>
+          <Text
+            style={styles.methodsHint}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
+            Select all methods you enjoy (leave empty for any)
+          </Text>
+          <View style={styles.methodsGrid}>
+            {COOKING_METHODS.map((method) => {
+              const isSelected = (formData.cooking_methods || []).includes(
+                method.value,
+              );
+              return (
+                <AnimatedPressable
+                  key={method.value}
+                  onPress={() => {
+                    const current = formData.cooking_methods || [];
+                    const updated = isSelected
+                      ? current.filter((m) => m !== method.value)
+                      : [...current, method.value];
+                    updateField("cooking_methods", updated);
+                  }}
+                  scaleValue={0.97}
+                >
+                  <View
+                    style={[
+                      styles.methodChip,
+                      isSelected && styles.methodChipSelected,
+                    ]}
+                  >
+                    <Ionicons
+                      name={method.icon as any}
+                      size={rf(14)}
+                      color={
+                        isSelected
+                          ? ResponsiveTheme.colors.primary
+                          : ResponsiveTheme.colors.textSecondary
+                      }
+                    />
+                    <Text
+                      style={[
+                        styles.methodChipText,
+                        isSelected && styles.methodChipTextSelected,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {method.label}
+                    </Text>
+                  </View>
+                </AnimatedPressable>
+              );
+            })}
+          </View>
+        </View>
+      )}
+
       <View style={styles.sectionBottomPad} />
     </GlassCard>
   );
@@ -327,5 +403,39 @@ const styles = StyleSheet.create({
   },
   sectionBottomPad: {
     height: ResponsiveTheme.spacing.lg,
+  },
+  methodsHint: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+  methodsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: rw(8),
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+  methodChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rw(4),
+    paddingHorizontal: rw(12),
+    paddingVertical: rh(0.8),
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderWidth: 1,
+    borderColor: "transparent",
+  },
+  methodChipSelected: {
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
+  },
+  methodChipText: {
+    fontSize: rf(11),
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+  methodChipTextSelected: {
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 });

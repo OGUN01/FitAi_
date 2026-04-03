@@ -189,7 +189,11 @@ export function buildPackagedFoodProvenance(
       ? "estimated"
       : "authoritative",
     confidence: product.confidence,
-    countryContext: product.gs1Country || "IN",
+    countryContext: (() => {
+      const country = product.gs1Country || null;
+      if (!country) console.warn('packagedFood: GS1 country not available for barcode product');
+      return country;
+    })(),
     requiresReview,
     source: product.source,
     productIdentity: {

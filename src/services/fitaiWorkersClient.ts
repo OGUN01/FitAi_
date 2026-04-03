@@ -144,6 +144,7 @@ export interface DietGenerationRequest {
     lunch_enabled?: boolean;
     dinner_enabled?: boolean;
     snacks_enabled?: boolean;
+    snacks_count?: number;
     cooking_skill_level?: string;
     max_prep_time_minutes?: number | null;
     budget_level?: string;
@@ -278,6 +279,24 @@ export interface WorkoutGenerationRequest {
     prefersVariety?: boolean;
     activityLevel?: string;
     preferredWorkoutTime?: string;
+  };
+  // H13: Fitness assessment (concrete ability indicators from onboarding)
+  fitnessAssessment?: {
+    pushupCount?: number;
+    runningMinutes?: number;
+    flexibilityLevel?: string;
+    experienceYears?: number;
+  };
+  // H13: Workout location preference
+  workoutLocation?: string;
+  // H13: Cardio/strength preference booleans
+  enjoysCardio?: boolean;
+  enjoysStrength?: boolean;
+  // H13: Health-based recommendations from advanced review
+  recommendations?: {
+    frequency?: number | null;
+    cardioMinutes?: number | null;
+    strengthSessions?: number | null;
   };
   focusMuscles?: string[];
   excludeExercises?: string[];

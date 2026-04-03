@@ -21,15 +21,16 @@ export class ClimateAdaptiveTDEECalculator implements TDEECalculator {
    */
   calculate(bmr: number, activityLevel: ActivityLevel, climate: ClimateType): number {
     // Activity multipliers (WHO/FAO validated)
-    const activityMultipliers: Record<ActivityLevel, number> = {
+    const activityMultipliers: Record<string, number> = {
       sedentary: 1.2,     // Desk job, minimal exercise
       light: 1.375,       // Light exercise 1-3 days/week
       moderate: 1.55,     // Moderate exercise 3-5 days/week
       active: 1.725,      // Heavy exercise 6-7 days/week
       very_active: 1.9,   // Intense daily training or physical job
+      extreme: 1.9,       // Alias for very_active (onboarding uses "extreme")
     };
 
-    let tdee = bmr * activityMultipliers[activityLevel];
+    let tdee = bmr * (activityMultipliers[activityLevel] ?? 1.55);
 
     // Climate adjustments (research-backed)
     const climateMultipliers: Record<ClimateType, number> = {
@@ -59,12 +60,13 @@ export class ClimateAdaptiveTDEECalculator implements TDEECalculator {
     finalTDEE: number;
     breakdown: string;
   } {
-    const activityMultipliers: Record<ActivityLevel, number> = {
+    const activityMultipliers: Record<string, number> = {
       sedentary: 1.2,
       light: 1.375,
       moderate: 1.55,
       active: 1.725,
       very_active: 1.9,
+      extreme: 1.9, // Alias for very_active (onboarding uses "extreme")
     };
 
     const climateMultipliers: Record<ClimateType, number> = {
@@ -101,15 +103,16 @@ export class ClimateAdaptiveTDEECalculator implements TDEECalculator {
    * Get activity level description
    */
   getActivityDescription(activityLevel: ActivityLevel): string {
-    const descriptions: Record<ActivityLevel, string> = {
+    const descriptions: Record<string, string> = {
       sedentary: 'Little to no exercise, desk job',
       light: 'Light exercise 1-3 days/week',
       moderate: 'Moderate exercise 3-5 days/week',
       active: 'Heavy exercise 6-7 days/week',
       very_active: 'Intense daily training or physical labor',
+      extreme: 'Intense daily training or physical labor', // Alias for very_active
     };
 
-    return descriptions[activityLevel];
+    return descriptions[activityLevel] || descriptions.moderate;
   }
 
   /**

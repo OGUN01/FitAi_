@@ -181,7 +181,7 @@ class CompletionTrackingService {
             const completionPayload = {
               user_id: userId,
               workout_id: workoutId,
-              workout_plan_id: null,
+              workout_plan_id: workoutSourcePlan?.databaseId || null,
               planned_day_key: getWorkoutDayKey(workout),
               plan_slot_key: getWorkoutSlotKey(
                 workout,
@@ -190,15 +190,14 @@ class CompletionTrackingService {
               workout_name: workout.title,
               workout_type: workout.category || "general",
               is_extra: false,
-              duration: completedDurationMinutes || null,
-              total_duration_minutes: completedDurationMinutes || null,
+              duration: completedDurationMinutes || null, // H18: canonical column for reads
+              total_duration_minutes: completedDurationMinutes || null, // kept for backward compat
               calories_burned: actualCaloriesBurned,
-              exercises: completedExercises,
               exercises_completed: completedExercises,
               started_at: sessionData?.startedAt || completedAt,
               completed_at: completedAt,
               is_completed: true,
-              enjoyment_rating: sessionData?.rating || null,
+              rating: sessionData?.rating || null, // H18: canonical — read by dataTransformation.ts
               notes:
                 sessionData?.notes || `Weekly workout plan: ${workout.title}`,
             };
@@ -370,7 +369,10 @@ class CompletionTrackingService {
       );
 
       if (meal) {
-        const userCountry = useProfileStore.getState().personalInfo?.country || "IN";
+        const userCountry = useProfileStore.getState().personalInfo?.country || null;
+        if (!userCountry) {
+          console.warn('[completionTracking] country not available for meal provenance — using null');
+        }
         const provenance: MealLogProvenance = logData?.provenance ||
           (meal as DayMeal & { sourceMetadata?: MealLogProvenance }).sourceMetadata || {
             mode: "manual",
@@ -918,13 +920,15 @@ class CompletionTrackingService {
 
         // Find the best set from this session
         let bestWeight = 0;
+        let bestWeightReps = 0;
         let bestE1RM = 0;
+        let bestE1RMReps = 0;
         for (const s of weightedSets) {
           const w = s.weight ?? s.weight_kg ?? 0;
           const r = s.reps ?? 0;
-          if (w > bestWeight) bestWeight = w;
+          if (w > bestWeight) { bestWeight = w; bestWeightReps = r; }
           const e1rm = estimateOneRepMax(w, r);
-          if (e1rm > bestE1RM) bestE1RM = e1rm;
+          if (e1rm > bestE1RM) { bestE1RM = e1rm; bestE1RMReps = r; }
         }
 
         // Compare against stored PRs
@@ -933,10 +937,10 @@ class CompletionTrackingService {
         const e1rmPR = prs.find((p) => p.prType === "estimated_1rm");
 
         if (bestWeight > (weightPR?.value ?? 0)) {
-          await prDetectionService.recordPR(userId, exerciseId, "weight", bestWeight, sessionId, exerciseName);
+          await prDetectionService.recordPR(userId, exerciseId, "weight", bestWeight, sessionId, exerciseName, bestWeightReps);
         }
         if (bestE1RM > (e1rmPR?.value ?? 0)) {
-          await prDetectionService.recordPR(userId, exerciseId, "estimated_1rm", bestE1RM, sessionId, exerciseName);
+          await prDetectionService.recordPR(userId, exerciseId, "estimated_1rm", bestE1RM, sessionId, exerciseName, bestE1RMReps);
         }
       }
     } catch (prErr) {

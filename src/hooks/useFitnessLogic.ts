@@ -92,6 +92,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     bodyAnalysis,
     workoutPreferences: profileWorkoutPreferences,
     personalInfo: profilePersonalInfo,
+    advancedReview,
   } = useProfileStore();
   const legacyPersonalInfo = useMemo(
     () =>
@@ -436,6 +437,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
           bodyMetrics: bodyAnalysis ?? undefined,
           workoutPreferences: profileWorkoutPreferences ?? undefined,
           regenerationSeed: Date.now() % 1000000, // Varies exercise selection on each generation
+          advancedReview: advancedReview ?? undefined, // H13: Wire health-based recommendations
         },
       );
 

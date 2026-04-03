@@ -70,8 +70,7 @@ export const useDietPreferences = ({
     cooking_skill_level: data?.cooking_skill_level || "beginner",
     max_prep_time_minutes: data?.max_prep_time_minutes ?? 30,
     budget_level: data?.budget_level || "medium",
-
-    // Health habits
+    cooking_methods: data?.cooking_methods || [],
     drinks_enough_water: data?.drinks_enough_water ?? false,
     limits_sugary_drinks: data?.limits_sugary_drinks ?? false,
     eats_regular_meals: data?.eats_regular_meals ?? false,
@@ -111,6 +110,7 @@ export const useDietPreferences = ({
         cooking_skill_level: data.cooking_skill_level || "beginner",
         max_prep_time_minutes: data.max_prep_time_minutes ?? 30,
         budget_level: data.budget_level || "medium",
+        cooking_methods: data.cooking_methods || [],
         drinks_enough_water: data.drinks_enough_water ?? false,
         limits_sugary_drinks: data.limits_sugary_drinks ?? false,
         eats_regular_meals: data.eats_regular_meals ?? false,

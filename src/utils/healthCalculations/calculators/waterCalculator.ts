@@ -25,15 +25,16 @@ export class ClimateAdaptiveWaterCalculator implements WaterCalculator {
     let waterML = weight * 35;
 
     // Activity-based additions (ml per day)
-    const activityBonus: Record<ActivityLevel, number> = {
+    const activityBonus: Record<string, number> = {
       sedentary: 0,        // No additional water needed
       light: 500,          // Light sweating
       moderate: 1000,      // Moderate sweating
       active: 1500,        // Heavy sweating
       very_active: 2000,   // Intense sweating
+      extreme: 2000,       // Alias for very_active (onboarding uses "extreme")
     };
 
-    waterML += activityBonus[activityLevel];
+    waterML += activityBonus[activityLevel] ?? 0;
 
     // Climate adjustments: additive (not multiplicative) to avoid compounding
     // with already-elevated base for higher body weights.
@@ -68,12 +69,13 @@ export class ClimateAdaptiveWaterCalculator implements WaterCalculator {
   } {
     const baseWater = weight * 35;
 
-    const activityBonus: Record<ActivityLevel, number> = {
+    const activityBonus: Record<string, number> = {
       sedentary: 0,
       light: 500,
       moderate: 1000,
       active: 1500,
       very_active: 2000,
+      extreme: 2000, // Alias for very_active (onboarding uses "extreme")
     };
 
     const climateBonus: Record<ClimateType, number> = {

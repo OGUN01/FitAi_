@@ -218,6 +218,31 @@ export const WorkoutGenerationRequestSchema = z.object({
 	excludeExercises: z.array(z.string()).optional(), // Exercise IDs to exclude
 	difficultyOverride: ExperienceLevelSchema.optional(), // Override experience level for exercise filtering
 
+	// H13: Fitness assessment (concrete ability indicators from onboarding)
+	fitnessAssessment: z.object({
+		pushupCount: z.number().int().min(0).max(200).optional().default(0),
+		runningMinutes: z.number().int().min(0).max(300).optional().default(0),
+		flexibilityLevel: z.enum(['poor', 'fair', 'good', 'excellent']).optional().default('fair'),
+		experienceYears: z.number().min(0).max(50).optional().default(0),
+	}).optional(),
+
+	// H13: Workout location preference
+	workoutLocation: z.enum(['home', 'gym', 'both']).optional().default('both'),
+
+	// H13: Cardio/strength preference booleans
+	enjoysCardio: z.boolean().optional().default(true),
+	enjoysStrength: z.boolean().optional().default(true),
+	enjoysGroupClasses: z.boolean().optional().default(false),
+	prefersOutdoor: z.boolean().optional().default(false),
+	needsMotivation: z.boolean().optional().default(false),
+
+	// H13: Health-based recommendations from advanced review
+	recommendations: z.object({
+		frequency: z.number().int().min(1).max(7).nullable().optional(),
+		cardioMinutes: z.number().int().min(0).max(600).nullable().optional(),
+		strengthSessions: z.number().int().min(0).max(7).nullable().optional(),
+	}).optional(),
+
 	// Mesocycle week (1-4), defaults handled at usage site
 	weekNumber: z.number().int().min(1).max(4).optional(),
 
@@ -388,6 +413,7 @@ const DietPreferencesOverrideSchema = z.object({
 	restrictions: z.array(z.string()).optional(),
 	dislikes: z.array(z.string()).optional(),
 	cuisine_preferences: z.array(z.string()).optional(),
+	snacks_count: z.number().int().min(0).max(5).optional(),
 	breakfast_enabled: z.boolean().optional(),
 	lunch_enabled: z.boolean().optional(),
 	dinner_enabled: z.boolean().optional(),
@@ -713,6 +739,7 @@ export interface DietPreferences {
 	restrictions?: string[];
 	dislikes?: string[];
 	cuisine_preferences?: string[];
+	snacks_count?: number;
 	breakfast_enabled?: boolean;
 	lunch_enabled?: boolean;
 	dinner_enabled?: boolean;

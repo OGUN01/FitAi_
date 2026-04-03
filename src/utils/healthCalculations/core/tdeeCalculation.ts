@@ -46,15 +46,23 @@ export const CLIMATE_MULTIPLIERS: Record<ClimateType, number> = {
 };
 
 /**
- * Occupation-based activity multipliers
- * For base daily metabolism from occupation NEAT (without exercise)
+ * Occupation / activity-level multipliers
+ * For base daily metabolism from NEAT (without exercise)
+ * Supports both legacy occupation_type and activity_level values
  */
 export const OCCUPATION_MULTIPLIERS: Record<string, number> = {
+  // Legacy occupation_type values
   desk_job: 1.25, // Sitting most of day
   light_active: 1.35, // Standing, light movement throughout day
   moderate_active: 1.45, // Regular movement, on feet often
   heavy_labor: 1.6, // Physical work all day
   very_active: 1.7, // Constant intense physical activity
+  // activity_level values (SSOT)
+  sedentary: 1.25,
+  light: 1.35,
+  moderate: 1.45,
+  active: 1.6,
+  extreme: 1.7,
 };
 
 export interface TDEEResult {

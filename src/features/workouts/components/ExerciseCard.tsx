@@ -281,6 +281,9 @@ export function ExerciseCard({
                   exercise.exerciseId,
                   "weight",
                   result.newWeightPR,
+                  undefined,
+                  undefined,
+                  reps,
                 );
               }
               if (result.is1RMPR && result.new1RMPR != null) {
@@ -289,6 +292,9 @@ export function ExerciseCard({
                   exercise.exerciseId,
                   "estimated_1rm",
                   result.new1RMPR,
+                  undefined,
+                  undefined,
+                  reps,
                 );
               }
             }

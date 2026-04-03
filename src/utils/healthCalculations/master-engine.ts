@@ -12,7 +12,10 @@ import { CardiovascularCalculations } from "./cardiovascular";
 import { FitnessRecommendations } from "./fitness-recommendations";
 import { HealthScoring } from "./health-scoring";
 import { SleepAnalysis } from "./sleep-analysis";
+import { getBMICategoryWithRisk } from "./core/bmiCalculation";
 import type { Goal } from "./types";
+import { mapActivityLevelForHealthCalc } from "../typeTransformers";
+import { detectEthnicity } from "./autoDetection";
 
 
 export class HealthCalculationEngine {
@@ -54,7 +57,7 @@ export class HealthCalculationEngine {
     );
     const tdee = MetabolicCalculations.calculateTDEE(
       bmr,
-      workoutPreferences.activity_level,
+      mapActivityLevelForHealthCalc(workoutPreferences.activity_level),
     );
     const metabolicAge = MetabolicCalculations.calculateMetabolicAge(
       bmr,
@@ -172,6 +175,15 @@ export class HealthCalculationEngine {
     const estimatedTimelineWeeks = bodyAnalysis.target_timeline_weeks;
     const totalCalorieDeficit = Math.round(weeklyWeightLossRate * 7700);
 
+    // Derived classification fields (H17)
+    const bmiClassification = getBMICategoryWithRisk(bmi);
+    const vo2MaxClassification = CardiovascularCalculations.classifyVO2Max(
+      estimatedVO2Max,
+      personalInfo.gender,
+    );
+    // H17: Ethnicity detection from country (used for BMI risk thresholds per WHO guidelines)
+    const ethnicityResult = detectEthnicity(personalInfo.country, personalInfo.state);
+
     return {
       calculated_bmi: Math.round(bmi * 100) / 100,
       calculated_bmr: Math.round(bmr),
@@ -215,6 +227,13 @@ export class HealthCalculationEngine {
       recommended_sleep_hours: recommendedSleepHours,
       current_sleep_duration: currentSleepDuration,
       sleep_efficiency_score: sleepEfficiencyScore,
+
+      // Derived classification fields (H17)
+      bmi_category: bmiClassification.category,
+      bmi_health_risk: bmiClassification.risk,
+      bmr_formula_used: "mifflin_st_jeor",
+      vo2_max_classification: vo2MaxClassification,
+      detected_ethnicity: ethnicityResult.ethnicity,
 
       data_completeness_percentage: 0,
       reliability_score: 0,

@@ -1,0 +1,110 @@
+- generic [ref=e54]:
+  - generic [ref=e55]:
+    - generic [ref=e58]:
+      - generic [ref=e59]:
+        - button "Personal step" [ref=e61] [cursor=pointer]:
+          - generic [ref=e63]: "1"
+        - generic [ref=e64]: Personal
+      - generic [ref=e66]:
+        - generic [ref=e68]:
+          - button "Diet step" [disabled]:
+            - generic [ref=e69]: "2"
+        - generic [ref=e70]: Diet
+      - generic [ref=e72]:
+        - generic [ref=e74]:
+          - button "Body step" [disabled]:
+            - generic [ref=e75]: "3"
+        - generic [ref=e76]: Body
+      - generic [ref=e78]:
+        - generic [ref=e80]:
+          - button "Workout step" [disabled]:
+            - generic [ref=e81]: "4"
+        - generic [ref=e82]: Workout
+      - generic [ref=e84]:
+        - generic [ref=e86]:
+          - button "Review step" [disabled]:
+            - generic [ref=e87]: "5"
+        - generic [ref=e88]: Review
+    - generic [ref=e90]: 1/5
+  - generic [ref=e92]:
+    - generic [ref=e95]:
+      - generic [ref=e101]:
+        - button "" [ref=e103] [cursor=pointer]:
+          - generic [ref=e106]: 
+        - generic [ref=e107]: Tell us about yourself
+        - generic [ref=e108]: This helps us create a personalized fitness plan just for you
+      - generic [ref=e109]:
+        - generic [ref=e110]:
+          - generic [ref=e112]:
+            - generic [ref=e114]: Full Name
+            - generic [ref=e116]:
+              - generic [ref=e118]:
+                - generic [ref=e119]: First Name
+                - textbox "John" [ref=e121]
+              - generic [ref=e123]:
+                - generic [ref=e124]: Last Name
+                - textbox "Doe" [ref=e126]
+          - generic [ref=e129]:
+            - generic [ref=e131]: Demographics
+            - generic [ref=e132]:
+              - generic [ref=e135]:
+                - generic [ref=e136]: Age
+                - textbox "25" [ref=e138]
+              - generic [ref=e139]:
+                - generic [ref=e140]: Gender *
+                - generic [ref=e144]:
+                  - generic [ref=e146] [cursor=pointer]: Male
+                  - generic [ref=e148] [cursor=pointer]: Female
+                  - generic [ref=e150] [cursor=pointer]: Other
+                  - generic [ref=e152] [cursor=pointer]: Prefer not to say
+        - generic [ref=e156]:
+          - generic [ref=e158]: Location
+          - generic [ref=e159]:
+            - generic [ref=e160]:
+              - generic [ref=e161]: Country *
+              - generic [ref=e162]:
+                - button "United States" [ref=e164] [cursor=pointer]:
+                  - generic [ref=e165]: United States
+                - button "India" [ref=e167] [cursor=pointer]:
+                  - generic [ref=e168]: India
+                - button "Canada" [ref=e170] [cursor=pointer]:
+                  - generic [ref=e171]: Canada
+                - button "United Kingdom" [ref=e173] [cursor=pointer]:
+                  - generic [ref=e174]: United Kingdom
+                - button "Australia" [ref=e176] [cursor=pointer]:
+                  - generic [ref=e177]: Australia
+                - button "Germany" [ref=e179] [cursor=pointer]:
+                  - generic [ref=e180]: Germany
+                - button "Other" [ref=e182] [cursor=pointer]:
+                  - generic [ref=e183]: Other
+            - generic [ref=e185]:
+              - generic [ref=e186]: Region/City (Optional)
+              - textbox "e.g., Mumbai, Los Angeles, London" [ref=e188]
+        - generic [ref=e192]:
+          - generic [ref=e193]:
+            - generic [ref=e194]: Sleep Schedule
+            - generic [ref=e195]: Help us understand your daily routine for personalized recommendations
+          - generic [ref=e196]:
+            - generic [ref=e197]:
+              - generic [ref=e198]:
+                - generic [ref=e199]: Wake Up Time *
+                - generic [ref=e201] [cursor=pointer]:
+                  - generic [ref=e202]: 
+                  - generic [ref=e203]: 7:00 AM
+              - generic [ref=e204]:
+                - generic [ref=e205]: Sleep Time *
+                - generic [ref=e207] [cursor=pointer]:
+                  - generic [ref=e208]: 
+                  - generic [ref=e209]: 11:00 PM
+            - generic [ref=e212]:
+              - generic [ref=e214]: 
+              - generic [ref=e215]:
+                - generic [ref=e216]: "Sleep Duration: 8h 0m"
+                - generic [ref=e217]: Great! This is within the recommended 7-9 hours.
+    - generic [ref=e220]:
+      - button " Back" [ref=e222] [cursor=pointer]:
+        - generic [ref=e223]: 
+        - generic [ref=e224]: Back
+      - button "Next " [ref=e226] [cursor=pointer]:
+        - generic [ref=e227]: Next
+        - generic [ref=e228]: 

@@ -271,10 +271,10 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
           );
           if (result) {
             if (result.isWeightPR && result.newWeightPR != null) {
-              prDetectionService.recordPR(userId, exerciseId, 'weight', result.newWeightPR, undefined, exerciseName);
+              prDetectionService.recordPR(userId, exerciseId, 'weight', result.newWeightPR, undefined, exerciseName, repsValue);
             }
             if (result.is1RMPR && result.new1RMPR != null) {
-              prDetectionService.recordPR(userId, exerciseId, 'estimated_1rm', result.new1RMPR, undefined, exerciseName);
+              prDetectionService.recordPR(userId, exerciseId, 'estimated_1rm', result.new1RMPR, undefined, exerciseName, repsValue);
             }
             onPRDetected?.(exerciseName);
           }

@@ -188,7 +188,6 @@ export class PersonalInfoService {
       errors.push("Valid age (13-120) is required");
     if (!data.gender) errors.push("Gender selection is required");
     if (!data.country?.trim()) errors.push("Country is required");
-    if (!data.occupation_type) errors.push("Occupation type is required");
     if (!data.wake_time) errors.push("Wake time is required");
     if (!data.sleep_time) errors.push("Sleep time is required");
 
@@ -210,7 +209,6 @@ export class PersonalInfoService {
       "age",
       "gender",
       "country",
-      "occupation_type",
       "wake_time",
       "sleep_time",
     ];

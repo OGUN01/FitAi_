@@ -213,6 +213,69 @@ ${calculatedMetrics.heart_rate_zones ? `- Heart Rate Zones:
   // FIX B: Sanitize injury strings before embedding in prompt
   const safeInjuries = sanitizePromptArray(profile.injuries);
 
+  // H13: Build fitness assessment section (concrete ability indicators)
+  let fitnessAssessmentSection = '';
+  const fa = request.fitnessAssessment;
+  if (fa && (fa.pushupCount || fa.runningMinutes || fa.flexibilityLevel !== 'fair' || fa.experienceYears)) {
+    fitnessAssessmentSection = `
+**User Fitness Assessment:**
+${fa.pushupCount ? `- Can do ${fa.pushupCount} pushups` : ''}
+${fa.runningMinutes ? `- Can run for ${fa.runningMinutes} minutes continuously` : ''}
+${fa.flexibilityLevel ? `- Flexibility: ${fa.flexibilityLevel}` : ''}
+${fa.experienceYears ? `- Workout experience: ${fa.experienceYears} years` : ''}
+
+Use these concrete indicators to calibrate exercise difficulty, starting weights, rep ranges, and rest periods more precisely than the general experience level alone.
+`;
+  }
+
+  // H13: Build workout location section
+  let locationSection = '';
+  const loc = request.workoutLocation;
+  if (loc && loc !== 'both') {
+    locationSection = `
+**Workout Location: ${loc}**
+${loc === 'home' ? 'Prefer bodyweight exercises and exercises doable with minimal equipment. Avoid machine and cable exercises.' : ''}
+${loc === 'gym' ? 'Include machine, cable, and barbell exercises freely alongside bodyweight options.' : ''}
+`;
+  }
+
+  // H13: Build cardio/strength preference section
+  let preferenceSection = '';
+  const enjoysCardio = request.enjoysCardio ?? true;
+  const enjoysStrength = request.enjoysStrength ?? true;
+  const enjoysGroupClasses = request.enjoysGroupClasses ?? false;
+  const prefersOutdoor = request.prefersOutdoor ?? false;
+  const needsMotivation = request.needsMotivation ?? false;
+
+  const prefParts: string[] = [];
+  if (!enjoysCardio || !enjoysStrength) {
+    prefParts.push(`Enjoys cardio: ${enjoysCardio ? 'YES' : 'NO'}, Enjoys strength: ${enjoysStrength ? 'YES' : 'NO'}`);
+    if (!enjoysCardio && enjoysStrength) prefParts.push('Bias the workout split toward more strength-focused days. Minimize standalone cardio sessions.');
+    if (enjoysCardio && !enjoysStrength) prefParts.push('Bias the workout split toward more cardio and conditioning days. Include circuit-style work.');
+    if (!enjoysCardio && !enjoysStrength) prefParts.push('Focus on functional, enjoyable movements. Keep sessions varied and engaging to build habit.');
+  }
+  if (enjoysGroupClasses) prefParts.push('User enjoys group classes — include partner-friendly or class-style workouts (e.g., circuit, HIIT, dance).');
+  if (prefersOutdoor) prefParts.push('User prefers outdoor activities — suggest outdoor-friendly exercises (e.g., running, park bodyweight circuits, hiking).');
+  if (needsMotivation) prefParts.push('User needs extra motivation — keep workouts short, varied, fun, and include progress milestones to maintain engagement.');
+
+  if (prefParts.length > 0) {
+    preferenceSection = `\n**User Preferences:**\n${prefParts.join('\n')}\n`;
+  }
+
+  // H13: Build health-based recommendations section
+  let recommendationsSection = '';
+  const recs = request.recommendations;
+  if (recs && (recs.frequency || recs.cardioMinutes || recs.strengthSessions)) {
+    recommendationsSection = `
+**Health-Based Recommendations (from advanced health analysis):**
+${recs.frequency ? `- Recommended frequency: ${recs.frequency} days/week` : ''}
+${recs.cardioMinutes ? `- Recommended cardio: ${recs.cardioMinutes} minutes/week` : ''}
+${recs.strengthSessions ? `- Recommended strength: ${recs.strengthSessions} sessions/week` : ''}
+
+Consider these recommendations when structuring the plan, especially if they differ from the user's stated preferences.
+`;
+  }
+
   return `You are FitAI, an expert personal trainer and workout programmer.
 
 **User Profile:**
@@ -224,6 +287,10 @@ ${safeInjuries.length > 0 ? `- ⚠️ INJURIES/LIMITATIONS: ${safeInjuries.join(
 ${activityLevel ? `- Activity Level: ${activityLevel}` : ''}
 ${medicalWarnings}
 ${metricsSection}
+${fitnessAssessmentSection}
+${locationSection}
+${preferenceSection}
+${recommendationsSection}
 **Weekly Plan Requirements:**
 - Workouts Per Week: ${workoutsPerWeek} days
 - Training Days: ${trainingDays.join(', ')}

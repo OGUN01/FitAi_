@@ -807,7 +807,18 @@ class DataBridge {
     const transformed: any = {
       location: data.location,
       equipment: data.equipment || [],
-      time_preference: data.timeCommitment || data.time_preference,
+      time_preference: data.time_preference ?? data.timePreference ?? (() => {
+        // Legacy fallback: parse numeric minutes from timeCommitment string (e.g. "30-45" -> 45)
+        const tc = data.timeCommitment || data.time_commitment;
+        if (!tc) return 30;
+        if (typeof tc === 'number') return tc;
+        if (tc === '60+') return 60;
+        const rangeMatch = String(tc).match(/(\d+)\s*-\s*(\d+)/);
+        if (rangeMatch) return parseInt(rangeMatch[2], 10);
+        const single = String(tc).match(/(\d+)/);
+        if (single) return parseInt(single[1], 10);
+        return 30;
+      })(),
       intensity:
         data.experience_level ||
         data.experienceLevel ||

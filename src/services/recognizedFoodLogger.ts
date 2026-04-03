@@ -467,7 +467,11 @@ export class RecognizedFoodLogger {
       mode: "meal_photo",
       truthLevel: "estimated",
       confidence: avgConfidence,
-      countryContext: useProfileStore.getState().personalInfo?.country || "IN",
+      countryContext: (() => {
+        const country = useProfileStore.getState().personalInfo?.country || null;
+        if (!country) console.warn('recognizedFoodLogger: country not set in profile');
+        return country;
+      })(),
       requiresReview: true,
       source: "food-recognition",
     };

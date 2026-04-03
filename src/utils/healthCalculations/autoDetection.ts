@@ -47,6 +47,51 @@ const COUNTRY_NAME_TO_ISO: Record<string, string> = {
   'new zealand': 'NZ', 'ireland': 'IE', 'israel': 'IL',
 };
 
+// ============================================================================
+// STATE NAME → CODE NORMALIZATION
+// ============================================================================
+
+const INDIAN_STATE_NAME_TO_CODE: Record<string, string> = {
+  'rajasthan': 'RJ', 'gujarat': 'GJ',
+  'kerala': 'KL', 'tamil nadu': 'TN', 'andhra pradesh': 'AP', 'telangana': 'TS',
+  'goa': 'GA', 'karnataka': 'KA', 'maharashtra': 'MH', 'odisha': 'OR', 'orissa': 'OR',
+  'west bengal': 'WB', 'jharkhand': 'JH', 'bihar': 'BR', 'assam': 'AS',
+  'uttar pradesh': 'UP', 'madhya pradesh': 'MP', 'haryana': 'HR', 'punjab': 'PB', 'delhi': 'DL',
+  'himachal pradesh': 'HP', 'uttarakhand': 'UK', 'jammu and kashmir': 'JK', 'jammu & kashmir': 'JK', 'sikkim': 'SK',
+};
+
+const US_STATE_NAME_TO_CODE: Record<string, string> = {
+  'florida': 'FL', 'hawaii': 'HI',
+  'arizona': 'AZ', 'nevada': 'NV', 'new mexico': 'NM', 'utah': 'UT',
+  'alaska': 'AK', 'minnesota': 'MN', 'wisconsin': 'WI', 'montana': 'MT',
+  'wyoming': 'WY', 'north dakota': 'ND', 'south dakota': 'SD', 'vermont': 'VT',
+  'maine': 'ME', 'new hampshire': 'NH',
+  'texas': 'TX', 'california': 'CA', 'new york': 'NY', 'illinois': 'IL',
+  'pennsylvania': 'PA', 'ohio': 'OH', 'georgia': 'GA', 'michigan': 'MI',
+  'north carolina': 'NC', 'new jersey': 'NJ', 'virginia': 'VA', 'washington': 'WA',
+  'massachusetts': 'MA', 'tennessee': 'TN', 'indiana': 'IN', 'missouri': 'MO',
+  'maryland': 'MD', 'colorado': 'CO', 'alabama': 'AL', 'south carolina': 'SC',
+  'louisiana': 'LA', 'kentucky': 'KY', 'oregon': 'OR', 'oklahoma': 'OK',
+  'connecticut': 'CT', 'iowa': 'IA', 'mississippi': 'MS', 'arkansas': 'AR',
+  'kansas': 'KS', 'nebraska': 'NE', 'idaho': 'ID', 'west virginia': 'WV',
+  'rhode island': 'RI', 'delaware': 'DE',
+};
+
+/**
+ * Normalize a state name to its 2-letter code.
+ * If already a short code (2-3 chars), returns as-is (uppercased).
+ * Otherwise looks up the full name in country-specific mappings.
+ */
+function normalizeStateToCode(state: string, countryCode: string): string {
+  const normalized = state.trim().toLowerCase();
+  // If already a 2-3 letter code, return as-is (uppercase)
+  if (normalized.length <= 3) return normalized.toUpperCase();
+  // Country-specific lookups
+  if (countryCode === 'IN') return INDIAN_STATE_NAME_TO_CODE[normalized]?.toUpperCase() || normalized.toUpperCase();
+  if (countryCode === 'US') return US_STATE_NAME_TO_CODE[normalized]?.toUpperCase() || normalized.toUpperCase();
+  return normalized.toUpperCase();
+}
+
 /**
  * Normalize a country string to ISO 3166-1 alpha-2 code.
  * If already an ISO code (2 uppercase letters), returns as-is (uppercased).
@@ -82,7 +127,7 @@ export function normalizeCountryToISO(country: string): string {
 export function detectClimate(country: string, state?: string): ClimateDetectionResult {
   // Normalize: accept both full names ("India") and ISO codes ("IN")
   const countryCode = normalizeCountryToISO(country || '');
-  const stateCode = state?.toUpperCase() || '';
+  const stateCode = state ? normalizeStateToCode(state, countryCode) : '';
 
   // TROPICAL COUNTRIES (Hot & Humid year-round)
   const tropicalCountries = [
@@ -516,7 +561,9 @@ export function validateActivityLevel(
 
   const activityLevels: ActivityLevel[] = ['sedentary', 'light', 'moderate', 'active', 'very_active'];
   const minIndex = activityLevels.indexOf(minRequired);
-  const selectedIndex = activityLevels.indexOf(activityLevel);
+  // Map "extreme" → "very_active" for comparison (onboarding uses "extreme")
+  const normalizedLevel = (activityLevel as string) === 'extreme' ? 'very_active' : activityLevel;
+  const selectedIndex = activityLevels.indexOf(normalizedLevel as ActivityLevel);
 
   if (selectedIndex < minIndex) {
     return {

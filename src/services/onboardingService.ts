@@ -171,6 +171,8 @@ export class DietPreferencesService {
         diet_type: data.diet_type ?? "balanced", // NOT NULL - only default if truly missing
         allergies: data.allergies || [], // NOT NULL - default to empty array
         restrictions: data.restrictions || [], // NOT NULL - default to empty array
+        cuisine_preferences: data.cuisine_preferences ?? [],
+        snacks_count: data.snacks_count ?? 2,
 
         // Diet readiness toggles
         keto_ready: data.keto_ready,
@@ -260,6 +262,8 @@ export class DietPreferencesService {
         diet_type: data.diet_type ?? "balanced",
         allergies: data.allergies || [],
         restrictions: data.restrictions || [],
+        cuisine_preferences: data.cuisine_preferences || [],
+        snacks_count: data.snacks_count ?? 2,
 
         // Diet readiness
         keto_ready: data.keto_ready || false,
@@ -661,6 +665,12 @@ export class AdvancedReviewService {
         current_sleep_duration: extended.current_sleep_duration,
         sleep_efficiency_score: extended.sleep_efficiency_score,
 
+        // Derived classification fields (H17) — from master-engine
+        bmi_category: extended.bmi_category,
+        bmi_health_risk: extended.bmi_health_risk,
+        bmr_formula_used: extended.bmr_formula_used,
+        vo2_max_classification: extended.vo2_max_classification,
+
         // Flags
         was_rate_capped: m.wasRateCapped,
       };
@@ -686,7 +696,8 @@ export class AdvancedReviewService {
     data: AdvancedReviewData,
   ): Promise<boolean> {
     try {
-      // Explicitly pick only DB columns — UI-only fields (bmi_health_risk, heart_rate_zones, etc.)
+      // Explicitly pick only DB columns — UI-only fields (bmi_health_risk,
+      // bmr_formula_used, vo2_max_classification, heart_rate_zones, etc.)
       // must not be spread into the upsert (BUG-46)
       const reviewData: Partial<AdvancedReviewRow> = {
         user_id: userId,
@@ -738,7 +749,6 @@ export class AdvancedReviewService {
         detected_ethnicity: data.detected_ethnicity ?? null,
         was_rate_capped: data.was_rate_capped ?? false,
         bmi_category: data.bmi_category ?? null,
-        health_score: data.health_score ?? null,
         health_grade: data.health_grade ?? null,
         updated_at: new Date().toISOString(),
       };
@@ -988,7 +998,6 @@ export class OnboardingUtils {
     if (!data.gender) errors.push("Gender selection is required");
     if (!data.country?.trim()) errors.push("Country is required");
     if (!data.state?.trim()) errors.push("State is required");
-    if (!data.occupation_type) errors.push("Occupation type is required");
     if (!data.wake_time) errors.push("Wake time is required");
     if (!data.sleep_time) errors.push("Sleep time is required");
 
@@ -1011,7 +1020,6 @@ export class OnboardingUtils {
       "gender",
       "country",
       "state",
-      "occupation_type",
       "wake_time",
       "sleep_time",
     ];

@@ -37,7 +37,9 @@ export const useHealthDataStore = create<HealthDataState>()(
         // Prevents yesterday's step count from showing as today's before HealthKit syncs.
         const lastSync = state.lastSyncTime;
         if (lastSync && getLocalDateString(lastSync) !== getLocalDateString()) {
-          state.metrics = { ...initialMetrics };
+          // Preserve goal values (stepsGoal, caloriesGoal) across daily resets
+          const { stepsGoal, caloriesGoal } = state.metrics;
+          state.metrics = { ...initialMetrics, stepsGoal, caloriesGoal };
         }
       },
     },

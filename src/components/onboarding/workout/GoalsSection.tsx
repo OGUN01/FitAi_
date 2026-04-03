@@ -13,19 +13,17 @@ import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
 import {
   FITNESS_GOALS,
   ACTIVITY_LEVELS,
-  OCCUPATION_OPTIONS,
 } from "../../../screens/onboarding/tabs/WorkoutPreferencesConstants";
 import {
   WorkoutPreferencesData,
   BodyAnalysisData,
-  PersonalInfoData,
 } from "../../../types/onboarding";
 
 interface GoalsSectionProps {
   formData: WorkoutPreferencesData;
-  personalInfoData?: PersonalInfoData | null;
   bodyAnalysisData?: BodyAnalysisData | null;
   toggleGoal: (goalId: string) => void;
+  updateField: <K extends keyof WorkoutPreferencesData>(field: K, value: WorkoutPreferencesData[K]) => void;
   getFieldError: (field: string) => string | undefined;
   hasFieldError: (field: string) => boolean;
   showInfoTooltip: (title: string, description: string) => void;
@@ -33,9 +31,9 @@ interface GoalsSectionProps {
 
 export const GoalsSection: React.FC<GoalsSectionProps> = ({
   formData,
-  personalInfoData,
   bodyAnalysisData,
   toggleGoal,
+  updateField,
   getFieldError,
   hasFieldError,
   showInfoTooltip,
@@ -50,10 +48,6 @@ export const GoalsSection: React.FC<GoalsSectionProps> = ({
   const currentActivityLevel = ACTIVITY_LEVELS.find(
     (level: any) => level.value === formData.activity_level,
   );
-  const occupationType = personalInfoData?.occupation_type || "desk_job";
-  const occupationLabel =
-    OCCUPATION_OPTIONS.find((opt: any) => opt.value === occupationType)
-      ?.label || "Unknown";
 
   return (
     <GlassCard
@@ -190,69 +184,83 @@ export const GoalsSection: React.FC<GoalsSectionProps> = ({
         </View>
       )}
 
-      {/* Activity Level - Display Only (Auto-calculated from occupation) */}
+      {/* Activity Level - User Selection (SSOT for activity_level) */}
       <View style={styles.edgeToEdgeContentPadded}>
         <View style={styles.activityField}>
           <Text style={styles.fieldLabel} numberOfLines={1}>
-            Daily Activity Level
+            Daily Activity Level *
           </Text>
           <Text
             style={styles.fieldSubtitle}
             numberOfLines={2}
             ellipsizeMode="tail"
           >
-            Auto-calculated based on your occupation ({occupationLabel})
+            How active are you in your daily life, including work and leisure?
           </Text>
+        </View>
+      </View>
 
-          <GlassCard
-            elevation={2}
-            blurIntensity="default"
-            padding="md"
-            borderRadius="lg"
-            style={styles.calculatedActivityCard}
-          >
-            <View style={styles.calculatedActivityContent}>
-              <Ionicons
-                name={(currentActivityLevel?.iconName as any) || "bed-outline"}
-                size={rf(32)}
-                color={ResponsiveTheme.colors.textSecondary}
-                style={{ marginRight: ResponsiveTheme.spacing.md }}
-              />
-              <View style={styles.calculatedActivityText}>
-                <Text
-                  style={styles.calculatedActivityTitle}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
+      <View style={styles.scrollContainerInset}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContentInset}
+          decelerationRate="fast"
+          snapToInterval={rw(105) + rw(10)}
+          snapToAlignment="start"
+        >
+          {ACTIVITY_LEVELS.map((level: any) => {
+            const isSelected = formData.activity_level === level.value;
+            return (
+              <AnimatedPressable
+                key={level.value}
+                style={styles.activityCardItem}
+                onPress={() => updateField("activity_level", level.value)}
+                scaleValue={0.95}
+              >
+                <View
+                  style={[
+                    styles.activityCard,
+                    isSelected && styles.activityCardSelected,
+                  ]}
                 >
-                  {currentActivityLevel?.label || "Sedentary"}
-                </Text>
-                <Text
-                  style={styles.calculatedActivityDescription}
-                  numberOfLines={2}
-                  ellipsizeMode="tail"
-                >
-                  {currentActivityLevel?.description || "Little to no exercise"}
-                </Text>
-                <View style={styles.calculatedActivityNote}>
-                  <Ionicons
-                    name="bulb-outline"
-                    size={rf(16)}
-                    color={ResponsiveTheme.colors.primary}
-                    style={{ marginRight: ResponsiveTheme.spacing.xs }}
-                  />
+                  <View
+                    style={[
+                      styles.activityIconContainer,
+                      isSelected && styles.activityIconContainerSelected,
+                    ]}
+                  >
+                    <Ionicons
+                      name={level.iconName as any}
+                      size={rf(24)}
+                      color={
+                        isSelected
+                          ? ResponsiveTheme.colors.primary
+                          : ResponsiveTheme.colors.textSecondary
+                      }
+                    />
+                  </View>
                   <Text
-                    style={styles.calculatedActivityNoteText}
+                    style={[
+                      styles.activityCardTitle,
+                      isSelected && styles.activityCardTitleSelected,
+                    ]}
                     numberOfLines={2}
                     ellipsizeMode="tail"
                   >
-                    Activity level is automatically determined based on your
-                    occupation type.
+                    {level.label}
                   </Text>
                 </View>
-              </View>
-            </View>
-          </GlassCard>
-        </View>
+              </AnimatedPressable>
+            );
+          })}
+        </ScrollView>
+      </View>
+
+      <View style={styles.edgeToEdgeContentPadded}>
+        {hasFieldError("activity_level") && (
+          <Text style={styles.errorText}>{getFieldError("activity_level")}</Text>
+        )}
       </View>
       <View style={styles.sectionBottomPad} />
     </GlassCard>
@@ -410,6 +418,46 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textSecondary,
+  },
+  activityCardItem: {
+    width: rw(105),
+  },
+  activityCard: {
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: "transparent",
+    padding: ResponsiveTheme.spacing.sm,
+    minHeight: rh(10),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  activityCardSelected: {
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
+  },
+  activityIconContainer: {
+    width: rf(44),
+    height: rf(44),
+    borderRadius: rf(22),
+    backgroundColor: `${ResponsiveTheme.colors.textSecondary}15`,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+  activityIconContainerSelected: {
+    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+  },
+  activityCardTitle: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: "center",
+    lineHeight: rf(14),
+  },
+  activityCardTitleSelected: {
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
   sectionBottomPad: {
     height: ResponsiveTheme.spacing.lg,

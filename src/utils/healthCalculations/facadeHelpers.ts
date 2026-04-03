@@ -2,12 +2,13 @@ import type { ActivityLevel, ClimateType } from "./types";
 
 export class FacadeHelpers {
   static getActivityMultiplier(level: ActivityLevel): number {
-    const multipliers = {
+    const multipliers: Record<string, number> = {
       sedentary: 1.2,
       light: 1.375,
       moderate: 1.55,
       active: 1.725,
       very_active: 1.9,
+      extreme: 1.9, // Alias for very_active (onboarding uses "extreme")
     };
     return multipliers[level] || 1.55;
   }
@@ -34,12 +35,13 @@ export class FacadeHelpers {
   }
 
   static getActivityWaterBonus(level: ActivityLevel, weight: number): number {
-    const bonuses = {
+    const bonuses: Record<string, number> = {
       sedentary: 0,
       light: weight * 5,
       moderate: weight * 10,
       active: weight * 15,
       very_active: weight * 20,
+      extreme: weight * 20, // Alias for very_active (onboarding uses "extreme")
     };
     return bonuses[level] || 0;
   }

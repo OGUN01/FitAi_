@@ -74,12 +74,17 @@ export function buildPlaceholdersFromUserData(
 		COUNTRY_CODE: countryCode,
 		STATE: profile?.state || 'Unknown',
 		CUISINE: cuisine,
+		CUISINE_PREFERENCES: prefs?.cuisine_preferences?.length
+			? sanitizePromptArray(prefs.cuisine_preferences).join(', ')
+			: '', // empty = no specific preference, use auto-detected only
 
 		// User profile
 		DIET_TYPE: prefs?.diet_type || 'non-veg',
 		AGE: profile?.age || 30,
 		GENDER: profile?.gender || 'unknown',
 		OCCUPATION: profile?.occupation_type || 'general',
+		WAKE_TIME: profile?.wake_time || '07:00',
+		SLEEP_TIME: profile?.sleep_time || '23:00',
 
 		// Allergies and restrictions
 		ALLERGIES: prefs?.allergies || [],
@@ -227,6 +232,9 @@ function buildPlanStructureRequirements(
 		excludeIngredients.length > 0
 			? `- NEVER include these explicitly excluded or disliked ingredients: ${excludeIngredients.join(', ')}`
 			: '';
+	const mealTimingContext = p.WAKE_TIME && p.SLEEP_TIME
+		? `- User wakes at ${p.WAKE_TIME} and sleeps at ${p.SLEEP_TIME}. Schedule breakfast within 1-2 hours of waking, dinner at least 2-3 hours before sleep, and space meals evenly throughout the active window`
+		: '';
 	const clinicalContext = [
 		p.MEDICATIONS.length > 0
 			? `- Check ingredient and timing conflicts for these medications/supplements: ${sanitizePromptArray(p.MEDICATIONS).join(', ')}`
@@ -263,6 +271,7 @@ ${weekdayInstruction}
 - Respect allergies, restrictions, prep time, budget, enabled meal slots, and cooking skill for every day
 ${additionalRestrictions}
 ${explicitExclusions}
+${mealTimingContext}
 ${clinicalContext}
 `;
 }
@@ -304,6 +313,7 @@ export function buildDietPrompt(
 	console.log('[DietPrompt] Building prompt for:', {
 		dietType,
 		cuisine: placeholders.CUISINE,
+		cuisinePreferences: placeholders.CUISINE_PREFERENCES || '(none)',
 		country: placeholders.COUNTRY,
 		calories: placeholders.CALORIES,
 		protein: placeholders.PROTEIN,

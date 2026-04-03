@@ -109,7 +109,7 @@ export async function getWorkoutPreferences(
         location: transformedData.location || "home",
         timePreference: transformedData.timePreference || 30,
         intensity: transformedData.intensity || "intermediate",
-        activity_level: transformedData.activityLevel || "moderate",
+        activity_level: transformedData.activityLevel || "sedentary",
       },
     };
   } catch (error) {
@@ -170,7 +170,7 @@ export async function updateWorkoutPreferences(
         location: transformedData.location || "home",
         timePreference: transformedData.timePreference || 30,
         intensity: transformedData.intensity || "intermediate",
-        activity_level: transformedData.activityLevel || "moderate",
+        activity_level: transformedData.activityLevel || "sedentary",
       },
     };
   } catch (error) {

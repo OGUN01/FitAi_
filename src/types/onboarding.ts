@@ -46,8 +46,8 @@ export interface PersonalInfoData {
   wake_time: string; // TIME format "HH:MM"
   sleep_time: string; // TIME format "HH:MM"
 
-  // Occupation (for activity level guidance)
-  occupation_type:
+  // Deprecated: occupation_type removed — activity_level lives in WorkoutPreferences (SSOT)
+  occupation_type?:
     | "desk_job"
     | "light_active"
     | "moderate_active"
@@ -88,7 +88,7 @@ export interface DietPreferencesData {
   dinner_enabled: boolean;
   snacks_enabled: boolean;
 
-  // NEW: Cooking preferences (3 fields)
+  // NEW: Cooking preferences (4 fields)
   cooking_skill_level:
     | "beginner"
     | "intermediate"
@@ -96,6 +96,7 @@ export interface DietPreferencesData {
     | "not_applicable";
   max_prep_time_minutes: number | null; // 5-180, null when not_applicable
   budget_level: "low" | "medium" | "high";
+  cooking_methods: string[]; // e.g. ["grilling", "steaming", "air_frying", "sauteing", "baking", "boiling"]
 
   // NEW: Health habits (14 boolean fields)
   drinks_enough_water: boolean;
@@ -316,8 +317,10 @@ export interface AdvancedReviewData {
   bmi_category?: string;
   bmi_health_risk?: string;
   detected_climate?: string;
+  /** @computed Not yet implemented — always null. Could be derived from country. */
   detected_ethnicity?: string;
   bmr_formula_used?: string;
+  /** @deprecated Use overall_health_score instead — health_score is not a DB column */
   health_score?: number;
   health_grade?: string;
   vo2_max_estimate?: number;
@@ -455,6 +458,8 @@ export interface DietPreferencesRow {
   diet_type?: "vegetarian" | "vegan" | "non-veg" | "pescatarian" | "balanced" | null;
   allergies?: string[] | null;
   restrictions?: string[] | null;
+  cuisine_preferences?: string[] | null;
+  snacks_count?: number | null;
   keto_ready?: boolean | null;
   intermittent_fasting_ready?: boolean | null;
   paleo_ready?: boolean | null;
@@ -473,6 +478,7 @@ export interface DietPreferencesRow {
     | null;
   max_prep_time_minutes?: number | null;
   budget_level?: "low" | "medium" | "high" | null;
+  cooking_methods?: string[] | null;
   drinks_enough_water?: boolean | null;
   limits_sugary_drinks?: boolean | null;
   eats_regular_meals?: boolean | null;
@@ -611,6 +617,7 @@ export interface AdvancedReviewRow {
   detected_ethnicity?: string | null;
   was_rate_capped?: boolean | null;
   bmi_category?: string | null;
+  /** @deprecated Use overall_health_score instead — health_score is not a DB column */
   health_score?: number | null;
   health_grade?: string | null;
   created_at?: string | null;

@@ -199,7 +199,7 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>
-                {(currentIntake / 1000).toFixed(2)}
+                {(currentIntake / 1000).toFixed(1)}
                 <Text style={styles.statUnit}>L</Text>
               </Text>
               <Text style={styles.statLabel}>Consumed</Text>
@@ -209,7 +209,7 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
 
             <View style={styles.statItem}>
               <Text style={styles.statValue}>
-                {(dailyGoal / 1000).toFixed(2)}
+                {(dailyGoal / 1000).toFixed(1)}
                 <Text style={styles.statUnit}>L</Text>
               </Text>
               <Text style={styles.statLabel}>Goal</Text>

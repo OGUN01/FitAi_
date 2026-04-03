@@ -195,12 +195,15 @@ export function validateTrainingVolume(
   frequency: number,
   duration: number,
   intensity: string,
-  occupation: string,
+  activityLevel: string,
 ): ValidationResult {
   const totalWeeklyHours = (frequency * duration) / 60;
+  // Support both legacy occupation_type and activity_level values
+  const isVeryActive = activityLevel === "very_active" || activityLevel === "extreme" || activityLevel === "active";
+  const isHeavyLabor = activityLevel === "heavy_labor";
   const ABSOLUTE_MAX_HOURS =
-    occupation === "very_active" ? 20
-    : occupation === "heavy_labor" ? 18
+    isVeryActive ? 20
+    : isHeavyLabor ? 18
     : 15;
 
   if (totalWeeklyHours > ABSOLUTE_MAX_HOURS) {

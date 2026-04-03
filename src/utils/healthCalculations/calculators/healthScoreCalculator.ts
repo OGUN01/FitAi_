@@ -185,6 +185,7 @@ export class HealthScoreCalculator {
       moderate: 15,
       active: 18,
       very_active: 20,
+      extreme: 20, // Alias for very_active (onboarding uses "extreme")
     };
 
     return activityScores[activityLevel] || 5;

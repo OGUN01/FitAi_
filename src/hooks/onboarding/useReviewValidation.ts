@@ -189,22 +189,27 @@ export const useReviewValidation = ({
       let detectedClimate: ClimateType = "temperate";
       try {
         // CRITICAL: Use climate-adaptive water calculation based on user's location
+        if (!personalInfo.country) {
+          console.warn('Climate detection: country not set in profile, defaulting to temperate');
+        }
         const climateResult = detectClimate(
-          personalInfo.country || "IN",
+          personalInfo.country || "",
           personalInfo.state,
         );
         detectedClimate = climateResult.climate;
 
         // Map activity level to the expected type
         const activityLevel: ActivityLevel =
-          (workoutPreferences.activity_level as ActivityLevel) || "moderate";
+          (workoutPreferences.activity_level as ActivityLevel) ?? "sedentary";
 
         // Calculate climate-adjusted water intake
-        waterIntake = waterCalculator.calculate(
-          bodyAnalysis && hasBodyData ? bodyAnalysis.current_weight_kg : 70,
-          activityLevel,
-          detectedClimate,
-        );
+        const waterWeightKg = bodyAnalysis && hasBodyData ? bodyAnalysis.current_weight_kg : null;
+        if (waterWeightKg == null) {
+          console.warn('Water calculation skipped: no weight data available');
+        }
+        waterIntake = waterWeightKg != null
+          ? waterCalculator.calculate(waterWeightKg, activityLevel, detectedClimate)
+          : 0;
 
 
         fiberIntake = MetabolicCalculations.calculateFiber(

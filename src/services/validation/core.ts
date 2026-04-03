@@ -113,7 +113,7 @@ export class ValidationEngine {
 
     const baseTDEE = MetabolicCalculations.calculateBaseTDEE(
       bmr,
-      personalInfo.occupation_type,
+      workoutPreferences.activity_level ?? "sedentary",
     );
     const exerciseBurn = MetabolicCalculations.calculateDailyExerciseBurn(
       workoutPreferences.workout_frequency_per_week,
@@ -276,7 +276,7 @@ export class ValidationEngine {
       workoutPreferences.workout_frequency_per_week,
       workoutPreferences.time_preference,
       workoutPreferences.intensity,
-      personalInfo.occupation_type,
+      workoutPreferences.activity_level ?? "sedentary",
     );
     if (volumeCheck.status === "BLOCKED") errors.push(volumeCheck);
 

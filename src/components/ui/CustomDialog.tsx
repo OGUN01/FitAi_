@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Dimensions,
   ScrollView,
+  TextInput,
   } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -335,7 +336,7 @@ interface WorkoutCompleteDialogProps {
   exercisesCompleted: number;
   totalExercises: number;
   onViewProgress: () => void;
-  onDone: () => void;
+  onDone: (rating?: number, notes?: string) => void;
 }
 
 interface WorkoutDetailsDialogProps {
@@ -502,6 +503,22 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
   onViewProgress,
   onDone,
 }) => {
+  const [rating, setRating] = useState(0);
+  const [notes, setNotes] = useState("");
+
+  const handleDone = () => {
+    onDone(rating > 0 ? rating : undefined, notes.trim() || undefined);
+    // Reset for next use
+    setRating(0);
+    setNotes("");
+  };
+
+  const handleViewProgress = () => {
+    // Pass rating/notes before navigating so they get saved
+    onDone(rating > 0 ? rating : undefined, notes.trim() || undefined);
+    onViewProgress();
+  };
+
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.overlay}>
@@ -548,17 +565,49 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
               </View>
             </View>
 
+            {/* Rating */}
+            <View style={completeStyles.feedbackSection}>
+              <Text style={completeStyles.feedbackLabel}>How was this workout?</Text>
+              <View style={completeStyles.starsRow}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <TouchableOpacity
+                    key={star}
+                    onPress={() => setRating(star)}
+                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                  >
+                    <Ionicons
+                      name={star <= rating ? "star" : "star-outline"}
+                      size={rf(28)}
+                      color={star <= rating ? "#F59E0B" : ResponsiveTheme.colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Notes */}
+              <TextInput
+                style={completeStyles.notesInput}
+                placeholder="Any notes? (optional)"
+                placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                value={notes}
+                onChangeText={setNotes}
+                multiline
+                maxLength={500}
+                numberOfLines={2}
+              />
+            </View>
+
             {/* Actions */}
             <View style={styles.actionsContainer}>
               <Button
                 title="View Progress"
-                onPress={onViewProgress}
+                onPress={handleViewProgress}
                 variant="outline"
                 style={styles.actionButton}
               />
               <Button
                 title="Done"
-                onPress={onDone}
+                onPress={handleDone}
                 variant="primary"
                 style={styles.actionButton}
               />
@@ -569,3 +618,35 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
     </Modal>
   );
 };
+
+const completeStyles = StyleSheet.create({
+  feedbackSection: {
+    width: "100%",
+    marginTop: rf(8),
+    marginBottom: rf(4),
+    alignItems: "center",
+  },
+  feedbackLabel: {
+    fontSize: rf(14),
+    fontWeight: "600" as const,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rf(8),
+  },
+  starsRow: {
+    flexDirection: "row" as const,
+    gap: rf(8),
+    marginBottom: rf(12),
+  },
+  notesInput: {
+    width: "100%" as const,
+    borderWidth: 1,
+    borderColor: ResponsiveTheme.colors.border,
+    borderRadius: rf(10),
+    padding: rf(10),
+    fontSize: rf(13),
+    color: ResponsiveTheme.colors.text,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary ?? ResponsiveTheme.colors.background,
+    minHeight: rf(60),
+    textAlignVertical: "top" as const,
+  },
+});

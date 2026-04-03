@@ -24,7 +24,7 @@ import { haptics } from "../../../../utils/haptics";
 import { crossPlatformAlert } from "../../../../utils/crossPlatformAlert";
 import { buildLegacyProfileAdapter } from "../../../../utils/profileLegacyAdapter";
 import type { FitnessGoals } from "../../../../types/user";
-import { userProfileService } from "../../../../services/userProfile";
+import { supabase } from "../../../../services/supabase";
 
 interface GoalsPreferencesEditModalProps {
   visible: boolean;
@@ -306,29 +306,36 @@ export const GoalsPreferencesEditModal: React.FC<
         });
       }
 
-      // Sync to Supabase
+      // Sync to Supabase (workout_preferences table — SSOT)
       if (user?.id) {
         try {
-          const result = await userProfileService.updateFitnessGoals(user.id, {
-            primary_goals: primaryGoals,
-            time_commitment: timeCommitment,
-            experience_level: experience,
-          });
+          const { error: wpError } = await supabase
+            .from("workout_preferences")
+            .upsert(
+              {
+                user_id: user.id,
+                primary_goals: primaryGoals,
+                time_commitment: timeCommitment,
+                experience_level: experience,
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: "user_id" },
+            );
 
-          if (!result.success) {
+          if (wpError) {
             console.error(
-              "Failed to sync fitness goals to database:",
-              result.error,
+              "Failed to sync workout preferences to database:",
+              wpError.message,
             );
             crossPlatformAlert(
               "Saved Locally",
               "Your goals were saved locally but failed to sync to the server. They will sync automatically when connection is restored.",
             );
           } else {
-            console.log("✅ Fitness goals synced to database");
+            console.log("✅ Workout preferences synced to database");
           }
         } catch (syncError) {
-          console.error("Error syncing fitness goals:", syncError);
+          console.error("Error syncing workout preferences:", syncError);
           // Don't fail the save - local update succeeded
         }
       }

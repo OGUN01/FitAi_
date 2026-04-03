@@ -75,3 +75,8 @@ export {
   HealthScoreCalculator,
   healthScoreCalculator,
 } from './healthScoreCalculator';
+
+// Step Goal Calculator
+export {
+  calculatePersonalizedStepGoal,
+} from './stepGoalCalculator';

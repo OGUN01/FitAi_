@@ -75,10 +75,10 @@ export const HydrationPanel: React.FC<HydrationPanelProps> = ({
         <View style={styles.waterTrackerContainer}>
           <View style={styles.amountRow}>
             <Text style={styles.waterAmountConsumed}>
-              {waterConsumedLiters.toFixed(2)}L
+              {waterConsumedLiters.toFixed(1)}L
             </Text>
             <Text style={styles.waterTargetAmount}>
-              of {effectiveGoalLiters.toFixed(2)}L goal
+              of {effectiveGoalLiters.toFixed(1)}L goal
             </Text>
             {isGoalReached && (
               <Text style={styles.goalReachedBadge}>✓ Goal reached!</Text>

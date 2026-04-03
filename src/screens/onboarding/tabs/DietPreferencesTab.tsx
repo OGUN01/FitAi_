@@ -9,9 +9,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../../utils/responsive";
+import { rf, rh } from "../../../utils/responsive";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { AnimatedPressable, AnimatedSection, HeroSection } from "../../../components/ui/aurora";
+import {
+  AnimatedPressable,
+  AnimatedSection,
+  HeroSection,
+} from "../../../components/ui/aurora";
 import { gradients } from "../../../theme/gradients";
 import {
   DietPreferencesData,
@@ -222,7 +226,11 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
               {isEditingFromReview ? "Review" : "Next"}
             </Text>
             <Ionicons
-              name={isEditingFromReview ? "checkmark-circle-outline" : "chevron-forward"}
+              name={
+                isEditingFromReview
+                  ? "checkmark-circle-outline"
+                  : "chevron-forward"
+              }
               size={rf(18)}
               color="#FFFFFF"
             />
@@ -278,7 +286,10 @@ const styles = StyleSheet.create({
   },
   footer: {
     padding: ResponsiveTheme.spacing.lg,
-    paddingBottom: Platform.OS === "ios" ? ResponsiveTheme.spacing.lg : ResponsiveTheme.spacing.xl,
+    paddingBottom:
+      Platform.OS === "ios"
+        ? ResponsiveTheme.spacing.lg
+        : ResponsiveTheme.spacing.xl,
     backgroundColor: "transparent",
   },
   buttonRow: {

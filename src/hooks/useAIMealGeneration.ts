@@ -37,14 +37,20 @@ import {
   mapScannedProductToScanResult as mapSharedScannedProductToScanResult,
 } from "../features/barcode/packagedFood";
 
-const buildMealPhotoProvenance = (confidence?: number): MealLogProvenance => ({
-  mode: "meal_photo",
-  truthLevel: "estimated",
-  confidence: confidence ?? null,
-  countryContext: useProfileStore.getState().personalInfo?.country ?? "IN",
-  requiresReview: true,
-  source: "food-recognition",
-});
+const buildMealPhotoProvenance = (confidence?: number): MealLogProvenance => {
+  const country = useProfileStore.getState().personalInfo?.country ?? null;
+  if (!country) {
+    console.warn('Meal generation: country not set in profile');
+  }
+  return {
+    mode: "meal_photo",
+    truthLevel: "estimated",
+    confidence: confidence ?? null,
+    countryContext: country,
+    requiresReview: true,
+    source: "food-recognition",
+  };
+};
 
 const buildPackagedFoodEntry = (product: ScannedProduct, grams: number) => {
   const safeGrams = clampPackagedFoodGrams(grams);
@@ -531,7 +537,10 @@ export const useAIMealGeneration = (options?: {
       setAiError(null);
 
       const dietaryRestrictions = mergedDietPrefs?.allergies || undefined;
-      const userCountry = useProfileStore.getState().personalInfo?.country ?? "IN";
+      const userCountry = useProfileStore.getState().personalInfo?.country ?? undefined;
+      if (!userCountry) {
+        console.warn('Meal generation: country not set in profile');
+      }
       const userCuisine = useProfileStore.getState().dietPreferences?.cuisine_preferences?.[0] ?? userCountry;
       const result = await foodRecognitionService.recognizeFood(
         imageUri,

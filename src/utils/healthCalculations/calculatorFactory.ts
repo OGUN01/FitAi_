@@ -415,15 +415,16 @@ export class HealthCalculatorFactory {
     climate: ClimateType
   ): number {
     // Base activity multipliers
-    const activityMultipliers = {
+    const activityMultipliers: Record<string, number> = {
       sedentary: 1.2,
       light: 1.375,
       moderate: 1.55,
       active: 1.725,
       very_active: 1.9,
+      extreme: 1.9, // Alias for very_active (onboarding uses "extreme")
     };
 
-    const baseTDEE = bmr * activityMultipliers[activityLevel];
+    const baseTDEE = bmr * (activityMultipliers[activityLevel] ?? 1.55);
 
     // BUG-12: Climate modifiers — use CLIMATE_MULTIPLIERS SSOT values (tropical = 1.075)
     const climateModifiers = {
@@ -448,12 +449,13 @@ export class HealthCalculatorFactory {
     // BUG-13: Delegate to ClimateAdaptiveWaterCalculator (SSOT) instead of divergent local formula
     // SSOT: base 35ml/kg + activity bonus, then climate multiplier (tropical 1.5, arid 1.7)
     const base = weight * 35;
-    const activityBonuses: Record<ActivityLevel, number> = {
+    const activityBonuses: Record<string, number> = {
       sedentary: 0,
       light: 500,
       moderate: 1000,
       active: 1500,
       very_active: 2000,
+      extreme: 2000, // Alias for very_active (onboarding uses "extreme")
     };
     const climateMultipliers: Record<ClimateType, number> = {
       tropical: 1.5,

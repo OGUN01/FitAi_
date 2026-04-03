@@ -171,7 +171,7 @@ class BackendTester {
       gender: "male",
       height_cm: 175,
       weight_kg: 70,
-      activity_level: "moderate",
+      activity_level: "sedentary",
     });
 
     if (!result.success) {

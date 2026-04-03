@@ -89,7 +89,6 @@ export const useHomeLogic = () => {
   const waterIntakeML = useHydrationStore((s) => s.waterIntakeML);
   const waterGoal = useHydrationStore((s) => s.dailyGoalML);
   const hydrationAddWater = useHydrationStore((s) => s.addWater);
-  const setHydrationGoal = useHydrationStore((s) => s.setDailyGoal);
   const checkAndResetIfNewDay = useHydrationStore(
     (s) => s.checkAndResetIfNewDay,
   );
@@ -141,12 +140,9 @@ export const useHomeLogic = () => {
       todayDateString,
     ],
   );
-  // Sync hydration goal
-  // NOTE: useNutritionTracking.ts also sets hydration goal — one of these should be removed
+  // Hydration day-boundary resets & Supabase sync
+  // NOTE: hydration goal is set exclusively in useNutritionTracking (SSOT)
   useEffect(() => {
-    if (calculatedMetrics?.dailyWaterML) {
-      setHydrationGoal(calculatedMetrics.dailyWaterML);
-    }
     checkAndResetIfNewDay();
     checkAndResetProgressIfNewDay();
 
@@ -154,7 +150,6 @@ export const useHomeLogic = () => {
       console.warn("[HomeScreen] Failed to sync hydration from Supabase:", err);
     });
   }, [
-    calculatedMetrics?.dailyWaterML,
     checkAndResetIfNewDay,
     checkAndResetProgressIfNewDay,
     syncHydrationWithSupabase,

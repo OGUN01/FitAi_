@@ -73,8 +73,8 @@ export function mapToCalculatedMetrics(
     dailyWaterML: (() => {
       const weight = bodyAnalysis?.current_weight_kg;
       const activity = (workoutPreferences?.activity_level ?? "sedentary") as ActivityLevel;
-      const climate = (advancedReview as any)?.detected_climate as ClimateType | undefined;
-      if (weight && weight > 0 && climate) {
+      const climate = ((advancedReview as any)?.detected_climate ?? "temperate") as ClimateType;
+      if (weight && weight > 0) {
         return waterCalculator.calculate(weight, activity, climate);
       }
       return advancedReview?.daily_water_ml ?? null;

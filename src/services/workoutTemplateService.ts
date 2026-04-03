@@ -191,7 +191,7 @@ class WorkoutTemplateService {
         (data as { usage_count?: number } | null)?.usage_count ?? 0;
       await supabase
         .from("workout_templates")
-        .update({ usage_count: currentCount + 1, updated_at: new Date().toISOString() })
+        .update({ usage_count: currentCount + 1, last_used_at: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq("id", id)
         .eq("user_id", userId);
     }

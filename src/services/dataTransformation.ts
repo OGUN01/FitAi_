@@ -96,7 +96,7 @@ export class DataTransformationService {
       duration: session.duration ?? null,
       total_duration_minutes: session.duration ?? null,
       calories_burned: session.caloriesBurned ?? null,
-      exercises: session.exercises || [],
+      exercises_completed: session.exercises || [],
       notes: session.notes || "",
       rating: session.rating,
       is_completed: session.isCompleted,
@@ -115,7 +115,7 @@ export class DataTransformationService {
       duration:
         supabaseSession.total_duration_minutes ?? supabaseSession.duration,
       caloriesBurned: supabaseSession.calories_burned,
-      exercises: supabaseSession.exercises || [],
+      exercises: supabaseSession.exercises_completed ?? supabaseSession.exercises ?? [],
       notes: supabaseSession.notes || "",
       rating: supabaseSession.rating || 0,
       isCompleted: supabaseSession.is_completed,

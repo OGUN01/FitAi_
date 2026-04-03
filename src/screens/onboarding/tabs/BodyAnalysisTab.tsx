@@ -9,9 +9,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../../utils/responsive";
+import { rf, rh } from "../../../utils/responsive";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { AnimatedPressable, AnimatedSection, HeroSection } from "../../../components/ui/aurora";
+import {
+  AnimatedPressable,
+  AnimatedSection,
+  HeroSection,
+} from "../../../components/ui/aurora";
 import { gradients } from "../../../theme/gradients";
 import { Camera } from "../../../components/advanced/Camera";
 import { ImagePicker } from "../../../components/advanced/ImagePicker";
@@ -122,7 +126,9 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
             contentPosition="center"
             height={180}
           >
-            <Text style={styles.title} numberOfLines={2}>Body Analysis</Text>
+            <Text style={styles.title} numberOfLines={2}>
+              Body Analysis
+            </Text>
             <Text style={styles.subtitle} numberOfLines={2}>
               Track your measurements and visualize your progress
             </Text>
@@ -232,7 +238,11 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
               {isEditingFromReview ? "Review" : "Next"}
             </Text>
             <Ionicons
-              name={isEditingFromReview ? "checkmark-circle-outline" : "chevron-forward"}
+              name={
+                isEditingFromReview
+                  ? "checkmark-circle-outline"
+                  : "chevron-forward"
+              }
               size={rf(18)}
               color="#FFFFFF"
             />
@@ -288,7 +298,10 @@ const styles = StyleSheet.create({
   },
   footer: {
     padding: ResponsiveTheme.spacing.lg,
-    paddingBottom: Platform.OS === "ios" ? ResponsiveTheme.spacing.lg : ResponsiveTheme.spacing.xl,
+    paddingBottom:
+      Platform.OS === "ios"
+        ? ResponsiveTheme.spacing.lg
+        : ResponsiveTheme.spacing.xl,
     backgroundColor: "transparent",
   },
   buttonRow: {

@@ -41,8 +41,13 @@ export async function completeWorkout(
                 sessionData?.totalDuration ||
                 workout.duration ||
                 null,
+              total_duration_minutes:
+                sessionData?.duration ||
+                sessionData?.totalDuration ||
+                workout.duration ||
+                null,
               calories_burned: actualCaloriesBurned,
-              exercises:
+              exercises_completed:
                 sessionData?.exercisesCompleted || workout.exercises || null,
               notes:
                 sessionData?.notes || `Weekly workout plan: ${workout.title}`,

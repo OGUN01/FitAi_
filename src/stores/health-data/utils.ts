@@ -12,6 +12,15 @@ export const createGeneralActions = (
   ) => void,
   get: () => HealthDataState,
 ) => ({
+  setStepsGoal: (goal: number): void => {
+    set((state) => ({
+      metrics: {
+        ...state.metrics,
+        stepsGoal: goal,
+      },
+    }));
+  },
+
   updateHealthMetrics: (newMetrics: Partial<HealthMetrics>): void => {
     set((state) => ({
       metrics: {

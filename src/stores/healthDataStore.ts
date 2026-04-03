@@ -26,6 +26,7 @@ import { resolveCurrentWeightForUser } from "../services/currentWeight";
 import { weightTrackingService } from "../services/WeightTrackingService";
 import { useProfileStore } from "./profileStore";
 import { useAuthStore } from "./authStore";
+import { getLocalDateString } from "../utils/weekUtils";
 
 function mergeRecentWorkouts(
   existing: HealthMetrics["recentWorkouts"],
@@ -255,6 +256,9 @@ export interface HealthDataState {
     autoLoggedCount: number;
   }>;
 
+  // Actions - Step Goal
+  setStepsGoal: (goal: number) => void;
+
   setShowHealthDashboard: (show: boolean) => void;
   getHealthInsights: () => string[];
   resetHealthData: () => void;
@@ -464,7 +468,7 @@ export const useHealthDataStore = create<HealthDataState>()(
               metrics: {
                 ...state.metrics,
                 steps: healthData.data?.steps ?? state.metrics.steps,
-                stepsGoal: state.metrics.stepsGoal ?? 10000,
+                stepsGoal: state.metrics.stepsGoal,
                 heartRate:
                   healthData.data?.heartRate ?? state.metrics.heartRate,
                 activeCalories:
@@ -706,6 +710,15 @@ export const useHealthDataStore = create<HealthDataState>()(
           console.error("❌ Failed to export nutrition to HealthKit:", error);
           return false;
         }
+      },
+
+      setStepsGoal: (goal: number): void => {
+        set((state) => ({
+          metrics: {
+            ...state.metrics,
+            stepsGoal: goal,
+          },
+        }));
       },
 
       setShowHealthDashboard: (show: boolean): void => {
@@ -1342,11 +1355,15 @@ export const useHealthDataStore = create<HealthDataState>()(
       },
 
       resetHealthData: (): void => {
+        // Preserve goal values across resets (they are user-specific, not daily)
+        const { stepsGoal, caloriesGoal } = get().metrics;
         set({
           metrics: {
             steps: 0,
             activeCalories: 0,
             recentWorkouts: [],
+            stepsGoal,
+            caloriesGoal,
             lastUpdated: new Date().toISOString(),
             sources: undefined,
             dataOrigins: undefined,
@@ -1373,6 +1390,23 @@ export const useHealthDataStore = create<HealthDataState>()(
         isHealthConnectAuthorized: state.isHealthConnectAuthorized, // Persist Health Connect auth
         lastSyncTime: state.lastSyncTime,
       }),
+      onRehydrateStorage: () => (state, error) => {
+        if (!state || error) return;
+        // Reset daily metrics if lastSyncTime is from a previous day.
+        // Preserve goal values (stepsGoal, caloriesGoal) across daily resets.
+        const lastSync = state.lastSyncTime;
+        if (lastSync && getLocalDateString(lastSync) !== getLocalDateString()) {
+          const { stepsGoal, caloriesGoal } = state.metrics;
+          state.metrics = {
+            steps: 0,
+            activeCalories: 0,
+            recentWorkouts: [],
+            lastUpdated: new Date().toISOString(),
+            stepsGoal,
+            caloriesGoal,
+          };
+        }
+      },
     },
   ),
 );

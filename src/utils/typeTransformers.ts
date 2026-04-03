@@ -89,10 +89,6 @@ export function toAppFormat<T extends Record<string, any>>(
       transformed[camelKey] = value;
     }
 
-    // Also keep original key for backward compatibility during migration
-    if (key !== camelKey) {
-      transformed[key] = transformed[camelKey];
-    }
   }
 
   return transformed;
@@ -383,13 +379,85 @@ export function normalizeToCamelCase<T extends Record<string, any>>(
       normalized[camelKey] = value;
     }
 
-    // Also keep original key for backward compatibility
-    if (key !== camelKey) {
-      normalized[key] = normalized[camelKey];
-    }
   }
 
   return normalized;
+}
+
+// ============================================================================
+// ENUM BOUNDARY MAPPERS
+// ============================================================================
+// Onboarding types (DB/user-facing) and health-calc types (internal) use
+// different enum values for the same concepts.  These mappers convert at the
+// boundary so neither side has to know about the other's vocabulary.
+
+/**
+ * Maps onboarding activity_level → health-calc ActivityLevel.
+ *
+ * Onboarding uses "extreme" (matches DB CHECK constraint);
+ * health-calc uses "very_active" — same concept, different label.
+ *
+ * All other values pass through unchanged:
+ *   sedentary, light, moderate, active
+ */
+export function mapActivityLevelForHealthCalc(
+  onboardingLevel: string,
+): string {
+  if (onboardingLevel === "extreme") return "very_active";
+  return onboardingLevel; // sedentary, light, moderate, active pass through
+}
+
+/**
+ * Maps health-calc ActivityLevel → onboarding activity_level.
+ *
+ * Inverse of mapActivityLevelForHealthCalc.
+ */
+export function mapActivityLevelForOnboarding(
+  healthCalcLevel: string,
+): string {
+  if (healthCalcLevel === "very_active") return "extreme";
+  return healthCalcLevel;
+}
+
+/**
+ * Maps onboarding diet_type → health-calc DietType.
+ *
+ * Onboarding uses "non-veg" and "balanced" (match DB CHECK constraint);
+ * health-calc uses "omnivore" for both — same concept, different label.
+ *
+ * Passthrough values: vegetarian, vegan, pescatarian
+ *
+ * NOTE: `resolveDietType()` in nutritional.ts already handles this mapping
+ * (including readiness-flag overrides like keto_ready → "keto").  Prefer
+ * resolveDietType() when you have the full DietPreferencesData object.
+ * Use this function only when you have a bare diet_type string.
+ */
+export function mapDietTypeForHealthCalc(
+  onboardingDietType: string,
+): string {
+  switch (onboardingDietType) {
+    case "non-veg":
+      return "omnivore";
+    case "balanced":
+      return "omnivore";
+    default:
+      return onboardingDietType; // vegetarian, vegan, pescatarian pass through
+  }
+}
+
+/**
+ * Maps health-calc DietType → onboarding diet_type.
+ *
+ * Inverse of mapDietTypeForHealthCalc.
+ * "omnivore" maps back to "non-veg" (the DB canonical value).
+ * keto, low_carb, paleo, mediterranean have no onboarding equivalent —
+ * they are derived from readiness flags, not diet_type — so they pass through as-is.
+ */
+export function mapDietTypeForOnboarding(
+  healthCalcDietType: string,
+): string {
+  if (healthCalcDietType === "omnivore") return "non-veg";
+  return healthCalcDietType;
 }
 
 // ============================================================================
@@ -403,6 +471,10 @@ export default {
   toDbFormat,
   normalizeToSnakeCase,
   normalizeToCamelCase,
+  mapActivityLevelForHealthCalc,
+  mapActivityLevelForOnboarding,
+  mapDietTypeForHealthCalc,
+  mapDietTypeForOnboarding,
   FIELD_MAPPINGS,
   REVERSE_FIELD_MAPPINGS,
 };

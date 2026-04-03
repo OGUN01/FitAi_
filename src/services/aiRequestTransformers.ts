@@ -75,7 +75,7 @@ function getRequestedMealsPerDay(dietPreferences?: DietPreferences): number {
   if (dietPreferences.breakfast_enabled !== false) mealsPerDay += 1;
   if (dietPreferences.lunch_enabled !== false) mealsPerDay += 1;
   if (dietPreferences.dinner_enabled !== false) mealsPerDay += 1;
-  if (dietPreferences.snacks_enabled) mealsPerDay += 2;
+  if (dietPreferences.snacks_enabled) mealsPerDay += (dietPreferences.snacks_count ?? 2);
 
   return mealsPerDay > 0 ? mealsPerDay : 3;
 }
@@ -259,9 +259,11 @@ export function transformForDietRequest(
           lunch_enabled: dietPreferences.lunch_enabled,
           dinner_enabled: dietPreferences.dinner_enabled,
           snacks_enabled: dietPreferences.snacks_enabled,
+          snacks_count: dietPreferences.snacks_count,
           cooking_skill_level: dietPreferences.cooking_skill_level,
           max_prep_time_minutes: dietPreferences.max_prep_time_minutes,
           budget_level: dietPreferences.budget_level,
+          cooking_methods: dietPreferences.cooking_methods || [],
           keto_ready: dietPreferences.keto_ready,
           intermittent_fasting_ready:
             dietPreferences.intermittent_fasting_ready,
@@ -321,9 +323,12 @@ export function transformForDietRequest(
     // so AI plans at the user's actual deficit target, not the DB maintenance value
     calorieTarget: calorieTarget ?? advancedReview?.daily_calories ?? (() => {
       const goal = primaryGoal ?? '';
-      if (goal.includes('loss') || goal.includes('cut')) return 1800;
-      if (goal.includes('gain') || goal.includes('bulk')) return 2800;
-      return 2200; // maintenance
+      let fallback: number;
+      if (goal.includes('loss') || goal.includes('cut')) fallback = 1800;
+      else if (goal.includes('gain') || goal.includes('bulk')) fallback = 2800;
+      else fallback = 2200; // maintenance
+      console.warn('[aiRequestTransformers] calorieTarget missing — using goal-based fallback:', fallback);
+      return fallback;
     })(),
     mealsPerDay,
     daysCount,
@@ -458,6 +463,8 @@ export function transformForWorkoutRequest(
     currentWeightKg?: number | null;
     weekNumber?: number;
     regenerationSeed?: number; // Varies exercise selection on regeneration
+    // H13: Advanced review data for health-based recommendations
+    advancedReview?: AdvancedReviewData | null;
   },
 ): WorkoutGenerationRequest {
   // Get experience level
@@ -527,6 +534,9 @@ export function transformForWorkoutRequest(
     personalInfo.gender === 'male' || personalInfo.gender === 'female'
       ? personalInfo.gender
       : 'other';
+
+  // H13: Wire ignored onboarding fields into workout generation request
+  const advancedReview = options?.advancedReview;
   return {
     profile: {
       age: personalInfo.age,
@@ -547,6 +557,27 @@ export function transformForWorkoutRequest(
       breastfeedingStatus: breastfeedingStatus,
     },
     weeklyPlan: weeklyPlan,
+    // H13: Fitness Assessment (Priority 1 - concrete ability indicators)
+    fitnessAssessment: {
+      pushupCount: workoutPreferences?.can_do_pushups ?? 0,
+      runningMinutes: workoutPreferences?.can_run_minutes ?? 0,
+      flexibilityLevel: workoutPreferences?.flexibility_level ?? 'fair',
+      experienceYears: workoutPreferences?.workout_experience_years ?? 0,
+    },
+    // H13: Location preference (Priority 2)
+    workoutLocation: workoutPreferences?.location ?? 'both',
+    // H13: Preference booleans (Priority 3)
+    enjoysCardio: workoutPreferences?.enjoys_cardio ?? true,
+    enjoysStrength: workoutPreferences?.enjoys_strength_training ?? true,
+    enjoysGroupClasses: workoutPreferences?.enjoys_group_classes ?? false,
+    prefersOutdoor: workoutPreferences?.prefers_outdoor_activities ?? false,
+    needsMotivation: workoutPreferences?.needs_motivation ?? false,
+    // H13: Advanced Review Recommendations (Priority 4 - calculated from health picture)
+    recommendations: advancedReview ? {
+      frequency: advancedReview.recommended_workout_frequency ?? null,
+      cardioMinutes: advancedReview.recommended_cardio_minutes ?? null,
+      strengthSessions: advancedReview.recommended_strength_sessions ?? null,
+    } : undefined,
     focusMuscles: options?.focusMuscles,
     weekNumber: options?.weekNumber,
     regenerationSeed: options?.regenerationSeed,

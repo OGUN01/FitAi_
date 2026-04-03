@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../../utils/responsive";
+import { rf, rh } from "../../../utils/responsive";
 import { ResponsiveTheme } from "../../../utils/constants";
 import {
   AnimatedPressable,
@@ -111,7 +111,9 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
             contentPosition="center"
             height={180}
           >
-            <Text style={styles.title} numberOfLines={2}>Let's create your fitness profile</Text>
+            <Text style={styles.title} numberOfLines={2}>
+              Let's create your fitness profile
+            </Text>
             <Text style={styles.subtitle} numberOfLines={3}>
               Tell us about your goals, current fitness level, and workout
               preferences
@@ -136,9 +138,9 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
             <AnimatedSection delay={0}>
               <GoalsSection
                 formData={formData}
-                personalInfoData={personalInfoData}
                 bodyAnalysisData={bodyAnalysisData}
                 toggleGoal={toggleGoal}
+                updateField={updateField}
                 getFieldError={getFieldError}
                 hasFieldError={hasFieldError}
                 showInfoTooltip={showInfoTooltip}
@@ -276,7 +278,7 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     elevation: 4,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderTopColor: "rgba(255,255,255,0.06)",
   },
   buttonRow: {
     flexDirection: "row",

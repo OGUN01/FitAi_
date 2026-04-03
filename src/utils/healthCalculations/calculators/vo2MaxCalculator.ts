@@ -93,6 +93,7 @@ export class VO2MaxCalculator {
       moderate: 4,
       active: 6,
       very_active: 7,
+      extreme: 7, // Alias for very_active (onboarding uses "extreme")
     };
 
     return activityMap[activityLevel] || 0;
