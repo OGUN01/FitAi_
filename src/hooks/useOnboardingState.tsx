@@ -24,6 +24,31 @@ import {
 import { invalidateMetricsCache } from "./useCalculatedMetrics";
 
 // ============================================================================
+// 🔍 DEBUG: Intercept AsyncStorage deletions of onboarding_data
+// Remove this block once persistence bug is fixed
+// ============================================================================
+const _origRemoveItem = AsyncStorage.removeItem.bind(AsyncStorage);
+(AsyncStorage as any).removeItem = async (key: string) => {
+  if (key === 'onboarding_data' || key === 'onboarding_completed') {
+    console.warn(`🚨 [STORAGE INTERCEPTOR] removeItem("${key}") called!`, new Error().stack);
+  }
+  return _origRemoveItem(key);
+};
+const _origMultiRemove = AsyncStorage.multiRemove.bind(AsyncStorage);
+(AsyncStorage as any).multiRemove = async (keys: string[]) => {
+  const sensitive = keys.filter((k: string) => k.startsWith('onboarding'));
+  if (sensitive.length > 0) {
+    console.warn(`🚨 [STORAGE INTERCEPTOR] multiRemove includes onboarding keys: ${sensitive.join(', ')}`, new Error().stack);
+  }
+  return _origMultiRemove(keys);
+};
+const _origClear = AsyncStorage.clear.bind(AsyncStorage);
+(AsyncStorage as any).clear = async () => {
+  console.warn(`🚨 [STORAGE INTERCEPTOR] AsyncStorage.clear() called!`, new Error().stack);
+  return _origClear();
+};
+
+// ============================================================================
 // TYPES
 // ============================================================================
 
@@ -734,6 +759,8 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
     // Use ref to get latest state values
     const currentState = stateRef.current;
 
+    console.warn(`\n💾 [ONBOARDING] saveToLocal called — PI=${!!currentState.personalInfo} DP=${!!currentState.dietPreferences} BA=${!!currentState.bodyAnalysis} WP=${!!currentState.workoutPreferences} tab=${currentState.currentTab}`);
+
     try {
       const dataToSave = {
         personalInfo: currentState.personalInfo,
@@ -746,10 +773,17 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
         lastSavedAt: new Date().toISOString(),
       };
 
+      const serialized = JSON.stringify(dataToSave);
+      console.warn(`💾 [ONBOARDING] Writing ${serialized.length} chars to AsyncStorage key="${STORAGE_KEYS.ONBOARDING_DATA}"`);
+
       await AsyncStorage.setItem(
         STORAGE_KEYS.ONBOARDING_DATA,
-        JSON.stringify(dataToSave),
+        serialized,
       );
+
+      // Verify write immediately
+      const verify = await AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_DATA);
+      console.warn(`💾 [ONBOARDING] Verify read-back: ${verify ? 'SUCCESS (' + verify.length + ' chars)' : 'FAILED — null returned!'}`);
 
       // Clear error on success
       setState((prev) => ({
@@ -770,13 +804,17 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
   }, []); // No dependencies - using ref instead
 
   const loadFromLocal = useCallback(async (): Promise<void> => {
+    console.warn('\n🔁 [ONBOARDING] loadFromLocal called');
     try {
       const savedData = await AsyncStorage.getItem(
         STORAGE_KEYS.ONBOARDING_DATA,
       );
 
+      console.warn(`📦 [ONBOARDING] AsyncStorage key="${STORAGE_KEYS.ONBOARDING_DATA}" → data ${savedData ? 'FOUND (' + savedData.length + ' chars)' : 'NOT FOUND (null)'}`);
+
       if (savedData) {
         const parsedData = JSON.parse(savedData);
+        console.warn(`✅ [ONBOARDING] Restoring: PI=${!!parsedData.personalInfo} DP=${!!parsedData.dietPreferences} BA=${!!parsedData.bodyAnalysis} WP=${!!parsedData.workoutPreferences} tab=${parsedData.currentTab}`);
 
         setState((prev) => {
           const finalState: OnboardingState = {
@@ -799,6 +837,9 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
 
           return finalState;
         });
+        console.warn('✅ [ONBOARDING] setState called with restored data');
+      } else {
+        console.warn('⚠️ [ONBOARDING] No saved data found — showing fresh onboarding');
       }
     } catch (error) {
       const message =
@@ -1006,7 +1047,7 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
         saveToLocalMemo().catch((error) => {
           console.error("[useOnboardingState] Auto-save failed:", error);
         });
-      }, 1000); // Debounce auto-save
+      }, 200); // Debounce auto-save (reduced from 1000ms so field edits survive reload)
 
       return () => {
         clearTimeout(timer);

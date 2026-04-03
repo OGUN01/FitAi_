@@ -208,6 +208,28 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
               if (isSubmittingRef.current) return;
               isSubmittingRef.current = true;
               try {
+                console.warn('\n========== 🥗 TAB 2: DIET PREFERENCES ==========');
+                console.warn('diet_type                  :', formData.diet_type);
+                console.warn('allergies                  :', formData.allergies);
+                console.warn('restrictions               :', formData.restrictions);
+                console.warn('keto_ready                 :', formData.keto_ready);
+                console.warn('intermittent_fasting_ready :', formData.intermittent_fasting_ready);
+                console.warn('mediterranean_ready        :', formData.mediterranean_ready);
+                console.warn('high_protein_ready         :', formData.high_protein_ready);
+                console.warn('low_carb_ready             :', formData.low_carb_ready);
+                console.warn('breakfast_enabled          :', formData.breakfast_enabled);
+                console.warn('lunch_enabled              :', formData.lunch_enabled);
+                console.warn('dinner_enabled             :', formData.dinner_enabled);
+                console.warn('snacks_enabled             :', formData.snacks_enabled);
+                console.warn('cooking_skill_level        :', formData.cooking_skill_level);
+                console.warn('max_prep_time_minutes      :', formData.max_prep_time_minutes);
+                console.warn('budget_level               :', formData.budget_level);
+                console.warn('drinks_enough_water        :', formData.drinks_enough_water);
+                console.warn('eats_regular_meals         :', formData.eats_regular_meals);
+                console.warn('avoids_late_night_eating   :', formData.avoids_late_night_eating);
+                console.warn('drinks_alcohol             :', formData.drinks_alcohol);
+                console.warn('smokes_tobacco             :', formData.smokes_tobacco);
+                console.warn('================================================\n');
                 onUpdate(formData);
                 if (isEditingFromReview && onReturnToReview) {
                   onReturnToReview();

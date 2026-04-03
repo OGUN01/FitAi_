@@ -154,13 +154,18 @@ class AuthService {
         };
       }
 
-      await this.clearLocalSession();
+      // No storedSession and no active Supabase session.
+      // Do NOT call clearLocalSession here — there's nothing stale to remove
+      // and calling it would wipe guest user data (onboarding_data, etc.).
       return {
         success: false,
         error: "No valid session found",
       };
     } catch (error) {
-      await this.clearLocalSession();
+      // Only clear if there was a stored session that is now invalid
+      if (this.currentSession) {
+        await this.clearLocalSession();
+      }
       return {
         success: false,
         error:
@@ -533,7 +538,10 @@ class AuthService {
 
       return await this.revalidateSession();
     } catch (error) {
-      await this.clearLocalSession();
+      // Only clear if there was a session to clean up
+      if (this.currentSession) {
+        await this.clearLocalSession();
+      }
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Session restoration failed',
@@ -571,7 +579,11 @@ class AuthService {
         });
         // Don't call callback — user state hasn't changed, only the token refreshed
       } else if (event === 'SIGNED_OUT') {
-        await this.clearLocalSession();
+        // Only clear if we actually had a session — Supabase fires SIGNED_OUT on
+        // startup even for users who were never signed in, which would wipe guest data.
+        if (this.currentSession) {
+          await this.clearLocalSession();
+        }
         callback(null);
       }
     });

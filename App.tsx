@@ -836,6 +836,14 @@ export default function App() {
       console.warn(`${'='.repeat(60)}`);
       console.warn(`  👤 user=${user?.id || 'null'} | isGuestMode=${isGuestMode} | guestId=${guestId} | hasProfile=${!!profile}`);
 
+      // 🔍 DEBUG: Check if onboarding_data survives to this point
+      try {
+        const onboardingDataCheck = await AsyncStorage.getItem('onboarding_data');
+        console.warn(`  🔍 [APP DEBUG] onboarding_data at loadExistingData START: ${onboardingDataCheck ? 'EXISTS (' + onboardingDataCheck.length + ' chars)' : 'NULL/MISSING'}`);
+      } catch(e) {
+        console.warn('  🔍 [APP DEBUG] Could not check onboarding_data:', e);
+      }
+
       // Only show loading spinner for authenticated users who need profile checks.
       // Unauthenticated users resolve quickly — no need to re-show the spinner.
       if (user && loadingAllowed.current) {

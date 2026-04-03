@@ -80,6 +80,49 @@ export const useReviewValidation = ({
       bodyAnalysis.height_cm >= 100 &&
       bodyAnalysis.height_cm <= 250;
 
+    // 🔍 ONBOARDING DEBUG — RAW INPUTS entering the calculation engine
+    if (__DEV__) {
+      console.log(
+        '\n========== ⚙️  REVIEW CALC — RAW INPUTS TO ENGINE ==========',
+        '\nhasBodyData             :', hasBodyData,
+        '\nbypassDeficitLimit      :', opts?.bypassDeficitLimit,
+        '\n--- Personal Info (going in) ---',
+        '\nage                     :', personalInfo.age,
+        '\ngender                  :', personalInfo.gender,
+        '\ncountry                 :', personalInfo.country,
+        '\nstate                   :', personalInfo.state,
+        '\nwake_time               :', personalInfo.wake_time,
+        '\nsleep_time              :', personalInfo.sleep_time,
+        '\n--- Body Analysis (going in) ---',
+        '\nheight_cm               :', bodyAnalysis?.height_cm,
+        '\ncurrent_weight_kg       :', bodyAnalysis?.current_weight_kg,
+        '\ntarget_weight_kg        :', bodyAnalysis?.target_weight_kg,
+        '\ntarget_timeline_weeks   :', bodyAnalysis?.target_timeline_weeks,
+        '\nbody_fat_percentage     :', bodyAnalysis?.body_fat_percentage,
+        '\nstress_level            :', bodyAnalysis?.stress_level,
+        '\npregnancy_status        :', bodyAnalysis?.pregnancy_status,
+        '\nbreastfeeding_status    :', bodyAnalysis?.breastfeeding_status,
+        '\nmedical_conditions      :', bodyAnalysis?.medical_conditions,
+        '\nphysical_limitations    :', bodyAnalysis?.physical_limitations,
+        '\n--- Workout Preferences (going in) ---',
+        '\nactivity_level          :', workoutPreferences.activity_level,
+        '\nintensity               :', workoutPreferences.intensity,
+        '\nprimary_goals           :', workoutPreferences.primary_goals,
+        '\nworkout_frequency/week  :', workoutPreferences.workout_frequency_per_week,
+        '\ntime_preference (min)   :', workoutPreferences.time_preference,
+        '\nweekly_weight_loss_goal :', workoutPreferences.weekly_weight_loss_goal,
+        '\n--- Diet Preferences (going in) ---',
+        '\ndiet_type               :', dietPreferences.diet_type,
+        '\nketo_ready              :', dietPreferences.keto_ready,
+        '\nhigh_protein_ready      :', dietPreferences.high_protein_ready,
+        '\nmediterranean_ready     :', dietPreferences.mediterranean_ready,
+        '\ndrinks_enough_water     :', dietPreferences.drinks_enough_water,
+        '\ncooking_skill_level     :', dietPreferences.cooking_skill_level,
+        '\nbudget_level            :', dietPreferences.budget_level,
+        '\n=============================================================\n'
+      );
+    }
+
     setIsCalculating(true);
     setCalculationError(null);
 
@@ -307,6 +350,91 @@ export const useReviewValidation = ({
 
       setCalculatedData(finalCalculations);
       onUpdate(finalCalculations);
+
+      // 🔍 ONBOARDING DEBUG — Tab 5: Review Calculated Data
+      if (__DEV__) {
+        console.log(
+          '\n========== 📊 TAB 5: REVIEW — CALCULATED DATA ==========',
+          '\n--- Metabolic Core ---',
+          '\ncalculated_bmi              :', finalCalculations.calculated_bmi,
+          '\ncalculated_bmr              :', finalCalculations.calculated_bmr,
+          '\ncalculated_tdee             :', finalCalculations.calculated_tdee,
+          '\nmetabolic_age               :', finalCalculations.metabolic_age,
+          '\n--- Daily Nutrition ---',
+          '\ndaily_calories              :', finalCalculations.daily_calories,
+          '\ndaily_protein_g             :', finalCalculations.daily_protein_g,
+          '\ndaily_carbs_g               :', finalCalculations.daily_carbs_g,
+          '\ndaily_fat_g                 :', finalCalculations.daily_fat_g,
+          '\ndaily_water_ml              :', finalCalculations.daily_water_ml,
+          '\ndaily_fiber_g               :', finalCalculations.daily_fiber_g,
+          '\n--- Weight Management ---',
+          '\nhealthy_weight_min          :', finalCalculations.healthy_weight_min,
+          '\nhealthy_weight_max          :', finalCalculations.healthy_weight_max,
+          '\nweekly_weight_loss_rate     :', finalCalculations.weekly_weight_loss_rate,
+          '\nestimated_timeline_weeks    :', finalCalculations.estimated_timeline_weeks,
+          '\ntotal_calorie_deficit       :', finalCalculations.total_calorie_deficit,
+          '\nwas_rate_capped             :', finalCalculations.was_rate_capped,
+          '\n--- Body Composition ---',
+          '\nideal_body_fat_min          :', finalCalculations.ideal_body_fat_min,
+          '\nideal_body_fat_max          :', finalCalculations.ideal_body_fat_max,
+          '\nlean_body_mass              :', finalCalculations.lean_body_mass,
+          '\nfat_mass                    :', finalCalculations.fat_mass,
+          '\n--- Fitness Metrics ---',
+          '\nestimated_vo2_max           :', finalCalculations.estimated_vo2_max,
+          '\nmax_heart_rate              :', finalCalculations.max_heart_rate,
+          '\ntarget_hr_fat_burn_min      :', finalCalculations.target_hr_fat_burn_min,
+          '\ntarget_hr_fat_burn_max      :', finalCalculations.target_hr_fat_burn_max,
+          '\ntarget_hr_cardio_min        :', finalCalculations.target_hr_cardio_min,
+          '\ntarget_hr_cardio_max        :', finalCalculations.target_hr_cardio_max,
+          '\ntarget_hr_peak_min          :', finalCalculations.target_hr_peak_min,
+          '\ntarget_hr_peak_max          :', finalCalculations.target_hr_peak_max,
+          '\nrecommended_workout_frequency:', finalCalculations.recommended_workout_frequency,
+          '\nrecommended_cardio_minutes  :', finalCalculations.recommended_cardio_minutes,
+          '\nrecommended_strength_sessions:', finalCalculations.recommended_strength_sessions,
+          '\n--- Health Scores (0-100) ---',
+          '\noverall_health_score        :', finalCalculations.overall_health_score,
+          '\ndiet_readiness_score        :', finalCalculations.diet_readiness_score,
+          '\nfitness_readiness_score     :', finalCalculations.fitness_readiness_score,
+          '\ngoal_realistic_score        :', finalCalculations.goal_realistic_score,
+          '\n--- Sleep ---',
+          '\nrecommended_sleep_hours     :', finalCalculations.recommended_sleep_hours,
+          '\ncurrent_sleep_duration      :', finalCalculations.current_sleep_duration,
+          '\nsleep_efficiency_score      :', finalCalculations.sleep_efficiency_score,
+          '\n--- Completion Metrics ---',
+          '\ndata_completeness_percentage:', finalCalculations.data_completeness_percentage,
+          '\nreliability_score           :', finalCalculations.reliability_score,
+          '\npersonalization_level       :', finalCalculations.personalization_level,
+          '\n--- Validation ---',
+          '\nvalidation_status           :', finalCalculations.validation_status,
+          '\nvalidation_errors           :', finalCalculations.validation_errors,
+          '\nvalidation_warnings         :', finalCalculations.validation_warnings,
+          '\ndetected_climate            :', finalCalculations.detected_climate,
+          '\n--- Extended Calculated Fields ---',
+          '\ncalculated_bmi              :', finalCalculations.calculated_bmi,
+          '\nbmi_category                :', (finalCalculations as any).bmi_category,
+          '\nbmi_health_risk             :', (finalCalculations as any).bmi_health_risk,
+          '\nbmr_formula_used            :', (finalCalculations as any).bmr_formula_used,
+          '\nhealth_grade                :', (finalCalculations as any).health_grade,
+          '\nvo2_max_estimate            :', (finalCalculations as any).vo2_max_estimate,
+          '\nvo2_max_classification      :', (finalCalculations as any).vo2_max_classification,
+          '\nheart_rate_zones            :', JSON.stringify((finalCalculations as any).heart_rate_zones),
+          '\nrefeed_schedule             :', finalCalculations.refeed_schedule,
+          '\nmedical_adjustments         :', finalCalculations.medical_adjustments,
+          '\nusedFallbackDefaults        :', finalCalculations.usedFallbackDefaults,
+          '\n--- Validation Engine Raw Metrics ---',
+          '\nvEngine.bmr                 :', validationResultsData.calculatedMetrics.bmr,
+          '\nvEngine.tdee                :', validationResultsData.calculatedMetrics.tdee,
+          '\nvEngine.targetCalories      :', validationResultsData.calculatedMetrics.targetCalories,
+          '\nvEngine.protein             :', validationResultsData.calculatedMetrics.protein,
+          '\nvEngine.carbs               :', validationResultsData.calculatedMetrics.carbs,
+          '\nvEngine.fat                 :', validationResultsData.calculatedMetrics.fat,
+          '\nvEngine.weeklyRate          :', validationResultsData.calculatedMetrics.weeklyRate,
+          '\nvEngine.originalWeeklyRate  :', validationResultsData.calculatedMetrics.originalWeeklyRate,
+          '\nvEngine.wasRateCapped       :', validationResultsData.calculatedMetrics.wasRateCapped,
+          '\nvEngine.timeline            :', validationResultsData.calculatedMetrics.timeline,
+          '\n==========================================================\n'
+        );
+      }
 
       // Calculate smart alternatives only when body data was entered
       // Calculate smart alternatives when body data was entered and there is a weight difference

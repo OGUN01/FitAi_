@@ -220,6 +220,23 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
               if (isSubmittingRef.current) return;
               isSubmittingRef.current = true;
               try {
+                console.warn('\n========== 🔎 TAB 3: BODY ANALYSIS ==========');
+                console.warn('height_cm            :', formData.height_cm);
+                console.warn('current_weight_kg    :', formData.current_weight_kg);
+                console.warn('target_weight_kg     :', formData.target_weight_kg);
+                console.warn('target_timeline_weeks:', formData.target_timeline_weeks);
+                console.warn('body_fat_percentage  :', formData.body_fat_percentage);
+                console.warn('waist_cm             :', formData.waist_cm);
+                console.warn('hip_cm               :', formData.hip_cm);
+                console.warn('bmi                  :', formData.bmi);
+                console.warn('bmr                  :', formData.bmr);
+                console.warn('stress_level         :', formData.stress_level);
+                console.warn('medical_conditions   :', formData.medical_conditions);
+                console.warn('medications          :', formData.medications);
+                console.warn('physical_limitations :', formData.physical_limitations);
+                console.warn('pregnancy_status     :', formData.pregnancy_status);
+                console.warn('ai_body_type         :', formData.ai_body_type);
+                console.warn('==============================================\n');
                 onUpdate(formData);
                 if (isEditingFromReview && onReturnToReview) {
                   onReturnToReview();

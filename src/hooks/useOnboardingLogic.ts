@@ -216,7 +216,10 @@ export const useOnboardingLogic = ({
   }, [getTabAccessibility, hasUnsavedChanges, currentTab, setCurrentTab]);
 
   const handleNextTab = useCallback(async (currentTabData?: any) => {
+    console.warn(`\n🔄 handleNextTab called — tab=${currentTab} isNavigating=${isNavigating} isSaving=${isSaving}`);
+
     if (isNavigating || isSaving) {
+      console.warn('⛔ handleNextTab BLOCKED by isNavigating/isSaving guard');
       return;
     }
 
@@ -224,6 +227,7 @@ export const useOnboardingLogic = ({
 
     try {
       const validation = validateTab(currentTab, currentTabData);
+      console.warn(`📋 Validation tab=${currentTab}: is_valid=${validation.is_valid} errors=${JSON.stringify(validation.errors)}`);
 
       if (!validation.is_valid) {
         crossPlatformAlert(
@@ -249,6 +253,13 @@ export const useOnboardingLogic = ({
 
       if (currentTab < 5) {
         const nextTab = currentTab + 1;
+        // 💾 Immediately persist to AsyncStorage so data survives reload
+        try {
+          await saveToLocalRef.current();
+          console.warn(`✅ [Onboarding] Tab ${currentTab} saved to local storage — moving to tab ${nextTab}`);
+        } catch (saveErr) {
+          console.error('❌ [Onboarding] Failed to save tab data locally:', saveErr);
+        }
         setCurrentTab(nextTab);
       } else {
         // Complete onboarding when on last tab
@@ -496,6 +507,79 @@ export const useOnboardingLogic = ({
       experienceLevel: wp?.intensity,
     });
     useHealthDataStore.getState().setStepsGoal(personalizedStepGoal);
+
+    // 🔍 ONBOARDING DEBUG — FINAL COMPLETE DATA (handed to app)
+    if (__DEV__) {
+      const ar = advancedReviewRef.current;
+      console.log(
+        '\n\n🎯🎯🎯 ================================================== 🎯🎯🎯',
+        '\n🎯     ONBOARDING COMPLETE — FULL DATA SNAPSHOT          🎯',
+        '\n🎯🎯🎯 ================================================== 🎯🎯🎯\n',
+        '\n===== 📋 PERSONAL INFO =====',
+        '\nfirst_name          :', completeData.personalInfo.first_name,
+        '\nlast_name           :', completeData.personalInfo.last_name,
+        '\nage                 :', completeData.personalInfo.age,
+        '\ngender              :', completeData.personalInfo.gender,
+        '\ncountry             :', completeData.personalInfo.country,
+        '\nstate               :', completeData.personalInfo.state,
+        '\nwake_time           :', completeData.personalInfo.wake_time,
+        '\nsleep_time          :', completeData.personalInfo.sleep_time,
+        '\n\n===== 🔎 BODY ANALYSIS =====',
+        '\nheight_cm           :', completeData.bodyAnalysis.height_cm,
+        '\ncurrent_weight_kg   :', completeData.bodyAnalysis.current_weight_kg,
+        '\ntarget_weight_kg    :', completeData.bodyAnalysis.target_weight_kg,
+        '\ntarget_timeline_wks :', completeData.bodyAnalysis.target_timeline_weeks,
+        '\nbody_fat_%          :', completeData.bodyAnalysis.body_fat_percentage,
+        '\nwaist_cm            :', completeData.bodyAnalysis.waist_cm,
+        '\nhip_cm              :', completeData.bodyAnalysis.hip_cm,
+        '\nbmi                 :', completeData.bodyAnalysis.bmi,
+        '\nbmr                 :', completeData.bodyAnalysis.bmr,
+        '\nideal_weight_min    :', completeData.bodyAnalysis.ideal_weight_min,
+        '\nideal_weight_max    :', completeData.bodyAnalysis.ideal_weight_max,
+        '\nstress_level        :', completeData.bodyAnalysis.stress_level,
+        '\nai_body_type        :', completeData.bodyAnalysis.ai_body_type,
+        '\nai_body_fat         :', completeData.bodyAnalysis.ai_estimated_body_fat,
+        '\nmedical_conditions  :', completeData.bodyAnalysis.medical_conditions,
+        '\nmedications         :', completeData.bodyAnalysis.medications,
+        '\nphysical_limitations:', completeData.bodyAnalysis.physical_limitations,
+        '\npregnancy_status    :', completeData.bodyAnalysis.pregnancy_status,
+        '\n\n===== 🥗 DIET PREFERENCES =====',
+        '\ndietType            :', completeData.dietPreferences.dietType,
+        '\nallergies           :', completeData.dietPreferences.allergies,
+        '\ncalorieTarget       :', completeData.dietPreferences.calorieTarget,
+        '\n\n===== 🏋️ WORKOUT PREFERENCES =====',
+        '\nprimary_goals       :', completeData.workoutPreferences.primary_goals,
+        '\nactivity_level      :', completeData.workoutPreferences.activity_level,
+        '\nlocation            :', completeData.workoutPreferences.location,
+        '\nworkout_types       :', completeData.workoutPreferences.workoutTypes,
+        '\ntime_preference     :', completeData.workoutPreferences.timePreference,
+        '\nintensity           :', completeData.workoutPreferences.intensity,
+        '\nfrequency/week      :', completeData.workoutPreferences.workout_frequency_per_week,
+        '\nexperience_years    :', completeData.workoutPreferences.workout_experience_years,
+        '\ncan_do_pushups      :', completeData.workoutPreferences.can_do_pushups,
+        '\ncan_run_minutes     :', completeData.workoutPreferences.can_run_minutes,
+        '\nflexibility_level   :', completeData.workoutPreferences.flexibility_level,
+        '\nweekly_loss_goal    :', completeData.workoutPreferences.weekly_weight_loss_goal,
+        '\npreferred_times     :', completeData.workoutPreferences.preferred_workout_times,
+        '\nenjoys_cardio       :', completeData.workoutPreferences.enjoys_cardio,
+        '\nenjoys_strength     :', completeData.workoutPreferences.enjoys_strength_training,
+        '\n\n===== 📊 CALCULATED REVIEW (advancedReview store) =====',
+        '\ncalculated_bmr      :', ar?.calculated_bmr,
+        '\ncalculated_tdee     :', ar?.calculated_tdee,
+        '\ndaily_calories      :', ar?.daily_calories,
+        '\ndaily_protein_g     :', ar?.daily_protein_g,
+        '\ndaily_carbs_g       :', ar?.daily_carbs_g,
+        '\ndaily_fat_g         :', ar?.daily_fat_g,
+        '\ndaily_water_ml      :', ar?.daily_water_ml,
+        '\ndaily_fiber_g       :', ar?.daily_fiber_g,
+        '\nweekly_loss_rate    :', ar?.weekly_weight_loss_rate,
+        '\nestimated_weeks     :', ar?.estimated_timeline_weeks,
+        '\noverall_health_score:', ar?.overall_health_score,
+        '\nvalidation_status   :', ar?.validation_status,
+        '\ndetected_climate    :', ar?.detected_climate,
+        '\n\n🎯🎯🎯 ================================================== 🎯🎯🎯\n'
+      );
+    }
 
     onComplete(completeData);
   }, [onComplete]);

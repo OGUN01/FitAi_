@@ -210,6 +210,28 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
               if (isSubmittingRef.current) return;
               isSubmittingRef.current = true;
               try {
+                console.warn('\n========== 🏋️ TAB 4: WORKOUT PREFERENCES ==========');
+                console.warn('primary_goals              :', formData.primary_goals);
+                console.warn('activity_level             :', formData.activity_level);
+                console.warn('intensity                  :', formData.intensity);
+                console.warn('workout_experience_years   :', formData.workout_experience_years);
+                console.warn('workout_frequency_per_week :', formData.workout_frequency_per_week);
+                console.warn('can_do_pushups             :', formData.can_do_pushups);
+                console.warn('can_run_minutes            :', formData.can_run_minutes);
+                console.warn('flexibility_level          :', formData.flexibility_level);
+                console.warn('location                   :', formData.location);
+                console.warn('equipment                  :', formData.equipment);
+                console.warn('workout_types              :', formData.workout_types);
+                console.warn('time_preference            :', formData.time_preference);
+                console.warn('preferred_workout_times    :', formData.preferred_workout_times);
+                console.warn('enjoys_cardio              :', formData.enjoys_cardio);
+                console.warn('enjoys_strength_training   :', formData.enjoys_strength_training);
+                console.warn('enjoys_group_classes       :', formData.enjoys_group_classes);
+                console.warn('prefers_outdoor_activities :', formData.prefers_outdoor_activities);
+                console.warn('needs_motivation           :', formData.needs_motivation);
+                console.warn('prefers_variety            :', formData.prefers_variety);
+                console.warn('weekly_weight_loss_goal    :', formData.weekly_weight_loss_goal);
+                console.warn('=================================================\n');
                 onUpdate(formData);
                 setTimeout(() => {
                   onNext(formData);
