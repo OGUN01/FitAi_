@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useCallback } from "react";
 
 import { View, StyleSheet, ScrollView, Text, Pressable } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rbr, rh } from "../../../utils/responsive";
 import { ResponsiveTheme } from "../../../utils/constants";
@@ -58,6 +59,8 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
   isComplete,
   isLoading = false,
 }) => {
+  const insets = useSafeAreaInsets();
+
   const {
     calculatedData,
     validationResults,
@@ -132,7 +135,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: rp(80) + insets.bottom }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -309,7 +312,6 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.background,
   },
   scrollContent: {
-    paddingBottom: rp(120),
   },
   footer: {
     position: 'absolute',

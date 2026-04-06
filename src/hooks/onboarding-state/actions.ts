@@ -8,19 +8,24 @@ import {
   AdvancedReviewData,
 } from "../../types/onboarding";
 import { OnboardingState } from "./types";
-import { STORAGE_KEYS } from "./constants";
+import { getOnboardingDataKey, getOnboardingCompletedKey } from "./constants";
 import { createInitialState } from "./state";
 
 export const useActions = (
   stateRef: React.MutableRefObject<OnboardingState>,
   setState: React.Dispatch<React.SetStateAction<OnboardingState>>,
   validateTab: (tabNumber: number, currentData?: any) => any,
+  userId: string | undefined,
 ) => {
   const setCurrentTab = useCallback(
     (tabNumber: number) => {
-      setState((prev) => ({ ...prev, currentTab: tabNumber }));
+      setState((prev) => {
+        const finalState = { ...prev, currentTab: tabNumber };
+        stateRef.current = finalState;
+        return finalState;
+      });
     },
-    [setState],
+    [setState, stateRef],
   );
 
   const markTabCompleted = useCallback(
@@ -28,10 +33,12 @@ export const useActions = (
       setState((prev) => {
         const newCompletedTabs = new Set(prev.completedTabs);
         newCompletedTabs.add(tabNumber);
-        return { ...prev, completedTabs: newCompletedTabs };
+        const finalState = { ...prev, completedTabs: newCompletedTabs };
+        stateRef.current = finalState;
+        return finalState;
       });
     },
-    [setState],
+    [setState, stateRef],
   );
 
   const markTabIncomplete = useCallback(
@@ -204,8 +211,12 @@ export const useActions = (
 
   const resetOnboarding = useCallback(async () => {
     try {
-      await AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING_DATA);
-      await AsyncStorage.removeItem("onboarding_completed");
+      if (userId) {
+        await AsyncStorage.multiRemove([
+          getOnboardingDataKey(userId),
+          getOnboardingCompletedKey(userId),
+        ]);
+      }
     } catch (error) {
       console.error("❌ [ONBOARDING] Failed to clear AsyncStorage:", error);
     }
@@ -215,7 +226,7 @@ export const useActions = (
     stateRef.current = finalState;
 
     setState(finalState);
-  }, [setState, stateRef]);
+  }, [setState, stateRef, userId]);
 
   const resetTab = useCallback(
     (tabNumber: number) => {

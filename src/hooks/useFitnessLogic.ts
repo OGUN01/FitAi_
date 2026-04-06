@@ -443,7 +443,14 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
 
       if (response.success && response.data) {
         setWeeklyWorkoutPlan(response.data);
-        await saveWeeklyWorkoutPlan(response.data);
+        try {
+          await saveWeeklyWorkoutPlan(response.data);
+        } catch (saveError) {
+          console.error(
+            "Failed to persist weekly workout plan to DB — plan is available this session only:",
+            saveError,
+          );
+        }
         incrementUsage("ai_generation");
 
         if (!useFitnessStore.getState().mesocycleStartDate) {

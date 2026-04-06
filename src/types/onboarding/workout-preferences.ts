@@ -31,6 +31,9 @@ export interface WorkoutPreferencesData {
 
   // NEW: Weight goals (populated from body_analysis)
   weekly_weight_loss_goal?: number; // DECIMAL(3,2)
+  // Write-once: the user's original intended rate before any pace-card selection.
+  // Persisted so originalRateRef in useReviewValidation survives tab remounts.
+  original_weekly_rate?: number; // DECIMAL(3,2)
 
   // NEW: Enhanced preferences
   preferred_workout_times: string[]; // TEXT[] - 'morning', 'afternoon', 'evening'
@@ -73,6 +76,7 @@ export interface WorkoutPreferencesRow {
   can_run_minutes?: number | null;
   flexibility_level?: "poor" | "fair" | "good" | "excellent" | null;
   weekly_weight_loss_goal?: number | null;
+  original_weekly_rate?: number | null;
   preferred_workout_times?: string[] | null;
   enjoys_cardio?: boolean | null;
   enjoys_strength_training?: boolean | null;

@@ -73,7 +73,8 @@ export type ActivityLevel =
   | "light"
   | "moderate"
   | "active"
-  | "very_active";
+  | "very_active"
+  | "extreme"; // maps to 'very_active' at external boundaries (see typeTransformers.ts)
 
 export type OccupationType =
   | "desk_job"

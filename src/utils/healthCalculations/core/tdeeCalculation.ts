@@ -12,14 +12,10 @@
  * - src/utils/healthCalculations/calculatorFactory.ts
  */
 
-export type ActivityLevel =
-  | "sedentary"
-  | "light"
-  | "moderate"
-  | "active"
-  | "very_active"
-  | "extreme";
-export type ClimateType = "temperate" | "tropical" | "cold" | "arid";
+import { CALORIE_PER_KG } from "../../../services/validation/constants";
+import { ActivityLevel, ClimateType } from "../types";
+
+export type { ActivityLevel, ClimateType };
 
 /**
  * Activity Multipliers - WHO/FAO Validated
@@ -258,9 +254,7 @@ export function getCalorieTarget(
   goal: "fat_loss" | "muscle_gain" | "maintenance",
   rate: number = 0.5,
 ): number {
-  // 1 kg fat = ~7700 kcal
-  const caloriesPerKg = 7700;
-  const weeklyDeficit = rate * caloriesPerKg;
+  const weeklyDeficit = rate * CALORIE_PER_KG;
   const dailyAdjustment = weeklyDeficit / 7;
 
   switch (goal) {

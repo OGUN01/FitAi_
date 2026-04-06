@@ -91,6 +91,7 @@ interface AllDataResult {
   workoutPreferences: WorkoutPreferencesData | WorkoutPreferences | null;
   advancedReview: AdvancedReviewData | any | null;
   source: "old_system" | "new_system" | "merged" | "local" | "database";
+  failedSections?: string[];
 }
 
 interface SaveResult {
@@ -242,6 +243,21 @@ class DataBridge {
   // ============================================================================
 
   async loadAllData(userId?: string): Promise<AllDataResult> {
+    // Bug 2 fix: skip DB fetch entirely if the store is already hydrated (idempotency guard).
+    // initialize() already has this check; loadAllData must mirror it so sequential callers
+    // don't trigger a redundant Supabase round-trip and a second hydrateFromLegacy call.
+    const profileStoreState = useProfileStore.getState();
+    if (profileStoreState.isHydrated) {
+      return {
+        personalInfo: profileStoreState.personalInfo,
+        dietPreferences: profileStoreState.dietPreferences,
+        bodyAnalysis: profileStoreState.bodyAnalysis,
+        workoutPreferences: profileStoreState.workoutPreferences,
+        advancedReview: profileStoreState.advancedReview,
+        source: "local",
+      };
+    }
+
     // AUDIT fix: deduplicate concurrent calls — if a load is already in flight, skip.
     if (DataBridge.isLoading) {
       const profileStore = useProfileStore.getState();
@@ -337,6 +353,8 @@ class DataBridge {
 
   private async loadFromDatabase(userId: string): Promise<AllDataResult> {
     try {
+      // Bug 3 fix: distinguish fetch failures from empty rows by tracking which sections threw.
+      const failedSections: string[] = [];
       const [
         personalInfo,
         dietPreferences,
@@ -346,22 +364,27 @@ class DataBridge {
       ] = await Promise.all([
         PersonalInfoService.load(userId).catch((e) => {
           console.error("Failed to load personalInfo:", e);
+          failedSections.push("personalInfo");
           return null;
         }),
         DietPreferencesService.load(userId).catch((e) => {
           console.error("Failed to load dietPreferences:", e);
+          failedSections.push("dietPreferences");
           return null;
         }),
         BodyAnalysisService.load(userId).catch((e) => {
           console.error("Failed to load bodyAnalysis:", e);
+          failedSections.push("bodyAnalysis");
           return null;
         }),
         WorkoutPreferencesService.load(userId).catch((e) => {
           console.error("Failed to load workoutPreferences:", e);
+          failedSections.push("workoutPreferences");
           return null;
         }),
         AdvancedReviewService.load(userId).catch((e) => {
           console.error("Failed to load advancedReview:", e);
+          failedSections.push("advancedReview");
           return null;
         }),
       ]);
@@ -395,9 +418,10 @@ class DataBridge {
       if (canonicalBodyAnalysis) batchUpdate.bodyAnalysis = canonicalBodyAnalysis as BodyAnalysisData;
       if (workoutPreferences) batchUpdate.workoutPreferences = workoutPreferences as WorkoutPreferencesData;
       if (advancedReview) batchUpdate.advancedReview = advancedReview as AdvancedReviewData;
-      if (Object.keys(batchUpdate).length > 0) {
-        profileStore.hydrateFromLegacy(batchUpdate);
-      }
+      // Bug 1 fix: call hydrateFromLegacy unconditionally so isHydrated is always set to true,
+      // even for brand-new users where every section returns null (empty batchUpdate).
+      // Downstream hooks gate on isHydrated; skipping the call causes an infinite wait loop.
+      profileStore.hydrateFromLegacy(batchUpdate);
       profileStore.setSyncStatus("synced");
       if (resolvedCurrentWeight?.value != null) {
         weightTrackingService.setWeight(resolvedCurrentWeight.value);
@@ -414,6 +438,7 @@ class DataBridge {
         workoutPreferences,
         advancedReview,
         source: "database",
+        ...(failedSections.length > 0 && { failedSections }),
       };
     } catch (error) {
       console.error("[DataBridge] loadFromDatabase error:", error);

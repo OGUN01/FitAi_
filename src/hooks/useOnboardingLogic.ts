@@ -247,8 +247,6 @@ export const useOnboardingLogic = ({
         return;
       }
 
-      markTabCompleted(currentTab);
-
       if (editMode) {
         setIsSaving(true);
         try {
@@ -256,6 +254,7 @@ export const useOnboardingLogic = ({
         } finally {
           setIsSaving(false);
         }
+        markTabCompleted(currentTab);
         onEditComplete?.();
         return;
       }
@@ -266,6 +265,7 @@ export const useOnboardingLogic = ({
         try {
           await saveToLocalRef.current();
           console.warn(`✅ [Onboarding] Tab ${currentTab} saved to local storage — moving to tab ${nextTab}`);
+          markTabCompleted(currentTab);
         } catch (saveErr) {
           console.error('❌ [Onboarding] Failed to save tab data locally:', saveErr);
         }
@@ -301,7 +301,12 @@ export const useOnboardingLogic = ({
 
     if (currentTab > 1) {
       saveToLocalRef.current?.();
-      setCurrentTab(currentTab - 1);
+      const targetTab = currentTab - 1;
+      setCurrentTab(targetTab);
+      // Invalidate all tabs after the target so stale completion marks are cleared
+      for (let tab = targetTab + 1; tab <= 5; tab++) {
+        markTabIncomplete(tab);
+      }
     } else if (hasUnsavedChanges) {
       crossPlatformAlert(
         "Exit Onboarding",
@@ -325,7 +330,7 @@ export const useOnboardingLogic = ({
     } else {
       onExit?.();
     }
-  }, [editMode, onEditCancel, currentTab, setCurrentTab, hasUnsavedChanges, onExit]);
+  }, [editMode, onEditCancel, currentTab, setCurrentTab, markTabIncomplete, hasUnsavedChanges, onExit]);
 
   const handleBackPress = useCallback(() => {
     if (hasUnsavedChanges) {

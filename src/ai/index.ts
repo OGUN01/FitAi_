@@ -311,9 +311,12 @@ class UnifiedAIService {
         };
       }
 
+      const weeklyPlan = transformDietResponseToWeeklyPlan(response, 1);
+      const transformedMeals = weeklyPlan?.meals || [];
+
       const dailyPlan: DailyMealPlan = {
         date: getLocalDateString(),
-        meals: response.data.meals || [],
+        meals: transformedMeals,
         totalCalories: response.data.dailyTotals?.calories || 0,
         totalMacros: {
           protein: response.data.dailyTotals?.protein || 0,
@@ -445,7 +448,7 @@ class UnifiedAIService {
 
       // Transform each workout in the weekly plan
       const daySlotCounts = new Map<string, number>();
-      const workouts = weeklyPlanData.workouts.map((w: any) => {
+      const workouts = (weeklyPlanData.workouts || []).map((w: any) => {
         const currentSlot = daySlotCounts.get(w.dayOfWeek) ?? 0;
         daySlotCounts.set(w.dayOfWeek, currentSlot + 1);
         return transformWorkoutData(w.workout, w.dayOfWeek, currentSlot);
@@ -832,7 +835,7 @@ function transformWorkoutData(
       id: `${dayOfWeek}_ex_${idx}`,
       exerciseId: ex.exerciseId,
       sets: ex.sets || 3,
-      reps: typeof ex.reps === "number" ? ex.reps : 12,
+      reps: typeof ex.reps === "number" ? ex.reps : (ex.reps || "8-12"),
       duration: ex.duration,
       restTime: ex.restSeconds || ex.restTime || 60,
       notes: ex.notes,
@@ -845,7 +848,7 @@ function transformWorkoutData(
       id: `${dayOfWeek}_warmup_${idx}`,
       exerciseId: ex.exerciseId,
       sets: ex.sets || 1,
-      reps: typeof ex.reps === "number" ? ex.reps : 10,
+      reps: typeof ex.reps === "number" ? ex.reps : (ex.reps || "10"),
       duration: ex.duration,
       restTime: ex.restSeconds || ex.restTime || 30,
       notes: ex.notes,
@@ -858,7 +861,7 @@ function transformWorkoutData(
       id: `${dayOfWeek}_cooldown_${idx}`,
       exerciseId: ex.exerciseId,
       sets: ex.sets || 1,
-      reps: typeof ex.reps === "number" ? ex.reps : 10,
+      reps: typeof ex.reps === "number" ? ex.reps : (ex.reps || "10"),
       duration: ex.duration,
       restTime: ex.restSeconds || ex.restTime || 30,
       notes: ex.notes,

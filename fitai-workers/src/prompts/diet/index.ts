@@ -79,7 +79,11 @@ export function buildPlaceholdersFromUserData(
 			: '', // empty = no specific preference, use auto-detected only
 
 		// User profile
-		DIET_TYPE: prefs?.diet_type || 'non-veg',
+		DIET_TYPE: (() => {
+			const raw = (prefs?.diet_type || 'non-veg').toLowerCase().trim();
+			// Normalize 'balanced' → 'non-veg' so placeholder and prompt header agree
+			return raw === 'balanced' ? 'non-veg' : raw;
+		})(),
 		AGE: profile?.age || 30,
 		GENDER: profile?.gender || 'unknown',
 		OCCUPATION: profile?.occupation_type || 'general',
@@ -351,6 +355,7 @@ export function buildDietPrompt(
 		case 'nonveg':
 		case 'non-vegetarian':
 		case 'omnivore':
+		case 'balanced':
 		case 'all':
 		default:
 			basePrompt = buildNonVegPrompt(placeholders);

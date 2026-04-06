@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { OnboardingState } from "./types";
 import { invalidateMetricsCache } from "../useCalculatedMetrics";
+import { OnboardingProgressService } from "../../services/onboardingService";
 
 export const useCompletion = (
   stateRef: React.MutableRefObject<OnboardingState>,
@@ -29,15 +30,9 @@ export const useCompletion = (
       }
 
       if (isAuthenticated && userId) {
+        let dbSuccess = false;
         try {
-          const dbSuccess = await saveToDatabase();
-          if (dbSuccess) {
-            invalidateMetricsCache();
-          } else {
-            console.warn(
-              "⚠️ Database save failed, continuing with local save for guest mode",
-            );
-          }
+          dbSuccess = await saveToDatabase();
         } catch (error) {
           const message =
             error instanceof Error ? error.message : "Database save failed";
@@ -47,9 +42,28 @@ export const useCompletion = (
           );
           setState((prev) => ({
             ...prev,
-            warnings: { ...prev.warnings, completeOnboarding: message },
+            errors: { ...prev.errors, completeOnboarding: message },
           }));
+          return false;
         }
+
+        if (!dbSuccess) {
+          console.error(
+            "❌ Database save failed during onboarding completion — aborting to prevent incomplete profile",
+          );
+          setState((prev) => ({
+            ...prev,
+            errors: {
+              ...prev.errors,
+              completeOnboarding:
+                "Failed to save your profile. Please check your connection and try again.",
+            },
+          }));
+          return false;
+        }
+
+        invalidateMetricsCache();
+        await OnboardingProgressService.markComplete(userId);
       } else {
         invalidateMetricsCache();
       }
@@ -69,12 +83,17 @@ export const useCompletion = (
         }));
       }
 
-      setState((prev) => ({
-        ...prev,
-        completedTabs: new Set([1, 2, 3, 4, 5]),
-        overallCompletion: 100,
-        errors: { ...prev.errors, completeOnboarding: "" },
-      }));
+      setState((prev) => {
+        const finalState = {
+          ...prev,
+          completedTabs: new Set([1, 2, 3, 4, 5]),
+          overallCompletion: 100,
+          hasUnsavedChanges: false,
+          errors: { ...prev.errors, completeOnboarding: "" },
+        };
+        stateRef.current = finalState;
+        return finalState;
+      });
 
       try {
         await AsyncStorage.setItem("onboarding_completed", "true");

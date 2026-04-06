@@ -472,6 +472,7 @@ const AdvancedReviewOverrideSchema = z.object({
 	calculated_bmi: z.number().min(0).max(80).optional(),
 	bmi_category: z.string().optional(),
 	health_score: z.number().min(0).max(100).optional(),
+	overall_health_score: z.number().min(0).max(100).optional(),
 });
 
 // ============================================================================
@@ -515,6 +516,10 @@ export const DietGenerationRequestSchema = z.object({
 	// AI parameters
 	model: z.string().default('google/gemini-2.5-flash'), // Vercel AI Gateway model ID (format: provider/model)
 	temperature: z.number().min(0).max(2).default(0.7),
+
+	// Goal rate and deadline — used by the handler to calibrate calorie deficit and pacing
+	weeklyWeightLossGoal: z.number().positive().optional(),
+	targetTimelineWeeks: z.number().positive().optional(),
 
 	// Async mode (default true to prevent timeout)
 	async: z.boolean().default(true),

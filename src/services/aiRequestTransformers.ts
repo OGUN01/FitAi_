@@ -531,7 +531,9 @@ export function transformForWorkoutRequest(
     preferredDays: preferredDays,
     workoutTypes: workoutPreferences?.workout_types || [],
     prefersVariety: workoutPreferences?.prefers_variety || false,
-    activityLevel: workoutPreferences?.activity_level,
+    activityLevel: workoutPreferences?.activity_level
+      ? mapActivityLevelForHealthCalc(workoutPreferences.activity_level)
+      : undefined,
     preferredWorkoutTime: preferredWorkoutTime, // ✅ NEW
   };
   const resolvedCurrentWeight = resolveCurrentWeight({

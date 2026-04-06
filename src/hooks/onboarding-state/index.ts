@@ -31,7 +31,7 @@ export const useOnboardingState = (): OnboardingStateWithActions => {
     resetOnboarding,
     resetTab,
     isOnboardingComplete,
-  } = useActions(stateRef, setState, validateTab);
+  } = useActions(stateRef, setState, validateTab, user?.id);
 
   const { completeOnboarding } = useCompletion(
     stateRef,

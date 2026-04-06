@@ -151,7 +151,9 @@ export const useDietPreferences = ({
   useEffect(() => {
     if (validationResult !== undefined) {
       const timer = setTimeout(() => {
-        stableOnUpdate();
+        if (!isSyncingFromProps.current) {
+          stableOnUpdate();
+        }
       }, 500);
       return () => {
         clearTimeout(timer);

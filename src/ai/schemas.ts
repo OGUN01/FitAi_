@@ -80,6 +80,40 @@ export const WORKOUT_SCHEMA = {
       description: 'Primary muscle groups targeted',
       items: { type: 'string' },
     },
+    totalDuration: {
+      type: 'number',
+      description: 'Total workout duration in minutes including warmup and cooldown',
+    },
+    warmup: {
+      type: 'array',
+      description: 'Warmup exercises before the main workout',
+      items: {
+        type: 'object',
+        properties: {
+          exerciseId: { type: 'string' },
+          sets: { type: 'number' },
+          reps: { type: 'string' },
+          restTime: { type: 'number' },
+          notes: { type: 'string' },
+        },
+        required: ['exerciseId', 'sets', 'reps', 'restTime', 'notes'],
+      },
+    },
+    cooldown: {
+      type: 'array',
+      description: 'Cooldown exercises after the main workout',
+      items: {
+        type: 'object',
+        properties: {
+          exerciseId: { type: 'string' },
+          sets: { type: 'number' },
+          reps: { type: 'string' },
+          restTime: { type: 'number' },
+          notes: { type: 'string' },
+        },
+        required: ['exerciseId', 'sets', 'reps', 'restTime', 'notes'],
+      },
+    },
   },
   required: [
     'title',
@@ -102,6 +136,9 @@ export const WORKOUT_SCHEMA = {
     'exercises',
     'equipment',
     'targetMuscleGroups',
+    'totalDuration',
+    'warmup',
+    'cooldown',
   ],
 };
 

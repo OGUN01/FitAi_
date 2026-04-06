@@ -32,6 +32,7 @@ interface UseReviewValidationProps {
   bodyAnalysis: BodyAnalysisData | null;
   workoutPreferences: WorkoutPreferencesData | null;
   onUpdate: (data: Partial<AdvancedReviewData>) => void;
+  onUpdateWorkoutPreferences?: (data: Partial<WorkoutPreferencesData>) => void;
 }
 
 interface UseReviewValidationReturn {
@@ -51,6 +52,7 @@ export const useReviewValidation = ({
   bodyAnalysis,
   workoutPreferences,
   onUpdate,
+  onUpdateWorkoutPreferences,
 }: UseReviewValidationProps): UseReviewValidationReturn => {
   const [validationResults, setValidationResults] =
     useState<ValidationResults | null>(null);
@@ -479,10 +481,23 @@ export const useReviewValidation = ({
           weightSignatureRef.current !== weightSignature
         ) {
           originalRateRef.current = null; // user changed target/current weight — reset
+          // Also clear the persisted original so it gets re-derived from the new weights.
+          if (onUpdateWorkoutPreferences) {
+            onUpdateWorkoutPreferences({ original_weekly_rate: undefined });
+          }
         }
         weightSignatureRef.current = weightSignature;
         if (originalRateRef.current === null && userRequestedRate > 0) {
-          originalRateRef.current = userRequestedRate;
+          // Prefer a previously-persisted original rate (survives tab remounts)
+          // over the live derived rate which may already reflect a pace-card selection.
+          const persistedOriginal = workoutPreferences?.original_weekly_rate;
+          originalRateRef.current = (persistedOriginal && persistedOriginal > 0)
+            ? persistedOriginal
+            : userRequestedRate;
+          // Write-once: only persist when we derived it for the first time (no stored value yet).
+          if (!persistedOriginal && onUpdateWorkoutPreferences) {
+            onUpdateWorkoutPreferences({ original_weekly_rate: userRequestedRate });
+          }
         }
         // Use frozen rate for KEEP MY GOAL card; fall back to live rate if not yet set.
         const frozenRate = originalRateRef.current ?? userRequestedRate;

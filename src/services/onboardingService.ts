@@ -15,7 +15,6 @@ import {
   OnboardingProgressRow,
 } from "../types/onboarding";
 import { resolveCurrentWeightForUser } from "./currentWeight";
-import { normalizeCountryToISO } from "../utils/healthCalculations/autoDetection";
 
 // ============================================================================
 // PERSONAL INFO SERVICE
@@ -50,7 +49,7 @@ export class PersonalInfoService {
         name: fullName, // Computed full name with fallback
         age: data.age ?? 0, // NOT NULL - 0 reveals missing data instead of fabricating age
         gender: data.gender || "prefer_not_to_say", // NOT NULL - safe default
-        country: data.country ? normalizeCountryToISO(data.country) : data.country,
+        country: data.country || null,
         state: data.state,
         region: data.region || null,
         wake_time: data.wake_time,
@@ -102,28 +101,18 @@ export class PersonalInfoService {
         return null;
       }
 
-      // VALIDATION: CRITICAL FIELDS - no fallbacks allowed
-      if (!data.age || data.age === 0) {
-        throw new Error("Age is required for accurate health calculations");
-      }
-      if (!data.gender || data.gender === "") {
-        throw new Error(
-          "Gender is required for accurate BMR and health calculations",
-        );
-      }
-
       const personalInfo: PersonalInfoData = {
         first_name: data.first_name || "",
         last_name: data.last_name || "",
-        name: data.name || "", // ✅ FIXED: Load the name field from database
-        age: data.age, // NO FALLBACK - validation above ensures it exists
-        gender: data.gender, // NO FALLBACK - validation above ensures it exists
+        name: data.name || "",
+        age: data.age || 0, // 0 = not yet entered; form validation handles this
+        gender: data.gender || "prefer_not_to_say",
         country: data.country || "",
         state: data.state || "",
         region: data.region === null ? undefined : data.region,
         wake_time: data.wake_time || "07:00",
         sleep_time: data.sleep_time || "23:00",
-        occupation_type: data.occupation_type || "desk_job",
+        occupation_type: data.occupation_type || undefined,
       };
 
       return personalInfo;
@@ -172,6 +161,7 @@ export class DietPreferencesService {
         allergies: data.allergies || [], // NOT NULL - default to empty array
         restrictions: data.restrictions || [], // NOT NULL - default to empty array
         cuisine_preferences: data.cuisine_preferences ?? [],
+        cooking_methods: data.cooking_methods || [],
         snacks_count: data.snacks_count ?? 2,
 
         // Diet readiness toggles
@@ -263,6 +253,7 @@ export class DietPreferencesService {
         allergies: data.allergies || [],
         restrictions: data.restrictions || [],
         cuisine_preferences: data.cuisine_preferences || [],
+        cooking_methods: data.cooking_methods || [],
         snacks_count: data.snacks_count ?? 2,
 
         // Diet readiness
@@ -281,7 +272,7 @@ export class DietPreferencesService {
 
         // Cooking preferences
         cooking_skill_level: data.cooking_skill_level || "beginner",
-        max_prep_time_minutes: data.max_prep_time_minutes || 30,
+        max_prep_time_minutes: data.max_prep_time_minutes ?? 30,
         budget_level: data.budget_level || "medium",
 
         // Health habits
@@ -330,10 +321,10 @@ export class BodyAnalysisService {
         target_timeline_weeks: data.target_timeline_weeks,
 
         // Body composition
-        body_fat_percentage: data.body_fat_percentage || null,
-        waist_cm: data.waist_cm || null,
-        hip_cm: data.hip_cm || null,
-        chest_cm: data.chest_cm || null,
+        body_fat_percentage: data.body_fat_percentage ?? null,
+        waist_cm: data.waist_cm ?? null,
+        hip_cm: data.hip_cm ?? null,
+        chest_cm: data.chest_cm ?? null,
 
         // Photos
         front_photo_url: data.front_photo_url || null,
@@ -341,9 +332,9 @@ export class BodyAnalysisService {
         back_photo_url: data.back_photo_url || null,
 
         // AI analysis
-        ai_estimated_body_fat: data.ai_estimated_body_fat || null,
-        ai_body_type: data.ai_body_type || null,
-        ai_confidence_score: data.ai_confidence_score || null,
+        ai_estimated_body_fat: data.ai_estimated_body_fat ?? null,
+        ai_body_type: data.ai_body_type ?? null,
+        ai_confidence_score: data.ai_confidence_score ?? null,
 
         // Medical information
         medical_conditions: data.medical_conditions || [],
@@ -361,13 +352,13 @@ export class BodyAnalysisService {
         // Calculated values
         // BUG-49: bmi/bmr were always null because useReviewValidation stores them in
         // calculatedData not bodyAnalysis. Compute BMI from measurements when not provided.
-        bmi: data.bmi || (data.current_weight_kg && data.height_cm
+        bmi: data.bmi ?? (data.current_weight_kg && data.height_cm
           ? Math.round((data.current_weight_kg / Math.pow(data.height_cm / 100, 2)) * 10) / 10
           : null),
-        bmr: data.bmr || null,
-        ideal_weight_min: data.ideal_weight_min || null,
-        ideal_weight_max: data.ideal_weight_max || null,
-        waist_hip_ratio: data.waist_hip_ratio || null,
+        bmr: data.bmr ?? null,
+        ideal_weight_min: data.ideal_weight_min ?? null,
+        ideal_weight_max: data.ideal_weight_max ?? null,
+        waist_hip_ratio: data.waist_hip_ratio ?? null,
 
         updated_at: new Date().toISOString(),
       };
@@ -415,34 +406,27 @@ export class BodyAnalysisService {
         return null;
       }
 
-      // VALIDATION: CRITICAL FIELDS - no fallbacks for weight/height
-      if (!data.height_cm || data.height_cm === 0) {
-        throw new Error("Height is required for BMI and health calculations");
-      }
-      if (!data.current_weight_kg || data.current_weight_kg === 0) {
-        throw new Error(
-          "Current weight is required for BMI, BMR, and TDEE calculations",
-        );
-      }
+      // NOTE: height/weight may be 0 if not yet entered — don't throw.
+      // The form validation layer handles "not set" state.
 
       const bodyAnalysis: BodyAnalysisData = {
-        height_cm: data.height_cm, // NO FALLBACK - validation above ensures it exists
-        current_weight_kg: data.current_weight_kg, // NO FALLBACK - validation above ensures it exists
+        height_cm: data.height_cm || 0,
+        current_weight_kg: data.current_weight_kg || 0,
         target_weight_kg: data.target_weight_kg != null ? data.target_weight_kg : undefined,
         target_timeline_weeks: data.target_timeline_weeks != null ? data.target_timeline_weeks : undefined,
 
-        body_fat_percentage: data.body_fat_percentage || undefined,
-        waist_cm: data.waist_cm || undefined,
-        hip_cm: data.hip_cm || undefined,
-        chest_cm: data.chest_cm || undefined,
+        body_fat_percentage: data.body_fat_percentage ?? undefined,
+        waist_cm: data.waist_cm ?? undefined,
+        hip_cm: data.hip_cm ?? undefined,
+        chest_cm: data.chest_cm ?? undefined,
 
         front_photo_url: data.front_photo_url || undefined,
         side_photo_url: data.side_photo_url || undefined,
         back_photo_url: data.back_photo_url || undefined,
 
-        ai_estimated_body_fat: data.ai_estimated_body_fat || undefined,
-        ai_body_type: data.ai_body_type || undefined,
-        ai_confidence_score: data.ai_confidence_score || undefined,
+        ai_estimated_body_fat: data.ai_estimated_body_fat ?? undefined,
+        ai_body_type: data.ai_body_type ?? undefined,
+        ai_confidence_score: data.ai_confidence_score ?? undefined,
 
         medical_conditions: data.medical_conditions || [],
         medications: data.medications || [],
@@ -454,11 +438,11 @@ export class BodyAnalysisService {
 
         stress_level: data.stress_level || undefined,
 
-        bmi: data.bmi || undefined,
-        bmr: data.bmr || undefined,
-        ideal_weight_min: data.ideal_weight_min || undefined,
-        ideal_weight_max: data.ideal_weight_max || undefined,
-        waist_hip_ratio: data.waist_hip_ratio || undefined,
+        bmi: data.bmi ?? undefined,
+        bmr: data.bmr ?? undefined,
+        ideal_weight_min: data.ideal_weight_min ?? undefined,
+        ideal_weight_max: data.ideal_weight_max ?? undefined,
+        waist_hip_ratio: data.waist_hip_ratio ?? undefined,
       };
 
       return bodyAnalysis;
@@ -493,7 +477,8 @@ export class WorkoutPreferencesService {
         can_do_pushups: data.can_do_pushups,
         can_run_minutes: data.can_run_minutes,
         flexibility_level: data.flexibility_level,
-        weekly_weight_loss_goal: data.weekly_weight_loss_goal || null,
+        weekly_weight_loss_goal: data.weekly_weight_loss_goal ?? null,
+        original_weekly_rate: data.original_weekly_rate ?? null,
         preferred_workout_times: data.preferred_workout_times,
         enjoys_cardio: data.enjoys_cardio,
         enjoys_strength_training: data.enjoys_strength_training,
@@ -562,7 +547,8 @@ export class WorkoutPreferencesService {
         can_do_pushups: data.can_do_pushups || 0,
         can_run_minutes: data.can_run_minutes || 0,
         flexibility_level: data.flexibility_level || "fair",
-        weekly_weight_loss_goal: data.weekly_weight_loss_goal || undefined,
+        weekly_weight_loss_goal: data.weekly_weight_loss_goal ?? undefined,
+        original_weekly_rate: data.original_weekly_rate ?? undefined,
         preferred_workout_times: data.preferred_workout_times || [],
         enjoys_cardio: data.enjoys_cardio ?? true,
         enjoys_strength_training: data.enjoys_strength_training ?? true,
@@ -631,6 +617,7 @@ export class AdvancedReviewService {
         daily_carbs_g: m.carbs,
         daily_fat_g: m.fat,
         daily_water_ml: extended.daily_water_ml,
+        daily_fiber_g: extended.daily_fiber_g,
 
         // Body composition — from master-engine
         healthy_weight_min: extended.healthy_weight_min,
@@ -798,7 +785,61 @@ export class AdvancedReviewService {
         return null;
       }
 
-      return data as AdvancedReviewData;
+      const reviewData: AdvancedReviewData = {
+        calculated_bmi: data.calculated_bmi ?? undefined,
+        calculated_bmr: data.calculated_bmr ?? undefined,
+        calculated_tdee: data.calculated_tdee ?? undefined,
+        metabolic_age: data.metabolic_age ?? undefined,
+        daily_calories: data.daily_calories ?? undefined,
+        daily_protein_g: data.daily_protein_g ?? undefined,
+        daily_carbs_g: data.daily_carbs_g ?? undefined,
+        daily_fat_g: data.daily_fat_g ?? undefined,
+        daily_water_ml: data.daily_water_ml ?? undefined,
+        daily_fiber_g: data.daily_fiber_g ?? undefined,
+        healthy_weight_min: data.healthy_weight_min ?? undefined,
+        healthy_weight_max: data.healthy_weight_max ?? undefined,
+        weekly_weight_loss_rate: data.weekly_weight_loss_rate ?? undefined,
+        estimated_timeline_weeks: data.estimated_timeline_weeks ?? undefined,
+        total_calorie_deficit: data.total_calorie_deficit ?? undefined,
+        ideal_body_fat_min: data.ideal_body_fat_min ?? undefined,
+        ideal_body_fat_max: data.ideal_body_fat_max ?? undefined,
+        lean_body_mass: data.lean_body_mass ?? undefined,
+        fat_mass: data.fat_mass ?? undefined,
+        estimated_vo2_max: data.estimated_vo2_max ?? undefined,
+        max_heart_rate: data.max_heart_rate ?? undefined,
+        target_hr_fat_burn_min: data.target_hr_fat_burn_min ?? undefined,
+        target_hr_fat_burn_max: data.target_hr_fat_burn_max ?? undefined,
+        target_hr_cardio_min: data.target_hr_cardio_min ?? undefined,
+        target_hr_cardio_max: data.target_hr_cardio_max ?? undefined,
+        target_hr_peak_min: data.target_hr_peak_min ?? undefined,
+        target_hr_peak_max: data.target_hr_peak_max ?? undefined,
+        recommended_workout_frequency: data.recommended_workout_frequency ?? undefined,
+        recommended_cardio_minutes: data.recommended_cardio_minutes ?? undefined,
+        recommended_strength_sessions: data.recommended_strength_sessions ?? undefined,
+        overall_health_score: data.overall_health_score ?? undefined,
+        diet_readiness_score: data.diet_readiness_score ?? undefined,
+        fitness_readiness_score: data.fitness_readiness_score ?? undefined,
+        goal_realistic_score: data.goal_realistic_score ?? undefined,
+        recommended_sleep_hours: data.recommended_sleep_hours ?? undefined,
+        current_sleep_duration: data.current_sleep_duration ?? undefined,
+        sleep_efficiency_score: data.sleep_efficiency_score ?? undefined,
+        data_completeness_percentage: data.data_completeness_percentage ?? undefined,
+        reliability_score: data.reliability_score ?? undefined,
+        personalization_level: data.personalization_level ?? undefined,
+        validation_status: data.validation_status ?? undefined,
+        validation_errors: data.validation_errors ?? undefined,
+        validation_warnings: data.validation_warnings ?? undefined,
+        refeed_schedule: data.refeed_schedule ?? undefined,
+        medical_adjustments: data.medical_adjustments ?? undefined,
+        bmi_category: data.bmi_category ?? undefined,
+        bmi_health_risk: data.bmi_health_risk ?? undefined,
+        detected_climate: data.detected_climate ?? undefined,
+        detected_ethnicity: data.detected_ethnicity ?? undefined,
+        bmr_formula_used: data.bmr_formula_used ?? undefined,
+        health_grade: data.health_grade ?? undefined,
+      };
+
+      return reviewData;
     } catch (error) {
       console.error("❌ AdvancedReviewService: Unexpected error:", error);
       return null;
@@ -945,6 +986,7 @@ export class OnboardingProgressService {
 
 export class OnboardingUtils {
   static calculateSleepDuration(wakeTime: string, sleepTime: string): number {
+    if (!wakeTime || !sleepTime) return 8; // safe default (normal sleep)
     const [wakeHour, wakeMin] = wakeTime.split(":").map(Number);
     const [sleepHour, sleepMin] = sleepTime.split(":").map(Number);
 

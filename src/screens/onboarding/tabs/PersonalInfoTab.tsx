@@ -175,23 +175,16 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
           </AnimatedPressable>
 
           <AnimatedPressable
-            style={styles.nextButtonCompact}
+            style={[
+              styles.nextButtonCompact,
+              validationResult && !validationResult.is_valid && styles.nextButtonDisabled,
+            ]}
+            disabled={!!(validationResult && !validationResult.is_valid)}
             onPress={() => {
               const finalData =
                 showCustomCountry && customCountry
                   ? { ...formData, country: customCountry }
                   : formData;
-              // 📋 TAB 1 NEXT PRESSED — always visible
-              console.warn('\n========== 📋 TAB 1: PERSONAL INFO ==========');
-              console.warn('first_name :', finalData.first_name);
-              console.warn('last_name  :', finalData.last_name);
-              console.warn('age        :', finalData.age);
-              console.warn('gender     :', finalData.gender);
-              console.warn('country    :', finalData.country);
-              console.warn('state      :', finalData.state);
-              console.warn('wake_time  :', finalData.wake_time);
-              console.warn('sleep_time :', finalData.sleep_time);
-              console.warn('==============================================\n');
               onUpdate(finalData);
               if (isEditingFromReview && onReturnToReview) {
                 onReturnToReview();
@@ -326,6 +319,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     boxShadow: '0px 4px 8px rgba(255, 107, 53, 0.3)',
     elevation: 4,
+  },
+  nextButtonDisabled: {
+    opacity: 0.5,
   },
   nextButtonText: {
     fontSize: ResponsiveTheme.fontSize.md,

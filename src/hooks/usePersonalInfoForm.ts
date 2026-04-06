@@ -95,11 +95,16 @@ export const usePersonalInfoForm = ({
   useEffect(() => {
     if (validationResult !== undefined) {
       const timer = setTimeout(() => {
-        const finalData =
-          showCustomCountry && customCountry
-            ? { ...formData, country: customCountry }
-            : formData;
-        onUpdateMemo(finalData);
+        if (!isSyncingFromProps.current) {
+          if (showCustomCountry && !customCountry.trim()) {
+            return;
+          }
+          const finalData =
+            showCustomCountry && customCountry
+              ? { ...formData, country: customCountry }
+              : formData;
+          onUpdateMemo(finalData);
+        }
       }, 500);
       return () => {
         clearTimeout(timer);

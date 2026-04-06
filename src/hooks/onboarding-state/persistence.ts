@@ -9,7 +9,7 @@ import {
   OnboardingProgressData,
 } from "../../types/onboarding";
 import { OnboardingState } from "./types";
-import { STORAGE_KEYS } from "./constants";
+import { getOnboardingDataKey } from "./constants";
 import {
   PersonalInfoService,
   DietPreferencesService,
@@ -268,6 +268,7 @@ export const usePersistence = (
           tabValidationStatus: progress?.tab_validation_status || {},
           overallCompletion: progress?.total_completion_percentage || 0,
           isLoading: false,
+          hasUnsavedChanges: false,
           errors: { ...prev.errors, loadDatabase: "" },
         };
 
@@ -297,6 +298,11 @@ export const usePersistence = (
   }, [isAuthenticated, userId, setState, stateRef]);
 
   const saveToLocal = useCallback(async (): Promise<void> => {
+    if (!userId) {
+      console.warn(`⚠️ [SYNC DEBUG] saveToLocal SKIPPED — userId not available`);
+      return;
+    }
+
     const currentState = stateRef.current;
 
     try {
@@ -314,7 +320,7 @@ export const usePersistence = (
       console.warn(`💾 [SYNC DEBUG] saveToLocal — tab=${dataToSave.currentTab}, completed=[${dataToSave.completedTabs}], has: PI=${!!dataToSave.personalInfo} DP=${!!dataToSave.dietPreferences} BA=${!!dataToSave.bodyAnalysis} WP=${!!dataToSave.workoutPreferences} AR=${!!dataToSave.advancedReview}`);
 
       await AsyncStorage.setItem(
-        STORAGE_KEYS.ONBOARDING_DATA,
+        getOnboardingDataKey(userId),
         JSON.stringify(dataToSave),
       );
 
@@ -336,12 +342,17 @@ export const usePersistence = (
         errors: { ...prev.errors, saveLocal: message },
       }));
     }
-  }, [stateRef, setState]);
+  }, [stateRef, setState, userId]);
 
   const loadFromLocal = useCallback(async (): Promise<void> => {
+    if (!userId) {
+      console.warn(`⚠️ [SYNC DEBUG] loadFromLocal SKIPPED — userId not available`);
+      return;
+    }
+
     try {
       const savedData = await AsyncStorage.getItem(
-        STORAGE_KEYS.ONBOARDING_DATA,
+        getOnboardingDataKey(userId),
       );
 
       if (savedData) {
@@ -381,7 +392,7 @@ export const usePersistence = (
         errors: { ...prev.errors, loadLocal: message },
       }));
     }
-  }, [setState, stateRef]);
+  }, [setState, stateRef, userId]);
 
   return {
     saveToDatabase,

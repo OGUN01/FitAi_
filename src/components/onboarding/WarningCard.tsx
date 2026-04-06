@@ -245,15 +245,18 @@ export const WarningCard: React.FC<WarningCardProps> = ({
           {/* WEIGHT LOSS LAYOUT */}
           {goalMode === "loss" && (
             <>
-              {/* 1. KEEP MY GOAL (always first — may be locked/blocked) */}
-              {dietOptions.slice(0, 1).map((alternative) => (
-                <AlternativeOption
-                  key={alternative.id}
-                  alternative={alternative}
-                  isSelected={selectedAlternativeId === alternative.id}
-                  onSelect={onSelectAlternative ?? (() => {})}
-                />
-              ))}
+              {/* 1. KEEP MY GOAL (identified by isUserOriginal flag, not position) */}
+              {(() => {
+                const keepMyGoalCard = dietOptions.find((alt) => alt.isUserOriginal === true);
+                return keepMyGoalCard ? (
+                  <AlternativeOption
+                    key={keepMyGoalCard.id}
+                    alternative={keepMyGoalCard}
+                    isSelected={selectedAlternativeId === keepMyGoalCard.id}
+                    onSelect={onSelectAlternative ?? (() => {})}
+                  />
+                ) : null;
+              })()}
 
               {/* 2. Unlock banner + promoted boost card */}
               {goalBoostOption && (
@@ -282,7 +285,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
 
               {/* 3. Remaining diet options (AGGRESSIVE, CHALLENGING, AT YOUR BMR, COMFORTABLE) */}
               <View style={styles.optionsList}>
-                {dietOptions.slice(1).map((alternative) => (
+                {dietOptions.filter((alt) => alt.isUserOriginal !== true).map((alternative) => (
                   <AlternativeOption
                     key={alternative.id}
                     alternative={alternative}

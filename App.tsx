@@ -1144,13 +1144,6 @@ export default function App() {
 
       setProfile(userProfile);
 
-      // ⚠️ CRITICAL: Wait for Zustand persist middleware to finish async save
-      // Without this delay, MainNavigation renders before persistence completes,
-      // causing ProfileScreen to read from empty userStore
-
-      await new Promise((resolve) => setTimeout(resolve, 150));
-
-
       // Store backup data in AsyncStorage with guest ID (for legacy compatibility)
       const currentGuestId =
         guestId ||
@@ -1180,15 +1173,15 @@ export default function App() {
 
       invalidateMetricsCache();
 
+      // Populate profileStore.advancedReview (and all other profile sections) so
+      // useCalculatedMetrics has real data the moment MainNavigation renders.
+      // Must be awaited BEFORE setIsOnboardingComplete so the store is fully
+      // hydrated before MainNavigation renders — no arbitrary setTimeout needed.
+      await dataBridge.loadAllData(user?.id);
+
       // Set complete flag LAST after all async operations finish
       console.warn(`✅ [APP DEBUG] Onboarding complete — transitioning to MainNavigation`);
       setIsOnboardingComplete(true);
-
-      // Populate profileStore.advancedReview (and all other profile sections) so
-      // useCalculatedMetrics has real data the moment MainNavigation renders.
-      // Without this call, advancedReview stays null and daily_calories/macros/water
-      // are all null for authenticated users until DataBridge's next scheduled load.
-      await dataBridge.loadAllData(user?.id);
     } catch (error) {
       console.error("❌ App: Failed to store onboarding data:", error);
       // Still allow onboarding to complete even if storage fails

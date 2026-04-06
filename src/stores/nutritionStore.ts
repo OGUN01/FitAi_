@@ -199,6 +199,7 @@ interface NutritionState {
   // Computed selectors - SINGLE SOURCE OF TRUTH
   getConsumedNutrition: () => ConsumedNutrition;
   getTodaysConsumedNutrition: () => ConsumedNutrition;
+  getConsumedNutritionForDate: (date: string) => ConsumedNutrition;
 
   // Meal session actions
   startMealSession: (meal: DayMeal) => Promise<string>;
@@ -398,6 +399,11 @@ export const useNutritionStore = create<NutritionState>()(
                   return planWithDbId;
                 }
               } else if (!error) {
+                // No rows in DB — only overwrite if there is no local plan already
+                const existingPlan = get().weeklyMealPlan;
+                if (existingPlan) {
+                  return existingPlan;
+                }
                 set({ weeklyMealPlan: null });
                 return null;
               }
@@ -581,6 +587,14 @@ export const useNutritionStore = create<NutritionState>()(
         lastTodaysDate2 = todayDate;
 
         return result;
+      },
+
+      getConsumedNutritionForDate: (date: string) => {
+        const state = get();
+        const mealsForDate = getConsumedMealsFromState(state).filter(
+          (meal) => getMealLocalDate(meal) === date,
+        );
+        return sumMealNutrition(mealsForDate);
       },
 
       // Meal session actions
@@ -1121,7 +1135,12 @@ export const useNutritionStore = create<NutritionState>()(
         hydrationOwnerUserId: state.hydrationOwnerUserId,
       }),
       onRehydrateStorage: () => (state) => {
-        state?.removeLegacyScanShadows?.();
+        // Defer so the set() inside removeLegacyScanShadows doesn't fire during
+        // the render cycle that triggered rehydration (React: "Cannot update a
+        // component while rendering a different component").
+        if (state?.removeLegacyScanShadows) {
+          setTimeout(() => state.removeLegacyScanShadows(), 0);
+        }
       },
     },
   ),

@@ -56,6 +56,7 @@ export const useAdvancedReviewForm = ({
     bodyAnalysis,
     workoutPreferences,
     onUpdate,
+    onUpdateWorkoutPreferences,
   });
 
   // Calculate all metrics when component mounts or data changes.
@@ -78,7 +79,7 @@ export const useAdvancedReviewForm = ({
   // Reset acknowledgment when warnings change
   useEffect(() => {
     setWarningsAcknowledged(false);
-  }, [validationResults?.warnings?.map(w => w.code).join(',')]);
+  }, [validationResults?.warnings?.map(w => w.code).sort().join(',')]);
 
   // Auto-select best option on first Tab 5 load:
   // - Weight loss + KEEP MY GOAL blocked → select bestBoostOptionId (or AT YOUR BMR fallback)
@@ -99,6 +100,12 @@ export const useAdvancedReviewForm = ({
       userOriginalCard &&
       Math.abs(storedGoal - userOriginalCard.weeklyRate) > 0.015;
     if (userAlreadyChoseExplicitly) {
+      hasAutoSelectedRef.current = true;
+      return;
+    }
+
+    // Maintenance mode: storedGoal of exactly 0 means user explicitly chose MAINTAIN
+    if (storedGoal === 0) {
       hasAutoSelectedRef.current = true;
       return;
     }
@@ -134,11 +141,11 @@ export const useAdvancedReviewForm = ({
         (bodyAnalysis?.current_weight_kg || 0) -
           (bodyAnalysis?.target_weight_kg || 0),
       );
-      const weeklyRate = alternative.weeklyRate || 0.5;
+      const weeklyRate = alternative.weeklyRate ?? 0.5;
       const newTimelineWeeks =
         weeklyRate > 0
           ? Math.ceil(weightToLose / weeklyRate)
-          : bodyAnalysis?.target_timeline_weeks || 16;
+          : 0;
 
       // BUG-32: Always sync weekly rate to workout preferences (even for "KEEP MY GOAL")
       if (onUpdateWorkoutPreferences) {
@@ -155,7 +162,13 @@ export const useAdvancedReviewForm = ({
           target_timeline_weeks: newTimelineWeeks,
         });
       } else if (alternative.isUserOriginal) {
-        // KEEP MY GOAL: deps haven't changed so useEffect won't auto-fire.
+        // KEEP MY GOAL: restore target_timeline_weeks to match the original rate,
+        // then re-run calculations (deps haven't changed so useEffect won't auto-fire).
+        if (onUpdateBodyAnalysis) {
+          onUpdateBodyAnalysis({
+            target_timeline_weeks: newTimelineWeeks,
+          });
+        }
         performCalculations({ bypassDeficitLimit: true });
       }
 
