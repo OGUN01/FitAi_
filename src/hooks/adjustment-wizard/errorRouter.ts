@@ -1,5 +1,6 @@
 import { Alternative, CurrentData } from "./types";
 import { FALLBACK_DAILY_CALORIES } from "../../constants/diet";
+import { CALORIE_PER_KG } from "../../services/validation/constants";
 import { logger } from "../../utils/logger";
 import {
   calculateWeightRateAlternatives,
@@ -17,9 +18,10 @@ export const calculateGainRateAlternatives = (
     tdee,
     currentWeight,
     targetWeight,
-    currentTimeline,
     currentFrequency,
   } = data;
+  // Bug 2 fix: guard against missing target_timeline_weeks (0 / null)
+  const currentTimeline = (data.currentTimeline > 0 ? data.currentTimeline : null) ?? 12;
   const weightDiff = Math.abs(targetWeight - currentWeight);
   const alternatives: Alternative[] = [];
 
@@ -35,7 +37,7 @@ export const calculateGainRateAlternatives = (
     newTimeline: leanWeeks,
     newWorkoutFrequency: Math.min(currentFrequency + 1, 6),
     newStrengthSessions: 5,
-    dailyCalories: Math.round(tdee + (leanGainRate * 7700) / 7),
+    dailyCalories: Math.round(tdee + (leanGainRate * CALORIE_PER_KG) / 7),
     weeklyRate: leanGainRate,
     newProteinTarget: Math.round(currentWeight * 2.4),
     approach: "Slow surplus for maximum muscle, minimal fat",
@@ -56,7 +58,7 @@ export const calculateGainRateAlternatives = (
     newTimeline: Math.ceil(weightDiff / moderateGainRate),
     newWorkoutFrequency: Math.min(currentFrequency, 5),
     newStrengthSessions: 4,
-    dailyCalories: Math.round(tdee + (moderateGainRate * 7700) / 7),
+    dailyCalories: Math.round(tdee + (moderateGainRate * CALORIE_PER_KG) / 7),
     weeklyRate: moderateGainRate,
     newProteinTarget: Math.round(currentWeight * 2.2),
     newIntensity: "advanced",
@@ -103,7 +105,7 @@ export const calculateGainRateAlternatives = (
     newTimeline: currentTimeline,
     newTargetWeight: Math.round(newTarget * 10) / 10,
     newWorkoutFrequency: currentFrequency,
-    dailyCalories: Math.round(tdee + (leanGainRate * 7700) / 7),
+    dailyCalories: Math.round(tdee + (leanGainRate * CALORIE_PER_KG) / 7),
     weeklyRate: leanGainRate,
     newProteinTarget: Math.round(currentWeight * 2.2),
     approach: `Gain ${achievableGain.toFixed(1)}kg quality mass in your timeframe`,
@@ -177,9 +179,13 @@ export const calculateAlternativesForError = (
     goals.includes("body-recomp") ||
     (goals.includes("weight-loss") && goals.includes("muscle-gain"));
 
-  const safeOptimalRate = currentWeight * 0.0075;
-  const safeMaxRate = currentWeight * 0.01;
-
+  // Bug 1 fix: prefer SSOT weekly_weight_loss_goal when available; fall back to body-weight %
+  const derivedOptimalRate = currentWeight * 0.0075;
+  const derivedMaxRate = currentWeight * 0.01;
+  const safeOptimalRate = data.weeklyWeightLossGoal ?? derivedOptimalRate;
+  const safeMaxRate = data.weeklyWeightLossGoal
+    ? Math.min(data.weeklyWeightLossGoal * 1.33, derivedMaxRate)
+    : derivedMaxRate;
 
   switch (errorCode) {
     case "EXTREMELY_UNREALISTIC":

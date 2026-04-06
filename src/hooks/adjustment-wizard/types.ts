@@ -44,6 +44,7 @@ export interface UseAdjustmentWizardProps {
     currentProtein?: number;
     currentCardioMinutes?: number;
     currentStrengthSessions?: number;
+    weeklyWeightLossGoal?: number;
   };
   primaryGoals?: string[];
   onSelectAlternative: (alternative: Alternative) => void;
@@ -62,4 +63,6 @@ export interface CurrentData {
   currentProtein?: number;
   currentCardioMinutes?: number;
   currentStrengthSessions?: number;
+  /** SSOT: weekly_weight_loss_goal from onboarding. When present, used instead of derived currentWeight*0.0075/0.01. */
+  weeklyWeightLossGoal?: number;
 }

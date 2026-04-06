@@ -90,7 +90,7 @@ export const useWorkoutPreferences = ({
     flexibility_level: data?.flexibility_level || "fair",
 
     // Weight goals (auto-populated from body analysis)
-    weekly_weight_loss_goal: data?.weekly_weight_loss_goal || undefined,
+    weekly_weight_loss_goal: data?.weekly_weight_loss_goal ?? undefined,
 
     // Preferences
     preferred_workout_times: data?.preferred_workout_times || [],
@@ -153,7 +153,7 @@ export const useWorkoutPreferences = ({
         can_do_pushups: data.can_do_pushups || 0,
         can_run_minutes: data.can_run_minutes || 0,
         flexibility_level: data.flexibility_level || "fair",
-        weekly_weight_loss_goal: data.weekly_weight_loss_goal || undefined,
+        weekly_weight_loss_goal: data.weekly_weight_loss_goal ?? undefined,
         preferred_workout_times: data.preferred_workout_times || [],
         enjoys_cardio: data.enjoys_cardio ?? true,
         enjoys_strength_training: data.enjoys_strength_training ?? true,
@@ -195,11 +195,16 @@ export const useWorkoutPreferences = ({
       if (current_weight_kg && target_weight_kg && target_timeline_weeks) {
         const weightDifference = Math.abs(current_weight_kg - target_weight_kg);
         const weeklyRate = weightDifference / target_timeline_weeks;
+        const weekly_weight_loss_goal = Math.round(weeklyRate * 100) / 100;
 
         setFormData((prev: WorkoutPreferencesData) => ({
           ...prev,
-          weekly_weight_loss_goal: Math.round(weeklyRate * 100) / 100,
+          weekly_weight_loss_goal,
         }));
+
+        if (!isSyncingFromProps.current) {
+          onUpdate({ weekly_weight_loss_goal });
+        }
       }
 
       if (
@@ -211,13 +216,13 @@ export const useWorkoutPreferences = ({
 
         switch (bodyAnalysisData.ai_body_type) {
           case "ectomorph":
-            suggestedGoals = ["muscle_gain", "strength"];
+            suggestedGoals = ["muscle-gain", "strength"];
             break;
           case "endomorph":
-            suggestedGoals = ["weight_loss", "endurance"];
+            suggestedGoals = ["weight-loss", "endurance"];
             break;
           case "mesomorph":
-            suggestedGoals = ["strength", "muscle_gain"];
+            suggestedGoals = ["strength", "muscle-gain"];
             break;
         }
 
@@ -226,6 +231,10 @@ export const useWorkoutPreferences = ({
             ...prev,
             primary_goals: suggestedGoals,
           }));
+
+          if (!isSyncingFromProps.current) {
+            onUpdate({ primary_goals: suggestedGoals });
+          }
         }
       }
     }
@@ -349,7 +358,7 @@ export const useWorkoutPreferences = ({
 
     if (
       primary_goals.includes("flexibility") ||
-      primary_goals.includes("general-fitness")
+      primary_goals.includes("general_fitness")
     ) {
       recommendedTypes.push("yoga");
       recommendedTypes.push("flexibility");
@@ -404,6 +413,10 @@ export const useWorkoutPreferences = ({
         ...prev,
         workout_types: recommendedTypes,
       }));
+
+      if (!isSyncingFromProps.current) {
+        onUpdate({ workout_types: recommendedTypes });
+      }
     }
   }, [calculateRecommendedWorkoutTypes]);
 

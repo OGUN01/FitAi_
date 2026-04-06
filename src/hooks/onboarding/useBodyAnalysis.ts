@@ -178,13 +178,18 @@ export const useBodyAnalysis = ({
         formData.height_cm,
       );
 
-      setFormData((prev: BodyAnalysisData) => ({
-        ...prev,
+      const computed = {
         bmi: Math.round(bmi * 100) / 100,
         bmr: bmr != null ? Math.round(bmr) : undefined,
         ideal_weight_min: Math.round(idealWeightRange.min * 100) / 100,
         ideal_weight_max: Math.round(idealWeightRange.max * 100) / 100,
-      }));
+      };
+
+      setFormData((prev: BodyAnalysisData) => ({ ...prev, ...computed }));
+
+      if (!isSyncingFromProps.current) {
+        onUpdate(computed);
+      }
     }
   }, [
     formData.height_cm,
@@ -202,10 +207,13 @@ export const useBodyAnalysis = ({
       formData.hip_cm > 0
     ) {
       const ratio = formData.waist_cm / formData.hip_cm;
-      setFormData((prev: BodyAnalysisData) => ({
-        ...prev,
-        waist_hip_ratio: Math.round(ratio * 100) / 100,
-      }));
+      const waist_hip_ratio = Math.round(ratio * 100) / 100;
+
+      setFormData((prev: BodyAnalysisData) => ({ ...prev, waist_hip_ratio }));
+
+      if (!isSyncingFromProps.current) {
+        onUpdate({ waist_hip_ratio });
+      }
     }
   }, [formData.waist_cm, formData.hip_cm]);
 
@@ -264,7 +272,12 @@ export const useBodyAnalysis = ({
   };
 
   const handleNumberInput = (field: keyof BodyAnalysisData, text: string) => {
-    const value = parseFloat(text) || 0;
+    if (text === '') {
+      updateField(field, undefined as BodyAnalysisData[typeof field]);
+      return;
+    }
+    const parsed = parseFloat(text);
+    const value = isNaN(parsed) ? undefined : parsed;
     updateField(field, value as BodyAnalysisData[typeof field]);
   };
 
@@ -330,13 +343,19 @@ export const useBodyAnalysis = ({
         confidenceScore: Math.floor(Math.random() * 20 + 75),
       };
 
-      setFormData((prev: BodyAnalysisData) => ({
-        ...prev,
+      const aiResults = {
         ai_estimated_body_fat:
           Math.round(mockAnalysis.estimatedBodyFat * 100) / 100,
         ai_body_type: mockAnalysis.bodyType,
         ai_confidence_score: mockAnalysis.confidenceScore,
+      };
+
+      setFormData((prev: BodyAnalysisData) => ({
+        ...prev,
+        ...aiResults,
       }));
+
+      onUpdate(aiResults);
 
       crossPlatformAlert(
         "Analysis Complete!",

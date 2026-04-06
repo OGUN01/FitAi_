@@ -25,6 +25,7 @@ export class HealthScoring {
       light: -5,
       moderate: 5,
       active: 10,
+      very_active: 15,
       extreme: 15,
     };
     score +=
@@ -70,6 +71,7 @@ export class HealthScoring {
       light: 0,
       moderate: 10,
       active: 15,
+      very_active: 20,
       extreme: 20,
     };
     score +=
@@ -115,7 +117,9 @@ export class HealthScoring {
               bodyAnalysis.current_weight_kg - bodyAnalysis.target_weight_kg,
             ) / bodyAnalysis.target_timeline_weeks;
 
-      if (weeklyRate > 1.5) score -= 30;
+      if (weeklyRate === 0) {
+        // maintenance goal — no penalty
+      } else if (weeklyRate > 1.5) score -= 30;
       else if (weeklyRate > 1) score -= 15;
       else if (weeklyRate >= 0.5) score += 10;
       else if (weeklyRate < 0.25) score -= 10;
@@ -144,6 +148,7 @@ export class HealthScoring {
     wakeTime: string,
     sleepTime: string,
   ): number {
+    if (!wakeTime || !sleepTime) return 8; // safe default (normal sleep)
     const [wakeHour, wakeMin] = wakeTime.split(":").map(Number);
     const [sleepHour, sleepMin] = sleepTime.split(":").map(Number);
 

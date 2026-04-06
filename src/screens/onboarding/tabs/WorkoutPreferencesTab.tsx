@@ -235,9 +235,9 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
                 onUpdate(formData);
                 setTimeout(() => {
                   onNext(formData);
+                  isSubmittingRef.current = false;
                 }, 100);
               } finally {
-                isSubmittingRef.current = false;
               }
             }}
             scaleValue={0.96}

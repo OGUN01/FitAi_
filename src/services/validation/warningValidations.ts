@@ -514,6 +514,7 @@ export function warnLowDietReadiness(
   weeklyRate: number,
   currentWeight: number,
 ): ValidationResult {
+  if (weeklyRate === 0) return { status: "OK" };
   const isAggressive = weeklyRate > currentWeight * 0.0075;
   const belowThreshold = isAggressive ? dietReadinessScore < 50 : dietReadinessScore < 30;
 

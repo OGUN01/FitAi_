@@ -53,6 +53,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
   onUpdate,
   onUpdateBodyAnalysis,
   onUpdateWorkoutPreferences,
+  onSaveToDatabase,
   onNavigateToTab,
   isComplete,
   isLoading = false,
@@ -223,14 +224,14 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
           style={[
             styles.completeButtonCompact,
             {
-              backgroundColor: (!isComplete || isCalculating || !!calculationError || ((validationResults?.warnings?.length ?? 0) > 0 && !warningsAcknowledged))
+              backgroundColor: (!isComplete || isCalculating || !!calculationError || ((validationResults?.warnings?.length ?? 0) > 0 && !warningsAcknowledged) || ((validationResults?.errors?.length ?? 0) > 0))
                 ? ResponsiveTheme.colors.textMuted
                 : ResponsiveTheme.colors.primary,
-              opacity: (!isComplete || isCalculating || !!calculationError || ((validationResults?.warnings?.length ?? 0) > 0 && !warningsAcknowledged)) ? 0.5 : 1,
+              opacity: (!isComplete || isCalculating || !!calculationError || ((validationResults?.warnings?.length ?? 0) > 0 && !warningsAcknowledged) || ((validationResults?.errors?.length ?? 0) > 0)) ? 0.5 : 1,
             }
           ]}
           onPress={onComplete}
-          disabled={!isComplete || isCalculating || !!calculationError || ((validationResults?.warnings?.length ?? 0) > 0 && !warningsAcknowledged)}
+          disabled={!isComplete || isCalculating || !!calculationError || ((validationResults?.warnings?.length ?? 0) > 0 && !warningsAcknowledged) || ((validationResults?.errors?.length ?? 0) > 0)}
           accessibilityHint="Complete all required sections to enable"
         >
           <Text style={styles.completeButtonText}>
@@ -246,6 +247,8 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
           <AdjustmentWizard
             visible={showErrorWizard}
             onClose={() => setShowErrorWizard(false)}
+            onSaveToDatabase={onSaveToDatabase}
+            weeklyWeightLossGoal={workoutPreferences?.weekly_weight_loss_goal ?? bodyAnalysis?.weekly_weight_loss_goal}
             error={validationResults.errors[0]}
             currentData={{
               bmr: calculatedData?.calculated_bmr || 0,

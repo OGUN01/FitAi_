@@ -1,4 +1,5 @@
 import { Alternative, CurrentData } from "./types";
+import { CALORIE_PER_KG } from "../../services/validation/constants";
 
 export const calculateWeightRateAlternatives = (
   data: CurrentData,
@@ -13,14 +14,15 @@ export const calculateWeightRateAlternatives = (
     tdee,
     currentWeight,
     targetWeight,
-    currentTimeline,
     currentFrequency,
   } = data;
+  // Bug 2 fix: guard against missing target_timeline_weeks (0 / null)
+  const currentTimeline = (data.currentTimeline > 0 ? data.currentTimeline : null) ?? 12;
   const weightDiff = Math.abs(targetWeight - currentWeight);
   const alternatives: Alternative[] = [];
 
   const optimalWeeks = Math.ceil(weightDiff / safeOptimalRate);
-  const optimalDeficit = (safeOptimalRate * 7700) / 7;
+  const optimalDeficit = (safeOptimalRate * CALORIE_PER_KG) / 7;
   const optimalCalories = isWeightLoss
     ? Math.max(Math.round(tdee - optimalDeficit), bmr)
     : Math.round(tdee + optimalDeficit);
@@ -55,7 +57,7 @@ export const calculateWeightRateAlternatives = (
   });
 
   const aggressiveWeeks = Math.ceil(weightDiff / safeMaxRate);
-  const aggressiveDeficit = (safeMaxRate * 7700) / 7;
+  const aggressiveDeficit = (safeMaxRate * CALORIE_PER_KG) / 7;
   const caloriesPerSession = 300;
   const additionalSessionsNeeded = Math.ceil(
     (aggressiveDeficit * 0.4) / (caloriesPerSession / 7),
@@ -102,7 +104,7 @@ export const calculateWeightRateAlternatives = (
 
   const balancedRate = currentWeight * 0.0085;
   const balancedWeeks = Math.ceil(weightDiff / balancedRate);
-  const balancedDeficit = (balancedRate * 7700) / 7;
+  const balancedDeficit = (balancedRate * CALORIE_PER_KG) / 7;
 
   const balancedCalories = isWeightLoss
     ? Math.max(Math.round(tdee - balancedDeficit), bmr)
@@ -136,8 +138,8 @@ export const calculateWeightRateAlternatives = (
     : currentWeight + achievableWeightChange;
 
   const targetCalories = isWeightLoss
-    ? Math.max(Math.round(tdee - (safeOptimalRate * 7700) / 7), bmr)
-    : Math.round(tdee + (safeOptimalRate * 7700) / 7);
+    ? Math.max(Math.round(tdee - (safeOptimalRate * CALORIE_PER_KG) / 7), bmr)
+    : Math.round(tdee + (safeOptimalRate * CALORIE_PER_KG) / 7);
 
   alternatives.push({
     name: "Adjust Goal",

@@ -191,11 +191,13 @@ export interface DietGenerationRequest {
     daily_fiber_g?: number;
     calculated_bmi?: number;
     bmi_category?: string;
-    health_score?: number;
+    overall_health_score?: number;
   };
   calorieTarget?: number;
   mealsPerDay?: number;
   daysCount?: number;
+  weeklyWeightLossGoal?: number;
+  targetTimelineWeeks?: number;
   macros?: {
     protein: number;
     carbs: number;

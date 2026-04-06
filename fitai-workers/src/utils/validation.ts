@@ -128,7 +128,7 @@ export const WorkoutTypeSchema = z.enum([
 /**
  * Gender
  */
-export const GenderSchema = z.enum(['male', 'female', 'other']);
+export const GenderSchema = z.enum(['male', 'female', 'other', 'prefer_not_to_say']);
 
 // ============================================================================
 // USER PROFILE SCHEMA (from onboarding)
@@ -140,8 +140,8 @@ export const GenderSchema = z.enum(['male', 'female', 'other']);
 export const UserProfileSchema = z.object({
 	// Personal info
 	age: z.number().int().min(13).max(120),
-	weight: z.number().min(30).max(300), // kg
-	height: z.number().min(100).max(250), // cm
+	weight: z.number().min(30).max(300).nullable().optional(), // kg — nullable for incomplete onboarding
+	height: z.number().min(100).max(250).nullable().optional(), // cm — nullable for incomplete onboarding
 	gender: GenderSchema,
 
 	// Fitness profile
@@ -403,6 +403,10 @@ const DietProfileOverrideSchema = z.object({
 	occupation_type: z.string().optional(),
 	wake_time: z.string().optional(),
 	sleep_time: z.string().optional(),
+	// activity_level accepts both onboarding values ('sedentary','lightly_active','moderately_active',
+	// 'very_active','extra_active','extreme') and health-calc mapped values ('light','moderate',
+	// 'active','very_active'). Both sets can arrive here, so we keep z.string() rather than a
+	// strict enum — invalid values are caught downstream in the TDEE calculation.
 	activity_level: z.string().optional(),
 	fitness_goal: z.string().optional(),
 });

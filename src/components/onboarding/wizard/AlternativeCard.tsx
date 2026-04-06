@@ -11,7 +11,7 @@ import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rw, rp } from "../../../utils/responsive";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { Alternative } from "../../../hooks/useAdjustmentWizard";
+import { Alternative } from "../../../hooks/adjustment-wizard";
 import { MetricPill } from "./MetricPill";
 
 interface AlternativeCardProps {

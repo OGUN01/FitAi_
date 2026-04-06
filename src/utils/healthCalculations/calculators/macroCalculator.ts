@@ -83,12 +83,16 @@ export class DietAdaptiveMacroCalculator implements MacroCalculator {
       throw new Error('Protein calories exceed total calories - invalid calculation');
     }
 
-    // Keto diet: 70% fat, 25% protein, 5% carbs
+    // Keto diet: protein as passed, carbs ~5% of calories (capped at 25g), fat = remainder
     if (dietType === 'keto') {
+      const carbCal = calories * 0.05;
+      const carbGrams = Math.min(Math.round(carbCal / 4), 25); // Cap at 25g for keto
+      const fatCal = calories - proteinCal - carbGrams * 4;
+
       return {
         protein: Math.round(protein),
-        fat: Math.round((calories * 0.70) / 9),  // 9 kcal per gram
-        carbs: Math.round((calories * 0.05) / 4), // 4 kcal per gram
+        fat: Math.round(Math.max(0, fatCal) / 9),  // 9 kcal per gram
+        carbs: carbGrams,
       };
     }
 
@@ -155,10 +159,12 @@ export class DietAdaptiveMacroCalculator implements MacroCalculator {
     const carbCal = macros.carbs * 4;
     const totalCal = proteinCal + fatCal + carbCal;
 
+    const proteinPct = Math.round((proteinCal / totalCal) * 100);
+    const fatPct = Math.round((fatCal / totalCal) * 100);
     return {
-      protein: Math.round((proteinCal / totalCal) * 100),
-      fat: Math.round((fatCal / totalCal) * 100),
-      carbs: Math.round((carbCal / totalCal) * 100),
+      protein: proteinPct,
+      fat: fatPct,
+      carbs: 100 - proteinPct - fatPct,
       totalCalories: Math.round(totalCal),
     };
   }

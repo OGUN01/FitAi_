@@ -57,6 +57,7 @@ import {
   AdvancedReviewService,
 } from "./src/services/onboardingService";
 import { invalidateMetricsCache } from "./src/hooks/useCalculatedMetrics";
+import { dataBridge } from "./src/services/DataBridge";
 import { useAppConfig } from "./src/hooks/useAppConfig";
 import { runAfterInteractions } from "./src/utils/performance";
 // validateProductionEnvironment removed - AI moved to Cloudflare Workers
@@ -1182,6 +1183,12 @@ export default function App() {
       // Set complete flag LAST after all async operations finish
       console.warn(`✅ [APP DEBUG] Onboarding complete — transitioning to MainNavigation`);
       setIsOnboardingComplete(true);
+
+      // Populate profileStore.advancedReview (and all other profile sections) so
+      // useCalculatedMetrics has real data the moment MainNavigation renders.
+      // Without this call, advancedReview stays null and daily_calories/macros/water
+      // are all null for authenticated users until DataBridge's next scheduled load.
+      await dataBridge.loadAllData(user?.id);
     } catch (error) {
       console.error("❌ App: Failed to store onboarding data:", error);
       // Still allow onboarding to complete even if storage fails

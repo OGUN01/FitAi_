@@ -112,7 +112,7 @@ export class ValidationEngine {
       personalInfo.sleep_time,
     );
 
-    const baseTDEE = MetabolicCalculations.calculateBaseTDEE(
+    const baseTDEE = MetabolicCalculations.calculateTDEE(
       bmr,
       workoutPreferences.activity_level ?? "sedentary",
     );
@@ -265,6 +265,7 @@ export class ValidationEngine {
         bodyAnalysis.current_weight_kg,
         bodyAnalysis.target_weight_kg,
         bodyAnalysis.target_timeline_weeks,
+        workoutPreferences.weekly_weight_loss_goal,
       );
       if (timelineCheck.status === "BLOCKED") errors.push(timelineCheck);
 
@@ -325,7 +326,11 @@ export class ValidationEngine {
           bodyAnalysis.target_timeline_weeks,
           tdee,
         );
-        if (timelineWarn.status === "WARNING") warnings.push(timelineWarn);
+        if (timelineWarn.status === "BLOCKED") {
+          errors.push(timelineWarn);
+        } else if (timelineWarn.status === "WARNING") {
+          warnings.push(timelineWarn);
+        }
       }
 
       const sleepWarn = warnLowSleep(sleepHours);
@@ -383,6 +388,7 @@ export class ValidationEngine {
         bmi,
         requiredWeeklyRate,
         bodyAnalysis.current_weight_kg,
+        bodyAnalysis?.ethnicity ?? personalInfo?.ethnicity ?? undefined,
       );
       if (obesityWarn.status === "WARNING") warnings.push(obesityWarn);
 
@@ -493,6 +499,29 @@ export class ValidationEngine {
         ? Math.round(targetCalories * (adjustedTDEE / tdee))
         : targetCalories;
 
+    // BUG-FIX: adjustedMacros were calculated against the original targetCalories above.
+    // If a medical multiplier shifted targetCalories (e.g. hypothyroid 0.9×), the macro
+    // grams must be scaled proportionally so that protein*4 + carbs*4 + fat*9 ≈
+    // medicallyAdjustedTargetCalories. Without this, displayed daily calories and
+    // displayed macros do not add up for medical-condition users.
+    const finalMacros =
+      targetCalories > 0 && medicallyAdjustedTargetCalories !== targetCalories
+        ? {
+            protein: Math.round(adjustedMacros.protein * (medicallyAdjustedTargetCalories / targetCalories)),
+            carbs: Math.round(adjustedMacros.carbs * (medicallyAdjustedTargetCalories / targetCalories)),
+            fat: Math.round(adjustedMacros.fat * (medicallyAdjustedTargetCalories / targetCalories)),
+          }
+        : adjustedMacros;
+
+    // Re-run BMR floor check on the medically-adjusted value. The pre-adjustment
+    // check at line 255 can pass while the post-adjustment value (e.g. hypothyroid
+    // 0.9× multiplier) falls below BMR. Errors from this second check are appended
+    // only when weight-loss is active (same guard as the original check).
+    if (isWeightLoss) {
+      const adjustedBmrCheck = validateBMRSafety(medicallyAdjustedTargetCalories, bmr);
+      if (adjustedBmrCheck.status === "BLOCKED") errors.push(adjustedBmrCheck);
+    }
+
     const deficitPercent = isWeightLoss ? (adjustedTDEE - medicallyAdjustedTargetCalories) / adjustedTDEE : 0;
     const refeedSchedule = this.calculateRefeedSchedule(
       bodyAnalysis.target_timeline_weeks,
@@ -534,9 +563,9 @@ export class ValidationEngine {
         weeklyRate: Math.round(weeklyRate * 100) / 100,
         originalWeeklyRate: Math.round(requiredWeeklyRate * 100) / 100,
         wasRateCapped,
-        protein: adjustedMacros.protein,
-        carbs: adjustedMacros.carbs,
-        fat: adjustedMacros.fat,
+        protein: finalMacros.protein,
+        carbs: finalMacros.carbs,
+        fat: finalMacros.fat,
         timeline: computedTimeline,
       },
       adjustments: {
@@ -553,6 +582,7 @@ export class ValidationEngine {
     wakeTime: string,
     sleepTime: string,
   ): number {
+    if (!wakeTime || !sleepTime) return 8; // safe default (normal sleep)
     const [wakeH, wakeM] = wakeTime.split(":").map(Number);
     const [sleepH, sleepM] = sleepTime.split(":").map(Number);
     const wakeMinutes = wakeH * 60 + wakeM;

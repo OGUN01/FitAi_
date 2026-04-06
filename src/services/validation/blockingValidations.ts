@@ -1,4 +1,5 @@
 import { ValidationResult } from "./types";
+import { CALORIE_PER_KG, MIN_CALORIES_FEMALE, MIN_CALORIES_MALE } from "./constants";
 
 export function validateMinimumBodyFat(
   bodyFat: number | undefined,
@@ -71,7 +72,7 @@ export function validateAbsoluteMinimum(
   targetCalories: number,
   gender: string,
 ): ValidationResult {
-  const absoluteMin = gender === "female" ? 1200 : 1500;
+  const absoluteMin = gender === "female" ? MIN_CALORIES_FEMALE : MIN_CALORIES_MALE;
   if (targetCalories < absoluteMin) {
     return {
       status: "BLOCKED",
@@ -87,9 +88,13 @@ export function validateTimeline(
   currentWeight: number,
   targetWeight: number,
   timelineWeeks: number,
+  weeklyWeightLossGoal?: number,
 ): ValidationResult {
   const weightDifference = Math.abs(targetWeight - currentWeight);
-  const requiredWeeklyRate = weightDifference / timelineWeeks;
+  const requiredWeeklyRate =
+    (weeklyWeightLossGoal ?? 0) > 0
+      ? weeklyWeightLossGoal!
+      : weightDifference / timelineWeeks;
   const extremeLimit = currentWeight * 0.015;
 
   if (requiredWeeklyRate > extremeLimit) {
@@ -232,7 +237,7 @@ export function validateInsufficientExercise(
 ): ValidationResult {
   const isAggressive = weeklyRate > currentWeight * 0.0075;
   // Use actual post-cap calories if provided; otherwise compute from uncapped rate
-  const targetCalories = actualTargetCalories ?? tdee - (weeklyRate * 7700) / 7;
+  const targetCalories = actualTargetCalories ?? tdee - (weeklyRate * CALORIE_PER_KG) / 7;
 
   if (frequency < 2 && isAggressive && targetCalories < bmr) {
     return {

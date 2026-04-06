@@ -243,10 +243,10 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
                 } else {
                   setTimeout(() => {
                     onNext(formData);
+                    isSubmittingRef.current = false;
                   }, 100);
                 }
               } finally {
-                isSubmittingRef.current = false;
               }
             }}
             scaleValue={0.96}

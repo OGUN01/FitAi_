@@ -24,6 +24,7 @@ import {
   type ClimateType,
 } from "../../utils/healthCalculations";
 import { calculateCompletionMetrics } from "../../utils/onboardingMetrics";
+import { mapActivityLevelForHealthCalc } from "../../utils/typeTransformers";
 
 interface UseReviewValidationProps {
   personalInfo: PersonalInfoData | null;
@@ -249,9 +250,10 @@ export const useReviewValidation = ({
         );
         detectedClimate = climateResult.climate;
 
-        // Map activity level to the expected type
+        // Map activity level to the expected type — must go through mapActivityLevelForHealthCalc
+        // so onboarding-only values like 'extreme' are normalised before use in health calc.
         const activityLevel: ActivityLevel =
-          (workoutPreferences.activity_level as ActivityLevel) ?? "sedentary";
+          (mapActivityLevelForHealthCalc(workoutPreferences.activity_level as string) as ActivityLevel) ?? "sedentary";
 
         // Calculate climate-adjusted water intake
         const waterWeightKg = bodyAnalysis && hasBodyData ? bodyAnalysis.current_weight_kg : null;

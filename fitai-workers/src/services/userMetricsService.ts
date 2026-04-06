@@ -28,7 +28,6 @@ export interface UserHealthMetrics {
 
   // BMI classification
   bmi_category: string;
-  bmi_health_risk?: string;
 
   // Daily nutritional needs (EXACT values - NEVER recalculate)
   daily_calories: number;
@@ -39,32 +38,15 @@ export interface UserHealthMetrics {
   daily_fiber_g?: number;
 
   // Advanced metrics
-  heart_rate_zones?: {
-    zone1_min: number;
-    zone1_max: number;
-    zone2_min: number;
-    zone2_max: number;
-    zone3_min: number;
-    zone3_max: number;
-    zone4_min: number;
-    zone4_max: number;
-    zone5_min: number;
-    zone5_max: number;
-  };
-  vo2_max_estimate?: number;
-  vo2_max_classification?: string;
-  health_score?: number;
+  estimated_vo2_max?: number;
+  overall_health_score?: number;
   health_grade?: string;
 
   // Context information
   detected_climate?: string;
   detected_ethnicity?: string;
-  bmr_formula_used?: string;
-  bmr_formula_accuracy?: string;
-  bmr_formula_confidence?: number;
 
   // Metadata
-  calculations_version?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -100,7 +82,6 @@ export async function loadUserMetrics(
         calculated_bmr,
         calculated_bmi,
         bmi_category,
-        bmi_health_risk,
         calculated_tdee,
         daily_calories,
         daily_water_ml,
@@ -108,17 +89,11 @@ export async function loadUserMetrics(
         daily_carbs_g,
         daily_fat_g,
         daily_fiber_g,
-        heart_rate_zones,
-        vo2_max_estimate,
-        vo2_max_classification,
-        health_score,
+        estimated_vo2_max,
+        overall_health_score,
         health_grade,
         detected_climate,
         detected_ethnicity,
-        bmr_formula_used,
-        bmr_formula_accuracy,
-        bmr_formula_confidence,
-        calculations_version,
         created_at,
         updated_at
       `)

@@ -35,6 +35,7 @@ import type {
 } from "../types/ai";
 import type { MealItem, Food } from "../types/diet";
 import { resolveCurrentWeight } from "./currentWeight";
+import { mapActivityLevelForHealthCalc } from "../utils/typeTransformers";
 // Note: MET-based calorie calculation happens at workout completion (completionTracking.ts)
 // where we have access to the user's actual weight from their profile
 
@@ -88,7 +89,7 @@ function mapSupportedDietaryRestriction(
   }
 
   const normalized = restriction.trim().toLowerCase().replace(/\s+/g, "-");
-  const supportedRestrictions: Record<string, string> = {
+  const supportedRestrictions: Record<string, string | null> = {
     vegetarian: "vegetarian",
     vegan: "vegan",
     pescatarian: "pescatarian",
@@ -103,14 +104,15 @@ function mapSupportedDietaryRestriction(
     kosher: "kosher",
     "low-carb": "low_carb",
     low_carb: "low_carb",
+    // These are valid onboarding values that map to no restriction (worker default path)
+    "non-veg": null,
+    balanced: null,
   };
 
-  const mappedValue = supportedRestrictions[normalized] ?? null;
-  // If diet_type doesn't map to a supported restriction, log and return null
-  if (!mappedValue) {
+  if (!(normalized in supportedRestrictions)) {
     console.warn('[aiRequestTransformers] Unsupported diet_type — restriction will not be applied:', restriction);
   }
-  return mappedValue;
+  return supportedRestrictions[normalized] ?? null;
 }
 
 function normalizeDayOfWeek(dayOfWeek: unknown): string | null {
@@ -166,14 +168,18 @@ export function transformForDietRequest(
     mealsPerDay?: number;
     advancedReview?: AdvancedReviewData | null;
     currentWeightKg?: number | null;
+    weeklyWeightLossGoal?: number | null;
+    targetTimelineWeeks?: number | null;
   } = {},
 ): DietGenerationRequest {
   // Extract activity level from workout preferences or fitness goals
-  const activityLevel =
+  // Apply mapActivityLevelForHealthCalc so 'extreme' → 'very_active' (worker TDEE expects this)
+  const activityLevel = mapActivityLevelForHealthCalc(
     personalInfo.activityLevel ||
     fitnessGoals.experience_level ||
     fitnessGoals.experience ||
-    "moderate";
+    "moderate"
+  );
 
   // Get primary fitness goal
   const primaryGoal =
@@ -314,7 +320,7 @@ export function transformForDietRequest(
           daily_fiber_g: advancedReview.daily_fiber_g ?? undefined,
           calculated_bmi: advancedReview.calculated_bmi ?? undefined,
           bmi_category: advancedReview.bmi_category ?? undefined,
-          health_score: advancedReview.health_score ?? undefined,
+          overall_health_score: advancedReview.overall_health_score ?? undefined,
         }
       : undefined,
 
@@ -332,6 +338,12 @@ export function transformForDietRequest(
     })(),
     mealsPerDay,
     daysCount,
+
+    // Goal rate and deadline — AI needs these to calibrate deficit and pacing
+    weeklyWeightLossGoal: generationOptions.weeklyWeightLossGoal ?? undefined,
+    targetTimelineWeeks: generationOptions.targetTimelineWeeks ??
+      bodyMetrics?.target_timeline_weeks ??
+      undefined,
 
     // IMPORTANT: dietaryRestrictions is used for cache key (not dietPreferences.dietType)
     dietaryRestrictions:

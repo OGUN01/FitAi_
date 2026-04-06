@@ -4,6 +4,7 @@ import {
   PersonalInfoData,
   WorkoutPreferencesData,
 } from "../types/onboarding";
+import { mapActivityLevelForHealthCalc } from "./typeTransformers";
 import {
   BodyMetrics,
   FitnessGoals,
@@ -63,7 +64,9 @@ export const buildLegacyPersonalInfo = ({
     weight: resolveCurrentWeightFromStores({
       bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
     }).value ?? bodyAnalysis?.current_weight_kg,
-    activityLevel: workoutPreferences?.activity_level,
+    activityLevel: workoutPreferences?.activity_level
+      ? mapActivityLevelForHealthCalc(workoutPreferences.activity_level)
+      : undefined,
   };
 };
 

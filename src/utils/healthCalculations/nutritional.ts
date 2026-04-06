@@ -14,6 +14,12 @@ export function resolveDietType(prefs: DietPreferencesData): DietType {
   if (prefs.paleo_ready) return 'paleo';
   if (prefs.mediterranean_ready) return 'mediterranean';
   if (prefs.low_carb_ready) return 'low_carb';
+  // high_protein_ready is an AI-only flag: it signals the AI generator to
+  // emphasise protein in the meal plan but it is NOT a DietType value.
+  // Macro splits are handled by macroCalculator based on goal (e.g. muscle_gain
+  // already applies a high protein multiplier). Mapping to a non-existent
+  // DietType would break macroCalculator; the omnivore fallback below is
+  // therefore the correct and intentional path for high_protein_ready users.
   switch (prefs.diet_type) {
     case 'vegetarian': return 'vegetarian';
     case 'vegan': return 'vegan';

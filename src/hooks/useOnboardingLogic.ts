@@ -108,6 +108,9 @@ export const useOnboardingLogic = ({
   const saveToLocalRef = useRef(saveToLocal);
   useEffect(() => { saveToLocalRef.current = saveToLocal; }, [saveToLocal]);
 
+  // Guard to prevent concurrent writes between the 30s interval and the 1s debounce in useOnboardingState
+  const isSavingRef = useRef(false);
+
   // ============================================================================
   // EFFECTS
   // ============================================================================
@@ -136,8 +139,14 @@ export const useOnboardingLogic = ({
   // Auto-save — saveToLocalRef prevents interval from restarting on saveToLocal identity change
   useEffect(() => {
     if (!hasUnsavedChanges) return;
-    const saveInterval = setInterval(() => {
-      saveToLocalRef.current();
+    const saveInterval = setInterval(async () => {
+      if (isSavingRef.current) return;
+      isSavingRef.current = true;
+      try {
+        await saveToLocalRef.current?.();
+      } finally {
+        isSavingRef.current = false;
+      }
     }, 30000);
     return () => {
       clearInterval(saveInterval);
@@ -291,6 +300,7 @@ export const useOnboardingLogic = ({
     }
 
     if (currentTab > 1) {
+      saveToLocalRef.current?.();
       setCurrentTab(currentTab - 1);
     } else if (hasUnsavedChanges) {
       crossPlatformAlert(
