@@ -386,11 +386,24 @@ export class FitAIWorkersClient {
           if (!refreshError && refreshData.session?.access_token) {
             return refreshData.session.access_token;
           }
-          console.error(
-            "[WorkersClient] Token refresh failed, using current token:",
+          // Refresh failed — check whether the fallback token is also expired.
+          const nowSec = Math.floor(Date.now() / 1000);
+          if (refreshError && session.expires_at && session.expires_at < nowSec) {
+            console.error(
+              "[WorkersClient] Token refresh failed and access token is expired — signing out:",
+              refreshError?.message,
+            );
+            await supabase.auth.signOut();
+            throw new AuthenticationError("Session expired. Please sign in again.");
+          }
+          console.warn(
+            "[WorkersClient] Token refresh failed but access token still valid, continuing:",
             refreshError?.message,
           );
         } catch (refreshErr) {
+          if (refreshErr instanceof AuthenticationError) {
+            throw refreshErr;
+          }
           console.error(
             "[WorkersClient] Token refresh threw, using current token:",
             refreshErr,
@@ -416,6 +429,7 @@ export class FitAIWorkersClient {
     endpoint: string,
     options: RequestInit,
     retryCount = 0,
+    retryOnAuthFailure = true,
   ): Promise<WorkersResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
 
@@ -446,6 +460,29 @@ export class FitAIWorkersClient {
 
       // Handle HTTP errors
       if (!response.ok) {
+        // On 401, attempt a single token refresh then retry the request once.
+        if (response.status === 401 && retryOnAuthFailure) {
+          try {
+            const { data: refreshData, error: refreshError } =
+              await supabase.auth.refreshSession();
+            if (!refreshError && refreshData.session?.access_token) {
+              const newToken = refreshData.session.access_token;
+              const refreshedOptions: RequestInit = {
+                ...options,
+                headers: {
+                  ...(options.headers as Record<string, string>),
+                  Authorization: `Bearer ${newToken}`,
+                },
+              };
+              // retryOnAuthFailure=false prevents an infinite 401 loop.
+              return this.makeRequest<T>(endpoint, refreshedOptions, retryCount, false);
+            }
+          } catch {
+            // Refresh threw — fall through to throw AuthenticationError below.
+          }
+          throw new AuthenticationError("Session expired. Please sign in again.");
+        }
+
         // Check if we should retry
         if (this.shouldRetry(response.status) && retryCount < this.maxRetries) {
           let delay = this.retryDelay * Math.pow(2, retryCount);

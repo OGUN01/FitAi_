@@ -47,17 +47,21 @@ export const clearAllUserData = async (): Promise<void> => {
 
   // Fitness store
   const fitnessState = useFitnessStore.getState();
-  safeReset(
-    "Fitness store",
-    fitnessState.reset || fitnessState.clearData || (() => {}),
-  );
+  const fitnessResetFn = fitnessState.reset || fitnessState.clearData;
+  if (fitnessResetFn) {
+    safeReset("Fitness store", fitnessResetFn);
+  } else {
+    console.warn('[clearUserData] No reset method found on store:', 'fitnessStore');
+  }
 
   // Nutrition store
   const nutritionState = useNutritionStore.getState();
-  safeReset(
-    "Nutrition store",
-    nutritionState.reset || nutritionState.clearData || (() => {}),
-  );
+  const nutritionResetFn = nutritionState.reset || nutritionState.clearData;
+  if (nutritionResetFn) {
+    safeReset("Nutrition store", nutritionResetFn);
+  } else {
+    console.warn('[clearUserData] No reset method found on store:', 'nutritionStore');
+  }
 
   // Clear module-level nutrition selector caches (prevents stale data across user sessions)
   clearNutritionCache();
@@ -76,10 +80,12 @@ export const clearAllUserData = async (): Promise<void> => {
 
   // Hydration store
   const hydrationState = useHydrationStore.getState();
-  safeReset(
-    "Hydration store",
-    hydrationState.reset || hydrationState.resetDaily || (() => {}),
-  );
+  const hydrationResetFn = hydrationState.reset || hydrationState.resetDaily;
+  if (hydrationResetFn) {
+    safeReset("Hydration store", hydrationResetFn);
+  } else {
+    console.warn('[clearUserData] No reset method found on store:', 'hydrationStore');
+  }
 
   // Analytics store
   const analyticsState = useAnalyticsStore.getState();
@@ -92,10 +98,12 @@ export const clearAllUserData = async (): Promise<void> => {
 
   // Health data store
   const healthDataState = useHealthDataStore.getState();
-  safeReset(
-    "Health data store",
-    healthDataState.reset || healthDataState.resetHealthData || (() => {}),
-  );
+  const healthDataResetFn = healthDataState.reset || healthDataState.resetHealthData;
+  if (healthDataResetFn) {
+    safeReset("Health data store", healthDataResetFn);
+  } else {
+    console.warn('[clearUserData] No reset method found on store:', 'healthDataStore');
+  }
 
   // Subscription store
   const subscriptionState = useSubscriptionStore.getState();
@@ -103,14 +111,20 @@ export const clearAllUserData = async (): Promise<void> => {
 
   // App state store
   const appState = useAppStateStore.getState();
-  safeReset(
-    "App state store",
-    appState.reset || appState.resetToToday || (() => {}),
-  );
+  const appStateResetFn = appState.reset || appState.resetToToday;
+  if (appStateResetFn) {
+    safeReset("App state store", appStateResetFn);
+  } else {
+    console.warn('[clearUserData] No reset method found on store:', 'appStateStore');
+  }
 
   // Profile store
   const profileState = useProfileStore.getState();
-  safeReset("Profile store", profileState.reset || (() => {}));
+  if (profileState.reset) {
+    safeReset("Profile store", profileState.reset);
+  } else {
+    console.warn('[clearUserData] No reset method found on store:', 'profileStore');
+  }
 
   // User store (profile + isProfileComplete — must clear to prevent cross-user data leak)
   const userState = useUserStore.getState();

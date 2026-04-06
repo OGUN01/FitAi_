@@ -245,7 +245,8 @@ export const useProfileLogic = () => {
         (key) =>
           key.startsWith("@fitai_cache_") ||
           key.startsWith("@fitai_image_") ||
-          key.startsWith("@fitai_temp_"),
+          key.startsWith("@fitai_temp_") ||
+          key.startsWith("cooking_video_"),
       );
       if (cacheKeys.length > 0) {
         await AsyncStorage.multiRemove(cacheKeys);
@@ -324,25 +325,43 @@ export const useProfileLogic = () => {
         );
         break;
       case "export": {
-        // Export all user data as JSON and share via native share sheet
-        try {
-          const data = await crudOperations.exportAllData();
-          if (data) {
-            const json = JSON.stringify(data, null, 2);
-            await Share.share({
-              message: json,
-              title: "FitAI Data Export",
-            });
-          } else {
-            crossPlatformAlert("Export Data", "No data found to export.");
-          }
-        } catch (exportError) {
-          console.error("[useProfileLogic] Export failed:", exportError);
-          crossPlatformAlert(
-            "Export Failed",
-            "Could not export data. Please try again.",
-          );
-        }
+        // Confirm before sharing personal health data
+        crossPlatformAlert(
+          "Export Your Data",
+          "This will share a file containing your personal health data (name, weight, measurements, meal logs, and workout history). Are you sure?",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Export",
+              onPress: async () => {
+                try {
+                  const data = await crudOperations.exportAllData();
+                  if (data) {
+                    const json = JSON.stringify(data, null, 2);
+                    await Share.share({
+                      message: json,
+                      title: "FitAI Data Export",
+                    });
+                  } else {
+                    crossPlatformAlert(
+                      "Export Data",
+                      "No data found to export.",
+                    );
+                  }
+                } catch (exportError) {
+                  console.error(
+                    "[useProfileLogic] Export failed:",
+                    exportError,
+                  );
+                  crossPlatformAlert(
+                    "Export Failed",
+                    "Could not export data. Please try again.",
+                  );
+                }
+              },
+            },
+          ],
+        );
         break;
       }
       case "sync": {

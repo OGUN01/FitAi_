@@ -179,6 +179,8 @@ export async function handleChat(
     if (request.stream) {
       console.log('[Chat] Starting streaming response');
 
+      const streamStartTime = Date.now();
+
       // Stream response using AI SDK
       const result = streamText({
         model,
@@ -187,6 +189,34 @@ export async function handleChat(
         maxTokens: request.maxTokens,
         abortSignal: c.req.raw.signal,
       });
+
+      // Persist conversation in the background after streaming completes.
+      // result.text is a Promise that resolves once the full text is available.
+      if (user) {
+        const userMessage = request.messages[request.messages.length - 1];
+        result.text
+          .then(async (assistantText) => {
+            const usage = await result.usage;
+            const generationTimeMs = Date.now() - streamStartTime;
+            await saveConversationMessages(
+              c.env,
+              conversationId,
+              user.id,
+              userMessage,
+              { role: 'assistant', content: assistantText },
+              {
+                model: request.model,
+                tokensUsed: usage?.totalTokens || 0,
+                generationTimeMs,
+                costUsd: calculateCost(request.model, usage?.totalTokens || 0),
+              }
+            );
+            console.log('[Chat] Streaming conversation saved to database');
+          })
+          .catch((saveError: unknown) => {
+            console.error('[Chat] Failed to save streaming conversation:', saveError);
+          });
+      }
 
       // Return SSE stream
       return result.toDataStreamResponse({

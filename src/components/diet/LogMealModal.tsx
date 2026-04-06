@@ -28,6 +28,7 @@ import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rh, rw, rp, rbr } from "../../utils/responsive";
 import { useNutritionStore } from "../../stores/nutritionStore";
 import { haptics } from "../../utils/haptics";
+import { parseLocalFloat } from "../../utils/units";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { completionTrackingService } from "../../services/completionTracking";
 import { useAuth } from "../../hooks/useAuth";
@@ -126,7 +127,7 @@ const makeIngredient = (): Ingredient => ({
   fiber: "",
 });
 
-const parseNum = (v: string) => parseFloat(v) || 0;
+const parseNum = (v: string) => parseLocalFloat(v) || 0;
 
 export const LogMealModal: React.FC<LogMealModalProps> = ({
   visible,

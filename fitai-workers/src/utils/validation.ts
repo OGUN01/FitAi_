@@ -543,7 +543,7 @@ export const ChatRequestSchema = z.object({
 		.array(
 			z.object({
 				role: z.enum(['user', 'assistant', 'system']),
-				content: z.string(),
+				content: z.string().max(10000),
 			}),
 		)
 		.min(1)

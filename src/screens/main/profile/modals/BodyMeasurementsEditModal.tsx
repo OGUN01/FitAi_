@@ -28,7 +28,7 @@ import { ResponsiveTheme } from "../../../../utils/constants";
 import { rf, rp, rbr, rw } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
 import { crossPlatformAlert } from "../../../../utils/crossPlatformAlert";
-import { convertWeight, toDisplayWeight } from "../../../../utils/units";
+import { convertWeight, toDisplayWeight, parseLocalFloat } from "../../../../utils/units";
 
 interface BodyMeasurementsEditModalProps {
   visible: boolean;
@@ -182,8 +182,8 @@ export const BodyMeasurementsEditModal: React.FC<
       }
 
       const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
-      const weightKg = convertWeight(parseFloat(weight), weightUnit, "kg");
-      const targetWeightKg = targetWeight ? convertWeight(parseFloat(targetWeight), weightUnit, "kg") : undefined;
+      const weightKg = convertWeight(parseLocalFloat(weight), weightUnit, "kg");
+      const targetWeightKg = targetWeight ? convertWeight(parseLocalFloat(targetWeight), weightUnit, "kg") : undefined;
       const canonicalCurrentWeight = user?.id
         ? (await resolveCurrentWeightForUser(user.id, {
             bodyAnalysisWeight: weightKg,
@@ -211,13 +211,13 @@ export const BodyMeasurementsEditModal: React.FC<
           bodyAnalysisData?.breastfeeding_status ||
           profile.bodyMetrics?.breastfeeding_status ||
           false,
-        height_cm: parseFloat(height),
+        height_cm: parseLocalFloat(height),
         current_weight_kg: canonicalCurrentWeight,
         ...(targetWeightKg != null ? { target_weight_kg: targetWeightKg } : {}),
-        body_fat_percentage: bodyFat ? parseFloat(bodyFat) : undefined,
-        chest_cm: chest ? parseFloat(chest) : undefined,
-        waist_cm: waist ? parseFloat(waist) : undefined,
-        hip_cm: hips ? parseFloat(hips) : undefined,
+        body_fat_percentage: bodyFat ? parseLocalFloat(bodyFat) : undefined,
+        chest_cm: chest ? parseLocalFloat(chest) : undefined,
+        waist_cm: waist ? parseLocalFloat(waist) : undefined,
+        hip_cm: hips ? parseLocalFloat(hips) : undefined,
       };
 
       // ✅ Update bodyAnalysis in profileStore

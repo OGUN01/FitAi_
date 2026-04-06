@@ -24,6 +24,7 @@ import {
   Platform,
 } from 'react-native';
 import { ResponsiveTheme } from '../../utils/constants';
+import { parseLocalFloat } from '../../utils/units';
 import {
   exerciseHistoryService,
   LastSessionData,
@@ -58,11 +59,11 @@ const KG_TO_LBS = 2.2046;
 
 function kgToDisplay(kg: number, units: 'kg' | 'lbs'): string {
   if (units === 'lbs') return (kg * KG_TO_LBS).toFixed(1);
-  return String(kg);
+  return kg.toFixed(1);
 }
 
 function displayToKg(display: string, units: 'kg' | 'lbs'): number {
-  const val = parseFloat(display) || 0;
+  const val = parseLocalFloat(display) || 0;
   if (units === 'lbs') return val / KG_TO_LBS;
   return val;
 }

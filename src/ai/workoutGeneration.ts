@@ -131,7 +131,7 @@ export async function generateWeeklyWorkoutPlan(
     const weeklyPlanData = response.data as any;
 
     const daySlotCounts = new Map<string, number>();
-    const workouts = weeklyPlanData.workouts.map((w: any) => {
+    const workouts = (weeklyPlanData.workouts || []).map((w: any) => {
       const currentSlot = daySlotCounts.get(w.dayOfWeek) ?? 0;
       daySlotCounts.set(w.dayOfWeek, currentSlot + 1);
       return transformWorkoutData(w.workout, w.dayOfWeek, currentSlot);

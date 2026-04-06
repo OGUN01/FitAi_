@@ -103,7 +103,7 @@ export async function restoreSession(
             };
           }
         } catch (refreshError) {
-          // Session refresh failed, continue to error
+          console.error('[Session] restoreSession refresh failed:', refreshError);
         }
       }
 
@@ -176,7 +176,25 @@ export function onAuthStateChange(
       setSession(newSession);
       await AsyncStorage.setItem("auth_session", JSON.stringify(newSession));
       callback(authUser);
-    } else if (event === "SIGNED_OUT") {
+    } else if (event === "TOKEN_REFRESHED" && session?.user) {
+      const authUser: AuthUser = {
+        id: session.user.id,
+        email: session.user.email!,
+        isEmailVerified: session.user.email_confirmed_at !== null,
+        lastLoginAt: new Date().toISOString(),
+      };
+
+      const newSession: AuthSession = {
+        user: authUser,
+        accessToken: session.access_token,
+        refreshToken: session.refresh_token,
+        expiresAt: session.expires_at || 0,
+      };
+
+      setSession(newSession);
+      await AsyncStorage.setItem("auth_session", JSON.stringify(newSession));
+      callback(authUser);
+    } else if (event === "SIGNED_OUT" || event === "USER_DELETED") {
       setSession(null);
       await AsyncStorage.removeItem("auth_session");
       callback(null);

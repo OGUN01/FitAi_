@@ -284,6 +284,12 @@ export const useBodyAnalysis = ({
 
   const handlePhotoCapture = (imageUri: string) => {
     const photoField = `${currentPhotoType}_photo_url` as keyof BodyAnalysisData;
+    const existingUri = formData[photoField] as string | undefined;
+    if (existingUri) {
+      FileSystem.deleteAsync(existingUri, { idempotent: true }).catch((err) => {
+        console.warn("[handlePhotoCapture] Failed to delete old temp file:", err);
+      });
+    }
     updateField(photoField, imageUri as BodyAnalysisData[typeof photoField]);
     setShowCamera(false);
   };

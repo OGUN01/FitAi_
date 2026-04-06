@@ -27,6 +27,15 @@ if (__DEV__) {
   const noop = () => {};
   console.log = noop;
 }
+
+// Global unhandled error handler — catches both sync and async JS errors
+// that escape all try/catch and ErrorBoundary boundaries.
+const _originalGlobalHandler = ErrorUtils.getGlobalHandler();
+ErrorUtils.setGlobalHandler((error, isFatal) => {
+  console.error('[GlobalError] Unhandled error:', error, 'isFatal:', isFatal);
+  _originalGlobalHandler(error, isFatal);
+});
+
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GluestackUIProvider } from "@gluestack-ui/themed";

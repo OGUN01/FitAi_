@@ -8,6 +8,9 @@ import { authEvents } from "../services/authEvents";
 
 const SESSION_RESTORE_TIMEOUT_MS = 10000;
 
+let initializingPromise: Promise<void> | null = null;
+let authStateUnsubscribe: (() => void) | null = null;
+
 interface AuthState {
   // State
   user: AuthUser | null;
@@ -279,66 +282,80 @@ export const useAuthStore = create<AuthState>()(
           return;
         }
 
-        set({ isLoading: true });
+        if (initializingPromise) {
+          return initializingPromise;
+        }
 
-        try {
-          // Add timeout wrapper to prevent hanging (10 seconds max for web cold starts)
-          const restorePromise = authService.restoreSession();
-          const timeoutPromise = new Promise<AuthResponse>((resolve) =>
-            setTimeout(() => {
-              resolve({ success: false, error: "Session restore timeout" });
-            }, SESSION_RESTORE_TIMEOUT_MS),
-          );
+        initializingPromise = (async () => {
+          set({ isLoading: true });
 
-          const response = await Promise.race([restorePromise, timeoutPromise]);
+          try {
+            // Add timeout wrapper to prevent hanging (10 seconds max for web cold starts)
+            const restorePromise = authService.restoreSession();
+            const timeoutPromise = new Promise<AuthResponse>((resolve) =>
+              setTimeout(() => {
+                resolve({ success: false, error: "Session restore timeout" });
+              }, SESSION_RESTORE_TIMEOUT_MS),
+            );
 
-          if (response.success && response.user) {
-            set({
-              user: response.user,
-              isAuthenticated: response.user.isEmailVerified,
-              isLoading: false,
-              isInitialized: true,
-              error: null,
+            const response = await Promise.race([restorePromise, timeoutPromise]);
+
+            if (response.success && response.user) {
+              set({
+                user: response.user,
+                isAuthenticated: response.user.isEmailVerified,
+                isLoading: false,
+                isInitialized: true,
+                error: null,
+              });
+            } else {
+              set({
+                user: null,
+                isAuthenticated: false,
+                isLoading: false,
+                isInitialized: true,
+                error: null,
+              });
+            }
+
+            // Set up auth state change listener (only once — guarded by initializingPromise)
+            if (authStateUnsubscribe) {
+              authStateUnsubscribe();
+            }
+            const subscription = authService.onAuthStateChange((user) => {
+              get().setUser(user);
             });
-          } else {
+            authStateUnsubscribe = subscription?.data?.subscription?.unsubscribe ?? null;
+
+            if (response.success && response.user && response.source === "cache") {
+              void authService.revalidateSession()
+                .then((revalidated) => {
+                  if (revalidated.success && revalidated.user) {
+                    get().setUser(revalidated.user);
+                    return;
+                  }
+
+                  get().setUser(null);
+                })
+                .catch((error) => {
+                  console.error("[authStore] revalidateSession failed:", error);
+                });
+            }
+          } catch (error) {
             set({
               user: null,
               isAuthenticated: false,
               isLoading: false,
               isInitialized: true,
-              error: null,
+              error:
+                error instanceof Error ? error.message : "Initialization failed",
             });
+          } finally {
+            initializingPromise = null;
           }
+        })();
 
-          // Set up auth state change listener
-          authService.onAuthStateChange((user) => {
-            get().setUser(user);
-          });
-
-          if (response.success && response.user && response.source === "cache") {
-            void authService.revalidateSession()
-              .then((revalidated) => {
-                if (revalidated.success && revalidated.user) {
-                  get().setUser(revalidated.user);
-                  return;
-                }
-
-                get().setUser(null);
-              })
-              .catch((error) => {
-                console.error("[authStore] revalidateSession failed:", error);
-              });
-          }
-        } catch (error) {
-          set({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-            isInitialized: true,
-            error:
-              error instanceof Error ? error.message : "Initialization failed",
-          });
-        }
+        return initializingPromise;
       },
 
       signInWithGoogle: async () => {

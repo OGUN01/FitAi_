@@ -30,6 +30,7 @@ import ScheduleBuilderScreen from "../../screens/workouts/ScheduleBuilderScreen"
 import { ResponsiveTheme } from "../../utils/constants";
 import { DayWorkout, DayMeal } from "../../types/ai";
 import { useAppConfig } from "../../hooks/useAppConfig";
+import { ScreenErrorBoundary } from "../errors/ScreenErrorBoundary";
 
 type MainTabKey = "home" | "fitness" | "diet" | "profile" | "analytics";
 
@@ -466,28 +467,41 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     <>
       {renderTabScreen(
         "home",
-        <HomeScreen onNavigateToTab={handleHomeNavigation} />,
+        <ScreenErrorBoundary screenName="HomeScreen">
+          <HomeScreen onNavigateToTab={handleHomeNavigation} />
+        </ScreenErrorBoundary>,
       )}
-      {renderTabScreen("fitness", <FitnessScreen navigation={navigation} />)}
+      {renderTabScreen(
+        "fitness",
+        <ScreenErrorBoundary screenName="FitnessScreen">
+          <FitnessScreen navigation={navigation} />
+        </ScreenErrorBoundary>,
+      )}
       {renderTabScreen(
         "diet",
-        <DietScreen
-          navigation={navigation}
-          route={{ params: tabParams.diet }}
-          isActive={activeTab === "diet" && !hasActiveOverlay}
-        />,
+        <ScreenErrorBoundary screenName="DietScreen">
+          <DietScreen
+            navigation={navigation}
+            route={{ params: tabParams.diet }}
+            isActive={activeTab === "diet" && !hasActiveOverlay}
+          />
+        </ScreenErrorBoundary>,
       )}
       {renderTabScreen(
         "profile",
-        <ProfileScreen
-          navigation={navigation}
-          route={{ params: tabParams.profile }}
-        />,
+        <ScreenErrorBoundary screenName="ProfileScreen">
+          <ProfileScreen
+            navigation={navigation}
+            route={{ params: tabParams.profile }}
+          />
+        </ScreenErrorBoundary>,
       )}
       {renderTabScreen(
         "analytics",
         appConfig.featureAnalytics ? (
-          <AnalyticsScreen navigation={navigation} />
+          <ScreenErrorBoundary screenName="AnalyticsScreen">
+            <AnalyticsScreen navigation={navigation} />
+          </ScreenErrorBoundary>
         ) : (
           <View style={styles.unavailableContainer}>
             <Text style={styles.unavailableTitle}>Feature Unavailable</Text>
@@ -504,60 +518,80 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     // Mutually exclusive if/else if chain — only one overlay renders at a time
     if (onboardingEditSession.isActive) {
       return (
-        <OnboardingContainer
-          editMode={onboardingEditSession.editMode}
-          initialTab={onboardingEditSession.initialTab}
-          onEditComplete={() => {
-            onboardingEditSession.onEditComplete?.();
-            navigation.goBack();
-          }}
-          onEditCancel={() => {
-            onboardingEditSession.onEditCancel?.();
-            navigation.goBack();
-          }}
-          onComplete={() => {
-            // This won't be called in edit mode, but required prop
-          }}
-        />
+        <ScreenErrorBoundary screenName="OnboardingContainer">
+          <OnboardingContainer
+            editMode={onboardingEditSession.editMode}
+            initialTab={onboardingEditSession.initialTab}
+            onEditComplete={() => {
+              onboardingEditSession.onEditComplete?.();
+              navigation.goBack();
+            }}
+            onEditCancel={() => {
+              onboardingEditSession.onEditCancel?.();
+              navigation.goBack();
+            }}
+            onComplete={() => {
+              // This won't be called in edit mode, but required prop
+            }}
+          />
+        </ScreenErrorBoundary>
       );
     } else if (workoutSession.isActive && workoutSession.workout) {
       return (
-        <WorkoutSessionScreen
-          route={{
-            params: {
-              workout: workoutSession.workout,
-              sessionId: workoutSession.sessionId,
-              resumeExerciseIndex: workoutSession.resumeExerciseIndex,
-              isExtra: workoutSession.isExtra,
-            },
-          }}
-          navigation={navigation}
-        />
+        <ScreenErrorBoundary screenName="WorkoutSessionScreen">
+          <WorkoutSessionScreen
+            route={{
+              params: {
+                workout: workoutSession.workout,
+                sessionId: workoutSession.sessionId,
+                resumeExerciseIndex: workoutSession.resumeExerciseIndex,
+                isExtra: workoutSession.isExtra,
+              },
+            }}
+            navigation={navigation}
+          />
+        </ScreenErrorBoundary>
       );
     } else if (cookingSession.isActive && cookingSession.meal) {
       return (
-        <CookingSessionScreen
-          route={{
-            params: {
-              meal: cookingSession.meal,
-            },
-          }}
-          navigation={navigation}
-        />
+        <ScreenErrorBoundary screenName="CookingSessionScreen">
+          <CookingSessionScreen
+            route={{
+              params: {
+                meal: cookingSession.meal,
+              },
+            }}
+            navigation={navigation}
+          />
+        </ScreenErrorBoundary>
       );
     } else if (mealSession.isActive && mealSession.meal) {
       return (
-        <MealSession
-          route={{ params: { meal: mealSession.meal } }}
-          navigation={navigation}
-        />
+        <ScreenErrorBoundary screenName="MealSession">
+          <MealSession
+            route={{ params: { meal: mealSession.meal } }}
+            navigation={navigation}
+          />
+        </ScreenErrorBoundary>
       );
     } else if (progressSession.isActive) {
-      return <ProgressScreen navigation={navigation} />;
+      return (
+        <ScreenErrorBoundary screenName="ProgressScreen">
+          <ProgressScreen navigation={navigation} />
+        </ScreenErrorBoundary>
+      );
     } else if (progressTrendsSession.isActive) {
-      return <ProgressTrendsScreen navigation={navigation} />;
+      return (
+        <ScreenErrorBoundary screenName="ProgressTrendsScreen">
+          <ProgressTrendsScreen navigation={navigation} />
+        </ScreenErrorBoundary>
+      );
     } else if (achievementsSession.isActive) {
-      return <AchievementsScreen navigation={navigation} />;
+      return (
+        <ScreenErrorBoundary screenName="AchievementsScreen">
+          <AchievementsScreen navigation={navigation} />
+        </ScreenErrorBoundary>
+      );
     } else if (contributeFoodSession.isActive) {
       if (!appConfig.featureFoodContributions) {
         return (
@@ -570,39 +604,53 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         );
       }
       return (
-        <ContributeFood
-          route={{ params: { barcode: contributeFoodSession.barcode ?? "" } }}
-          navigation={navigation}
-        />
+        <ScreenErrorBoundary screenName="ContributeFood">
+          <ContributeFood
+            route={{ params: { barcode: contributeFoodSession.barcode ?? "" } }}
+            navigation={navigation}
+          />
+        </ScreenErrorBoundary>
       );
     } else if (templateLibrarySession.isActive) {
-      return <TemplateLibraryScreen navigation={navigation} />;
+      return (
+        <ScreenErrorBoundary screenName="TemplateLibraryScreen">
+          <TemplateLibraryScreen navigation={navigation} />
+        </ScreenErrorBoundary>
+      );
     } else if (scheduleBuilderSession.isActive) {
-      return <ScheduleBuilderScreen navigation={navigation} />;
+      return (
+        <ScreenErrorBoundary screenName="ScheduleBuilderScreen">
+          <ScheduleBuilderScreen navigation={navigation} />
+        </ScreenErrorBoundary>
+      );
     } else if (createWorkoutSession.isActive) {
       return (
-        <CreateWorkoutScreen
-          navigation={navigation}
-          route={
-            createWorkoutSession.templateId
-              ? { params: { templateId: createWorkoutSession.templateId } }
-              : undefined
-          }
-        />
+        <ScreenErrorBoundary screenName="CreateWorkoutScreen">
+          <CreateWorkoutScreen
+            navigation={navigation}
+            route={
+              createWorkoutSession.templateId
+                ? { params: { templateId: createWorkoutSession.templateId } }
+                : undefined
+            }
+          />
+        </ScreenErrorBoundary>
       );
     } else if (exerciseHistorySession.isActive && exerciseHistorySession.exerciseId) {
       return (
-        <ExerciseHistoryScreen
-          route={{
-            params: {
-              exerciseId: exerciseHistorySession.exerciseId,
-              exerciseName:
-                exerciseHistorySession.exerciseName ||
-                exerciseHistorySession.exerciseId,
-            },
-          }}
-          navigation={navigation}
-        />
+        <ScreenErrorBoundary screenName="ExerciseHistoryScreen">
+          <ExerciseHistoryScreen
+            route={{
+              params: {
+                exerciseId: exerciseHistorySession.exerciseId,
+                exerciseName:
+                  exerciseHistorySession.exerciseName ||
+                  exerciseHistorySession.exerciseId,
+              },
+            }}
+            navigation={navigation}
+          />
+        </ScreenErrorBoundary>
       );
     }
 

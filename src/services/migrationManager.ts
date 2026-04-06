@@ -750,7 +750,16 @@ export class MigrationManager {
         break;
 
       case "uploadFitnessData":
-        await supabase.from("workouts").delete().eq("user_id", userId);
+        // "workouts" table does not exist in the schema; skip it.
+        const { error: workoutsError } = await supabase
+          .from("workouts")
+          .delete()
+          .eq("user_id", userId);
+        if (workoutsError)
+          console.warn(
+            "[MigrationManager] workouts table not found:",
+            workoutsError.message
+          );
         await supabase.from("workout_sessions").delete().eq("user_id", userId);
         break;
 

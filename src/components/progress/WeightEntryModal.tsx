@@ -38,7 +38,7 @@ import { invalidateMetricsCache } from "../../hooks/useCalculatedMetrics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getLocalDateString } from "../../utils/weekUtils";
 import { weightTrackingService } from "../../services/WeightTrackingService";
-import { convertWeight, toDisplayWeight } from "../../utils/units";
+import { convertWeight, toDisplayWeight, parseLocalFloat } from "../../utils/units";
 
 interface WeightEntryModalProps {
   visible: boolean;
@@ -86,7 +86,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
 
   // Validate inputs
   const validateInputs = useCallback((): boolean => {
-    const weightNum = parseFloat(weight);
+    const weightNum = parseLocalFloat(weight);
 
     if (!weight || isNaN(weightNum)) {
       setError("Please enter a valid weight");
@@ -106,7 +106,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
     }
 
     if (bodyFat) {
-      const bodyFatNum = parseFloat(bodyFat);
+      const bodyFatNum = parseLocalFloat(bodyFat);
       if (isNaN(bodyFatNum) || bodyFatNum < 3 || bodyFatNum > 60) {
         setError("Body fat must be between 3% and 60%");
         return false;
@@ -128,8 +128,8 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
     setError(null);
 
     try {
-      const weightKg = convertWeight(parseFloat(weight), unit, "kg");
-      const bodyFatPercent = bodyFat ? parseFloat(bodyFat) : undefined;
+      const weightKg = convertWeight(parseLocalFloat(weight), unit, "kg");
+      const bodyFatPercent = bodyFat ? parseLocalFloat(bodyFat) : undefined;
 
       if (user?.id) {
         // Authenticated user: sync to Supabase

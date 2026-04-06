@@ -71,7 +71,6 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
     // Suppress Metro symbolication errors from console
     if (
-      error.message?.includes("unknown") ||
       error.stack?.includes("getCodeFrame") ||
       error.stack?.includes("symbolicate") ||
       error.message?.includes("ENOENT")

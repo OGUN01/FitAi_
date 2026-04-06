@@ -67,7 +67,7 @@ export const YAxisLabels: React.FC<YAxisLabelsProps> = ({
           textAnchor="end"
           fontWeight="500"
         >
-          {value.toFixed(1)}
+          {value % 1 === 0 ? String(value) : value.toFixed(1)}
         </SvgText>
       );
     })}
@@ -244,7 +244,7 @@ export const SelectedPointTooltip: React.FC<SelectedPointTooltipProps> = ({
         textAnchor="middle"
         fontWeight="700"
       >
-        {point.value.toFixed(1)}
+        {point.value % 1 === 0 ? String(point.value) : point.value.toFixed(1)}
         {unit}
       </SvgText>
     </G>

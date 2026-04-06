@@ -184,15 +184,18 @@ class LoggerService {
     switch (level) {
       case "DEBUG":
         if (__DEV__) {
+          console.debug(`${prefix} ${message}`, metadata || "", error || "");
         }
         break;
 
       case "INFO":
         if (__DEV__ || this.config.logInfoInProduction) {
+          console.info(`${prefix} ${message}`, metadata || "", error || "");
         }
         break;
 
       case "WARN":
+        console.warn(`${prefix} ${message}`, metadata || "", error || "");
         break;
 
       case "ERROR":

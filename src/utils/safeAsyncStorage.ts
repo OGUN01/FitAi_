@@ -36,7 +36,7 @@ export const safeAsyncStorage: StateStorage = {
     try {
       await AsyncStorage.setItem(name, value);
     } catch (e) {
-      // Storage write failed
+      console.error('[SafeAsyncStorage] Write failed for key:', name, e);
     }
   },
 

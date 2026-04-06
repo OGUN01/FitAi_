@@ -279,11 +279,14 @@ export const DateFormatters = {
    */
   isThisWeek(date: Date | string): boolean {
     const d = typeof date === "string" ? new Date(date) : date;
-    const today = new Date();
-    const weekStart = new Date(today.setDate(today.getDate() - today.getDay()));
-    const weekEnd = new Date(
-      today.setDate(today.getDate() - today.getDay() + 6),
-    );
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0=Sun
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - dayOfWeek);
+    weekStart.setHours(0, 0, 0, 0);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
 
     return d >= weekStart && d <= weekEnd;
   },

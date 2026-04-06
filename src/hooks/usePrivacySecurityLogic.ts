@@ -3,6 +3,7 @@
  */
 
 import { useState, useCallback, useEffect } from "react";
+import { Share } from "react-native";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../services/supabase";
@@ -86,21 +87,22 @@ export const usePrivacySecurityLogic = () => {
           email: user.email,
           localData: Object.fromEntries(
             userData
-              .map(([key, value]) => [
-                key,
-                value ? JSON.parse(value) : null,
-              ])
+              .map(([key, value]) => {
+                try {
+                  return [key, value ? JSON.parse(value) : null];
+                } catch {
+                  return [key, value]; // keep raw string if not valid JSON
+                }
+              })
               .filter(([_, value]) => value !== null),
           ),
         };
 
-        // In a real app, this would upload to a storage bucket and email the link
-        // For now, we log it and show success
-
-        crossPlatformAlert(
-          "Export Complete",
-          "Your data has been exported. In a production app, this would be emailed to you.",
-        );
+        // Share the exported data via the native share sheet
+        await Share.share({
+          message: JSON.stringify(exportData, null, 2),
+          title: "Your FitAI Data Export",
+        });
       } catch (error) {
         console.error("Data export failed:", error);
         crossPlatformAlert("Error", "Failed to export data. Please try again.");
