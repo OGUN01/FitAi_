@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -124,6 +124,11 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     onViewProgress: () => void;
     onDone: (rating?: number, notes?: string) => void;
   } | null>(null);
+
+  // Guard against double-tap on "Finish Workout" creating two Supabase rows (Bug 1)
+  const isCompletingRef = useRef(false);
+  // Stores the Supabase-generated row ID returned by completeExtraWorkout (Bug 3)
+  const supabaseSessionIdRef = useRef<string | null>(null);
 
   const [restTimerEndTime, setRestTimerEndTime] = useState<number | null>(null);
   // Total duration of the current rest period — for RestTimer progress bar
@@ -325,6 +330,9 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   }, [session, animations]);
 
   const completeWorkout = useCallback(async () => {
+    // Bug 1: prevent double-tap from creating two Supabase rows
+    if (isCompletingRef.current) return;
+    isCompletingRef.current = true;
     try {
       const elapsedSeconds = Math.floor(
         (new Date().getTime() - session.workoutStartTime.getTime()) / 1000,
@@ -343,7 +351,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 
       let success: boolean;
       if (isExtra === true || (isExtra as any) === "true") {
-        success = await completeExtraWorkout(
+        const extraResult = await completeExtraWorkout(
           workout,
           {
             sessionId: sessionId || "unknown",
@@ -353,6 +361,9 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           },
           getCurrentUserId() || undefined,
         );
+        // Bug 3: store server-generated row ID for rating/notes update
+        supabaseSessionIdRef.current = extraResult;
+        success = extraResult !== null;
       } else {
         success = await completionTrackingService.completeWorkout(
           workout.id || "unknown",
@@ -442,7 +453,12 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           },
           onDone: async (rating?: number, notes?: string) => {
             // H24: Save user-provided rating and notes to the workout session
-            if ((rating || notes) && sessionId) {
+            // Bug 3: for extra workouts use the server-generated row ID, not the local UUID
+            const rowId =
+              isExtra === true || (isExtra as any) === "true"
+                ? supabaseSessionIdRef.current
+                : sessionId;
+            if ((rating || notes) && rowId) {
               try {
                 const userId = getCurrentUserId();
                 if (userId) {
@@ -452,7 +468,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
                   await supabase
                     .from("workout_sessions")
                     .update(updatePayload)
-                    .eq("id", sessionId)
+                    .eq("id", rowId)
                     .eq("user_id", userId);
                 }
               } catch (err) {
@@ -460,6 +476,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
               }
             }
             setCompleteDialog(null);
+            isCompletingRef.current = false;
             navigation.goBack();
           },
         });
@@ -468,6 +485,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       }
     } catch (error) {
       console.error("🚨 Error completing workout:", error);
+      isCompletingRef.current = false;
       showWorkoutCompleteErrorAlert(workout, session.workoutStats, () =>
         navigation.goBack(),
       );
@@ -752,6 +770,11 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
                 styles.startButton,
                 session.currentProgress.isCompleted && styles.completedButton,
               ]}
+              disabled={
+                session.currentProgress.isCompleted &&
+                session.currentExerciseIndex >= session.totalExercises - 1 &&
+                isCompletingRef.current
+              }
               onPress={
                 session.currentProgress.isCompleted
                   ? goToNextExercise

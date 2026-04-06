@@ -847,14 +847,14 @@ export async function handleWebhook(c: Context<{ Bindings: Env }>): Promise<Resp
 		.eq('id', existingSubscription.id);
 
 	if (updateError) {
-		return c.json({ success: false, error: 'Database update failed' }, 500);
+		return c.json({ success: false, error: 'Database update failed' }, 200);
 	}
 
 	// Record successful event processing for idempotency
 	try {
 		await recordWebhookEvent(supabase, eventId, eventType, buildWebhookPayload(eventId, event, 'processed'));
 	} catch {
-		return c.json({ success: false, error: 'Failed to record webhook event' }, 500);
+		return c.json({ success: false, error: 'Failed to record webhook event' }, 200);
 	}
 
 	return c.json({ success: true, message: 'Webhook processed' }, 200);

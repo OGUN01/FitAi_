@@ -113,7 +113,7 @@ export async function completeExtraWorkout(
   workout: DayWorkout,
   sessionData: any,
   userId: string | null | undefined,
-): Promise<boolean> {
+): Promise<string | null> {
   try {
     // Calculate actual calories burned via MET — 0 if weight unavailable (Rule 8)
     const profileStore = useProfileStore.getState();
@@ -187,6 +187,8 @@ export async function completeExtraWorkout(
             "⚠️ Supabase extra workout insert error:",
             supabaseResult.error,
           );
+          // Bug 2: DB write failed — do NOT update store with stale/ghost data
+          return null;
         } else if (supabaseResult.data?.id) {
           supabaseSessionId = supabaseResult.data.id;
         }
@@ -195,6 +197,8 @@ export async function completeExtraWorkout(
           "❌ Failed to sync extra workout to Supabase:",
           supabaseErr,
         );
+        // Bug 2: DB write threw — do NOT update store
+        return null;
       }
 
       // Update analytics_metrics (fire-and-forget, eventual consistency)
@@ -263,9 +267,10 @@ export async function completeExtraWorkout(
       );
     }
 
-    return true;
+    // Bug 3: return the Supabase row ID (or a local fallback for guests)
+    return supabaseSessionId || sessionData?.sessionId || generateUUID();
   } catch (err) {
     console.error("❌ completeExtraWorkout failed:", err);
-    return false;
+    return null;
   }
 }

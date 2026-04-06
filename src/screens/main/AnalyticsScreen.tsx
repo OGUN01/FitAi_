@@ -108,20 +108,6 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
   // returned a stale value derived from workoutProgress (can lag after plan regeneration).
   const currentStreak = useAchievementStore((s) => s.currentStreak);
 
-  // ========== SCREEN DEBUG LOG ==========
-  useEffect(() => {
-    console.warn(`\n${'='.repeat(60)}`);
-    console.warn(`📊 [SCREEN DEBUG] AnalyticsScreen MOUNTED`);
-    console.warn(`${'='.repeat(60)}`);
-    console.warn(`👤 User: ${user?.id || 'none'}`);
-    console.warn(`📅 Period: ${selectedPeriod} | Streak: ${currentStreak}`);
-    console.warn(`⚖️  Body: Height=${bodyAnalysis?.height_cm ?? '?'}cm | Weight=${bodyAnalysis?.current_weight_kg ?? '?'}kg | Target=${bodyAnalysis?.target_weight_kg ?? '?'}kg`);
-    console.warn(`📊 Metrics: TDEE=${calculatedMetrics?.calculatedTDEE ?? '?'} | BMR=${calculatedMetrics?.calculatedBMR ?? '?'}`);
-    console.warn(`🏋️ Completed Sessions: ${completedSessions?.length || 0}`);
-    console.warn(`📈 History: Weight=${weightHistory.length} points | Calories=${calorieHistory.length} points`);
-    console.warn(`${'='.repeat(60)}\n`);
-  }, []);
-
   // Initialize analytics on mount
   useEffect(() => {
     if (!isInitialized) {

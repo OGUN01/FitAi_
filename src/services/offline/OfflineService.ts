@@ -17,6 +17,7 @@ class OfflineService {
   private network: NetworkManager;
   private queue: QueueManager;
   private rollback: RollbackManager;
+  private _ready: Promise<void>;
 
   private constructor() {
     this.storage = new StorageManager();
@@ -24,7 +25,7 @@ class OfflineService {
     this.rollback = new RollbackManager();
     this.queue = new QueueManager(this.storage, this.rollback);
 
-    this.initializeService();
+    this._ready = this.initializeService();
   }
 
   static getInstance(): OfflineService {
@@ -69,6 +70,7 @@ class OfflineService {
   async queueAction(
     action: Omit<OfflineAction, "id" | "timestamp" | "retryCount">,
   ): Promise<string> {
+    await this._ready;
     const actionId = await this.queue.queueAction(action);
 
     if (this.isDeviceOnline()) {
@@ -106,6 +108,10 @@ class OfflineService {
 
   async clearFailedActionsForTable(table: string): Promise<void> {
     await this.queue.clearFailedActionsForTable(table);
+  }
+
+  hasPendingActions(): boolean {
+    return this.storage.getSyncQueue().length > 0;
   }
 
   getSyncStatus(): SyncStatus {

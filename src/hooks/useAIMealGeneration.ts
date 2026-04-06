@@ -235,6 +235,7 @@ export const useAIMealGeneration = (options?: {
   >(null);
   const barcodeRetryCountRef = useRef(0);
   const activeLookupBarcodeRef = useRef<string | null>(null);
+  const lookupInProgressRef = useRef(false);
 
   const setLogMealScanCallback = useCallback(
     (cb: ((result: LogMealScanResult) => void) | null) => {
@@ -475,6 +476,12 @@ export const useAIMealGeneration = (options?: {
   const handleScanProduct = (
     entryPoint: BarcodeEntryPoint = "diet_barcode",
   ) => {
+    if (!canUseFeature("barcode_scan")) {
+      triggerPaywall(
+        "You've reached your barcode scan limit. Upgrade to Pro for unlimited barcode scanning.",
+      );
+      return;
+    }
     clearBarcodeSession({
       clearLogMealCallback: entryPoint !== "log_meal_barcode",
       resetEntryPoint: false,
@@ -845,6 +852,9 @@ export const useAIMealGeneration = (options?: {
     rawSymbology?: string,
     rawBarcode?: string,
   ) => {
+    if (lookupInProgressRef.current) {
+      return;
+    }
     if (
       barcodeCameraState !== "idle" &&
       barcodeCameraState !== "decoding" &&
@@ -853,6 +863,7 @@ export const useAIMealGeneration = (options?: {
       return;
     }
 
+    lookupInProgressRef.current = true;
     const effectiveRawBarcode = rawBarcode ?? normalizedBarcode;
     if (activeLookupBarcodeRef.current === normalizedBarcode) {
       return;
@@ -894,6 +905,7 @@ export const useAIMealGeneration = (options?: {
       switch (lookupResult.outcome) {
         case "authoritative_hit":
           if (lookupResult.product) {
+            incrementUsage("barcode_scan");
             finishPackagedFoodRoute(lookupResult.product, "barcode");
           }
           break;
@@ -1120,6 +1132,7 @@ export const useAIMealGeneration = (options?: {
         },
       ]);
     } finally {
+      lookupInProgressRef.current = false;
       setIsProcessingBarcode(false);
     }
   };

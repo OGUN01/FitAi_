@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -41,6 +41,7 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const checkInProgress = useRef(false);
 
   // Load user achievements
   const loadAchievements = async () => {
@@ -73,7 +74,10 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
   // Check and award new achievements
   const checkForNewAchievements = async () => {
     if (!user?.id || !workoutStats) return;
+    if (checkInProgress.current) return;
+    checkInProgress.current = true;
 
+    try {
     const newAchievements: Omit<Achievement, "id" | "earned_at">[] = [];
 
     // First Workout Achievement
@@ -231,6 +235,9 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
       } catch (err) {
         console.error("Failed to award achievements:", err);
       }
+    }
+    } finally {
+      checkInProgress.current = false;
     }
   };
 

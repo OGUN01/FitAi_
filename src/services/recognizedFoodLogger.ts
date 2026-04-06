@@ -505,10 +505,14 @@ export class RecognizedFoodLogger {
     const omitEstimatedSecondaryMicronutrients =
       provenance.mode === "meal_photo" && provenance.truthLevel === "estimated";
 
-    return recognizedFoods.map((food) => {
+    return recognizedFoods.flatMap((food) => {
+      if (food.nutrition.calories <= 0) {
+        console.warn('[recognizedFoodLogger] Skipping food with zero/invalid calories:', food.name);
+        return [];
+      }
       const mapping = mappingByFoodId.get(food.id);
       const normalizedFiber = normalizeMealLogFiberValue(food.nutrition.fiber);
-      return {
+      return [{
         food_id: mapping?.databaseFoodId,
         quantity_grams: food.userGrams ?? food.estimatedGrams,
         name: food.name,
@@ -526,7 +530,7 @@ export class RecognizedFoodLogger {
         sodium: omitEstimatedSecondaryMicronutrients
           ? undefined
           : food.nutrition.sodium,
-      };
+      }];
     });
   }
 }

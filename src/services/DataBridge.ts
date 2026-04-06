@@ -35,6 +35,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useUserStore } from "../stores/userStore";
 import { useProfileStore } from "../stores/profileStore";
 import { syncEngine } from "./SyncEngine";
+import { offlineService } from "./offline/OfflineService";
 import { resolveCurrentWeightForUser } from "./currentWeight";
 import { weightTrackingService } from "./WeightTrackingService";
 // Type transformation utilities for snake_case/camelCase conversion
@@ -421,8 +422,15 @@ class DataBridge {
       // Bug 1 fix: call hydrateFromLegacy unconditionally so isHydrated is always set to true,
       // even for brand-new users where every section returns null (empty batchUpdate).
       // Downstream hooks gate on isHydrated; skipping the call causes an infinite wait loop.
-      profileStore.hydrateFromLegacy(batchUpdate);
-      profileStore.setSyncStatus("synced");
+      // Offline-queue guard: skip hydration if local edits are queued but not yet synced,
+      // to avoid overwriting newer in-flight data with stale server values.
+      if (offlineService.hasPendingActions()) {
+        console.warn('[DataBridge] Skipping hydration: offline queue has pending actions');
+        profileStore.setSyncStatus("synced");
+      } else {
+        profileStore.hydrateFromLegacy(batchUpdate);
+        profileStore.setSyncStatus("synced");
+      }
       if (resolvedCurrentWeight?.value != null) {
         weightTrackingService.setWeight(resolvedCurrentWeight.value);
       }

@@ -330,6 +330,15 @@ export async function handleMediaDelete(
 
     // Verify ownership for all user-uploaded content
     const uploadedBy = object.customMetadata?.uploadedBy;
+    // If uploadedBy metadata is absent AND the category is a system/shared category
+    // (exercise, diet), deny deletion. Only user-category files are deletable without metadata.
+    if (!uploadedBy && (category === 'exercise' || category === 'diet')) {
+      throw new APIError(
+        'Unauthorized to delete this file',
+        403,
+        'FORBIDDEN' as any
+      );
+    }
     if (uploadedBy && uploadedBy !== user.id) {
       throw new APIError(
         'Unauthorized to delete this file',

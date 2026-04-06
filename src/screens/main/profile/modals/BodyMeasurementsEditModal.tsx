@@ -60,10 +60,10 @@ export const BodyMeasurementsEditModal: React.FC<
       const bodyMetrics = profile.bodyMetrics;
       const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
       // ✅ SSOT: profileStore.bodyAnalysis is authoritative; profile.bodyMetrics is legacy fallback
-      setHeight((bodyAnalysisData?.height_cm && bodyAnalysisData.height_cm > 0) ? bodyAnalysisData.height_cm.toString() : (bodyMetrics?.height_cm?.toString() || ""));
-      setWeight((bodyAnalysisData?.current_weight_kg && bodyAnalysisData.current_weight_kg > 0) ? bodyAnalysisData.current_weight_kg.toString() : (bodyMetrics?.current_weight_kg?.toString() || ""));
-      setTargetWeight((bodyAnalysisData?.target_weight_kg && bodyAnalysisData.target_weight_kg > 0) ? bodyAnalysisData.target_weight_kg.toString() : ((bodyMetrics?.target_weight_kg && bodyMetrics.target_weight_kg > 0) ? bodyMetrics.target_weight_kg.toString() : ""));
-      setBodyFat((bodyAnalysisData?.body_fat_percentage && bodyAnalysisData.body_fat_percentage > 0) ? bodyAnalysisData.body_fat_percentage.toString() : ((bodyMetrics?.body_fat_percentage && bodyMetrics.body_fat_percentage > 0) ? bodyMetrics.body_fat_percentage.toString() : ""));
+      setHeight((bodyAnalysisData?.height_cm && bodyAnalysisData.height_cm > 0) ? bodyAnalysisData.height_cm.toString() : "");
+      setWeight((bodyAnalysisData?.current_weight_kg && bodyAnalysisData.current_weight_kg > 0) ? bodyAnalysisData.current_weight_kg.toString() : "");
+      setTargetWeight((bodyAnalysisData?.target_weight_kg && bodyAnalysisData.target_weight_kg > 0) ? bodyAnalysisData.target_weight_kg.toString() : "");
+      setBodyFat((bodyAnalysisData?.body_fat_percentage && bodyAnalysisData.body_fat_percentage > 0) ? bodyAnalysisData.body_fat_percentage.toString() : "");
       setChest((bodyAnalysisData?.chest_cm && bodyAnalysisData.chest_cm > 0) ? bodyAnalysisData.chest_cm.toString() : "");
       setWaist((bodyAnalysisData?.waist_cm && bodyAnalysisData.waist_cm > 0) ? bodyAnalysisData.waist_cm.toString() : "");
       setHips((bodyAnalysisData?.hip_cm && bodyAnalysisData.hip_cm > 0) ? bodyAnalysisData.hip_cm.toString() : "");

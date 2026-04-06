@@ -15,6 +15,22 @@ export class QueueManager {
   async queueAction(
     action: Omit<OfflineAction, "id" | "timestamp" | "retryCount">,
   ): Promise<string> {
+    // Dedup: if an UPDATE for the same table+record is already queued, replace its
+    // payload instead of stacking a redundant entry (last-write-wins semantics).
+    if (action.type === "UPDATE" && action.data?.id) {
+      const queue = this.storage.getSyncQueue();
+      const existingIndex = queue.findIndex(
+        (a) => a.type === "UPDATE" && a.table === action.table && a.data?.id === action.data.id,
+      );
+      if (existingIndex !== -1) {
+        queue[existingIndex].data = action.data;
+        queue[existingIndex].timestamp = Date.now();
+        this.storage.setSyncQueue(queue);
+        await this.storage.saveData();
+        return queue[existingIndex].id;
+      }
+    }
+
     const offlineAction: OfflineAction = {
       ...action,
       id: this.generateId(),

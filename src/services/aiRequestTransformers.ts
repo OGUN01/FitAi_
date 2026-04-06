@@ -236,11 +236,15 @@ export function transformForDietRequest(
     });
   }
 
+  if (personalInfo.age === undefined || personalInfo.age === null) {
+    console.warn('[aiRequestTransformers] personalInfo.age is undefined — falling back to 25 for diet request');
+  }
+
   return {
     // Rich request context so the worker can use the latest onboarding values
     // even before Supabase has finished syncing.
     profile: {
-      age: personalInfo.age, // NO FALLBACK - must come from onboarding
+      age: personalInfo.age ?? 25,
       gender: personalInfo.gender, // NO FALLBACK
       weight:
         (resolvedCurrentWeight.value ?? personalInfo.weight ?? null) as number | null, // null = explicitly missing, not 0
@@ -333,7 +337,7 @@ export function transformForDietRequest(
       if (goal.includes('loss') || goal.includes('cut')) fallback = 1800;
       else if (goal.includes('gain') || goal.includes('bulk')) fallback = 2800;
       else fallback = 2200; // maintenance
-      console.warn('[aiRequestTransformers] calorieTarget missing — using goal-based fallback:', fallback);
+      console.error('[aiRequestTransformers] calorieTarget missing — using goal-based fallback:', fallback);
       return fallback;
     })(),
     mealsPerDay,
@@ -551,9 +555,13 @@ export function transformForWorkoutRequest(
 
   // H13: Wire ignored onboarding fields into workout generation request
   const advancedReview = options?.advancedReview;
+  if (personalInfo.age === undefined || personalInfo.age === null) {
+    console.warn('[aiRequestTransformers] personalInfo.age is undefined — falling back to 25 for workout request');
+  }
+
   return {
     profile: {
-      age: personalInfo.age,
+      age: personalInfo.age ?? 25,
       gender: mappedGender,
       weight: resolvedCurrentWeight.value ?? personalInfo.weight ?? null,
       height: bodyMetrics?.height_cm ?? personalInfo.height ?? null,

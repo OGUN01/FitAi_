@@ -407,10 +407,14 @@ export const useAchievementStore = create<AchievementStore>()(
                 console.log(`🏆 Achievement unlocked: ${achievement.title}`);
 
                 // Sync newly unlocked achievement to Supabase
-                achievementDataService.saveUserAchievement(
-                  userId,
-                  userAchievement,
-                );
+                achievementDataService
+                  .saveUserAchievement(userId, userAchievement)
+                  .catch((err) =>
+                    console.error(
+                      '[achievementStore] Failed to save achievement to Supabase:',
+                      err,
+                    ),
+                  );
               },
             );
 
@@ -770,6 +774,28 @@ export const useAchievementStore = create<AchievementStore>()(
 
             console.log(
               `✅ Loaded and merged ${cloudAchievements.size} achievements from Supabase`,
+            );
+          }
+
+          // Offline recovery: push any locally-completed achievements missing from cloud
+          const localState = get();
+          const missingInCloud: string[] = [];
+          localState.userAchievements.forEach((ua, key) => {
+            if (ua.isCompleted && !cloudAchievements.has(key)) {
+              missingInCloud.push(key);
+              achievementDataService
+                .saveUserAchievement(userId, ua)
+                .catch((err) =>
+                  console.error(
+                    '[achievementStore] Failed to push offline achievement to Supabase:',
+                    err,
+                  ),
+                );
+            }
+          });
+          if (missingInCloud.length > 0) {
+            console.warn(
+              `[achievementStore] Found ${missingInCloud.length} locally-completed achievement(s) missing from Supabase — pushing: ${missingInCloud.join(', ')}`,
             );
           }
         } catch (error) {

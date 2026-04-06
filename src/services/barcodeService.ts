@@ -384,6 +384,7 @@ class BarcodeService {
         );
 
         if (dbErr) {
+          console.error('[barcodeService] Supabase barcode lookup failed:', dbErr);
           sawRetryableFailure = true;
         } else if (dbRows && (dbRows as LookupBarcodeRow[]).length > 0) {
           const row = (dbRows as LookupBarcodeRow[])[0];

@@ -80,7 +80,30 @@ export class DietAdaptiveMacroCalculator implements MacroCalculator {
 
     // Ensure we don't exceed total calories with protein alone
     if (proteinCal >= calories) {
-      throw new Error('Protein calories exceed total calories - invalid calculation');
+      console.warn(
+        `macroCalculator: proteinCal (${proteinCal}) >= calories (${calories}); capping protein to 50% of calories`,
+      );
+      protein = Math.round((calories * 0.50) / 4);
+      // Recalculate after cap
+      const cappedProteinCal = protein * 4;
+      if (dietType === 'keto') {
+        const carbCal = calories * 0.05;
+        const carbGrams = Math.min(Math.round(carbCal / 4), 25);
+        const fatCal = calories - cappedProteinCal - carbGrams * 4;
+        return {
+          protein,
+          fat: Math.round(Math.max(0, fatCal) / 9),
+          carbs: carbGrams,
+        };
+      }
+      const remainingCal = calories - cappedProteinCal;
+      const fatCal = remainingCal * 0.30;
+      const carbCal = remainingCal * 0.70;
+      return {
+        protein,
+        fat: Math.round(fatCal / 9),
+        carbs: Math.round(carbCal / 4),
+      };
     }
 
     // Keto diet: protein as passed, carbs ~5% of calories (capped at 25g), fat = remainder
@@ -158,6 +181,10 @@ export class DietAdaptiveMacroCalculator implements MacroCalculator {
     const fatCal = macros.fat * 9;
     const carbCal = macros.carbs * 4;
     const totalCal = proteinCal + fatCal + carbCal;
+
+    if (totalCal === 0) {
+      return { protein: 0, fat: 0, carbs: 0, totalCalories: 0 };
+    }
 
     const proteinPct = Math.round((proteinCal / totalCal) * 100);
     const fatPct = Math.round((fatCal / totalCal) * 100);
