@@ -1,7 +1,7 @@
 // Migration Progress Hook
 // Manages state and animations for migration progress component
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Animated } from "react-native";
 import { MigrationProgress, MigrationResult } from "../services/migration";
 
@@ -73,6 +73,7 @@ export const useMigrationProgress = (
   );
   const [pulseAnimation] = useState(new Animated.Value(1));
   const [celebrationAnimation] = useState(new Animated.Value(0));
+  const loopsRef = useRef<Animated.CompositeAnimation[]>([]);
 
   // Progress bar animation
   useEffect(() => {
@@ -90,6 +91,7 @@ export const useMigrationProgress = (
 
       if (currentStepIndex >= 0) {
         // Animate completed steps
+        const loops: Animated.CompositeAnimation[] = [];
         stepAnimations.forEach((animation, index) => {
           if (index < currentStepIndex) {
             Animated.timing(animation, {
@@ -99,7 +101,7 @@ export const useMigrationProgress = (
             }).start();
           } else if (index === currentStepIndex) {
             // Pulse current step
-            Animated.loop(
+            const loop = Animated.loop(
               Animated.sequence([
                 Animated.timing(animation, {
                   toValue: 0.7,
@@ -112,11 +114,15 @@ export const useMigrationProgress = (
                   useNativeDriver: true,
                 }),
               ]),
-            ).start();
+            );
+            loops.push(loop);
+            loop.start();
           }
         });
+        loopsRef.current = loops;
       }
     }
+    return () => { loopsRef.current.forEach(l => l.stop()); };
   }, [progress]);
 
   // Celebration animation

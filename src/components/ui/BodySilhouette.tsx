@@ -7,6 +7,7 @@ import Animated, {
   withSequence,
   withTiming,
   withDelay,
+  cancelAnimation,
 } from "react-native-reanimated";
 import Svg, { Path, Circle, Line, G, Text as SvgText } from "react-native-svg";
 import { rf, rp } from "../../utils/responsive";
@@ -248,6 +249,7 @@ const PulsingPoint: React.FC<{
         ),
       );
     }
+    return () => { cancelAnimation(scale); };
   }, [showAnimation, delay]);
 
   return (

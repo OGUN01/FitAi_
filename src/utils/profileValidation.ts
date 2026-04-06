@@ -483,7 +483,20 @@ export function validateDateOfBirth(dob: string | Date): ValidationResult {
   try {
     const birthDate = typeof dob === "string" ? new Date(dob) : dob;
     const today = new Date();
-    const age = today.getFullYear() - birthDate.getFullYear();
+
+    if (birthDate > today) {
+      return {
+        isValid: false,
+        missingFields: ["date_of_birth"],
+        errors: ["Date of birth cannot be in the future"],
+      };
+    }
+
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
 
     if (age < 13) {
       return {

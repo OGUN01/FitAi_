@@ -179,7 +179,6 @@ export async function loggingMiddleware(
       status: statusCode,
       time: responseTime + 'ms',
       user: user?.id || 'anonymous',
-      ip: ipAddress,
     });
   }
 }

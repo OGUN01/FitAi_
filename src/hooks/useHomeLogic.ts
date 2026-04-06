@@ -228,14 +228,20 @@ export const useHomeLogic = () => {
     const analyticsTask = InteractionManager.runAfterInteractions(() => {
       const loadAnalytics = async () => {
         if (Platform.OS === "ios" && healthSettings.healthKitEnabled) {
-          isHealthKitAuthorized ? syncHealthData() : initializeHealthKit();
+          if (isHealthKitAuthorized) {
+            await syncHealthData();
+          } else {
+            await initializeHealthKit();
+          }
         } else if (
           Platform.OS === "android" &&
           healthSettings.healthConnectEnabled
         ) {
-          isHealthConnectAuthorized
-            ? syncFromHealthConnect(7)
-            : initializeHealthConnect();
+          if (isHealthConnectAuthorized) {
+            await syncFromHealthConnect(7);
+          } else {
+            await initializeHealthConnect();
+          }
         }
 
         if (analyticsInitialized) {

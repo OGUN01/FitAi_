@@ -253,10 +253,11 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
               </Text>
               <Text style={styles.quantityText}>
                 ⚖️ Calories per gram:{" "}
-                {Math.round(
-                  (ingredientData.calories / Number(ingredientData.quantity)) *
-                    100,
-                ) / 100}
+                {(() => {
+                  const qty = Number(ingredientData.quantity);
+                  const calsPerUnit = qty > 0 ? (ingredientData.calories / qty) * 100 : null;
+                  return calsPerUnit != null ? Math.round(calsPerUnit * 100) / 100 : '—';
+                })()}
               </Text>
             </View>
           </View>

@@ -13,6 +13,7 @@ import Animated, {
   withTiming,
   Easing,
   interpolate,
+  cancelAnimation,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { animations } from "../../../theme/animations";
@@ -114,6 +115,7 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
         false, // Don't reverse
       );
     }
+    return () => { cancelAnimation(shimmerPosition); };
   }, [animated]);
 
   // Animated shimmer style

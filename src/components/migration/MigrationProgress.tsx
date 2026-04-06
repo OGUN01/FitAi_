@@ -1,7 +1,7 @@
 // Migration Progress Component for Track B Infrastructure
 // Provides smooth animations and progress tracking for data migration
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -113,6 +113,7 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
   );
   const [pulseAnimation] = useState(new Animated.Value(1));
   const [celebrationAnimation] = useState(new Animated.Value(0));
+  const loopsRef = useRef<Animated.CompositeAnimation[]>([]);
 
   const screenWidth = Dimensions.get("window").width;
 
@@ -136,6 +137,7 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
 
       if (currentStepIndex >= 0) {
         // Animate completed steps
+        const loops: Animated.CompositeAnimation[] = [];
         stepAnimations.forEach((animation, index) => {
           if (index < currentStepIndex) {
             Animated.timing(animation, {
@@ -145,7 +147,7 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
             }).start();
           } else if (index === currentStepIndex) {
             // Pulse current step
-            Animated.loop(
+            const loop = Animated.loop(
               Animated.sequence([
                 Animated.timing(animation, {
                   toValue: 0.7,
@@ -158,11 +160,15 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
                   useNativeDriver: true,
                 }),
               ]),
-            ).start();
+            );
+            loops.push(loop);
+            loop.start();
           }
         });
+        loopsRef.current = loops;
       }
     }
+    return () => { loopsRef.current.forEach(l => l.stop()); };
   }, [progress]);
 
   useEffect(() => {

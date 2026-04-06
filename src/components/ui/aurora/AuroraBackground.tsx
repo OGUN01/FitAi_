@@ -14,6 +14,7 @@ import Animated, {
   withTiming,
   withSequence,
   Easing,
+  cancelAnimation,
 } from "react-native-reanimated";
 import {
   gradients,
@@ -97,6 +98,7 @@ export const AuroraBackground: React.FC<AuroraBackgroundProps> = ({
     } else {
       opacity.value = 1;
     }
+    return () => { cancelAnimation(opacity); };
   }, [animated, animationSpeed, intensity]);
 
   const animatedStyle = useAnimatedStyle(() => ({

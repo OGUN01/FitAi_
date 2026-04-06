@@ -7,6 +7,7 @@ import Animated, {
   withSequence,
   withTiming,
   Easing,
+  cancelAnimation,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { rf, rp } from "../../utils/responsive";
@@ -64,6 +65,7 @@ export const PulseButton: React.FC<PulseButtonProps> = ({
       pulseScale.value = withTiming(1, { duration: 200 });
       pulseOpacity.value = withTiming(1, { duration: 200 });
     }
+    return () => { cancelAnimation(pulseScale); cancelAnimation(pulseOpacity); };
   }, [pulseEnabled, disabled, loading]);
 
   const animatedButtonStyle = useAnimatedStyle(() => ({

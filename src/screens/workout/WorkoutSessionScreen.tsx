@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Pressable,
   BackHandler,
+  Platform,
 } from "react-native";
 import { ResponsiveTheme } from "../../utils/constants";
 import { getLocalDateString } from "../../utils/weekUtils";
@@ -574,6 +575,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 
   // Android hardware back button — show exit dialog instead of default nav
   useEffect(() => {
+    if (Platform.OS !== 'android') return;
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
       exitWorkout();
       return true; // prevent default back

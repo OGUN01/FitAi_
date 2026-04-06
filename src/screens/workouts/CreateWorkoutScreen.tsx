@@ -8,6 +8,8 @@ import {
   StyleSheet,
   SafeAreaView,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { GestureDetector } from "react-native-gesture-handler";
 import Animated, { useAnimatedStyle, interpolate } from "react-native-reanimated";
@@ -201,7 +203,7 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
   );
 
   const updateExerciseField = useCallback(
-    (index: number, field: keyof TemplateExercise, value: number | [number, number]) => {
+    (index: number, field: keyof TemplateExercise, value: number | [number, number] | undefined) => {
       setAddedExercises((prev) =>
         prev.map((ex, i) => (i === index ? { ...ex, [field]: value } : ex)),
       );
@@ -326,6 +328,10 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} testID="back-button">
           <Text style={styles.headerButton}>Back</Text>
@@ -426,7 +432,7 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                         updateExerciseField(
                           index,
                           "targetWeightKg",
-                          parseFloat(v) || 0,
+                          v === '' ? undefined : Math.max(0, parseFloat(v) || 0),
                         )
                       }
                       placeholder="0"
@@ -510,6 +516,7 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
           <Text style={styles.saveTemplateText}>Save Template</Text>
         </Pressable>
       </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

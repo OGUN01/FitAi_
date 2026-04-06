@@ -87,6 +87,7 @@ class NotificationService {
     trigger: Notifications.NotificationTriggerInput,
     data?: any,
   ): Promise<string | null> {
+    if (Platform.OS === "web") return null;
     try {
       const notificationId = await Notifications.scheduleNotificationAsync({
         identifier,

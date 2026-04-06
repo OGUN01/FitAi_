@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthResponse, AuthSession } from "./types";
 import { dataBridge } from "../DataBridge";
 import { migrationManager } from "../migrationManager";
+import { unregisterBackgroundHealthSync } from "../backgroundHealthSync";
 
 const SYNC_QUEUE_KEY = "offline_sync_queue";
 
@@ -146,6 +147,10 @@ export async function logout(
         error: error.message,
       };
     }
+
+    await unregisterBackgroundHealthSync().catch(e =>
+      console.error('[logout] unregister bg task failed:', e)
+    );
 
     // Clear local session
     setSession(null);

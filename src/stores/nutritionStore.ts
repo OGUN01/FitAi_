@@ -880,12 +880,14 @@ export const useNutritionStore = create<NutritionState>()(
                   "Failed to fetch planned meal logs:",
                   plannedLogsResult.error,
                 );
+                return;
               }
               if (todaysConsumedLogsResult?.error) {
                 console.error(
                   "Failed to fetch today's consumed meal logs:",
                   todaysConsumedLogsResult.error,
                 );
+                return;
               }
 
               const plannedLogs = plannedLogsResult?.data || [];

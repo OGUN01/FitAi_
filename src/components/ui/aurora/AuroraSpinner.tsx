@@ -12,6 +12,7 @@ import Animated, {
   withRepeat,
   withTiming,
   Easing,
+  cancelAnimation,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -99,6 +100,7 @@ export const AuroraSpinner: React.FC<AuroraSpinnerProps> = ({
       -1, // Infinite loop
       false, // Don't reverse
     );
+    return () => { cancelAnimation(rotation); };
   }, [duration]);
 
   // Animated rotation style

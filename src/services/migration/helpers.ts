@@ -18,7 +18,7 @@ export async function uploadToSupabase(
   context: MigrationContext,
 ): Promise<void> {
   try {
-    const projectId = "mqfrwtmkokivoxgukgsz";
+    const projectId = process.env.EXPO_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)\./)?.[1] ?? "";
 
     const columns = Object.keys(data).join(", ");
     const values = Object.values(data)
@@ -51,7 +51,7 @@ export async function deleteFromSupabase(
   context: MigrationContext,
 ): Promise<void> {
   try {
-    const projectId = "mqfrwtmkokivoxgukgsz";
+    const projectId = process.env.EXPO_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)\./)?.[1] ?? "";
     const query = `DELETE FROM ${table} WHERE id = '${id}'`;
 
     await sleep(50 + Math.random() * 100);
@@ -66,7 +66,7 @@ export async function verifyDataInSupabase(
   context: MigrationContext,
 ): Promise<void> {
   try {
-    const projectId = "mqfrwtmkokivoxgukgsz";
+    const projectId = process.env.EXPO_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)\./)?.[1] ?? "";
 
     if (context.uploadedData.user) {
       const query = `SELECT COUNT(*) as count FROM profiles WHERE id = '${context.userId}'`;

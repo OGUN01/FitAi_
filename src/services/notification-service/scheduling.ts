@@ -107,7 +107,7 @@ export async function scheduleWaterReminders(
     const targetDate = new Date(today);
     targetDate.setDate(today.getDate() + day);
 
-    intervals.forEach((interval, index) => {
+    for (const [index, interval] of intervals.entries()) {
       const [hours, minutes] = interval.time.split(":").map(Number);
       const reminderTime = new Date(targetDate);
       reminderTime.setHours(hours, minutes, 0, 0);
@@ -116,7 +116,7 @@ export async function scheduleWaterReminders(
         const identifier = `water_${day}_${index}`;
         const litersPerReminder = interval.liters;
 
-        service.scheduleNotification(
+        await service.scheduleNotification(
           identifier,
           "💧 Hydration Time!",
           `Time to drink ${litersPerReminder}L of water. Stay hydrated for better performance!`,
@@ -124,7 +124,7 @@ export async function scheduleWaterReminders(
           { type: "water", liters: litersPerReminder },
         );
       }
-    });
+    }
   }
 }
 
@@ -144,7 +144,7 @@ export async function scheduleWorkoutReminders(
   const today = new Date();
 
   for (let day = 0; day < 7; day++) {
-    times.forEach((workoutTime, index) => {
+    for (const [index, workoutTime] of times.entries()) {
       const [hours, minutes] = workoutTime.split(":").map(Number);
       const reminderTime = new Date(today);
       reminderTime.setDate(today.getDate() + day);
@@ -157,7 +157,7 @@ export async function scheduleWorkoutReminders(
       if (reminderTime > new Date()) {
         const identifier = `workout_${day}_${index}`;
 
-        service.scheduleNotification(
+        await service.scheduleNotification(
           identifier,
           "🏋️ Workout Time Coming Up!",
           `Your workout starts in ${config.reminderMinutes} minutes. Get ready to crush it! 💪`,
@@ -165,7 +165,7 @@ export async function scheduleWorkoutReminders(
           { type: "workout", originalTime: workoutTime },
         );
       }
-    });
+    }
   }
 }
 
@@ -191,8 +191,8 @@ export async function scheduleMealReminders(
   const today = new Date();
 
   for (let day = 0; day < 7; day++) {
-    meals.forEach((meal) => {
-      if (!meal.config.enabled) return;
+    for (const meal of meals) {
+      if (!meal.config.enabled) continue;
 
       const [hours, minutes] = meal.config.time.split(":").map(Number);
       const mealTime = new Date(today);
@@ -202,7 +202,7 @@ export async function scheduleMealReminders(
       if (mealTime > new Date()) {
         const identifier = `meal_${meal.key}_${day}`;
 
-        service.scheduleNotification(
+        await service.scheduleNotification(
           identifier,
           `${meal.emoji} ${meal.name} Time!`,
           `Time for a nutritious ${meal.name.toLowerCase()}. Fuel your body right! 🌟`,
@@ -210,7 +210,7 @@ export async function scheduleMealReminders(
           { type: "meal", mealType: meal.key },
         );
       }
-    });
+    }
   }
 }
 

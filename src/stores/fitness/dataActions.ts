@@ -51,9 +51,7 @@ export const createDataActions = (
             // Rebuild completedSessions — skip IDs already in the store (from this session)
             // NOTE: workoutProgress is NOT restored from Supabase sessions.
             // Completion status is determined solely from completedSessions.
-            const existingIds = new Set(get().completedSessions.map((c) => c.sessionId));
             const hydrated: CompletedSession[] = sessions
-              .filter((s) => !existingIds.has(s.id))
               .map((s) => {
                 const planWorkout = get().weeklyWorkoutPlan?.workouts?.find(
                   (workout) =>

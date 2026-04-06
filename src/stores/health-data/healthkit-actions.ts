@@ -83,15 +83,16 @@ export const createHealthKitActions = (
       };
 
       if (syncResult.success && syncResult.data) {
+        const currentMetrics = get().metrics;
         const newMetrics: HealthMetrics = {
-          ...get().metrics,
+          ...currentMetrics,
           steps: syncResult.data.steps || 0,
           activeCalories: syncResult.data.activeEnergy || 0,
           weight: syncResult.data.bodyWeight,
           heartRate: syncResult.data.heartRate,
           sleepHours: syncResult.data.sleepHours,
           recentWorkouts: [
-            ...get().metrics.recentWorkouts,
+            ...currentMetrics.recentWorkouts,
             ...(syncResult.data.workouts?.map((workout: any) => ({
               id: workout.id || `workout_${Date.now()}`,
               type: workout.type || "unknown",

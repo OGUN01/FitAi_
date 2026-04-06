@@ -769,7 +769,7 @@ export class MigrationEngine {
   ): Promise<void> {
     try {
       // Use Supabase MCP tools to insert data
-      const projectId = "mqfrwtmkokivoxgukgsz";
+      const projectId = process.env.EXPO_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)\./)?.[1] ?? "";
 
       // Prepare the SQL insert query
       const columns = Object.keys(data).join(", ");
@@ -808,7 +808,7 @@ export class MigrationEngine {
     context: MigrationContext,
   ): Promise<void> {
     try {
-      const projectId = "mqfrwtmkokivoxgukgsz";
+      const projectId = process.env.EXPO_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)\./)?.[1] ?? "";
       const query = `DELETE FROM ${table} WHERE id = '${id}'`;
 
       // Execute the query using Supabase MCP tools
@@ -823,7 +823,7 @@ export class MigrationEngine {
 
   private async verifyDataInSupabase(context: MigrationContext): Promise<void> {
     try {
-      const projectId = "mqfrwtmkokivoxgukgsz";
+      const projectId = process.env.EXPO_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)\./)?.[1] ?? "";
 
       // Verify user profile exists
       if (context.uploadedData.user) {

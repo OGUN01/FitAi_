@@ -12,7 +12,7 @@
  * - is_calibration flag flows through SetLogData to completionTracking._writeExerciseSets.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -64,8 +64,7 @@ function kgToDisplay(kg: number, units: 'kg' | 'lbs'): string {
 
 function displayToKg(display: string, units: 'kg' | 'lbs'): number {
   const val = parseLocalFloat(display) || 0;
-  if (units === 'lbs') return val / KG_TO_LBS;
-  return val;
+  return Math.max(0, units === 'lbs' ? val / KG_TO_LBS : val);
 }
 
 function isTimeHold(reps: number | string): boolean {
@@ -146,6 +145,7 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
 }) => {
   const [weight, setWeight] = useState('');
   const [repsInput, setRepsInput] = useState('');
+  const repsRef = useRef<TextInput>(null);
   const [setType, setSetType] = useState<SetType>('normal');
   const [previousSession, setPreviousSession] = useState<LastSessionData | null>(null);
   const [suggestedWeight, setSuggestedWeight] = useState<ProgressionResult | null>(null);
@@ -378,6 +378,8 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
                 placeholder="0"
                 placeholderTextColor="#666"
                 autoFocus
+                returnKeyType="next"
+                onSubmitEditing={() => repsRef.current?.focus()}
               />
             </View>
           ) : (
@@ -390,6 +392,7 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
           <View style={styles.inputRow}>
             <Text style={styles.fieldLabel}>{repsLabel}</Text>
             <TextInput
+              ref={repsRef}
               style={styles.input}
               value={repsInput}
               onChangeText={setRepsInput}
@@ -397,6 +400,7 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
               placeholder="0"
               placeholderTextColor="#666"
               autoFocus={isBodyweight}
+              returnKeyType="done"
             />
           </View>
 

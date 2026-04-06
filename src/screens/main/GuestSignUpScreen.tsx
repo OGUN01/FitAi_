@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Platform } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Platform, KeyboardAvoidingView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
@@ -227,9 +227,11 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top"]}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
             <AnimatedPressable
@@ -369,6 +371,7 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
 
           <View style={styles.bottomSpacing} />
         </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </AuroraBackground>
   );

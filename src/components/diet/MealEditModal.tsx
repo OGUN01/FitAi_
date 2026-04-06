@@ -258,6 +258,7 @@ export const MealEditModal: React.FC<MealEditModalProps> = ({
             <ScrollView
               style={styles.scrollView}
               showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
             >
               {/* Meal Name */}
               <View style={styles.section}>

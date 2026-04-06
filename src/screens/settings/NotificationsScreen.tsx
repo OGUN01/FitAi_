@@ -210,6 +210,8 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
     editModal,
     scheduledCount,
     preferences,
+    isInitialized,
+    error,
     handleToggle,
     handleEditPress,
     closeEditModal,
@@ -232,6 +234,12 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
+          {!isInitialized && error ? (
+            <Text style={styles.permissionWarning}>
+              Notification permission denied. Enable in device Settings.
+            </Text>
+          ) : null}
+
           <DescriptionCard scheduledCount={scheduledCount} />
 
           <View style={styles.section}>
@@ -432,6 +440,12 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: rh(80),
+  },
+  permissionWarning: {
+    color: "orange",
+    fontSize: rf(13),
+    textAlign: "center" as const,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 });
 

@@ -126,18 +126,13 @@ export class UserMetricsService {
    * Uses caching to avoid excessive database calls
    */
   async loadUserMetrics(userId: string, forceRefresh: boolean = false): Promise<UserMetrics> {
-    console.log('📊 [USER-METRICS] Loading user metrics for:', userId, { forceRefresh });
-
     // Check cache
     const now = Date.now();
     if (!forceRefresh && this.cachedMetrics && (now - this.lastLoadTime) < this.CACHE_DURATION_MS) {
-      console.log('📊 [USER-METRICS] Returning cached metrics');
       return this.cachedMetrics;
     }
 
     try {
-      console.log('📊 [USER-METRICS] Loading from database...');
-
       // Load all data in parallel for performance
       const [
         personalInfo,
@@ -152,14 +147,6 @@ export class UserMetricsService {
         WorkoutPreferencesService.load(userId),
         AdvancedReviewService.load(userId),
       ]);
-
-      console.log('📊 [USER-METRICS] Data loaded:', {
-        hasPersonalInfo: !!personalInfo,
-        hasDietPreferences: !!dietPreferences,
-        hasBodyAnalysis: !!bodyAnalysis,
-        hasWorkoutPreferences: !!workoutPreferences,
-        hasAdvancedReview: !!advancedReview,
-      });
 
       const resolvedCurrentWeight = bodyAnalysis
         ? await resolveCurrentWeightForUser(userId, {
@@ -188,7 +175,6 @@ export class UserMetricsService {
       this.cachedMetrics = metrics;
       this.lastLoadTime = now;
 
-      console.log('✅ [USER-METRICS] User metrics loaded successfully');
       return metrics;
     } catch (error) {
       console.error('❌ [USER-METRICS] Failed to load user metrics:', error);
@@ -353,7 +339,6 @@ export class UserMetricsService {
    * Call this after user updates their profile/goals
    */
   clearCache(): void {
-    console.log('📊 [USER-METRICS] Clearing cache');
     this.cachedMetrics = null;
     this.lastLoadTime = 0;
   }

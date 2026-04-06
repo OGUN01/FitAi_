@@ -10,7 +10,7 @@
  * - Updates local stores for instant UI feedback
  */
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -61,6 +61,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
   // Form state
   const [weight, setWeight] = useState<string>("");
   const [bodyFat, setBodyFat] = useState<string>("");
+  const bodyFatRef = useRef<TextInput>(null);
   const [notes, setNotes] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -261,6 +262,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                 <ScrollView
                   style={styles.scrollContent}
                   showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
                 >
                   {/* Weight Input */}
                   <View style={styles.inputGroup}>
@@ -283,6 +285,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                         placeholderTextColor={ResponsiveTheme.colors.textMuted}
                         keyboardType="decimal-pad"
                         returnKeyType="next"
+                        onSubmitEditing={() => bodyFatRef.current?.focus()}
                         editable={!isSubmitting}
                       />
                       <Text style={styles.unitLabel}>{displayUnit}</Text>
@@ -300,13 +303,14 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                         style={styles.inputIcon}
                       />
                       <TextInput
+                        ref={bodyFatRef}
                         style={styles.input}
                         value={bodyFat}
                         onChangeText={setBodyFat}
                         placeholder="e.g., 18.5"
                         placeholderTextColor={ResponsiveTheme.colors.textMuted}
                         keyboardType="decimal-pad"
-                        returnKeyType="next"
+                        returnKeyType="done"
                         editable={!isSubmitting}
                       />
                       <Text style={styles.unitLabel}>%</Text>

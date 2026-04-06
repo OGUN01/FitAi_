@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
-import { BackHandler } from "react-native";
+import { BackHandler, Platform } from "react-native";
 import { useOnboardingState } from "./useOnboardingState";
 import type { OnboardingReviewData } from "../types/onboarding";
 import type { TabConfig } from "../components/onboarding/OnboardingTabBar";
@@ -334,6 +334,7 @@ export const useOnboardingLogic = ({
 
   // Handle hardware back button
   useEffect(() => {
+    if (Platform.OS !== 'android') return;
     const backAction = () => {
       handlePreviousTab();
       return true;

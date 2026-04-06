@@ -96,6 +96,7 @@
     "expo-image-picker": "^16.1.4",
     "expo-linear-gradient": "^14.1.5",
     "expo-notifications": "~0.31.4",
+    "expo-secure-store": "~14.0.1",
     "expo-sqlite": "^15.2.14",
     "expo-status-bar": "~2.2.3",
     "formdata-polyfill": "^4.0.10",

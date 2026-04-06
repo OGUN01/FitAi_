@@ -36,6 +36,7 @@ export const useNotificationsScreen = ({
     toggleNotificationType = () => {},
     initialize = async () => {},
     isInitialized = false,
+    error = null,
   } = isExpoGo || !useNotificationStore ? {} : useNotificationStore();
 
   useEffect(() => {
@@ -149,6 +150,8 @@ export const useNotificationsScreen = ({
     editModal,
     scheduledCount,
     preferences,
+    isInitialized,
+    error,
     handleToggle,
     handleEditPress,
     closeEditModal,

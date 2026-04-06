@@ -107,6 +107,7 @@ export const useNotificationStore = create<NotificationState>()(
       },
 
       updateWaterConfig: async (config) => {
+        if (!get().isInitialized) return;
         const currentPrefs = get().preferences;
         const updatedPrefs = {
           ...currentPrefs,
@@ -120,6 +121,7 @@ export const useNotificationStore = create<NotificationState>()(
       },
 
       updateWorkoutConfig: async (config) => {
+        if (!get().isInitialized) return;
         const currentPrefs = get().preferences;
         const updatedPrefs = {
           ...currentPrefs,
@@ -135,6 +137,7 @@ export const useNotificationStore = create<NotificationState>()(
       },
 
       updateMealConfig: async (config) => {
+        if (!get().isInitialized) return;
         const currentPrefs = get().preferences;
         const updatedPrefs = {
           ...currentPrefs,
@@ -148,6 +151,7 @@ export const useNotificationStore = create<NotificationState>()(
       },
 
       updateSleepConfig: async (config) => {
+        if (!get().isInitialized) return;
         const currentPrefs = get().preferences;
         const updatedPrefs = {
           ...currentPrefs,
@@ -161,6 +165,7 @@ export const useNotificationStore = create<NotificationState>()(
       },
 
       toggleNotificationType: async (type) => {
+        if (!get().isInitialized) return;
         const currentPrefs = get().preferences;
         const updatedPrefs = {
           ...currentPrefs,

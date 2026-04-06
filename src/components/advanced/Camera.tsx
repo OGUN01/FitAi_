@@ -114,7 +114,9 @@ const CameraComponent: React.FC<CameraProps> = ({
     }
 
     if (!permission || !permission.granted) {
-      requestPermission();
+      if (permission?.canAskAgain !== false) {
+        requestPermission();
+      }
     }
   }, [visible, permission, requestPermission]);
 

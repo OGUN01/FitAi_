@@ -69,6 +69,7 @@ import { invalidateMetricsCache } from "./src/hooks/useCalculatedMetrics";
 import { dataBridge } from "./src/services/DataBridge";
 import { useAppConfig } from "./src/hooks/useAppConfig";
 import { runAfterInteractions } from "./src/utils/performance";
+import * as Notifications from "expo-notifications";
 // validateProductionEnvironment removed - AI moved to Cloudflare Workers
 
 // Enhanced Expo Go detection with bulletproof methods and debugging
@@ -136,6 +137,7 @@ export default function App() {
   const [isLoadingOnboarding, setIsLoadingOnboarding] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
   const [subscriptionTimeout, setSubscriptionTimeout] = useState(false);
+  const [initialNotificationTab, setInitialNotificationTab] = useState<string | undefined>(undefined);
 
   const { user, isLoading, isInitialized, isGuestMode, guestId } = useAuth();
   const { config: appConfig, loading: appConfigLoading } = useAppConfig();
@@ -1088,6 +1090,30 @@ export default function App() {
                 notifError,
               );
             }
+
+            if (!mounted) return;
+
+            // Handle cold-start notification tap (app was killed when user tapped notification)
+            try {
+              const lastResponse = await Notifications.getLastNotificationResponseAsync();
+              if (lastResponse) {
+                const data = lastResponse.notification.request.content.data;
+                if (data?.type === 'water') {
+                  setInitialNotificationTab('diet');
+                } else if (data?.type === 'workout') {
+                  setInitialNotificationTab('fitness');
+                } else if (data?.type === 'meal') {
+                  setInitialNotificationTab('diet');
+                }
+              }
+            } catch (coldStartError) {
+              console.error('[App] Cold-start notification check failed:', coldStartError);
+            }
+
+            // Clear badge count when app becomes active
+            if (Platform.OS !== 'web') {
+              Notifications.setBadgeCountAsync(0).catch(() => {});
+            }
           }
         });
       } catch (error) {
@@ -1097,12 +1123,28 @@ export default function App() {
       }
     };
 
+    // Warm-start listener: handle notification taps while app is running/backgrounded
+    let notificationResponseSubscription: Notifications.Subscription | null = null;
+    if (!isExpoGo) {
+      notificationResponseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
+        const data = response.notification.request.content.data;
+        if (data?.type === 'water') {
+          setInitialNotificationTab('diet');
+        } else if (data?.type === 'workout') {
+          setInitialNotificationTab('fitness');
+        } else if (data?.type === 'meal') {
+          setInitialNotificationTab('diet');
+        }
+      });
+    }
+
     initializeApp().catch((error) => {
       console.error("[App] Unhandled initialization error:", error);
     });
 
     return () => {
       mounted = false;
+      notificationResponseSubscription?.remove();
     };
   }, []);
 
@@ -1280,7 +1322,7 @@ export default function App() {
               />
 
               {isOnboardingComplete ? (
-                <MainNavigation />
+                <MainNavigation initialTab={initialNotificationTab} />
               ) : shouldResumeAuthenticatedOnboarding ? (
                 <OnboardingContainer
                   onComplete={handleOnboardingComplete}
