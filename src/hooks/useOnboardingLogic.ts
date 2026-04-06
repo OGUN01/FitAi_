@@ -332,32 +332,6 @@ export const useOnboardingLogic = ({
     }
   }, [editMode, onEditCancel, currentTab, setCurrentTab, markTabIncomplete, hasUnsavedChanges, onExit]);
 
-  const handleBackPress = useCallback(() => {
-    if (hasUnsavedChanges) {
-      crossPlatformAlert(
-        "Exit Onboarding",
-        "You have unsaved changes. Are you sure you want to exit?",
-        [
-          { text: "Stay", style: "cancel" },
-          {
-            text: "Save & Exit",
-            onPress: async () => {
-              await saveToLocalRef.current();
-              onExit?.();
-            },
-          },
-          {
-            text: "Exit Without Saving",
-            style: "destructive",
-            onPress: () => onExit?.(),
-          },
-        ],
-      );
-    } else {
-      onExit?.();
-    }
-  }, [hasUnsavedChanges, onExit]);
-
   // Handle hardware back button
   useEffect(() => {
     const backAction = () => {
@@ -761,7 +735,6 @@ export const useOnboardingLogic = ({
     handleTabPress,
     handleNextTab,
     handlePreviousTab,
-    handleBackPress,
     handleCompleteOnboarding,
     handleCompletionGetStarted,
     handleDismissDialog,

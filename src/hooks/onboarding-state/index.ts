@@ -92,15 +92,30 @@ export const useOnboardingState = (): OnboardingStateWithActions => {
   useEffect(() => {
     let mounted = true;
 
-    loadFromLocalMemo().catch((error) => {
+    const load = async () => {
+      // Fast path: populate UI immediately from local cache
+      try {
+        await loadFromLocalMemo();
+      } catch (error) {
+        if (!mounted) return;
+        logger.error('[useOnboardingState] Load from local failed', { error: String(error) });
+      }
       if (!mounted) return;
-      logger.error('[useOnboardingState] Load from local failed', { error: String(error) });
-    });
+      // Authoritative path: override with fresh server data so DB always wins
+      // over stale AsyncStorage (e.g. user edited profile on another device)
+      if (isAuthenticated) {
+        await loadFromDatabase().catch((error) => {
+          if (mounted) logger.error('[useOnboardingState] Load from database failed', { error: String(error) });
+        });
+      }
+    };
+
+    load();
 
     return () => {
       mounted = false;
     };
-  }, [loadFromLocalMemo]);
+  }, [loadFromLocalMemo, loadFromDatabase, isAuthenticated]);
 
   return {
     ...state,

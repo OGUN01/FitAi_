@@ -41,6 +41,18 @@ export const useAdvancedReviewForm = ({
   const timeoutRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => () => { timeoutRefs.current.forEach(clearTimeout); }, []);
   const hasAutoSelectedRef = useRef(false);
+
+  // Stale-closure fix: always-current refs for bodyAnalysis and workoutPreferences
+  // so handleRateSelection reads live values even when the callback is memoized.
+  const bodyAnalysisRef = useRef(bodyAnalysis);
+  useEffect(() => { bodyAnalysisRef.current = bodyAnalysis; }, [bodyAnalysis]);
+  const workoutPreferencesRef = useRef(workoutPreferences);
+  useEffect(() => { workoutPreferencesRef.current = workoutPreferences; }, [workoutPreferences]);
+
+  // Race-condition fix: block the auto-firing performCalculations useEffect while
+  // handleRateSelection is mid-flight dispatching both prop updates, then call
+  // performCalculations once manually after both updates are done.
+  const isSelectingAlternativeRef = useRef(false);
   const {
     validationResults,
     calculatedData,
@@ -64,7 +76,10 @@ export const useAdvancedReviewForm = ({
   // selected goal on first load. The engine still emits the DEFICIT_LIMITED_FOR_SAFETY
   // warning (informational) but it no longer silently replaces their calorie target.
   // The cap only floor is BMR — eating below your own metabolic rate is never allowed.
+  // Race-condition fix: skip auto-recalc while handleRateSelection is batching its
+  // two prop updates — it will call performCalculations once explicitly after both.
   useEffect(() => {
+    if (isSelectingAlternativeRef.current) return;
     if (personalInfo && dietPreferences && workoutPreferences) {
       performCalculations({ bypassDeficitLimit: true });
     }
@@ -137,10 +152,18 @@ export const useAdvancedReviewForm = ({
       // Both the card and the stored timeline must agree so the chart shows the same
       // number of weeks that the card promised. Math.ceil rounds up fractional weeks
       // (e.g. 19.32 → 20) which is the correct approach: you can't do 0.32 of a week.
+      //
+      // Stale-closure fix: read from refs so we always get the current weight values
+      // even when auto-select fires immediately after smartAlternatives becomes available
+      // (at which point the callback may still be memoized with older prop values).
+      const currentBodyAnalysis = bodyAnalysisRef.current;
       const weightToLose = Math.abs(
-        (bodyAnalysis?.current_weight_kg || 0) -
-          (bodyAnalysis?.target_weight_kg || 0),
+        (currentBodyAnalysis?.current_weight_kg || 0) -
+          (currentBodyAnalysis?.target_weight_kg || 0),
       );
+      // Race-condition fix: block the auto-firing useEffect for the duration of this
+      // selection so the two prop updates don't each trigger a separate recalculation.
+      isSelectingAlternativeRef.current = true;
       const weeklyRate = alternative.weeklyRate ?? 0.5;
       const newTimelineWeeks =
         weeklyRate > 0
@@ -262,6 +285,11 @@ export const useAdvancedReviewForm = ({
         );
       }
 
+      // Clear batch guard and trigger one unified recalculation now that both
+      // prop updates have been dispatched.
+      isSelectingAlternativeRef.current = false;
+      performCalculations({ bypassDeficitLimit: true });
+
       setSuccessMessage(
         `Rate updated to ${alternative.weeklyRate} kg/week. Recalculating...`,
       );
@@ -269,8 +297,6 @@ export const useAdvancedReviewForm = ({
       timeoutRefs.current.push(t1);
     },
     [
-      bodyAnalysis,
-      workoutPreferences,
       onUpdateBodyAnalysis,
       onUpdateWorkoutPreferences,
       performCalculations,

@@ -473,48 +473,89 @@ export const MOTIVATIONAL_CONTENT_SCHEMA = {
   type: 'object',
   properties: {
     dailyTip: {
-      type: 'string',
+      type: 'object',
       description: 'Practical fitness tip for the day',
+      properties: {
+        icon: { type: 'string', description: 'Emoji icon representing the tip' },
+        title: { type: 'string', description: 'Short title for the tip' },
+        content: { type: 'string', description: 'Full tip text' },
+        category: {
+          type: 'string',
+          enum: ['nutrition', 'exercise', 'mindset', 'recovery'],
+          description: 'Tip category',
+        },
+      },
+      required: ['icon', 'title', 'content', 'category'],
+      propertyOrdering: ['icon', 'title', 'content', 'category'],
     },
     encouragement: {
-      type: 'string',
+      type: 'object',
       description: 'Personalized motivational message',
+      properties: {
+        message: { type: 'string', description: 'Motivational message text' },
+        emoji: { type: 'string', description: 'Supporting emoji' },
+        tone: {
+          type: 'string',
+          enum: ['supportive', 'energetic', 'calm', 'challenging'],
+          description: 'Tone of the message',
+        },
+      },
+      required: ['message', 'emoji', 'tone'],
+      propertyOrdering: ['message', 'emoji', 'tone'],
     },
     challenge: {
       type: 'object',
       description: 'Daily or weekly challenge',
       properties: {
-        title: {
+        title: { type: 'string', description: 'Challenge name' },
+        description: { type: 'string', description: 'What the user needs to do' },
+        reward: { type: 'string', description: "What they'll gain from completing it" },
+        duration: { type: 'string', description: 'Duration as human-readable string, e.g. "7 days"' },
+        difficulty: {
           type: 'string',
-          description: 'Challenge name',
-        },
-        description: {
-          type: 'string',
-          description: 'What the user needs to do',
-        },
-        reward: {
-          type: 'string',
-          description: "What they'll gain from completing it",
-        },
-        duration: {
-          type: 'number',
-          description: 'Duration in days',
+          enum: ['easy', 'medium', 'hard'],
+          description: 'Challenge difficulty',
         },
       },
-      required: ['title', 'description', 'reward', 'duration'],
-      propertyOrdering: ['title', 'description', 'reward', 'duration'],
+      required: ['title', 'description', 'reward', 'duration', 'difficulty'],
+      propertyOrdering: ['title', 'description', 'reward', 'duration', 'difficulty'],
     },
     quote: {
-      type: 'string',
+      type: 'object',
       description: 'Inspirational quote',
+      properties: {
+        text: { type: 'string', description: 'Quote text' },
+        author: { type: 'string', description: 'Quote author' },
+        context: { type: 'string', description: 'Context or relevance to the user (optional)' },
+      },
+      required: ['text', 'author'],
+      propertyOrdering: ['text', 'author', 'context'],
     },
     factOfTheDay: {
-      type: 'string',
+      type: 'object',
       description: 'Interesting fitness or health fact',
+      properties: {
+        fact: { type: 'string', description: 'The fact text' },
+        source: { type: 'string', description: 'Source of the fact (optional)' },
+        relatedTip: { type: 'string', description: 'Related actionable tip (optional)' },
+      },
+      required: ['fact'],
+      propertyOrdering: ['fact', 'source', 'relatedTip'],
+    },
+    personalizedMessage: {
+      type: 'object',
+      description: 'Message personalized to the user\'s data',
+      properties: {
+        content: { type: 'string', description: 'Personalized message text' },
+        basedOn: { type: 'string', description: 'Data point that triggered this message' },
+        actionItem: { type: 'string', description: 'Concrete action for the user (optional)' },
+      },
+      required: ['content', 'basedOn'],
+      propertyOrdering: ['content', 'basedOn', 'actionItem'],
     },
   },
-  required: ['dailyTip', 'encouragement', 'challenge', 'quote', 'factOfTheDay'],
-  propertyOrdering: ['dailyTip', 'encouragement', 'challenge', 'quote', 'factOfTheDay'],
+  required: ['dailyTip', 'encouragement', 'challenge', 'quote', 'factOfTheDay', 'personalizedMessage'],
+  propertyOrdering: ['dailyTip', 'encouragement', 'challenge', 'quote', 'factOfTheDay', 'personalizedMessage'],
 };
 
 // ============================================================================
