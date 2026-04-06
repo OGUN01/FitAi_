@@ -8,15 +8,18 @@ export const initializeBackend = async () => {
       const { dataBridge } = await import("../../services/DataBridge");
       await dataBridge.initialize();
     } catch (dmErr) {
+      console.error("[initializeBackend] dataBridge.initialize failed:", dmErr);
     }
 
     try {
       const { crudOperations } = await import("../../services/crudOperations");
       await crudOperations.initialize();
     } catch (crudErr) {
+      console.error("[initializeBackend] crudOperations.initialize failed:", crudErr);
     }
 
   } catch (error) {
+    console.error("[initializeBackend] failed:", error);
   }
 };
 

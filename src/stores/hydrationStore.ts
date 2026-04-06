@@ -67,9 +67,8 @@ export const useHydrationStore = create<HydrationState>()(
 
         const newIntake = state.waterIntakeML + amountML;
         // Cap at 150% of goal to prevent accidental over-logging
-        const maxIntake = state.dailyGoalML
-          ? state.dailyGoalML * 1.5
-          : newIntake;
+        const DEFAULT_DAILY_GOAL_ML = 2500;
+        const maxIntake = (state.dailyGoalML ?? DEFAULT_DAILY_GOAL_ML) * 1.5;
 
         set({ waterIntakeML: Math.min(newIntake, maxIntake) });
 

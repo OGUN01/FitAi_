@@ -53,6 +53,11 @@ export function RestTimer({
   const expiredRef = useRef(false);
   // Effective end time = targetEndTime + addedSeconds * 1000 (when not paused)
   const effectiveEndRef = useRef<number>(0);
+  // Stable ref so the interval never needs to restart when onExpire changes
+  const onExpireRef = useRef(onExpire);
+  useEffect(() => {
+    onExpireRef.current = onExpire;
+  }, [onExpire]);
 
   // ── Initialise when a new targetEndTime arrives ───────────────────────────
   useEffect(() => {
@@ -83,12 +88,12 @@ export function RestTimer({
       if (secs === 0 && !expiredRef.current) {
         expiredRef.current = true;
         Vibration.vibrate([0, 400, 100, 400]);
-        onExpire();
+        onExpireRef.current();
       }
     }, 500); // 500ms tick for smoothness
 
     return () => clearInterval(id);
-  }, [targetEndTime, isPaused, onExpire]);
+  }, [targetEndTime, isPaused]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handlePauseResume = useCallback(() => {
@@ -111,11 +116,10 @@ export function RestTimer({
       remainingAtPauseRef.current += 10;
       setRemaining((r) => r + 10);
     } else {
-      // Extend effective end time
+      // Extend effective end time; interval will pick up the change on next tick
       effectiveEndRef.current += 10_000;
     }
     setAddedSeconds((a) => a + 10);
-    setRemaining((r) => r + 10);
   }, [isPaused]);
 
   // ── Derived display values ─────────────────────────────────────────────────

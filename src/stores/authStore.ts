@@ -316,14 +316,18 @@ export const useAuthStore = create<AuthState>()(
           });
 
           if (response.success && response.user && response.source === "cache") {
-            void authService.revalidateSession().then((revalidated) => {
-              if (revalidated.success && revalidated.user) {
-                get().setUser(revalidated.user);
-                return;
-              }
+            void authService.revalidateSession()
+              .then((revalidated) => {
+                if (revalidated.success && revalidated.user) {
+                  get().setUser(revalidated.user);
+                  return;
+                }
 
-              get().setUser(null);
-            });
+                get().setUser(null);
+              })
+              .catch((error) => {
+                console.error("[authStore] revalidateSession failed:", error);
+              });
           }
         } catch (error) {
           set({

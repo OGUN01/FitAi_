@@ -146,6 +146,7 @@ export class PersonalInfoService {
    * Calculate sleep duration from wake and sleep times
    */
   static calculateSleepDuration(wakeTime: string, sleepTime: string): number {
+    if (!wakeTime || !sleepTime) return 8; // safe default (normal sleep)
     const [wakeHour, wakeMin] = wakeTime.split(":").map(Number);
     const [sleepHour, sleepMin] = sleepTime.split(":").map(Number);
 
@@ -153,7 +154,7 @@ export class PersonalInfoService {
     const sleepMinutes = sleepHour * 60 + sleepMin;
 
     let duration = wakeMinutes - sleepMinutes;
-    if (duration <= 0) duration += 24 * 60; // Handle overnight sleep
+    if (duration < 0) duration += 24 * 60; // Handle overnight sleep
 
     return duration / 60; // Return hours as decimal
   }

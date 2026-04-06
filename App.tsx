@@ -126,6 +126,7 @@ export default function App() {
   const [userData, setUserData] = useState<OnboardingReviewData | null>(null);
   const [isLoadingOnboarding, setIsLoadingOnboarding] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
+  const [subscriptionTimeout, setSubscriptionTimeout] = useState(false);
 
   const { user, isLoading, isInitialized, isGuestMode, guestId } = useAuth();
   const { config: appConfig, loading: appConfigLoading } = useAppConfig();
@@ -201,6 +202,15 @@ export default function App() {
     isInitialized,
     user?.id,
   ]);
+
+  // Safety timeout: if subscription init hangs (e.g. Worker is down), unblock the spinner after 5s
+  useEffect(() => {
+    if (!user || isGuestMode) return;
+    const timer = setTimeout(() => {
+      setSubscriptionTimeout(true);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [user, isGuestMode]);
 
   // Only use notification store if not in Expo Go
   const notificationStore = useNotificationStore
@@ -1192,7 +1202,7 @@ export default function App() {
   // Show loading while authentication, config, or onboarding data are initializing.
   // This keeps maintenance and version gates from flashing open before config loads.
   const isSubscriptionBootstrapping =
-    !!user && !isGuestMode && !isSubscriptionInitialized;
+    !!user && !isGuestMode && !isSubscriptionInitialized && !subscriptionTimeout;
   const shouldResumeAuthenticatedOnboarding =
     !!user && !isGuestMode && !isOnboardingComplete;
 

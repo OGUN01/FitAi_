@@ -317,6 +317,7 @@ export async function syncSleep(ctx: SyncContext): Promise<void> {
       }
     }
   } catch (error) {
+    console.error("[syncHelpers] Sleep sync failed:", error);
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("sleep");
   }

@@ -114,6 +114,7 @@ class CompletionTrackingService {
           reps: ex.reps,
           duration: ex.duration,
           restTime: ex.restTime,
+          bodyParts: ex.bodyParts || ex.muscle_groups || ex.targetMuscles || [],
         }),
       );
 

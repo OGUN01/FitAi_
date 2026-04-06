@@ -4,6 +4,7 @@ import Constants from "expo-constants";
 import { useHydrationStore, useNutritionStore } from "../stores";
 import { useCalculatedMetrics } from "./useCalculatedMetrics";
 import { useNutritionData } from "./useNutritionData";
+import { supabase } from "../services/supabase";
 
 const isExpoGo =
   Constants.appOwnership === "expo" ||
@@ -67,7 +68,7 @@ export const useNutritionTracking = (navigation: any) => {
 
   const waterConsumedLiters = waterIntakeML / 1000;
   const DEFAULT_WATER_GOAL_ML = 2500; // 2.5L default when no profile metrics available
-  const waterGoalLiters = (waterGoalML ?? 0) / 1000;
+  const waterGoalLiters = (waterGoalML ?? DEFAULT_WATER_GOAL_ML) / 1000;
 
   const handleAddWater = () => {
     const incrementAmountML = 250;
@@ -124,11 +125,29 @@ export const useNutritionTracking = (navigation: any) => {
     }
   };
 
-  const handleRemoveWater = () => {
+  const handleRemoveWater = async () => {
     if (waterIntakeML > 0) {
       const decrementAmountML = 250;
       const newAmount = Math.max(0, waterIntakeML - decrementAmountML);
       useHydrationStore.getState().setWaterIntake(newAmount);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const today = new Date().toISOString().split('T')[0];
+          const { data: logs } = await supabase
+            .from('water_logs')
+            .select('id')
+            .eq('user_id', session.user.id)
+            .gte('logged_at', today)
+            .order('logged_at', { ascending: false })
+            .limit(1);
+          if (logs && logs.length > 0) {
+            await supabase.from('water_logs').delete().eq('id', logs[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('[handleRemoveWater] Failed to remove water log:', error);
+      }
     }
   };
 

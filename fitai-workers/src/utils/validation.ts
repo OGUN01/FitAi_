@@ -401,8 +401,8 @@ const DietProfileOverrideSchema = z.object({
 	country: z.string().optional(),
 	state: z.string().optional(),
 	occupation_type: z.string().optional(),
-	wake_time: z.string().optional(),
-	sleep_time: z.string().optional(),
+	wake_time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+	sleep_time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
 	// activity_level accepts both onboarding values ('sedentary','lightly_active','moderately_active',
 	// 'very_active','extra_active','extreme') and health-calc mapped values ('light','moderate',
 	// 'active','very_active'). Both sets can arrive here, so we keep z.string() rather than a

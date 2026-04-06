@@ -309,14 +309,21 @@ export const GoalsPreferencesEditModal: React.FC<
       // Sync to Supabase (workout_preferences table — SSOT)
       if (user?.id) {
         try {
+          const timePreferenceMinutes =
+            timeCommitment === "60+"
+              ? 60
+              : (() => {
+                  const m = timeCommitment.match(/(\d+)\s*-\s*(\d+)/);
+                  return m ? parseInt(m[2], 10) : 45;
+                })();
           const { error: wpError } = await supabase
             .from("workout_preferences")
             .upsert(
               {
                 user_id: user.id,
                 primary_goals: primaryGoals,
-                time_commitment: timeCommitment,
-                experience_level: experience,
+                time_preference: timePreferenceMinutes,
+                intensity: experience,
                 updated_at: new Date().toISOString(),
               },
               { onConflict: "user_id" },

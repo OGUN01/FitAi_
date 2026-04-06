@@ -224,7 +224,8 @@ class NotificationService {
       const targetDate = new Date(today);
       targetDate.setDate(today.getDate() + day);
 
-      intervals.forEach((interval, index) => {
+      for (let index = 0; index < intervals.length; index++) {
+        const interval = intervals[index];
         const [hours, minutes] = interval.time.split(":").map(Number);
         const reminderTime = new Date(targetDate);
         reminderTime.setHours(hours, minutes, 0, 0);
@@ -234,7 +235,7 @@ class NotificationService {
           const identifier = `water_${day}_${index}`;
           const litersPerReminder = interval.liters;
 
-          this.scheduleNotification(
+          await this.scheduleNotification(
             identifier,
             "💧 Hydration Time!",
             `Time to drink ${litersPerReminder}L of water. Stay hydrated for better performance!`,
@@ -242,7 +243,7 @@ class NotificationService {
             { type: "water", liters: litersPerReminder },
           );
         }
-      });
+      }
     }
   }
 
@@ -348,7 +349,8 @@ class NotificationService {
 
     // Schedule for next 7 days
     for (let day = 0; day < 7; day++) {
-      times.forEach((workoutTime, index) => {
+      for (let index = 0; index < times.length; index++) {
+        const workoutTime = times[index];
         const [hours, minutes] = workoutTime.split(":").map(Number);
         const reminderTime = new Date(today);
         reminderTime.setDate(today.getDate() + day);
@@ -362,7 +364,7 @@ class NotificationService {
         if (reminderTime > new Date()) {
           const identifier = `workout_${day}_${index}`;
 
-          this.scheduleNotification(
+          await this.scheduleNotification(
             identifier,
             "🏋️ Workout Time Coming Up!",
             `Your workout starts in ${config.reminderMinutes} minutes. Get ready to crush it! 💪`,
@@ -370,7 +372,7 @@ class NotificationService {
             { type: "workout", originalTime: workoutTime },
           );
         }
-      });
+      }
     }
   }
 
@@ -394,8 +396,8 @@ class NotificationService {
     const today = new Date();
 
     for (let day = 0; day < 7; day++) {
-      meals.forEach((meal) => {
-        if (!meal.config.enabled) return;
+      for (const meal of meals) {
+        if (!meal.config.enabled) continue;
 
         const [hours, minutes] = meal.config.time.split(":").map(Number);
         const mealTime = new Date(today);
@@ -405,7 +407,7 @@ class NotificationService {
         if (mealTime > new Date()) {
           const identifier = `meal_${meal.key}_${day}`;
 
-          this.scheduleNotification(
+          await this.scheduleNotification(
             identifier,
             `${meal.emoji} ${meal.name} Time!`,
             `Time for a nutritious ${meal.name.toLowerCase()}. Fuel your body right! 🌟`,
@@ -413,7 +415,7 @@ class NotificationService {
             { type: "meal", mealType: meal.key },
           );
         }
-      });
+      }
     }
   }
 
@@ -442,7 +444,7 @@ class NotificationService {
       if (preReminderTime > new Date()) {
         const identifier = `sleep_pre_${day}`;
 
-        this.scheduleNotification(
+        await this.scheduleNotification(
           identifier,
           "😴 Wind Down Time",
           `Bedtime in ${config.reminderMinutes} minutes. Start your relaxation routine! 🌙`,
@@ -459,7 +461,7 @@ class NotificationService {
       if (bedTime > new Date()) {
         const identifier = `sleep_bedtime_${day}`;
 
-        this.scheduleNotification(
+        await this.scheduleNotification(
           identifier,
           "🌙 Time for Bed",
           "Good night! Quality sleep is essential for recovery and performance. Sweet dreams! 😴",
@@ -544,7 +546,7 @@ class NotificationService {
       }
 
     } catch (error) {
-      // Don't throw error - AsyncStorage backup is sufficient
+      console.error("[notificationService] savePreferencesToSupabase failed:", error);
     }
   }
 

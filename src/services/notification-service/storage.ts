@@ -31,6 +31,7 @@ export async function savePreferencesToSupabase(
     }
 
   } catch (error) {
+    console.error("[notificationService] savePreferencesToSupabase failed:", error);
   }
 }
 

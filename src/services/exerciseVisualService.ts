@@ -369,6 +369,11 @@ class ExerciseVisualService {
    */
   private async preloadPopularExercises(): Promise<void> {
     try {
+      const netInfo = await NetInfo.fetch();
+      if (!netInfo.isConnected) {
+        return; // skip preload when offline — cache will be populated on next online session
+      }
+
       const exercises: ExerciseData[] = [];
 
       // Load first 30 pages (300 exercises) - covers most common exercises

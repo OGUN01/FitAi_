@@ -286,7 +286,7 @@ class GoogleAuthService {
           redirectTo:
             Platform.OS === 'web' && typeof window !== 'undefined' && window.location
               ? `${window.location.origin}/auth/callback`
-              : 'exp://localhost:8081/--/auth/callback',
+              : AuthSession.makeRedirectUri({ scheme: 'fitai', path: 'auth/callback' }),
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -324,7 +324,15 @@ class GoogleAuthService {
     try {
 
       // Extract the session from the callback URL
-      const code = new URL(url).searchParams.get('code') || '';
+      let code = '';
+      try {
+        code = new URL(url).searchParams.get('code') || '';
+      } catch {
+        return { success: false, error: 'Malformed callback URL' };
+      }
+      if (!code) {
+        return { success: false, error: 'No authorization code in callback URL' };
+      }
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
       if (error) {

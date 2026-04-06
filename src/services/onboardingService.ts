@@ -994,7 +994,7 @@ export class OnboardingUtils {
     const sleepMinutes = sleepHour * 60 + sleepMin;
 
     let duration = wakeMinutes - sleepMinutes;
-    if (duration <= 0) duration += 24 * 60; // Handle overnight sleep
+    if (duration < 0) duration += 24 * 60; // Handle overnight sleep
 
     return duration / 60; // Return hours as decimal
   }

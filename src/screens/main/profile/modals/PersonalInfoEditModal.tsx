@@ -315,8 +315,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
             try {
               const { error: wpError } = await supabase
                 .from("workout_preferences")
-                .update({ activity_level: activityLevel })
-                .eq("user_id", user.id);
+                .upsert({ user_id: user.id, activity_level: activityLevel }, { onConflict: "user_id" });
               if (wpError) {
                 console.error(
                   "[PersonalInfoModal] Activity level sync error:",

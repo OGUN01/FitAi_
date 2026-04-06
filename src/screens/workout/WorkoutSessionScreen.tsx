@@ -90,22 +90,6 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   const { workout, sessionId, resumeExerciseIndex, isExtra } = route.params;
   const insets = useSafeAreaInsets();
 
-  // ========== SCREEN DEBUG LOG ==========
-  React.useEffect(() => {
-    console.warn(`\n${'='.repeat(60)}`);
-    console.warn(`💪 [SCREEN DEBUG] WorkoutSessionScreen MOUNTED`);
-    console.warn(`${'='.repeat(60)}`);
-    console.warn(`🏋️ Workout: ${workout?.name || workout?.dayOfWeek || '(unknown)'}`);
-    console.warn(`📋 Session ID: ${sessionId || 'new'} | Resume Index: ${resumeExerciseIndex ?? 0} | Extra: ${isExtra || false}`);
-    console.warn(`🔢 Exercises: ${workout?.exercises?.length || 0}`);
-    if (workout?.exercises?.length) {
-      workout.exercises.forEach((ex: any, i: number) => {
-        console.warn(`  ${i + 1}. ${ex.name || ex.exerciseName || '?'} — ${ex.sets || '?'}x${ex.reps || ex.duration || '?'}`);
-      });
-    }
-    console.warn(`${'='.repeat(60)}\n`);
-  }, []);
-
   const parsedResumeIndex = safeNumber(resumeExerciseIndex, 0);
   const session = useWorkoutSession(
     (workout ?? { exercises: [] }) as DayWorkout,

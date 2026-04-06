@@ -143,6 +143,9 @@ export const clearAllUserData = async (): Promise<void> => {
     "meal_logs",
     "body_analysis",
     "body_measurements",
+    // Notification preferences and store
+    "notification-store",
+    "notification_preferences",
   ];
 
   try {
@@ -178,6 +181,13 @@ export const clearAllUserData = async (): Promise<void> => {
       }),
     ),
   );
+
+  try {
+    const Notifications = require('expo-notifications');
+    await Notifications.cancelAllScheduledNotificationsAsync();
+  } catch (e) {
+    console.error("[clearUserData] Failed to cancel notifications:", e);
+  }
 
   if (errors.length > 0) {
     console.error(
