@@ -101,10 +101,14 @@ export const calculateCompletionMetrics = (
       bodyAnalysis.target_weight_kg &&
       bodyAnalysis.target_timeline_weeks
     ) {
+      // M3: prefer weekly_weight_loss_goal (SSOT) over timeline-derived rate.
+      const storedGoal = workoutPreferences?.weekly_weight_loss_goal;
       const weeklyRate =
-        Math.abs(
-          bodyAnalysis.current_weight_kg - bodyAnalysis.target_weight_kg,
-        ) / bodyAnalysis.target_timeline_weeks;
+        storedGoal && storedGoal > 0
+          ? storedGoal
+          : Math.abs(
+              bodyAnalysis.current_weight_kg - bodyAnalysis.target_weight_kg,
+            ) / bodyAnalysis.target_timeline_weeks;
       if (weeklyRate > 1.5) score -= 25; // Very unrealistic
       if (weeklyRate > 1) score -= 10; // Slightly unrealistic
     }

@@ -13,6 +13,7 @@ import { FitnessRecommendations } from "./fitness-recommendations";
 import { HealthScoring } from "./health-scoring";
 import { SleepAnalysis } from "./sleep-analysis";
 import { getBMICategoryWithRisk } from "./core/bmiCalculation";
+import { CALORIE_PER_KG } from "../../services/validation/constants";
 import type { Goal } from "./types";
 import { mapActivityLevelForHealthCalc } from "../typeTransformers";
 import { detectEthnicity } from "./autoDetection";
@@ -88,6 +89,7 @@ export class HealthCalculationEngine {
       tdee,
       cappedRate,
       isWeightLoss,
+      personalInfo.gender,
     );
 
     const macros = NutritionalCalculations.calculateMacronutrients(
@@ -173,7 +175,7 @@ export class HealthCalculationEngine {
     );
 
     const estimatedTimelineWeeks = bodyAnalysis.target_timeline_weeks;
-    const totalCalorieDeficit = Math.round(weeklyWeightLossRate * 7700);
+    const totalCalorieDeficit = Math.round(weeklyWeightLossRate * CALORIE_PER_KG);
 
     // Derived classification fields (H17)
     const bmiClassification = getBMICategoryWithRisk(bmi);
@@ -183,6 +185,44 @@ export class HealthCalculationEngine {
     );
     // H17: Ethnicity detection from country (used for BMI risk thresholds per WHO guidelines)
     const ethnicityResult = detectEthnicity(personalInfo.country, personalInfo.state);
+
+    // ── Quality / Completeness scores ──────────────────────────────────────
+    // data_completeness_percentage: fraction of optional precision fields provided.
+    // Optional fields that improve calculation accuracy:
+    const optionalPrecisionFields = [
+      bodyAnalysis.body_fat_percentage != null,              // body composition path
+      (bodyAnalysis.photos && Object.keys(bodyAnalysis.photos).length > 0), // AI photo analysis
+      bodyAnalysis.stress_level != null,                     // conservative deficit adjustment
+      bodyAnalysis.medical_conditions && bodyAnalysis.medical_conditions.length > 0, // safety guards
+      workoutPreferences.workout_experience_years > 0,       // volume recommendations
+      workoutPreferences.can_run_minutes > 0,                // VO2 max calculation
+      personalInfo.country?.length > 0,                      // ethnicity-aware BMI thresholds
+      dietPreferences.cooking_methods && dietPreferences.cooking_methods.length > 0, // recipe filtering
+    ];
+    const providedCount = optionalPrecisionFields.filter(Boolean).length;
+    const dataCompletenessPercentage = Math.round(
+      // 40 base (required fields always present) + up to 60 from optional fields
+      40 + (providedCount / optionalPrecisionFields.length) * 60
+    );
+
+    // reliability_score: how confident are the metabolic calculations.
+    // Penalised when key inputs are estimated rather than measured.
+    let reliabilityScore = 100;
+    if (!bodyAnalysis.body_fat_percentage) reliabilityScore -= 15; // BMR uses population formula, not lean mass
+    if (!workoutPreferences.can_run_minutes || workoutPreferences.can_run_minutes === 0) reliabilityScore -= 10; // VO2 max is an estimate
+    if (!bodyAnalysis.stress_level) reliabilityScore -= 5;  // stress correction not applied
+    if (bodyAnalysis.medical_conditions && bodyAnalysis.medical_conditions.length > 0 && !bodyAnalysis.body_fat_percentage) reliabilityScore -= 10;
+    reliabilityScore = Math.max(50, reliabilityScore); // floor at 50 — always somewhat reliable
+
+    // personalization_level: how tailored the output is to this specific user.
+    // Combines completeness + goal specificity + preference richness.
+    const hasSpecificGoal = workoutPreferences.primary_goals && workoutPreferences.primary_goals.length > 0;
+    const hasDietPreferences = dietPreferences.diet_type && dietPreferences.diet_type !== "balanced";
+    const hasHealthHabits = dietPreferences.health_habits_grouped != null;
+    const hasLocationData = !!(personalInfo.country && personalInfo.state);
+    const personalizationBonus = [hasSpecificGoal, hasDietPreferences, hasHealthHabits, hasLocationData]
+      .filter(Boolean).length * 5;
+    const personalizationLevel = Math.min(100, Math.round(dataCompletenessPercentage * 0.7 + reliabilityScore * 0.2 + personalizationBonus));
 
     return {
       calculated_bmi: Math.round(bmi * 100) / 100,
@@ -235,9 +275,9 @@ export class HealthCalculationEngine {
       vo2_max_classification: vo2MaxClassification,
       detected_ethnicity: ethnicityResult.ethnicity,
 
-      data_completeness_percentage: 0,
-      reliability_score: 0,
-      personalization_level: 0,
+      data_completeness_percentage: dataCompletenessPercentage,
+      reliability_score: reliabilityScore,
+      personalization_level: personalizationLevel,
     };
   }
 }

@@ -1,4 +1,5 @@
 import { ValidationResult } from "./types";
+import { CALORIE_PER_KG } from "./constants";
 
 export function warnAggressiveTimeline(
   requiredRate: number,
@@ -16,9 +17,9 @@ export function warnAggressiveTimeline(
   if (requiredRate > optimal) {
     const optimalWeeks = Math.ceil(weightDifference / optimal);
     const conservativeWeeks = Math.ceil(weightDifference / conservative);
-    const aggressiveDeficit = (requiredRate * 7700) / 7;
-    const optimalDeficit = (optimal * 7700) / 7;
-    const conservativeDeficit = (conservative * 7700) / 7;
+    const aggressiveDeficit = (requiredRate * CALORIE_PER_KG) / 7;
+    const optimalDeficit = (optimal * CALORIE_PER_KG) / 7;
+    const conservativeDeficit = (conservative * CALORIE_PER_KG) / 7;
     const isVeryAggressive = requiredRate > moderateAggressive;
     // BUG-22: extremeLimit was defined but never used — rates above it now get ERROR severity
     const isExtreme = requiredRate > extremeLimit;

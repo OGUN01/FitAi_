@@ -12,6 +12,7 @@ import {
   ValidationResults,
   SmartAlternativesResult,
 } from "./types";
+import { CALORIE_PER_KG, MAX_SURPLUS_FRACTION } from "./constants";
 import {
   validateMinimumBodyFat,
   validateMinimumBMI,
@@ -136,8 +137,15 @@ export class ValidationEngine {
     const weightDifference = Math.abs(
       bodyAnalysis.target_weight_kg - bodyAnalysis.current_weight_kg,
     );
+    // Use the stored pace-card rate (SSOT) rather than deriving from timeline.
+    // Timeline is Math.ceil-rounded so 17/22 = 0.77 ≠ 0.8 — using it introduces
+    // a calorie discrepancy vs what the card displayed. Fall back to timeline-derived
+    // rate only for legacy data or first-load before any card is selected.
+    const _storedGoal = workoutPreferences.weekly_weight_loss_goal;
     const requiredWeeklyRate =
-      weightDifference / bodyAnalysis.target_timeline_weeks;
+      (_storedGoal && _storedGoal > 0)
+        ? _storedGoal
+        : weightDifference / bodyAnalysis.target_timeline_weeks;
 
     let targetCalories: number;
     let weeklyRate: number;
@@ -150,14 +158,25 @@ export class ValidationEngine {
     } | null = null;
 
     if (isWeightLoss) {
-      const dailyDeficit = (requiredWeeklyRate * 7700) / 7;
+      const dailyDeficit = (requiredWeeklyRate * CALORIE_PER_KG) / 7;
       const initialTargetCalories = tdee - dailyDeficit;
       if (opts?.bypassDeficitLimit) {
-        // Show the user their actual selected goal — clamp only at BMR (absolute floor).
-        const floored = Math.max(initialTargetCalories, bmr);
+        // Show the user their actual selected goal — clamp at BMR (absolute floor).
+        // BUG-47: For high-stress or medical-condition users, also enforce a conservative
+        // 15% deficit ceiling. Without this, a stressed user could select a 35% deficit
+        // via "KEEP MY GOAL" and the system would silently allow it in bypass mode.
+        const isHighRisk =
+          bodyAnalysis.stress_level === "high" ||
+          (bodyAnalysis.medical_conditions?.length ?? 0) > 0;
+        const conservativeFloor = isHighRisk
+          ? Math.round(tdee * (1 - 0.15))  // 15% max deficit for high-risk
+          : 0;                              // no extra floor for normal users
+        const floored = Math.max(initialTargetCalories, bmr, conservativeFloor);
+        const wasConservativeLimited = isHighRisk && floored > initialTargetCalories;
         deficitLimitResult = {
           adjustedCalories: floored,
-          wasLimited: false,
+          wasLimited: wasConservativeLimited,
+          limitReason: wasConservativeLimited ? "high stress or medical conditions" : undefined,
           originalDeficitPercent: dailyDeficit / tdee,
           adjustedDeficitPercent: (tdee - floored) / tdee,
         };
@@ -167,14 +186,14 @@ export class ValidationEngine {
           tdee,
           bmr,
           bodyAnalysis.stress_level || "moderate",
-          bodyAnalysis.medical_conditions.length > 0,
+          (bodyAnalysis.medical_conditions?.length ?? 0) > 0,
         );
       }
       targetCalories = deficitLimitResult.adjustedCalories;
 
       if (deficitLimitResult.wasLimited) {
         const actualDailyDeficit = tdee - targetCalories;
-        weeklyRate = (actualDailyDeficit * 7) / 7700;
+        weeklyRate = (actualDailyDeficit * 7) / CALORIE_PER_KG;
         warnings.push({
           status: "WARNING",
           code: "DEFICIT_LIMITED_FOR_SAFETY",
@@ -188,14 +207,28 @@ export class ValidationEngine {
           canProceed: true,
         });
       } else {
-        weeklyRate = requiredWeeklyRate;
+        // D1-FIX: In bypass mode the BMR floor may have been applied even though
+        // wasLimited=false. When initialTargetCalories < bmr the system ate at BMR —
+        // the actual achievable weeklyRate is derived from the real deficit (tdee-bmr),
+        // not the user's requested rate. This makes chart / macros / daily_calories consistent.
+        const wasBMRFloored =
+          !!opts?.bypassDeficitLimit &&
+          Math.round(initialTargetCalories) < Math.round(bmr);
+        if (wasBMRFloored) {
+          const actualDailyDeficit = tdee - targetCalories; // targetCalories === bmr here
+          weeklyRate = (actualDailyDeficit * 7) / CALORIE_PER_KG;
+        } else {
+          weeklyRate = requiredWeeklyRate;
+        }
       }
     } else if (isWeightGain) {
-      const dailySurplus = (requiredWeeklyRate * 7700) / 7;
-      // Cap surplus at 15% of TDEE to prevent excessive fat gain (BUG-40)
-      const cappedSurplus = Math.min(dailySurplus, tdee * 0.15);
+      const dailySurplus = (requiredWeeklyRate * CALORIE_PER_KG) / 7;
+      // D4b-FIX: Cap surplus at 10% of TDEE (evidence-based lean bulk maximum).
+      // 15% was too aggressive and led primarily to fat gain not muscle gain.
+      // Science: ~5-10% surplus above TDEE maximises muscle-to-fat ratio.
+      const cappedSurplus = Math.min(dailySurplus, tdee * MAX_SURPLUS_FRACTION);
       targetCalories = tdee + cappedSurplus;
-      weeklyRate = (cappedSurplus * 7) / 7700;
+      weeklyRate = (cappedSurplus * 7) / CALORIE_PER_KG;
     } else {
       targetCalories = tdee;
       weeklyRate = 0;
@@ -474,6 +507,20 @@ export class ValidationEngine {
     const wasRateCapped =
       isWeightLoss && deficitLimitResult?.wasLimited === true;
 
+    // D1-FIX: When the BMR floor was applied in bypass mode, derive the timeline
+    // from the actual enforced weeklyRate so chart / macros / daily_calories are
+    // mathematically consistent (all three now reflect eating at BMR).
+    // Without this, the chart shows 16 weeks but calories imply 20 weeks — ambiguous.
+    const wasBMRFlooredInBypass =
+      isWeightLoss &&
+      !!opts?.bypassDeficitLimit &&
+      Math.round(medicallyAdjustedTargetCalories) === Math.round(bmr) &&
+      weeklyRate < requiredWeeklyRate;
+    const computedTimeline =
+      (wasBMRFlooredInBypass || wasRateCapped) && weeklyRate > 0
+        ? Math.ceil(weightDifference / weeklyRate)
+        : bodyAnalysis.target_timeline_weeks;
+
     return {
       hasErrors: errors.length > 0,
       hasWarnings: warnings.length > 0,
@@ -490,7 +537,7 @@ export class ValidationEngine {
         protein: adjustedMacros.protein,
         carbs: adjustedMacros.carbs,
         fat: adjustedMacros.fat,
-        timeline: bodyAnalysis.target_timeline_weeks,
+        timeline: computedTimeline,
       },
       adjustments: {
         refeedSchedule:

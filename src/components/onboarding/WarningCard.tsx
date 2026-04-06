@@ -87,17 +87,39 @@ export const WarningCard: React.FC<WarningCardProps> = ({
     transform: [{ scale: checkScale.value }],
   }));
 
-  // Separate diet-only vs exercise alternatives
+  const goalMode = smartAlternatives?.goalMode ?? "loss";
+
+  // Diet-only options (all modes)
   const dietOptions =
-    smartAlternatives?.alternatives.filter((alt) => !alt.requiresExercise) ??
-    [];
-  const exerciseOptions =
-    smartAlternatives?.alternatives.filter((alt) => alt.requiresExercise) ?? [];
+    smartAlternatives?.alternatives.filter((alt) => !alt.requiresExercise) ?? [];
+
+  // For weight loss: promoted boost card shown inline between KEEP MY GOAL and other diet cards
+  const goalBoostOption = goalMode === "loss"
+    ? (smartAlternatives?.alternatives.find(a => a.id === smartAlternatives?.bestBoostOptionId) ?? null)
+    : null;
+
+  // Exercise options excluding the promoted boost (shown in collapsible toggle)
+  const otherExerciseOptions =
+    smartAlternatives?.alternatives.filter(
+      (alt) => alt.requiresExercise && alt.id !== goalBoostOption?.id
+    ) ?? [];
+
+  // For weight gain: frequency upgrade options
+  const frequencyUpgradeOptions = otherExerciseOptions.filter(a => a.isFrequencyUpgrade);
 
   const userOriginal = smartAlternatives?.alternatives.find(
     (alt) => alt.isUserOriginal,
   );
   const belowBMR = userOriginal && userOriginal.bmrDifference < 0;
+
+  // Auto-expand other exercise options when one is selected.
+  // M2: include smartAlternatives in deps so the check re-runs if cards regenerate
+  // while selectedAlternativeId is unchanged (e.g. tab remount with same stored goal).
+  useEffect(() => {
+    if (selectedAlternativeId && otherExerciseOptions.some(o => o.id === selectedAlternativeId)) {
+      setShowExerciseOptions(true);
+    }
+  }, [selectedAlternativeId, smartAlternatives]);
 
   return (
     <View style={styles.container}>
@@ -133,7 +155,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
             {smartAlternatives.weightToLose != null
               ? smartAlternatives.weightToLose.toFixed(1)
               : "--"}{" "}
-            kg to lose
+            {goalMode === "gain" ? "kg to gain" : goalMode === "maintenance" ? "kg to balance" : "kg to lose"}
           </Text>
         </View>
       )}
@@ -211,87 +233,185 @@ export const WarningCard: React.FC<WarningCardProps> = ({
         </View>
       ))}
 
-      {/* ── Inline Rate Picker (from RateComparisonCard) ── */}
-      {smartAlternatives && dietOptions.length > 0 && (
+      {/* ── Inline Rate Picker ── */}
+      {smartAlternatives && (dietOptions.length > 0 || goalBoostOption) && (
         <>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>SELECT YOUR RATE</Text>
+            <Text style={styles.sectionTitle}>
+              {goalMode === "maintenance" ? "YOUR BALANCE" : "SELECT YOUR RATE"}
+            </Text>
           </View>
 
-          <View style={styles.optionsList}>
-            {dietOptions.map((alternative) => (
-              <AlternativeOption
-                key={alternative.id}
-                alternative={alternative}
-                isSelected={selectedAlternativeId === alternative.id}
-                onSelect={onSelectAlternative ?? (() => { if (__DEV__) console.warn('WarningCard: onSelectAlternative not provided'); })}
-              />
-            ))}
-          </View>
-
-          {/* Exercise Options Toggle */}
-          {exerciseOptions.length > 0 && (
+          {/* WEIGHT LOSS LAYOUT */}
+          {goalMode === "loss" && (
             <>
-              <TouchableOpacity
-                style={styles.exerciseDivider}
-                onPress={() => setShowExerciseOptions(!showExerciseOptions)}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  showExerciseOptions
-                    ? "Hide exercise options"
-                    : "Show exercise options"
-                }
-              >
-                <View style={styles.dividerLine} />
-                <View style={styles.dividerContent}>
-                  <Ionicons
-                    name="fitness-outline"
-                    size={rf(14)}
-                    color={ResponsiveTheme.colors.textSecondary}
-                  />
-                  <Text style={styles.dividerText}>
-                    {showExerciseOptions ? "HIDE" : "OR ADD"} EXERCISE
-                  </Text>
-                  <Ionicons
-                    name={showExerciseOptions ? "chevron-up" : "chevron-down"}
-                    size={rf(14)}
-                    color={ResponsiveTheme.colors.textSecondary}
-                  />
-                </View>
-                <View style={styles.dividerLine} />
-              </TouchableOpacity>
+              {/* 1. KEEP MY GOAL (always first — may be locked/blocked) */}
+              {dietOptions.slice(0, 1).map((alternative) => (
+                <AlternativeOption
+                  key={alternative.id}
+                  alternative={alternative}
+                  isSelected={selectedAlternativeId === alternative.id}
+                  onSelect={onSelectAlternative ?? (() => {})}
+                />
+              ))}
 
-              {showExerciseOptions && (
-                <View style={styles.optionsList}>
-                  {exerciseOptions.map((alternative) => (
-                    <AlternativeOption
-                      key={alternative.id}
-                      alternative={alternative}
-                      isSelected={selectedAlternativeId === alternative.id}
-                      onSelect={onSelectAlternative ?? (() => { if (__DEV__) console.warn('WarningCard: onSelectAlternative not provided'); })}
-                    />
-                  ))}
-                </View>
+              {/* 2. Unlock banner + promoted boost card */}
+              {goalBoostOption && (
+                <>
+                  <TouchableOpacity
+                    style={styles.unlockBanner}
+                    onPress={() => onSelectAlternative?.(goalBoostOption)}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Unlock your goal with exercise"
+                  >
+                    <Ionicons name="lock-open-outline" size={rf(13)} color="#22C55E" />
+                    <Text style={styles.unlockBannerText}>
+                      Closer to your goal with exercise ↓
+                    </Text>
+                  </TouchableOpacity>
+                  <AlternativeOption
+                    key={goalBoostOption.id}
+                    alternative={goalBoostOption}
+                    isSelected={selectedAlternativeId === goalBoostOption.id}
+                    onSelect={onSelectAlternative ?? (() => {})}
+                  />
+                  <View style={styles.sectionDivider} />
+                </>
+              )}
+
+              {/* 3. Remaining diet options (AGGRESSIVE, CHALLENGING, AT YOUR BMR, COMFORTABLE) */}
+              <View style={styles.optionsList}>
+                {dietOptions.slice(1).map((alternative) => (
+                  <AlternativeOption
+                    key={alternative.id}
+                    alternative={alternative}
+                    isSelected={selectedAlternativeId === alternative.id}
+                    onSelect={onSelectAlternative ?? (() => {})}
+                  />
+                ))}
+              </View>
+
+              {/* 4. Other boost options in collapsible toggle (LIGHT BOOST, CARDIO BOOST) */}
+              {otherExerciseOptions.filter(a => !a.isFrequencyUpgrade).length > 0 && (
+                <>
+                  <TouchableOpacity
+                    style={styles.exerciseDivider}
+                    onPress={() => setShowExerciseOptions(!showExerciseOptions)}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel={showExerciseOptions ? "Hide exercise options" : "Show exercise options"}
+                  >
+                    <View style={styles.dividerLine} />
+                    <View style={styles.dividerContent}>
+                      <Ionicons name="fitness-outline" size={rf(14)} color={ResponsiveTheme.colors.textSecondary} />
+                      <Text style={styles.dividerText}>
+                        {showExerciseOptions ? "HIDE" : "OR ADD"} EXERCISE
+                      </Text>
+                      <Ionicons
+                        name={showExerciseOptions ? "chevron-up" : "chevron-down"}
+                        size={rf(14)}
+                        color={ResponsiveTheme.colors.textSecondary}
+                      />
+                    </View>
+                    <View style={styles.dividerLine} />
+                  </TouchableOpacity>
+
+                  {showExerciseOptions && (
+                    <View style={styles.optionsList}>
+                      {otherExerciseOptions.filter(a => !a.isFrequencyUpgrade).map((alternative) => (
+                        <AlternativeOption
+                          key={alternative.id}
+                          alternative={alternative}
+                          isSelected={selectedAlternativeId === alternative.id}
+                          onSelect={onSelectAlternative ?? (() => {})}
+                        />
+                      ))}
+                    </View>
+                  )}
+                </>
+              )}
+
+              {/* Safe Rate Footer */}
+              <View style={styles.safeRateInfo}>
+                <Ionicons name="shield-checkmark" size={rf(14)} color="#22C55E" style={styles.safeRateIcon} />
+                <Text style={styles.safeRateText}>
+                  Safe rate at your BMR:{" "}
+                  <Text style={styles.safeRateValue}>{smartAlternatives.rateAtBMR} kg/week</Text>
+                </Text>
+              </View>
+            </>
+          )}
+
+          {/* WEIGHT GAIN LAYOUT */}
+          {goalMode === "gain" && (
+            <>
+              <View style={styles.optionsList}>
+                {dietOptions.map((alternative) => (
+                  <AlternativeOption
+                    key={alternative.id}
+                    alternative={alternative}
+                    isSelected={selectedAlternativeId === alternative.id}
+                    onSelect={onSelectAlternative ?? (() => {})}
+                  />
+                ))}
+              </View>
+
+              {/* Frequency upgrade options */}
+              {frequencyUpgradeOptions.length > 0 && (
+                <>
+                  <TouchableOpacity
+                    style={styles.exerciseDivider}
+                    onPress={() => setShowExerciseOptions(!showExerciseOptions)}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel={showExerciseOptions ? "Hide training options" : "Add more training days"}
+                  >
+                    <View style={styles.dividerLine} />
+                    <View style={styles.dividerContent}>
+                      <Ionicons name="barbell-outline" size={rf(14)} color={ResponsiveTheme.colors.textSecondary} />
+                      <Text style={styles.dividerText}>
+                        {showExerciseOptions ? "HIDE" : "OR ADD MORE"} TRAINING
+                      </Text>
+                      <Ionicons
+                        name={showExerciseOptions ? "chevron-up" : "chevron-down"}
+                        size={rf(14)}
+                        color={ResponsiveTheme.colors.textSecondary}
+                      />
+                    </View>
+                    <View style={styles.dividerLine} />
+                  </TouchableOpacity>
+
+                  {showExerciseOptions && (
+                    <View style={styles.optionsList}>
+                      {frequencyUpgradeOptions.map((alternative) => (
+                        <AlternativeOption
+                          key={alternative.id}
+                          alternative={alternative}
+                          isSelected={selectedAlternativeId === alternative.id}
+                          onSelect={onSelectAlternative ?? (() => {})}
+                        />
+                      ))}
+                    </View>
+                  )}
+                </>
               )}
             </>
           )}
 
-          {/* Safe Rate Footer */}
-          <View style={styles.safeRateInfo}>
-            <Ionicons
-              name="shield-checkmark"
-              size={rf(14)}
-              color="#22C55E"
-              style={styles.safeRateIcon}
-            />
-            <Text style={styles.safeRateText}>
-              Safe rate at your BMR:{" "}
-              <Text style={styles.safeRateValue}>
-                {smartAlternatives.rateAtBMR} kg/week
-              </Text>
-            </Text>
-          </View>
+          {/* MAINTENANCE LAYOUT */}
+          {goalMode === "maintenance" && (
+            <View style={styles.optionsList}>
+              {dietOptions.map((alternative) => (
+                <AlternativeOption
+                  key={alternative.id}
+                  alternative={alternative}
+                  isSelected={selectedAlternativeId === alternative.id}
+                  onSelect={onSelectAlternative ?? (() => {})}
+                />
+              ))}
+            </View>
+          )}
         </>
       )}
 
@@ -566,6 +686,32 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: ResponsiveTheme.colors.textSecondary,
     letterSpacing: 0.5,
+  },
+  unlockBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(34, 197, 94, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(34, 197, 94, 0.3)",
+    borderRadius: rp(20),
+    paddingVertical: rp(6),
+    paddingHorizontal: rp(14),
+    marginTop: rp(10),
+    marginBottom: rp(6),
+    gap: rp(6),
+    alignSelf: "center",
+  },
+  unlockBannerText: {
+    fontSize: rf(11),
+    fontWeight: "600",
+    color: "#22C55E",
+    letterSpacing: 0.2,
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    marginVertical: rp(10),
   },
   safeRateInfo: {
     flexDirection: "row",

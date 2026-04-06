@@ -2,6 +2,7 @@ import { MacronutrientDistribution } from "./shared-types";
 import { macroCalculator } from "./calculators/macroCalculator";
 import type { Goal, DietType } from "./types";
 import type { DietPreferencesData } from "../../types/onboarding";
+import { CALORIE_PER_KG, MIN_CALORIES_FEMALE, MIN_CALORIES_MALE } from "../../services/validation/constants";
 
 /**
  * Resolve the effective macro DietType from user diet preferences.
@@ -26,13 +27,15 @@ export class NutritionalCalculations {
     tdee: number,
     weeklyWeightChangeKg: number,
     isWeightLoss: boolean = true,
+    gender: "male" | "female" = "female", // should always be provided; defaults to female for safety
   ): number {
-    const weeklyCalorieChange = weeklyWeightChangeKg * 7700;
+    const weeklyCalorieChange = weeklyWeightChangeKg * CALORIE_PER_KG;
     const dailyCalorieChange = weeklyCalorieChange / 7;
 
     const result = isWeightLoss ? tdee - dailyCalorieChange : tdee + dailyCalorieChange;
-    // Enforce clinical minimum — never below 1200 kcal/day regardless of deficit size
-    return isWeightLoss ? Math.max(result, 1200) : result;
+    // Enforce clinical minimum — never below ACSM floor regardless of deficit size
+    const minCalories = gender === "male" ? MIN_CALORIES_MALE : MIN_CALORIES_FEMALE;
+    return isWeightLoss ? Math.max(result, minCalories) : result;
   }
 
   /**

@@ -1,4 +1,5 @@
 import { ValidationResult } from "../types";
+import { CALORIE_PER_KG } from "../constants";
 
 export function warnAggressiveTimeline(
   requiredRate: number,
@@ -13,18 +14,22 @@ export function warnAggressiveTimeline(
   const conservative = currentWeight * 0.005;
   const weightDifference = Math.abs(currentWeight - targetWeight);
 
-  if (requiredRate > optimal && requiredRate <= extremeLimit) {
+  if (requiredRate > optimal) {
     const optimalWeeks = Math.ceil(weightDifference / optimal);
     const conservativeWeeks = Math.ceil(weightDifference / conservative);
-    const aggressiveDeficit = (requiredRate * 7700) / 7;
-    const optimalDeficit = (optimal * 7700) / 7;
-    const conservativeDeficit = (conservative * 7700) / 7;
+    const aggressiveDeficit = (requiredRate * CALORIE_PER_KG) / 7;
+    const optimalDeficit = (optimal * CALORIE_PER_KG) / 7;
+    const conservativeDeficit = (conservative * CALORIE_PER_KG) / 7;
     const isVeryAggressive = requiredRate > moderateAggressive;
+    // BUG-22: extremeLimit was defined but never used — rates above it now get ERROR severity
+    const isExtreme = requiredRate > extremeLimit;
 
     return {
-      status: "WARNING",
-      code: "AGGRESSIVE_TIMELINE",
-      message: isVeryAggressive
+      status: isExtreme ? "BLOCKED" : "WARNING",
+      code: isExtreme ? "EXTREME_RATE" : "AGGRESSIVE_TIMELINE",
+      message: isExtreme
+        ? `Your goal rate (${requiredRate.toFixed(2)}kg/week) exceeds safe medical limits — health risk`
+        : isVeryAggressive
         ? `Your goal rate (${requiredRate.toFixed(2)}kg/week) is very aggressive`
         : `Your goal rate (${requiredRate.toFixed(2)}kg/week) is aggressive`,
       impact: `Recommended: ${optimal.toFixed(2)}kg/week for optimal muscle retention`,
@@ -94,7 +99,7 @@ export function warnAggressiveTimeline(
           cons: ["Slowest progress"],
         },
       ],
-      canProceed: true,
+      canProceed: !isExtreme,
     };
   }
   return { status: "OK" };

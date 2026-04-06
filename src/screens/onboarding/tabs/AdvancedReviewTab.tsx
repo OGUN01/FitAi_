@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useMemo, useState, useCallback } from "react";
+
 import { View, StyleSheet, ScrollView, Text, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rbr, rh } from "../../../utils/responsive";
@@ -65,7 +66,6 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
     setShowErrorWizard,
     successMessage,
     smartAlternatives,
-    selectedAlternativeId,
     handleRateSelection,
     performCalculations,
     warningsAcknowledged,
@@ -79,6 +79,54 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
     onUpdateBodyAnalysis,
     onUpdateWorkoutPreferences,
   });
+
+  // Session-scoped card ID: set on every explicit user tap, cleared on unmount.
+  // This is the primary SSOT for highlighted card — no fuzzy rate matching needed
+  // within a session. Survives re-renders but not tab switches (by design: if the
+  // user goes back to Tab 3 and changes data, old card IDs are stale anyway).
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+
+  const handleSelectAlternative = useCallback((alt: SmartAlternative) => {
+    setSelectedCardId(alt.id);
+    handleRateSelection(alt);
+  }, [handleRateSelection]);
+
+  // selectedAlternativeId:
+  //   1. Use session-scoped selectedCardId if the user has tapped a card this session
+  //      → 100% unambiguous (no rate collision possible)
+  //   2. Fall back to min-distance rate match for restored state (tab switch / reload)
+  //      → min-distance is correct for all current cards; only identical-rate ties
+  //        remain ambiguous, but those cards are functionally equivalent anyway
+  const selectedAlternativeId = useMemo(() => {
+    // Primary: exact card ID from this session's tap
+    if (selectedCardId && smartAlternatives?.alternatives?.some(a => a.id === selectedCardId)) {
+      if (__DEV__) console.warn('[PACE MATCH] session ID ->', selectedCardId);
+      return selectedCardId;
+    }
+    // Fallback: minimum-distance rate match
+    const goal = workoutPreferences?.weekly_weight_loss_goal;
+    if (!goal || !smartAlternatives?.alternatives?.length) return null;
+    if (__DEV__) {
+      console.warn(
+        '[PACE MATCH] fallback - goal =', goal, 'kg/wk',
+        '| cards:', smartAlternatives.alternatives.map(a => `${a.id}(${a.weeklyRate})`).join(', '),
+      );
+    }
+    let bestMatch: SmartAlternative | null = null;
+    let bestDiff = Infinity;
+    for (const alt of smartAlternatives.alternatives) {
+      const diff = Math.abs(alt.weeklyRate - goal);
+      if (diff < 0.015 && diff < bestDiff) {
+        bestMatch = alt;
+        bestDiff = diff;
+      }
+    }
+    if (__DEV__) {
+      console.warn('[PACE MATCH] fallback result ->', bestMatch?.id ?? 'NO MATCH');
+    }
+    return bestMatch?.id ?? null;
+  }, [selectedCardId, workoutPreferences?.weekly_weight_loss_goal, smartAlternatives]);
+
 
   return (
     <View style={styles.container}>
@@ -158,7 +206,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
               }}
               smartAlternatives={smartAlternatives}
               selectedAlternativeId={selectedAlternativeId}
-              onSelectAlternative={handleRateSelection}
+              onSelectAlternative={handleSelectAlternative}
             />
           </View>
         )}
@@ -216,9 +264,12 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                   Math.abs(sa.dailyCalories - alt.dailyCalories) < 5,
               );
               if (smartAlt) {
-                handleRateSelection(smartAlt);
+                handleSelectAlternative(smartAlt);
               } else {
-                handleRateSelection({
+                // BUG-45: Wire ALL wizard Alternative fields into the SmartAlternative
+                // so handleRateSelection can properly sync exercise params downstream.
+                const hasExercise = !!alt.newWorkoutFrequency;
+                handleSelectAlternative({
                   id: "custom-" + alt.name,
                   label: alt.name,
                   description: alt.approach,
@@ -229,8 +280,16 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                   isUserOriginal: false,
                   bmrDifference: 0,
                   isBlocked: false,
-                  requiresExercise: !!alt.newWorkoutFrequency,
+                  requiresExercise: hasExercise,
+                  exerciseType: hasExercise
+                    ? (alt.newIntensity === "advanced" ? "intense" : alt.newIntensity === "beginner" ? "light" : "moderate")
+                    : undefined,
+                  exerciseMinutes: alt.newCardioMinutes ?? undefined,
+                  exerciseSessions: alt.newWorkoutFrequency ?? undefined,
+                  exerciseCaloriesBurned: undefined,
+                  exerciseDescription: alt.newCardioMinutes ? `${alt.newCardioMinutes} min cardio` : undefined,
                   timelineWeeks: alt.newTimeline || 12,
+                  isBelowBMR: false,
                 } as SmartAlternative);
               }
             }}

@@ -358,6 +358,114 @@ export const useOnboardingLogic = ({
   }, [handlePreviousTab]);
 
   const handleCompleteOnboarding = useCallback(async () => {
+    // M8: isCalculating (Tab 5's performCalculations flag) is not accessible from this hook —
+    // it lives in the AdvancedReviewTab's local state. If the user presses "Complete Setup"
+    // while calculations are still running, refs here may snapshot pre-calculation values.
+    // To guard against this, Tab 5 should disable the "Complete Setup" button while isCalculating=true.
+
+    // 🔍 ONBOARDING DEBUG — "Complete Setup" button pressed (pre-save snapshot)
+    if (__DEV__) {
+      // H7: workoutPreferencesRef is updated via useEffect and may lag by one render cycle
+      // if the user pressed "Complete Setup" immediately after a pace card selection.
+      // The ref is the best available value here (no Zustand getState() for onboarding state).
+      // Log a warning if the ref's weekly_weight_loss_goal is unset, which may indicate staleness.
+      const liveWpFromRef = workoutPreferencesRef.current;
+      if (liveWpFromRef?.weekly_weight_loss_goal === undefined || liveWpFromRef?.weekly_weight_loss_goal === null) {
+        console.warn(
+          '⚠️ [H7] workoutPreferencesRef.current.weekly_weight_loss_goal is',
+          liveWpFromRef?.weekly_weight_loss_goal,
+          '— ref may be stale (pace card selected immediately before Complete Setup pressed).',
+          'completeOnboarding() reads from onboarding state directly, not from these debug refs.',
+        );
+      }
+      const wp = liveWpFromRef;
+      const ar = advancedReviewRef.current;
+      const ba = bodyAnalysisRef.current;
+
+      // Verification calculations
+      const dailyDeficit = (ar?.calculated_tdee ?? 0) - (ar?.daily_calories ?? 0);
+      const impliedWeeklyRateFromDeficit = (dailyDeficit * 7) / 7700;
+      const weightToLose = Math.abs((ba?.current_weight_kg ?? 0) - (ba?.target_weight_kg ?? 0));
+      const weeklyGoal = wp?.weekly_weight_loss_goal ?? 0;
+      const impliedTimeline = weightToLose > 0 && weeklyGoal > 0
+        ? Math.ceil(weightToLose / weeklyGoal)
+        : 0;
+      const macroCals = (ar?.daily_protein_g ?? 0) * 4 + (ar?.daily_carbs_g ?? 0) * 4 + (ar?.daily_fat_g ?? 0) * 9;
+      const macroMatch = Math.abs(macroCals - (ar?.daily_calories ?? 0)) <= 50 ? '✅ MATCH' : '⚠️ MISMATCH';
+      const rateMatch = Math.abs(impliedWeeklyRateFromDeficit - (ar?.weekly_weight_loss_rate ?? 0)) <= 0.05
+        ? '✅ MATCH'
+        : `⚠️ MISMATCH (deficit-implied: ${impliedWeeklyRateFromDeficit.toFixed(3)} vs stored: ${ar?.weekly_weight_loss_rate})`;
+      const timelineMatch = impliedTimeline > 0 && impliedTimeline === ar?.estimated_timeline_weeks
+        ? '✅ MATCH'
+        : `⚠️ MISMATCH (goal-implied: ${impliedTimeline} wks vs stored: ${ar?.estimated_timeline_weeks} wks)`;
+
+      // FITNESS_GOAL_MAP (mirrors aiRequestTransformers.ts mapping)
+      const FITNESS_GOAL_MAP: Record<string, string> = {
+        weight_loss: 'weight_loss', lose_weight: 'weight_loss',
+        muscle_gain: 'muscle_gain', build_muscle: 'muscle_gain',
+        maintenance: 'maintenance', maintain: 'maintenance',
+        athletic_performance: 'athletic', endurance: 'endurance',
+        strength: 'strength', flexibility: 'flexibility', general_fitness: 'general_fitness',
+      };
+      const primaryGoal = (wp?.primary_goals ?? [])[0] ?? 'not_set';
+      const mappedFitnessGoal = FITNESS_GOAL_MAP[primaryGoal] ?? primaryGoal;
+
+      console.warn(
+        '\n\n🚀🚀🚀 ====================================================== 🚀🚀🚀',
+        '\n🚀     COMPLETE SETUP PRESSED — PRE-SAVE SNAPSHOT              🚀',
+        '\n🚀🚀🚀 ====================================================== 🚀🚀🚀',
+        '\n',
+        '\n====== 🎯 PACE SELECTION STATE (from workoutPreferences) ======',
+        '\nweekly_weight_loss_goal :', wp?.weekly_weight_loss_goal, 'kg/wk  ← SSOT for selected pace card',
+        '\nworkout_frequency/week  :', wp?.workout_frequency_per_week, 'sessions',
+        '\nactivity_level          :', wp?.activity_level,
+        '\nintensity               :', wp?.intensity,
+        '\nworkout_types           :', wp?.workout_types,
+        '\ntime_preference         :', wp?.time_preference, 'min/session',
+        '\n',
+        '\n====== 🔢 CALCULATION OUTPUTS (from advancedReview) ======',
+        '\ncalculated_bmr          :', ar?.calculated_bmr, 'kcal/day',
+        '\ncalculated_tdee         :', ar?.calculated_tdee, 'kcal/day',
+        '\ndaily_calories          :', ar?.daily_calories, 'kcal/day',
+        '\ndaily_protein_g         :', ar?.daily_protein_g, 'g',
+        '\ndaily_carbs_g           :', ar?.daily_carbs_g, 'g',
+        '\ndaily_fat_g             :', ar?.daily_fat_g, 'g',
+        '\ndaily_water_ml          :', ar?.daily_water_ml, 'ml',
+        '\ndaily_fiber_g           :', ar?.daily_fiber_g, 'g',
+        '\nweekly_weight_loss_rate :', ar?.weekly_weight_loss_rate, 'kg/wk  ← must match weekly_weight_loss_goal',
+        '\nestimated_timeline_weeks:', ar?.estimated_timeline_weeks, 'weeks',
+        '\ntotal_calorie_deficit   :', ar?.total_calorie_deficit, 'kcal',
+        '\nwas_rate_capped         :', ar?.was_rate_capped,
+        '\ndetected_climate        :', ar?.detected_climate,
+        '\nvalidation_status       :', ar?.validation_status,
+        '\n',
+        '\n====== ✅ VERIFICATION CHECKS ======',
+        '\n[VERIFY] Daily deficit (TDEE - calories)    :', dailyDeficit.toFixed(1), 'kcal/day',
+        '\n[VERIFY] Weekly rate implied by deficit      :', impliedWeeklyRateFromDeficit.toFixed(3), 'kg/wk',
+        '\n[VERIFY] Rate consistency (deficit ↔ stored):', rateMatch,
+        '\n[VERIFY] Weight to lose                      :', weightToLose.toFixed(2), 'kg',
+        '\n[VERIFY] Timeline (goal ÷ rate)              :', impliedTimeline, 'weeks',
+        '\n[VERIFY] Timeline consistency (goal ↔ stored):', timelineMatch,
+        '\n[VERIFY] Macro calories sum                  :', macroCals.toFixed(0), 'kcal',
+        '\n         (P:', (ar?.daily_protein_g ?? 0) * 4, '+ C:', (ar?.daily_carbs_g ?? 0) * 4, '+ F:', (ar?.daily_fat_g ?? 0) * 9, ')',
+        '\n[VERIFY] Macros ↔ daily_calories             :', macroMatch,
+        '\n',
+        '\n====== 🏃 AI GENERATION INPUTS (what Cloudflare Workers will receive) ======',
+        '\nworkoutsPerWeek         :', wp?.workout_frequency_per_week,
+        '\nworkoutDuration         :', wp?.time_preference, 'min',
+        '\nexperienceLevel         :', wp?.intensity,
+        '\nactivityLevel           :', wp?.activity_level,
+        '\nprimaryGoal (raw)       :', primaryGoal,
+        '\nfitnessGoal (mapped)    :', mappedFitnessGoal,
+        '\ncalorieTarget (diet AI) :', ar?.daily_calories, 'kcal  ← advancedReview.daily_calories',
+        '\nrecommended_freq        :', ar?.recommended_workout_frequency,
+        '\nrecommended_cardio_min  :', ar?.recommended_cardio_minutes,
+        '\nrecommended_strength    :', ar?.recommended_strength_sessions,
+        '\n',
+        '\n🚀🚀🚀 ====================================================== 🚀🚀🚀\n',
+      );
+    }
+
     const success = await completeOnboarding();
 
     if (success) {

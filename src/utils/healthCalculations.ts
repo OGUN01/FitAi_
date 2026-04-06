@@ -8,6 +8,7 @@ import {
   WorkoutPreferencesData,
   AdvancedReviewData,
 } from "../types/onboarding";
+import { CALORIE_PER_KG } from "../services/validation/constants";
 import { calculateBMI as calculateBMICore } from "./healthCalculations/core/bmiCalculation";
 import { calculateBMR as calculateBMRCore } from "./healthCalculations/core/bmrCalculation";
 import {
@@ -526,8 +527,7 @@ export class NutritionalCalculations {
     weeklyWeightChangeKg: number,
     isWeightLoss: boolean = true,
   ): number {
-    // 1 kg fat ≈ 7700 calories
-    const weeklyCalorieChange = weeklyWeightChangeKg * 7700;
+    const weeklyCalorieChange = weeklyWeightChangeKg * CALORIE_PER_KG;
     const dailyCalorieChange = weeklyCalorieChange / 7;
 
     return isWeightLoss ? tdee - dailyCalorieChange : tdee + dailyCalorieChange;
@@ -1163,6 +1163,7 @@ export class HealthCalculationEngine {
       tdee,
       workoutPreferences.weekly_weight_loss_goal || weeklyWeightLossRate,
       isWeightLoss,
+      personalInfo.gender,
     );
 
     // Nutritional needs
@@ -1252,7 +1253,7 @@ export class HealthCalculationEngine {
 
     // Timeline calculations
     const estimatedTimelineWeeks = bodyAnalysis.target_timeline_weeks;
-    const totalCalorieDeficit = Math.round(weeklyWeightLossRate * 7700); // Weekly deficit
+    const totalCalorieDeficit = Math.round(weeklyWeightLossRate * CALORIE_PER_KG); // Weekly deficit
 
     return {
       // Basic metabolic calculations

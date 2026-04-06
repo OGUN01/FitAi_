@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   PersonalInfoData,
   DietPreferencesData,
@@ -12,6 +12,7 @@ import {
   SmartAlternativesResult,
 } from "../../services/validationEngine";
 import { HealthCalculationEngine } from "../../utils/healthCalculations/master-engine";
+import { CALORIE_PER_KG, DEFAULT_EXERCISE_SESSIONS_PER_WEEK } from "../../services/validation/constants";
 import {
   MetabolicCalculations,
   MetabolicCalculations as NewMetabolicCalc,
@@ -59,6 +60,13 @@ export const useReviewValidation = ({
   const [smartAlternatives, setSmartAlternatives] =
     useState<SmartAlternativesResult | null>(null);
 
+  // D2-FIX: Freeze the user's original requested rate on first calculation.
+  // This ensures the "KEEP MY GOAL" card always reflects the user's actual
+  // original desire, not a rate re-derived from a subsequently-selected timeline.
+  // Reset when core body fields change (user edits tab 3 and returns).
+  const originalRateRef = useRef<number | null>(null);
+  const weightSignatureRef = useRef<string | null>(null);
+
   const performCalculations = useCallback(async (opts?: { bypassDeficitLimit?: boolean }) => {
     if (
       !personalInfo ||
@@ -82,7 +90,7 @@ export const useReviewValidation = ({
 
     // 🔍 ONBOARDING DEBUG — RAW INPUTS entering the calculation engine
     if (__DEV__) {
-      console.log(
+      console.warn(
         '\n========== ⚙️  REVIEW CALC — RAW INPUTS TO ENGINE ==========',
         '\nhasBodyData             :', hasBodyData,
         '\nbypassDeficitLimit      :', opts?.bypassDeficitLimit,
@@ -233,7 +241,7 @@ export const useReviewValidation = ({
       try {
         // CRITICAL: Use climate-adaptive water calculation based on user's location
         if (!personalInfo.country) {
-          console.warn('Climate detection: country not set in profile, defaulting to temperate');
+          if (__DEV__) console.warn('Climate detection: country not set in profile, defaulting to temperate');
         }
         const climateResult = detectClimate(
           personalInfo.country || "",
@@ -297,7 +305,7 @@ export const useReviewValidation = ({
 
       // BUG-03: Derive total_calorie_deficit from ValidationEngine's actual capped weekly rate
       const vEngineWeeklyRate = validationResultsData.calculatedMetrics.weeklyRate;
-      const vEngineDailyDeficit = (vEngineWeeklyRate * 7700) / 7;
+      const vEngineDailyDeficit = (vEngineWeeklyRate * CALORIE_PER_KG) / 7;
       const vEngineTimeline = validationResultsData.calculatedMetrics.timeline;
       const totalCalorieDeficit = Math.round(vEngineDailyDeficit * vEngineTimeline * 7);
 
@@ -353,7 +361,7 @@ export const useReviewValidation = ({
 
       // 🔍 ONBOARDING DEBUG — Tab 5: Review Calculated Data
       if (__DEV__) {
-        console.log(
+        console.warn(
           '\n========== 📊 TAB 5: REVIEW — CALCULATED DATA ==========',
           '\n--- Metabolic Core ---',
           '\ncalculated_bmi              :', finalCalculations.calculated_bmi,
@@ -450,17 +458,45 @@ export const useReviewValidation = ({
           bodyAnalysis.target_timeline_weeks > 0
             ? bodyAnalysis.target_timeline_weeks
             : 12;
-        const userRequestedRate = isRecomp ? 0 : weightDifference / timelineWeeks;
+        // Prefer weekly_weight_loss_goal (SSOT set by pace card selection) over the
+        // timeline-derived rate. The timeline is ceiling-rounded so 17/22 = 0.77 ≠ 0.8.
+        // Using the stored goal keeps KEEP MY GOAL card, originalRateRef, and the
+        // fallback matcher all anchored to the rate the user actually chose.
+        const storedGoal = workoutPreferences?.weekly_weight_loss_goal;
+        const userRequestedRate = isRecomp ? 0
+          : (storedGoal && storedGoal > 0) ? storedGoal
+          : weightDifference / timelineWeeks;
+
+        // D2-FIX: Manage the frozen original-rate ref.
+        // The weight signature tracks whether the user changed current/target weight.
+        // If they did, the original rate is stale and must reset so the new goal
+        // first-loads with the fresh KEEP MY GOAL card.
+        const weightSignature = `${bodyAnalysis.current_weight_kg}:${bodyAnalysis.target_weight_kg}`;
+        if (
+          weightSignatureRef.current !== null &&
+          weightSignatureRef.current !== weightSignature
+        ) {
+          originalRateRef.current = null; // user changed target/current weight — reset
+        }
+        weightSignatureRef.current = weightSignature;
+        if (originalRateRef.current === null && userRequestedRate > 0) {
+          originalRateRef.current = userRequestedRate;
+        }
+        // Use frozen rate for KEEP MY GOAL card; fall back to live rate if not yet set.
+        const frozenRate = originalRateRef.current ?? userRequestedRate;
 
         try {
           const alternativesResult =
             ValidationEngine.calculateSmartAlternatives(
-              userRequestedRate,
+              frozenRate,  // D2: always use frozen original goal; not the derived rate
               validationResultsData.calculatedMetrics.bmr,
               validationResultsData.calculatedMetrics.tdee,
               bodyAnalysis.current_weight_kg,
               bodyAnalysis.target_weight_kg,
               personalInfo.gender as "male" | "female",
+              workoutPreferences?.workout_frequency_per_week ?? DEFAULT_EXERCISE_SESSIONS_PER_WEEK,
+              workoutPreferences?.intensity ?? "beginner",
+              workoutPreferences?.time_preference ?? 60,
             );
 
           setSmartAlternatives(alternativesResult);
