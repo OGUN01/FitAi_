@@ -222,6 +222,10 @@ interface SubscriptionState {
   // Actions
   fetchSubscriptionStatus: (options?: {
     preserveExistingOnError?: boolean;
+    /** When true, a server response with a lower tier than the current optimistic
+     *  plan will not overwrite currentPlan/features. Used after a fresh purchase
+     *  to guard against webhook lag returning stale free-tier data. */
+    skipDowngrade?: boolean;
   }) => Promise<void>;
   initializeSubscription: () => Promise<void>;
   refreshUsage: () => Promise<void>;
@@ -272,6 +276,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
         fetchSubscriptionStatus: async (options) => {
           const preserveExistingOnError = options?.preserveExistingOnError ?? false;
+          const skipDowngrade = options?.skipDowngrade ?? false;
           set({ isLoading: true });
 
           if (shouldSkipRemoteSubscriptionStatusOnLocalWeb()) {
@@ -386,6 +391,19 @@ export const useSubscriptionStore = create<SubscriptionState>()(
                   },
                 },
               };
+            }
+
+            // C8-3: Guard against webhook lag overwriting a freshly-purchased
+            // optimistic premium plan with stale free-tier data from the server.
+            // Tier rank: free=0, basic=1, pro=2.
+            const tierRank: Record<SubscriptionTier, number> = { free: 0, basic: 1, pro: 2 };
+            const currentTier = get().currentPlan?.tier ?? "free";
+            const serverTierRank = tierRank[data.tier] ?? 0;
+            const currentTierRank = tierRank[currentTier] ?? 0;
+            if (skipDowngrade && serverTierRank < currentTierRank) {
+              // Server returned a lower tier — keep the optimistic state, just stop loading.
+              set({ isLoading: false });
+              return;
             }
 
             set({
@@ -585,18 +603,27 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             subscriptionStatus: snapshot.status ?? "authenticated",
             features: snapshot.features,
             usage: deriveUsageFromFeatures(snapshot.features),
-            usageIsFresh: false,
+            // C8-2: payment just completed — the optimistic state IS the source of truth.
+            // Mark fresh so canUseFeature() doesn't block users who just paid.
+            usageIsFresh: true,
             currentPeriodEnd: normalizePeriodEnd(snapshot.current_period_end),
             usageResetMonth: currentMonth,
             usageResetDay: currentDay,
           });
         },
         applyLifecycleUpdate: ({ status, current_period_end }) => {
+          const normalizedEnd = normalizePeriodEnd(current_period_end);
+          // C8-4: On cancel, if the period end is still in the future the user
+          // retains access until that date. Mark usage fresh so canUseFeature()
+          // doesn't immediately block them, contradicting the UI message.
+          // isPremium() already enforces expiry via currentPeriodEnd when the date passes.
+          const accessContinues =
+            normalizedEnd !== null && new Date(normalizedEnd) > new Date();
           set((state) => ({
             ...state,
             subscriptionStatus: status,
-            usageIsFresh: false,
-            currentPeriodEnd: normalizePeriodEnd(current_period_end),
+            usageIsFresh: accessContinues,
+            currentPeriodEnd: normalizedEnd,
           }));
         },
       }),

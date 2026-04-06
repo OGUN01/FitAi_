@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import { supabase } from "../supabase";
+import { offlineService } from "../offline";
 import { crudOperations } from "../crudOperations";
 import { analyticsDataService } from "../analyticsData";
 import { MealLog, SyncStatus } from "../../types/localData";
@@ -136,34 +137,47 @@ export class MealService {
 
       await crudOperations.createMealLog(mealLog);
 
-      const { data, error } = await supabase
-        .from("meal_logs")
-        .insert({
-          id: mealLog.id,
-          user_id: userId,
-          meal_name: mealData.name,
-          meal_type: mealData.type,
-          food_items: mealLog.foods,
-          total_calories: nutritionTotals.calories,
-          total_protein: nutritionTotals.protein,
-          total_carbohydrates: nutritionTotals.carbs,
-          total_fat: nutritionTotals.fat,
-          logging_mode: "manual",
-          truth_level: "curated",
-          requires_review: false,
-          source_metadata: {},
-          notes: mealData.name,
-          logged_at: mealLog.loggedAt,
-        })
-        .select()
-        .single();
+      const mealLogInsert = {
+        id: mealLog.id,
+        user_id: userId,
+        meal_name: mealData.name,
+        meal_type: mealData.type,
+        food_items: mealLog.foods,
+        total_calories: nutritionTotals.calories,
+        total_protein: nutritionTotals.protein,
+        total_carbohydrates: nutritionTotals.carbs,
+        total_fat: nutritionTotals.fat,
+        logging_mode: "manual",
+        truth_level: "curated",
+        requires_review: false,
+        source_metadata: {},
+        notes: mealData.name,
+        logged_at: mealLog.loggedAt,
+      };
 
-      if (error) {
-        console.error("Error creating meal:", error);
-        return {
-          success: false,
-          error: error.message,
-        };
+      let remoteCreatedAt: string | undefined;
+
+      try {
+        const { data, error } = await supabase
+          .from("meal_logs")
+          .insert(mealLogInsert)
+          .select()
+          .single();
+
+        if (error) {
+          throw error;
+        }
+
+        remoteCreatedAt = data.created_at;
+      } catch (supabaseError) {
+        console.error("Error creating meal in Supabase, queuing for retry:", supabaseError);
+        await offlineService.queueAction({
+          type: "CREATE",
+          table: "meal_logs",
+          data: mealLogInsert,
+          userId,
+          maxRetries: 3,
+        });
       }
 
       // Populate analytics_metrics so the calorie chart always has data
@@ -177,7 +191,7 @@ export class MealService {
       return {
         success: true,
         data: {
-          id: data.id,
+          id: mealLog.id,
           user_id: userId,
           name: mealData.name,
           type: mealData.type,
@@ -187,7 +201,7 @@ export class MealService {
           total_fat: nutritionTotals.fat,
           total_fiber: nutritionTotals.fiber,
           consumed_at: mealLog.loggedAt,
-          created_at: data.created_at ?? mealLog.loggedAt,
+          created_at: remoteCreatedAt ?? mealLog.loggedAt,
           foods: [],
         },
       };

@@ -87,6 +87,7 @@ interface ConsumedNutrition {
   fat: number;
   fiber: number;
   sugar: number;
+  sodium?: number;
 }
 
 const EMPTY_CONSUMED_NUTRITION: ConsumedNutrition = {
@@ -96,6 +97,7 @@ const EMPTY_CONSUMED_NUTRITION: ConsumedNutrition = {
   fat: 0,
   fiber: 0,
   sugar: 0,
+  sodium: 0,
 };
 
 function clearConsumedNutritionCaches() {
@@ -132,6 +134,7 @@ function sumMealNutrition(meals: Meal[]): ConsumedNutrition {
       fat: acc.fat + (meal.totalMacros?.fat || 0),
       fiber: acc.fiber + (meal.totalMacros?.fiber || 0),
       sugar: acc.sugar + (meal.totalMacros?.sugar || 0),
+      sodium: (acc.sodium ?? 0) + (meal.totalMacros?.sodium || 0),
     }),
     { ...EMPTY_CONSUMED_NUTRITION },
   );

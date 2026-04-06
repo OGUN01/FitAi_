@@ -295,8 +295,11 @@ export const usePaywall = () => {
           status: "authenticated",
         });
 
-      // Step 5: Refresh subscription store to reflect new status
-      await fetchSubscriptionStatus({ preserveExistingOnError: true });
+      // Step 5: Refresh subscription store to reflect new status.
+      // preserveExistingOnError: keep optimistic state if network fails (C8-2).
+      // skipDowngrade: prevent webhook lag from overwriting premium state with
+      // stale free-tier data before the server has processed the payment (C8-3).
+      await fetchSubscriptionStatus({ preserveExistingOnError: true, skipDowngrade: true });
 
       // Step 6: Success! Dismiss paywall and show success message
       if (!isMountedRef.current) return true;
