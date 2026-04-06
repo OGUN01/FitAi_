@@ -347,7 +347,7 @@ class NutritionDataService {
       const { data: advancedReview, error: advancedError } = await supabase
         .from("advanced_review")
         .select(
-          "daily_calories, daily_protein_g, daily_carbs_g, daily_fat_g, daily_water_ml",
+          "daily_calories, daily_protein_g, daily_carbs_g, daily_fat_g, daily_water_ml, daily_fiber_g",
         )
         .eq("user_id", userId)
         .maybeSingle();

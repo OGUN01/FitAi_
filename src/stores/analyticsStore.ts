@@ -337,7 +337,19 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
         const state = get();
         const { metricsHistory } = state;
 
-        if (metricsHistory.length === 0) return;
+        if (metricsHistory.length === 0) {
+          set({
+            chartData: {
+              workoutFrequency: [],
+              weightProgress: [],
+              sleepPattern: [],
+              caloriesBurned: [],
+              waterIntake: [],
+              performanceScore: [],
+            },
+          });
+          return;
+        }
 
         const chartData = {
           workoutFrequency: state.getWorkoutFrequencyData(30),
@@ -567,7 +579,10 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
         weightHistory: Array<{ date: string; weight: number }>,
         calorieHistory: Array<{ date: string; consumed: number; burned: number }>,
       ) => {
-        set({ weightHistory, calorieHistory });
+        const sortedWeightHistory = [...weightHistory].sort(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+        );
+        set({ weightHistory: sortedWeightHistory, calorieHistory });
       },
 
       // Fix 21: Cache DailyMetrics fetched from analytics_metrics Supabase table

@@ -112,6 +112,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
     features,
     currentPeriodEnd,
     applyLifecycleUpdate,
+    fetchSubscriptionStatus,
   } = useSubscriptionStore();
 
   const { triggerPaywall, showPaywall, dismiss, paywallReason } = usePaywall();
@@ -160,6 +161,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
                 status: normalizeLifecycleStatus(result.status),
                 current_period_end: result.current_period_end ?? currentPeriodEnd,
               });
+              await fetchSubscriptionStatus();
               crossPlatformAlert(
                 "Subscription Cancelled",
                 `You can continue using premium features until ${formatDate(
@@ -179,7 +181,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
         },
       ],
     );
-  }, [applyLifecycleUpdate, currentPeriodEnd]);
+  }, [applyLifecycleUpdate, currentPeriodEnd, fetchSubscriptionStatus]);
 
   const handlePause = useCallback(() => {
     haptics.medium();
@@ -224,6 +226,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
       applyLifecycleUpdate({
         status: normalizeLifecycleStatus(result.status),
       });
+      await fetchSubscriptionStatus();
       crossPlatformAlert(
         "Subscription Resumed",
         result.message ?? "Welcome back! Your premium features are active again.",
@@ -237,7 +240,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
     } finally {
       setActionLoading(null);
     }
-  }, [applyLifecycleUpdate]);
+  }, [applyLifecycleUpdate, fetchSubscriptionStatus]);
 
   const handleUpgrade = useCallback(() => {
     haptics.light();

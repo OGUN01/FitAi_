@@ -31,6 +31,28 @@ export class QueueManager {
       }
     }
 
+    // Dedup: skip duplicate CREATE for the same entity (double-tap offline guard).
+    if (action.type === "CREATE" && action.data?.id) {
+      const queue = this.storage.getSyncQueue();
+      const existing = queue.find(
+        (a) => a.type === "CREATE" && a.table === action.table && a.data?.id === action.data.id,
+      );
+      if (existing) {
+        return existing.id;
+      }
+    }
+
+    // Dedup: skip duplicate DELETE for the same entity.
+    if (action.type === "DELETE" && action.data?.id) {
+      const queue = this.storage.getSyncQueue();
+      const existing = queue.find(
+        (a) => a.type === "DELETE" && a.table === action.table && a.data?.id === action.data.id,
+      );
+      if (existing) {
+        return existing.id;
+      }
+    }
+
     const offlineAction: OfflineAction = {
       ...action,
       id: this.generateId(),
@@ -76,6 +98,8 @@ export class QueueManager {
           this.rollback.clearRollback(action.id);
         } catch (error) {
           action.retryCount++;
+          // Persist the incremented retryCount immediately so it survives an app kill mid-sync.
+          await this.storage.saveData();
 
           if (action.retryCount >= action.maxRetries) {
             await this.rollback.rollbackAction(action.id, this.storage);

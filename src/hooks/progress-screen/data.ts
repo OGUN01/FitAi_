@@ -118,8 +118,9 @@ export const generateWeeklyChartData = (activities: any[]): WeeklyDataPoint[] =>
   const weekData = days.map((day) => ({ day, workouts: 0, meals: 0, calories: 0, duration: 0 }));
 
   activities.forEach((activity) => {
-    const activityDate = new Date(activity.completedAt);
-    const dayIndex = (activityDate.getDay() + 6) % 7;
+    const d = new Date(activity.completedAt);
+    const localDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const dayIndex = (localDate.getDay() + 6) % 7;
 
     if (activity.type === "workout") {
       weekData[dayIndex].workouts += 1;

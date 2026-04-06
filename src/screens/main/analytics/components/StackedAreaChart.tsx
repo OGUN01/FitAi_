@@ -26,8 +26,8 @@ export const StackedAreaChart: React.FC<StackedAreaChartProps> = ({
   return (
     <View style={styles.areaChartContainer}>
       {consumedData.map((item, index) => {
-        const consumed = burnedData[index]?.value || 0;
-        const burned = item.value;
+        const consumed = item.value;
+        const burned = burnedData[index]?.value || 0;
         const consumedHeight = (consumed / maxValue) * 100;
         const burnedHeight = (burned / maxValue) * 100;
 

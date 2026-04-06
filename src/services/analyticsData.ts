@@ -451,7 +451,7 @@ class AnalyticsDataService {
             "[analyticsData] Failed to fetch existing metrics row for accumulation:",
             fetchError,
           );
-          return;
+          return false;
         }
 
         const row: Record<string, unknown> = {

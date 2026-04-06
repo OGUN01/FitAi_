@@ -258,20 +258,26 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
         data: { user },
       } = await supabase.auth.getUser();
 
+      if (!user) {
+        setSubmitError("You must be signed in to submit a contribution.");
+        setIsSubmitting(false);
+        return;
+      }
+
       const { error } = await supabase.from("user_food_contributions").insert({
-        barcode: barcode || null,
-        product_name: formData.productName.trim(),
-        user_id: user?.id ?? null,
-        contribution_type: "new_product" as const,
-        energy_kcal_100g: parsePositiveFloat(formData.calories),
-        proteins_100g: parsePositiveFloat(formData.protein),
-        carbohydrates_100g: parsePositiveFloat(formData.carbs),
-        fat_100g: parsePositiveFloat(formData.fat),
-        fiber_100g: parsePositiveFloat(formData.fiber) ?? null,
-        sugars_100g: parsePositiveFloat(formData.sugar) ?? null,
-        sodium_100g: parsePositiveFloat(formData.sodium) ?? null,
-        brands: formData.brand.trim() || null,
-        is_approved: false,
+        user_id: user.id,
+        name: formData.productName.trim(),
+        brand: formData.brand.trim() || null,
+        calories: parsePositiveFloat(formData.calories),
+        protein_g: parsePositiveFloat(formData.protein),
+        carbs_g: parsePositiveFloat(formData.carbs),
+        fat_g: parsePositiveFloat(formData.fat),
+        fiber_g: parsePositiveFloat(formData.fiber) ?? null,
+        extra_data: {
+          barcode: barcode || null,
+          sugar: parsePositiveFloat(formData.sugar) ?? null,
+          sodium: parsePositiveFloat(formData.sodium) ?? null,
+        },
       });
 
       if (error) {

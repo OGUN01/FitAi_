@@ -59,91 +59,68 @@ function mapSessionToDb(data: Record<string, unknown>) {
 
 export async function executeAction(action: OfflineAction): Promise<void> {
   const { type, table, data } = action;
-  const maxRetries = 3;
-  let lastError: Error | null = null;
 
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-
-      switch (type) {
-        case "CREATE":
-          const insertData = table === 'workout_sessions' ? mapSessionToDb(data as Record<string, unknown>) : data;
-          // progress_entries has a unique (user_id, entry_date) constraint — upsert to avoid
-          // duplicate key errors when replaying queued offline actions.
-          const createResponse = table === 'progress_entries'
-            ? await supabase.from(table).upsert([insertData], { onConflict: 'user_id,entry_date' })
-            : await supabase.from(table).insert([insertData]);
-          const createValidation = validateSupabaseResponse(
-            createResponse,
-            "CREATE",
-            table,
-          );
-          if (!createValidation.valid) {
-            throw new Error(createValidation.error);
-          }
-          break;
-
-        case "UPDATE":
-          const { id, ...updateData } = data;
-          if (!id) {
-            throw new Error(
-              `UPDATE operation missing required 'id' field for table ${table}`,
-            );
-          }
-          const updateResponse = await supabase
-            .from(table)
-            .update(updateData)
-            .eq("id", id);
-          const updateValidation = validateSupabaseResponse(
-            updateResponse,
-            "UPDATE",
-            table,
-          );
-          if (!updateValidation.valid) {
-            throw new Error(updateValidation.error);
-          }
-          console.log(`✅ Successfully updated record ${id} in ${table}`);
-          break;
-
-        case "DELETE":
-          if (!data.id) {
-            throw new Error(
-              `DELETE operation missing required 'id' field for table ${table}`,
-            );
-          }
-          const deleteResponse = await supabase
-            .from(table)
-            .delete()
-            .eq("id", data.id);
-          const deleteValidation = validateSupabaseResponse(
-            deleteResponse,
-            "DELETE",
-            table,
-          );
-          if (!deleteValidation.valid) {
-            throw new Error(deleteValidation.error);
-          }
-          break;
-
-        default:
-          throw new Error(`Unknown action type: ${type}`);
-      }
-
-      return;
-    } catch (error) {
-      lastError = error as Error;
-      console.warn(
-        `⚠️ Attempt ${attempt} failed for ${type} on ${table}:`,
-        error,
+  switch (type) {
+    case "CREATE":
+      const insertData = table === 'workout_sessions' ? mapSessionToDb(data as Record<string, unknown>) : data;
+      // progress_entries has a unique (user_id, entry_date) constraint — upsert to avoid
+      // duplicate key errors when replaying queued offline actions.
+      const createResponse = table === 'progress_entries'
+        ? await supabase.from(table).upsert([insertData], { onConflict: 'user_id,entry_date' })
+        : await supabase.from(table).insert([insertData]);
+      const createValidation = validateSupabaseResponse(
+        createResponse,
+        "CREATE",
+        table,
       );
-
-      if (attempt < maxRetries) {
-        const backoffDelay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
-        await new Promise((resolve) => setTimeout(resolve, backoffDelay));
+      if (!createValidation.valid) {
+        throw new Error(createValidation.error);
       }
-    }
-  }
+      break;
 
-  const errorMessage = `Failed to execute ${type} on ${table} after ${maxRetries} attempts: ${lastError?.message}`;
-  throw new Error(errorMessage);
+    case "UPDATE":
+      const { id, ...updateData } = data;
+      if (!id) {
+        throw new Error(
+          `UPDATE operation missing required 'id' field for table ${table}`,
+        );
+      }
+      const updateResponse = await supabase
+        .from(table)
+        .update(updateData)
+        .eq("id", id);
+      const updateValidation = validateSupabaseResponse(
+        updateResponse,
+        "UPDATE",
+        table,
+      );
+      if (!updateValidation.valid) {
+        throw new Error(updateValidation.error);
+      }
+      console.log(`✅ Successfully updated record ${id} in ${table}`);
+      break;
+
+    case "DELETE":
+      if (!data.id) {
+        throw new Error(
+          `DELETE operation missing required 'id' field for table ${table}`,
+        );
+      }
+      const deleteResponse = await supabase
+        .from(table)
+        .delete()
+        .eq("id", data.id);
+      const deleteValidation = validateSupabaseResponse(
+        deleteResponse,
+        "DELETE",
+        table,
+      );
+      if (!deleteValidation.valid) {
+        throw new Error(deleteValidation.error);
+      }
+      break;
+
+    default:
+      throw new Error(`Unknown action type: ${type}`);
+  }
 }

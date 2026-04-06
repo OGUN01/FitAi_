@@ -234,9 +234,7 @@ export class FreeNutritionAPIs {
     try {
       // Validate API key is set
       if (!this.usdaApiKey) {
-        throw new Error(
-          "USDA API key not configured. Set USDA_API_KEY environment variable.",
-        );
+        return null;
       }
 
       const searchUrl = `https://api.nal.usda.gov/fdc/v1/foods/search`;
@@ -293,11 +291,6 @@ export class FreeNutritionAPIs {
         }
       });
 
-      // Convert sodium from mg to g for consistency
-      if (nutritionData.sodium) {
-        nutritionData.sodium = nutritionData.sodium / 1000;
-      }
-
       return {
         ...nutritionData,
         source: "USDA",
@@ -352,7 +345,7 @@ export class FreeNutritionAPIs {
         fat: nutrients["fat_100g"] || 0,
         fiber: nutrients["fiber_100g"] || 0,
         sugar: nutrients["sugars_100g"] || 0,
-        sodium: (nutrients["salt_100g"] || 0) / 2.5, // Convert salt to sodium
+        sodium: (nutrients["salt_100g"] || 0) * 400, // salt (g/100g) → sodium (mg): * 0.4 * 1000
         source: "OpenFoodFacts",
         confidence: this.calculateMatchConfidence(
           foodName,
@@ -577,7 +570,7 @@ export class FreeNutritionAPIs {
                   fat: nutrients["fat_100g"] || 0,
                   fiber: nutrients["fiber_100g"] || 0,
                   sugar: nutrients["sugars_100g"] || 0,
-                  sodium: (nutrients["salt_100g"] || 0) / 2.5,
+                  sodium: (nutrients["salt_100g"] || 0) * 400, // salt (g/100g) → sodium (mg): * 0.4 * 1000
                   source: "OpenFoodFacts",
                   confidence: 90,
                 }
@@ -672,7 +665,7 @@ export class FreeNutritionAPIs {
                   fat: n["fat_100g"] || 0,
                   fiber: n["fiber_100g"] || 0,
                   sugar: n["sugars_100g"] || 0,
-                  sodium: (n["salt_100g"] || 0) / 2.5,
+                  sodium: (n["salt_100g"] || 0) * 400, // salt (g/100g) → sodium (mg): * 0.4 * 1000
                   source: "OpenFoodFacts-India",
                   confidence: 90,
                 }

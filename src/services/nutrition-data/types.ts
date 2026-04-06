@@ -69,6 +69,7 @@ export interface NutritionGoals {
   daily_carbs?: number;
   daily_fat?: number;
   daily_water_ml?: number;
+  daily_fiber_g?: number;
   macroTargets?: {
     protein: number;
     carbohydrates: number;

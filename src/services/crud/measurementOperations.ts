@@ -73,12 +73,11 @@ export async function deleteBodyMeasurement(
   initialize: () => Promise<void>,
 ): Promise<void> {
   try {
+    const existing = await readBodyMeasurement(measurementId, initialize);
     await updateBodyMeasurement(
       measurementId,
       {
-        notes:
-          (await readBodyMeasurement(measurementId, initialize))?.notes +
-            " [DELETED]" || "[DELETED]",
+        notes: existing?.notes ? existing.notes + " [DELETED]" : "[DELETED]",
       },
       initialize,
     );

@@ -37,9 +37,9 @@ export const RATE_LIMITS = {
 		windowSeconds: 3600,
 		keyPrefix: 'ratelimit:ip',
 	},
-	/** For AI generation endpoints - 500 requests per hour (increased for testing) */
+	/** For AI generation endpoints - 50 requests per hour */
 	AI_GENERATION: {
-		maxRequests: 500,
+		maxRequests: 50,
 		windowSeconds: 3600,
 		keyPrefix: 'ratelimit:ai',
 	},

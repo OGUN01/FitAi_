@@ -345,7 +345,7 @@ class ProgressDataService {
     timeRange: number = 30,
   ): Promise<ProgressDataResponse<ProgressStats>> {
     try {
-      const entriesResponse = await this.getUserProgressEntries(userId);
+      const entriesResponse = await this.getUserProgressEntries(userId, 2);
 
       if (
         !entriesResponse.success ||

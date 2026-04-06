@@ -19,6 +19,8 @@ import {
   ActivityIndicator,
   Platform,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -26,8 +28,13 @@ import {
 import Animated, { FadeIn } from "react-native-reanimated";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rh } from "../../utils/responsive";
+import { rf, rw, rh } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
+
+// Subscription gate
+import { useSubscriptionStore } from "../../stores/subscriptionStore";
+import { usePaywall } from "../../hooks/usePaywall";
+import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 
 // Stores
 import { useAnalyticsStore } from "../../stores/analyticsStore";
@@ -66,6 +73,10 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
   navigation,
 }) => {
   const insets = useSafeAreaInsets();
+
+  // Subscription gate — analytics is a premium feature
+  const analyticsEnabled = useSubscriptionStore((s) => s.features.analytics);
+  const { triggerPaywall } = usePaywall();
 
   // State
   // NOTE: selectedPeriod is intentionally NOT local state — we read it from
@@ -684,6 +695,37 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
   const showLoading =
     !refreshing && !dataError && (isDataLoading || isAnalyticsLoading || !isHistoryCurrent);
 
+  if (!analyticsEnabled) {
+    return (
+      <AuroraBackground theme="space" animated={true} intensity={0.3}>
+        <SafeAreaView style={styles.container} edges={["top"]}>
+          <View style={styles.lockedContainer}>
+            <View style={styles.lockedIconContainer}>
+              <Ionicons name="analytics-outline" size={rf(40)} color="#FF8A5C" />
+            </View>
+            <Text style={styles.lockedTitle}>Premium Feature</Text>
+            <Text style={styles.lockedDescription}>
+              Detailed analytics and trend charts are available on Basic and Pro plans.
+            </Text>
+            <AnimatedPressable
+              onPress={() => triggerPaywall("Unlock detailed analytics with a premium plan")}
+              style={styles.lockedUpgradeButton}
+            >
+              <LinearGradient
+                colors={["#FF8A5C", "#A78BFA"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.lockedUpgradeGradient}
+              >
+                <Text style={styles.lockedUpgradeText}>Upgrade to Unlock</Text>
+              </LinearGradient>
+            </AnimatedPressable>
+          </View>
+        </SafeAreaView>
+      </AuroraBackground>
+    );
+  }
+
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top"]}>
@@ -867,6 +909,50 @@ const styles = StyleSheet.create({
   },
   breakdownExtra: {
     color: ResponsiveTheme.colors.successAlt,
+  },
+  lockedContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: rw(32),
+  },
+  lockedIconContainer: {
+    backgroundColor: "rgba(255, 138, 92, 0.15)",
+    borderRadius: rw(40),
+    padding: rw(20),
+    marginBottom: rh(20),
+    borderWidth: 1,
+    borderColor: "rgba(255, 138, 92, 0.3)",
+  },
+  lockedTitle: {
+    fontSize: rf(22),
+    fontWeight: "800",
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rh(10),
+    textAlign: "center",
+  },
+  lockedDescription: {
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: "center",
+    lineHeight: rf(20),
+    marginBottom: rh(28),
+  },
+  lockedUpgradeButton: {
+    borderRadius: rw(16),
+    overflow: "hidden",
+    width: "100%",
+  },
+  lockedUpgradeGradient: {
+    paddingVertical: rh(14),
+    paddingHorizontal: rw(24),
+    alignItems: "center",
+    borderRadius: rw(16),
+  },
+  lockedUpgradeText: {
+    color: "#FFF",
+    fontWeight: "700",
+    fontSize: rf(16),
   },
 });
 

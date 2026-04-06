@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import * as FileSystem from "expo-file-system";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import {
   BodyAnalysisData,
@@ -306,7 +307,15 @@ export const useBodyAnalysis = ({
 
   const removePhoto = (photoType: "front" | "side" | "back") => {
     const photoField = `${photoType}_photo_url` as keyof BodyAnalysisData;
+    const photoUri = formData[photoField] as string | undefined;
+
     updateField(photoField, undefined as BodyAnalysisData[typeof photoField]);
+
+    if (photoUri) {
+      FileSystem.deleteAsync(photoUri, { idempotent: true }).catch((err) => {
+        console.warn("[removePhoto] Failed to delete local file:", err);
+      });
+    }
 
     if (formData.ai_estimated_body_fat) {
       setFormData((prev: BodyAnalysisData) => ({
@@ -333,21 +342,12 @@ export const useBodyAnalysis = ({
     setIsAnalyzingPhotos(true);
 
     try {
-      // Mock analysis - no artificial delay
-
-      const mockAnalysis = {
-        estimatedBodyFat: Math.random() * 10 + 15,
-        bodyType: ["ectomorph", "mesomorph", "endomorph"][
-          Math.floor(Math.random() * 3)
-        ] as "ectomorph" | "mesomorph" | "endomorph",
-        confidenceScore: Math.floor(Math.random() * 20 + 75),
-      };
+      // Photo analysis not yet implemented — real AI analysis requires a backend vision model.
 
       const aiResults = {
-        ai_estimated_body_fat:
-          Math.round(mockAnalysis.estimatedBodyFat * 100) / 100,
-        ai_body_type: mockAnalysis.bodyType,
-        ai_confidence_score: mockAnalysis.confidenceScore,
+        ai_estimated_body_fat: null as number | null | undefined,
+        ai_body_type: null as string | null | undefined,
+        ai_confidence_score: 0,
       };
 
       setFormData((prev: BodyAnalysisData) => ({
@@ -358,9 +358,9 @@ export const useBodyAnalysis = ({
       onUpdate(aiResults);
 
       crossPlatformAlert(
-        "Analysis Complete!",
-        `Body analysis completed with ${mockAnalysis.confidenceScore}% confidence. Review the results below.`,
-        [{ text: "Great!" }],
+        "Analysis Not Available",
+        "AI photo analysis is not yet available. You can enter your body fat percentage manually below.",
+        [{ text: "OK" }],
       );
     } catch (error) {
       console.error("Photo analysis failed:", error);

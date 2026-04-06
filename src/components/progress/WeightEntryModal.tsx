@@ -115,7 +115,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
 
     setError(null);
     return true;
-  }, [weight, bodyFat]);
+  }, [weight, bodyFat, unit]);
 
   // Submit weight entry
   const handleSubmit = useCallback(async () => {

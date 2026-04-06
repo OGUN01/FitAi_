@@ -267,7 +267,11 @@ export class HealthCalculatorFacade {
         waterIntake: water,
         waterTarget: water,
         protein,
-        proteinTarget: protein,
+        // proteinTarget intentionally omitted: `protein` here is the calculated
+        // target, not actual consumed intake. Passing the same value as both
+        // protein and proteinTarget would always yield a 100% nutrition score.
+        // The health score calculator skips the nutrition component when
+        // proteinTarget is absent, which is correct for this calculation context.
         vo2max: vo2max?.vo2max,
       });
     } catch (error) {

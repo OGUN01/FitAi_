@@ -13,6 +13,7 @@ import { generateObject, createGateway } from 'ai';
 import { z } from 'zod';
 import { Env } from '../utils/types';
 import { AuthContext } from '../middleware/auth';
+import { APIError } from '../utils/errors';
 
 // ============================================================================
 // SCHEMAS
@@ -26,11 +27,11 @@ const RequestSchema = z.object({
 
 const NutritionSchema = z.object({
 	calories_kcal: z.number().describe('Calories per 100g'),
-	protein_g: z.number().describe('Protein in grams per 100g'),
-	carbs_g: z.number().describe('Carbohydrates in grams per 100g'),
-	fat_g: z.number().describe('Fat in grams per 100g'),
-	fiber_g: z.number().describe('Dietary fiber in grams per 100g'),
-	sugar_g: z.number().describe('Sugar in grams per 100g'),
+	protein_g: z.number().min(0).describe('Protein in grams per 100g'),
+	carbs_g: z.number().min(0).describe('Carbohydrates in grams per 100g'),
+	fat_g: z.number().min(0).describe('Fat in grams per 100g'),
+	fiber_g: z.number().min(0).describe('Dietary fiber in grams per 100g'),
+	sugar_g: z.number().min(0).describe('Sugar in grams per 100g'),
 	sodium_mg: z.number().describe('Sodium in milligrams per 100g'),
 	confidence_0_to_100: z
 		.number()
@@ -54,6 +55,11 @@ function createAIProvider(env: Env) {
 
 export async function handleNutritionEstimate(c: Context<{ Bindings: Env; Variables: AuthContext }>) {
 	const startTime = Date.now();
+
+	const user = c.get('user') as AuthContext['user'];
+	if (!user) {
+		throw new APIError('Authentication required', 401, 'UNAUTHORIZED');
+	}
 
 	let body: unknown;
 	try {

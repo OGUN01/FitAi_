@@ -28,6 +28,7 @@ import { ResponsiveTheme } from "../../../../utils/constants";
 import { rf, rp, rbr, rw } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
 import { crossPlatformAlert } from "../../../../utils/crossPlatformAlert";
+import { convertWeight, toDisplayWeight } from "../../../../utils/units";
 
 interface BodyMeasurementsEditModalProps {
   visible: boolean;
@@ -40,6 +41,8 @@ export const BodyMeasurementsEditModal: React.FC<
   const { profile } = useUser();
   const { user } = useAuth();
   const { updateBodyAnalysis } = useProfileStore();
+  const personalInfo = useProfileStore((s) => s.personalInfo);
+  const weightUnit: "kg" | "lbs" = personalInfo?.units === "imperial" ? "lbs" : "kg";
 
   // Form state
   const [height, setHeight] = useState("");
@@ -61,15 +64,19 @@ export const BodyMeasurementsEditModal: React.FC<
       const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
       // ✅ SSOT: profileStore.bodyAnalysis is authoritative; profile.bodyMetrics is legacy fallback
       setHeight((bodyAnalysisData?.height_cm && bodyAnalysisData.height_cm > 0) ? bodyAnalysisData.height_cm.toString() : "");
-      setWeight((bodyAnalysisData?.current_weight_kg && bodyAnalysisData.current_weight_kg > 0) ? bodyAnalysisData.current_weight_kg.toString() : "");
-      setTargetWeight((bodyAnalysisData?.target_weight_kg && bodyAnalysisData.target_weight_kg > 0) ? bodyAnalysisData.target_weight_kg.toString() : "");
+      const rawWeight = bodyAnalysisData?.current_weight_kg;
+      const displayWt = rawWeight && rawWeight > 0 ? toDisplayWeight(rawWeight, weightUnit) : null;
+      setWeight(displayWt != null ? displayWt.toFixed(1) : "");
+      const rawTarget = bodyAnalysisData?.target_weight_kg;
+      const displayTarget = rawTarget && rawTarget > 0 ? toDisplayWeight(rawTarget, weightUnit) : null;
+      setTargetWeight(displayTarget != null ? displayTarget.toFixed(1) : "");
       setBodyFat((bodyAnalysisData?.body_fat_percentage && bodyAnalysisData.body_fat_percentage > 0) ? bodyAnalysisData.body_fat_percentage.toString() : "");
       setChest((bodyAnalysisData?.chest_cm && bodyAnalysisData.chest_cm > 0) ? bodyAnalysisData.chest_cm.toString() : "");
       setWaist((bodyAnalysisData?.waist_cm && bodyAnalysisData.waist_cm > 0) ? bodyAnalysisData.waist_cm.toString() : "");
       setHips((bodyAnalysisData?.hip_cm && bodyAnalysisData.hip_cm > 0) ? bodyAnalysisData.hip_cm.toString() : "");
       setErrors({});
     }
-  }, [visible, profile]);
+  }, [visible, profile, weightUnit]);
 
   // Calculate BMI
   const bmi = useMemo(() => {
@@ -104,23 +111,25 @@ export const BodyMeasurementsEditModal: React.FC<
       newErrors.height = "Enter valid height in cm (100-250)";
     }
 
+    const wMin = weightUnit === "lbs" ? 66 : 30;
+    const wMax = weightUnit === "lbs" ? 660 : 300;
     if (
       !weight ||
       isNaN(Number(weight)) ||
-      Number(weight) < 30 ||
-      Number(weight) > 300
+      Number(weight) < wMin ||
+      Number(weight) > wMax
     ) {
-      newErrors.weight = "Enter valid weight in kg (30-300)";
+      newErrors.weight = `Enter valid weight in ${weightUnit} (${wMin}-${wMax})`;
     }
 
     // Target weight is optional but must be valid if provided
     if (
       targetWeight &&
       (isNaN(Number(targetWeight)) ||
-        Number(targetWeight) < 30 ||
-        Number(targetWeight) > 300)
+        Number(targetWeight) < wMin ||
+        Number(targetWeight) > wMax)
     ) {
-      newErrors.targetWeight = "Enter valid target weight in kg (30-300)";
+      newErrors.targetWeight = `Enter valid target weight in ${weightUnit} (${wMin}-${wMax})`;
     }
 
     // Body fat is optional but must be valid if provided
@@ -157,7 +166,7 @@ export const BodyMeasurementsEditModal: React.FC<
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [height, weight, targetWeight, bodyFat, chest, waist, hips]);
+  }, [height, weight, targetWeight, bodyFat, chest, waist, hips, weightUnit]);
 
   // Save handler
   const handleSave = useCallback(async () => {
@@ -173,11 +182,13 @@ export const BodyMeasurementsEditModal: React.FC<
       }
 
       const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
+      const weightKg = convertWeight(parseFloat(weight), weightUnit, "kg");
+      const targetWeightKg = targetWeight ? convertWeight(parseFloat(targetWeight), weightUnit, "kg") : undefined;
       const canonicalCurrentWeight = user?.id
         ? (await resolveCurrentWeightForUser(user.id, {
-            bodyAnalysisWeight: parseFloat(weight),
-          })).value ?? parseFloat(weight)
-        : parseFloat(weight);
+            bodyAnalysisWeight: weightKg,
+          })).value ?? weightKg
+        : weightKg;
       const nextBodyAnalysis = {
         // Preserve other fields - profileStore.bodyAnalysis is authoritative SSOT
         medical_conditions:
@@ -202,7 +213,7 @@ export const BodyMeasurementsEditModal: React.FC<
           false,
         height_cm: parseFloat(height),
         current_weight_kg: canonicalCurrentWeight,
-        ...(targetWeight ? { target_weight_kg: parseFloat(targetWeight) } : {}),
+        ...(targetWeightKg != null ? { target_weight_kg: targetWeightKg } : {}),
         body_fat_percentage: bodyFat ? parseFloat(bodyFat) : undefined,
         chest_cm: chest ? parseFloat(chest) : undefined,
         waist_cm: waist ? parseFloat(waist) : undefined,
@@ -258,6 +269,7 @@ export const BodyMeasurementsEditModal: React.FC<
     onClose,
     validate,
     updateBodyAnalysis,
+    weightUnit,
   ]);
 
   const hasChanges = useCallback(() => {
@@ -428,10 +440,10 @@ export const BodyMeasurementsEditModal: React.FC<
         onChangeText={setWeight}
         placeholder="Enter your weight"
         keyboardType="decimal-pad"
-        maxLength={5}
-        suffix="kg"
+        maxLength={6}
+        suffix={weightUnit}
         error={errors.weight}
-        hint="Weight in kilograms"
+        hint={`Weight in ${weightUnit}`}
       />
 
       {/* Target Weight */}
@@ -443,8 +455,8 @@ export const BodyMeasurementsEditModal: React.FC<
         onChangeText={setTargetWeight}
         placeholder="Enter your goal weight"
         keyboardType="decimal-pad"
-        maxLength={5}
-        suffix="kg"
+        maxLength={6}
+        suffix={weightUnit}
         error={errors.targetWeight}
         hint="Your weight goal (optional)"
       />

@@ -10,6 +10,7 @@ import { NetworkManager } from "./network";
 import { QueueManager } from "./queue";
 import { RollbackManager } from "./rollback";
 import * as crypto from "expo-crypto";
+import { supabase } from "../supabase";
 
 class OfflineService {
   private static instance: OfflineService;
@@ -57,6 +58,13 @@ class OfflineService {
     }
     await this.network.initialize();
     this.network.setOnlineCallback(() => this.syncOfflineActions());
+
+    // Clear offline queue on sign-out to prevent RLS errors looping on the next sync.
+    supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        this.clearOfflineData();
+      }
+    });
   }
 
   isDeviceOnline(): boolean {
@@ -99,6 +107,7 @@ class OfflineService {
   }
 
   async syncOfflineActions(): Promise<SyncResult> {
+    await this._ready;
     return this.queue.syncActions(this.network.isDeviceOnline());
   }
 
