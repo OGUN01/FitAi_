@@ -608,7 +608,10 @@ export const useFitnessStore = create<FitnessState>()(
             return state;
           }
           let newSessions = [...state.completedSessions, session];
-          if (newSessions.length > 90) newSessions = newSessions.slice(-90);
+          if (newSessions.length > 90) {
+            console.warn(`[fitnessStore] completedSessions capped at 90 — ${newSessions.length - 90} oldest sessions dropped`);
+            newSessions = newSessions.slice(-90);
+          }
           return { completedSessions: newSessions };
         });
       },
@@ -809,8 +812,10 @@ export const useFitnessStore = create<FitnessState>()(
             completedAt: new Date().toISOString(),
           });
 
-          // Complete the workout
-          await get().completeWorkout(currentSession.workoutId, sessionId);
+          // Complete the workout — pass actual MET-based calories from workoutProgress if available
+          const actualCalories =
+            get().workoutProgress[currentSession.workoutId]?.caloriesBurned;
+          await get().completeWorkout(currentSession.workoutId, sessionId, actualCalories);
 
           set({ currentWorkoutSession: null });
         } catch (error) {

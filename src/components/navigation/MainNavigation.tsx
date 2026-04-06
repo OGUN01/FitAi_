@@ -206,9 +206,9 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           isExtra: params.isExtra,
         });
       } else if (screen === "MealSession") {
-        setMealSession({ isActive: true, meal: params.meal });
+        setMealSession({ isActive: true, meal: params?.meal });
       } else if (screen === "CookingSession") {
-        setCookingSession({ isActive: true, meal: params.meal });
+        setCookingSession({ isActive: true, meal: params?.meal });
       } else if (screen === "OnboardingContainer") {
         setOnboardingEditSession({
           isActive: true,

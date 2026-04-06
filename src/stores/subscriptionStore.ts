@@ -452,7 +452,12 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         },
 
         isPremium: () => {
-          const { subscriptionStatus, currentPlan } = get();
+          const { subscriptionStatus, currentPlan, currentPeriodEnd } = get();
+          // If currentPeriodEnd is set and in the past, treat as not premium
+          // regardless of status (defense-in-depth against webhook lag).
+          if (currentPeriodEnd && new Date(currentPeriodEnd) < new Date()) {
+            return false;
+          }
           // Use persisted state even before isInitialized to avoid flash of free-tier UI.
           // If currentPlan is null (no persisted data) we default to false.
           return (

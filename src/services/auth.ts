@@ -578,7 +578,7 @@ class AuthService {
           expiresAt: session.expires_at || 0,
         });
         // Don't call callback — user state hasn't changed, only the token refreshed
-      } else if (event === 'SIGNED_OUT') {
+      } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
         // Only clear if we actually had a session — Supabase fires SIGNED_OUT on
         // startup even for users who were never signed in, which would wipe guest data.
         if (this.currentSession) {

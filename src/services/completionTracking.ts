@@ -287,8 +287,11 @@ class CompletionTrackingService {
         }
 
         // ALWAYS update store (Rule 6: store is the runtime source)
-        // Use supabaseSessionId when available so loadData() dedup can match by ID
-        // and avoid double-counting when the realtime subscription re-fires loadData()
+        // NOTE: addCompletedSession cannot be moved before the DB call (not optimistic)
+        // because sessionId uses supabaseSessionId — the server-generated row ID that is
+        // only available after the Supabase insert. Without it, loadData() dedup would
+        // fail to match the stored session when the realtime subscription re-fires,
+        // causing double-counting in the completed sessions list.
         useFitnessStore.getState().addCompletedSession({
           sessionId:
             supabaseSessionId || sessionData?.sessionId || generateUUID(),
@@ -476,6 +479,30 @@ class CompletionTrackingService {
                       },
                     },
                   }));
+
+                  // Bug 1 fix: update dailyMeals so getTodaysConsumedNutrition reflects
+                  // this meal immediately (Rule 6: store is the runtime source).
+                  useNutritionStore.getState().addDailyMeal({
+                    id: meal.id,
+                    type: meal.type,
+                    name: meal.name,
+                    items: meal.items || [],
+                    totalCalories: meal.totalCalories || 0,
+                    totalMacros: {
+                      protein: meal.totalMacros?.protein ?? 0,
+                      carbohydrates: meal.totalMacros?.carbohydrates ?? 0,
+                      fat: meal.totalMacros?.fat ?? 0,
+                      fiber: meal.totalMacros?.fiber ?? 0,
+                      sugar: meal.totalMacros?.sugar ?? 0,
+                      sodium: meal.totalMacros?.sodium ?? 0,
+                    },
+                    tags: meal.tags || [],
+                    isPersonalized: meal.isPersonalized ?? false,
+                    aiGenerated: meal.aiGenerated ?? true,
+                    createdAt: meal.createdAt || completedAt,
+                    updatedAt: completedAt,
+                    loggedAt: completedAt,
+                  });
                 }
 
                 // Save to analytics_metrics for Monthly Summary tracking
