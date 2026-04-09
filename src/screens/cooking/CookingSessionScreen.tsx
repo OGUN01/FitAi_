@@ -46,9 +46,9 @@ export default function CookingSessionScreen({
       console.warn(`\n${'='.repeat(60)}`);
       console.warn(`[SCREEN DEBUG] CookingSessionScreen MOUNTED`);
       console.warn(`${'='.repeat(60)}`);
-      console.warn(`Meal: ${meal?.name || '(unknown)'} | Type: ${meal?.mealType || '?'}`);
-      console.warn(`Calories: ${meal?.calories || '?'} | Protein: ${meal?.protein || '?'}g`);
-      console.warn(`Ingredients: ${meal?.ingredients?.length || 0} | Steps: ${meal?.instructions?.length || meal?.steps?.length || 0}`);
+      console.warn(`Meal: ${meal?.name || '(unknown)'} | Type: ${meal?.type || '?'}`);
+      console.warn(`Calories: ${meal?.totalCalories || '?'} | Protein: ${meal?.totalMacros?.protein || '?'}g`);
+      console.warn(`Items: ${meal?.items?.length || 0} | Steps: ${meal?.instructions?.length || meal?.cookingInstructions?.length || 0}`);
       console.warn(`${'='.repeat(60)}\n`);
     }
   }, []);

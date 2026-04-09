@@ -40,6 +40,7 @@ export interface AIResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
+  retryable?: boolean; // Hint to UI that the operation can be retried
   timedOut?: boolean; // Control-flow signal for generation timeout
   confidence?: number; // Add confidence as direct property
   generationTime?: number; // Add generationTime as direct property

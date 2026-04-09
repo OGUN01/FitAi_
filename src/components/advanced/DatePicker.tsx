@@ -194,11 +194,6 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 hour: "2-digit",
                 minute: "2-digit",
               })}
-              accessibilityRole="button"
-              accessibilityLabel={time.toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
             >
               <Text
                 style={[
@@ -324,7 +319,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.sm,
     minHeight: 44,
-    minHeight: 44,
     backgroundColor: ResponsiveTheme.colors.surface,
     borderRadius: ResponsiveTheme.borderRadius.md,
     borderWidth: 1,
@@ -385,7 +379,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
-    minHeight: 44,
     minHeight: 44,
     marginVertical: ResponsiveTheme.spacing.xs / 2,
     borderRadius: ResponsiveTheme.borderRadius.md,

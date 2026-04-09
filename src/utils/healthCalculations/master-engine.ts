@@ -89,7 +89,7 @@ export class HealthCalculationEngine {
       tdee,
       cappedRate,
       isWeightLoss,
-      personalInfo.gender,
+      personalInfo.gender === "male" ? "male" : "female",
     );
 
     const macros = NutritionalCalculations.calculateMacronutrients(
@@ -218,7 +218,7 @@ export class HealthCalculationEngine {
     // Combines completeness + goal specificity + preference richness.
     const hasSpecificGoal = workoutPreferences.primary_goals && workoutPreferences.primary_goals.length > 0;
     const hasDietPreferences = dietPreferences.diet_type && dietPreferences.diet_type !== "balanced";
-    const hasHealthHabits = dietPreferences.health_habits_grouped != null;
+    const hasHealthHabits = dietPreferences.drinks_enough_water !== undefined || dietPreferences.limits_sugary_drinks !== undefined;
     const hasLocationData = !!(personalInfo.country && personalInfo.state);
     const personalizationBonus = [hasSpecificGoal, hasDietPreferences, hasHealthHabits, hasLocationData]
       .filter(Boolean).length * 5;

@@ -1166,7 +1166,6 @@ export class HealthCalculationEngine {
       tdee,
       workoutPreferences.weekly_weight_loss_goal || weeklyWeightLossRate,
       isWeightLoss,
-      personalInfo.gender,
     );
 
     // Nutritional needs

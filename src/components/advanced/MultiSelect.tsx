@@ -206,8 +206,6 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
                     disabled={isDisabled}
                     accessibilityRole="button"
                     accessibilityLabel={option.label}
-                    accessibilityRole="button"
-                    accessibilityLabel={option.label}
                   >
                     <View style={styles.optionContent}>
                       {option.icon && (
@@ -399,7 +397,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
-    minHeight: 44,
     minHeight: 44,
     marginVertical: ResponsiveTheme.spacing.xs / 2,
     borderRadius: ResponsiveTheme.borderRadius.md,

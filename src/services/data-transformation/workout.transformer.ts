@@ -1,5 +1,6 @@
 import { WorkoutSession } from "../../types/localData";
 import { SupabaseWorkoutSession } from "./types";
+import type { Json } from "../supabase-types.generated";
 
 export function transformWorkoutSessionToSupabase(
   session: WorkoutSession,
@@ -14,7 +15,7 @@ export function transformWorkoutSessionToSupabase(
     duration: session.duration ?? null,
     total_duration_minutes: session.duration ?? null,
     calories_burned: session.caloriesBurned ?? null,
-    exercises_completed: session.exercises ?? null,
+    exercises_completed: (session.exercises ?? null) as unknown as Json,
     notes: session.notes || "",
     rating: session.rating,
     is_completed: session.isCompleted,

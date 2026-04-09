@@ -61,12 +61,12 @@ class UserProfileService {
         userProfile.workoutPreferences = workoutResponse.data;
         // Synthesize fitnessGoals from workout_preferences (SSOT)
         // fitness_goals table is deprecated — all goal data lives in workout_preferences
-        const wp = workoutResponse.data as Record<string, unknown>;
+        const wp = workoutResponse.data as Record<string, any>;
         userProfile.fitnessGoals = {
-          primary_goals: wp.primary_goals || wp.primaryGoals || [],
-          time_commitment: wp.time_commitment || '',
-          experience: wp.experience_level || wp.experienceLevel || '',
-          experience_level: wp.experience_level || wp.experienceLevel || '',
+          primary_goals: (wp.primary_goals || wp.primaryGoals || []) as string[],
+          time_commitment: (wp.time_commitment || '') as string,
+          experience: (wp.experience_level || wp.experienceLevel || '') as string,
+          experience_level: (wp.experience_level || wp.experienceLevel || '') as string,
         };
       }
 

@@ -27,6 +27,29 @@ import {
 
 let mealLogsChannel: RealtimeChannel | null = null;
 
+// Row shape returned by Supabase meal_logs select
+interface MealLogRow {
+  id: string;
+  meal_plan_id?: string | null;
+  meal_type?: string | null;
+  meal_name?: string | null;
+  from_plan?: boolean | null;
+  plan_meal_id?: string | null;
+  portion_multiplier?: number | null;
+  total_calories?: number | null;
+  total_protein?: number | null;
+  total_carbohydrates?: number | null;
+  total_fat?: number | null;
+  food_items?: unknown;
+  logged_at?: string | null;
+  logging_mode?: string | null;
+  truth_level?: string | null;
+  confidence?: number | null;
+  country_context?: string | null;
+  requires_review?: boolean | null;
+  source_metadata?: Record<string, unknown> | null;
+}
+
 const MEAL_LOG_SELECT =
   "id, meal_plan_id, meal_type, meal_name, from_plan, plan_meal_id, portion_multiplier, total_calories, total_protein, total_carbohydrates, total_fat, food_items, logged_at, logging_mode, truth_level, confidence, country_context, requires_review, source_metadata";
 
@@ -624,7 +647,7 @@ export const useNutritionStore = create<NutritionState>()(
             photos: [],
             syncStatus: SyncStatus.PENDING,
             syncMetadata: {
-              lastSyncedAt: null,
+              lastSyncedAt: undefined,
               lastModifiedAt: new Date().toISOString(),
               syncVersion: 1,
               deviceId: Platform.OS ?? "unknown",
@@ -792,7 +815,7 @@ export const useNutritionStore = create<NutritionState>()(
               photos: [],
               syncStatus: SyncStatus.PENDING,
               syncMetadata: {
-                lastSyncedAt: null,
+                lastSyncedAt: undefined,
                 lastModifiedAt: new Date().toISOString(),
                 syncVersion: 1,
                 deviceId: Platform.OS ?? "unknown",
@@ -890,8 +913,8 @@ export const useNutritionStore = create<NutritionState>()(
                 return;
               }
 
-              const plannedLogs = plannedLogsResult?.data || [];
-              const todaysConsumedLogs = todaysConsumedLogsResult?.data || [];
+              const plannedLogs = (plannedLogsResult?.data || []) as unknown as MealLogRow[];
+              const todaysConsumedLogs = (todaysConsumedLogsResult?.data || []) as unknown as MealLogRow[];
 
               if (plannedLogs.length > 0) {
                 // Rebuild mealProgress â€” skip IDs already tracked (from this session)
@@ -912,9 +935,8 @@ export const useNutritionStore = create<NutritionState>()(
                   if (progressKey && !restoredProgress[progressKey]) {
                     restoredProgress[progressKey] = {
                       mealId: progressKey,
-                      planMealId: log.plan_meal_id || undefined,
                       progress: 100,
-                      completedAt: log.logged_at,
+                      completedAt: log.logged_at || undefined,
                       logId: log.id,
                     };
                   }
@@ -963,9 +985,8 @@ export const useNutritionStore = create<NutritionState>()(
                 ) {
                   authoritativeRestoredProgress[progressKey] = {
                     mealId: progressKey,
-                    planMealId: log.plan_meal_id || undefined,
                     progress: 100,
-                    completedAt: log.logged_at,
+                    completedAt: log.logged_at || undefined,
                     logId: log.id,
                   };
                 }
@@ -998,7 +1019,7 @@ export const useNutritionStore = create<NutritionState>()(
                 const foodItems = normalizeMealLogFoodItems(log.food_items);
                 return {
                   id: log.id,
-                  type: log.meal_type || "snack",
+                  type: toMealType(log.meal_type || undefined),
                   name: log.meal_name || "Meal",
                   totalCalories: log.total_calories || 0,
                   totalMacros: {
@@ -1009,7 +1030,7 @@ export const useNutritionStore = create<NutritionState>()(
                     sugar: deriveMealLogSugar(foodItems),
                   },
                   items: foodItems as unknown as MealItem[],
-                  loggedAt: log.logged_at,
+                  loggedAt: log.logged_at || undefined,
                   // Required Meal fields with safe defaults for Supabase-hydrated entries
                   tags: [] as string[],
                   isPersonalized: false,
@@ -1018,14 +1039,14 @@ export const useNutritionStore = create<NutritionState>()(
                   updatedAt: log.logged_at || new Date().toISOString(),
                   sourceMetadata: log.logging_mode
                     ? {
-                        mode: log.logging_mode,
+                        mode: log.logging_mode || undefined,
                         truthLevel: log.truth_level || "curated",
                         confidence: log.confidence || null,
                         countryContext: log.country_context || null,
                         requiresReview: log.requires_review || false,
-                        source: log.source_metadata?.source || null,
+                        source: (log.source_metadata?.source as string) || null,
                         productIdentity:
-                          log.source_metadata?.productIdentity || null,
+                          (log.source_metadata?.productIdentity as string) || null,
                         conflict: log.source_metadata?.conflict || null,
                       }
                     : undefined,

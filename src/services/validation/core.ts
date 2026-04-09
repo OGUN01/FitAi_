@@ -388,7 +388,7 @@ export class ValidationEngine {
         bmi,
         requiredWeeklyRate,
         bodyAnalysis.current_weight_kg,
-        bodyAnalysis?.ethnicity ?? personalInfo?.ethnicity ?? undefined,
+        (bodyAnalysis as BodyAnalysisData & { ethnicity?: string })?.ethnicity ?? (personalInfo as PersonalInfoData & { ethnicity?: string })?.ethnicity ?? undefined,
       );
       if (obesityWarn.status === "WARNING") warnings.push(obesityWarn);
 

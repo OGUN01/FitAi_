@@ -269,7 +269,7 @@ class NutritionDataService {
 
       return {
         success: true,
-        data: meals as Meal[],
+        data: meals as unknown as Meal[],
       };
     } catch (error) {
       console.error("Error in getUserMeals:", error);

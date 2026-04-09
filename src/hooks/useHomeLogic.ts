@@ -420,15 +420,17 @@ export const useHomeLogic = () => {
 
   const userAge = useMemo(() => {
     // SSOT: profileStore.personalInfo is authoritative (onboarding_data); userStore profile is legacy fallback
-    return personalInfo?.age || profile?.personalInfo?.age;
+    const legacyPersonalInfo = profile?.personalInfo as { age?: number; name?: string } | undefined;
+    return personalInfo?.age || legacyPersonalInfo?.age;
   }, [personalInfo, profile]);
 
   const userName = useMemo(() => {
     // SSOT: profileStore.personalInfo is authoritative; compute from first+last, fallback to userStore
     const profileName =
       `${personalInfo?.first_name || ""} ${personalInfo?.last_name || ""}`.trim();
+    const legacyPersonalInfo = profile?.personalInfo as { name?: string } | undefined;
     return (
-      profileName || personalInfo?.name || profile?.personalInfo?.name || ""
+      profileName || personalInfo?.name || legacyPersonalInfo?.name || ""
     );
   }, [personalInfo, profile]);
 

@@ -247,8 +247,8 @@ export function transformForDietRequest(
       age: personalInfo.age ?? 25,
       gender: personalInfo.gender, // NO FALLBACK
       weight:
-        (resolvedCurrentWeight.value ?? personalInfo.weight ?? null) as number | null, // null = explicitly missing, not 0
-      height: (bodyMetrics?.height_cm ?? personalInfo.height ?? null) as number | null, // null = explicitly missing, not 0
+        (resolvedCurrentWeight.value ?? personalInfo.weight ?? null) ?? undefined, // undefined = explicitly missing, not 0
+      height: (bodyMetrics?.height_cm ?? personalInfo.height ?? null) ?? undefined, // undefined = explicitly missing, not 0
       activity_level: activityLevel,
       fitness_goal: primaryGoal,
       country: personalInfo.country,
@@ -563,8 +563,8 @@ export function transformForWorkoutRequest(
     profile: {
       age: personalInfo.age ?? 25,
       gender: mappedGender,
-      weight: resolvedCurrentWeight.value ?? personalInfo.weight ?? null,
-      height: bodyMetrics?.height_cm ?? personalInfo.height ?? null,
+      weight: resolvedCurrentWeight.value ?? personalInfo.weight ?? 0,
+      height: bodyMetrics?.height_cm ?? personalInfo.height ?? 0,
       fitnessGoal: primaryGoal,
       experienceLevel: experienceLevel,
       availableEquipment: equipment,

@@ -84,19 +84,19 @@ export async function generateWorkout(
       return null;
     }
 
-    const dayWorkout: DayWorkout = {
+    const dayWorkout = {
       ...(result.data as unknown as Partial<DayWorkout>),
       id: generateUUID(),
       // Use engine's personalized title/calories; fall back to template only if absent
       title: result.data.title || template.title,
-      category: template.category,
+      category: template.category as DayWorkout["category"],
       duration: template.duration,
       // result.data.estimatedCalories is MET-based (user weight + duration) — don't override
       dayOfWeek: getCurrentDayName(),
       isExtra: true,
     };
 
-    return dayWorkout;
+    return dayWorkout as DayWorkout;
   } catch (err) {
     console.error("[extraWorkoutService] generateWorkout threw:", err);
     return null;

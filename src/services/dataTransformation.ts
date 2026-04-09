@@ -11,6 +11,7 @@ import {
   SyncStatus,
 } from "../types/localData";
 import { Database } from "./supabase";
+import type { Json } from "./supabase-types.generated";
 import {
   deriveMealLogFiber,
   normalizeMealLogFoodItems,
@@ -60,8 +61,10 @@ export class DataTransformationService {
       name:
         personalInfo.name ||
         `${personalInfo.first_name || ""} ${personalInfo.last_name || ""}`.trim(),
-      age: personalInfo.age || null,
-      gender: this.normalizeGender(personalInfo.gender),
+      age: personalInfo.age || 0,
+      gender: this.normalizeGender(personalInfo.gender) || "other",
+      first_name: personalInfo.first_name || "",
+      last_name: personalInfo.last_name || "",
       updated_at: new Date().toISOString(),
     };
   }
@@ -96,7 +99,7 @@ export class DataTransformationService {
       duration: session.duration ?? null,
       total_duration_minutes: session.duration ?? null,
       calories_burned: session.caloriesBurned ?? null,
-      exercises_completed: session.exercises || [],
+      exercises_completed: (session.exercises || []) as unknown as Json,
       notes: session.notes || "",
       rating: session.rating,
       is_completed: session.isCompleted,
@@ -139,7 +142,7 @@ export class DataTransformationService {
       plan_meal_id: mealLog.planMealId || null,
       portion_multiplier: mealLog.portionMultiplier ?? 1,
       meal_name: mealLog.notes || mealLog.foods?.[0]?.name || "Meal",
-      food_items: mealLog.foods || [],
+      food_items: (mealLog.foods || []) as unknown as Json,
       total_calories: mealLog.totalCalories || 0,
       total_protein: mealLog.totalMacros?.protein || 0,
       total_carbohydrates: mealLog.totalMacros?.carbohydrates || 0,
@@ -153,7 +156,7 @@ export class DataTransformationService {
         source: mealLog.provenance?.source || null,
         productIdentity: mealLog.provenance?.productIdentity || null,
         conflict: mealLog.provenance?.conflict || null,
-      },
+      } as unknown as Json,
       notes: mealLog.notes || null,
       logged_at: mealLog.loggedAt || new Date().toISOString(),
     };

@@ -351,8 +351,8 @@ export const useBodyAnalysis = ({
       // Photo analysis not yet implemented — real AI analysis requires a backend vision model.
 
       const aiResults = {
-        ai_estimated_body_fat: null as number | null | undefined,
-        ai_body_type: null as string | null | undefined,
+        ai_estimated_body_fat: undefined as number | undefined,
+        ai_body_type: undefined as "ectomorph" | "mesomorph" | "endomorph" | undefined,
         ai_confidence_score: 0,
       };
 

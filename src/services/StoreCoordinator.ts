@@ -20,7 +20,12 @@ export {
 } from "./authUtils";
 
 // Import getCurrentUserId locally for use in this file
-import { getCurrentUserId as getAuthUserId } from "./authUtils";
+import {
+  getCurrentUserId as getAuthUserId,
+  requireUserId,
+  isAuthenticated,
+  getUserIdOrGuest,
+} from "./authUtils";
 
 import { useAuthStore } from "../stores/authStore";
 import { useNutritionStore } from "../stores/nutritionStore";

@@ -2,7 +2,13 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { rf } from "../../../utils/responsive";
-import { QuickActionOption } from "../../../hooks/useAIMealsPanel";
+
+/** Locally-defined type — original module `useAIMealsPanel` was removed. */
+interface QuickActionOption {
+  emoji: string;
+  title: string;
+  description: string;
+}
 
 interface QuickActionCardProps {
   action: QuickActionOption;

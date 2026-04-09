@@ -717,7 +717,7 @@ export const useFitnessStore = create<FitnessState>()(
               isCompleted: false,
               syncStatus: "pending" as import("../types/localData").SyncStatus,
               syncMetadata: {
-                lastSyncedAt: null,
+                lastSyncedAt: undefined,
                 lastModifiedAt: new Date().toISOString(),
                 syncVersion: 1,
                 deviceId: Platform.OS ?? "unknown",

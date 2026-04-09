@@ -174,6 +174,7 @@ export interface DietPreferences {
     | "not_applicable";
   max_prep_time_minutes: number | null; // 5-180, null when not_applicable
   budget_level: "low" | "medium" | "high";
+  cooking_methods?: string[]; // e.g. ["grilling", "steaming", "air_frying", "sauteing", "baking", "boiling"]
 
   // Health habits (14 boolean fields)
   // Hydration

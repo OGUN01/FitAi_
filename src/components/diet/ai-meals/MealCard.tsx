@@ -8,7 +8,16 @@ import {
 } from "react-native";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { rf, rh, rw, rs } from "../../../utils/responsive";
-import { MealGenerationOption } from "../../../hooks/useAIMealsPanel";
+
+/** Locally-defined type — original module `useAIMealsPanel` was removed. */
+interface MealGenerationOption {
+  emoji: string;
+  color: string;
+  title: string;
+  description: string;
+  estimatedTime: string;
+  suggestions: string[];
+}
 
 interface MealCardProps {
   option: MealGenerationOption;

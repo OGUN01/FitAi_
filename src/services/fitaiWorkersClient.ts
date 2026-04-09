@@ -148,6 +148,7 @@ export interface DietGenerationRequest {
     cooking_skill_level?: string;
     max_prep_time_minutes?: number | null;
     budget_level?: string;
+    cooking_methods?: string[];
     keto_ready?: boolean;
     intermittent_fasting_ready?: boolean;
     paleo_ready?: boolean;
@@ -294,6 +295,9 @@ export interface WorkoutGenerationRequest {
   // H13: Cardio/strength preference booleans
   enjoysCardio?: boolean;
   enjoysStrength?: boolean;
+  enjoysGroupClasses?: boolean;
+  prefersOutdoor?: boolean;
+  needsMotivation?: boolean;
   // H13: Health-based recommendations from advanced review
   recommendations?: {
     frequency?: number | null;

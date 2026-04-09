@@ -4,6 +4,7 @@ import {
   deriveMealLogFiber,
   normalizeMealLogFoodItems,
 } from "../../utils/mealLogNutrition";
+import type { Json } from "../supabase-types.generated";
 
 export function transformMealLogToSupabase(
   mealLog: MealLog,
@@ -13,7 +14,7 @@ export function transformMealLogToSupabase(
     user_id: userId,
     meal_type: mealLog.mealType,
     meal_name: mealLog.notes || mealLog.foods?.[0]?.name || "Meal",
-    food_items: mealLog.foods || [],
+    food_items: (mealLog.foods || []) as unknown as Json,
     total_calories: mealLog.totalCalories || 0,
     total_protein: mealLog.totalMacros?.protein || 0,
     total_carbohydrates: mealLog.totalMacros?.carbohydrates || 0,
@@ -27,7 +28,7 @@ export function transformMealLogToSupabase(
       source: mealLog.provenance?.source || null,
       productIdentity: mealLog.provenance?.productIdentity || null,
       conflict: mealLog.provenance?.conflict || null,
-    },
+    } as unknown as Json,
     notes: mealLog.notes || null,
     logged_at: mealLog.loggedAt || new Date().toISOString(),
   };

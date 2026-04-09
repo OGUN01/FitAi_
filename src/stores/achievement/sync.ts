@@ -27,7 +27,7 @@ export const createSyncActions = (set: any, get: any) => ({
         await achievementDataService.loadUserAchievements(userId);
 
       if (cloudAchievements.size > 0) {
-        set((state) => {
+        set((state: { userAchievements: Map<string, UserAchievement> }) => {
           const mergedAchievements = new Map<string, UserAchievement>(
             state.userAchievements,
           );

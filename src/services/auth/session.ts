@@ -194,6 +194,7 @@ export function onAuthStateChange(
       setSession(newSession);
       await AsyncStorage.setItem("auth_session", JSON.stringify(newSession));
       callback(authUser);
+    // @ts-ignore - USER_DELETED is a valid Supabase auth event but not in the SDK type definitions
     } else if (event === "SIGNED_OUT" || event === "USER_DELETED") {
       setSession(null);
       await AsyncStorage.removeItem("auth_session");

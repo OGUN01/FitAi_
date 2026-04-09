@@ -251,7 +251,6 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             visible={showErrorWizard}
             onClose={() => setShowErrorWizard(false)}
             onSaveToDatabase={onSaveToDatabase}
-            weeklyWeightLossGoal={workoutPreferences?.weekly_weight_loss_goal ?? bodyAnalysis?.weekly_weight_loss_goal}
             error={validationResults.errors[0]}
             currentData={{
               bmr: calculatedData?.calculated_bmr || 0,

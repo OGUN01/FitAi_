@@ -316,7 +316,7 @@ class UnifiedAIService {
 
       const dailyPlan: DailyMealPlan = {
         date: getLocalDateString(),
-        meals: transformedMeals,
+        meals: transformedMeals as unknown as Meal[],
         totalCalories: response.data.dailyTotals?.calories || 0,
         totalMacros: {
           protein: response.data.dailyTotals?.protein || 0,

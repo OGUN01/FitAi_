@@ -39,8 +39,10 @@ export function transformOnboardingDataToProfile(
     name:
       personalInfo.name ||
       `${personalInfo.first_name || ""} ${personalInfo.last_name || ""}`.trim(),
-    age: personalInfo.age || null,
-    gender: normalizeGender(personalInfo.gender),
+    age: personalInfo.age || 0,
+    gender: normalizeGender(personalInfo.gender) || "other",
+    first_name: personalInfo.first_name || "",
+    last_name: personalInfo.last_name || "",
     updated_at: new Date().toISOString(),
   };
 }

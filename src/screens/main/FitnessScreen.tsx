@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
   customPlanCtaTitle: {
     fontSize: rf(16),
     fontWeight: "700" as const,
-    color: ResponsiveTheme.colors.textPrimary,
+    color: ResponsiveTheme.colors.text,
     marginBottom: rp(8),
   },
   customPlanCtaSubtitle: {

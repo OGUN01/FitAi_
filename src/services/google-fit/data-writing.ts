@@ -109,8 +109,8 @@ export class GoogleFitDataWriter {
       // SDK types don't match our extended weightData shape
       const result = await GoogleFit.saveWeight(
         weightData as unknown as Parameters<typeof GoogleFit.saveWeight>[0],
-        (err: Error | null, res: unknown) => {
-          if (err) {
+        (isError: boolean, res: true) => {
+          if (isError) {
             // error handled silently
           }
         },

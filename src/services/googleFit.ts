@@ -426,7 +426,7 @@ class GoogleFitService {
         nutritionEntry as unknown as Parameters<typeof GoogleFit.saveFood>[0],
         (isError: boolean, res: true) => {
           if (isError) {
-            console.warn("⚠️ Nutrition save error:", err);
+            console.warn("⚠️ Nutrition save error:", res);
           }
         },
       );
@@ -464,7 +464,7 @@ class GoogleFitService {
         weightData as unknown as Parameters<typeof GoogleFit.saveWeight>[0],
         (isError: boolean, res: true) => {
           if (isError) {
-            console.warn("⚠️ Weight save error:", err);
+            console.warn("⚠️ Weight save error:", res);
           }
         },
       );

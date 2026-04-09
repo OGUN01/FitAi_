@@ -555,9 +555,9 @@ export const useUserStore = create<UserState>()(
         const workoutPrefs = profile.workoutPreferences;
         const hasWorkoutPrefs = !!(workoutPrefs &&
           ((workoutPrefs.primary_goals?.length > 0) ||
-           (workoutPrefs.primaryGoals?.length > 0) ||
+           ((workoutPrefs.primaryGoals?.length ?? 0) > 0) ||
            (workoutPrefs.workout_types?.length > 0) ||
-           (workoutPrefs.workoutTypes?.length > 0) ||
+           ((workoutPrefs.workoutTypes?.length ?? 0) > 0) ||
            (workoutPrefs.location && workoutPrefs.intensity)));
 
         // fitness_goals table is fully deprecated. If a user only has data in

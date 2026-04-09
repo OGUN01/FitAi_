@@ -328,10 +328,10 @@ class UserProfileService {
           // Synthesize fitnessGoals from workout_preferences (deprecated fitness_goals table)
           const wp = workoutResponse.data as Record<string, unknown>;
           userProfile.fitnessGoals = {
-            primary_goals: wp.primary_goals || wp.primaryGoals || [],
-            time_commitment: wp.time_commitment || '',
-            experience: wp.experience_level || wp.experienceLevel || '',
-            experience_level: wp.experience_level || wp.experienceLevel || '',
+            primary_goals: (wp.primary_goals || wp.primaryGoals || []) as string[],
+            time_commitment: (wp.time_commitment || '') as string,
+            experience: (wp.experience_level || wp.experienceLevel || '') as string,
+            experience_level: (wp.experience_level || wp.experienceLevel || '') as string,
           };
         }
 
@@ -597,7 +597,7 @@ class UserProfileService {
     dbProfile: DatabaseProfile,
   ): UserProfile {
     // Cast to Record to access fields in either camelCase (after fromDb) or snake_case
-    const profile = dbProfile as Record<string, unknown>;
+    const profile = dbProfile as Record<string, any>;
 
     // Helper to access a field in either snake_case or camelCase
     const get = (snake: string, camel: string, fallback: any = undefined) =>
@@ -680,27 +680,27 @@ class UserProfileService {
   private mapDatabaseGoalsToFitnessGoals(
     dbGoals: DatabaseFitnessGoals,
   ): FitnessGoals {
-    const goals = dbGoals as Record<string, unknown>;
+    const goals = dbGoals as Record<string, any>;
     return {
-      primary_goals: goals.primary_goals || goals.primaryGoals || [],
+      primary_goals: (goals.primary_goals || goals.primaryGoals || []) as string[],
       time_commitment:
-        goals.time_commitment ||
+        (goals.time_commitment ||
         goals.timeCommitment ||
         goals.preferred_workout_duration?.toString() ||
         goals.preferredWorkoutDuration?.toString() ||
-        "",
+        "") as string,
       experience:
-        goals.fitness_level ||
+        (goals.fitness_level ||
         goals.fitnessLevel ||
         goals.experience_level ||
         goals.experienceLevel ||
-        "",
+        "") as string,
       experience_level:
-        goals.fitness_level ||
+        (goals.fitness_level ||
         goals.fitnessLevel ||
         goals.experience_level ||
         goals.experienceLevel ||
-        "",
+        "") as string,
     };
 }
 }

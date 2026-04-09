@@ -866,7 +866,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             visible={showProductModal}
             onClose={handleCloseProductDetails}
             product={scannedProduct}
-            healthAssessment={productHealthAssessment}
+            healthAssessment={productHealthAssessment ?? undefined}
             onAddToMeal={onHandleAddProductToMeal}
           />
         )}

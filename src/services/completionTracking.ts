@@ -2,7 +2,7 @@ import { useFitnessStore } from "../stores/fitnessStore";
 import { useNutritionStore } from "../stores/nutritionStore";
 import { useProfileStore } from "../stores/profileStore";
 import { useAchievementStore } from "../stores/achievementStore";
-import { DayWorkout, DayMeal } from "../ai";
+import { DayWorkout, DayMeal, WorkoutSet } from "../ai";
 import crudOperations from "./crudOperations";
 import { MealLog, SyncStatus } from "../types/localData";
 import { supabase } from "./supabase";
@@ -107,15 +107,19 @@ class CompletionTrackingService {
     // Calculate from exercises using MET values
     if (workout.exercises && workout.exercises.length > 0) {
       const exerciseInputs: ExerciseCalorieInput[] = workout.exercises.map(
-        (ex) => ({
-          exerciseId: ex.exerciseId || ex.id,
-          name: ex.exerciseName || ex.name,
-          sets: ex.sets,
-          reps: ex.reps,
-          duration: ex.duration,
-          restTime: ex.restTime,
-          bodyParts: ex.bodyParts || ex.muscle_groups || ex.targetMuscles || [],
-        }),
+        (ex) => {
+          // Runtime data from Workers API may include bodyParts/muscle_groups/targetMuscles
+          const exAny = ex as WorkoutSet & { bodyParts?: string[]; muscle_groups?: string[]; targetMuscles?: string[] };
+          return {
+            exerciseId: ex.exerciseId || ex.id,
+            name: ex.exerciseName || ex.name,
+            sets: ex.sets,
+            reps: ex.reps,
+            duration: ex.duration,
+            restTime: ex.restTime,
+            bodyParts: exAny.bodyParts || exAny.muscle_groups || exAny.targetMuscles || [],
+          };
+        },
       );
 
       const result = calculateWorkoutCalories(exerciseInputs, userWeight);
