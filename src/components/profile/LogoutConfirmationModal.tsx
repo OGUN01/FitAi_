@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rp, rbr } from "../../utils/responsive";
+import { rf } from "../../utils/responsive";
 import { gradients, toLinearGradientProps } from "../../theme/gradients";
 
 interface LogoutConfirmationModalProps {

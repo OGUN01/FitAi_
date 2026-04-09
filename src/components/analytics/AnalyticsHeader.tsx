@@ -9,7 +9,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rh, rp } from "../../utils/responsive";
+import { rf, rw, rp } from "../../utils/responsive";
 import { PeriodSelector, Period } from "../form/PeriodSelector";
 
 interface AnalyticsHeaderProps {

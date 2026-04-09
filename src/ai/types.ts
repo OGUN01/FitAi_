@@ -4,7 +4,7 @@
  * Contains all type definitions for AI service interfaces
  */
 
-import { Workout, Meal } from "../types/ai";
+import { Workout } from "../types/ai";
 
 /**
  * Weekly workout plan structure

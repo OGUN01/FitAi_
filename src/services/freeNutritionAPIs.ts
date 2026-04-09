@@ -297,6 +297,7 @@ export class FreeNutritionAPIs {
         confidence: this.calculateMatchConfidence(foodName, food.description),
       };
     } catch (error) {
+      console.error("[freeNutritionAPIs] searchUSDA failed:", error);
       return null;
     }
   }
@@ -353,6 +354,7 @@ export class FreeNutritionAPIs {
         ),
       };
     } catch (error) {
+      console.error("[freeNutritionAPIs] searchOpenFoodFacts failed:", error);
       return null;
     }
   }

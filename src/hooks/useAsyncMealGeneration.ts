@@ -16,8 +16,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   fitaiWorkersClient,
   DietGenerationRequest,
-  DietPlan,
-  AsyncJobStatusResponse,
   isDietPlanResponse,
   isAsyncJobResponse,
 } from "../services/fitaiWorkersClient";

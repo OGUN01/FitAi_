@@ -16,7 +16,7 @@ import Animated, {
   Easing,
   cancelAnimation,
 } from "react-native-reanimated";
-import { springConfig, duration } from "../../../theme/animations";
+import { springConfig } from "../../../theme/animations";
 import { haptics } from "../../../utils/haptics";
 
 type AnimationType = "scale" | "bounce" | "pulse" | "rotate" | "none";

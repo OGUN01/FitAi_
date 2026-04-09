@@ -24,7 +24,7 @@ import {
   toLinearGradientProps,
   gradients,
 } from "../../../theme/gradients";
-import { rw, rh, rp } from "../../../utils/responsive";
+import { rw, rp } from "../../../utils/responsive";
 
 const AnimatedImageBackground =
   Animated.createAnimatedComponent(ImageBackground);

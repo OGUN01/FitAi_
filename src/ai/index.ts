@@ -33,9 +33,6 @@ export * from "../data/achievements";
 // IMPORTS
 // ============================================================================
 
-import { MOTIVATIONAL_CONTENT_SCHEMA } from "./schemas";
-import { workoutEngine } from "../features/workouts/WorkoutEngine";
-import { nutritionEngine } from "../features/nutrition/NutritionEngine";
 import {
   PersonalInfo,
   FitnessGoals,
@@ -62,7 +59,6 @@ import {
   AuthenticationError,
   WorkersAPIError,
   NetworkError,
-  AsyncJobStatusResponse,
   isDietPlanResponse,
   isAsyncJobResponse,
 } from "../services/fitaiWorkersClient";

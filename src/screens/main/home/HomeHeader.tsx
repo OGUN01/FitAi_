@@ -9,7 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh, rp, rbr, rs } from "../../../utils/responsive";
+import { rf, rw, rp, rs } from "../../../utils/responsive";
 
 const avatarGradientShadow = {
   shadowColor: ResponsiveTheme.colors.black,

@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   StyleSheet,
-  FlatList,
   Text,
   TouchableOpacity,
   Platform,

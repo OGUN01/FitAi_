@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Animated,
   StyleProp,
   ViewStyle,
 } from "react-native";

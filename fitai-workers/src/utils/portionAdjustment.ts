@@ -27,11 +27,6 @@ export function adjustPortionsToTarget(
   mealPlan: DietResponse,
   targetCalories: number
 ): DietResponse {
-  console.log('[PortionAdjustment] Starting adjustment:', {
-    currentCalories: mealPlan.totalCalories,
-    targetCalories,
-  });
-
   // Calculate current total calories from meals
   const currentCalories = mealPlan.meals.reduce((sum, meal) => {
     return sum + meal.foods.reduce((mealSum, food) => mealSum + food.nutrition.calories, 0);
@@ -45,11 +40,8 @@ export function adjustPortionsToTarget(
   // Calculate scale factor
   const scaleFactor = targetCalories / currentCalories;
 
-  console.log('[PortionAdjustment] Scale factor:', scaleFactor);
-
   // Don't adjust if within 2% (acceptable variance)
   if (Math.abs(1 - scaleFactor) < 0.02) {
-    console.log('[PortionAdjustment] Within 2% tolerance - no adjustment needed');
     return mealPlan;
   }
 
@@ -135,14 +127,6 @@ export function adjustPortionsToTarget(
       : undefined,
   };
 
-  console.log('[PortionAdjustment] Adjustment complete:', {
-    originalCalories: currentCalories,
-    adjustedCalories: totalNutrition.calories,
-    targetCalories,
-    difference: Math.abs(totalNutrition.calories - targetCalories),
-    accuracy: `${(100 - Math.abs((totalNutrition.calories - targetCalories) / targetCalories * 100)).toFixed(2)}%`,
-  });
-
   return {
     ...mealPlan,
     meals: adjustedMeals,
@@ -188,13 +172,6 @@ export function adjustForProteinTarget(
   targetCalories: number,
   targetProtein: number
 ): DietResponse {
-  console.log('[ProteinAdjustment] Starting protein-aware adjustment:', {
-    currentCalories: mealPlan.totalCalories,
-    currentProtein: mealPlan.totalNutrition.protein,
-    targetCalories,
-    targetProtein,
-  });
-
   // Step 1: First do standard calorie adjustment
   let adjusted = adjustPortionsToTarget(mealPlan, targetCalories);
   
@@ -204,14 +181,8 @@ export function adjustForProteinTarget(
   
   // If protein is within 5% of target, no further adjustment needed
   if (proteinDiffPercent < 0.05) {
-    console.log('[ProteinAdjustment] Protein within 5% tolerance, no adjustment needed');
     return adjusted;
   }
-  
-  console.log('[ProteinAdjustment] Protein off by:', {
-    diff: `${proteinDiff.toFixed(1)}g`,
-    percent: `${(proteinDiffPercent * 100).toFixed(1)}%`,
-  });
   
   // Step 2: Categorize all foods as high-protein or low-protein
   type FoodWithMeta = {
@@ -242,11 +213,6 @@ export function adjustForProteinTarget(
   
   const highProteinFoods = allFoods.filter(f => f.isHighProtein);
   const lowProteinFoods = allFoods.filter(f => !f.isHighProtein);
-  
-  console.log('[ProteinAdjustment] Food categorization:', {
-    highProtein: highProteinFoods.length,
-    lowProtein: lowProteinFoods.length,
-  });
   
   // If no high-protein foods, can't do composition adjustment
   if (highProteinFoods.length === 0) {
@@ -282,11 +248,6 @@ export function adjustForProteinTarget(
     ? lowProteinTotalProtein / lowProteinCalories 
     : 0;
   
-  console.log('[ProteinAdjustment] Protein density:', {
-    highProteinAvg: `${(avgProteinPerCal * 100).toFixed(2)}g/100cal`,
-    lowProteinAvg: `${(lowAvgProteinPerCal * 100).toFixed(2)}g/100cal`,
-  });
-  
   // Step 4: Calculate how to shift calories between categories to hit protein target
   // Let x = calories to shift from low-protein to high-protein foods
   // New protein = currentProtein + (avgProteinPerCal - lowAvgProteinPerCal) * x
@@ -307,22 +268,11 @@ export function adjustForProteinTarget(
   const maxShift = Math.min(highProteinCalories * 0.5, lowProteinCalories * 0.5);
   const actualShift = Math.max(-maxShift, Math.min(maxShift, caloriesToShift));
   
-  console.log('[ProteinAdjustment] Calorie shift calculation:', {
-    idealShift: caloriesToShift.toFixed(0),
-    actualShift: actualShift.toFixed(0),
-    maxAllowed: maxShift.toFixed(0),
-  });
-  
   // Step 5: Calculate scale factors for each category
   // High-protein foods: add actualShift calories
   // Low-protein foods: remove actualShift calories
   const highProteinScaleFactor = (highProteinCalories + actualShift) / highProteinCalories;
   const lowProteinScaleFactor = (lowProteinCalories - actualShift) / lowProteinCalories;
-  
-  console.log('[ProteinAdjustment] Scale factors:', {
-    highProtein: highProteinScaleFactor.toFixed(3),
-    lowProtein: lowProteinScaleFactor.toFixed(3),
-  });
   
   // Step 6: Apply scale factors to each food category
   const adjustedMeals: Meal[] = adjusted.meals.map((meal, mealIndex) => {
@@ -420,16 +370,6 @@ export function adjustForProteinTarget(
   const finalProteinDiff = Math.abs(totalNutrition.protein - targetProtein);
   const finalCalorieDiff = Math.abs(totalNutrition.calories - targetCalories);
   
-  console.log('[ProteinAdjustment] Adjustment complete:', {
-    originalProtein: currentProtein,
-    adjustedProtein: totalNutrition.protein,
-    targetProtein,
-    proteinDifference: finalProteinDiff.toFixed(1) + 'g',
-    proteinAccuracy: `${(100 - (finalProteinDiff / targetProtein) * 100).toFixed(1)}%`,
-    caloriesDifference: finalCalorieDiff,
-    caloriesAccuracy: `${(100 - (finalCalorieDiff / targetCalories) * 100).toFixed(1)}%`,
-  });
-  
   return {
     ...adjusted,
     meals: adjustedMeals,
@@ -477,11 +417,6 @@ export function validateMealPlan(
     fat: mealPlan.totalNutrition.fats,
   };
 
-  console.log('[MealPlanValidation] Validating meal plan:', {
-    totals,
-    targets: targetMetrics,
-  });
-
   // Calorie validation (±100 kcal = acceptable)
   const calorieDiff = Math.abs(totals.calories - targetMetrics.daily_calories);
   if (calorieDiff > 100) {
@@ -517,7 +452,6 @@ export function validateMealPlan(
   if (warnings.length > 0) {
     console.warn('[MealPlanValidation] Validation warnings:', warnings);
   } else {
-    console.log('[MealPlanValidation] Meal plan meets all targets');
   }
 
   return warnings;

@@ -1,5 +1,3 @@
-import { Animated } from "react-native";
-
 /**
  * Common animation configuration types
  */

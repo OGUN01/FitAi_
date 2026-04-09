@@ -58,6 +58,7 @@ class UserProfileService {
         .single();
 
       if (error) {
+        console.error("[userProfile] createProfile Supabase error:", error);
         return {
           success: false,
           error: error.message,
@@ -72,6 +73,7 @@ class UserProfileService {
         data: userProfile,
       };
     } catch (error) {
+      console.error("[userProfile] createProfile failed:", error);
       return {
         success: false,
         error:
@@ -92,6 +94,7 @@ class UserProfileService {
         .single();
 
       if (error) {
+        console.error("[userProfile] getProfile Supabase error:", error);
         return {
           success: false,
           error: error.message,
@@ -106,6 +109,7 @@ class UserProfileService {
         data: userProfile,
       };
     } catch (error) {
+      console.error("[userProfile] getProfile failed:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : "Failed to get profile",
@@ -132,6 +136,7 @@ class UserProfileService {
         .single();
 
       if (error) {
+        console.error("[userProfile] updateProfile Supabase error:", error);
         return {
           success: false,
           error: error.message,
@@ -146,6 +151,7 @@ class UserProfileService {
         data: userProfile,
       };
     } catch (error) {
+      console.error("[userProfile] updateProfile failed:", error);
       return {
         success: false,
         error:
@@ -171,6 +177,7 @@ class UserProfileService {
         .single();
 
       if (error) {
+        console.error("[userProfile] createFitnessGoals Supabase error:", error);
         return {
           success: false,
           error: error.message,
@@ -185,6 +192,7 @@ class UserProfileService {
         data: fitnessGoals,
       };
     } catch (error) {
+      console.error("[userProfile] createFitnessGoals failed:", error);
       return {
         success: false,
         error:
@@ -209,6 +217,7 @@ class UserProfileService {
         .maybeSingle();
 
       if (error) {
+        console.error("[userProfile] getFitnessGoals Supabase error:", error);
         return {
           success: false,
           error: error.message,
@@ -231,6 +240,7 @@ class UserProfileService {
         data: fitnessGoals,
       };
     } catch (error) {
+      console.error("[userProfile] getFitnessGoals failed:", error);
       return {
         success: false,
         error:
@@ -270,6 +280,7 @@ class UserProfileService {
         .single();
 
       if (error) {
+        console.error("[userProfile] updateFitnessGoals Supabase error:", error);
         return {
           success: false,
           error: error.message,
@@ -284,6 +295,7 @@ class UserProfileService {
         data: fitnessGoals,
       };
     } catch (error) {
+      console.error("[userProfile] updateFitnessGoals failed:", error);
       return {
         success: false,
         error:
@@ -340,6 +352,7 @@ class UserProfileService {
           data: userProfile,
         };
       } catch (error) {
+        console.error("[userProfile] getCompleteProfile failed:", error);
         return {
           success: false,
           error:
@@ -375,6 +388,7 @@ class UserProfileService {
           // No data found - this is okay
           return { success: true, data: null };
         }
+        console.error("[userProfile] getDietPreferences Supabase error:", error);
         return {
           success: false,
           error: error.message,
@@ -433,6 +447,7 @@ class UserProfileService {
         },
       };
     } catch (error) {
+      console.error("[userProfile] getDietPreferences failed:", error);
       return {
         success: false,
         error:
@@ -461,6 +476,7 @@ class UserProfileService {
           // No data found - this is okay
           return { success: true, data: null };
         }
+        console.error("[userProfile] getWorkoutPreferences Supabase error:", error);
         return {
           success: false,
           error: error.message,
@@ -482,6 +498,7 @@ class UserProfileService {
         },
       };
     } catch (error) {
+      console.error("[userProfile] getWorkoutPreferences failed:", error);
       return {
         success: false,
         error:
@@ -528,6 +545,7 @@ class UserProfileService {
         .single();
 
       if (error) {
+        console.error("[userProfile] updateWorkoutPreferences Supabase error:", error);
         return {
           success: false,
           error: error.message,
@@ -549,6 +567,7 @@ class UserProfileService {
         },
       };
     } catch (error) {
+      console.error("[userProfile] updateWorkoutPreferences failed:", error);
       return {
         success: false,
         error:
@@ -572,6 +591,7 @@ class UserProfileService {
         .eq("id", userId);
 
       if (error) {
+        console.error("[userProfile] deleteProfile Supabase error:", error);
         return {
           success: false,
           error: error.message,
@@ -582,6 +602,7 @@ class UserProfileService {
         success: true,
       };
     } catch (error) {
+      console.error("[userProfile] deleteProfile failed:", error);
       return {
         success: false,
         error:

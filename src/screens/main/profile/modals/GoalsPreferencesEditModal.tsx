@@ -231,12 +231,6 @@ export const GoalsPreferencesEditModal: React.FC<
           : rawTime;
       }
 
-      console.log("📊 [GoalsModal] Loading from sources:", {
-        fromProfileStore: { wpGoals, wpExperience, wpTime },
-        fromUserStore: profileGoals ? "available" : "none",
-        resolved: { loadedGoals, loadedExperience, loadedTime },
-      });
-
       setPrimaryGoals(loadedGoals);
       setExperience(loadedExperience);
       setTimeCommitment(loadedTime);

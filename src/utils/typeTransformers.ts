@@ -10,7 +10,6 @@
  * USAGE:
  * - When RECEIVING data from Supabase: Data is already in snake_case (preferred format)
  * - When SENDING data to Supabase: Ensure data is in snake_case
- * - For legacy components expecting camelCase: Use toAppFormat()
  * - For database operations: Use toDbFormat()
  *
  * Created: January 2026 - Source of Truth Consolidation
@@ -21,77 +20,11 @@
 // ============================================================================
 
 /**
- * Convert a string from snake_case to camelCase
- * e.g., "first_name" -> "firstName", "primary_goals" -> "primaryGoals"
- */
-export function snakeToCamel(str: string): string {
-  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
-}
-
-/**
  * Convert a string from camelCase to snake_case
  * e.g., "firstName" -> "first_name", "primaryGoals" -> "primary_goals"
  */
-export function camelToSnake(str: string): string {
+function camelToSnake(str: string): string {
   return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
-}
-
-export function toDisplayLabel(str: string): string {
-  return str
-    .replace(/_/g, " ")
-    .replace(/-/g, " ")
-    .replace(/([A-Z])/g, " $1")
-    .replace(/\s+/g, " ")
-    .trim()
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
-}
-
-/**
- * Deep transform object keys from snake_case to camelCase
- * Handles nested objects and arrays
- */
-export function toAppFormat<T extends Record<string, any>>(
-  obj: T,
-): Record<string, any> | any[] {
-  if (obj === null || obj === undefined) {
-    return obj;
-  }
-
-  if (Array.isArray(obj)) {
-    return obj.map((item) =>
-      typeof item === "object" && item !== null ? toAppFormat(item) : item,
-    );
-  }
-
-  if (typeof obj !== "object") {
-    return obj;
-  }
-
-  const transformed: Record<string, any> = {};
-
-  for (const key of Object.keys(obj)) {
-    const camelKey = snakeToCamel(key);
-    const value = obj[key];
-
-    if (value !== null && typeof value === "object") {
-      if (Array.isArray(value)) {
-        transformed[camelKey] = value.map((item) =>
-          typeof item === "object" && item !== null ? toAppFormat(item) : item,
-        );
-      } else if (value instanceof Date) {
-        transformed[camelKey] = value;
-      } else {
-        transformed[camelKey] = toAppFormat(value);
-      }
-    } else {
-      transformed[camelKey] = value;
-    }
-
-  }
-
-  return transformed;
 }
 
 /**
@@ -153,7 +86,7 @@ export function toDbFormat<T extends Record<string, any>>(
  * Known field mappings between legacy camelCase and database snake_case
  * These are fields that have been identified as having inconsistent naming
  */
-export const FIELD_MAPPINGS = {
+const FIELD_MAPPINGS = {
   // PersonalInfo fields
   firstName: "first_name",
   lastName: "last_name",
@@ -290,19 +223,6 @@ export const FIELD_MAPPINGS = {
   medicalAdjustments: "medical_adjustments",
 } as const;
 
-/**
- * Reverse mapping: snake_case to camelCase
- */
-export const REVERSE_FIELD_MAPPINGS: Record<string, string> = Object.entries(
-  FIELD_MAPPINGS,
-).reduce(
-  (acc, [camel, snake]) => {
-    acc[snake] = camel;
-    return acc;
-  },
-  {} as Record<string, string>,
-);
-
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
@@ -351,39 +271,6 @@ export function normalizeToSnakeCase<T extends Record<string, any>>(
   return normalized;
 }
 
-/**
- * Normalize field names using known mappings to camelCase
- * For legacy components that expect camelCase
- */
-export function normalizeToCamelCase<T extends Record<string, any>>(
-  obj: T,
-): Record<string, any> {
-  if (!isPlainObject(obj)) {
-    return obj;
-  }
-
-  const normalized: Record<string, any> = {};
-
-  for (const [key, value] of Object.entries(obj)) {
-    // Check if this is a known snake_case field
-    const camelKey = REVERSE_FIELD_MAPPINGS[key] || key;
-
-    // Recursively normalize nested objects
-    if (isPlainObject(value)) {
-      normalized[camelKey] = normalizeToCamelCase(value);
-    } else if (Array.isArray(value)) {
-      normalized[camelKey] = value.map((item) =>
-        isPlainObject(item) ? normalizeToCamelCase(item) : item,
-      );
-    } else {
-      normalized[camelKey] = value;
-    }
-
-  }
-
-  return normalized;
-}
-
 // ============================================================================
 // ENUM BOUNDARY MAPPERS
 // ============================================================================
@@ -407,74 +294,12 @@ export function mapActivityLevelForHealthCalc(
   return onboardingLevel; // sedentary, light, moderate, active pass through
 }
 
-/**
- * Maps health-calc ActivityLevel → onboarding activity_level.
- *
- * Inverse of mapActivityLevelForHealthCalc.
- */
-export function mapActivityLevelForOnboarding(
-  healthCalcLevel: string,
-): string {
-  if (healthCalcLevel === "very_active") return "extreme";
-  return healthCalcLevel;
-}
-
-/**
- * Maps onboarding diet_type → health-calc DietType.
- *
- * Onboarding uses "non-veg" and "balanced" (match DB CHECK constraint);
- * health-calc uses "omnivore" for both — same concept, different label.
- *
- * Passthrough values: vegetarian, vegan, pescatarian
- *
- * NOTE: `resolveDietType()` in nutritional.ts already handles this mapping
- * (including readiness-flag overrides like keto_ready → "keto").  Prefer
- * resolveDietType() when you have the full DietPreferencesData object.
- * Use this function only when you have a bare diet_type string.
- */
-export function mapDietTypeForHealthCalc(
-  onboardingDietType: string,
-): string {
-  switch (onboardingDietType) {
-    case "non-veg":
-      return "omnivore";
-    case "balanced":
-      return "omnivore";
-    default:
-      return onboardingDietType; // vegetarian, vegan, pescatarian pass through
-  }
-}
-
-/**
- * Maps health-calc DietType → onboarding diet_type.
- *
- * Inverse of mapDietTypeForHealthCalc.
- * "omnivore" maps back to "non-veg" (the DB canonical value).
- * keto, low_carb, paleo, mediterranean have no onboarding equivalent —
- * they are derived from readiness flags, not diet_type — so they pass through as-is.
- */
-export function mapDietTypeForOnboarding(
-  healthCalcDietType: string,
-): string {
-  if (healthCalcDietType === "omnivore") return "non-veg";
-  return healthCalcDietType;
-}
-
 // ============================================================================
 // EXPORTS
 // ============================================================================
 
 export default {
-  snakeToCamel,
-  camelToSnake,
-  toAppFormat,
   toDbFormat,
   normalizeToSnakeCase,
-  normalizeToCamelCase,
   mapActivityLevelForHealthCalc,
-  mapActivityLevelForOnboarding,
-  mapDietTypeForHealthCalc,
-  mapDietTypeForOnboarding,
-  FIELD_MAPPINGS,
-  REVERSE_FIELD_MAPPINGS,
 };

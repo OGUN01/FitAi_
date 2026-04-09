@@ -529,6 +529,7 @@ class NotificationService {
       } = await supabase.auth.getUser();
 
       if (authError || !user) {
+        if (authError) console.error("[notificationService] Auth error in save:", authError);
         return;
       }
 
@@ -588,6 +589,7 @@ class NotificationService {
       } = await supabase.auth.getUser();
 
       if (authError || !user) {
+        if (authError) console.error("[notificationService] Auth error in get:", authError);
         return null;
       }
 
@@ -612,6 +614,7 @@ class NotificationService {
 
       return null;
     } catch (error) {
+      console.error("[notificationService] getPreferencesFromSupabase failed:", error);
       return null;
     }
   }

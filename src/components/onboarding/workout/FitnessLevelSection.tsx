@@ -1,7 +1,7 @@
 import React, { type ComponentProps } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rw } from "../../../utils/responsive";
+import { rf } from "../../../utils/responsive";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { GlassCard } from "../../../components/ui/aurora";
 import { Slider } from "../../../components/ui";

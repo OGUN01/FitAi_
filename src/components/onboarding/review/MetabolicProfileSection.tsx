@@ -36,7 +36,8 @@ export const MetabolicProfileSection: React.FC<
   };
 
   const getMetabolicAgeColor = () => {
-    const age = calculatedData.metabolic_age || 25;
+    const age = calculatedData.metabolic_age || null;
+    if (age === null) return [ResponsiveTheme.colors.text + '40', ResponsiveTheme.colors.text + '40'];
     if (age < 30) return [ResponsiveTheme.colors.success, ResponsiveTheme.colors.successAltDark];
     if (age < 50) return [ResponsiveTheme.colors.amber, ResponsiveTheme.colors.warning];
     return [ResponsiveTheme.colors.warning, ResponsiveTheme.colors.error];

@@ -1,7 +1,6 @@
 import * as crypto from "expo-crypto";
 import { supabase } from "./supabase";
 import { crudOperations } from "./crudOperations";
-import { dataBridge } from "./DataBridge";
 import { AuthUser } from "../types/user";
 import { BodyMeasurement } from "../types/localData";
 import { analyticsDataService } from "./analyticsData";

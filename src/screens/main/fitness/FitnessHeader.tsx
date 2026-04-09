@@ -9,7 +9,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh, rp, rbr } from "../../../utils/responsive";
+import { rf, rw, rp, rbr } from "../../../utils/responsive";
 
 interface FitnessHeaderProps {
   userName: string;

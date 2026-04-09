@@ -11,7 +11,6 @@ import {
   useSharedValue,
   withSpring,
   withTiming,
-  cancelAnimation,
 } from 'react-native-reanimated';
 import { animations } from '../theme/animations';
 import { haptics } from '../utils/haptics';

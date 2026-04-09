@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, Linking } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -8,7 +8,6 @@ import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rw } from "../../utils/responsive";
-import { haptics } from "../../utils/haptics";
 
 interface ContactCardProps {
   onContactEmail: () => void;

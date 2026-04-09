@@ -3,7 +3,6 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createDebouncedStorage } from "../utils/safeAsyncStorage";
 import {
   healthKitService,
@@ -126,7 +125,7 @@ export interface HealthMetrics {
   dataOrigins?: string[];
 }
 
-export interface HealthIntegrationSettings {
+interface HealthIntegrationSettings {
   healthKitEnabled: boolean;
   healthConnectEnabled: boolean; // Health Connect integration
   autoSyncEnabled: boolean;
@@ -147,7 +146,7 @@ export interface HealthIntegrationSettings {
   preferredProvider: "healthkit" | "googlefit" | "healthconnect"; // User's preferred health data provider
 }
 
-export interface HealthDataState {
+interface HealthDataState {
   // Current Health Data
   metrics: HealthMetrics;
 

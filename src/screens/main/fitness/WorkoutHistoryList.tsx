@@ -16,7 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh, rp } from "../../../utils/responsive";
+import { rf, rw, rp } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 import { crossPlatformAlert } from "../../../utils/crossPlatformAlert";
 

@@ -1,7 +1,7 @@
 ﻿import React from "react";
 import { View, Text, Modal, ActivityIndicator, StyleSheet } from "react-native";
 import { ResponsiveTheme } from '../../utils/constants';
-import { rf, rp, rh, rw } from '../../utils/responsive';
+import { rf, rh, rw } from '../../utils/responsive';
 
 
 interface MigrationStatusModalProps {

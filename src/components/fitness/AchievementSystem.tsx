@@ -4,11 +4,10 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
 } from "react-native";
 import { Card } from "../ui";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rp, rbr, rs } from "../../utils/responsive";
+import { rf, rbr, rs } from "../../utils/responsive";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../services/supabase";
@@ -58,6 +57,7 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
         .order("earned_at", { ascending: false });
 
       if (error) {
+        console.error("[AchievementSystem] Supabase error:", error);
         setError(error.message);
       } else {
         setAchievements(data || []);

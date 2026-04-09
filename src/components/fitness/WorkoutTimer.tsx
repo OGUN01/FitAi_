@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, PropsWithChildren } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Modal } from "react-native";
-import { Card, Button } from "../ui";
+import { Card } from "../ui";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rp, rbr, rs, rh } from "../../utils/responsive";
 

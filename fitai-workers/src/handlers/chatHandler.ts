@@ -148,15 +148,6 @@ export async function handleChat(
     const user = c.get('user');
     const conversationId = request.conversationId || crypto.randomUUID();
 
-    console.log('[Chat] Request validated:', {
-      messageCount: request.messages.length,
-      hasContext: !!request.context,
-      stream: request.stream,
-      model: request.model,
-      conversationId,
-      authenticated: !!user,
-    });
-
     // 2. Build system prompt with context
     const systemPrompt = buildSystemPrompt(request);
 

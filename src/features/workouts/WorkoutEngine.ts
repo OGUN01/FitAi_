@@ -11,7 +11,6 @@ import {
 } from "../../data/exercises";
 import {
   Workout,
-  WorkoutPlan,
   Exercise,
   WorkoutSet,
   AIResponse,
@@ -131,7 +130,8 @@ class WorkoutEngineService {
       fitnessGoals.experience_level ||
       "beginner") as "beginner" | "intermediate" | "advanced";
     const goals = fitnessGoals.primary_goals || fitnessGoals.primaryGoals || [];
-    const age = personalInfo.age || 30;
+    if (!personalInfo.age) console.warn('[WorkoutEngine] User age unavailable, using 0 — workout personalization limited');
+    const age = personalInfo.age || 0;
     const workoutType: "hiit" | "strength" =
       timeAvailable <= 20 ? "hiit" : "strength";
 

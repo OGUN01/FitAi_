@@ -9,7 +9,6 @@ import { MultiSelectWithCustom } from "../../../components/advanced/MultiSelectW
 import {
   MEDICAL_CONDITIONS_OPTIONS,
   PHYSICAL_LIMITATIONS_OPTIONS,
-  STRESS_LEVELS,
 } from "../../../screens/onboarding/tabs/BodyAnalysisConstants";
 import { BodyAnalysisData, PersonalInfoData } from "../../../types/onboarding";
 

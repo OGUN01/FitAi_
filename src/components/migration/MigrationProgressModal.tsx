@@ -16,7 +16,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rbr, rp, rh, rw } from "../../utils/responsive";
+import { rf, rbr, rh, rw } from "../../utils/responsive";
 import { migrationManager } from "../../services/migrationManager";
 import { MigrationStatus } from "../../types/profileData";
 

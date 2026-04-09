@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from "react-native";
-import Animated, {
+import {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
@@ -9,7 +9,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 import Svg, { Line, Circle, Path, G, Text as SvgText } from "react-native-svg";
-import { rf, rp, rw, rh } from "../../utils/responsive";
+import { rf } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { ChartTooltip } from "./ChartTooltip";
 import { hapticSelection } from "../../utils/haptics";

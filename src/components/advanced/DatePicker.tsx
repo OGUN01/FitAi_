@@ -9,7 +9,7 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { Button, Card } from "../ui";
+import { Button } from "../ui";
 import { ResponsiveTheme } from "../../utils/constants";
 
 interface DatePickerProps {

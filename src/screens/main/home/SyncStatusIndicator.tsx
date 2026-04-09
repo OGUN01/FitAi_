@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { rf, rw } from "../../../utils/responsive";
 import { useHealthDataStore } from "../../../stores/healthDataStore";
@@ -31,10 +30,8 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
     isHealthConnectAuthorized,
     syncStatus,
     lastSyncTime,
-    syncError,
     syncHealthData,
     syncFromHealthConnect,
-    settings,
     metrics,
   } = useHealthDataStore();
 

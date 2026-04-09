@@ -237,14 +237,14 @@ export function transformForDietRequest(
   }
 
   if (personalInfo.age === undefined || personalInfo.age === null) {
-    console.warn('[aiRequestTransformers] personalInfo.age is undefined — falling back to 25 for diet request');
+    console.warn('[aiRequestTransformers] personalInfo.age is undefined — using 0 for diet request (AI will receive signal that age is missing)');
   }
 
   return {
     // Rich request context so the worker can use the latest onboarding values
     // even before Supabase has finished syncing.
     profile: {
-      age: personalInfo.age ?? 25,
+      age: personalInfo.age ?? 0,
       gender: personalInfo.gender, // NO FALLBACK
       weight:
         (resolvedCurrentWeight.value ?? personalInfo.weight ?? null) ?? undefined, // undefined = explicitly missing, not 0
@@ -556,12 +556,12 @@ export function transformForWorkoutRequest(
   // H13: Wire ignored onboarding fields into workout generation request
   const advancedReview = options?.advancedReview;
   if (personalInfo.age === undefined || personalInfo.age === null) {
-    console.warn('[aiRequestTransformers] personalInfo.age is undefined — falling back to 25 for workout request');
+    console.warn('[aiRequestTransformers] personalInfo.age is undefined — using 0 for workout request (AI will receive signal that age is missing)');
   }
 
   return {
     profile: {
-      age: personalInfo.age ?? 25,
+      age: personalInfo.age ?? 0,
       gender: mappedGender,
       weight: resolvedCurrentWeight.value ?? personalInfo.weight ?? 0,
       height: bodyMetrics?.height_cm ?? personalInfo.height ?? 0,
@@ -920,8 +920,12 @@ function calculateEstimatedCalories(workout: WorkoutPlan, userWeightKg?: number)
     advanced: 8,
   };
   const met = metByDifficulty[difficulty] ?? 6;
-  // 70kg = WHO reference weight when actual weight unavailable
-  return Math.round(met * (userWeightKg ?? 70) * durationHours);
+  // Return 0 calories if weight is unavailable — never use fake weight
+  if (!userWeightKg) {
+    console.warn('[aiRequestTransformers] Weight unavailable for calorie estimation');
+    return 0;
+  }
+  return Math.round(met * userWeightKg * durationHours);
 }
 
 function transformExercises(workout: WorkoutPlan): any[] {

@@ -1,7 +1,7 @@
 import { logger } from '../utils/logger';
 import { useState } from "react";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
-import { DayMeal, MealItem } from "../types/ai";
+import { DayMeal } from "../types/ai";
 import { completionTrackingService } from "../services/completionTracking";
 import { mealMotivationService } from "../features/nutrition/MealMotivation";
 

@@ -10,7 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rw, rp } from "../../utils/responsive";
+import { rf, rp } from "../../utils/responsive";
 import { gradients, toLinearGradientProps } from "../../theme/gradients";
 
 export interface ScanResultData {

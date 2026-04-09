@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef } from "react";
 import { OnboardingState } from "./types";
 
 export const createInitialState = (): OnboardingState => ({

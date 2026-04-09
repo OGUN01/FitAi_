@@ -132,45 +132,37 @@ class NormalizedNameMappingService {
   async findBestMatch(aiGeneratedName: string): Promise<NameMappingResult> {
     const cleanName = this.cleanExerciseName(aiGeneratedName);
 
-    console.log(`🔍 Finding match for: "${aiGeneratedName}" -> "${cleanName}"`);
-
     // 1. Try exact mapping first
     const exactMatch = this.findExactMatch(cleanName);
     if (exactMatch) {
-      console.log(`✅ Exact match found: "${exactMatch.exercise.name}"`);
       return exactMatch;
     }
 
     // 2. Try AI-to-Database mapping
     const mappingMatch = this.findMappingMatch(cleanName);
     if (mappingMatch) {
-      console.log(`✅ Mapping match found: "${mappingMatch.exercise.name}"`);
       return mappingMatch;
     }
 
     // 3. Try normalized name matching
     const normalizedMatch = this.findNormalizedMatch(cleanName);
     if (normalizedMatch) {
-      console.log(`✅ Normalized match found: "${normalizedMatch.exercise.name}"`);
       return normalizedMatch;
     }
 
     // 4. Try semantic pattern matching
     const semanticMatch = this.findSemanticMatch(cleanName);
     if (semanticMatch) {
-      console.log(`✅ Semantic match found: "${semanticMatch.exercise.name}"`);
       return semanticMatch;
     }
 
     // 5. Try fuzzy word matching
     const fuzzyMatch = this.findFuzzyMatch(cleanName);
     if (fuzzyMatch) {
-      console.log(`✅ Fuzzy match found: "${fuzzyMatch.exercise.name}"`);
       return fuzzyMatch;
     }
 
     // 6. Generate intelligent fallback
-    console.log(`🔄 Creating intelligent fallback for "${aiGeneratedName}"`);
     return this.generateIntelligentFallback(aiGeneratedName);
   }
 

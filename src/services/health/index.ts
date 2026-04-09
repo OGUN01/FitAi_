@@ -1,5 +1,4 @@
 export * from "./types";
-export * from "./dataSources";
 export {
   healthConnectService,
   HealthConnectService,

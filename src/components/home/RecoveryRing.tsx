@@ -1,6 +1,5 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import Animated from "react-native-reanimated";
 import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rw, rp } from "../../utils/responsive";

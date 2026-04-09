@@ -152,15 +152,6 @@ export async function loadUserMetrics(
       );
     }
 
-    console.log('[UserMetrics] Metrics loaded successfully:', {
-      bmr: data.calculated_bmr,
-      tdee: data.calculated_tdee,
-      daily_calories: data.daily_calories,
-      protein: data.daily_protein_g,
-      carbs: data.daily_carbs_g,
-      fat: data.daily_fat_g,
-    });
-
     return data as UserHealthMetrics;
   } catch (error) {
     if (error instanceof APIError) {

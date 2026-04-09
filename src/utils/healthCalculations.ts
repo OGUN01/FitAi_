@@ -510,7 +510,11 @@ export class MetabolicCalculations {
     const match = references.find(
       (ref) => age >= ref.ageRange[0] && age <= ref.ageRange[1],
     );
-    return match ? match.bmr : gender === "male" ? 1650 : 1300; // Default mid-range value
+    if (!match) {
+      console.warn('[healthCalculations] Age out of range for BMR lookup, returning 0');
+      return 0;
+    }
+    return match.bmr;
   }
 }
 

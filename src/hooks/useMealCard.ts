@@ -7,7 +7,6 @@ import {
 } from "react-native-reanimated";
 import { haptics } from "../utils/haptics";
 import { DayMeal, MealItem } from "../types/ai";
-import { colors } from "../theme/aurora-tokens";
 
 // LayoutAnimation disabled on Android — Reanimated handles animations
 // on the UI thread. Enabling both causes JS thread contention and lag.

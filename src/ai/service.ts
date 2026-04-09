@@ -1,4 +1,4 @@
-import { PersonalInfo, FitnessGoals, BodyMetrics } from "../types/user";
+import { PersonalInfo, FitnessGoals } from "../types/user";
 import { MotivationalContent, AIResponse } from "../types/ai";
 import { AIServiceMetadata } from "./types";
 import { fitaiWorkersClient } from "../services/fitaiWorkersClient";

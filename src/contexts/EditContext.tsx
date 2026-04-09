@@ -23,7 +23,6 @@ import { buildLegacyProfileAdapter } from "../utils/profileLegacyAdapter";
 import {
   EditContextData,
   EditActions,
-  PersonalInfo,
   FitnessGoals,
   DietPreferences,
   WorkoutPreferences,

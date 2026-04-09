@@ -565,13 +565,17 @@ class SyncEngine {
       (userEmail ? userEmail.split("@")[0] : "") ||
       "User";
 
+    if (!data.age) {
+      console.warn('[SyncEngine] User age unavailable — syncing null to profiles.age');
+    }
+
     const profileData = {
       id: userId,
       email: userEmail, // Required NOT NULL - from auth session
       name: derivedName, // Required NOT NULL field
       first_name: firstName,
       last_name: lastName,
-      age: data.age || 25, // NOT NULL - default if missing
+      age: data.age || null, // Column allows NULL — no fake age
       gender: data.gender || "prefer_not_to_say", // NOT NULL - safe default
       country: data.country || "US",
       state: data.state || "",

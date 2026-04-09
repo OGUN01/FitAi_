@@ -50,14 +50,6 @@ export class RecognizedFoodLogger {
     error?: string;
   }> {
     try {
-      console.log("Starting to log recognized foods:", {
-        userId,
-        foodCount: recognizedFoods.length,
-        mealType,
-        customMealName,
-        persistCatalogFoods: options?.persistCatalogFoods ?? false,
-      });
-
       if (!recognizedFoods.length) {
         throw new Error("No recognized foods to log");
       }

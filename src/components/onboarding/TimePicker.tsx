@@ -7,7 +7,7 @@ import {
   Modal,
   ScrollView,
 } from "react-native";
-import { rf, rp, rh, rw } from "../../utils/responsive";
+import { rh, rw } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { Button } from "../ui";
 

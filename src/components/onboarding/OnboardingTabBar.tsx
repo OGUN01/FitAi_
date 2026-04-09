@@ -9,10 +9,9 @@ import Animated, {
   withTiming,
   interpolate,
 } from "react-native-reanimated";
-import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
+import { rf, rw, rp, rbr } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { TabValidationResult } from "../../types/onboarding";
-import { animations } from "../../theme/animations";
 
 // ============================================================================
 // TYPES

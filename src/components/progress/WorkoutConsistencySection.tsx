@@ -7,13 +7,13 @@
  */
 
 import React, { useMemo } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { useFitnessStore } from "../../stores/fitnessStore";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rp, rh, rbr, rw, rs } from "../../utils/responsive";
+import { rf, rp, rh, rbr, rs } from "../../utils/responsive";
 
 const DAYS_SHOWN = 35; // 5 weeks
 const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];

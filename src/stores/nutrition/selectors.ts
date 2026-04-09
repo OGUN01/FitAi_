@@ -1,4 +1,4 @@
-import { ConsumedNutrition, MealProgress, NutritionState } from "./types";
+import { ConsumedNutrition, MealProgress, NutritionState } from "../nutritionStore";
 import { getLocalDateString } from "../../utils/weekUtils";
 
 let consumedNutritionCache: ConsumedNutrition | null = null;
@@ -51,8 +51,9 @@ export function getConsumedNutrition(state: NutritionState): ConsumedNutrition {
       carbs: acc.carbs + (meal.totalMacros?.carbohydrates || 0),
       fat: acc.fat + (meal.totalMacros?.fat || 0),
       fiber: acc.fiber + (meal.totalMacros?.fiber || 0),
+      sugar: acc.sugar + (meal.totalMacros?.sugar || 0),
     }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0 },
   );
 
   // Also include daily meals (added from suggestions)
@@ -63,16 +64,18 @@ export function getConsumedNutrition(state: NutritionState): ConsumedNutrition {
       carbs: acc.carbs + (meal.totalMacros?.carbohydrates || 0),
       fat: acc.fat + (meal.totalMacros?.fat || 0),
       fiber: acc.fiber + (meal.totalMacros?.fiber || 0),
+      sugar: acc.sugar + (meal.totalMacros?.sugar || 0),
     }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0 },
   );
 
-  const result = {
+  const result: ConsumedNutrition = {
     calories: weeklyResult.calories + dailyMealsTotal.calories,
     protein: weeklyResult.protein + dailyMealsTotal.protein,
     carbs: weeklyResult.carbs + dailyMealsTotal.carbs,
     fat: weeklyResult.fat + dailyMealsTotal.fat,
     fiber: weeklyResult.fiber + dailyMealsTotal.fiber,
+    sugar: weeklyResult.sugar + dailyMealsTotal.sugar,
   };
 
   consumedNutritionCache = result;
@@ -126,8 +129,9 @@ export function getTodaysConsumedNutrition(
       carbs: acc.carbs + (meal.totalMacros?.carbohydrates || 0),
       fat: acc.fat + (meal.totalMacros?.fat || 0),
       fiber: acc.fiber + (meal.totalMacros?.fiber || 0),
+      sugar: acc.sugar + (meal.totalMacros?.sugar || 0),
     }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0 },
   );
 
   // Only include daily meals created today (dailyMeals persist across days in storage)
@@ -143,16 +147,18 @@ export function getTodaysConsumedNutrition(
       carbs: acc.carbs + (meal.totalMacros?.carbohydrates || 0),
       fat: acc.fat + (meal.totalMacros?.fat || 0),
       fiber: acc.fiber + (meal.totalMacros?.fiber || 0),
+      sugar: acc.sugar + (meal.totalMacros?.sugar || 0),
     }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0 },
   );
 
-  const result = {
+  const result: ConsumedNutrition = {
     calories: weeklyResult.calories + dailyMealsTotal.calories,
     protein: weeklyResult.protein + dailyMealsTotal.protein,
     carbs: weeklyResult.carbs + dailyMealsTotal.carbs,
     fat: weeklyResult.fat + dailyMealsTotal.fat,
     fiber: weeklyResult.fiber + dailyMealsTotal.fiber,
+    sugar: weeklyResult.sugar + dailyMealsTotal.sugar,
   };
 
   todaysConsumedNutritionCache = result;

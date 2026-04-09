@@ -1,11 +1,6 @@
 import { useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-  PersonalInfoData,
-  DietPreferencesData,
-  BodyAnalysisData,
-  WorkoutPreferencesData,
-  AdvancedReviewData,
   OnboardingProgressData,
 } from "../../types/onboarding";
 import { OnboardingState } from "./types";

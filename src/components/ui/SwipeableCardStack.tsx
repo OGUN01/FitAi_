@@ -6,8 +6,6 @@ import {
   Dimensions,
   Platform,
   PanResponder,
-  GestureResponderEvent,
-  PanResponderGestureState,
   StyleProp,
   ViewStyle,
 } from "react-native";

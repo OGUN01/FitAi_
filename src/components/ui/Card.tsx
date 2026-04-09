@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   Text,
 } from "react-native";
-import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { rp } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 
 interface CardProps {

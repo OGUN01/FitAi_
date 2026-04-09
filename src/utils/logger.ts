@@ -218,9 +218,5 @@ export const logger = {
 
 // Create scoped loggers for common modules
 export const storeLogger = logger.scope("Store");
-export const apiLogger = logger.scope("API");
-export const authLogger = logger.scope("Auth");
-export const analyticsLogger = logger.scope("Analytics");
-export const healthLogger = logger.scope("Health");
 
 export default logger;

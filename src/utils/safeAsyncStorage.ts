@@ -23,6 +23,7 @@ export const safeAsyncStorage: StateStorage = {
         return null;
       }
     } catch (e) {
+      console.error('[SafeAsyncStorage] Read failed for key:', name, e);
       try {
         await AsyncStorage.removeItem(name);
       } catch {
@@ -44,7 +45,7 @@ export const safeAsyncStorage: StateStorage = {
     try {
       await AsyncStorage.removeItem(name);
     } catch (e) {
-      // Storage remove failed
+      console.error('[SafeAsyncStorage] Remove failed for key:', name, e);
     }
   },
 };

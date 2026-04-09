@@ -535,7 +535,10 @@ export const useOnboardingLogic = ({
           | "pescatarian",
         allergies: dp?.allergies || [],
         restrictions: dp?.cuisine_preferences || [],
-        calorieTarget: ar?.daily_calories || 2000,
+        calorieTarget: (() => {
+          if (!ar?.daily_calories) console.warn('[useOnboardingLogic] daily_calories unavailable — using 0 as calorieTarget');
+          return ar?.daily_calories || 0;
+        })(),
       },
       workoutPreferences: {
         location: wp?.location || "gym",

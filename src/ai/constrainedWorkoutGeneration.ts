@@ -462,8 +462,7 @@ const levenshteinDistance = (str1: string, str2: string): number => {
  * @deprecated Use workoutGeneration.ts instead. This module will be removed.
  */
 export const testConstrainedGeneration = async (): Promise<void> => {
-  console.log('⚠️ This test is deprecated. Use Cloudflare Workers backend instead.');
-  console.log('Endpoint: https://fitai-workers.sharmaharsh9887.workers.dev/workout/generate');
+  // Deprecated: Use Cloudflare Workers backend instead.
 };
 
 // Export the main function and utilities

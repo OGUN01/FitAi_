@@ -1,4 +1,4 @@
-import { FOOD_ALIASES, normalizeName } from './foodAliases';
+import { normalizeName } from './foodAliases';
 import { FreeNutritionAPIs } from '../../services/freeNutritionAPIs';
 
 export interface MappedFood {
@@ -47,7 +47,9 @@ export class IngredientMapper {
         cache.set(cacheKey, mapped);
         return mapped;
       }
-    } catch {}
+    } catch (err) {
+      console.error("[IngredientMapper] Enrichment lookup failed:", err);
+    }
 
     // 4) fallback
     return {

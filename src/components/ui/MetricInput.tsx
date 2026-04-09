@@ -8,7 +8,7 @@ import Animated, {
   Extrapolate,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { rf, rp, rw } from "../../utils/responsive";
+import { rp, rw } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 
 interface MetricInputProps {

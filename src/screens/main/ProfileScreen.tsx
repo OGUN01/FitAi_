@@ -323,7 +323,6 @@ export const ProfileScreen: React.FC<{ navigation?: any; route?: any }> = ({
   route,
 }) => {
   const handleEditComplete = async () => {
-    console.log("[ProfileScreen] Edit completed");
     try {
       // Refresh from Supabase if authenticated
       const userId = useAuthStore.getState().user?.id;
@@ -341,7 +340,7 @@ export const ProfileScreen: React.FC<{ navigation?: any; route?: any }> = ({
   return (
     <EditProvider
       onEditComplete={handleEditComplete}
-      onEditCancel={() => console.log("[ProfileScreen] Edit cancelled")}
+      onEditCancel={() => {}}
     >
       <ProfileScreenInternal navigation={navigation} route={route} />
     </EditProvider>

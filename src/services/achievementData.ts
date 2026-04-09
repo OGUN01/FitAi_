@@ -2,8 +2,7 @@
 // Provides cloud persistence for user achievements to prevent data loss on app reinstall
 
 import { supabase } from "./supabase";
-import { UserAchievement } from "./achievementEngine";
-import { achievementEngine } from "./achievements";
+import { UserAchievement, achievementEngine } from "./achievementEngine";
 
 export interface AchievementSyncResult {
   success: boolean;

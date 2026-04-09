@@ -8,14 +8,12 @@ import {
   ScrollView,
 
   ActivityIndicator,
-  Animated,
   TextInput,
   Keyboard,
   StyleProp,
   ViewStyle,
 } from "react-native";
 import { SafeAreaView } from "react-native";
-import { PanGestureHandler } from "react-native-gesture-handler";
 import { ResponsiveTheme } from "../../utils/constants";
 import { Button, Card } from "../ui";
 import { RecognizedFood } from "../../services/foodRecognitionService";

@@ -5,7 +5,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { EventEmitter } from "../utils/EventEmitter";
 import { crudOperations } from "./crudOperations";
-import { dataBridge } from "./DataBridge";
 import { logger } from "../utils/logger";
 
 export interface FitnessMetrics {

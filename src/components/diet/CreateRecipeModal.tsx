@@ -17,9 +17,8 @@ import {
 } from "react-native";
 import { Card } from "../ui";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rh, rw, rs, rp } from "../../utils/responsive";
+import { rf, rh, rw, rs } from "../../utils/responsive";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
-import { RECIPE_CREATION_SCHEMA } from "../../ai/schemas/foodRecognitionSchema";
 
 // Stub for deprecated AI service (migrated to Cloudflare Workers)
 const geminiService = {

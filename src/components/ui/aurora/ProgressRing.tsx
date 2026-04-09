@@ -9,9 +9,7 @@ import { View, Text, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
-  withTiming,
   withSpring,
-  Easing,
 } from "react-native-reanimated";
 import Svg, {
   Circle,
@@ -19,7 +17,6 @@ import Svg, {
   LinearGradient as SvgLinearGradient,
   Stop,
 } from "react-native-svg";
-import { animations } from "../../../theme/animations";
 import { colors } from "../../../theme/aurora-tokens";
 import { rf } from "../../../utils/responsive";
 

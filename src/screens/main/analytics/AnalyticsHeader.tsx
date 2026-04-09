@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh, rp, rs } from "../../../utils/responsive";
+import { rf, rw, rp } from "../../../utils/responsive";
 import { PeriodSelector, Period } from "./PeriodSelector";
 import { haptics } from "../../../utils/haptics";
 

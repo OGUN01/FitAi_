@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "./useAuth";
 import {
-  CompleteOnboardingData,
   PersonalInfoData,
   DietPreferencesData,
   BodyAnalysisData,
@@ -11,7 +10,6 @@ import {
   OnboardingProgressData,
   TabValidationResult,
 } from "../types/onboarding";
-import { supabase } from "../services/supabase";
 import {
   PersonalInfoService,
   DietPreferencesService,

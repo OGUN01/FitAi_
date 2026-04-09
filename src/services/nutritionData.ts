@@ -337,11 +337,6 @@ class NutritionDataService {
     userId: string,
   ): Promise<NutritionDataResponse<NutritionGoals>> {
     try {
-      console.log(
-        "ðŸ“Š [NutritionData] getUserNutritionGoals - Loading for user:",
-        userId,
-      );
-
       // STEP 1: Try to load from advanced_review (onboarding calculated values)
       // This is the SOURCE OF TRUTH for nutrition targets
       const { data: advancedReview, error: advancedError } = await supabase
@@ -353,11 +348,6 @@ class NutritionDataService {
         .maybeSingle();
 
       if (advancedReview && !advancedError) {
-        console.log(
-          "âœ… [NutritionData] Found goals in advanced_review (onboarding):",
-          advancedReview,
-        );
-
         // Map advanced_review fields to NutritionGoals format
         const goalsFromOnboarding: NutritionGoals = {
           id: `onboarding_${userId}`,
@@ -422,10 +412,6 @@ class NutritionDataService {
         };
       }
 
-      console.log(
-        "âœ… [NutritionData] Found goals in nutrition_goals table:",
-        data,
-      );
       return {
         success: true,
         data,

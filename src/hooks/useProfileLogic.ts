@@ -187,7 +187,6 @@ export const useProfileLogic = () => {
           }
         }
 
-        console.log("[useProfileLogic] Units preference saved:", units);
       } catch (error) {
         console.error("[useProfileLogic] Error saving units:", error);
       }
@@ -221,8 +220,6 @@ export const useProfileLogic = () => {
   }, []);
 
   const handleSettingItemPress = async (item: SettingItem) => {
-    console.log("[ProfileScreen] Setting item pressed:", item.id);
-
     switch (item.id) {
       case "personal-info":
         // Use dedicated edit modal instead of onboarding
@@ -363,7 +360,7 @@ export const useProfileLogic = () => {
         setShowClearCacheModal(true);
         break;
       default:
-        console.log("[ProfileScreen] Unknown setting:", item.id);
+        console.warn("[ProfileScreen] Unknown setting:", item.id);
     }
   };
 

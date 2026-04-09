@@ -9,7 +9,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rp, rbr } from "../../../utils/responsive";
+import { rf, rp } from "../../../utils/responsive";
 
 interface CustomInputSectionProps {
   customAmount: string;

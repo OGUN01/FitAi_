@@ -17,7 +17,6 @@ import Animated, {
   cancelAnimation,
 } from "react-native-reanimated";
 import {
-  gradients,
   type AuroraTheme,
   getAuroraGradient,
 } from "../../../theme/gradients";

@@ -135,8 +135,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   const userUnits: "kg" | "lbs" =
     personalInfo?.units === "imperial" ? "lbs" : "kg";
   const bodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
-  if (!bodyAnalysis?.current_weight_kg) console.warn('[WorkoutSession] User weight unavailable — defaulting to 70 kg for calorie calculation');
-  const userWeightKg = bodyAnalysis?.current_weight_kg || 70;
+  if (!bodyAnalysis?.current_weight_kg) console.warn('[WorkoutSession] User weight unavailable — calorie calculation will return 0');
+  const userWeightKg = bodyAnalysis?.current_weight_kg || 0;
   const experienceLevel: 'beginner' | 'intermediate' | 'advanced' =
     workoutPreferences?.intensity ?? 'beginner';
 

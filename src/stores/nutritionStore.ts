@@ -95,7 +95,7 @@ function createLoggedFood(
   };
 }
 
-interface MealProgress {
+export interface MealProgress {
   mealId: string;
   progress: number; // 0-100
   completedAt?: string;
@@ -103,7 +103,7 @@ interface MealProgress {
 }
 
 // Consumed nutrition computed from completed meals - SINGLE SOURCE OF TRUTH
-interface ConsumedNutrition {
+export interface ConsumedNutrition {
   calories: number;
   protein: number;
   carbs: number;
@@ -177,7 +177,7 @@ let lastTodaysMealProgressRef2: any = null;
 let lastTodaysDailyMealsRef2: any = null;
 let lastTodaysDate2: string = "";
 
-interface NutritionState {
+export interface NutritionState {
   // Weekly meal plan state
   weeklyMealPlan: WeeklyMealPlan | null;
   isGeneratingPlan: boolean;
@@ -1171,7 +1171,3 @@ export const useNutritionStore = create<NutritionState>()(
 );
 
 export default useNutritionStore;
-
-export const selectMealProgress = (state: NutritionState) => state.mealProgress;
-export const selectWeeklyMealPlan = (state: NutritionState) => state.weeklyMealPlan;
-export const selectConsumedNutrition = (state: NutritionState) => state.dailyMeals;

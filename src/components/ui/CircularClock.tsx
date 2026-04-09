@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from "react-native";
-import Svg, { Circle, Path, G, Text as SvgText, Rect } from "react-native-svg";
-import { rf, rp, rw, rh } from "../../utils/responsive";
+import Svg, { Circle, Path, Text as SvgText } from "react-native-svg";
+import { rf, rw, rh } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 
 interface CircularClockProps {

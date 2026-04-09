@@ -22,7 +22,7 @@ import {
 } from "../../data/regionalCuisineData";
 import { colors } from "../../theme/aurora-tokens";
 import { useNutritionStore } from "../../stores";
-import type { Meal } from "../../types/diet/meal";
+import type { Meal } from "../../types/diet";
 
 /** Max number of meal suggestions shown at a time */
 const MAX_SUGGESTIONS = 5;

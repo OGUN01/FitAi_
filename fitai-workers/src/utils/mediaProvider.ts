@@ -398,7 +398,7 @@ export function getAvailableLibraries(userHasPremium: boolean): Array<{
 export async function loadProviderMappings(library: MediaLibrary): Promise<void> {
   // TODO: Load mapping JSON file
   // Format: { "exerciseId": "providerAssetId", ... }
-  console.log(`[Media Provider] TODO: Load mappings for ${library}`);
+  // TODO: Load mapping JSON file for the specified library
 }
 
 /**

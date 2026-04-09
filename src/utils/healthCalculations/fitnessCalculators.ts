@@ -52,12 +52,19 @@ export class HeartRateCalculatorService {
       advanced: 58,
       elite: 50,
     };
-    return baselines[fitnessLevel] || 70;
+    if (!baselines[fitnessLevel]) {
+      console.warn(`[fitnessCalculators] Unknown fitnessLevel "${fitnessLevel}" for resting HR estimation, returning 0`);
+    }
+    return baselines[fitnessLevel] || 0;
   }
 }
 
 export class VO2MaxCalculatorService {
-  static estimate(user: HealthCalcProfile, restingHR: number): VO2MaxEstimate {
+  static estimate(user: HealthCalcProfile, restingHR: number): VO2MaxEstimate | null {
+    if (!restingHR) {
+      console.warn('[fitnessCalculators] Resting HR is 0 — cannot estimate VO2Max');
+      return null;
+    }
     try {
       const result = vo2MaxCalculator.estimateVO2Max(user, restingHR);
       if (!result) {

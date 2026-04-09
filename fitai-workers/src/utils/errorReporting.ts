@@ -125,9 +125,6 @@ export async function logToAnalytics(
       event: eventName,
     };
 
-    // Log to console (Cloudflare logs)
-    console.log(`[Analytics] ${eventName}:`, JSON.stringify(eventData, null, 2));
-
     // TODO: Integration with external monitoring services
     // Uncomment and configure when ready:
     //

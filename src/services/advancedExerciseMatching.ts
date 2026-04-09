@@ -232,6 +232,7 @@ class AdvancedExerciseMatchingService {
 
       return null;
     } catch (error) {
+      console.error("[advancedExerciseMatching] tryFuzzyMatch failed:", error);
       return null;
     }
   }
@@ -288,6 +289,7 @@ class AdvancedExerciseMatchingService {
 
       return null;
     } catch (error) {
+      console.error("[advancedExerciseMatching] trySemanticMatch failed:", error);
       return null;
     }
   }
@@ -329,6 +331,7 @@ class AdvancedExerciseMatchingService {
 
       return null;
     } catch (error) {
+      console.error("[advancedExerciseMatching] tryClassificationMatch failed:", error);
       return null;
     }
   }
@@ -442,6 +445,7 @@ class AdvancedExerciseMatchingService {
       // For now, return null without AI assistance
       return null;
     } catch (error) {
+      console.error("[advancedExerciseMatching] generateSemanticMapping failed:", error);
       return null;
     }
 

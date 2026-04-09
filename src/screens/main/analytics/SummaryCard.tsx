@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rw, rh, rp, rbr } from "../../../utils/responsive";
+import { rf, rp, rbr } from "../../../utils/responsive";
 import { TrendPeriod } from "../../../hooks/useProgressTrendsLogic";
 import { DailyMetrics } from "../../../services/analyticsData";
 

@@ -4,8 +4,6 @@ import {
   Text,
   StyleSheet,
   LayoutChangeEvent,
-  Platform,
-  PanResponder,
   Animated as RNAnimated,
   StyleProp,
   ViewStyle,
@@ -18,13 +16,12 @@ import Animated, {
   withTiming,
   runOnJS,
   interpolate,
-  Extrapolate,
 } from "react-native-reanimated";
 import {
   PanGestureHandler,
   PanGestureHandlerGestureEvent,
 } from "react-native-gesture-handler";
-import { rf, rp, rh, rw, rbr } from "../../utils/responsive";
+import { rf, rp, rbr } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { hapticSelection } from "../../utils/haptics";
 

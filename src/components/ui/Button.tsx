@@ -6,7 +6,6 @@ import {
   ViewStyle,
   TextStyle,
   ActivityIndicator,
-  View,
 } from "react-native";
 import Animated, {
   useSharedValue,

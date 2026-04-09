@@ -1,6 +1,5 @@
 // Achievement Categories for FitAI
 
-import { Achievement } from "../../types/ai";
 import { WORKOUT_ACHIEVEMENTS } from "./workout-achievements";
 import { CONSISTENCY_ACHIEVEMENTS } from "./consistency-achievements";
 import { NUTRITION_ACHIEVEMENTS } from "./nutrition-achievements";

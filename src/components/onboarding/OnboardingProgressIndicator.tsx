@@ -1,10 +1,9 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rp, rh, rw } from "../../utils/responsive";
+import { rf, rh, rw } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import {
-  OnboardingProgressData,
   TabValidationResult,
 } from "../../types/onboarding";
 

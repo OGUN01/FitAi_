@@ -8,7 +8,7 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { rf, rp, rh } from "../../utils/responsive";
+import { rh } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 
 export interface BarData {

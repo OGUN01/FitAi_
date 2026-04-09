@@ -670,22 +670,14 @@ async function generateFreshWorkout(
 
   // calculatedMetrics already loaded at top of generateFreshWorkout (shared between rule-based and LLM paths)
 
-
   // 2. Filter exercises (1500 → 30-50)
     let filterResult;
     let filteredExercises;
 
     try {
-      console.log('[Workout Generation] Starting exercise filtering...');
       filterResult = await filterExercisesForWorkout(request, 40);
-      console.log('[Workout Generation] Filter result type:', typeof filterResult);
-      console.log('[Workout Generation] Filter result keys:', filterResult ? Object.keys(filterResult) : 'null');
 
       filteredExercises = filterResult?.exercises || [];
-      console.log('[Workout Generation] Filtered exercises type:', typeof filteredExercises);
-      console.log('[Workout Generation] Is array:', Array.isArray(filteredExercises));
-      console.log('[Workout Generation] Exercise count:', filteredExercises.length);
-      console.log('[Workout Generation] Exercise filtering complete:', filterResult?.stats || 'No stats');
     } catch (filterError) {
       console.error('[Workout Generation] Exercise filtering FAILED:', filterError);
       throw new APIError(

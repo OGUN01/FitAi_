@@ -6,7 +6,6 @@ import {
   subscribeWithSelector,
   persist,
 } from "zustand/middleware";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logger } from "../utils/logger";
 import { createDebouncedStorage } from "../utils/safeAsyncStorage";
 import { supabase } from "../services/supabase";

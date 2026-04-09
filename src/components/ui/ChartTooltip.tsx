@@ -5,9 +5,8 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
-  runOnJS,
 } from "react-native-reanimated";
-import { rf, rp } from "../../utils/responsive";
+import { rp } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 
 interface ChartTooltipProps {

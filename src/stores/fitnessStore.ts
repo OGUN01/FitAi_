@@ -1,12 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 import { createDebouncedStorage } from "../utils/safeAsyncStorage";
 import * as crypto from "expo-crypto";
 import { WeeklyWorkoutPlan, DayWorkout, WorkoutSet } from "../ai";
 import { crudOperations } from "../services/crudOperations";
-import { dataBridge } from "../services/DataBridge";
 import { offlineService } from "../services/offline";
 import { supabase } from "../services/supabase";
 import { generateUUID, isValidUUID } from "../utils/uuid";
@@ -1337,8 +1335,3 @@ export const useFitnessStore = create<FitnessState>()(
 );
 
 export default useFitnessStore;
-
-export const selectWorkoutProgress = (state: FitnessState) => state.workoutProgress;
-export const selectWeeklyWorkoutPlan = (state: FitnessState) => state.weeklyWorkoutPlan;
-export const selectCompletedSessions = (state: FitnessState) => state.completedSessions;
-export const selectCurrentWorkoutSession = (state: FitnessState) => state.currentWorkoutSession;

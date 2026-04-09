@@ -4,12 +4,11 @@ import {
   View,
   StyleSheet,
   Pressable,
-  Dimensions,
   ViewStyle,
   DimensionValue,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { rh, rw } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 
 // REMOVED: Module-level Dimensions.get() causes crash - use rw/rh functions instead

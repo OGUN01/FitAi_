@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { rp, rh, rw, rs } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
 

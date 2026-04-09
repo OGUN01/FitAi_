@@ -4,11 +4,9 @@ import {
   Pressable,
   Text,
   StyleSheet,
-  Dimensions,
-  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { rp, rh, rw } from "../../utils/responsive";
 import { useResponsiveTheme } from "../../hooks/useResponsiveTheme";
 
 // REMOVED: Module-level Dimensions.get() causes crash

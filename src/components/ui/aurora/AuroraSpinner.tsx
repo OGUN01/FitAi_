@@ -20,7 +20,6 @@ import {
   toLinearGradientProps,
   gradientAuroraSpace,
 } from "../../../theme/gradients";
-import { animations } from "../../../theme/animations";
 
 // ============================================================================
 // TYPES

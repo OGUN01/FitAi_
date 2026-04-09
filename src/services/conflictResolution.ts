@@ -2,8 +2,6 @@
 // Handles data conflicts during migration with intelligent resolution strategies
 
 import * as crypto from "expo-crypto";
-import { validationService } from "../utils/validation";
-import { LocalStorageSchema } from "../types/localData";
 
 // ============================================================================
 // TYPES AND INTERFACES

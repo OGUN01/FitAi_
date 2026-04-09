@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, useWindowDimensions } from "react-native";
-import Animated, {
+import {
   useSharedValue,
   useAnimatedProps,
   withTiming,

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rp, rbr } from "../../../utils/responsive";
+import { rf, rp } from "../../../utils/responsive";
 
 interface QuickAddOptionsProps {
   onQuickAdd: (amountML: number) => void;

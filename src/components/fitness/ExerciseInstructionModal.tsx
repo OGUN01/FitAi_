@@ -7,11 +7,10 @@ import {
   ScrollView,
   TouchableOpacity,
   // Image imported from expo-image below
-  Dimensions,
   SafeAreaView,
 } from "react-native";
 import { Image } from "expo-image";
-import { Card, Button } from "../ui";
+import { Button } from "../ui";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rp, rbr, rh, rs } from "../../utils/responsive";
 import { exerciseFilterService } from "../../services/exerciseFilterService";

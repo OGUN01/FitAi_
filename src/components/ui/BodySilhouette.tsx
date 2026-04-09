@@ -1,8 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from "react-native";
-import Animated, {
+import {
   useSharedValue,
-  useAnimatedStyle,
   withRepeat,
   withSequence,
   withTiming,
@@ -10,7 +9,7 @@ import Animated, {
   cancelAnimation,
 } from "react-native-reanimated";
 import Svg, { Path, Circle, Line, G, Text as SvgText } from "react-native-svg";
-import { rf, rp } from "../../utils/responsive";
+import { rf } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 
 interface MeasurementPoint {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   WorkoutPreferencesData,
   BodyAnalysisData,
@@ -8,8 +8,6 @@ import {
 import { MetabolicCalculations } from "../../utils/healthCalculations";
 import {
   STANDARD_GYM_EQUIPMENT,
-  OCCUPATION_OPTIONS,
-  WORKOUT_TYPE_OPTIONS,
 } from "../../screens/onboarding/tabs/WorkoutPreferencesConstants";
 
 interface UseWorkoutPreferencesProps {

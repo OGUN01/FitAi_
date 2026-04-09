@@ -35,7 +35,6 @@ import {
   persist,
   subscribeWithSelector,
 } from "zustand/middleware";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createDebouncedStorage } from "../utils/safeAsyncStorage";
 
 // Import types from onboarding (which are the actual data structures used)
@@ -51,13 +50,13 @@ import type {
 // SYNC STATUS TYPES
 // ============================================================================
 
-export type SyncStatus = "idle" | "syncing" | "synced" | "error" | "pending";
+type SyncStatus = "idle" | "syncing" | "synced" | "error" | "pending";
 
 // ============================================================================
 // STORE STATE INTERFACE
 // ============================================================================
 
-export interface ProfileState {
+interface ProfileState {
   // Profile data sections (matching onboarding tabs)
   personalInfo: PersonalInfoData | null;
   dietPreferences: DietPreferencesData | null;
@@ -78,7 +77,7 @@ export interface ProfileState {
 // STORE ACTIONS INTERFACE
 // ============================================================================
 
-export interface ProfileActions {
+interface ProfileActions {
   // Data update actions (each marks state as pending)
   updatePersonalInfo: (data: Partial<PersonalInfoData>) => void;
   updateDietPreferences: (data: Partial<DietPreferencesData>) => void;
@@ -100,7 +99,7 @@ export interface ProfileActions {
 // COMBINED STORE TYPE
 // ============================================================================
 
-export type ProfileStore = ProfileState & ProfileActions;
+type ProfileStore = ProfileState & ProfileActions;
 
 // ============================================================================
 // INITIAL STATE
@@ -275,89 +274,5 @@ export const useProfileStore = create<ProfileStore>()(
     ),
   ),
 );
-
-// ============================================================================
-// SELECTORS (for optimized component subscriptions)
-// ============================================================================
-
-/**
- * Select only personal info to avoid unnecessary re-renders
- */
-export const selectPersonalInfo = (state: ProfileStore) => state.personalInfo;
-
-/**
- * Select only diet preferences
- */
-export const selectDietPreferences = (state: ProfileStore) =>
-  state.dietPreferences;
-
-/**
- * Select only body analysis
- */
-export const selectBodyAnalysis = (state: ProfileStore) => state.bodyAnalysis;
-
-/**
- * Select only workout preferences
- */
-export const selectWorkoutPreferences = (state: ProfileStore) =>
-  state.workoutPreferences;
-
-/**
- * Select only advanced review
- */
-export const selectAdvancedReview = (state: ProfileStore) =>
-  state.advancedReview;
-
-/**
- * Select sync status information
- */
-export const selectSyncInfo = (state: ProfileStore) => ({
-  syncStatus: state.syncStatus,
-  lastSyncedAt: state.lastSyncedAt,
-  syncError: state.syncError,
-});
-
-/**
- * Check if profile has complete data (all 5 sections populated)
- */
-export const selectIsProfileComplete = (state: ProfileStore) => {
-  return !!(
-    state.personalInfo &&
-    state.dietPreferences &&
-    state.bodyAnalysis &&
-    state.workoutPreferences &&
-    state.advancedReview
-  );
-};
-
-/**
- * Get profile completion percentage (0-100)
- */
-export const selectProfileCompleteness = (state: ProfileStore) => {
-  let completed = 0;
-  const total = 5;
-
-  if (state.personalInfo) completed++;
-  if (state.dietPreferences) completed++;
-  if (state.bodyAnalysis) completed++;
-  if (state.workoutPreferences) completed++;
-  if (state.advancedReview) completed++;
-
-  return Math.round((completed / total) * 100);
-};
-
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-/**
- * Get the current profile store state (for use outside of React components)
- */
-export const getProfileStoreState = () => useProfileStore.getState();
-
-/**
- * Subscribe to profile store changes (for use outside of React components)
- */
-export const subscribeToProfileStore = useProfileStore.subscribe;
 
 export default useProfileStore;

@@ -12,9 +12,8 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  interpolate,
 } from "react-native-reanimated";
-import { rf, rp, rh, rw, rs, rbr } from "../../utils/responsive";
+import { rf, rp, rh, rw, rbr } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 
 interface InputProps {

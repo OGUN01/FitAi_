@@ -386,6 +386,7 @@ class AnalyticsDataService {
         .maybeSingle();
 
       if (error || !data) {
+        if (error) console.error("[analyticsData] Query failed:", error);
         return null;
       }
 

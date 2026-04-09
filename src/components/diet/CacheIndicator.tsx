@@ -10,7 +10,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rp, rbr } from "../../utils/responsive";
+import { rf, rp } from "../../utils/responsive";
 import type { APIMetadata } from "../../services/fitaiWorkersClient";
 
 // ============================================================================

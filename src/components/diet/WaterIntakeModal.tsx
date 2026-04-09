@@ -27,7 +27,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { haptics } from "../../utils/haptics";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rp, rbr } from "../../utils/responsive";
+import { rf, rp } from "../../utils/responsive";
 
 interface WaterIntakeModalProps {
   visible: boolean;

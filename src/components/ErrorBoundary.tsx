@@ -13,7 +13,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
 } from "react-native";
 import { ResponsiveTheme } from "../utils/constants";
 import { logger } from "../utils/logger";

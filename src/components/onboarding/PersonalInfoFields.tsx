@@ -2,7 +2,6 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { GlassCard } from "../../components/ui/aurora";
 import { Input, SegmentedControl } from "../../components/ui";
-import { rf } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { GENDER_OPTIONS } from "./PersonalInfoConstants";
 import { PersonalInfoData } from "../../types/onboarding";

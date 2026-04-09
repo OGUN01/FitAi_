@@ -5,7 +5,6 @@
 import * as crypto from "expo-crypto";
 import {
   Meal,
-  NutritionPlan,
   DailyMealPlan,
   Food,
   MealItem,

@@ -6,7 +6,7 @@ import {
   StyleSheet,
   ViewStyle,
 } from "react-native";
-import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { rw } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 
 interface LoadingSpinnerProps {

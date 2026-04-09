@@ -5,7 +5,6 @@ import { logger } from "../utils/logger";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Platform, AppState, AppStateStatus } from "react-native";
 import { useHealthDataStore } from "../stores/healthDataStore";
-import { healthKitService } from "../services/healthKit";
 
 export interface UseHealthKitSyncOptions {
   // Auto-initialize on hook mount

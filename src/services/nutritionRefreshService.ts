@@ -99,12 +99,6 @@ export class NutritionRefreshService {
     loggedMeal: Meal,
   ): Promise<void> {
     try {
-      console.log("🍽️ Refreshing nutrition data after meal logging:", {
-        mealId: loggedMeal.id,
-        mealType: loggedMeal.type,
-        calories: loggedMeal.total_calories,
-      });
-
       // Wait a small delay to ensure database consistency
       await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -168,7 +162,6 @@ export class NutritionRefreshService {
           },
         );
 
-        console.log("📊 Current daily nutrition totals:", stats);
         return stats;
       } else {
         console.warn("⚠️ Failed to get daily nutrition:", response.error);
@@ -258,11 +251,6 @@ export class NutritionRefreshService {
 
       const isConsistent = issues.length === 0;
 
-      console.log("🔍 Nutrition consistency check:", {
-        isConsistent,
-        issuesFound: issues.length,
-        stats,
-      });
 
       return {
         isConsistent,

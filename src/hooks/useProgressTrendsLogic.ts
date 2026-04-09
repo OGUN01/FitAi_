@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuthStore } from "../stores/authStore";
 import { useCalculatedMetrics } from "./useCalculatedMetrics";
 import { useAnalyticsStore } from "../stores/analyticsStore";
-import { analyticsDataService, DailyMetrics } from "../services/analyticsData";
+import { analyticsDataService } from "../services/analyticsData";
 import { haptics } from "../utils/haptics";
 
 export type TrendPeriod = "week" | "month" | "quarter" | "year";

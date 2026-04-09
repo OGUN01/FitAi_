@@ -23,7 +23,6 @@ import {
   EditContextType,
   EditProviderProps,
   EditContextData,
-  PersonalInfo,
   FitnessGoals,
   DietPreferences,
   WorkoutPreferences,

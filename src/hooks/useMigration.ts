@@ -9,8 +9,6 @@ import {
 } from "../services/migrationManager";
 import { MigrationProgress } from "../services/migration";
 import {
-  SyncConflict,
-  ConflictResolution,
   MigrationResult,
 } from "../types/profileData";
 import { useAuth } from "./useAuth";

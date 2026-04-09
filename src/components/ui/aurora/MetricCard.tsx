@@ -10,12 +10,11 @@ import Animated, {
   useSharedValue,
   useAnimatedProps,
   withTiming,
-  Easing,
   useDerivedValue,
 } from "react-native-reanimated";
 import { GlassCard } from "./GlassCard";
 import { colors, typography, spacing } from "../../../theme/aurora-tokens";
-import { duration, easingFunctions } from "../../../theme/animations";
+import { easingFunctions } from "../../../theme/animations";
 import { rbr } from "../../../utils/responsive";
 
 const AnimatedText = Animated.createAnimatedComponent(Text);

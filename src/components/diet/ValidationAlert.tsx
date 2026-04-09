@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rh, rp, rbr } from "../../utils/responsive";
+import { rf, rp } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import type {
   ValidationError,

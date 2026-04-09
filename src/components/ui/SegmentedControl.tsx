@@ -11,11 +11,9 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  interpolate,
-  Extrapolate,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { rf, rp, rbr, rw } from "../../utils/responsive";
+import { rp } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 
 export interface SegmentOption {

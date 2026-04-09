@@ -84,14 +84,6 @@ export const useOnboardingIntegration = () => {
           lastName = nameParts.slice(1).join(" ") || "";
         }
 
-        console.log(
-          "📝 integration.ts: Processing name for database storage:",
-          {
-            fullName: personalData.name,
-            firstName,
-            lastName,
-          },
-        );
 
         // Handle height - accept both formats
         const heightValue =
@@ -104,11 +96,6 @@ export const useOnboardingIntegration = () => {
           undefined;
         const ageValue = personalData.age;
 
-        console.log("📝 integration.ts: Processed measurements:", {
-          height_cm: heightValue,
-          current_weight_kg: weightValue,
-          age: ageValue,
-        });
 
         // Try to update profile first, create if it doesn't exist
         const profileData = {

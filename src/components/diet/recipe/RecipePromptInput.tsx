@@ -7,7 +7,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rh, rs } from "../../../utils/responsive";
+import { rf, rh } from "../../../utils/responsive";
 
 interface RecipePrompt {
   id: string;

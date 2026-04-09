@@ -437,6 +437,7 @@ export class FoodRecognitionFeedbackService {
         feedback: data,
       };
     } catch (error) {
+      console.error("[foodRecognitionFeedbackService] getMealFeedback failed:", error);
       return {
         success: false,
         error:

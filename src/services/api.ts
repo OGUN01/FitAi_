@@ -372,6 +372,7 @@ export class FitAIApi {
         .limit(1);
 
       if (error) {
+        console.error("[api] checkHealth Supabase error:", error);
         return apiUtils.createErrorResponse("Database connection failed");
       }
 
@@ -380,6 +381,7 @@ export class FitAIApi {
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
+      console.error("[api] checkHealth failed:", error);
       return apiUtils.createErrorResponse("Health check failed");
     }
   }

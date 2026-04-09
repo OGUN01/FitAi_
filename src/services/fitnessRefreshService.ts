@@ -24,14 +24,12 @@ export class FitnessRefreshService {
    */
   onRefreshNeeded(callback: () => Promise<void>): () => void {
     this.refreshCallbacks.push(callback);
-    console.log('📡 Registered fitness refresh callback');
 
     // Return unsubscribe function
     return () => {
       const index = this.refreshCallbacks.indexOf(callback);
       if (index > -1) {
         this.refreshCallbacks.splice(index, 1);
-        console.log('📡 Unregistered fitness refresh callback');
       }
     };
   }
@@ -41,15 +39,13 @@ export class FitnessRefreshService {
    */
   async triggerRefresh(): Promise<void> {
     if (this.isRefreshing) {
-      console.log('🔄 Fitness refresh already in progress, skipping...');
+      console.warn('Fitness refresh already in progress, skipping');
       return;
     }
 
     this.isRefreshing = true;
 
     try {
-      console.log('🔄 Triggering fitness data refresh...');
-
       // Execute all refresh callbacks in parallel
       await Promise.all(
         this.refreshCallbacks.map(async (callback) => {
@@ -61,7 +57,6 @@ export class FitnessRefreshService {
         })
       );
 
-      console.log('✅ Fitness data refresh completed');
     } catch (error) {
       console.error('❌ Error during fitness refresh:', error);
     } finally {
@@ -79,15 +74,12 @@ export class FitnessRefreshService {
     caloriesBurned?: number;
   }): Promise<void> {
     try {
-      console.log('🏋️ Refreshing fitness data after workout completion:', workoutData);
-
       // Wait a small delay to ensure database consistency
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       // Trigger the general refresh
       await this.triggerRefresh();
 
-      console.log('✅ Post-workout fitness refresh completed');
     } catch (error) {
       console.error('❌ Error refreshing fitness after workout completion:', error);
       // Still try to trigger the general refresh

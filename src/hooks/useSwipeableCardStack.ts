@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Dimensions, PanResponder, Platform } from "react-native";
+import { Dimensions, PanResponder } from "react-native";
 import {
   useSharedValue,
   useAnimatedStyle,

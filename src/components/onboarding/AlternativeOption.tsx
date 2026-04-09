@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rw, rh, rp } from "../../utils/responsive";
+import { rf, rp } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { SmartAlternative, RiskLevel } from "../../services/validationEngine";
 

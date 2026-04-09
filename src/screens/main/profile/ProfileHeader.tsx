@@ -17,7 +17,7 @@ import {
   toLinearGradientProps,
 } from "../../../theme/gradients";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { rf, rp, rbr, rw } from "../../../utils/responsive";
+import { rf, rp, rw } from "../../../utils/responsive";
 
 const avatarShadow = {
   shadowColor: ResponsiveTheme.colors.errorLight,
