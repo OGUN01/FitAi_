@@ -21,13 +21,21 @@ interface HydrationState {
   // Daily goal in MILLILITERS (set from calculatedMetrics.dailyWaterML)
   dailyGoalML: number | null;
 
+  // True when the user has explicitly set a custom goal (via notifications/reminder edit).
+  // When false, the goal was auto-seeded from calculatedMetrics and should update
+  // whenever the user's profile (weight, activity) changes.
+  isGoalUserSet: boolean;
+
   // Date tracking for daily reset
   lastResetDate: string; // ISO date string (YYYY-MM-DD)
 
   // Actions
   addWater: (amountML: number) => void;
   setWaterIntake: (amountML: number) => void;
+  // setDailyGoal: explicit user override — marks isGoalUserSet = true
   setDailyGoal: (goalML: number) => void;
+  // setDailyGoalFromMetrics: auto-update from calculatedMetrics — only applies when !isGoalUserSet
+  setDailyGoalFromMetrics: (goalML: number) => void;
   resetDaily: () => void;
   checkAndResetIfNewDay: () => void;
 
@@ -55,6 +63,7 @@ export const useHydrationStore = create<HydrationState>()(
       // Initial state
       waterIntakeML: 0,
       dailyGoalML: null, // Must be set from calculatedMetrics
+      isGoalUserSet: false,
       lastResetDate: getTodayDateString(),
 
       // Add water (main action for UI buttons)
@@ -83,10 +92,21 @@ export const useHydrationStore = create<HydrationState>()(
         set({ waterIntakeML: Math.max(0, amountML) });
       },
 
-      // Set daily goal (called when calculatedMetrics loads)
+      // Set daily goal — explicit user override (e.g. from water reminder settings)
+      // Marks isGoalUserSet = true so auto-updates from metrics don't overwrite it.
       setDailyGoal: (goalML: number) => {
         if (!goalML || goalML <= 0) return;
-        set({ dailyGoalML: goalML });
+        set({ dailyGoalML: goalML, isGoalUserSet: true });
+      },
+
+      // Set daily goal from calculatedMetrics — only applies when user hasn't set a custom goal.
+      // This keeps the goal in sync with profile changes (weight, activity level) automatically.
+      setDailyGoalFromMetrics: (goalML: number) => {
+        if (!goalML || goalML <= 0) return;
+        const { isGoalUserSet } = get();
+        if (!isGoalUserSet) {
+          set({ dailyGoalML: goalML });
+        }
       },
 
       // Manual reset (for testing/debugging)
@@ -142,6 +162,7 @@ export const useHydrationStore = create<HydrationState>()(
         set({
           waterIntakeML: 0,
           dailyGoalML: null,
+          isGoalUserSet: false,
           lastResetDate: getTodayDateString(),
         });
       },
@@ -186,6 +207,7 @@ export const useHydrationStore = create<HydrationState>()(
       partialize: (state) => ({
         waterIntakeML: state.waterIntakeML,
         dailyGoalML: state.dailyGoalML,
+        isGoalUserSet: state.isGoalUserSet,
         lastResetDate: state.lastResetDate,
       }),
       // After AsyncStorage rehydrates, check if it's a new day and reset if needed

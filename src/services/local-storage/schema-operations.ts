@@ -345,7 +345,7 @@ export class SchemaOperations {
       {
         ciphertext: CryptoUtils.enc.Base64.parse(encryptedData.payload),
         tag: CryptoUtils.enc.Base64.parse(encryptedData.tag || ""),
-      } as any,
+      },
       this.encryptionKey,
       {
         iv: CryptoUtils.enc.Base64.parse(encryptedData.iv),

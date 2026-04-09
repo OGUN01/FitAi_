@@ -28,6 +28,17 @@ export interface FitnessMetrics {
   mood?: number; // 1-10
   waterIntake: number; // liters
   nutritionScore?: number; // 1-100
+  // Extended fields populated at runtime from healthDataStore
+  nutrition?: {
+    calories?: number;
+    protein?: number;
+    carbohydrates?: number;
+    carbs?: number;
+    fat?: number;
+    fiber?: number;
+  };
+  height?: number; // in meters
+  recentWorkouts?: Array<{ type?: string; [key: string]: unknown }>;
 }
 
 export interface WorkoutAnalytics {
@@ -341,7 +352,7 @@ class AnalyticsEngine extends EventEmitter {
   } {
     // Check if any metrics have nutrition data
     const metricsWithNutrition = metrics.filter(
-      (m) => (m as any).nutrition || m.nutritionScore,
+      (m) => m.nutrition || m.nutritionScore,
     );
 
     if (metricsWithNutrition.length === 0) {
@@ -359,7 +370,7 @@ class AnalyticsEngine extends EventEmitter {
     let dataPoints = 0;
 
     for (const metric of metrics) {
-      const nutrition = (metric as any).nutrition;
+      const nutrition = metric.nutrition;
       if (nutrition) {
         totalProtein += nutrition.protein || 0;
         totalCarbs += nutrition.carbohydrates || nutrition.carbs || 0;
@@ -560,8 +571,8 @@ class AnalyticsEngine extends EventEmitter {
   private getUserHeight(metrics: FitnessMetrics[]): number {
     // Check if any metric has height stored
     for (const metric of metrics) {
-      if ((metric as any).height && (metric as any).height > 0) {
-        return (metric as any).height; // In meters
+      if (metric.height && metric.height > 0) {
+        return metric.height; // In meters
       }
     }
     return 0; // Unknown
@@ -1161,8 +1172,8 @@ class AnalyticsEngine extends EventEmitter {
 
     for (const metric of metrics) {
       // Check recentWorkouts in each metric if available (from healthDataStore)
-      if ((metric as any).recentWorkouts) {
-        for (const workout of (metric as any).recentWorkouts) {
+      if (metric.recentWorkouts) {
+        for (const workout of metric.recentWorkouts) {
           const type = workout.type || "Unknown";
           typeCounts[type] = (typeCounts[type] || 0) + 1;
           totalWorkoutCount++;
@@ -1217,10 +1228,10 @@ class AnalyticsEngine extends EventEmitter {
     const muscleGroupCounts: Record<string, number> = {};
 
     for (const metric of metrics) {
-      if ((metric as any).recentWorkouts) {
-        for (const workout of (metric as any).recentWorkouts) {
+      if (metric.recentWorkouts) {
+        for (const workout of metric.recentWorkouts) {
           // Map workout types to primary muscle groups
-          const muscleGroup = this.workoutTypeToMuscleGroup(workout.type);
+          const muscleGroup = this.workoutTypeToMuscleGroup(workout.type || "Unknown");
           if (muscleGroup) {
             muscleGroupCounts[muscleGroup] =
               (muscleGroupCounts[muscleGroup] || 0) + 1;

@@ -31,6 +31,7 @@ import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rp, rbr, rs, rh } from "../../utils/responsive";
 import { progressDataService } from "../../services/progressData";
 import { BodyAnalysisService } from "../../services/onboardingService";
+import type { BodyAnalysisData } from "../../types/onboarding";
 import { useProfileStore } from "../../stores/profileStore";
 import { useAnalyticsStore } from "../../stores/analyticsStore";
 import { useAuth } from "../../hooks/useAuth";
@@ -173,7 +174,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
 
       if (user?.id) {
         try {
-          await BodyAnalysisService.save(user.id, nextBodyAnalysis as any);
+          await BodyAnalysisService.save(user.id, nextBodyAnalysis as BodyAnalysisData);
         } catch (mirrorError) {
           console.error(
             "Failed to mirror manual weight into body analysis:",

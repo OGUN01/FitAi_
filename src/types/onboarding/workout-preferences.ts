@@ -45,14 +45,6 @@ export interface WorkoutPreferencesData {
   prefers_variety: boolean;
 }
 
-// Form state for UI components
-export interface WorkoutPreferencesFormState extends WorkoutPreferencesData {
-  // UI-specific fields
-  errors: Partial<Record<keyof WorkoutPreferencesData, string>>;
-  is_loading: boolean;
-  is_dirty: boolean;
-}
-
 // Database row type (matching database schema)
 export interface WorkoutPreferencesRow {
   id: string;
@@ -87,13 +79,3 @@ export interface WorkoutPreferencesRow {
   created_at?: string | null;
   updated_at?: string | null;
 }
-
-// Validation rules for workout preferences
-export const WORKOUT_PREFERENCES_VALIDATION = {
-  workout_experience_years: { min: 0, max: 50 },
-  workout_frequency_per_week: { min: 0, max: 7 },
-  can_do_pushups: { min: 0, max: 200 },
-  can_run_minutes: { min: 0, max: 300 },
-  workout_types: { min_items: 1 },
-  primary_goals: { min_items: 1 },
-} as const;

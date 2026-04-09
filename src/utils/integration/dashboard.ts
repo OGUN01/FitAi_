@@ -1,5 +1,4 @@
 import { useAuth } from "../../hooks/useAuth";
-import { useUser } from "../../hooks/useUser";
 import { useProfileStore } from "../../stores/profileStore";
 import { useOffline } from "../../hooks/useOffline";
 import { api } from "../../services/api";
@@ -9,24 +8,25 @@ import { resolveCurrentWeightFromStores } from "../../services/currentWeight";
 
 export const useDashboardIntegration = () => {
   const { user: authUser } = useAuth();
-  const { profile } = useUser();
   const { isOnline } = useOffline();
   const {
     bodyAnalysis,
     personalInfo: profilePersonalInfo,
     workoutPreferences: profileWorkoutPreferences,
+    dietPreferences: profileDietPreferences,
   } = useProfileStore();
   const adaptedProfile = buildLegacyProfileAdapter({
     personalInfo: profilePersonalInfo,
     bodyAnalysis,
     workoutPreferences: profileWorkoutPreferences,
+    dietPreferences: profileDietPreferences,
+    legacyProfile: null,
   });
   const dashboardProfile = {
-    ...profile,
     personalInfo: adaptedProfile.personalInfo,
     fitnessGoals: adaptedProfile.fitnessGoals,
     dietPreferences: adaptedProfile.dietPreferences,
-  };
+  } as Record<string, any>;
 
   const getUserStats = () => {
     return dashboardProfile?.stats;
@@ -87,7 +87,7 @@ export const useDashboardIntegration = () => {
       heightCm,
       ageNum,
       gender as "male" | "female",
-      activityLevelValue as any,
+      activityLevelValue as "sedentary" | "light" | "moderate" | "active" | "extreme",
     );
   };
 

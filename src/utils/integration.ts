@@ -1,11 +1,14 @@
 import { useAuth } from "../hooks/useAuth";
-import { useUser } from "../hooks/useUser";
+import { useUserStore } from "../stores/userStore";
 import { useProfileStore } from "../stores/profileStore";
 import { useOffline } from "../hooks/useOffline";
 import {
   PersonalInfo as UserPersonalInfo,
   FitnessGoals as UserFitnessGoals,
+  WorkoutPreferences as UserWorkoutPreferences,
+  DietPreferences as UserDietPreferences,
   OnboardingData,
+  CreateProfileRequest,
 } from "../types/user";
 import {
   PersonalInfo as ProfilePersonalInfo,
@@ -34,7 +37,7 @@ export const useOnboardingIntegration = () => {
     updateFitnessGoals,
     updatePersonalInfo,
     updateFitnessGoalsLocal,
-  } = useUser();
+  } = useUserStore();
   const { optimisticCreate } = useOffline();
 
   // Helper function to get user ID (authenticated user or guest)
@@ -69,7 +72,7 @@ export const useOnboardingIntegration = () => {
         updatePersonalInfo(personalInfo);
 
         // Handle both OLD and NEW field formats
-        const personalData = personalInfo as any;
+        const personalData = personalInfo as UserPersonalInfo & Record<string, unknown>;
 
         // Split name into first_name and last_name for database storage
         let firstName = personalData.first_name || "";
@@ -92,12 +95,12 @@ export const useOnboardingIntegration = () => {
 
         // Handle height - accept both formats
         const heightValue =
-          personalData.height_cm ||
-          parseFloat(personalData.height) ||
+          (personalData.height_cm as number | undefined) ||
+          personalData.height ||
           undefined;
         const weightValue =
-          personalData.current_weight_kg ||
-          parseFloat(personalData.weight) ||
+          (personalData.current_weight_kg as number | undefined) ||
+          personalData.weight ||
           undefined;
         const ageValue = personalData.age;
 
@@ -113,30 +116,30 @@ export const useOnboardingIntegration = () => {
           first_name: firstName,
           last_name: lastName,
           age: ageValue || undefined,
-          gender: personalData.gender as "male" | "female" | "other",
+          gender: personalData.gender as UserPersonalInfo["gender"],
           height_cm: heightValue,
           current_weight_kg: weightValue,
-          activityLevel: personalData.activityLevel as any,
-        } as any;
+          activityLevel: personalData.activityLevel as string | undefined,
+        } as Partial<UserPersonalInfo>;
 
         // Try update first
         let response = await updateProfile(authUser.id, profileData);
 
         // If update fails (profile doesn't exist), create it
         if (!response.success) {
-          const createData = {
+          const createData: Record<string, unknown> = {
             name: personalData.name || `${firstName} ${lastName}`.trim(),
             first_name: firstName,
             last_name: lastName,
             age: ageValue || "",
-            gender: personalData.gender as "male" | "female" | "other",
+            gender: personalData.gender as UserPersonalInfo["gender"],
             height_cm: heightValue || "",
             current_weight_kg: weightValue || "",
-            activityLevel: personalData.activityLevel as any,
+            activityLevel: personalData.activityLevel as string | undefined,
             id: authUser.id,
             email: authUser.email || "",
-          } as any;
-          response = await createProfile(createData);
+          };
+          response = await createProfile(createData as unknown as CreateProfileRequest);
         }
 
         if (!response.success) {
@@ -174,7 +177,7 @@ export const useOnboardingIntegration = () => {
       // ALWAYS save to local storage first (for both guest and authenticated users)
       dataBridge.setUserId(currentUserId);
       const localSaveSuccess = await dataBridge.saveFitnessGoals(
-        fitnessGoals as any,
+        fitnessGoals as unknown as UserWorkoutPreferences,
       );
 
       if (!localSaveSuccess) {
@@ -184,7 +187,7 @@ export const useOnboardingIntegration = () => {
       // If user is authenticated, also try to save to remote
       if (isAuthenticated && authUser) {
         // Update local state immediately
-        updateFitnessGoalsLocal(fitnessGoals as any);
+        updateFitnessGoalsLocal(fitnessGoals);
 
         // Save to workout_preferences (SSOT) instead of deprecated fitness_goals table
         const { error: wpError } = await supabase
@@ -237,11 +240,12 @@ export const useOnboardingIntegration = () => {
       const currentUserId = getUserId();
 
       // Add default values for optional fields
-      const dietPrefsWithDefaults: any = {
+      const dietPrefsRecord = dietPreferences as Record<string, unknown>;
+      const dietPrefsWithDefaults: Record<string, unknown> = {
         ...dietPreferences,
-        cookingSkill: (dietPreferences as any).cookingSkill || "intermediate",
-        mealPrepTime: (dietPreferences as any).mealPrepTime || "moderate",
-        dislikes: (dietPreferences as any).dislikes || [],
+        cookingSkill: (dietPrefsRecord.cookingSkill as string) || "intermediate",
+        mealPrepTime: (dietPrefsRecord.mealPrepTime as string) || "moderate",
+        dislikes: (dietPrefsRecord.dislikes as string[]) || [],
         id: `diet_${currentUserId}`,
         version: 1,
         createdAt: new Date().toISOString(),
@@ -253,7 +257,7 @@ export const useOnboardingIntegration = () => {
       // ALWAYS save to local storage first (for both guest and authenticated users)
       dataBridge.setUserId(currentUserId);
       const localSaveSuccess = await dataBridge.saveDietPreferences(
-        dietPrefsWithDefaults,
+        dietPrefsWithDefaults as unknown as UserDietPreferences,
       );
 
       if (!localSaveSuccess) {
@@ -330,13 +334,11 @@ export const useOnboardingIntegration = () => {
               location: workoutPreferences.location,
               equipment: workoutPreferences.equipment,
               time_preference:
-                (workoutPreferences as any).time_preference ||
-                (workoutPreferences as any).timePreference ||
+                workoutPreferences.time_preference ||
                 30,
               intensity: workoutPreferences.intensity,
               workout_types:
-                (workoutPreferences as any).workout_types ||
-                (workoutPreferences as any).workoutTypes ||
+                workoutPreferences.workout_types ||
                 [],
             });
 
@@ -501,25 +503,25 @@ export const useOnboardingIntegration = () => {
  */
 export const useDashboardIntegration = () => {
   const { user: authUser } = useAuth();
-  const { profile } = useUser();
   const { isOnline } = useOffline();
   const {
     bodyAnalysis,
     personalInfo: profilePersonalInfo,
     workoutPreferences: profileWorkoutPreferences,
+    dietPreferences: profileDietPreferences,
   } = useProfileStore();
   const adaptedProfile = buildLegacyProfileAdapter({
     personalInfo: profilePersonalInfo,
     bodyAnalysis,
     workoutPreferences: profileWorkoutPreferences,
-    legacyProfile: profile,
+    dietPreferences: profileDietPreferences,
+    legacyProfile: null,
   });
   const dashboardProfile = {
-    ...profile,
     personalInfo: adaptedProfile.personalInfo,
     fitnessGoals: adaptedProfile.fitnessGoals,
     dietPreferences: adaptedProfile.dietPreferences,
-  };
+  } as Record<string, unknown>;
 
   /**
    * Get user stats for dashboard
@@ -597,7 +599,7 @@ export const useDashboardIntegration = () => {
       heightCm,
       ageNum,
       gender as "male" | "female",
-      activityLevelValue as any,
+      activityLevelValue as "sedentary" | "light" | "moderate" | "active" | "extreme",
     );
   };
 
@@ -631,7 +633,7 @@ export const useFormValidation = () => {
  */
 export const useUnitConversion = () => {
   const { getUserPreferences } = useDashboardIntegration();
-  const preferences = getUserPreferences();
+  const preferences = getUserPreferences() as { units?: "metric" | "imperial" } | undefined;
 
   return {
     convertWeight: api.utils.convertWeight,
@@ -664,9 +666,9 @@ export const useUnitConversion = () => {
  */
 export const useErrorHandling = () => {
   return {
-    handleApiError: (error: any) => {
-      if (error?.message) {
-        return error.message;
+    handleApiError: (error: unknown) => {
+      if (error && typeof error === "object" && "message" in error) {
+        return (error as { message: string }).message;
       }
       if (typeof error === "string") {
         return error;
@@ -674,19 +676,31 @@ export const useErrorHandling = () => {
       return "An unexpected error occurred";
     },
 
-    isNetworkError: (error: any) => {
+    isNetworkError: (error: unknown) => {
+      const msg = error && typeof error === "object" && "message" in error
+        ? (error as { message: string }).message
+        : "";
+      const code = error && typeof error === "object" && "code" in error
+        ? (error as { code: string }).code
+        : "";
       return (
-        error?.message?.includes("network") ||
-        error?.message?.includes("fetch") ||
-        error?.code === "NETWORK_ERROR"
+        msg.includes("network") ||
+        msg.includes("fetch") ||
+        code === "NETWORK_ERROR"
       );
     },
 
-    isAuthError: (error: any) => {
+    isAuthError: (error: unknown) => {
+      const msg = error && typeof error === "object" && "message" in error
+        ? (error as { message: string }).message
+        : "";
+      const code = error && typeof error === "object" && "code" in error
+        ? (error as { code: string }).code
+        : "";
       return (
-        error?.message?.includes("auth") ||
-        error?.message?.includes("unauthorized") ||
-        error?.code === "AUTH_ERROR"
+        msg.includes("auth") ||
+        msg.includes("unauthorized") ||
+        code === "AUTH_ERROR"
       );
     },
   };

@@ -1,7 +1,7 @@
 // Conflict Resolution UI Component for Track B Infrastructure
 // Provides user interface for resolving data conflicts during migration
 
-import React, { useState } from "react";
+import React, { useState, type ComponentProps } from "react";
 import {
   View,
   Text,
@@ -122,7 +122,7 @@ const ConflictItem: React.FC<ConflictItemProps> = ({
       <View style={styles.conflictHeader}>
         <View style={styles.conflictInfo}>
           <Ionicons
-            name={getConflictTypeIcon(conflict.type) as any}
+            name={getConflictTypeIcon(conflict.type) as ComponentProps<typeof Ionicons>['name']}
             size={20}
             color={getSeverityColor(conflict.severity)}
           />

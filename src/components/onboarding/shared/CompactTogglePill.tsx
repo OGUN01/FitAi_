@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, type ComponentProps } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Animated, {
   useSharedValue,
@@ -62,7 +62,7 @@ export const CompactTogglePill: React.FC<CompactTogglePillProps> = ({
           {/* Icon */}
           <View style={styles.compactPillIconWrap}>
             <Ionicons
-              name={iconName as any}
+              name={iconName as ComponentProps<typeof Ionicons>['name']}
               size={rf(16)}
               color={
                 isActive

@@ -8,7 +8,6 @@ export {
   DietPreferences,
   WorkoutPreferences,
   UserProfile,
-  TimeCommitment,
 } from './user';
 
 // Workout domain

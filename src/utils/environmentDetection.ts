@@ -194,7 +194,7 @@ export class EnvironmentDetector {
 
     // Check if Metro bundler is connected (development)
     try {
-      if (typeof (global as any).__METRO_GLOBAL_PREFIX__ !== "undefined") {
+      if (typeof (global as Record<string, unknown>).__METRO_GLOBAL_PREFIX__ !== "undefined") {
         return "debug";
       }
     } catch {
@@ -237,15 +237,15 @@ export class EnvironmentDetector {
       }
 
       // Strategy 2: Constants.expoConfig access
-      const expoConfigValue = (Constants.expoConfig as any)?.[key];
+      const expoConfigValue = (Constants.expoConfig as Record<string, unknown> | null)?.[key];
       if (expoConfigValue) {
-        return expoConfigValue;
+        return expoConfigValue as string;
       }
 
       // Strategy 3: Constants.expoConfig.extra access (production)
-      const extraValue = (Constants.expoConfig as any)?.extra?.[key];
+      const extraValue = (Constants.expoConfig?.extra as Record<string, unknown> | undefined)?.[key];
       if (extraValue) {
-        return extraValue;
+        return extraValue as string;
       }
 
       return null;

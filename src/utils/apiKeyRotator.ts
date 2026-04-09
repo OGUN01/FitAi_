@@ -305,7 +305,13 @@ export class APIKeyRotator {
       availableKeys: 0,
       totalRequestsToday: 0,
       totalRequestsThisMinute: 0,
-      keyStatistics: [] as any[],
+      keyStatistics: [] as Array<{
+        keyIndex: number;
+        requestsToday: number;
+        requestsThisMinute: number;
+        isBlocked: boolean;
+        hasQuota: boolean;
+      }>,
     };
 
     this.keys.forEach((key, index) => {

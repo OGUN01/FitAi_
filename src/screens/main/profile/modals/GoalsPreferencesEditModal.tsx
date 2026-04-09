@@ -15,8 +15,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { SettingsModalWrapper } from "../components/SettingsModalWrapper";
 import { GlassFormPicker } from "../components/GlassFormPicker";
 import { useProfileStore } from "../../../../stores/profileStore";
-import { useUserStore } from "../../../../stores/userStore";
-import { useUser } from "../../../../hooks/useUser";
 import { useAuth } from "../../../../hooks/useAuth";
 import { ResponsiveTheme } from "../../../../utils/constants";
 import { rf } from "../../../../utils/responsive";
@@ -121,7 +119,6 @@ const TIME_COMMITMENT_OPTIONS = [
 export const GoalsPreferencesEditModal: React.FC<
   GoalsPreferencesEditModalProps
 > = ({ visible, onClose }) => {
-  const { profile: rawProfile } = useUser();
   const { user } = useAuth();
   const {
     updateWorkoutPreferences,
@@ -132,7 +129,6 @@ export const GoalsPreferencesEditModal: React.FC<
   } = useProfileStore();
   const profile = React.useMemo(
     () => ({
-      ...rawProfile,
       bodyMetrics: bodyAnalysis,
       workoutPreferences,
       ...buildLegacyProfileAdapter({
@@ -140,11 +136,10 @@ export const GoalsPreferencesEditModal: React.FC<
         bodyAnalysis,
         workoutPreferences,
         dietPreferences,
-        legacyProfile: rawProfile,
+        legacyProfile: null,
       }),
     }),
     [
-      rawProfile,
       personalInfo,
       bodyAnalysis,
       workoutPreferences,
@@ -293,18 +288,6 @@ export const GoalsPreferencesEditModal: React.FC<
 
       // Update profileStore (primary save target)
       updateWorkoutPreferences(updatedGoals);
-
-      // Also update userStore so reads from profile.fitnessGoals stay in sync
-      const currentProfile = useUserStore.getState().profile;
-      if (currentProfile) {
-        useUserStore.getState().setProfile({
-          ...currentProfile,
-          fitnessGoals: {
-            ...currentProfile.fitnessGoals,
-            ...updatedGoals,
-          },
-        });
-      }
 
       // Sync to Supabase (workout_preferences table — SSOT)
       if (user?.id) {

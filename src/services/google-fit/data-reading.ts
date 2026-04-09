@@ -31,7 +31,7 @@ export class GoogleFitDataReader {
         });
 
         if (Array.isArray(stepsData) && stepsData.length > 0) {
-          const latestSteps = stepsData[stepsData.length - 1] as any;
+          const latestSteps = stepsData[stepsData.length - 1] as unknown as { steps?: number };
           googleFitData.steps = latestSteps.steps || 0;
         }
       } catch (error) {

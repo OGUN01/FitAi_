@@ -88,8 +88,8 @@ export const Input: React.FC<InputProps> = ({
         <TextInput
           style={[
             styles.input,
-            leftIcon && (styles.inputWithLeftIcon as any),
-            rightIcon && (styles.inputWithRightIcon as any),
+            leftIcon ? styles.inputWithLeftIcon : undefined,
+            rightIcon ? styles.inputWithRightIcon : undefined,
             multiline && styles.inputMultiline,
             inputStyle,
           ]}

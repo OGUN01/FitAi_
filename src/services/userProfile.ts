@@ -326,7 +326,7 @@ class UserProfileService {
         if (workoutResponse.success && workoutResponse.data) {
           userProfile.workoutPreferences = workoutResponse.data;
           // Synthesize fitnessGoals from workout_preferences (deprecated fitness_goals table)
-          const wp = workoutResponse.data as any;
+          const wp = workoutResponse.data as Record<string, unknown>;
           userProfile.fitnessGoals = {
             primary_goals: wp.primary_goals || wp.primaryGoals || [],
             time_commitment: wp.time_commitment || '',
@@ -596,8 +596,8 @@ class UserProfileService {
   private mapDatabaseProfileToUserProfile(
     dbProfile: DatabaseProfile,
   ): UserProfile {
-    // Cast to any to access fields in either camelCase (after fromDb) or snake_case
-    const profile = dbProfile as any;
+    // Cast to Record to access fields in either camelCase (after fromDb) or snake_case
+    const profile = dbProfile as Record<string, unknown>;
 
     // Helper to access a field in either snake_case or camelCase
     const get = (snake: string, camel: string, fallback: any = undefined) =>
@@ -680,7 +680,7 @@ class UserProfileService {
   private mapDatabaseGoalsToFitnessGoals(
     dbGoals: DatabaseFitnessGoals,
   ): FitnessGoals {
-    const goals = dbGoals as any;
+    const goals = dbGoals as Record<string, unknown>;
     return {
       primary_goals: goals.primary_goals || goals.primaryGoals || [],
       time_commitment:

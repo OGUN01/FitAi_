@@ -1,5 +1,5 @@
 // Track B Integration Hook for Track C Features
-// Provides comprehensive React integration for all Track B infrastructure services
+// Provides React integration for Track B infrastructure services (migration, backup, offline status)
 
 import { useState, useEffect, useCallback } from 'react';
 import {
@@ -9,14 +9,8 @@ import {
   TrackAAuthData,
 } from '../services/trackIntegrationService';
 import { useMigration } from './useMigration';
-import { realTimeSyncService, SyncStatus } from '../services/syncService';
-import { syncMonitoringService, SyncMetrics, ConnectionHealth } from '../services/syncMonitoring';
 import { backupRecoveryService, BackupStatus } from '../services/backupRecoveryService';
-import {
-  intelligentSyncScheduler,
-  SyncDecision,
-  DeviceConditions,
-} from '../services/intelligentSyncScheduler';
+import { offlineService } from '../services/offline/OfflineService';
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -44,16 +38,11 @@ export interface UseTrackBIntegrationReturn {
     clearResult: () => void;
   };
 
-  // Sync
+  // Sync (simplified — uses OfflineService online status)
   sync: {
-    status: SyncStatus;
-    metrics: SyncMetrics | null;
-    connectionHealth: ConnectionHealth | null;
     isOnline: boolean;
     isSyncing: boolean;
     lastSyncTime: Date | null;
-    startSync: () => Promise<void>;
-    forceSync: () => Promise<void>;
   };
 
   // Backup
@@ -64,15 +53,6 @@ export interface UseTrackBIntegrationReturn {
     availableBackups: any[];
     createBackup: (type?: 'full' | 'incremental', description?: string) => Promise<void>;
     restoreFromBackup: (backupId: string, options?: any) => Promise<void>;
-  };
-
-  // Intelligent Scheduling
-  scheduler: {
-    decision: SyncDecision | null;
-    conditions: DeviceConditions | null;
-    stats: any;
-    makeSyncDecision: (priority?: string) => Promise<SyncDecision>;
-    getCurrentConditions: () => Promise<DeviceConditions>;
   };
 
   // Actions
@@ -116,21 +96,8 @@ export const useTrackBIntegration = (): UseTrackBIntegrationReturn => {
   const [lastEvent, setLastEvent] = useState<IntegrationEvent | null>(null);
   const [serviceHealth, setServiceHealth] = useState<Record<string, any>>({});
 
-  // Sync state
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>({
-    isOnline: true,
-    isSyncing: false,
-    lastSyncTime: null,
-    lastSyncResult: null,
-    pendingChanges: 0,
-    queuedOperations: 0,
-    syncProgress: 0,
-    nextSyncTime: null,
-    connectionQuality: 'good',
-  });
-
-  const [syncMetrics, setSyncMetrics] = useState<SyncMetrics | null>(null);
-  const [connectionHealth, setConnectionHealth] = useState<ConnectionHealth | null>(null);
+  // Offline/sync state (from OfflineService)
+  const [isOnline, setIsOnline] = useState(offlineService.isDeviceOnline());
 
   // Backup state
   const [backupStatus, setBackupStatus] = useState<BackupStatus>({
@@ -142,11 +109,6 @@ export const useTrackBIntegration = (): UseTrackBIntegrationReturn => {
     totalBackupSize: 0,
     backupHealth: 'good',
   });
-
-  // Scheduler state
-  const [syncDecision, setSyncDecision] = useState<SyncDecision | null>(null);
-  const [deviceConditions, setDeviceConditions] = useState<DeviceConditions | null>(null);
-  const [schedulerStats, setSchedulerStats] = useState<any>(null);
 
   // General state
   const [isLoading, setIsLoading] = useState(false);
@@ -174,18 +136,9 @@ export const useTrackBIntegration = (): UseTrackBIntegrationReturn => {
       setIntegrationStatus(status);
     });
 
-    // Subscribe to sync events
-    const unsubscribeSyncStatus = realTimeSyncService.onStatusChange((status) => {
-      setSyncStatus(status);
-    });
-
-    // Subscribe to monitoring events
-    const unsubscribeMetrics = syncMonitoringService.onMetricsUpdate((metrics) => {
-      setSyncMetrics(metrics);
-    });
-
-    const unsubscribeHealth = syncMonitoringService.onHealthUpdate((health) => {
-      setConnectionHealth(health);
+    // Subscribe to network status from OfflineService
+    const unsubscribeNetwork = offlineService.addNetworkListener((online) => {
+      setIsOnline(online);
     });
 
     // Subscribe to backup events
@@ -193,26 +146,11 @@ export const useTrackBIntegration = (): UseTrackBIntegrationReturn => {
       setBackupStatus(status);
     });
 
-    // Subscribe to scheduler events
-    const unsubscribeSchedulerDecision = intelligentSyncScheduler.onSyncDecision((decision) => {
-      setSyncDecision(decision);
-    });
-
-    const unsubscribeSchedulerConditions = intelligentSyncScheduler.onConditionsUpdate(
-      (conditions) => {
-        setDeviceConditions(conditions);
-      }
-    );
-
     return () => {
       unsubscribeEvents();
       unsubscribeStatus();
-      unsubscribeSyncStatus();
-      unsubscribeMetrics();
-      unsubscribeHealth();
+      unsubscribeNetwork();
       unsubscribeBackupStatus();
-      unsubscribeSchedulerDecision();
-      unsubscribeSchedulerConditions();
     };
   }, []);
 
@@ -303,28 +241,6 @@ export const useTrackBIntegration = (): UseTrackBIntegrationReturn => {
     }
   }, []);
 
-  const startSync = useCallback(async () => {
-    setError(null);
-    try {
-      await realTimeSyncService.startSync();
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to start sync';
-      setError(errorMessage);
-      console.error('Sync start failed:', err);
-    }
-  }, []);
-
-  const forceSync = useCallback(async () => {
-    setError(null);
-    try {
-      await realTimeSyncService.forcSync();
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to force sync';
-      setError(errorMessage);
-      console.error('Force sync failed:', err);
-    }
-  }, []);
-
   const createBackup = useCallback(
     async (type: 'full' | 'incremental' = 'full', description = '') => {
       setError(null);
@@ -358,47 +274,6 @@ export const useTrackBIntegration = (): UseTrackBIntegrationReturn => {
     }
   }, []);
 
-  const makeSyncDecision = useCallback(async (priority = 'normal') => {
-    try {
-      const decision = await intelligentSyncScheduler.makeSyncDecision(priority as any);
-      setSyncDecision(decision);
-      return decision;
-    } catch (err) {
-      console.error('Failed to make sync decision:', err);
-      throw err;
-    }
-  }, []);
-
-  const getCurrentConditions = useCallback(async () => {
-    try {
-      const conditions = await intelligentSyncScheduler.getCurrentConditions();
-      setDeviceConditions(conditions);
-      return conditions;
-    } catch (err) {
-      console.error('Failed to get current conditions:', err);
-      throw err;
-    }
-  }, []);
-
-  // Update scheduler stats periodically
-  useEffect(() => {
-    const updateStats = () => {
-      try {
-        const stats = intelligentSyncScheduler.getStats();
-        setSchedulerStats(stats);
-      } catch (err) {
-        console.error('Failed to get scheduler stats:', err);
-      }
-    };
-
-    updateStats();
-    const interval = setInterval(updateStats, 30000); // Every 30 seconds
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
-
   // ============================================================================
   // RETURN OBJECT
   // ============================================================================
@@ -425,16 +300,11 @@ export const useTrackBIntegration = (): UseTrackBIntegrationReturn => {
       clearResult: migration.clearResult,
     },
 
-    // Sync
+    // Sync (simplified — uses OfflineService for online status)
     sync: {
-      status: syncStatus,
-      metrics: syncMetrics,
-      connectionHealth,
-      isOnline: syncStatus.isOnline,
-      isSyncing: syncStatus.isSyncing,
-      lastSyncTime: syncStatus.lastSyncTime,
-      startSync,
-      forceSync,
+      isOnline,
+      isSyncing: false,
+      lastSyncTime: null,
     },
 
     // Backup
@@ -445,15 +315,6 @@ export const useTrackBIntegration = (): UseTrackBIntegrationReturn => {
       availableBackups: backupStatus.availableBackups,
       createBackup,
       restoreFromBackup,
-    },
-
-    // Intelligent Scheduling
-    scheduler: {
-      decision: syncDecision,
-      conditions: deviceConditions,
-      stats: schedulerStats,
-      makeSyncDecision,
-      getCurrentConditions,
     },
 
     // Actions

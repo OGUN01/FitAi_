@@ -495,6 +495,11 @@ class NotificationService {
     }
   }
 
+  // TODO: notification_preferences is written to AsyncStorage here AND persisted by
+  // notificationStore.ts via Zustand persist (key "notification-store"). This creates
+  // two copies of notification preferences. A future refactor should consolidate to
+  // use only the Zustand store as the single source of truth.
+
   // Save preferences to storage
   async savePreferences(preferences: NotificationPreferences): Promise<void> {
     try {

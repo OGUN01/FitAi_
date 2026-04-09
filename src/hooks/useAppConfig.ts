@@ -100,11 +100,11 @@ export function useAppConfig(): UseAppConfigResult {
 
     fetchConfig();
 
-    const realtime = typeof (supabase as { channel?: unknown }).channel === 'function'
-      ? (supabase as any)
+    const realtime = typeof supabase.channel === 'function'
+      ? supabase
           .channel('public:app_config')
           .on(
-            'postgres_changes',
+            'postgres_changes' as const,
             { event: '*', schema: 'public', table: 'app_config' },
             () => {
               void fetchConfig();
@@ -115,8 +115,8 @@ export function useAppConfig(): UseAppConfigResult {
 
     return () => {
       cancelled = true;
-      if (realtime && typeof (supabase as any).removeChannel === 'function') {
-        (supabase as any).removeChannel(realtime);
+      if (realtime && typeof supabase.removeChannel === 'function') {
+        supabase.removeChannel(realtime);
       }
     };
   }, []);

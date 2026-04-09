@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, DimensionValue } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { LargeProgressRing } from "../ui/aurora/ProgressRing";
@@ -111,7 +111,7 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = React.m
                   styles.progressFill,
                   {
                     backgroundColor: proteinOverflow ? OVERFLOW_COLOR : "#4A90D9",
-                    width: `${Math.min(100, resolvedTargets.protein.target > 0 ? (resolvedTargets.protein.current / resolvedTargets.protein.target) * 100 : 0)}%` as any,
+                    width: `${Math.min(100, resolvedTargets.protein.target > 0 ? (resolvedTargets.protein.current / resolvedTargets.protein.target) * 100 : 0)}%` as DimensionValue,
                   },
                 ]}
               />
@@ -135,7 +135,7 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = React.m
                   styles.progressFill,
                   {
                     backgroundColor: carbsOverflow ? OVERFLOW_COLOR : "#F5A623",
-                    width: `${Math.min(100, resolvedTargets.carbs.target > 0 ? (resolvedTargets.carbs.current / resolvedTargets.carbs.target) * 100 : 0)}%` as any,
+                    width: `${Math.min(100, resolvedTargets.carbs.target > 0 ? (resolvedTargets.carbs.current / resolvedTargets.carbs.target) * 100 : 0)}%` as DimensionValue,
                   },
                 ]}
               />
@@ -159,7 +159,7 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = React.m
                   styles.progressFill,
                   {
                     backgroundColor: fatOverflow ? OVERFLOW_COLOR : "#2ECC71",
-                    width: `${Math.min(100, resolvedTargets.fat.target > 0 ? (resolvedTargets.fat.current / resolvedTargets.fat.target) * 100 : 0)}%` as any,
+                    width: `${Math.min(100, resolvedTargets.fat.target > 0 ? (resolvedTargets.fat.current / resolvedTargets.fat.target) * 100 : 0)}%` as DimensionValue,
                   },
                 ]}
               />
@@ -184,7 +184,7 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = React.m
                     styles.progressFill,
                     {
                       backgroundColor: fiberOverflow ? OVERFLOW_COLOR : "#9B59B6",
-                      width: `${Math.min(100, nutritionTargets.fiber.target > 0 ? (nutritionTargets.fiber.current / nutritionTargets.fiber.target) * 100 : 0)}%` as any,
+                      width: `${Math.min(100, nutritionTargets.fiber.target > 0 ? (nutritionTargets.fiber.current / nutritionTargets.fiber.target) * 100 : 0)}%` as DimensionValue,
                     },
                   ]}
                 />
@@ -210,7 +210,7 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = React.m
                     styles.progressFill,
                     {
                       backgroundColor: sugarOverflow ? OVERFLOW_COLOR : "#E74C3C",
-                      width: `${Math.min(100, nutritionTargets.sugar.target > 0 ? (nutritionTargets.sugar.current / nutritionTargets.sugar.target) * 100 : 0)}%` as any,
+                      width: `${Math.min(100, nutritionTargets.sugar.target > 0 ? (nutritionTargets.sugar.current / nutritionTargets.sugar.target) * 100 : 0)}%` as DimensionValue,
                     },
                   ]}
                 />

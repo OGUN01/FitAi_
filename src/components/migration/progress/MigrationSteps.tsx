@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type ComponentProps } from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { MigrationStepInfo } from "../../../hooks/useMigrationProgress";
@@ -51,7 +51,7 @@ export const MigrationSteps: React.FC<MigrationStepsProps> = ({
               ]}
             >
               <Ionicons
-                name={isCompleted ? "checkmark" : (step.icon as any)}
+                name={isCompleted ? "checkmark" : (step.icon as ComponentProps<typeof Ionicons>['name'])}
                 size={rf(20)}
                 color={
                   isCompleted

@@ -30,7 +30,7 @@ export interface DietPreferencesData {
   dinner_enabled: boolean;
   snacks_enabled: boolean;
 
-  // NEW: Cooking preferences (3 fields)
+  // NEW: Cooking preferences (4 fields)
   cooking_skill_level:
     | "beginner"
     | "intermediate"
@@ -38,6 +38,7 @@ export interface DietPreferencesData {
     | "not_applicable";
   max_prep_time_minutes: number | null; // 5-180, null when not_applicable
   budget_level: "low" | "medium" | "high";
+  cooking_methods: string[]; // e.g. ["grilling", "steaming", "air_frying", "sauteing", "baking", "boiling"]
 
   // NEW: Health habits (14 boolean fields)
   drinks_enough_water: boolean;
@@ -56,49 +57,6 @@ export interface DietPreferencesData {
   takes_supplements: boolean;
 }
 
-// Helper type for health habits section
-export interface HealthHabits {
-  // Hydration habits
-  hydration: {
-    drinks_enough_water: boolean;
-    limits_sugary_drinks: boolean;
-  };
-
-  // Eating patterns
-  eating_patterns: {
-    eats_regular_meals: boolean;
-    avoids_late_night_eating: boolean;
-    controls_portion_sizes: boolean;
-    reads_nutrition_labels: boolean;
-  };
-
-  // Food choices
-  food_choices: {
-    eats_processed_foods: boolean;
-    eats_5_servings_fruits_veggies: boolean;
-    limits_refined_sugar: boolean;
-    includes_healthy_fats: boolean;
-  };
-
-  // Substances
-  substances: {
-    drinks_alcohol: boolean;
-    smokes_tobacco: boolean;
-    drinks_coffee: boolean;
-    takes_supplements: boolean;
-  };
-}
-
-// Form state for UI components
-export interface DietPreferencesFormState extends DietPreferencesData {
-  // UI-specific fields
-  errors: Partial<Record<keyof DietPreferencesData, string>>;
-  is_loading: boolean;
-  is_dirty: boolean;
-  // Grouped health habits for UI display
-  health_habits_grouped: HealthHabits;
-}
-
 // Database row type (matching database schema)
 export interface DietPreferencesRow {
   id: string;
@@ -106,6 +64,8 @@ export interface DietPreferencesRow {
   diet_type?: "vegetarian" | "vegan" | "non-veg" | "pescatarian" | "balanced" | null;
   allergies?: string[] | null;
   restrictions?: string[] | null;
+  cuisine_preferences?: string[] | null;
+  snacks_count?: number | null;
   keto_ready?: boolean | null;
   intermittent_fasting_ready?: boolean | null;
   paleo_ready?: boolean | null;
@@ -124,6 +84,7 @@ export interface DietPreferencesRow {
     | null;
   max_prep_time_minutes?: number | null;
   budget_level?: "low" | "medium" | "high" | null;
+  cooking_methods?: string[] | null;
   drinks_enough_water?: boolean | null;
   limits_sugary_drinks?: boolean | null;
   eats_regular_meals?: boolean | null;
@@ -141,8 +102,3 @@ export interface DietPreferencesRow {
   created_at?: string | null;
   updated_at?: string | null;
 }
-
-// Validation rules for diet preferences
-export const DIET_PREFERENCES_VALIDATION = {
-  max_prep_time_minutes: { min: 5, max: 180 },
-} as const;

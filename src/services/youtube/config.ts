@@ -48,13 +48,12 @@ export function getYouTubeApiKey(): string | undefined {
     const processEnvValue = process.env.EXPO_PUBLIC_YOUTUBE_API_KEY;
     if (processEnvValue) return processEnvValue;
 
-    const expoConfigValue = (Constants.expoConfig as any)
+    const expoConfigValue = (Constants.expoConfig as Record<string, unknown> | null)
       ?.EXPO_PUBLIC_YOUTUBE_API_KEY;
-    if (expoConfigValue) return expoConfigValue;
+    if (expoConfigValue) return expoConfigValue as string;
 
-    const extraValue = (Constants.expoConfig as any)?.extra
-      ?.EXPO_PUBLIC_YOUTUBE_API_KEY;
-    if (extraValue) return extraValue;
+    const extraObj = (Constants.expoConfig as Record<string, unknown> | null)?.extra as Record<string, unknown> | undefined;
+    if (extraObj?.EXPO_PUBLIC_YOUTUBE_API_KEY) return extraObj.EXPO_PUBLIC_YOUTUBE_API_KEY as string;
 
     return undefined;
   } catch (error) {

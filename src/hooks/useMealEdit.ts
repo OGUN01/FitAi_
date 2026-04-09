@@ -40,7 +40,7 @@ export const useMealEdit = (
   useEffect(() => {
     if (visible && meal) {
       setMealName(meal.name || "");
-      setMealType((meal.type as any) || "lunch");
+      setMealType(meal.type || "lunch");
       setMealTime(
         meal.timing ||
           MEAL_TIMES[meal.type as keyof typeof MEAL_TIMES] ||

@@ -8,7 +8,7 @@ import {
   AdvancedReviewData,
 } from "../../types/onboarding";
 import { OnboardingState } from "./types";
-import { getOnboardingDataKey, getOnboardingCompletedKey } from "./constants";
+import { getOnboardingDataKey } from "./constants";
 import { createInitialState } from "./state";
 
 export const useActions = (
@@ -214,7 +214,6 @@ export const useActions = (
       if (userId) {
         await AsyncStorage.multiRemove([
           getOnboardingDataKey(userId),
-          getOnboardingCompletedKey(userId),
         ]);
       }
     } catch (error) {

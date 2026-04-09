@@ -4,7 +4,7 @@
  */
 
 import type {
-  UserProfile,
+  HealthCalcProfile,
   BMIClassification,
   BMICutoffs,
   Macros,
@@ -24,7 +24,7 @@ export interface BMRCalculator {
    * @param user - User profile with weight, height, age, gender
    * @returns BMR in kcal/day
    */
-  calculate(user: UserProfile): number;
+  calculate(user: HealthCalcProfile): number;
 
   /**
    * Get the formula name

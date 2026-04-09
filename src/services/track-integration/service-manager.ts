@@ -1,7 +1,4 @@
 import { migrationManager } from "../migrationManager";
-import { realTimeSyncService } from "../syncService";
-import { syncMonitoringService } from "../syncMonitoring";
-import { intelligentSyncScheduler } from "../intelligentSyncScheduler";
 import { backupRecoveryService } from "../backupRecoveryService";
 import { IntegrationStatus, ServiceType, ServiceStatus } from "./types";
 
@@ -38,15 +35,7 @@ export class ServiceManager {
     try {
       this.log("Starting sync services...");
 
-      await realTimeSyncService.initialize();
       this.updateServiceStatus("sync", "active");
-
-      await syncMonitoringService.startMonitoring();
-      this.updateServiceStatus("monitoring", "active");
-
-      await intelligentSyncScheduler.start();
-      this.updateServiceStatus("scheduler", "active");
-
       this.updateStatus({ syncActive: true });
 
       this.log("Sync services started successfully");
@@ -79,9 +68,6 @@ export class ServiceManager {
   }
 
   async stopAllServices(): Promise<void> {
-    await realTimeSyncService.stop();
-    await syncMonitoringService.stopMonitoring();
-    await intelligentSyncScheduler.stop();
     await backupRecoveryService.stop();
 
     this.updateStatus({
@@ -106,20 +92,9 @@ export class ServiceManager {
         lastMigration: migrationManager.getCurrentResult(),
       };
 
-      health.sync = {
-        status: "active",
-        syncStatus: realTimeSyncService.getSyncStatus(),
-        metrics: syncMonitoringService.getMetrics(),
-      };
-
       health.backup = {
         status: "active",
         backupStatus: backupRecoveryService.getStatus(),
-      };
-
-      health.scheduler = {
-        status: "active",
-        stats: intelligentSyncScheduler.getStats(),
       };
     } catch (error) {
       this.log("Failed to get service health:", error);

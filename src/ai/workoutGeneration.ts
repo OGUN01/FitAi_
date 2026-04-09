@@ -128,7 +128,7 @@ export async function generateWeeklyWorkoutPlan(
       };
     }
 
-    const weeklyPlanData = response.data as any;
+    const weeklyPlanData = response.data as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
     const daySlotCounts = new Map<string, number>();
     const workouts = (weeklyPlanData.workouts || []).map((w: any) => {

@@ -41,14 +41,6 @@ export interface PersonalInfoData {
   notifications_enabled?: boolean;
 }
 
-// Form state for UI components
-export interface PersonalInfoFormState extends PersonalInfoData {
-  // UI-specific fields
-  errors: Partial<Record<keyof PersonalInfoData, string>>;
-  is_loading: boolean;
-  is_dirty: boolean;
-}
-
 // Database row type (matching database schema)
 export interface ProfilesRow {
   id: string;
@@ -77,14 +69,3 @@ export interface ProfilesRow {
   created_at?: string | null;
   updated_at?: string | null;
 }
-
-// Validation rules for personal info
-export const PERSONAL_INFO_VALIDATION = {
-  age: { min: 13, max: 120 },
-  first_name: { min_length: 1, max_length: 50 },
-  last_name: { min_length: 1, max_length: 50 },
-  country: { required: true },
-  state: { required: true },
-  wake_time: { required: true, format: "HH:MM" },
-  sleep_time: { required: true, format: "HH:MM" },
-} as const;

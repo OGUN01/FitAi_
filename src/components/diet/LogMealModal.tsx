@@ -432,7 +432,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
 
       const updatedPlan = {
         ...currentPlan,
-        meals: [...currentPlan.meals, newMeal as any],
+        meals: [...currentPlan.meals, newMeal as unknown as typeof currentPlan.meals[number]],
       };
       // Update local store first so completionTrackingService can find the meal
       setWeeklyMealPlan(updatedPlan);

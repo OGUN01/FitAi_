@@ -38,7 +38,7 @@ export const StepsOverview: React.FC<StepsOverviewProps> = ({
               : styles.stepOverviewCard;
 
         return (
-          <Card key={index} style={cardStyle as any}>
+          <Card key={index} style={StyleSheet.flatten(cardStyle)}>
             <View style={styles.stepOverviewContent}>
               <View style={styles.stepOverviewLeft}>
                 <Text style={styles.stepOverviewNumber}>{index + 1}</Text>

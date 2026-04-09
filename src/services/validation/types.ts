@@ -21,7 +21,7 @@ export interface SmartAlternative {
   id: string;
   label: string;
   weeklyRate: number;
-  dailyCalories: number;
+  dailyCalories: number;       // TRUE required calories (may be below BMR — see isBelowBMR)
   bmrDifference: number;
   timelineWeeks: number;
   riskLevel: RiskLevel;
@@ -33,11 +33,24 @@ export interface SmartAlternative {
   isBlocked: boolean;
   blockReason?: string;
   requiresExercise: boolean;
-  exerciseType?: "light" | "moderate" | "intense";
+  exerciseType?: "light" | "moderate" | "intense"
+             | "boost_light" | "boost_cardio" | "boost_hard"
+             | "freq_4" | "freq_5" | "freq_6" | "freq_7";
   exerciseMinutes?: number;
+  exerciseSessions?: number;       // sessions/week the card was calculated with
   exerciseCaloriesBurned?: number;
   exerciseDescription?: string;
+  /** True when the diet-only route requires eating below the user's own BMR.
+   *  The UI should show this as DANGEROUS and suggest exercise alternatives. */
+  isBelowBMR?: boolean;
+  /** True when this rate already includes the user's existing workout plan in TDEE */
+  workoutPlanInclusive?: boolean;
+  /** True when this is a workout frequency upgrade option (weight-gain mode) */
+  isFrequencyUpgrade?: boolean;
+  /** Motivational note shown on the card (e.g. "More training = better muscle quality") */
+  motivationalNote?: string;
 }
+
 
 export interface SmartAlternativesResult {
   alternatives: SmartAlternative[];
@@ -50,6 +63,10 @@ export interface SmartAlternativesResult {
   showRateComparison: boolean;
   minimumCalorieFloor: number;
   rateAtBMR: number;
+  /** ID of the highest-weeklyRate cardio boost option (weight-loss mode only) */
+  bestBoostOptionId?: string | null;
+  /** Drives WarningCard layout: "loss" | "gain" | "maintenance" */
+  goalMode?: "loss" | "gain" | "maintenance";
 }
 
 export interface ValidationResults {

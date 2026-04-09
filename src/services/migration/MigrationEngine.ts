@@ -176,7 +176,7 @@ export class MigrationEngine {
 
         const migrationError: MigrationError = {
           step: step.name,
-          code: (error as any)?.code || "UNKNOWN_ERROR",
+          code: (error instanceof Error && 'code' in error ? (error as Error & { code?: string }).code : undefined) || "UNKNOWN_ERROR",
           message: error instanceof Error ? error.message : String(error),
           details: error,
           timestamp: new Date(),

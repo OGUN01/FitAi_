@@ -64,7 +64,8 @@ class PrivacyPolicyHandler implements PrivacyPolicyHandlerService {
           readerMode: false,
           showTitle: true,
           enableBarCollapsing: false,
-        } as any);
+        // Some options may not be in all WebBrowser versions
+        } as Parameters<typeof WebBrowser.openBrowserAsync>[1]);
       } catch (webBrowserError) {
         // Fallback to system browser
         const canOpen = await Linking.canOpenURL(this.PRIVACY_POLICY_URL);

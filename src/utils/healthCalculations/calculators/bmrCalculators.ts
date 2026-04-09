@@ -4,7 +4,7 @@
  */
 
 import type { BMRCalculator } from '../interfaces/calculators';
-import type { UserProfile } from '../types.js';
+import type { HealthCalcProfile } from '../types.js';
 
 /**
  * Mifflin-St Jeor Formula (1990) - DEFAULT
@@ -15,7 +15,7 @@ import type { UserProfile } from '../types.js';
  * Female: (10 × weight) + (6.25 × height) - (5 × age) - 161
  */
 export class MifflinStJeorBMRCalculator implements BMRCalculator {
-  calculate(user: UserProfile): number {
+  calculate(user: HealthCalcProfile): number {
     const weight = user.weight;
     const height = user.height;
     const age = user.age;
@@ -52,7 +52,7 @@ export class MifflinStJeorBMRCalculator implements BMRCalculator {
  * BMR = 370 + (21.6 × lean body mass in kg)
  */
 export class KatchMcArdleBMRCalculator implements BMRCalculator {
-  calculate(user: UserProfile): number {
+  calculate(user: HealthCalcProfile): number {
     const weight = user.weight;
     const bodyFat = user.bodyFat;
 
@@ -85,7 +85,7 @@ export class KatchMcArdleBMRCalculator implements BMRCalculator {
  * BMR = 500 + (22 × lean body mass in kg)
  */
 export class CunninghamBMRCalculator implements BMRCalculator {
-  calculate(user: UserProfile): number {
+  calculate(user: HealthCalcProfile): number {
     const weight = user.weight;
     const bodyFat = user.bodyFat;
 
@@ -119,7 +119,7 @@ export class CunninghamBMRCalculator implements BMRCalculator {
  * Female: 447.593 + (9.247 × weight) + (3.098 × height) - (4.330 × age)
  */
 export class HarrisBenedictBMRCalculator implements BMRCalculator {
-  calculate(user: UserProfile): number {
+  calculate(user: HealthCalcProfile): number {
     const weight = user.weight;
     const height = user.height;
     const age = user.age;

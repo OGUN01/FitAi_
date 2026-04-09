@@ -224,7 +224,7 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
                 styles.periodButton,
                 selectedPeriod === period.key && styles.periodButtonActive,
               ]}
-              onPress={() => setSelectedPeriod(period.key as any)}
+              onPress={() => setSelectedPeriod(period.key as "week" | "month" | "year")}
             >
               <Text
                 style={[

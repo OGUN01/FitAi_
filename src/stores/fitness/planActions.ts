@@ -133,7 +133,7 @@ export const createPlanActions = (
         throw new Error("Invalid plan UUID format");
       }
 
-      let activePlanRowId = (plan as any).databaseId || null;
+      let activePlanRowId = plan.databaseId || null;
       if (!activePlanRowId) {
         try {
           const { data: activePlans, error: activePlansError } = await supabase
@@ -160,12 +160,12 @@ export const createPlanActions = (
 
       const planRowId = activePlanRowId || planId;
       const hasConfirmedDatabaseId = Boolean(
-        activePlanRowId || (plan as any).databaseId,
+        activePlanRowId || plan.databaseId,
       );
       const planDataWithDbId = hasConfirmedDatabaseId
         ? {
             ...plan,
-            databaseId: activePlanRowId || (plan as any).databaseId,
+            databaseId: activePlanRowId || plan.databaseId,
           }
         : plan;
 

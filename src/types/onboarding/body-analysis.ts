@@ -66,16 +66,6 @@ export interface BodyAnalysisData {
   };
 }
 
-// Form state for UI components
-export interface BodyAnalysisFormState extends BodyAnalysisData {
-  // UI-specific fields
-  errors: Partial<Record<keyof BodyAnalysisData, string>>;
-  is_loading: boolean;
-  is_dirty: boolean;
-  is_analyzing_photos: boolean;
-  photo_upload_progress: Record<"front" | "side" | "back", number>;
-}
-
 // Database row type (matching database schema)
 export interface BodyAnalysisRow {
   id: string;
@@ -112,13 +102,3 @@ export interface BodyAnalysisRow {
   created_at?: string | null;
   updated_at?: string | null;
 }
-
-// Validation rules for body analysis
-export const BODY_ANALYSIS_VALIDATION = {
-  height_cm: { min: 100, max: 250 },
-  current_weight_kg: { min: 30, max: 300 },
-  target_weight_kg: { min: 30, max: 300 },
-  target_timeline_weeks: { min: 4, max: 104 },
-  body_fat_percentage: { min: 3, max: 50 },
-  ai_confidence_score: { min: 0, max: 100 },
-} as const;

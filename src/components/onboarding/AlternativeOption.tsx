@@ -90,6 +90,7 @@ const getIconName = (iconName: string): keyof typeof Ionicons.glyphMap => {
     walk: "walk",
     bicycle: "bicycle",
     barbell: "barbell",
+    scale: "scale",
   };
   return iconMap[iconName] || "ellipse";
 };
@@ -204,7 +205,25 @@ export const AlternativeOption: React.FC<AlternativeOptionProps> = ({
         <View style={styles.detailsRow}>
           <Text style={styles.rate}>{alternative.weeklyRate} kg/week</Text>
           <Text style={styles.separator}>•</Text>
-          <Text style={styles.calories}>{alternative.dailyCalories} cal</Text>
+          {/* Calories: red + warning icon when this route goes below the user's BMR */}
+          <View style={styles.caloriesRow}>
+            {alternative.isBelowBMR && (
+              <Ionicons
+                name="warning"
+                size={rf(10)}
+                color="#EF4444"
+                style={{ marginRight: 2 }}
+              />
+            )}
+            <Text
+              style={[
+                styles.calories,
+                alternative.isBelowBMR && { color: "#EF4444", fontWeight: "700" },
+              ]}
+            >
+              {alternative.dailyCalories} cal
+            </Text>
+          </View>
           {alternative.requiresExercise && (
             <>
               <Text style={styles.separator}>•</Text>
@@ -215,9 +234,31 @@ export const AlternativeOption: React.FC<AlternativeOptionProps> = ({
           )}
         </View>
 
+        {/* Below-BMR warning sub-label */}
+        {alternative.isBelowBMR && (
+          <Text style={styles.belowBMRWarning}>
+            ⚠ Requires eating below your BMR — not sustainable long-term
+          </Text>
+        )}
+
+        {/* Annotation A: exercise cards eat at safe minimum (BMR) */}
+        {alternative.requiresExercise && !alternative.isFrequencyUpgrade && (
+          <Text style={styles.bmrAnnotation}>Eating at your safe minimum (BMR)</Text>
+        )}
+
+        {/* Annotation B: diet cards already include the user's workout plan in TDEE */}
+        {alternative.workoutPlanInclusive && !alternative.requiresExercise && (
+          <Text style={styles.workoutInclusiveNote}>✓ Includes your workout plan</Text>
+        )}
+
+        {/* Annotation C: gainer frequency upgrade motivational note */}
+        {alternative.motivationalNote && (
+          <Text style={styles.motivationalNote}>{alternative.motivationalNote}</Text>
+        )}
+
         {/* Timeline */}
         <Text style={styles.timeline}>
-          {alternative.timelineWeeks} weeks to goal
+          {alternative.timelineWeeks > 0 ? `${alternative.timelineWeeks} weeks to goal` : "Ongoing"}
         </Text>
       </View>
 
@@ -311,6 +352,37 @@ const styles = StyleSheet.create({
     fontSize: rf(11),
     color: ResponsiveTheme.colors.textSecondary,
   },
+  caloriesRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  belowBMRWarning: {
+    fontSize: rf(9),
+    color: "#EF4444",
+    fontStyle: "italic",
+    marginBottom: rp(1),
+    lineHeight: rf(12),
+  },
+  bmrAnnotation: {
+    fontSize: rf(9),
+    color: "#22C55E",
+    fontStyle: "italic",
+    marginBottom: rp(1),
+    lineHeight: rf(12),
+  },
+  workoutInclusiveNote: {
+    fontSize: rf(9),
+    color: "#6EE7B7",
+    marginBottom: rp(1),
+    lineHeight: rf(12),
+  },
+  motivationalNote: {
+    fontSize: rf(9),
+    color: "#60A5FA",
+    fontWeight: "600",
+    marginBottom: rp(1),
+    lineHeight: rf(12),
+  },
   exercise: {
     fontSize: rf(11),
     color: ResponsiveTheme.colors.primary,
@@ -320,6 +392,7 @@ const styles = StyleSheet.create({
     fontSize: rf(10),
     color: ResponsiveTheme.colors.textMuted,
   },
+
   badge: {
     paddingHorizontal: rp(8),
     paddingVertical: rp(4),

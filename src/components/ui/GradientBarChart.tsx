@@ -103,7 +103,7 @@ const BarItem: React.FC<BarItemProps> = ({
       <View style={styles.barTrack}>
         <Animated.View style={[styles.barFill, animatedBarStyle]}>
           <LinearGradient
-            colors={data.gradient as any}
+            colors={data.gradient as unknown as readonly [string, string, ...string[]]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.barGradient}

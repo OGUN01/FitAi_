@@ -26,6 +26,7 @@ import {
 } from "react-native-gesture-handler";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import type { ComponentProps } from "react";
 import { rf, rp, rh, rw } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { hapticSwipeAction } from "../../utils/haptics";
@@ -223,13 +224,13 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
       {nextCard && (
         <View style={[styles.card, styles.cardBackground]}>
           <LinearGradient
-            colors={nextCard.gradient as any}
+            colors={nextCard.gradient as unknown as readonly [string, string, ...string[]]}
             style={styles.cardGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
             <Ionicons
-              name={nextCard.iconName as any}
+              name={nextCard.iconName as ComponentProps<typeof Ionicons>['name']}
               size={rf(36)}
               color={ResponsiveTheme.colors.white}
               style={styles.cardIcon}
@@ -246,7 +247,7 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
           style={[styles.card, cardAnimatedStyle]}
         >
           <LinearGradient
-            colors={currentCard.gradient as any}
+            colors={currentCard.gradient as unknown as readonly [string, string, ...string[]]}
             style={styles.cardGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -275,7 +276,7 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
             {/* Card content */}
             <View style={styles.cardContent}>
               <Ionicons
-                name={currentCard.iconName as any}
+                name={currentCard.iconName as ComponentProps<typeof Ionicons>['name']}
                 size={rf(36)}
                 color={ResponsiveTheme.colors.white}
                 style={styles.cardIcon}
@@ -311,7 +312,7 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
         <PanGestureHandler onGestureEvent={gestureHandler}>
           <Animated.View style={[styles.card, cardAnimatedStyle]}>
             <LinearGradient
-              colors={currentCard.gradient as any}
+              colors={currentCard.gradient as unknown as readonly [string, string, ...string[]]}
               style={styles.cardGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -340,7 +341,7 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
               {/* Card content */}
               <View style={styles.cardContent}>
                 <Ionicons
-                  name={currentCard.iconName as any}
+                  name={currentCard.iconName as ComponentProps<typeof Ionicons>['name']}
                   size={rf(36)}
                   color={ResponsiveTheme.colors.white}
                   style={styles.cardIcon}

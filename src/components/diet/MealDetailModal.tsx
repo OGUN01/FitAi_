@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type ComponentProps } from "react";
 import {
   Modal,
   View,
@@ -71,7 +71,7 @@ export const MealDetailModal: React.FC<MealDetailModalProps> = ({
               <View style={styles.headerLeft}>
                 <View style={styles.typeChip}>
                   <Ionicons
-                    name={iconName as any}
+                    name={iconName as ComponentProps<typeof Ionicons>['name']}
                     size={rf(14)}
                     color={ResponsiveTheme.colors.primary}
                   />

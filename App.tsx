@@ -52,8 +52,9 @@ import { useAuth } from "./src/hooks/useAuth";
 import { ErrorBoundary } from "./src/components/ErrorBoundary";
 import { useUserStore } from "./src/stores/userStore";
 import { useAuthStore } from "./src/stores/authStore";
+import { useProfileStore } from "./src/stores/profileStore";
 import { useSubscriptionStore } from "./src/stores/subscriptionStore";
-import { UserProfile, PersonalInfo, FitnessGoals } from "./src/types/user";
+import { convertOnboardingToProfile } from "./src/utils/profileConversion";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { googleAuthService } from "./src/services/googleAuth";
@@ -65,7 +66,6 @@ import {
   WorkoutPreferencesService,
   AdvancedReviewService,
 } from "./src/services/onboardingService";
-import { invalidateMetricsCache } from "./src/hooks/useCalculatedMetrics";
 import { dataBridge } from "./src/services/DataBridge";
 import { useAppConfig } from "./src/hooks/useAppConfig";
 import { runAfterInteractions } from "./src/utils/performance";
@@ -229,274 +229,6 @@ export default function App() {
     : null;
   const initializeNotifications = notificationStore?.initialize;
   const areNotificationsInitialized = notificationStore?.isInitialized;
-
-  // Helper function to convert OnboardingReviewData to UserProfile
-  const convertOnboardingToProfile = (
-    data: OnboardingReviewData,
-  ): UserProfile => {
-    // ✅ FIX: Create fitnessGoals from workoutPreferences data
-    // The onboarding saves goals data in workoutPreferences, not in a separate fitnessGoals field
-    const wp = data.workoutPreferences;
-
-    // Convert goals from hyphen format to underscore format for edit modals
-    // e.g., 'weight-loss' -> 'weight_loss', 'muscle-gain' -> 'muscle_gain'
-    const rawGoals =
-      (wp as any)?.primary_goals || (wp as any)?.primaryGoals || [];
-    const normalizedGoals = rawGoals.map((goal: string) =>
-      goal.replace(/-/g, "_"),
-    );
-
-    // Convert time_preference (number in minutes) to time range string
-    // Onboarding stores: 15, 30, 45, 60, 75, 90, 120
-    // Modal expects: '15-30', '30-45', '45-60', '60+'
-    const timeMinutes =
-      (wp as any)?.time_preference ?? (wp as any)?.timePreference ?? 0;
-    const getTimeRange = (minutes: number): string => {
-      if (minutes <= 30) return "15-30";
-      if (minutes <= 45) return "30-45";
-      if (minutes <= 60) return "45-60";
-      return "60+";
-    };
-    const timeRange = getTimeRange(timeMinutes);
-
-    // ALWAYS build fitnessGoals from workoutPreferences data (the source of truth)
-    // Don't use data.fitnessGoals directly as it may have incorrect format
-    const fitnessGoals = {
-      // Pull from workoutPreferences which is where onboarding stores this data
-      primary_goals:
-        normalizedGoals.length > 0
-          ? normalizedGoals
-          : (data.fitnessGoals as any)?.primary_goals || [],
-      primaryGoals:
-        normalizedGoals.length > 0
-          ? normalizedGoals
-          : (data.fitnessGoals as any)?.primaryGoals || [], // Legacy alias for edit modals
-      time_commitment: timeRange,
-      timeCommitment: timeRange, // Legacy alias for edit modals
-      experience: wp?.intensity ?? data.fitnessGoals?.experience ?? "beginner",
-      experience_level:
-        wp?.intensity ?? data.fitnessGoals?.experience_level ?? "beginner", // Legacy alias
-      // Preserve other optional fields from data.fitnessGoals if they exist
-      preferred_equipment: data.fitnessGoals?.preferred_equipment,
-      target_areas: data.fitnessGoals?.target_areas,
-    };
-
-    // ✅ FIX: Compute name from first_name + last_name if not present
-    const computedName =
-      data.personalInfo.name ||
-      `${data.personalInfo.first_name || ""} ${data.personalInfo.last_name || ""}`.trim() ||
-      "User";
-
-    return {
-      id: guestId || `guest_${Date.now()}`,
-      email: data.personalInfo.email || "",
-      personalInfo: {
-        ...data.personalInfo,
-        name: computedName, // Ensure name is always computed
-        // Provide defaults for required fields
-        country: data.personalInfo.country || "",
-        state: data.personalInfo.state || "",
-        wake_time: data.personalInfo.wake_time || "07:00",
-        sleep_time: data.personalInfo.sleep_time || "23:00",
-        occupation_type:
-          (data.personalInfo.occupation_type as any) ?? undefined,
-      } as PersonalInfo,
-      fitnessGoals: fitnessGoals as FitnessGoals,
-      dietPreferences: data.dietPreferences
-        ? {
-            // Basic diet info
-            diet_type:
-              (data.dietPreferences as any).diet_type ??
-              (data.dietPreferences as any).dietType ??
-              "balanced",
-            allergies: data.dietPreferences.allergies || [],
-            restrictions: data.dietPreferences.restrictions || [],
-
-            // Diet readiness toggles (6) - defaults for backward compatibility
-            keto_ready: (data.dietPreferences as any).keto_ready ?? false,
-            intermittent_fasting_ready:
-              (data.dietPreferences as any).intermittent_fasting_ready ?? false,
-            paleo_ready: (data.dietPreferences as any).paleo_ready ?? false,
-            mediterranean_ready:
-              (data.dietPreferences as any).mediterranean_ready ?? false,
-            low_carb_ready:
-              (data.dietPreferences as any).low_carb_ready ?? false,
-            high_protein_ready:
-              (data.dietPreferences as any).high_protein_ready ?? false,
-
-            // Meal preferences (4)
-            breakfast_enabled:
-              (data.dietPreferences as any).breakfast_enabled !== false,
-            lunch_enabled:
-              (data.dietPreferences as any).lunch_enabled !== false,
-            dinner_enabled:
-              (data.dietPreferences as any).dinner_enabled !== false,
-            snacks_enabled:
-              (data.dietPreferences as any).snacks_enabled !== false,
-
-            // Cooking preferences (3)
-            cooking_skill_level:
-              (data.dietPreferences as any).cooking_skill_level ||
-              (data.dietPreferences as any).cookingSkill ||
-              "beginner",
-            max_prep_time_minutes:
-              (data.dietPreferences as any).max_prep_time_minutes || null,
-            budget_level:
-              (data.dietPreferences as any).budget_level || "medium",
-
-            // Health habits (14)
-            drinks_enough_water:
-              (data.dietPreferences as any).drinks_enough_water ?? false,
-            limits_sugary_drinks:
-              (data.dietPreferences as any).limits_sugary_drinks ?? false,
-            eats_regular_meals:
-              (data.dietPreferences as any).eats_regular_meals ?? false,
-            avoids_late_night_eating:
-              (data.dietPreferences as any).avoids_late_night_eating ?? false,
-            controls_portion_sizes:
-              (data.dietPreferences as any).controls_portion_sizes ?? false,
-            reads_nutrition_labels:
-              (data.dietPreferences as any).reads_nutrition_labels ?? false,
-            eats_processed_foods:
-              (data.dietPreferences as any).eats_processed_foods ?? false,
-            eats_5_servings_fruits_veggies:
-              (data.dietPreferences as any).eats_5_servings_fruits_veggies ??
-              false,
-            limits_refined_sugar:
-              (data.dietPreferences as any).limits_refined_sugar ?? false,
-            includes_healthy_fats:
-              (data.dietPreferences as any).includes_healthy_fats ?? false,
-            drinks_alcohol:
-              (data.dietPreferences as any).drinks_alcohol ?? false,
-            smokes_tobacco:
-              (data.dietPreferences as any).smokes_tobacco ?? false,
-            drinks_coffee: (data.dietPreferences as any).drinks_coffee ?? false,
-            takes_supplements:
-              (data.dietPreferences as any).takes_supplements ?? false,
-          }
-        : undefined,
-      workoutPreferences: (() => {
-        const wp = data.workoutPreferences;
-        return wp
-          ? {
-              location: wp.location ?? "home",
-              equipment: wp.equipment || [],
-              time_preference:
-                (wp as any).time_preference ?? (wp as any).timePreference ?? 0,
-              intensity: wp.intensity ?? "beginner",
-              workout_types:
-                (wp as any).workout_types ?? (wp as any).workoutTypes ?? [],
-              primary_goals:
-                (wp as any).primary_goals ?? (wp as any).primaryGoals ?? [],
-              activity_level:
-                (wp as any).activity_level ??
-                (wp as any).activityLevel ??
-                undefined,
-              workout_frequency_per_week:
-                (wp as any).workout_frequency_per_week,
-              workout_experience_years:
-                (wp as any).workout_experience_years,
-              preferred_workout_times:
-                (wp as any).preferred_workout_times ?? [],
-              enjoys_cardio: (wp as any).enjoys_cardio,
-              enjoys_strength_training: (wp as any).enjoys_strength_training,
-              enjoys_group_classes: (wp as any).enjoys_group_classes,
-              prefers_outdoor_activities: (wp as any).prefers_outdoor_activities,
-              needs_motivation: (wp as any).needs_motivation,
-              prefers_variety: (wp as any).prefers_variety,
-              // Backward compatibility
-              timePreference:
-                (wp as any).time_preference ?? (wp as any).timePreference ?? 0,
-              workoutTypes:
-                (wp as any).workout_types ?? (wp as any).workoutTypes ?? [],
-              primaryGoals:
-                (wp as any).primary_goals ?? (wp as any).primaryGoals ?? [],
-              activityLevel:
-                (wp as any).activity_level ??
-                (wp as any).activityLevel ??
-                undefined,
-            }
-          : {
-              location: "home" as const,
-              equipment: [],
-              time_preference: 0,
-              intensity: "beginner" as const,
-              workout_types: [],
-              primary_goals: [],
-              activity_level: undefined,
-              // Backward compatibility
-              timePreference: 0,
-              workoutTypes: [],
-              primaryGoals: [],
-              activityLevel: undefined,
-            };
-      })(),
-      // ✅ FIX: Map bodyAnalysis from onboarding to bodyMetrics in UserProfile
-      // Handle both flat format (height_cm, current_weight_kg) and nested format (measurements.height, measurements.weight)
-      bodyMetrics: data.bodyAnalysis
-        ? (() => {
-            const ba = data.bodyAnalysis as any;
-            const measurements = ba.measurements || {};
-            return {
-              // Check both flat format and nested measurements format, also check personalInfo
-              height_cm:
-                ba.height_cm ??
-                measurements.height ??
-                measurements.height_cm ??
-                data.personalInfo?.height ??
-                0,
-              current_weight_kg:
-                ba.current_weight_kg ??
-                measurements.weight ??
-                measurements.current_weight_kg ??
-                data.personalInfo?.weight ??
-                0,
-              target_weight_kg:
-                ba.target_weight_kg ??
-                measurements.targetWeight ??
-                measurements.target_weight_kg,
-              target_timeline_weeks:
-                ba.target_timeline_weeks ?? measurements.target_timeline_weeks,
-              body_fat_percentage:
-                ba.body_fat_percentage ??
-                measurements.bodyFat ??
-                measurements.body_fat_percentage,
-              waist_cm:
-                ba.waist_cm ?? measurements.waist ?? measurements.waist_cm,
-              hip_cm: ba.hip_cm ?? measurements.hips ?? measurements.hip_cm,
-              chest_cm:
-                ba.chest_cm ?? measurements.chest ?? measurements.chest_cm,
-              bmi: ba.bmi ?? null,
-              bmr: ba.bmr ?? null,
-              ideal_weight_min: ba.ideal_weight_min ?? null,
-              ideal_weight_max: ba.ideal_weight_max ?? null,
-              front_photo_url: ba.front_photo_url,
-              side_photo_url: ba.side_photo_url,
-              back_photo_url: ba.back_photo_url,
-              // Medical fields from onboarding
-              medical_conditions: ba.medical_conditions ?? [],
-              medications: ba.medications ?? [],
-              physical_limitations: ba.physical_limitations ?? [],
-              pregnancy_status: ba.pregnancy_status ?? false,
-              breastfeeding_status: ba.breastfeeding_status ?? false,
-            };
-          })()
-        : undefined,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      preferences: {
-        units: "metric" as const,
-        notifications: true,
-        darkMode: false,
-      },
-      stats: {
-        totalWorkouts: 0,
-        totalCaloriesBurned: 0,
-        currentStreak: 0,
-        longestStreak: 0,
-      },
-    };
-  };
 
   // Helper function to migrate existing guest data to current guest ID
   const migrateExistingGuestData = async (
@@ -979,7 +711,7 @@ export default function App() {
 
 
               // Convert to profile format and load into userStore
-              const userProfile = convertOnboardingToProfile(onboardingData);
+              const userProfile = convertOnboardingToProfile(onboardingData, guestId);
               setProfile(userProfile);
 
               // Validate the profile has all required fields
@@ -1193,7 +925,7 @@ export default function App() {
       setUserData(data);
 
       // Convert to profile format and store in userStore for persistence
-      const userProfile = convertOnboardingToProfile(data);
+      const userProfile = convertOnboardingToProfile(data, guestId);
 
       console.warn(`\n📱 [APP DEBUG] Profile converted from onboarding:`);
       console.warn(`  Name: ${userProfile.personalInfo?.name}`);
@@ -1229,10 +961,30 @@ export default function App() {
 
 
 
+      // Note: invalidateMetricsCache() is already called by completeOnboarding()
+      // in completion.ts before onComplete fires — no need to call it again here.
 
-      // Invalidate metrics cache to ensure HomeScreen loads fresh data
-
-      invalidateMetricsCache();
+      // Directly seed profileStore with onboarding data for guest users.
+      // saveToLocal() skips saving when userId is absent, so dataBridge.loadAllData()
+      // finds nothing in AsyncStorage and leaves profileStore.personalInfo = null,
+      // causing HomeScreen to show "(unknown)" instead of the user's name.
+      // Seeding here ensures the store is populated before MainNavigation renders.
+      const profileStoreState = useProfileStore.getState();
+      if (data.personalInfo) {
+        profileStoreState.updatePersonalInfo(data.personalInfo as any);
+      }
+      if (data.dietPreferences) {
+        profileStoreState.updateDietPreferences(data.dietPreferences as any);
+      }
+      if (data.workoutPreferences) {
+        profileStoreState.updateWorkoutPreferences(data.workoutPreferences as any);
+      }
+      if (data.bodyAnalysis) {
+        profileStoreState.updateBodyAnalysis(data.bodyAnalysis as any);
+      }
+      if (data.advancedReview) {
+        profileStoreState.updateAdvancedReview(data.advancedReview as any);
+      }
 
       // Populate profileStore.advancedReview (and all other profile sections) so
       // useCalculatedMetrics has real data the moment MainNavigation renders.

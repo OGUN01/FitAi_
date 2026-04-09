@@ -1,12 +1,48 @@
 import { HealthConnectData, MetricSource } from "./types";
 import { getDataSource, getBestDataSource } from "./dataSources";
 
+/** Shape of a Health Connect record returned by readRecords */
+interface HealthConnectRecord {
+  startTime?: string;
+  endTime?: string;
+  exerciseType?: unknown;
+  title?: string;
+  energy?: { inKilocalories?: number };
+  distance?: { inMeters?: number };
+  weight?: { inKilograms?: number };
+  heartRateVariabilityMillis?: number;
+  percentage?: number;
+  metadata?: {
+    id?: string;
+    dataOrigin?: string;
+  };
+  [key: string]: unknown;
+}
+
+/** Shape of an aggregate result returned by aggregateRecord */
+interface AggregateResult {
+  COUNT_TOTAL?: number;
+  BPM_AVG?: number;
+  BPM_MIN?: number;
+  ACTIVE_CALORIES_TOTAL?: { inKilocalories?: number };
+  ENERGY_TOTAL?: { inKilocalories?: number };
+  BASAL_CALORIES_TOTAL?: { inKilocalories?: number };
+  DISTANCE?: { inMeters?: number };
+  dataOrigins?: string[];
+  [key: string]: unknown;
+}
+
+/** Shape of a readRecords response */
+interface ReadRecordsResult {
+  records?: HealthConnectRecord[];
+}
+
 export interface SyncContext {
   healthData: HealthConnectData;
   allDataOrigins: Set<string>;
   excludedRawSources: string[];
-  aggregateRecord: (params: any) => Promise<any>;
-  readRecords: (type: string, params: any) => Promise<any>;
+  aggregateRecord: (params: Record<string, unknown>) => Promise<AggregateResult | null>;
+  readRecords: (type: string, params: Record<string, unknown>) => Promise<ReadRecordsResult | null>;
   startDate: Date;
   endDate: Date;
   todayStart: Date;
@@ -42,11 +78,11 @@ export async function syncSteps(ctx: SyncContext): Promise<void> {
 
     if (stepsAggregate && typeof stepsAggregate.COUNT_TOTAL === "number") {
       const origins = stepsAggregate.dataOrigins || [];
-      const hasRawSensor = origins.some((o: any) =>
+      const hasRawSensor = origins.some((o: string) =>
         ctx.excludedRawSources.includes(o),
       );
       const appSources = origins.filter(
-        (o: any) => !ctx.excludedRawSources.includes(o),
+        (o: string) => !ctx.excludedRawSources.includes(o),
       );
 
       if (hasRawSensor && appSources.length > 0) {
@@ -181,7 +217,7 @@ export async function syncTotalCaloriesWithBMRFallback(
         ctx.healthData.totalCalories =
           bmrCalories + (ctx.healthData.activeCalories || 0);
 
-        if (bmrAggregate.dataOrigins?.length > 0) {
+        if (bmrAggregate.dataOrigins && bmrAggregate.dataOrigins.length > 0) {
           bmrAggregate.dataOrigins.forEach((origin: string) =>
             ctx.allDataOrigins.add(origin),
           );
@@ -264,10 +300,10 @@ export async function syncWeight(ctx: SyncContext): Promise<void> {
       },
     });
 
-    if (weightRecords?.records?.length > 0) {
+    if (weightRecords?.records && weightRecords.records.length > 0) {
       const latestRecord = weightRecords.records[
         weightRecords.records.length - 1
-      ] as any;
+      ];
       ctx.healthData.weight = latestRecord.weight?.inKilograms;
 
       if (latestRecord.metadata?.dataOrigin) {
@@ -295,18 +331,18 @@ export async function syncSleep(ctx: SyncContext): Promise<void> {
       },
     });
 
-    if (sleepRecords?.records?.length > 0) {
-      ctx.healthData.sleep = sleepRecords.records.map((sleep: any) => ({
-        startTime: sleep.startTime,
-        endTime: sleep.endTime,
+    if (sleepRecords?.records && sleepRecords.records.length > 0) {
+      ctx.healthData.sleep = sleepRecords.records.map((sleep) => ({
+        startTime: sleep.startTime!,
+        endTime: sleep.endTime!,
         duration: Math.round(
-          (new Date(sleep.endTime).getTime() -
-            new Date(sleep.startTime).getTime()) /
+          (new Date(sleep.endTime!).getTime() -
+            new Date(sleep.startTime!).getTime()) /
             60000,
         ),
       }));
 
-      const firstRecord = sleepRecords.records[0] as any;
+      const firstRecord = sleepRecords.records[0];
       if (firstRecord.metadata?.dataOrigin) {
         ctx.allDataOrigins.add(firstRecord.metadata.dataOrigin);
         const source = getDataSource(firstRecord.metadata.dataOrigin);
@@ -333,25 +369,25 @@ export async function syncExerciseSessions(ctx: SyncContext): Promise<void> {
       },
     });
 
-    if (exerciseRecords?.records?.length > 0) {
+    if (exerciseRecords?.records && exerciseRecords.records.length > 0) {
       ctx.healthData.exerciseSessions = exerciseRecords.records.map(
-        (exercise: any) => ({
+        (exercise) => ({
           id: exercise.metadata?.id || `exercise_${Date.now()}`,
-          startTime: exercise.startTime,
-          endTime: exercise.endTime,
+          startTime: exercise.startTime!,
+          endTime: exercise.endTime!,
           exerciseType: exercise.exerciseType?.toString() || "unknown",
           title: exercise.title,
           calories: exercise.energy?.inKilocalories,
           distance: exercise.distance?.inMeters,
           duration: Math.round(
-            (new Date(exercise.endTime).getTime() -
-              new Date(exercise.startTime).getTime()) /
+            (new Date(exercise.endTime!).getTime() -
+              new Date(exercise.startTime!).getTime()) /
               60000,
           ),
         }),
       );
 
-      const firstRecord = exerciseRecords.records[0] as any;
+      const firstRecord = exerciseRecords.records[0];
       if (firstRecord.metadata?.dataOrigin) {
         ctx.allDataOrigins.add(firstRecord.metadata.dataOrigin);
         const source = getDataSource(firstRecord.metadata.dataOrigin);
@@ -377,10 +413,10 @@ export async function syncHRV(ctx: SyncContext): Promise<void> {
       },
     });
 
-    if (hrvRecords?.records?.length > 0) {
+    if (hrvRecords?.records && hrvRecords.records.length > 0) {
       const latestRecord = hrvRecords.records[
         hrvRecords.records.length - 1
-      ] as any;
+      ];
       ctx.healthData.heartRateVariability =
         latestRecord.heartRateVariabilityMillis;
 
@@ -409,10 +445,10 @@ export async function syncSpO2(ctx: SyncContext): Promise<void> {
       },
     });
 
-    if (spo2Records?.records?.length > 0) {
+    if (spo2Records?.records && spo2Records.records.length > 0) {
       const latestRecord = spo2Records.records[
         spo2Records.records.length - 1
-      ] as any;
+      ];
       ctx.healthData.oxygenSaturation = latestRecord.percentage;
 
       if (latestRecord.metadata?.dataOrigin) {
@@ -440,10 +476,10 @@ export async function syncBodyFat(ctx: SyncContext): Promise<void> {
       },
     });
 
-    if (bodyFatRecords?.records?.length > 0) {
+    if (bodyFatRecords?.records && bodyFatRecords.records.length > 0) {
       const latestRecord = bodyFatRecords.records[
         bodyFatRecords.records.length - 1
-      ] as any;
+      ];
       ctx.healthData.bodyFat = latestRecord.percentage;
 
       if (latestRecord.metadata?.dataOrigin) {

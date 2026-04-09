@@ -3,10 +3,14 @@
  * Different ethnic groups have different health risks at different BMI levels
  */
 
-import type { BMICalculator, BMIClassification, BMICutoffs } from '../types.js';
+import type { BMICalculator, BMIClassification, BMICutoffs, EthnicityType } from '../types.js';
 
 // Population Type for BMI calculator selection
 export type PopulationType = 'asian' | 'african' | 'caucasian' | 'hispanic' | 'athletic' | 'general';
+
+// Accepted types for getBMICalculator — PopulationType plus the wider EthnicityType
+// (unknown values fall through to the default StandardBMICalculator)
+export type BMICalculatorInput = PopulationType | EthnicityType;
 
 /**
  * Asian BMI Calculator
@@ -398,7 +402,7 @@ export class HispanicBMICalculator implements BMICalculator {
  * @param populationType - User's population/ethnic background
  * @returns Appropriate BMI calculator instance
  */
-export function getBMICalculator(populationType: PopulationType = 'general'): BMICalculator {
+export function getBMICalculator(populationType: BMICalculatorInput = 'general'): BMICalculator {
   switch (populationType) {
     case 'asian':
       return new AsianBMICalculator();

@@ -7,7 +7,7 @@
  *  - Calorie adherence: weeklyProgress.caloriesConsumed + calculatedMetrics.dailyCalories (7 days)
  */
 
-import React from 'react';
+import React, { type ComponentProps } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -61,7 +61,7 @@ const GoalBar: React.FC<GoalBarProps> = ({
     return (
       <View style={styles.goalBarContainer}>
         <View style={styles.goalBarHeader}>
-          <Ionicons name={icon as any} size={rf(14)} color={iconColor} />
+          <Ionicons name={icon as ComponentProps<typeof Ionicons>['name']} size={rf(14)} color={iconColor} />
           <Text style={styles.goalBarLabel}>{label}</Text>
         </View>
         <Text style={styles.noDataText}>No goal set</Text>
@@ -78,7 +78,7 @@ const GoalBar: React.FC<GoalBarProps> = ({
   return (
     <View style={styles.goalBarContainer}>
       <View style={styles.goalBarHeader}>
-        <Ionicons name={icon as any} size={rf(14)} color={iconColor} />
+        <Ionicons name={icon as ComponentProps<typeof Ionicons>['name']} size={rf(14)} color={iconColor} />
         <Text style={styles.goalBarLabel}>{label}</Text>
         <Text
           style={[

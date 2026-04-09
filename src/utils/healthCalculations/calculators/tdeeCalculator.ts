@@ -5,6 +5,7 @@
 
 import type { TDEECalculator } from '../interfaces/calculators';
 import type { ActivityLevel, ClimateType } from '../types';
+import { CALORIE_PER_KG } from '../../../services/validation/constants';
 
 /**
  * Climate-Adaptive TDEE Calculator
@@ -141,9 +142,7 @@ export class ClimateAdaptiveTDEECalculator implements TDEECalculator {
     goal: 'fat_loss' | 'muscle_gain' | 'maintenance',
     rate: number = 0.5
   ): number {
-    // 1 kg fat = ~7700 kcal
-    const caloriesPerKg = 7700;
-    const weeklyDeficit = rate * caloriesPerKg;
+    const weeklyDeficit = rate * CALORIE_PER_KG;
     const dailyAdjustment = weeklyDeficit / 7;
 
     switch (goal) {

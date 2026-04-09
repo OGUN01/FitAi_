@@ -7,7 +7,7 @@
  */
 
 import { muscleGainCalculator, fatLossValidator } from "./calculators";
-import type { UserProfile, GoalValidation } from "./types";
+import type { HealthCalcProfile, GoalValidation } from "./types";
 
 export interface MuscleGainLimits {
   monthlyRate: number;
@@ -24,7 +24,7 @@ export interface FatLossValidation {
 }
 
 export class MuscleGainCalculatorService {
-  static calculateLimits(user: UserProfile): MuscleGainLimits {
+  static calculateLimits(user: HealthCalcProfile): MuscleGainLimits {
     try {
       const limits = muscleGainCalculator.calculateMaxGainRate(user);
       return {
@@ -41,7 +41,7 @@ export class MuscleGainCalculatorService {
   static validateGoal(
     targetGain: number,
     timelineMonths: number,
-    user: UserProfile,
+    user: HealthCalcProfile,
   ): GoalValidation {
     try {
       return muscleGainCalculator.validateGoal(

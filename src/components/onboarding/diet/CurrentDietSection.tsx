@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type ComponentProps } from "react";
 import {
   View,
   Text,
@@ -88,7 +88,7 @@ export const CurrentDietSection: React.FC<CurrentDietSectionProps> = ({
                   {/* Icon + Info row */}
                   <View style={styles.consistentCardHeader}>
                     <Ionicons
-                      name={option.iconName as any}
+                      name={option.iconName as ComponentProps<typeof Ionicons>['name']}
                       size={rf(22)}
                       color={
                         isSelected

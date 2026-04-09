@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type ComponentProps } from "react";
 import {
   View,
   Text,
@@ -108,7 +108,7 @@ export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                   {/* Icon + Info row */}
                   <View style={styles.consistentCardHeader}>
                     <Ionicons
-                      name={option.iconName as any}
+                      name={option.iconName as ComponentProps<typeof Ionicons>['name']}
                       size={rf(22)}
                       color={
                         isSelected
@@ -215,7 +215,7 @@ export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                     return equipment ? (
                       <View key={equipmentId} style={styles.gymEquipmentItem}>
                         <Ionicons
-                          name={equipment.iconName as any}
+                          name={equipment.iconName as ComponentProps<typeof Ionicons>['name']}
                           size={rf(16)}
                           color={ResponsiveTheme.colors.text}
                           style={{ marginRight: ResponsiveTheme.spacing.xs }}
@@ -308,7 +308,7 @@ export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                   {/* Icon */}
                   <View style={styles.consistentCardIconCenter}>
                     <Ionicons
-                      name={time.iconName as any}
+                      name={time.iconName as ComponentProps<typeof Ionicons>['name']}
                       size={rf(22)}
                       color={
                         isSelected

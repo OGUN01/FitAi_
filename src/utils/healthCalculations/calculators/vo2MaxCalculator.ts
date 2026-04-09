@@ -15,7 +15,7 @@
  * Date: 2025-12-30
  */
 
-import { UserProfile, VO2MaxEstimate, ActivityLevel } from "../types";
+import { HealthCalcProfile, VO2MaxEstimate, ActivityLevel } from "../types";
 
 export class VO2MaxCalculator {
   /**
@@ -32,7 +32,7 @@ export class VO2MaxCalculator {
    * @param restingHR - Resting heart rate in bpm
    * @returns VO2 max estimate with classification and recommendations
    */
-  estimateVO2Max(user: UserProfile, restingHR: number): VO2MaxEstimate {
+  estimateVO2Max(user: HealthCalcProfile, restingHR: number): VO2MaxEstimate {
     const { age, gender } = user;
     const activityLevel = user.activityLevel || "sedentary";
 

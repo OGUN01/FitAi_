@@ -39,7 +39,7 @@ export function transformSupabaseToMealLog(supabaseMealLog: any): MealLog {
   return {
     id: supabaseMealLog.id,
     mealType: supabaseMealLog.meal_type,
-    foods: foods as any,
+    foods: foods as unknown as MealLog["foods"],
     totalCalories: supabaseMealLog.total_calories || 0,
     totalMacros: {
       protein: supabaseMealLog.total_protein || 0,

@@ -36,12 +36,16 @@ import {
   healthScoreCalculator,
 } from "./calculators";
 import type {
-  UserProfile,
+  HealthCalcProfile,
   ActivityLevel,
   DietType,
   ClimateType,
   EthnicityType,
   BMRFormula,
+  Goal,
+  HeartRateZones,
+  VO2MaxEstimate,
+  HealthScore,
 } from "./types";
 
 // ============================================================================
@@ -76,33 +80,12 @@ export interface ComprehensiveHealthMetrics {
   };
 
   // Advanced Cardio Metrics (optional)
-  heartRateZones?: {
-    resting: number;
-    fatBurn: { min: number; max: number };
-    cardio: { min: number; max: number };
-    peak: { min: number; max: number };
-    maxHR: number;
-  } | null;
+  heartRateZones?: HeartRateZones | null;
 
-  vo2max?: {
-    vo2max: number;
-    classification: string;
-    fitnessAge: number;
-  } | null;
+  vo2max?: VO2MaxEstimate | null;
 
   // Health Assessment (optional)
-  healthScore?: {
-    totalScore: number;
-    grade: string;
-    breakdown: {
-      bmi: number;
-      bodyFat: number;
-      hydration: number;
-      nutrition: number;
-      cardiovascular: number;
-    };
-    recommendations: string[];
-  } | null;
+  healthScore?: HealthScore | null;
 
   // Goal-Specific Metrics (optional)
   muscleGainLimits?: {
@@ -173,7 +156,7 @@ export class HealthCalculatorFacade {
    * Calculate ALL health metrics for a user
    * This is the main method - one call does everything
    */
-  static calculateAllMetrics(user: UserProfile): ComprehensiveHealthMetrics {
+  static calculateAllMetrics(user: HealthCalcProfile): ComprehensiveHealthMetrics {
 
     // ========================================================================
     // STEP 1: AUTO-DETECT CONTEXT
@@ -192,7 +175,7 @@ export class HealthCalculatorFacade {
       !!user.bodyFat,
       user.fitnessLevel === "elite",
     );
-    const bmiCalc = getBMICalculator(ethnicityResult.ethnicity as any);
+    const bmiCalc = getBMICalculator(ethnicityResult.ethnicity);
 
     // ========================================================================
     // STEP 3: CALCULATE CORE METRICS
@@ -220,7 +203,7 @@ export class HealthCalculatorFacade {
     // ========================================================================
 
     const dietType: DietType = user.dietType || "omnivore";
-    const goalType = (user.goal || "maintenance") as any;
+    const goalType: Goal = user.goal || "maintenance";
     const protein = macroCalculator.calculateProtein(
       user.weight,
       goalType,
@@ -305,8 +288,8 @@ export class HealthCalculatorFacade {
       bmiClassification: {
         category: bmiClass.category,
         healthRisk: bmiClass.healthRisk,
-        ethnicity: bmiClass.ethnicity as any,
-        message: bmiClass.message as any,
+        ethnicity: bmiClass.ethnicity ?? ethnicityResult.ethnicity,
+        message: bmiClass.message ?? "",
       },
       tdee,
       dailyCalories: tdee,
@@ -326,10 +309,14 @@ export class HealthCalculatorFacade {
       },
 
       // Advanced Metrics
-      heartRateZones: hrZones as any,
-      vo2max: vo2max as any,
-      healthScore: healthScore as any,
-      muscleGainLimits: muscleGainLimits as any,
+      heartRateZones: hrZones,
+      vo2max: vo2max,
+      healthScore: healthScore,
+      muscleGainLimits: muscleGainLimits ? {
+        monthlyRate: muscleGainLimits.maxMonthlyGain,
+        yearlyGain: muscleGainLimits.maxMonthlyGain * 12,
+        classification: muscleGainLimits.experienceLevel,
+      } : null,
 
       // Context
       climate: climateResult.climate,
@@ -370,7 +357,7 @@ export class HealthCalculatorFacade {
    * Validate a user's fitness goal
    */
   static validateGoal(
-    user: UserProfile,
+    user: HealthCalcProfile,
     goal: GoalInput,
   ): GoalValidationResult {
 
@@ -436,7 +423,7 @@ export class HealthCalculatorFacade {
    * Recalculate metrics after profile update
    * Useful when user updates their weight, activity level, etc.
    */
-  static recalculateMetrics(user: UserProfile): ComprehensiveHealthMetrics {
+  static recalculateMetrics(user: HealthCalcProfile): ComprehensiveHealthMetrics {
     return this.calculateAllMetrics(user);
   }
 

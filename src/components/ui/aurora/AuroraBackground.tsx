@@ -107,8 +107,8 @@ export const AuroraBackground: React.FC<AuroraBackgroundProps> = ({
 
   return (
     <AnimatedLinearGradient
-      {...(gradientProps as any)}
-      style={[styles.container, animatedStyle, style] as any}
+      {...gradientProps}
+      style={[styles.container, animatedStyle, style]}
     >
       {children}
     </AnimatedLinearGradient>

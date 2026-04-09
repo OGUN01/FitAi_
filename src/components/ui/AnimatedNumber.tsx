@@ -41,11 +41,15 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
     const displayValue = animatedValue.value.toFixed(decimals);
     return {
       text: `${prefix}${displayValue}${suffix}`,
-    } as any;
+    } as { text: string };
   });
 
   return (
-    <AnimatedText style={style} animatedProps={animatedProps}>
+    <AnimatedText
+      style={style}
+      // @ts-ignore - Reanimated AnimatedProps type issue with text prop
+      animatedProps={animatedProps}
+    >
       {prefix}
       {value.toFixed(decimals)}
       {suffix}

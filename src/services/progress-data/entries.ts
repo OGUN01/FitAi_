@@ -83,7 +83,7 @@ export async function createProgressEntry(
       photos: entryData.progress_photos || [],
       notes: entryData.notes,
       syncStatus: "pending",
-    } as any;
+    };
 
     await crudOperations.createBodyMeasurement(bodyMeasurement);
 
@@ -109,7 +109,7 @@ export async function createProgressEntry(
       });
       return {
         success: true,
-        data: { ...upsertPayload, id: bodyMeasurement.id } as any,
+        data: { ...upsertPayload, id: bodyMeasurement.id, created_at: entryDate, measurements: upsertPayload.measurements || {} } as ProgressEntry,
       };
     }
 
@@ -131,7 +131,7 @@ export async function createProgressEntry(
       });
       return {
         success: true,
-        data: { ...upsertPayload, id: bodyMeasurement.id } as any,
+        data: { ...upsertPayload, id: bodyMeasurement.id, created_at: entryDate, measurements: upsertPayload.measurements || {} } as ProgressEntry,
       };
     }
 

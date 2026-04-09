@@ -695,7 +695,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             };
           }
           // For version 2→3 keep whatever was persisted (shape is compatible).
-          return persistedState as any;
+          return persistedState as Record<string, unknown>;
         },
       },
     ),

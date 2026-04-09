@@ -42,10 +42,6 @@ export async function requestAuthorization(): Promise<HealthKitPermissionsStatus
 
     if (granted) {
       await AsyncStorage.setItem("healthkit_authorized", "true");
-      await AsyncStorage.setItem(
-        "healthkit_auth_date",
-        new Date().toISOString(),
-      );
     }
 
     return {

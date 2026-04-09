@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type ComponentProps } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rw, rh, rs, rbr, rp } from "../../../utils/responsive";
@@ -137,7 +137,7 @@ export const MealPreferencesSection: React.FC<MealPreferencesSectionProps> = ({
                   {/* Icon + Toggle row */}
                   <View style={styles.consistentCardHeader}>
                     <Ionicons
-                      name={meal.iconName as any}
+                      name={meal.iconName as ComponentProps<typeof Ionicons>['name']}
                       size={rf(22)}
                       color={
                         isEnabled

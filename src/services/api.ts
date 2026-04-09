@@ -37,46 +37,38 @@ export const apiUtils = {
   /**
    * Handle Supabase errors and convert to ApiResponse
    */
-  // @ts-ignore - Type compatibility issue with ApiResponse
   handleSupabaseError<T>(
-    error: any,
+    error: { message?: string } | null | undefined,
     defaultMessage: string = "An error occurred",
   ): ApiResponseType<T> {
-    if (error?.message) {
-      return {
-        success: false,
-        error: error.message,
-      } as any;
-    }
-
     return {
       success: false,
-      error: defaultMessage,
-    } as any;
+      error: { code: 'SUPABASE_ERROR', message: error?.message || defaultMessage, statusCode: 500 },
+      timestamp: new Date().toISOString(),
+    };
   },
 
   /**
    * Create success response
    */
-  // @ts-ignore - Type compatibility issue with ApiResponse
   createSuccessResponse<T>(data: T, message?: string): ApiResponseType<T> {
     return {
       success: true,
       data,
       message,
-    } as any;
+      timestamp: new Date().toISOString(),
+    };
   },
 
   /**
    * Create error response
    */
-  // @ts-ignore - Type compatibility issue with ApiResponse
-  createErrorResponse(error: string, code?: string): ApiResponseType<any> {
+  createErrorResponse(error: string, code?: string): ApiResponseType<never> {
     return {
       success: false,
-      error,
-      ...(code && { code }),
-    } as any;
+      error: { code: code || 'ERROR', message: error, statusCode: 500 },
+      timestamp: new Date().toISOString(),
+    };
   },
 
   /**

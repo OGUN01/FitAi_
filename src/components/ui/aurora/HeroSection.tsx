@@ -174,7 +174,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         resizeMode={resizeMode}
       >
         {/* Gradient Overlay for Better Text Contrast */}
-        <LinearGradient {...(gradientProps as any)} style={styles.overlay}>
+        <LinearGradient {...gradientProps} style={styles.overlay}>
           {/* Content Area */}
           <View
             style={[styles.content, getContentPositionStyle(), contentStyle]}

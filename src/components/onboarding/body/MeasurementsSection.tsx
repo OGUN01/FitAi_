@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type ComponentProps } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf } from "../../../utils/responsive";
@@ -164,7 +164,7 @@ export const MeasurementsSection: React.FC<MeasurementsSectionProps> = ({
               </Text>
               <View style={styles.bmiCategory}>
                 <Ionicons
-                  name={getBMICategory(formData.bmi).iconName as any}
+                  name={getBMICategory(formData.bmi).iconName as ComponentProps<typeof Ionicons>['name']}
                   size={rf(24)}
                   color={getBMICategory(formData.bmi).color}
                 />

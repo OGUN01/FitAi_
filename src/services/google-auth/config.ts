@@ -21,19 +21,20 @@ export const getEnvVar: EnvVarGetter = (key: string): string | null => {
       return processEnvValue;
     }
 
-    const expoConfigValue = (Constants.expoConfig as any)?.[key];
+    const expoConfigValue = (Constants.expoConfig as Record<string, unknown> | null)?.[key];
     if (expoConfigValue) {
-      return expoConfigValue;
+      return expoConfigValue as string;
     }
 
-    const extraValue = (Constants.expoConfig as any)?.extra?.[key];
-    if (extraValue) {
-      return extraValue;
+    const extraObj = (Constants.expoConfig as Record<string, unknown> | null)?.extra as Record<string, unknown> | undefined;
+    if (extraObj?.[key]) {
+      return extraObj[key] as string;
     }
 
-    const manifestValue = (Constants.manifest as any)?.extra?.[key];
-    if (manifestValue) {
-      return manifestValue;
+    const manifest = Constants.manifest as Record<string, unknown> | null;
+    const manifestExtra = manifest?.extra as Record<string, unknown> | undefined;
+    if (manifestExtra?.[key]) {
+      return manifestExtra[key] as string;
     }
 
     return null;

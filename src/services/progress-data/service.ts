@@ -1,7 +1,7 @@
 import { crudOperations } from "../crudOperations";
 import {
   ProgressEntry,
-  BodyAnalysis,
+  ProgressBodyAnalysis,
   ProgressStats,
   ProgressGoals,
   ProgressDataResponse,
@@ -50,7 +50,7 @@ export class ProgressDataService {
 
   async getUserBodyAnalysis(
     userId: string,
-  ): Promise<ProgressDataResponse<BodyAnalysis>> {
+  ): Promise<ProgressDataResponse<ProgressBodyAnalysis>> {
     return getUserBodyAnalysis(userId);
   }
 

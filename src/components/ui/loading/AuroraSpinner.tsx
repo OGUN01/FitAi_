@@ -164,7 +164,7 @@ export const AuroraSpinner: React.FC<AuroraSpinnerProps> = ({
         ]}
       >
         <LinearGradient
-          colors={colors as any}
+          colors={colors as unknown as readonly [string, string, ...string[]]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[

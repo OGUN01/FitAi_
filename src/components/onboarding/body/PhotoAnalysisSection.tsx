@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type ComponentProps } from "react";
 import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rw, rp, rbr } from "../../../utils/responsive";
@@ -112,7 +112,7 @@ export const PhotoAnalysisSection: React.FC<PhotoAnalysisSectionProps> = ({
                   ) : (
                     <View style={styles.photoPlaceholderCompact}>
                       <Ionicons
-                        name={photoType.iconName as any}
+                        name={photoType.iconName as ComponentProps<typeof Ionicons>['name']}
                         size={rf(36)}
                         color={ResponsiveTheme.colors.primary}
                       />

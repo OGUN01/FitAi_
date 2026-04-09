@@ -1,8 +1,6 @@
 import { useFitnessStore } from "../stores/fitnessStore";
 import { useNutritionStore } from "../stores/nutritionStore";
 import { useHydrationStore } from "../stores/hydrationStore";
-import { useUserStore } from "../stores/userStore";
-import { useProfileStore } from "../stores/profileStore";
 import { crudOperations } from "./crudOperations";
 import { WeeklyWorkoutPlan, DayWorkout, WeeklyMealPlan, DayMeal } from "../ai";
 import { logger } from "../utils/logger";
@@ -140,7 +138,7 @@ class DataRetrievalService {
     });
 
     return {
-      workout: todaysWorkout as any,
+      workout: todaysWorkout as DayWorkout | null,
       meals: todaysMeals,
       progress: {
         workoutProgress,

@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect } from "react";
-import { StyleSheet, View, Text, ViewStyle } from "react-native";
+import { StyleSheet, View, Text, ViewStyle, TextStyle } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
@@ -135,7 +135,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   const animatedTextProps = useAnimatedProps(() => {
     return {
       text: formattedValue.value,
-    } as any;
+    } as { text: string };
   });
 
   // Get trend indicator symbol and color
@@ -271,11 +271,11 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   value: {
-    fontWeight: typography.fontWeight.bold as any,
+    fontWeight: typography.fontWeight.bold as TextStyle['fontWeight'],
     color: colors.text.primary,
   },
   unit: {
-    fontWeight: typography.fontWeight.medium as any,
+    fontWeight: typography.fontWeight.medium as TextStyle['fontWeight'],
     color: colors.text.secondary,
   },
   labelRow: {
@@ -284,11 +284,11 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   label: {
-    fontWeight: typography.fontWeight.regular as any,
+    fontWeight: typography.fontWeight.regular as TextStyle['fontWeight'],
     color: colors.text.secondary,
   },
   trend: {
-    fontWeight: typography.fontWeight.bold as any,
+    fontWeight: typography.fontWeight.bold as TextStyle['fontWeight'],
     fontSize: typography.fontSize.h3,
   },
 });

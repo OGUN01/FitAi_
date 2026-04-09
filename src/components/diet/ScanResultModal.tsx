@@ -204,7 +204,7 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
             onPress={onAccept}
           >
             <LinearGradient
-              {...(toLinearGradientProps(gradients.button.primary) as any)}
+              {...toLinearGradientProps(gradients.button.primary)}
               style={styles.primaryButtonGradient}
             >
               <Ionicons

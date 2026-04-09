@@ -190,7 +190,7 @@ class QuickActionsTestSuite {
           success: result.success,
           processingTime,
           error: result.error,
-          dataReceived: !!(result as any).data || !!result.foods,
+          dataReceived: !!('data' in result && result.data) || !!result.foods,
         },
       });
     } catch (error) {

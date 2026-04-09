@@ -28,14 +28,14 @@ import { invalidateMetricsCache } from "./useCalculatedMetrics";
 // Remove this block once persistence bug is fixed
 // ============================================================================
 const _origRemoveItem = AsyncStorage.removeItem.bind(AsyncStorage);
-(AsyncStorage as any).removeItem = async (key: string) => {
+(AsyncStorage as unknown as Record<string, Function>).removeItem = async (key: string) => {
   if (key === 'onboarding_data' || key === 'onboarding_completed') {
     console.warn(`🚨 [STORAGE INTERCEPTOR] removeItem("${key}") called!`, new Error().stack);
   }
   return _origRemoveItem(key);
 };
 const _origMultiRemove = AsyncStorage.multiRemove.bind(AsyncStorage);
-(AsyncStorage as any).multiRemove = async (keys: string[]) => {
+(AsyncStorage as unknown as Record<string, Function>).multiRemove = async (keys: string[]) => {
   const sensitive = keys.filter((k: string) => k.startsWith('onboarding'));
   if (sensitive.length > 0) {
     console.warn(`🚨 [STORAGE INTERCEPTOR] multiRemove includes onboarding keys: ${sensitive.join(', ')}`, new Error().stack);
@@ -43,7 +43,7 @@ const _origMultiRemove = AsyncStorage.multiRemove.bind(AsyncStorage);
   return _origMultiRemove(keys);
 };
 const _origClear = AsyncStorage.clear.bind(AsyncStorage);
-(AsyncStorage as any).clear = async () => {
+(AsyncStorage as unknown as Record<string, Function>).clear = async () => {
   console.warn(`🚨 [STORAGE INTERCEPTOR] AsyncStorage.clear() called!`, new Error().stack);
   return _origClear();
 };
@@ -1005,16 +1005,6 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
         overallCompletion: 100,
         errors: { ...prev.errors, completeOnboarding: "" }, // Clear error on success
       }));
-
-      try {
-        await AsyncStorage.setItem("onboarding_completed", "true");
-      } catch (error) {
-        console.error(
-          "❌ Failed to mark onboarding complete in AsyncStorage:",
-          error,
-        );
-        // Not critical - state is already updated
-      }
 
       return true; // Always return true if validation passed
     } catch (error) {

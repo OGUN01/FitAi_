@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect } from "react";
-import { StyleSheet, View, Text, ViewStyle } from "react-native";
+import { StyleSheet, View, Text, ViewStyle, TextStyle } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -104,7 +104,7 @@ interface FeatureItemProps {
   animationType: AnimationType;
   glassEffect: boolean;
   showDescription: boolean;
-  elevation: number;
+  elevation: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 }
 
 const FeatureItem: React.FC<FeatureItemProps> = ({
@@ -186,7 +186,7 @@ const FeatureItem: React.FC<FeatureItemProps> = ({
             hapticType="light"
           >
             <GlassCard
-              elevation={elevation as any}
+              elevation={elevation}
               padding="md"
               borderRadius="lg"
               blurIntensity="light"
@@ -196,7 +196,7 @@ const FeatureItem: React.FC<FeatureItemProps> = ({
           </AnimatedPressable>
         ) : (
           <GlassCard
-            elevation={elevation as any}
+            elevation={elevation}
             padding="md"
             borderRadius="lg"
             blurIntensity="light"
@@ -292,13 +292,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.fontSize.body,
-    fontWeight: typography.fontWeight.semibold as any,
+    fontWeight: typography.fontWeight.semibold as TextStyle['fontWeight'],
     color: colors.text.primary,
     textAlign: "center",
   },
   description: {
     fontSize: typography.fontSize.caption,
-    fontWeight: typography.fontWeight.regular as any,
+    fontWeight: typography.fontWeight.regular as TextStyle['fontWeight'],
     color: colors.text.secondary,
     textAlign: "center",
   },

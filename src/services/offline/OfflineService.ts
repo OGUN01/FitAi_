@@ -11,6 +11,7 @@ import { QueueManager } from "./queue";
 import { RollbackManager } from "./rollback";
 import * as crypto from "expo-crypto";
 import { supabase } from "../supabase";
+import { syncMutex } from "../syncMutex";
 
 class OfflineService {
   private static instance: OfflineService;
@@ -108,7 +109,12 @@ class OfflineService {
 
   async syncOfflineActions(): Promise<SyncResult> {
     await this._ready;
-    return this.queue.syncActions(this.network.isDeviceOnline());
+    if (this.queue.isSyncInProgress()) {
+      return { success: true, syncedActions: 0, failedActions: 0, errors: [] };
+    }
+    return syncMutex.withLock("OfflineService.syncOfflineActions", () =>
+      this.queue.syncActions(this.network.isDeviceOnline()),
+    );
   }
 
   async clearOfflineData(): Promise<void> {

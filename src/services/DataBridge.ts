@@ -12,9 +12,8 @@
  *
  * SSOT RULES:
  * 1. ProfileStore is the SINGLE SOURCE OF TRUTH for all onboarding profile data
- * 2. userStore is ONLY used for Supabase auth-related profile sync (backward compat)
- * 3. DataBridge handles all data transformation and sync logic
- * 4. All database operations go through onboardingService
+ * 2. DataBridge handles all data transformation and sync logic
+ * 3. All database operations go through onboardingService
  *
  * DATA FORMAT:
  * - Database/Supabase: snake_case (e.g., first_name, primary_goals)
@@ -24,15 +23,12 @@
  * STORES RESPONSIBILITY:
  * - profileStore: SSOT for personalInfo, dietPreferences, bodyAnalysis,
  *                 workoutPreferences, advancedReview (onboarding data)
- * - userStore: Supabase user profile operations, auth state (NOT for onboarding data)
  *
  * @see src/stores/profileStore.ts - SSOT for onboarding data
- * @see src/stores/userStore.ts - Supabase user operations only
  * @see src/utils/typeTransformers.ts - snake_case/camelCase conversion utilities
  */
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useUserStore } from "../stores/userStore";
 import { useProfileStore } from "../stores/profileStore";
 import { syncEngine } from "./SyncEngine";
 import { offlineService } from "./offline/OfflineService";
@@ -126,7 +122,7 @@ const LEGACY_BODY_MEASUREMENTS_KEY = "body_measurements";
 
 class DataBridge {
   private static instance: DataBridge;
-  private static isLoading: boolean = false;
+  private static loadPromise: Promise<AllDataResult> | null = null;
   private currentUserId: string | null = null;
   private isOnline: boolean = true;
   private isInitialized: boolean = false;
@@ -243,12 +239,13 @@ class DataBridge {
   // LOAD ALL DATA
   // ============================================================================
 
-  async loadAllData(userId?: string): Promise<AllDataResult> {
+  async loadAllData(userId?: string, options?: { forceRefresh?: boolean }): Promise<AllDataResult> {
     // Bug 2 fix: skip DB fetch entirely if the store is already hydrated (idempotency guard).
     // initialize() already has this check; loadAllData must mirror it so sequential callers
     // don't trigger a redundant Supabase round-trip and a second hydrateFromLegacy call.
+    // When forceRefresh is true, bypass the cache to fetch fresh data from the server.
     const profileStoreState = useProfileStore.getState();
-    if (profileStoreState.isHydrated) {
+    if (profileStoreState.isHydrated && !options?.forceRefresh) {
       return {
         personalInfo: profileStoreState.personalInfo,
         dietPreferences: profileStoreState.dietPreferences,
@@ -259,20 +256,22 @@ class DataBridge {
       };
     }
 
-    // AUDIT fix: deduplicate concurrent calls — if a load is already in flight, skip.
-    if (DataBridge.isLoading) {
-      const profileStore = useProfileStore.getState();
-      return {
-        personalInfo: profileStore.personalInfo,
-        dietPreferences: profileStore.dietPreferences,
-        bodyAnalysis: profileStore.bodyAnalysis,
-        workoutPreferences: profileStore.workoutPreferences,
-        advancedReview: profileStore.advancedReview,
-        source: "local",
-      };
+    // AUDIT fix: deduplicate concurrent calls — if a load is already in flight,
+    // wait for the same promise instead of returning stale store state.
+    if (DataBridge.loadPromise) {
+      return DataBridge.loadPromise;
     }
 
-    DataBridge.isLoading = true;
+    // Start the actual load and share the promise with concurrent callers
+    DataBridge.loadPromise = this._doLoadAllData(userId);
+    try {
+      return await DataBridge.loadPromise;
+    } finally {
+      DataBridge.loadPromise = null;
+    }
+  }
+
+  private async _doLoadAllData(userId?: string): Promise<AllDataResult> {
     const targetUserId = userId || this.currentUserId;
 
     try {
@@ -297,8 +296,6 @@ class DataBridge {
         ...localData,
         source: "local",
       };
-    } finally {
-      DataBridge.isLoading = false;
     }
   }
 
@@ -424,8 +421,11 @@ class DataBridge {
       // Downstream hooks gate on isHydrated; skipping the call causes an infinite wait loop.
       // Offline-queue guard: skip hydration if local edits are queued but not yet synced,
       // to avoid overwriting newer in-flight data with stale server values.
+      // TODO: This guard is overbroad — skips ALL hydration if ANY offline action is pending,
+      // even for unrelated tables (meal_logs, workout_sessions). Should filter by profile-related
+      // tables only (personal_info, diet_preferences, body_analysis, workout_preferences, advanced_review).
       if (offlineService.hasPendingActions()) {
-        console.warn('[DataBridge] Skipping hydration: offline queue has pending actions');
+        console.error('[DataBridge] Skipping hydration: offline queue has pending actions — this may cause empty profile screens if only non-profile tables are queued');
         profileStore.setSyncStatus("synced");
       } else {
         profileStore.hydrateFromLegacy(batchUpdate);
@@ -435,9 +435,7 @@ class DataBridge {
         weightTrackingService.setWeight(resolvedCurrentWeight.value);
       }
 
-      // NOTE: userStore is NOT updated here - profileStore is the SSOT
-      // userStore.updatePersonalInfo is deprecated and should not be used
-      // See: src/stores/userStore.ts for deprecation notice
+      // NOTE: profileStore is the SSOT for all onboarding/profile data
 
       return {
         personalInfo,
@@ -1019,12 +1017,6 @@ class DataBridge {
           data.dietPreferences ||
           data.bodyAnalysis
         );
-      }
-
-      // Check userStore
-      const userStore = useUserStore.getState();
-      if (userStore.profile?.personalInfo) {
-        return true;
       }
 
       return false;
@@ -1632,7 +1624,7 @@ class DataBridge {
         country: "US",
         state: "CA",
       };
-      await this.savePersonalInfo(samplePersonalInfo as any);
+      await this.savePersonalInfo(samplePersonalInfo as unknown as PersonalInfo);
       return true;
     } catch (error) {
       console.error("[DataBridge] createSampleProfileData error:", error);

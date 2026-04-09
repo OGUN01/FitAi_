@@ -9,12 +9,17 @@ import {
   FitnessGoals,
   DietPreferences,
   WorkoutPreferences,
-  UserProfile,
+  SyncableUserProfile,
   ValidationResult,
   DataValidationSchema,
 } from '../types/profileData';
 
 class ProfileValidator implements DataValidationSchema {
+  // Helper to safely access extra properties on partial data objects
+  private getField(data: Record<string, unknown>, field: string): unknown {
+    return data[field];
+  }
+
   // ============================================================================
   // PERSONAL INFO VALIDATION
   // ============================================================================
@@ -22,6 +27,7 @@ class ProfileValidator implements DataValidationSchema {
   validatePersonalInfo(data: Partial<PersonalInfo>): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
+    const record = data as Record<string, unknown>;
 
     // Required fields validation
     if (!data.name || data.name.trim().length === 0) {
@@ -35,7 +41,7 @@ class ProfileValidator implements DataValidationSchema {
     if (!data.age) {
       errors.push('Age is required');
     } else {
-      const age = parseInt(String((data as any).age), 10);
+      const age = parseInt(String(data.age), 10);
       if (isNaN(age) || age < 13 || age > 120) {
         errors.push('Age must be between 13 and 120');
       } else if (age < 18) {
@@ -49,28 +55,28 @@ class ProfileValidator implements DataValidationSchema {
       errors.push('Gender must be male, female, or other');
     }
 
-    if (!(data as any).height) {
+    if (!data.height) {
       errors.push('Height is required');
     } else {
-      const height = parseFloat((data as any).height);
+      const height = parseFloat(String(data.height));
       if (isNaN(height) || height < 100 || height > 250) {
         errors.push('Height must be between 100cm and 250cm');
       }
     }
 
-    if (!(data as any).weight) {
+    if (!data.weight) {
       errors.push('Weight is required');
     } else {
-      const weight = parseFloat((data as any).weight);
+      const weight = parseFloat(String(data.weight));
       if (isNaN(weight) || weight < 30 || weight > 300) {
         errors.push('Weight must be between 30kg and 300kg');
       }
     }
 
-    if (!(data as any).activityLevel) {
+    if (!data.activityLevel) {
       errors.push('Activity level is required');
     } else if (
-      !['sedentary', 'light', 'moderate', 'active', 'very_active'].includes((data as any).activityLevel)
+      !['sedentary', 'light', 'moderate', 'active', 'very_active'].includes(data.activityLevel)
     ) {
       errors.push('Invalid activity level');
     }
@@ -80,7 +86,8 @@ class ProfileValidator implements DataValidationSchema {
       errors.push('Invalid email format');
     }
 
-    if ((data as any).phoneNumber && !this.isValidPhoneNumber((data as any).phoneNumber)) {
+    const phoneNumber = record.phoneNumber as string | undefined;
+    if (phoneNumber && !this.isValidPhoneNumber(phoneNumber)) {
       warnings.push('Phone number format may be invalid');
     }
 
@@ -98,6 +105,7 @@ class ProfileValidator implements DataValidationSchema {
   validateFitnessGoals(data: Partial<FitnessGoals>): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
+    const record = data as Record<string, unknown>;
 
     // Required fields validation
     if (!data.primaryGoals || data.primaryGoals.length === 0) {
@@ -117,14 +125,16 @@ class ProfileValidator implements DataValidationSchema {
     }
 
     // Optional fields validation
-    if ((data as any).targetWeight) {
-      const weight = parseFloat((data as any).targetWeight);
+    const targetWeight = record.targetWeight as string | number | undefined;
+    if (targetWeight) {
+      const weight = parseFloat(String(targetWeight));
       if (isNaN(weight) || weight < 30 || weight > 300) {
         errors.push('Target weight must be between 30kg and 300kg');
       }
     }
 
-    if ((data as any).timeframe && !this.isValidTimeframe((data as any).timeframe)) {
+    const timeframe = record.timeframe as string | undefined;
+    if (timeframe && !this.isValidTimeframe(timeframe)) {
       warnings.push('Timeframe may be unrealistic');
     }
 
@@ -142,6 +152,7 @@ class ProfileValidator implements DataValidationSchema {
   validateDietPreferences(data: Partial<DietPreferences>): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
+    const record = data as Record<string, unknown>;
 
     // Required fields validation
     if (!data.diet_type) {
@@ -155,12 +166,14 @@ class ProfileValidator implements DataValidationSchema {
     }
 
     // Optional fields validation - cookingSkill
-    if ((data as any).cookingSkill && !['beginner', 'intermediate', 'advanced'].includes((data as any).cookingSkill)) {
+    const cookingSkill = record.cookingSkill as string | undefined;
+    if (cookingSkill && !['beginner', 'intermediate', 'advanced'].includes(cookingSkill)) {
       errors.push('Invalid cooking skill level');
     }
 
     // Optional fields validation - mealPrepTime
-    if ((data as any).mealPrepTime && !['quick', 'moderate', 'extended'].includes((data as any).mealPrepTime)) {
+    const mealPrepTime = record.mealPrepTime as string | undefined;
+    if (mealPrepTime && !['quick', 'moderate', 'extended'].includes(mealPrepTime)) {
       errors.push('Invalid meal preparation time preference');
     }
 
@@ -169,7 +182,8 @@ class ProfileValidator implements DataValidationSchema {
       errors.push('Allergies must be an array');
     }
 
-    if ((data as any).cuisinePreferences && !Array.isArray((data as any).cuisinePreferences)) {
+    const cuisinePreferences = record.cuisinePreferences as unknown;
+    if (cuisinePreferences && !Array.isArray(cuisinePreferences)) {
       errors.push('Cuisine preferences must be an array');
     }
 
@@ -177,7 +191,8 @@ class ProfileValidator implements DataValidationSchema {
       errors.push('Dietary restrictions must be an array');
     }
 
-    if ((data as any).dislikes && !Array.isArray((data as any).dislikes)) {
+    const dislikes = record.dislikes as unknown;
+    if (dislikes && !Array.isArray(dislikes)) {
       errors.push('Dislikes must be an array');
     }
 
@@ -227,10 +242,12 @@ class ProfileValidator implements DataValidationSchema {
     }
 
     // Frequency validation
-    if ((data as any).frequency !== undefined) {
-      if ((data as any).frequency < 1 || (data as any).frequency > 7) {
+    const record = data as Record<string, unknown>;
+    const frequency = record.frequency as number | undefined;
+    if (frequency !== undefined) {
+      if (frequency < 1 || frequency > 7) {
         errors.push('Workout frequency must be between 1 and 7 days per week');
-      } else if ((data as any).frequency > 6) {
+      } else if (frequency > 6) {
         warnings.push('Training 7 days a week may lead to overtraining');
       }
     }
@@ -251,7 +268,7 @@ class ProfileValidator implements DataValidationSchema {
   // USER PROFILE VALIDATION
   // ============================================================================
 
-  validateUserProfile(data: Partial<UserProfile>): ValidationResult {
+  validateUserProfile(data: Partial<SyncableUserProfile>): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -323,7 +340,7 @@ class ProfileValidator implements DataValidationSchema {
   // PROFILE COMPLETENESS CALCULATION
   // ============================================================================
 
-  calculateProfileCompleteness(profile: Partial<UserProfile>): number {
+  calculateProfileCompleteness(profile: Partial<SyncableUserProfile>): number {
     let completeness = 0;
     const maxScore = 100;
 

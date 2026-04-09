@@ -38,7 +38,8 @@ export class GoogleFitDataWriter {
         sourcePackage: "com.fitai.app",
       };
 
-      const result = await GoogleFit.saveWorkout(workoutData as any);
+      // SDK types don't match our extended workoutData shape
+      const result = await GoogleFit.saveWorkout(workoutData as unknown as Parameters<typeof GoogleFit.saveWorkout>[0]);
 
       if (result) {
         return true;
@@ -72,10 +73,11 @@ export class GoogleFitDataWriter {
         sourcePackage: "com.fitai.app",
       };
 
+      // SDK types don't match our extended nutritionEntry shape
       const result = await GoogleFit.saveFood(
-        nutritionEntry as any,
-        (err: any, res: any) => {
-          if (err) {
+        nutritionEntry as unknown as Parameters<typeof GoogleFit.saveFood>[0],
+        (isError: boolean, res: true) => {
+          if (isError) {
             // error handled silently
           }
         },
@@ -104,9 +106,10 @@ export class GoogleFitDataWriter {
         unit: "kg",
       };
 
+      // SDK types don't match our extended weightData shape
       const result = await GoogleFit.saveWeight(
-        weightData as any,
-        (err: any, res: any) => {
+        weightData as unknown as Parameters<typeof GoogleFit.saveWeight>[0],
+        (err: Error | null, res: unknown) => {
           if (err) {
             // error handled silently
           }

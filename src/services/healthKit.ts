@@ -161,10 +161,6 @@ class HealthKitService {
 
       if (granted) {
         await AsyncStorage.setItem("healthkit_authorized", "true");
-        await AsyncStorage.setItem(
-          "healthkit_auth_date",
-          new Date().toISOString(),
-        );
       }
 
       return {
@@ -284,7 +280,7 @@ class HealthKitService {
         restingHeartRate,
         heartRateVariability,
         sleepHours,
-        sleepQuality: sleepQuality as any,
+        sleepQuality: sleepQuality as HealthKitData["sleepQuality"],
         bodyWeight: bodyMass?.value,
         workouts: processedWorkouts,
       };

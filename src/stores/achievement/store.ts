@@ -20,7 +20,7 @@ export const useAchievementStore = create<AchievementStore>()(
     })),
     {
       name: "achievement-storage",
-      storage: achievementStorage as any,
+      storage: createJSONStorage(() => achievementStorage),
       partialize: (state) => ({
         userAchievements: state.userAchievements,
         totalFitCoinsEarned: state.totalFitCoinsEarned,

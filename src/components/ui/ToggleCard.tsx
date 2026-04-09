@@ -159,7 +159,7 @@ export const ToggleCard: React.FC<ToggleCardProps> = ({
         {isActive && (
           <View style={styles.activeIndicator}>
             <LinearGradient
-              colors={gradient as any}
+              colors={gradient as unknown as readonly [string, string, ...string[]]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.activeIndicatorGradient}

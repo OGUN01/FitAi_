@@ -121,9 +121,12 @@ export const useNutritionData = ({
     const n = getTodaysConsumedNutrition();
     const todayDate = getLocalDateString();
     const completedLoggedMeals = storeDailyMeals.filter(
-      (meal) =>
-        typeof (meal as any).loggedAt === "string" &&
-        getLocalDateString((meal as any).loggedAt) === todayDate,
+      (meal) => {
+        const mealRecord = meal as unknown as Record<string, unknown>;
+        const loggedAt = mealRecord.loggedAt;
+        return typeof loggedAt === "string" &&
+          getLocalDateString(loggedAt) === todayDate;
+      },
     ).length;
 
     return {

@@ -301,7 +301,7 @@ export const EXERCISE_DATABASE = {
 
 // Utility function to check if exercise name is verified
 export const isVerifiedExercise = (exerciseName: string): boolean => {
-  return VERIFIED_EXERCISE_NAMES.includes(exerciseName.toLowerCase() as any);
+  return (VERIFIED_EXERCISE_NAMES as readonly string[]).includes(exerciseName.toLowerCase());
 };
 
 // Get random verified exercises by category

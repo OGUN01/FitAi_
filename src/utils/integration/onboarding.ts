@@ -1,7 +1,12 @@
 import { useAuth } from "../../hooks/useAuth";
-import { useUser } from "../../hooks/useUser";
+import { useUserStore } from "../../stores/userStore";
 import { useOffline } from "../../hooks/useOffline";
-import { OnboardingData } from "../../types/user";
+import {
+  OnboardingData,
+  WorkoutPreferences as UserWorkoutPreferences,
+  DietPreferences as UserDietPreferences,
+  CreateProfileRequest,
+} from "../../types/user";
 import { supabase } from "../../services/api";
 import { dataBridge } from "../../services/DataBridge";
 import {
@@ -20,7 +25,7 @@ export const useOnboardingIntegration = () => {
     updateFitnessGoals,
     updatePersonalInfo,
     updateFitnessGoalsLocal,
-  } = useUser();
+  } = useUserStore();
   const { optimisticCreate } = useOffline();
 
   const getUserId: GetUserIdFn = () => {
@@ -44,7 +49,7 @@ export const useOnboardingIntegration = () => {
       }
 
       if (isAuthenticated && authUser) {
-        const personalData = personalInfo as any;
+        const personalData = personalInfo as UserPersonalInfo & Record<string, unknown>;
 
         let firstName = personalData.first_name || "";
         let lastName = personalData.last_name || "";
@@ -56,12 +61,12 @@ export const useOnboardingIntegration = () => {
         }
 
         const heightValue =
-          personalData.height_cm ||
-          parseFloat(personalData.height) ||
+          (personalData.height_cm as number | undefined) ||
+          personalData.height ||
           undefined;
         const weightValue =
-          personalData.current_weight_kg ||
-          parseFloat(personalData.weight) ||
+          (personalData.current_weight_kg as number | undefined) ||
+          personalData.weight ||
           undefined;
         const ageValue = personalData.age;
 
@@ -70,28 +75,28 @@ export const useOnboardingIntegration = () => {
           first_name: firstName,
           last_name: lastName,
           age: ageValue || undefined,
-          gender: personalData.gender as "male" | "female" | "other",
+          gender: personalData.gender as UserPersonalInfo["gender"],
           height_cm: heightValue,
           current_weight_kg: weightValue,
-          activityLevel: personalData.activityLevel as any,
-        } as any;
+          activityLevel: personalData.activityLevel as string | undefined,
+        } as Partial<UserPersonalInfo>;
 
         let response = await updateProfile(authUser.id, profileData);
 
         if (!response.success) {
-          const createData = {
+          const createData: Record<string, unknown> = {
             name: personalData.name || `${firstName} ${lastName}`.trim(),
             first_name: firstName,
             last_name: lastName,
             age: ageValue || "",
-            gender: personalData.gender as "male" | "female" | "other",
+            gender: personalData.gender as UserPersonalInfo["gender"],
             height_cm: heightValue || "",
             current_weight_kg: weightValue || "",
-            activityLevel: personalData.activityLevel as any,
+            activityLevel: personalData.activityLevel as string | undefined,
             id: authUser.id,
             email: authUser.email || "",
-          } as any;
-          response = await createProfile(createData);
+          };
+          response = await createProfile(createData as unknown as CreateProfileRequest);
         }
 
         if (!response.success) {
@@ -123,7 +128,7 @@ export const useOnboardingIntegration = () => {
 
       dataBridge.setUserId(currentUserId);
       const localSaveSuccess = await dataBridge.saveFitnessGoals(
-        fitnessGoals as any,
+        fitnessGoals as unknown as UserWorkoutPreferences,
       );
 
       if (!localSaveSuccess) {
@@ -131,7 +136,7 @@ export const useOnboardingIntegration = () => {
       }
 
       if (isAuthenticated && authUser) {
-        updateFitnessGoalsLocal(fitnessGoals as any);
+        updateFitnessGoalsLocal(fitnessGoals);
 
         // Save to workout_preferences (SSOT) instead of deprecated fitness_goals table
         const { error: wpError } = await supabase
@@ -178,11 +183,12 @@ export const useOnboardingIntegration = () => {
     try {
       const currentUserId = getUserId();
 
-      const dietPrefsWithDefaults: any = {
+      const dietPrefsRecord = dietPreferences as Record<string, unknown>;
+      const dietPrefsWithDefaults: Record<string, unknown> = {
         ...dietPreferences,
-        cookingSkill: (dietPreferences as any).cookingSkill || "intermediate",
-        mealPrepTime: (dietPreferences as any).mealPrepTime || "moderate",
-        dislikes: (dietPreferences as any).dislikes || [],
+        cookingSkill: (dietPrefsRecord.cookingSkill as string) || "intermediate",
+        mealPrepTime: (dietPrefsRecord.mealPrepTime as string) || "moderate",
+        dislikes: (dietPrefsRecord.dislikes as string[]) || [],
         id: `diet_${currentUserId}`,
         version: 1,
         createdAt: new Date().toISOString(),
@@ -193,7 +199,7 @@ export const useOnboardingIntegration = () => {
 
       dataBridge.setUserId(currentUserId);
       const localSaveSuccess = await dataBridge.saveDietPreferences(
-        dietPrefsWithDefaults,
+        dietPrefsWithDefaults as unknown as UserDietPreferences,
       );
 
       if (!localSaveSuccess) {
@@ -261,13 +267,11 @@ export const useOnboardingIntegration = () => {
               location: workoutPreferences.location,
               equipment: workoutPreferences.equipment,
               time_preference:
-                (workoutPreferences as any).time_preference ||
-                (workoutPreferences as any).timePreference ||
+                workoutPreferences.time_preference ||
                 30,
               intensity: workoutPreferences.intensity,
               workout_types:
-                (workoutPreferences as any).workout_types ||
-                (workoutPreferences as any).workoutTypes ||
+                workoutPreferences.workout_types ||
                 [],
             });
 
@@ -309,9 +313,9 @@ export const useOnboardingIntegration = () => {
           const photoUrls = bodyAnalysis.photos || {};
           const { data, error } = await supabase.from("body_analysis").upsert({
             user_id: authUser.id,
-            front_photo_url: (photoUrls as any).front || null,
-            side_photo_url: (photoUrls as any).side || null,
-            back_photo_url: (photoUrls as any).back || null,
+            front_photo_url: photoUrls.front || null,
+            side_photo_url: photoUrls.side || null,
+            back_photo_url: photoUrls.back || null,
           });
 
           if (error) {

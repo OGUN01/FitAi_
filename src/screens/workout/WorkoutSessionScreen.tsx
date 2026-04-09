@@ -335,7 +335,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       const durationMinutes = Math.max(1, Math.round(elapsedSeconds / 60));
 
       let success: boolean;
-      if (isExtra === true || (isExtra as any) === "true") {
+      if (isExtra === true || String(isExtra) === "true") {
         const extraResult = await completeExtraWorkout(
           workout,
           {
@@ -440,7 +440,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             // H24: Save user-provided rating and notes to the workout session
             // Bug 3: for extra workouts use the server-generated row ID, not the local UUID
             const rowId =
-              isExtra === true || (isExtra as any) === "true"
+              isExtra === true || String(isExtra) === "true"
                 ? supabaseSessionIdRef.current
                 : sessionId;
             if ((rating || notes) && rowId) {
@@ -549,8 +549,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             caloriesBurned: session.workoutStats.caloriesBurned,
           });
 
-        if (isExtra === true || (isExtra as any) === "true") {
-          const storeState = useFitnessStore.getState() as any;
+        if (isExtra === true || String(isExtra) === "true") {
+          const storeState = useFitnessStore.getState() as { updateActiveExtraProgress?: (index: number) => void };
           if (typeof storeState.updateActiveExtraProgress === "function") {
             storeState.updateActiveExtraProgress(session.currentExerciseIndex);
           }
@@ -673,7 +673,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
               navigation.navigate('ExerciseHistory', {
                 exerciseId: session.currentExercise.exerciseId ?? '',
                 exerciseName: exerciseName,
-              } as any)
+              } as never)
             }
             style={styles.exerciseNameRow}
             testID="exercise-name-history-tap"

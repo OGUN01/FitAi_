@@ -46,8 +46,8 @@ export type {
   DietType,
   BodyFatSource,
 
-  // User Profile
-  UserProfile,
+  // Health Calculation Profile
+  HealthCalcProfile,
 
   // BMI Types
   BMICutoffs,

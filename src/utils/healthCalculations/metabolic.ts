@@ -4,6 +4,7 @@ import {
   calculateTDEE as calculateTDEECore,
   calculateBaseTDEE as calculateBaseTDEECore,
 } from "./core/tdeeCalculation";
+import type { ActivityLevel } from "./types";
 import {
   BodyFatData,
   ActivityValidationResult,
@@ -35,7 +36,7 @@ export class MetabolicCalculations {
   }
 
   static calculateTDEE(bmr: number, activityLevel: string): number {
-    return calculateTDEECore(bmr, activityLevel as any);
+    return calculateTDEECore(bmr, activityLevel as ActivityLevel);
   }
 
   static calculateBaseTDEE(bmr: number, occupation: string): number {

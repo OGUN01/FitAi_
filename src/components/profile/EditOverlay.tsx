@@ -11,7 +11,7 @@
  * a message directing users to the appropriate section.
  */
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, type ComponentProps } from "react";
 import {
   View,
   Text,
@@ -158,7 +158,7 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({
       <View style={styles.contentContainer}>
         <View style={styles.iconCircle}>
           <Ionicons
-            name={sectionInfo.icon as any}
+            name={sectionInfo.icon as ComponentProps<typeof Ionicons>['name']}
             size={48}
               color={ResponsiveTheme.colors.primary}
           />

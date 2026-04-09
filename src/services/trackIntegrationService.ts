@@ -3,9 +3,6 @@
 
 import { migrationEngine } from "./migration";
 import { migrationManager } from "./migrationManager";
-import { realTimeSyncService } from "./syncService";
-import { syncMonitoringService } from "./syncMonitoring";
-import { intelligentSyncScheduler } from "./intelligentSyncScheduler";
 import { backupRecoveryService } from "./backupRecoveryService";
 import { dataBridge } from "./DataBridge";
 import { enhancedLocalStorage } from "./localStorage";
@@ -246,7 +243,7 @@ export class TrackIntegrationService {
         this.log("Migration completed successfully");
       } else {
         throw new Error(
-          `Migration failed: ${(result as any)?.errors?.[0]?.message || "Unknown error"}`,
+          `Migration failed: ${(result as { errors?: Array<{ message?: string }> })?.errors?.[0]?.message || "Unknown error"}`,
         );
       }
     } catch (error) {
@@ -270,18 +267,6 @@ export class TrackIntegrationService {
     try {
       this.log("Starting sync services...");
 
-      // Initialize sync service
-      await realTimeSyncService.initialize();
-      this.updateServiceStatus("sync", "active");
-
-      // Start monitoring
-      await syncMonitoringService.startMonitoring();
-      this.updateServiceStatus("monitoring", "active");
-
-      // Start intelligent scheduler
-      await intelligentSyncScheduler.start();
-      this.updateServiceStatus("scheduler", "active");
-
       this.updateStatus({ syncActive: true });
 
       this.emitEvent({
@@ -294,7 +279,6 @@ export class TrackIntegrationService {
       this.log("Sync services started successfully");
     } catch (error) {
       this.log("Failed to start sync services:", error);
-      this.updateServiceStatus("sync", "error");
       throw error;
     }
   }
@@ -351,23 +335,10 @@ export class TrackIntegrationService {
         lastMigration: migrationManager.getCurrentResult(),
       };
 
-      // Sync service health
-      health.sync = {
-        status: this.status.services.sync,
-        syncStatus: realTimeSyncService.getSyncStatus(),
-        metrics: syncMonitoringService.getMetrics(),
-      };
-
       // Backup service health
       health.backup = {
         status: this.status.services.backup,
         backupStatus: backupRecoveryService.getStatus(),
-      };
-
-      // Scheduler health
-      health.scheduler = {
-        status: this.status.services.scheduler,
-        stats: intelligentSyncScheduler.getStats(),
       };
     } catch (error) {
       this.log("Failed to get service health:", error);
@@ -383,9 +354,6 @@ export class TrackIntegrationService {
     try {
       this.log("Stopping Track B integration...");
 
-      await realTimeSyncService.stop();
-      await syncMonitoringService.stopMonitoring();
-      await intelligentSyncScheduler.stop();
       await backupRecoveryService.stop();
 
       await this.saveIntegrationState();
@@ -471,16 +439,6 @@ export class TrackIntegrationService {
     migrationManager.onResult((result) => {
       this.emitEvent({
         type: result.success ? "migration_complete" : "error",
-        timestamp: new Date(),
-        data: { result },
-        source: "track_b",
-      });
-    });
-
-    // Sync events
-    realTimeSyncService.onSyncResult((result) => {
-      this.emitEvent({
-        type: result.success ? "sync_complete" : "error",
         timestamp: new Date(),
         data: { result },
         source: "track_b",

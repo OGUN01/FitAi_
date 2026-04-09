@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Vibration,
+  DimensionValue,
 } from "react-native";
 
 interface RestTimerProps {
@@ -156,7 +157,7 @@ export function RestTimer({
           <View
             style={[
               styles.progressFill,
-              { width: `${Math.round(progressFraction * 100)}%` as any },
+              { width: `${Math.round(progressFraction * 100)}%` as DimensionValue },
             ]}
           />
         </View>

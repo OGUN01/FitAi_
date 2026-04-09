@@ -444,7 +444,7 @@ class UnifiedAIService {
       }
 
       // ✅ Backend ALWAYS returns weekly plan (NO FALLBACK)
-      const weeklyPlanData = response.data as any;
+      const weeklyPlanData = response.data as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
       // Transform each workout in the weekly plan
       const daySlotCounts = new Map<string, number>();
@@ -669,8 +669,7 @@ class UnifiedAIService {
   > {
     try {
       if (attempts >= MAX_POLL_ATTEMPTS) {
-        // Cast needed: AIResponse doesn't have timedOut but callers can inspect it
-        return { success: false, error: 'Meal plan generation timed out. Please try again.', timedOut: true } as any;
+        return { success: false, error: 'Meal plan generation timed out. Please try again.', timedOut: true };
       }
 
       const response = await fitaiWorkersClient.getJobStatus(jobId);

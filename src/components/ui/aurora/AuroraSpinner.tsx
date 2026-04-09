@@ -159,17 +159,15 @@ export const AuroraSpinner: React.FC<AuroraSpinnerProps> = ({
         ]}
       >
         <LinearGradient
-          {...(toLinearGradientProps(gradient) as any)}
-          style={
-            [
+          {...toLinearGradientProps(gradient)}
+          style={[
               styles.gradient,
               {
                 width: spinnerSize,
                 height: spinnerSize,
                 borderRadius: spinnerSize / 2,
               },
-            ] as any
-          }
+            ]}
         >
           {/* Inner transparent circle to create ring effect */}
           <View

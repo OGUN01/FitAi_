@@ -209,8 +209,8 @@ export function transformForDietRequest(
   }
   const uniqueDietaryRestrictions = [...new Set(dietaryRestrictions)];
 
-  const excludeIngredients = Array.isArray((dietPreferences as any)?.dislikes)
-    ? ((dietPreferences as any).dislikes as string[]).filter(Boolean)
+  const excludeIngredients = Array.isArray((dietPreferences as DietPreferences & { dislikes?: string[] })?.dislikes)
+    ? ((dietPreferences as DietPreferences & { dislikes?: string[] }).dislikes as string[]).filter(Boolean)
     : [];
   const mealsPerDay = clampInt(
     generationOptions.mealsPerDay ?? getRequestedMealsPerDay(dietPreferences),
@@ -681,13 +681,13 @@ export function transformWorkoutResponseToWeeklyPlan(
       warmup: workoutPlan.warmup?.map(transformExerciseItem) || [],
       cooldown: workoutPlan.cooldown?.map(transformExerciseItem) || [],
       createdAt: new Date().toISOString(),
-    } as any);
+    } as Workout);
   }
 
   return {
     id: workoutPlan.id || `weekly_workout_week_${weekNumber}`,
     weekNumber,
-    workouts: workouts as any,
+    workouts: workouts as WeeklyWorkoutPlan["workouts"],
     planTitle: workoutPlan.title || "Your Personalized Workout Plan",
     planDescription: workoutPlan.description,
     restDays: [1, 3, 5], // Tuesday, Thursday, Saturday, Sunday indices

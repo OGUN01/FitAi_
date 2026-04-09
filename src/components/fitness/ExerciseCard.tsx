@@ -109,9 +109,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
   return (
     <Card
       style={
-        (isCompleted
+        StyleSheet.flatten(isCompleted
           ? [styles.card, styles.cardCompleted, style]
-          : [styles.card, style]) as any
+          : [styles.card, style])
       }
       variant="outlined"
     >

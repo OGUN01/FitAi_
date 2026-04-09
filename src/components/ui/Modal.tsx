@@ -6,6 +6,7 @@ import {
   Pressable,
   Dimensions,
   ViewStyle,
+  DimensionValue,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
@@ -113,7 +114,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
             style={[
               styles.bottomSheetContent,
               {
-                height: height as any,
+                height: height as DimensionValue,
                 paddingBottom: insets.bottom + ResponsiveTheme.spacing.lg,
               },
             ]}

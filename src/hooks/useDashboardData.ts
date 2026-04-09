@@ -17,7 +17,6 @@ import { useFitnessStore } from "../stores/fitnessStore";
 import { useHealthDataStore } from "../stores/healthDataStore";
 import { useHydrationStore } from "../stores/hydrationStore";
 import { useAchievementStore } from "../stores/achievementStore";
-import { useUserStore } from "../stores/userStore";
 import { useAnalyticsStore } from "../stores/analyticsStore";
 import { useProfileStore } from "../stores/profileStore";
 import { findCompletedSessionForWorkout } from "../utils/workoutIdentity";
@@ -79,8 +78,7 @@ export const useDashboardData = (): DashboardData => {
   // Auth - minimal selection
   const authUser = useAuthStore((s) => s.user);
 
-  // User profile
-  const userProfile = useUserStore((s) => s.profile);
+  // User profile (SSOT: profileStore only)
   const profilePersonalInfo = useProfileStore((s) => s.personalInfo);
   const profileBodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
   const profileWorkoutPreferences = useProfileStore(
@@ -118,17 +116,14 @@ export const useDashboardData = (): DashboardData => {
   const streak = useAchievementStore((s) => s.currentStreak);
 
   const profile = useMemo(
-    () => ({
-      ...userProfile,
-      ...buildLegacyProfileAdapter({
+    () =>
+      buildLegacyProfileAdapter({
         personalInfo: profilePersonalInfo,
         bodyAnalysis: profileBodyAnalysis,
         workoutPreferences: profileWorkoutPreferences,
         dietPreferences: profileDietPreferences,
       }),
-    }),
     [
-      userProfile,
       profilePersonalInfo,
       profileBodyAnalysis,
       profileWorkoutPreferences,
@@ -225,14 +220,14 @@ export const useTodaysWorkout = () => {
     const todayName = getCurrentDayName();
 
     const todaysWorkouts = weeklyWorkoutPlan.workouts.filter(
-      (w: any) => w.dayOfWeek?.toLowerCase() === todayName,
+      (w) => w.dayOfWeek?.toLowerCase() === todayName,
     );
     const todaysWorkout =
       todaysWorkouts.find(
-        (w: any) =>
+        (w) =>
           !findCompletedSessionForWorkout({
             completedSessions,
-            workout: w as any,
+            workout: w,
             plan: weeklyWorkoutPlan,
             weekStart: getCurrentWeekStart(),
           }),
@@ -246,7 +241,7 @@ export const useTodaysWorkout = () => {
       todaysWorkouts.reduce((total, workout) => {
         const completedSession = findCompletedSessionForWorkout({
           completedSessions,
-          workout: workout as any,
+          workout: workout,
           plan: weeklyWorkoutPlan,
           weekStart: getCurrentWeekStart(),
         });

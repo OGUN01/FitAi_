@@ -137,9 +137,9 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
                         variant={getButtonVariant(action)}
                         accessibilityLabel={action.style === "cancel" ? "back" : action.text}
                         style={
-                          (index === actions.length - 1
-                            ? { width: "100%" }
-                            : styles.actionButton) as any
+                          index === actions.length - 1
+                            ? { width: "100%" as const }
+                            : styles.actionButton
                         }
                       />
                     ))}

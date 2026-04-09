@@ -1,5 +1,4 @@
 import { migrationManager } from "../migrationManager";
-import { realTimeSyncService } from "../syncService";
 import { backupRecoveryService } from "../backupRecoveryService";
 import { IntegrationEvent, IntegrationStatus } from "./types";
 
@@ -20,15 +19,6 @@ export class EventSystem {
     migrationManager.onResult((result) => {
       emitEvent({
         type: result.success ? "migration_complete" : "error",
-        timestamp: new Date(),
-        data: { result },
-        source: "track_b",
-      });
-    });
-
-    realTimeSyncService.onSyncResult((result) => {
-      emitEvent({
-        type: result.success ? "sync_complete" : "error",
         timestamp: new Date(),
         data: { result },
         source: "track_b",

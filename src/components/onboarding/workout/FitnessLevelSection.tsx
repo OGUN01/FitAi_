@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type ComponentProps } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rw } from "../../../utils/responsive";
@@ -67,7 +67,7 @@ export const FitnessLevelSection: React.FC<FitnessLevelSectionProps> = ({
           >
             <View style={styles.calculatedLevelContent}>
               <Ionicons
-                name={(levelInfo?.iconName as any) || "leaf-outline"}
+                name={(levelInfo?.iconName as ComponentProps<typeof Ionicons>['name']) || "leaf-outline"}
                 size={rf(24)}
                 color={ResponsiveTheme.colors.primary}
                 style={{ marginRight: ResponsiveTheme.spacing.sm }}
@@ -145,7 +145,7 @@ export const FitnessLevelSection: React.FC<FitnessLevelSectionProps> = ({
               return workoutType ? (
                 <View key={typeId} style={styles.recommendedTypeItem}>
                   <Ionicons
-                    name={workoutType.iconName as any}
+                    name={workoutType.iconName as ComponentProps<typeof Ionicons>['name']}
                     size={rf(16)}
                     color={ResponsiveTheme.colors.text}
                     style={{ marginRight: ResponsiveTheme.spacing.xs }}

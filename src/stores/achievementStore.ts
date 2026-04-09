@@ -7,6 +7,7 @@ import {
   subscribeWithSelector,
   persist,
   createJSONStorage,
+  StateStorage,
 } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -252,7 +253,7 @@ interface AchievementStore {
 }
 
 // Custom storage to handle Map serialization
-const achievementStorage = {
+const achievementStorage: StateStorage = {
   getItem: async (name: string): Promise<string | null> => {
     try {
       const value = await AsyncStorage.getItem(name);
@@ -280,7 +281,7 @@ const achievementStorage = {
       return null;
     }
   },
-  setItem: async (name: string, value: string | any): Promise<void> => {
+  setItem: async (name: string, value: string): Promise<void> => {
     try {
       // Zustand persist may call setItem with the state object directly (not a string)
       const parsed = typeof value === "string" ? JSON.parse(value) : value;
@@ -975,10 +976,10 @@ export const useAchievementStore = create<AchievementStore>()(
     })),
     {
       name: "achievement-storage",
-      storage: achievementStorage as any,
+      storage: createJSONStorage(() => achievementStorage),
       partialize: (state) => ({
         // Persist critical state - convert Map to Array for JSON serialization
-        userAchievements: Array.from(state.userAchievements.entries()) as any,
+        userAchievements: Array.from(state.userAchievements.entries()) as [string, UserAchievement][],
         totalFitCoinsEarned: state.totalFitCoinsEarned,
         completionRate: state.completionRate,
         currentStreak: state.currentStreak,
@@ -988,7 +989,7 @@ export const useAchievementStore = create<AchievementStore>()(
         if (!state) return;
         // Convert Array back to Map after rehydration (JSON cannot serialize Map natively)
         if (state.userAchievements && !(state.userAchievements instanceof Map)) {
-          state.userAchievements = new Map(state.userAchievements as any);
+          state.userAchievements = new Map(state.userAchievements as unknown as [string, UserAchievement][]);
         }
       },
     },

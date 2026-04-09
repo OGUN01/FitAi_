@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, Text, TextInput, StyleSheet, ViewStyle } from "react-native";
+import { View, Text, TextInput, StyleSheet, ViewStyle, DimensionValue } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -134,9 +134,9 @@ export const MetricInput: React.FC<MetricInputProps> = ({
           </View>
 
           {/* Progress Fill */}
-          <View style={[styles.scaleFill, { width: `${percentage}%` } as any]}>
+          <View style={[styles.scaleFill, { width: `${percentage}%` as DimensionValue }]}>
             <LinearGradient
-              colors={gradient as any}
+              colors={gradient as unknown as readonly [string, string, ...string[]]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.scaleFillGradient}
@@ -146,7 +146,7 @@ export const MetricInput: React.FC<MetricInputProps> = ({
           {/* Animated Indicator */}
           <Animated.View style={[styles.indicator, animatedIndicatorStyle]}>
             <LinearGradient
-              colors={gradient as any}
+              colors={gradient as unknown as readonly [string, string, ...string[]]}
               style={styles.indicatorGradient}
             />
             <View style={styles.indicatorTriangle} />

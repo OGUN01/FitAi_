@@ -71,21 +71,22 @@ class GoogleAuthService {
             }
             
             // Strategy 2: Constants.expoConfig access (production builds)
-            const expoConfigValue = (Constants.expoConfig as any)?.[key];
+            const expoConfigValue = (Constants.expoConfig as Record<string, unknown> | null)?.[key];
             if (expoConfigValue) {
-              return expoConfigValue;
+              return expoConfigValue as string;
             }
-            
+
             // Strategy 3: Constants.expoConfig.extra access (CRITICAL for production)
-            const extraValue = (Constants.expoConfig as any)?.extra?.[key];
-            if (extraValue) {
-              return extraValue;
+            const extraValue = (Constants.expoConfig as Record<string, unknown> | null)?.extra as Record<string, unknown> | undefined;
+            if (extraValue?.[key]) {
+              return extraValue[key] as string;
             }
-            
+
             // Strategy 4: Try manifest fallback (legacy support)
-            const manifestValue = (Constants.manifest as any)?.extra?.[key];
-            if (manifestValue) {
-              return manifestValue;
+            const manifest = Constants.manifest as Record<string, unknown> | null;
+            const manifestExtra = manifest?.extra as Record<string, unknown> | undefined;
+            if (manifestExtra?.[key]) {
+              return manifestExtra[key] as string;
             }
             
             if (Platform.OS === 'ios' || !key.includes('IOS')) {

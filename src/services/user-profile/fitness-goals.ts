@@ -7,6 +7,11 @@ import { toDb, fromDb } from "../../utils/transformers/fieldNameTransformers";
 import { FitnessGoalsResponse } from "./types";
 import { mapDatabaseGoalsToFitnessGoals } from "./mappers";
 
+/**
+ * @deprecated The fitness_goals DB table is deprecated. All goal data now lives in workout_preferences.
+ * This CRUD layer is only kept because integration files (utils/integration.ts, utils/integration/onboarding.ts)
+ * still call the userStore actions that delegate here. Remove once integration files are migrated.
+ */
 export async function createFitnessGoals(
   goalsData: CreateFitnessGoalsRequest,
 ): Promise<FitnessGoalsResponse> {
@@ -43,6 +48,11 @@ export async function createFitnessGoals(
   }
 }
 
+/**
+ * @deprecated The fitness_goals DB table is deprecated. All goal data now lives in workout_preferences.
+ * This CRUD layer is only kept because integration files still call the userStore actions that delegate here.
+ * Remove once integration files are migrated.
+ */
 export async function getFitnessGoals(
   userId: string,
 ): Promise<FitnessGoalsResponse> {
@@ -84,6 +94,11 @@ export async function getFitnessGoals(
   }
 }
 
+/**
+ * @deprecated The fitness_goals DB table is deprecated. All goal data now lives in workout_preferences.
+ * This CRUD layer is only kept because integration files still call the userStore actions that delegate here.
+ * Remove once integration files are migrated.
+ */
 export async function updateFitnessGoals(
   userId: string,
   updates: UpdateFitnessGoalsRequest,

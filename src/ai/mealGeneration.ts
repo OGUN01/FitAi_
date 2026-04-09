@@ -122,10 +122,10 @@ export async function generateDailyMealPlan(
         protein: response.data.dailyTotals?.protein || 0,
         carbohydrates: response.data.dailyTotals?.carbs || 0,
         fat: response.data.dailyTotals?.fat || 0,
-        fiber: (response.data.dailyTotals as any)?.fiber ?? 0,
-        sugar: (response.data.dailyTotals as any)?.sugar ?? 0,
+        fiber: (response.data.dailyTotals as Record<string, number | undefined>)?.fiber ?? 0,
+        sugar: (response.data.dailyTotals as Record<string, number | undefined>)?.sugar ?? 0,
       },
-      waterIntake: (response.data.dailyTotals as any)?.water ?? 0,
+      waterIntake: (response.data.dailyTotals as Record<string, number | undefined>)?.water ?? 0,
     };
 
     return {

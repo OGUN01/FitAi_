@@ -12,7 +12,7 @@
  * Date: 2025-12-30
  */
 
-import { UserProfile, MuscleGainLimits, GoalValidation } from "../types";
+import { HealthCalcProfile, MuscleGainLimits, GoalValidation } from "../types";
 
 export class MuscleGainCalculator {
   /**
@@ -25,7 +25,7 @@ export class MuscleGainCalculator {
    * - Advanced (3-5 years): 0.25-0.5% bodyweight/month
    * - Elite (5+ years): 0.1-0.25% bodyweight/month
    */
-  calculateMaxGainRate(user: UserProfile): MuscleGainLimits {
+  calculateMaxGainRate(user: HealthCalcProfile): MuscleGainLimits {
     const trainingYears = user.workoutExperienceYears || 0;
     const age = user.age;
     const gender = user.gender;
@@ -80,7 +80,7 @@ export class MuscleGainCalculator {
   validateGoal(
     targetGain: number,
     timelineMonths: number,
-    user: UserProfile,
+    user: HealthCalcProfile,
   ): GoalValidation {
     const limits = this.calculateMaxGainRate(user);
     const maxGain = limits.maxMonthlyGain * timelineMonths;
@@ -144,7 +144,7 @@ export class MuscleGainCalculator {
    * Estimate muscle gain potential for first year
    * Useful for setting long-term expectations
    */
-  estimateFirstYearPotential(user: UserProfile): {
+  estimateFirstYearPotential(user: HealthCalcProfile): {
     optimistic: number;
     realistic: number;
     conservative: number;
@@ -163,7 +163,7 @@ export class MuscleGainCalculator {
    * Calculate total natural muscle gain potential (career)
    * Based on Alan Aragon's career muscle gain potential
    */
-  calculateCareerPotential(user: UserProfile): {
+  calculateCareerPotential(user: HealthCalcProfile): {
     totalPotential: number;
     timeToReach: number;
     breakdown: {

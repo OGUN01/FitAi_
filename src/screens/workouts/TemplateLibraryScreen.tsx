@@ -139,7 +139,7 @@ export default function TemplateLibraryScreen({ navigation }: Props) {
               navigation.navigate('ExerciseHistory', {
                 exerciseId: ex.exerciseId,
                 exerciseName: ex.name,
-              } as any)
+              } as never)
             }
             testID={`exercise-history-${item.id}-${idx}`}
           >

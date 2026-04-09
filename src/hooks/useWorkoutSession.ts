@@ -105,7 +105,7 @@ export const useWorkoutSession = (
         if (exercise) {
           completedInputs.push({
             exerciseId: exercise.exerciseId,
-            name: (exercise as any).name || (exercise as any).exerciseName,
+            name: (exercise as unknown as Record<string, unknown>).name as string || (exercise as unknown as Record<string, unknown>).exerciseName as string,
             sets: completedSets,
             reps: exercise.reps,
             restTime: exercise.restTime,

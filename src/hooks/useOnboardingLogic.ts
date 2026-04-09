@@ -510,7 +510,7 @@ export const useOnboardingLogic = ({
         weight: ba?.current_weight_kg || 0,
         country: pi?.country || "",
         state: pi?.state || "",
-      } as any,
+      },
       fitnessGoals: {
         primary_goals: wp?.primary_goals || [],
         time_commitment: `${wp?.time_preference || wp?.session_duration_minutes || 45} minutes`,
@@ -526,7 +526,7 @@ export const useOnboardingLogic = ({
             : wp?.intensity === "advanced"
               ? "advanced"
               : "intermediate",
-      } as any,
+      },
       dietPreferences: {
         dietType: (dp?.diet_type || "balanced") as
           | "vegetarian"
@@ -536,7 +536,7 @@ export const useOnboardingLogic = ({
         allergies: dp?.allergies || [],
         restrictions: dp?.cuisine_preferences || [],
         calorieTarget: ar?.daily_calories || 2000,
-      } as any,
+      },
       workoutPreferences: {
         location: wp?.location || "gym",
         equipment: wp?.equipment || wp?.available_equipment || [],
@@ -595,6 +595,7 @@ export const useOnboardingLogic = ({
         ai_estimated_body_fat: ba?.ai_estimated_body_fat,
         ai_confidence_score: ba?.ai_confidence_score,
       },
+      advancedReview: ar || undefined,
     };
 
     // Calculate and set personalized step goal from onboarding data

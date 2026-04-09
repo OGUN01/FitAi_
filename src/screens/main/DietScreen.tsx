@@ -53,7 +53,6 @@ import { calculateMealSchedule } from "../../utils/mealSchedule";
 import { getLocalDateString } from "../../utils/weekUtils";
 import PaywallModal from "../../components/subscription/PaywallModal";
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
-import { useUserStore } from "../../stores/userStore";
 import { buildLegacyProfileAdapter } from "../../utils/profileLegacyAdapter";
 
 interface DietScreenProps {
@@ -223,15 +222,15 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     const todayDate = getLocalDateString();
     return dailyMeals.filter(
       (meal) =>
-        typeof (meal as any).loggedAt === "string" &&
-        getLocalDateString((meal as any).loggedAt) === todayDate,
+        typeof (meal as unknown as Record<string, unknown>).loggedAt === "string" &&
+        getLocalDateString((meal as unknown as Record<string, unknown>).loggedAt as string) === todayDate,
     );
   }, [dailyMeals]);
   const todaysPlannedSuggestionMeals = React.useMemo(() => {
     const todayDate = getLocalDateString();
     return dailyMeals.filter(
       (meal) =>
-        !(meal as any).loggedAt &&
+        !(meal as unknown as Record<string, unknown>).loggedAt &&
         !!meal.createdAt && getLocalDateString(meal.createdAt) === todayDate,
     );
   }, [dailyMeals]);
@@ -241,10 +240,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   const workoutPreferences = useProfileStore(
     (state) => state.workoutPreferences,
   );
-  const rawProfile = useUserStore((state) => state.profile);
   const userProfile = React.useMemo(
     () => ({
-      ...rawProfile,
       bodyMetrics: bodyAnalysis,
       workoutPreferences,
       ...buildLegacyProfileAdapter({
@@ -252,11 +249,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({
         bodyAnalysis,
         workoutPreferences,
         dietPreferences,
-        legacyProfile: rawProfile,
       }),
     }),
     [
-      rawProfile,
       personalInfo,
       bodyAnalysis,
       dietPreferences,

@@ -21,7 +21,7 @@
  * Date: 2025-12-30
  */
 
-import { UserProfile, HealthScore, ScoreFactor, ActivityLevel } from "../types";
+import { HealthCalcProfile, HealthScore, ScoreFactor, ActivityLevel } from "../types";
 
 interface HealthMetrics {
   bmi?: number;
@@ -42,7 +42,7 @@ export class HealthScoreCalculator {
    * @param metrics - Health metrics (BMI, water, protein, VO2 max, etc.)
    * @returns Health score with breakdown and recommendations
    */
-  calculate(user: UserProfile, metrics: HealthMetrics): HealthScore {
+  calculate(user: HealthCalcProfile, metrics: HealthMetrics): HealthScore {
     let totalScore = 0;
     const factors: ScoreFactor[] = [];
 
@@ -314,7 +314,7 @@ export class HealthScoreCalculator {
    */
   private getRecommendations(
     factors: ScoreFactor[],
-    user: UserProfile,
+    user: HealthCalcProfile,
   ): string[] {
     const recommendations: string[] = [];
 

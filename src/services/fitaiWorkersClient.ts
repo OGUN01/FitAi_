@@ -525,7 +525,7 @@ export class FitAIWorkersClient {
       return responseData;
     } catch (error) {
       // Network errors (timeout, no connection, etc.)
-      if (error instanceof TypeError || (error as any).name === "AbortError") {
+      if (error instanceof TypeError || (error instanceof Error && error.name === "AbortError")) {
         if (retryCount < this.maxRetries) {
           const delay = this.retryDelay * Math.pow(2, retryCount);
           await this.sleep(delay);

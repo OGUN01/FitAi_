@@ -20,9 +20,9 @@ import { SettingsModalWrapper } from "../components/SettingsModalWrapper";
 import { GlassFormInput } from "../components/GlassFormInput";
 import { GlassCard } from "../../../../components/ui/aurora/GlassCard";
 import { useProfileStore } from "../../../../stores/profileStore";
-import { useUser } from "../../../../hooks/useUser";
 import { useAuth } from "../../../../hooks/useAuth";
 import { BodyAnalysisService } from "../../../../services/onboardingService";
+import type { BodyAnalysisData } from "../../../../types/onboarding";
 import { resolveCurrentWeightForUser } from "../../../../services/currentWeight";
 import { ResponsiveTheme } from "../../../../utils/constants";
 import { rf, rp, rbr, rw } from "../../../../utils/responsive";
@@ -38,9 +38,9 @@ interface BodyMeasurementsEditModalProps {
 export const BodyMeasurementsEditModal: React.FC<
   BodyMeasurementsEditModalProps
 > = ({ visible, onClose }) => {
-  const { profile } = useUser();
   const { user } = useAuth();
   const { updateBodyAnalysis } = useProfileStore();
+  const bodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
   const personalInfo = useProfileStore((s) => s.personalInfo);
   const weightUnit: "kg" | "lbs" = personalInfo?.units === "imperial" ? "lbs" : "kg";
 
@@ -58,11 +58,9 @@ export const BodyMeasurementsEditModal: React.FC<
 
   // Load current values when modal opens
   useEffect(() => {
-    if (visible && profile) {
-      // ✅ Get measurements from bodyMetrics (database: body_analysis table)
-      const bodyMetrics = profile.bodyMetrics;
+    if (visible) {
       const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
-      // ✅ SSOT: profileStore.bodyAnalysis is authoritative; profile.bodyMetrics is legacy fallback
+      // ✅ SSOT: profileStore.bodyAnalysis is authoritative
       setHeight((bodyAnalysisData?.height_cm && bodyAnalysisData.height_cm > 0) ? bodyAnalysisData.height_cm.toString() : "");
       const rawWeight = bodyAnalysisData?.current_weight_kg;
       const displayWt = rawWeight && rawWeight > 0 ? toDisplayWeight(rawWeight, weightUnit) : null;
@@ -76,7 +74,7 @@ export const BodyMeasurementsEditModal: React.FC<
       setHips((bodyAnalysisData?.hip_cm && bodyAnalysisData.hip_cm > 0) ? bodyAnalysisData.hip_cm.toString() : "");
       setErrors({});
     }
-  }, [visible, profile, weightUnit]);
+  }, [visible, bodyAnalysis, weightUnit]);
 
   // Calculate BMI
   const bmi = useMemo(() => {
@@ -177,10 +175,6 @@ export const BodyMeasurementsEditModal: React.FC<
 
     setIsSaving(true);
     try {
-      if (!profile) {
-        throw new Error("Profile not found");
-      }
-
       const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
       const weightKg = convertWeight(parseLocalFloat(weight), weightUnit, "kg");
       const targetWeightKg = targetWeight ? convertWeight(parseLocalFloat(targetWeight), weightUnit, "kg") : undefined;
@@ -193,23 +187,18 @@ export const BodyMeasurementsEditModal: React.FC<
         // Preserve other fields - profileStore.bodyAnalysis is authoritative SSOT
         medical_conditions:
           bodyAnalysisData?.medical_conditions ||
-          profile.bodyMetrics?.medical_conditions ||
           [],
         medications:
           bodyAnalysisData?.medications ||
-          profile.bodyMetrics?.medications ||
           [],
         physical_limitations:
           bodyAnalysisData?.physical_limitations ||
-          profile.bodyMetrics?.physical_limitations ||
           [],
         pregnancy_status:
           bodyAnalysisData?.pregnancy_status ||
-          profile.bodyMetrics?.pregnancy_status ||
           false,
         breastfeeding_status:
           bodyAnalysisData?.breastfeeding_status ||
-          profile.bodyMetrics?.breastfeeding_status ||
           false,
         height_cm: parseLocalFloat(height),
         current_weight_kg: canonicalCurrentWeight,
@@ -231,7 +220,7 @@ export const BodyMeasurementsEditModal: React.FC<
         try {
           const success = await BodyAnalysisService.save(
             user.id,
-            nextBodyAnalysis as any,
+            nextBodyAnalysis as BodyAnalysisData,
           );
 
           if (!success) {
@@ -264,7 +253,6 @@ export const BodyMeasurementsEditModal: React.FC<
     chest,
     waist,
     hips,
-    profile,
     user,
     onClose,
     validate,
@@ -283,29 +271,17 @@ export const BodyMeasurementsEditModal: React.FC<
     };
 
     const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
-    if (!profile?.bodyMetrics) {
-      if (!bodyAnalysisData) return true;
-      return (
-        floatChanged(height, bodyAnalysisData.height_cm) ||
-        floatChanged(weight, bodyAnalysisData.current_weight_kg) ||
-        floatChanged(targetWeight, bodyAnalysisData.target_weight_kg) ||
-        floatChanged(bodyFat, bodyAnalysisData.body_fat_percentage) ||
-        floatChanged(chest, bodyAnalysisData.chest_cm) ||
-        floatChanged(waist, bodyAnalysisData.waist_cm) ||
-        floatChanged(hips, bodyAnalysisData.hip_cm)
-      );
-    }
-    const bodyMetrics = profile.bodyMetrics;
+    if (!bodyAnalysisData) return true;
     return (
-      floatChanged(height, bodyAnalysisData?.height_cm ?? bodyMetrics?.height_cm) ||
-      floatChanged(weight, bodyAnalysisData?.current_weight_kg ?? bodyMetrics?.current_weight_kg) ||
-      floatChanged(targetWeight, bodyAnalysisData?.target_weight_kg ?? bodyMetrics?.target_weight_kg) ||
-      floatChanged(bodyFat, bodyAnalysisData?.body_fat_percentage ?? bodyMetrics?.body_fat_percentage) ||
-      floatChanged(chest, bodyAnalysisData?.chest_cm) ||
-      floatChanged(waist, bodyAnalysisData?.waist_cm) ||
-      floatChanged(hips, bodyAnalysisData?.hip_cm)
+      floatChanged(height, bodyAnalysisData.height_cm) ||
+      floatChanged(weight, bodyAnalysisData.current_weight_kg) ||
+      floatChanged(targetWeight, bodyAnalysisData.target_weight_kg) ||
+      floatChanged(bodyFat, bodyAnalysisData.body_fat_percentage) ||
+      floatChanged(chest, bodyAnalysisData.chest_cm) ||
+      floatChanged(waist, bodyAnalysisData.waist_cm) ||
+      floatChanged(hips, bodyAnalysisData.hip_cm)
     );
-  }, [height, weight, targetWeight, bodyFat, chest, waist, hips, profile]);
+  }, [height, weight, targetWeight, bodyFat, chest, waist, hips, bodyAnalysis]);
 
   return (
     <SettingsModalWrapper

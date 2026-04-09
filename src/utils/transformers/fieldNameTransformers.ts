@@ -40,7 +40,7 @@ export function keysToSnakeCase<T = any>(obj: any): T {
 
   // Handle arrays
   if (Array.isArray(obj)) {
-    return obj.map((item) => keysToSnakeCase(item)) as any;
+    return obj.map((item) => keysToSnakeCase(item)) as T;
   }
 
   // Handle non-objects (primitives, dates, etc.)
@@ -83,7 +83,7 @@ export function keysToCamelCase<T = any>(obj: any): T {
 
   // Handle arrays
   if (Array.isArray(obj)) {
-    return obj.map((item) => keysToCamelCase(item)) as any;
+    return obj.map((item) => keysToCamelCase(item)) as T;
   }
 
   // Handle non-objects (primitives, dates, etc.)

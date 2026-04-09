@@ -362,7 +362,7 @@ export class GoogleFitAnalytics {
 
         if (Array.isArray(stepsData) && stepsData.length > 0) {
           const totalSteps =
-            (stepsData[stepsData.length - 1] as any).steps || 0;
+            (stepsData[stepsData.length - 1] as unknown as { steps?: number }).steps || 0;
 
           if (totalSteps > 1000) {
             activities.push({

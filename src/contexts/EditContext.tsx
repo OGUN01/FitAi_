@@ -72,7 +72,6 @@ export const EditProvider: React.FC<EditProviderProps> = ({
     saveDietPreferences,
     saveWorkoutPreferences,
   } = useOnboardingIntegration();
-  const { setProfile } = useUserStore();
   const { personalInfo, bodyAnalysis, workoutPreferences, dietPreferences } =
     useProfileStore();
 
@@ -259,7 +258,7 @@ export const EditProvider: React.FC<EditProviderProps> = ({
             case "dietPreferences": {
               // SSOT: profileStore.dietPreferences is authoritative; profile.dietPreferences (userStore) is legacy fallback
               const profileStoreDP = useProfileStore.getState().dietPreferences;
-              const dp = (profileStoreDP || profile?.dietPreferences) as any;
+              const dp = (profileStoreDP || profile?.dietPreferences) as Record<string, any> | null; // eslint-disable-line @typescript-eslint/no-explicit-any
               sectionData = {
                 // Basic diet info
                 diet_type: dp?.diet_type ?? dp?.dietType ?? "balanced",
@@ -475,28 +474,6 @@ export const EditProvider: React.FC<EditProviderProps> = ({
       const saveSuccess = saveResult.success;
 
       if (saveSuccess) {
-        // For guest users, update the profile in userStore to reflect changes immediately
-        if (isGuestMode && profile) {
-          const updatedProfile: any = { ...profile };
-          switch (editSection) {
-            case "personalInfo":
-              updatedProfile.personalInfo = currentData as PersonalInfo;
-              break;
-            case "fitnessGoals":
-              updatedProfile.fitnessGoals = currentData as FitnessGoals;
-              break;
-            case "dietPreferences":
-              updatedProfile.dietPreferences = currentData as DietPreferences;
-              break;
-            case "workoutPreferences":
-              updatedProfile.workoutPreferences =
-                currentData as WorkoutPreferences;
-              break;
-          }
-          updatedProfile.updatedAt = new Date().toISOString();
-          setProfile(updatedProfile);
-        }
-
         // Reset edit state
         setIsEditMode(false);
         setEditSection(null);

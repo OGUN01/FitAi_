@@ -4,6 +4,9 @@ import { healthConnectService, canUseHealthConnect } from "./healthConnect";
 
 const TASK_NAME = "fitai-healthconnect-background-sync";
 
+// NativeModulesProxy is typed as a Record but may have extra properties at runtime
+const nativeModules = NativeModulesProxy as Record<string, unknown>;
+
 export async function registerBackgroundHealthSync(
   minIntervalSeconds: number = 900,
 ): Promise<boolean> {
@@ -16,9 +19,8 @@ export async function registerBackgroundHealthSync(
     }
 
     // Guard: skip if native modules are not bundled (Expo Go / old dev client)
-    const hasTaskManager = !!(NativeModulesProxy as any)?.ExpoTaskManager;
-    const hasBackgroundFetch = !!(NativeModulesProxy as any)
-      ?.ExpoBackgroundFetch;
+    const hasTaskManager = !!nativeModules.ExpoTaskManager;
+    const hasBackgroundFetch = !!nativeModules.ExpoBackgroundFetch;
     if (!hasTaskManager || !hasBackgroundFetch) {
       return false;
     }
@@ -27,32 +29,29 @@ export async function registerBackgroundHealthSync(
     const BackgroundFetch = await import("expo-background-fetch");
 
     // Define task if not defined
-    const anyTM: any = TaskManager as any;
-    const isDefined = anyTM.isTaskDefined
-      ? anyTM.isTaskDefined(TASK_NAME)
+    const isDefined = TaskManager.isTaskDefined
+      ? TaskManager.isTaskDefined(TASK_NAME)
       : false;
     if (!isDefined) {
-      (TaskManager as any).defineTask(TASK_NAME, async () => {
+      TaskManager.defineTask(TASK_NAME, async () => {
         try {
           const hadChanges = await healthConnectService.runBackgroundSyncOnce();
           return hadChanges
-            ? (BackgroundFetch as any).BackgroundFetchResult.NewData
-            : (BackgroundFetch as any).BackgroundFetchResult.NoData;
+            ? BackgroundFetch.BackgroundFetchResult.NewData
+            : BackgroundFetch.BackgroundFetchResult.NoData;
         } catch (e) {
-          return (BackgroundFetch as any).BackgroundFetchResult.Failed;
+          return BackgroundFetch.BackgroundFetchResult.Failed;
         }
       });
     }
 
     // Register
-    const status = await (BackgroundFetch as any).registerTaskAsync(TASK_NAME, {
+    await BackgroundFetch.registerTaskAsync(TASK_NAME, {
       minimumInterval: Math.max(900, minIntervalSeconds),
       stopOnTerminate: false,
       startOnBoot: true,
-      forceAlarmManager: true,
-      enableHeadless: true,
     });
-    return !!status;
+    return true;
   } catch (e) {
     console.error(
       "[backgroundHealthSync] registerBackgroundHealthSync failed:",
@@ -66,7 +65,7 @@ export async function unregisterBackgroundHealthSync(): Promise<void> {
   if (Platform.OS !== "android") return;
   try {
     const BackgroundFetch = await import("expo-background-fetch");
-    await (BackgroundFetch as any).unregisterTaskAsync(TASK_NAME);
+    await BackgroundFetch.unregisterTaskAsync(TASK_NAME);
   } catch (e) {
     console.error(
       "[backgroundHealthSync] unregisterBackgroundHealthSync failed:",

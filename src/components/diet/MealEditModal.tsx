@@ -72,7 +72,7 @@ export const MealEditModal: React.FC<MealEditModalProps> = ({
   useEffect(() => {
     if (visible && meal) {
       setMealName(meal.name || "");
-      setMealType((meal.type as any) || "lunch");
+      setMealType((meal.type as (typeof MEAL_TYPES)[number]) || "lunch");
       setMealTime(
         meal.timing ||
           MEAL_TIMES[meal.type as keyof typeof MEAL_TIMES] ||

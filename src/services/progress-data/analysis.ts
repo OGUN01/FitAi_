@@ -1,9 +1,9 @@
 import { supabase } from "../supabase";
-import { BodyAnalysis, ProgressDataResponse } from "./types";
+import { ProgressBodyAnalysis, ProgressDataResponse } from "./types";
 
 export async function getUserBodyAnalysis(
   userId: string,
-): Promise<ProgressDataResponse<BodyAnalysis>> {
+): Promise<ProgressDataResponse<ProgressBodyAnalysis>> {
   try {
     const { data, error } = await supabase
       .from("body_analysis")

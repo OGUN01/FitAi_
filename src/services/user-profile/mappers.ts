@@ -5,8 +5,8 @@ import type { DatabaseProfile, DatabaseFitnessGoals } from "./types";
  * Map database profile to UserProfile type
  */
 export function mapDatabaseProfileToUserProfile(dbProfile: DatabaseProfile, workoutPrefs?: any) {
-  // Cast to any to access fields in either camelCase (after fromDb) or snake_case
-  const profile = dbProfile as any;
+  // Cast to Record to access fields in either camelCase (after fromDb) or snake_case
+  const profile = dbProfile as Record<string, unknown>;
 
   // Helper to access a field in either snake_case or camelCase
   const get = (snake: string, camel: string, fallback: any = undefined) =>

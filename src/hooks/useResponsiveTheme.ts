@@ -31,7 +31,7 @@ export const useResponsiveStyles = <T extends Record<string, any>>(
       return styleCreator(theme);
     } catch (error) {
       console.warn('Failed to create responsive styles, using base theme:', error);
-      return styleCreator(ResponsiveTheme as any);
+      return styleCreator(ResponsiveTheme as ReturnType<typeof createResponsiveTheme>);
     }
   }, [theme, styleCreator]);
 };

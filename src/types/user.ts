@@ -327,23 +327,6 @@ export type ActivityLevel =
   | "active"
   | "extreme";
 
-// Gender options
-export type Gender = "male" | "female" | "other";
-
-// Experience levels
-export type ExperienceLevel = "beginner" | "intermediate" | "advanced";
-
-// Fitness goals
-export type FitnessGoal =
-  | "weight_loss"
-  | "muscle_gain"
-  | "strength"
-  | "endurance"
-  | "flexibility"
-  | "general_fitness";
-
-// Time commitment options
-export type TimeCommitment = "15-30" | "30-45" | "45-60" | "60+";
 
 // API request types used by userProfile service/store
 export interface CreateProfileRequest extends PersonalInfo {}

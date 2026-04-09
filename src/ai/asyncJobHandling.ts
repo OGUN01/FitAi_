@@ -79,8 +79,7 @@ export async function generateWeeklyMealPlanAsync(
         return {
           success: false,
           error: 'Received meal plan data could not be processed. Please try regenerating.',
-          rawDataAvailable: true,
-        } as any;
+        };
       }
 
       const weeklyPlan = transformed;
@@ -128,7 +127,7 @@ export async function checkMealPlanJobStatus(
 > {
   try {
     if (attempts >= MAX_POLL_ATTEMPTS) {
-      return { success: false, error: 'Meal plan generation timed out. Please try again.', timedOut: true } as any;
+      return { success: false, error: 'Meal plan generation timed out. Please try again.', timedOut: true };
     }
 
     const response = await fitaiWorkersClient.getJobStatus(jobId);
@@ -154,8 +153,7 @@ export async function checkMealPlanJobStatus(
         return {
           success: false,
           error: 'Received meal plan data could not be processed. Please try regenerating.',
-          rawDataAvailable: true,
-        } as any;
+        };
       }
 
       return {

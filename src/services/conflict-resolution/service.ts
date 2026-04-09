@@ -94,7 +94,7 @@ export class ConflictResolutionService {
   }
 
   getConflictStatistics(conflicts: DataConflict[]): ConflictStatistics {
-    const byType: Record<ConflictType, number> = {} as any;
+    const byType = {} as Record<ConflictType, number>;
     const bySeverity: Record<string, number> = {};
     let autoResolvable = 0;
     let requiresUserInput = 0;

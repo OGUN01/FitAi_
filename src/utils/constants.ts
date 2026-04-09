@@ -205,14 +205,6 @@ export const createResponsiveTheme = () => {
 // Components should migrate to useResponsiveTheme hook for true responsive values
 export const ResponsiveTheme = THEME;
 
-export const STORAGE_KEYS = {
-  USER_DATA: "@fitai_user_data",
-  ONBOARDING_DATA: "@fitai_onboarding_data",
-  WORKOUT_DATA: "@fitai_workout_data",
-  DIET_DATA: "@fitai_diet_data",
-  SETTINGS: "@fitai_settings",
-};
-
 export const API_ENDPOINTS = {
   AUTH: "/auth",
   USERS: "/users",

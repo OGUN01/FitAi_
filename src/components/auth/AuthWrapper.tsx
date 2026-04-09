@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
-import { useUser } from "../../hooks/useUser";
+import { useUserStore } from "../../stores/userStore";
 import { initializeBackend } from "../../utils/integration";
 import { rf, rp } from "../../utils/responsive";
 import { THEME } from "../../utils/constants";
@@ -22,7 +22,8 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({
   loadingComponent,
 }) => {
   const { isAuthenticated, isInitialized, user } = useAuth();
-  const { profile, getCompleteProfile } = useUser();
+  const profile = useUserStore((s) => s.profile);
+  const getCompleteProfile = useUserStore((s) => s.getCompleteProfile);
 
   // Initialize backend on mount
   useEffect(() => {

@@ -88,7 +88,7 @@ export const StyleSection: React.FC<StyleSectionProps> = ({
                 onToggle={() =>
                   updateField(
                     preference.key as keyof WorkoutPreferencesData,
-                    !isActive as any,
+                    !isActive as WorkoutPreferencesData[keyof WorkoutPreferencesData],
                   )
                 }
                 onInfoPress={() =>

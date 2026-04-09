@@ -895,8 +895,8 @@ export const useFitnessStore = create<FitnessState>()(
                   weight: data.weightKg,
                   completed: data.completed,
                   setType: data.setType,
-                  rpe: (data as any).rpe ?? null,
-                  isCalibration: (data as any).isCalibration ?? false,
+                  rpe: data.rpe ?? null,
+                  isCalibration: data.isCalibration ?? false,
                 };
               }
 

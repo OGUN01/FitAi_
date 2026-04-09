@@ -169,7 +169,7 @@ export class DataTransformationService {
       fromPlan: supabaseMealLog.from_plan ?? false,
       portionMultiplier: supabaseMealLog.portion_multiplier ?? 1,
       mealType: supabaseMealLog.meal_type,
-      foods: foods as any,
+      foods: foods as unknown as MealLog["foods"],
       totalCalories: supabaseMealLog.total_calories || 0,
       totalMacros: {
         protein: supabaseMealLog.total_protein || 0,

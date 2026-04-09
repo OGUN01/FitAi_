@@ -6,6 +6,8 @@ import {
   Animated,
   PanResponder,
   StyleSheet,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -302,7 +304,7 @@ export const MealSuggestions: React.FC = () => {
                       style={[
                         styles.addToPlanButton,
                         isAdded ? styles.addToPlanButtonAdded : undefined,
-                      ] as any}
+                      ] as StyleProp<ViewStyle>}
                       onPress={() =>
                         handleAddToPlan(suggestion.id, suggestion)
                       }

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Platform } from "react-native";
 import Animated from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import type { ComponentProps } from "react";
 import { PanGestureHandler } from "react-native-gesture-handler";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { rf, rp } from "../../../utils/responsive";
@@ -34,7 +35,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
 }) => {
   const renderCardContent = () => (
     <LinearGradient
-      colors={card.gradient as any}
+      colors={card.gradient as unknown as readonly [string, string, ...string[]]}
       style={styles.cardGradient}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
@@ -48,7 +49,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
 
       <View style={styles.cardContent}>
         <Ionicons
-          name={card.iconName as any}
+          name={card.iconName as ComponentProps<typeof Ionicons>['name']}
           size={rf(36)}
           color={ResponsiveTheme.colors.white}
           style={styles.cardIcon}

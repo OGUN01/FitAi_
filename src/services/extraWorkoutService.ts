@@ -5,7 +5,6 @@ import { analyticsDataService } from "./analyticsData";
 import { resolveCurrentWeightForUser } from "./currentWeight";
 import { fitnessRefreshService } from "./fitnessRefreshService";
 import { useFitnessStore } from "../stores/fitnessStore";
-import { useUserStore } from "../stores/userStore";
 import { useProfileStore } from "../stores/profileStore";
 import { useAchievementStore } from "../stores/achievementStore";
 import {
@@ -86,7 +85,7 @@ export async function generateWorkout(
     }
 
     const dayWorkout: DayWorkout = {
-      ...(result.data as any),
+      ...(result.data as unknown as Partial<DayWorkout>),
       id: generateUUID(),
       // Use engine's personalized title/calories; fall back to template only if absent
       title: result.data.title || template.title,

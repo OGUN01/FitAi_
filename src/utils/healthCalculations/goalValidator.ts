@@ -2,12 +2,12 @@ import {
   MuscleGainCalculatorService,
   FatLossValidatorService,
 } from "./goalCalculators";
-import type { UserProfile } from "./types";
+import type { HealthCalcProfile } from "./types";
 import type { GoalInput, GoalValidationResult } from "./facadeTypes";
 
 export class GoalValidator {
   static validateGoal(
-    user: UserProfile,
+    user: HealthCalcProfile,
     goal: GoalInput,
   ): GoalValidationResult {
 

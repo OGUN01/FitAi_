@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type ComponentProps } from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rw } from "../../../../utils/responsive";
@@ -46,7 +46,7 @@ export const WorkoutTimesSelector: React.FC<WorkoutTimesSelectorProps> = ({
                 >
                   <View style={styles.consistentCardIconCenter}>
                     <Ionicons
-                      name={time.iconName as any}
+                      name={time.iconName as ComponentProps<typeof Ionicons>['name']}
                       size={rf(22)}
                       color={
                         isSelected

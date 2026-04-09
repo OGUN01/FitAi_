@@ -1,5 +1,4 @@
 import { useCallback } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { OnboardingState } from "./types";
 import { invalidateMetricsCache } from "../useCalculatedMetrics";
 import { OnboardingProgressService } from "../../services/onboardingService";
@@ -94,15 +93,6 @@ export const useCompletion = (
         stateRef.current = finalState;
         return finalState;
       });
-
-      try {
-        await AsyncStorage.setItem("onboarding_completed", "true");
-      } catch (error) {
-        console.error(
-          "❌ Failed to mark onboarding complete in AsyncStorage:",
-          error,
-        );
-      }
 
       return true;
     } catch (error) {

@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect } from "react";
-import { StyleSheet, View, Text, Pressable, ViewStyle } from "react-native";
+import { StyleSheet, View, Text, Pressable, ViewStyle, TextStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useSharedValue,
@@ -211,7 +211,7 @@ export const DynamicTabBar: React.FC<DynamicTabBarProps> = ({
         <View style={styles.progressContainer}>
           <View style={styles.progressTrack}>
             <AnimatedLinearGradient
-              {...(toLinearGradientProps(gradients.button.primary) as any)}
+              {...toLinearGradientProps(gradients.button.primary)}
               style={[styles.progressFill, progressStyle]}
             />
           </View>
@@ -222,7 +222,7 @@ export const DynamicTabBar: React.FC<DynamicTabBarProps> = ({
       <View style={styles.tabsContainer}>
         {/* Liquid Morph Indicator */}
         <AnimatedLinearGradient
-          {...(toLinearGradientProps(gradients.button.primary) as any)}
+          {...toLinearGradientProps(gradients.button.primary)}
           style={[styles.indicator, indicatorStyle]}
         />
 
@@ -367,13 +367,13 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: typography.fontSize.caption,
-    fontWeight: typography.fontWeight.medium as any,
+    fontWeight: typography.fontWeight.medium as TextStyle['fontWeight'],
     color: colors.text.muted,
     textAlign: "center",
   },
   tabTextActive: {
     color: colors.text.primary,
-    fontWeight: typography.fontWeight.semibold as any,
+    fontWeight: typography.fontWeight.semibold as TextStyle['fontWeight'],
   },
   tabTextDisabled: {
     opacity: 0.4,
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
   completionCheck: {
     fontSize: rf(10),
     color: colors.text.primary,
-    fontWeight: typography.fontWeight.bold as any,
+    fontWeight: typography.fontWeight.bold as TextStyle['fontWeight'],
   },
 });
 

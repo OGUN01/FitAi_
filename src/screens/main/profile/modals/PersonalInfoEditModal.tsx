@@ -17,9 +17,7 @@ import { SettingsModalWrapper } from "../components/SettingsModalWrapper";
 import { GlassFormInput } from "../components/GlassFormInput";
 import { GlassFormPicker } from "../components/GlassFormPicker";
 import { useProfileStore } from "../../../../stores/profileStore";
-import { useUser } from "../../../../hooks/useUser";
 import { useAuth } from "../../../../hooks/useAuth";
-import { useUserStore } from "../../../../stores/userStore";
 import { userProfileService } from "../../../../services/userProfile";
 import { supabase } from "../../../../services/supabase";
 import { buildLegacyProfileAdapter } from "../../../../utils/profileLegacyAdapter";
@@ -76,7 +74,6 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
   visible,
   onClose,
 }) => {
-  const { profile: rawProfile } = useUser();
   const { user } = useAuth();
   const {
     updatePersonalInfo,
@@ -84,7 +81,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
     bodyAnalysis,
     dietPreferences,
   } = useProfileStore();
-  // SSOT: profileStore.personalInfo is authoritative (onboarding_data table); userStore.profile is legacy fallback
+  // SSOT: profileStore.personalInfo is authoritative (onboarding_data table)
   const profilePersonalInfo = useProfileStore((s) => s.personalInfo);
   // SSOT: profileStore.workoutPreferences is authoritative for activity_level (onboarding_data table)
   const profileWorkoutPreferences = useProfileStore(
@@ -92,7 +89,6 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
   );
   const profile = React.useMemo(
     () => ({
-      ...rawProfile,
       bodyMetrics: bodyAnalysis,
       workoutPreferences: profileWorkoutPreferences,
       ...buildLegacyProfileAdapter({
@@ -100,11 +96,10 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
         bodyAnalysis,
         workoutPreferences: profileWorkoutPreferences,
         dietPreferences,
-        legacyProfile: rawProfile,
+        legacyProfile: null,
       }),
     }),
     [
-      rawProfile,
       profilePersonalInfo,
       bodyAnalysis,
       profileWorkoutPreferences,
@@ -241,40 +236,8 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
         region: profile?.personalInfo?.region || "",
         wake_time: profile?.personalInfo?.wake_time || "",
         sleep_time: profile?.personalInfo?.sleep_time || "",
-        occupation_type: profile?.personalInfo?.occupation_type as any,
+        occupation_type: profile?.personalInfo?.occupation_type as "desk_job" | "light_active" | "moderate_active" | "heavy_labor" | "very_active" | undefined,
       });
-
-      // Sync to userStore so header/display components pick up the change immediately
-      const currentProfile = useUserStore.getState().profile;
-      if (currentProfile) {
-        useUserStore.getState().setProfile({
-          ...currentProfile,
-          personalInfo: {
-            ...currentProfile.personalInfo,
-            name: name.trim(),
-            first_name: firstName,
-            last_name: lastName,
-            age: parseInt(age, 10),
-            gender: gender as "male" | "female" | "other" | "prefer_not_to_say",
-          },
-          workoutPreferences: {
-            // Spread existing to preserve all required fields, then override activity_level
-            ...(currentProfile.workoutPreferences ?? {
-              location: "home" as const,
-              equipment: [],
-              time_preference: 30,
-              intensity: "beginner" as const,
-              workout_types: [],
-              primary_goals: [],
-              activity_level: "moderate",
-            }),
-            activity_level:
-              activityLevel ||
-              currentProfile.workoutPreferences?.activity_level ||
-              "moderate",
-          } as import("../../../../types/user").WorkoutPreferences,
-        });
-      }
 
       // ✅ SSOT: profileStore.workoutPreferences is authoritative for activity_level
       if (
@@ -284,7 +247,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
             profile?.workoutPreferences?.activity_level)
       ) {
         updateWorkoutPreferences({
-          activity_level: activityLevel as any,
+          activity_level: activityLevel as "light" | "moderate" | "sedentary" | "active" | "extreme" | undefined,
         });
       }
 
@@ -300,7 +263,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
             last_name: lastName,
             age: parseInt(age, 10),
             gender: gender as "male" | "female" | "other" | "prefer_not_to_say",
-          } as any);
+          } as Record<string, unknown>);
           if (!result.success) {
             console.error(
               "[PersonalInfoModal] Failed to sync to Supabase:",

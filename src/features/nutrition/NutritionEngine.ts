@@ -64,7 +64,7 @@ class NutritionEngineService {
               preferences?.prepTimeLimit && preferences.prepTimeLimit <= 15
                 ? "quick"
                 : "flexible",
-          } as any,
+          } as Record<string, unknown>,
         },
       );
 
@@ -123,7 +123,7 @@ class NutritionEngineService {
           dietPreferences: {
             dietary_restrictions: preferences?.dietaryRestrictions || [],
             cuisine_preferences: preferences?.cuisinePreferences || [],
-          } as any,
+          } as Record<string, unknown>,
         },
       );
 

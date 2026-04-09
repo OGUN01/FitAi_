@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type ComponentProps } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rw, rh } from "../../../utils/responsive";
@@ -97,7 +97,7 @@ export const CookingPreferencesSection: React.FC<
                   {/* Icon */}
                   <View style={styles.consistentCardIconCenter}>
                     <Ionicons
-                      name={skill.iconName as any}
+                      name={skill.iconName as ComponentProps<typeof Ionicons>['name']}
                       size={rf(22)}
                       color={
                         isSelected
@@ -261,7 +261,7 @@ export const CookingPreferencesSection: React.FC<
                     ]}
                   >
                     <Ionicons
-                      name={method.icon as any}
+                      name={method.icon as ComponentProps<typeof Ionicons>['name']}
                       size={rf(14)}
                       color={
                         isSelected

@@ -51,16 +51,22 @@ export interface ProfileActions {
 
 /**
  * Fitness goals-related actions
+ * @deprecated The fitness_goals DB table is deprecated. All goal data now lives in workout_preferences.
+ * These actions are kept temporarily for integration file compatibility.
  */
 export interface FitnessGoalsActions {
+  /** @deprecated Use profileStore.updateWorkoutPreferences() instead */
   createFitnessGoals: (
     goalsData: CreateFitnessGoalsRequest,
   ) => Promise<FitnessGoalsResponse>;
+  /** @deprecated Use profileStore.workoutPreferences instead */
   getFitnessGoals: (userId: string) => Promise<FitnessGoalsResponse>;
+  /** @deprecated Use profileStore.updateWorkoutPreferences() instead */
   updateFitnessGoals: (
     userId: string,
     updates: UpdateFitnessGoalsRequest,
   ) => Promise<FitnessGoalsResponse>;
+  /** @deprecated Use profileStore.updateWorkoutPreferences() instead */
   updateFitnessGoalsLocal: (fitnessGoals: FitnessGoals) => void;
 }
 

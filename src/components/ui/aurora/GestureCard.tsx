@@ -5,7 +5,7 @@
  */
 
 import React from "react";
-import { StyleSheet, View, Text, ViewStyle } from "react-native";
+import { StyleSheet, View, Text, ViewStyle, TextStyle } from "react-native";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 import Animated, {
   useSharedValue,
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   },
   actionLabel: {
     fontSize: typography.fontSize.body,
-    fontWeight: typography.fontWeight.semibold as any,
+    fontWeight: typography.fontWeight.semibold as TextStyle['fontWeight'],
   },
 });
 

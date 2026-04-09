@@ -898,7 +898,7 @@ export const useNutritionStore = create<NutritionState>()(
                 const existingProgress = get().mealProgress;
                 const remoteProgressKeys = new Set<string>();
                 const remoteLogIds = new Set<string>();
-                const restoredProgress: Record<string, any> = {};
+                const restoredProgress: Record<string, MealProgress> = {};
                 (plannedLogs ?? []).forEach((log) => {
                   const progressKey = log.plan_meal_id || log.id;
 
@@ -923,11 +923,10 @@ export const useNutritionStore = create<NutritionState>()(
                   const preservedLocalProgress = Object.fromEntries(
                     Object.entries(existingProgress).filter(
                       ([key, progress]) => {
-                        const localProgress = progress as any;
                         if (remoteProgressKeys.has(key)) return false;
                         if (
-                          localProgress?.logId &&
-                          remoteLogIds.has(localProgress.logId)
+                          progress?.logId &&
+                          remoteLogIds.has(progress.logId)
                         ) {
                           return false;
                         }
@@ -974,16 +973,15 @@ export const useNutritionStore = create<NutritionState>()(
 
               const preservedInFlightProgress = Object.fromEntries(
                 Object.entries(get().mealProgress).filter(([key, progress]) => {
-                  const localProgress = progress as any;
                   if (authoritativeRemoteProgressKeys.has(key)) return false;
                   if (
-                    localProgress?.logId &&
-                    authoritativeRemoteLogIds.has(localProgress.logId)
+                    progress?.logId &&
+                    authoritativeRemoteLogIds.has(progress.logId)
                   ) {
                     return false;
                   }
 
-                  return (localProgress?.progress ?? 0) < 100;
+                  return (progress?.progress ?? 0) < 100;
                 }),
               );
 
@@ -1010,7 +1008,7 @@ export const useNutritionStore = create<NutritionState>()(
                     fiber: deriveMealLogFiber(foodItems),
                     sugar: deriveMealLogSugar(foodItems),
                   },
-                  items: foodItems as any[],
+                  items: foodItems as unknown as MealItem[],
                   loggedAt: log.logged_at,
                   // Required Meal fields with safe defaults for Supabase-hydrated entries
                   tags: [] as string[],

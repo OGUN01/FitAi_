@@ -22,8 +22,8 @@ import type {
   FitnessGoals,
 } from "../types/user";
 import type {
-  UserProfile,
-  BodyAnalysis,
+  SyncableUserProfile,
+  SyncableBodyAnalysis,
   ValidationResult,
   SyncableData,
 } from "../types/profileData";

@@ -95,11 +95,11 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
     console.warn(`📊 Stats: Workouts=${userStats?.totalWorkouts ?? 0} | Calories=${userStats?.totalCaloriesBurned ?? 0} | Streak=${userStats?.currentStreak ?? 0}`);
     console.warn(`📋 Profile loaded: ${!!profile}`);
     if (profile) {
-      console.warn(`  PersonalInfo: Age=${(profile.personalInfo as any)?.age} | Gender=${(profile.personalInfo as any)?.gender}`);
-      console.warn(`  Goals: [${(profile.fitnessGoals as any)?.primary_goals?.join(', ') || 'none'}]`);
-      console.warn(`  Body: Height=${(profile.bodyMetrics as any)?.height_cm}cm | Weight=${(profile.bodyMetrics as any)?.current_weight_kg}kg`);
-      console.warn(`  Diet: ${(profile.dietPreferences as any)?.diet_type || '(none)'}`);
-      console.warn(`  Workout: Location=${(profile.workoutPreferences as any)?.location} | Intensity=${(profile.workoutPreferences as any)?.intensity}`);
+      console.warn(`  PersonalInfo: Age=${(profile.personalInfo as unknown as Record<string, unknown>)?.age} | Gender=${(profile.personalInfo as unknown as Record<string, unknown>)?.gender}`);
+      console.warn(`  Goals: [${(profile.fitnessGoals as unknown as Record<string, unknown[]>)?.primary_goals?.join(', ') || 'none'}]`);
+      console.warn(`  Body: Height=${(profile.bodyMetrics as unknown as Record<string, unknown>)?.height_cm}cm | Weight=${(profile.bodyMetrics as unknown as Record<string, unknown>)?.current_weight_kg}kg`);
+      console.warn(`  Diet: ${(profile.dietPreferences as unknown as Record<string, unknown>)?.diet_type || '(none)'}`);
+      console.warn(`  Workout: Location=${(profile.workoutPreferences as unknown as Record<string, unknown>)?.location} | Intensity=${(profile.workoutPreferences as unknown as Record<string, unknown>)?.intensity}`);
     }
     console.warn(`${'='.repeat(60)}\n`);
   }, []);
@@ -122,7 +122,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
 
         if (profileResponse.success && profileResponse.data) {
           const profileStore = useProfileStore.getState();
-          const latestProfile = profileResponse.data as any;
+          const latestProfile = profileResponse.data as unknown as Record<string, Record<string, unknown>>;
 
           if (latestProfile.personalInfo) {
             profileStore.updatePersonalInfo(latestProfile.personalInfo);
@@ -325,24 +325,7 @@ export const ProfileScreen: React.FC<{ navigation?: any; route?: any }> = ({
   const handleEditComplete = async () => {
     console.log("[ProfileScreen] Edit completed");
     try {
-      // Sync profileStore data to userStore for immediate UI update
-      const profileStoreState = useProfileStore.getState();
-      const currentProfile = useUserStore.getState().profile;
-      if (currentProfile && profileStoreState.personalInfo) {
-        const pInfo = profileStoreState.personalInfo;
-        const displayName =
-          pInfo.name ||
-          `${pInfo.first_name || ""} ${pInfo.last_name || ""}`.trim();
-        useUserStore.getState().setProfile({
-          ...currentProfile,
-          personalInfo: {
-            ...currentProfile.personalInfo,
-            ...pInfo,
-            name: displayName || currentProfile.personalInfo?.name,
-          },
-        });
-      }
-      // Then try Supabase refresh if authenticated
+      // Refresh from Supabase if authenticated
       const userId = useAuthStore.getState().user?.id;
       if (userId) {
         await useUserStore.getState().getCompleteProfile(userId);

@@ -8,10 +8,10 @@ import {
   DayName,
 } from "../stores";
 import { useProfileStore } from "../stores/profileStore";
-import { useUserStore } from "../stores/userStore";
 import { aiService } from "../ai";
 import { completionTrackingService } from "../services/completionTracking";
 import { WeeklyMealPlan, DayMeal } from "../types/ai";
+import type { DietPreferences } from "../types/user";
 import { crudOperations } from "../services/crudOperations";
 import { useCalculatedMetrics } from "./useCalculatedMetrics";
 import { useNutritionData } from "./useNutritionData";
@@ -59,7 +59,6 @@ export const useMealPlanning = (navigation: any) => {
   const mealProgressMap = useNutritionStore((state) => state.mealProgress);
   const getMealProgress = (mealId: string) => mealProgressMap[mealId] ?? null;
   const loadNutritionStoreData = useNutritionStore((state) => state.loadData);
-  const profile = useUserStore((state) => state.profile);
 
   const selectedDay = useAppStateStore((state) => state.selectedDay);
   const { user } = useAuth();
@@ -87,12 +86,12 @@ export const useMealPlanning = (navigation: any) => {
     [profilePersonalInfo, bodyAnalysis, profileWorkoutPreferences],
   );
   const mergedFitnessGoals = useMemo(
-    () => buildLegacyFitnessGoals(profileWorkoutPreferences, profile),
-    [profileWorkoutPreferences, profile],
+    () => buildLegacyFitnessGoals(profileWorkoutPreferences),
+    [profileWorkoutPreferences],
   );
   const mergedDietPreferences = useMemo(
-    () => buildLegacyDietPreferences(profileDietPreferences, profile),
-    [profileDietPreferences, profile],
+    () => buildLegacyDietPreferences(profileDietPreferences),
+    [profileDietPreferences],
   );
 
   const { getCalorieTarget } = useCalculatedMetrics();
@@ -330,10 +329,10 @@ export const useMealPlanning = (navigation: any) => {
         1,
         {
           bodyMetrics: bodyAnalysis || undefined,
-          dietPreferences: ((profileDietPreferences as any) ||
+          dietPreferences: (profileDietPreferences ||
             mergedDietPreferences ||
             dietPreferences ||
-            undefined) as any,
+            undefined) as DietPreferences | undefined,
           calorieTarget: userCalorieTarget,
           advancedReview: profileAdvancedReview || undefined,
         },

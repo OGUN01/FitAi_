@@ -20,7 +20,7 @@ import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 const isExpoGo =
   Constants.appOwnership === "expo" ||
   Constants.executionEnvironment === "storeClient" ||
-  (__DEV__ && !Constants.isDevice && !(Constants.platform?.web as any));
+  (__DEV__ && !Constants.isDevice && !(Constants.platform?.web as { uri?: string } | undefined));
 
 // Load notification stores safely
 let useWorkoutReminders: any = null;
@@ -338,7 +338,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
             </View>
             <View style={styles.presetButtons}>
               {["early", "normal", "late"].map((preset) => {
-                const time = getPresetTime("breakfast", preset as any);
+                const time = getPresetTime("breakfast", preset as "early" | "normal" | "late");
                 return (
                   <TouchableOpacity
                     key={preset}
@@ -396,7 +396,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
             </View>
             <View style={styles.presetButtons}>
               {["early", "normal", "late"].map((preset) => {
-                const time = getPresetTime("lunch", preset as any);
+                const time = getPresetTime("lunch", preset as "early" | "normal" | "late");
                 return (
                   <TouchableOpacity
                     key={preset}
@@ -454,7 +454,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
             </View>
             <View style={styles.presetButtons}>
               {["early", "normal", "late"].map((preset) => {
-                const time = getPresetTime("dinner", preset as any);
+                const time = getPresetTime("dinner", preset as "early" | "normal" | "late");
                 return (
                   <TouchableOpacity
                     key={preset}

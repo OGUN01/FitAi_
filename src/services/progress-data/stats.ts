@@ -61,8 +61,8 @@ export async function getProgressStats(
     ] as const;
 
     measurementKeys.forEach((key) => {
-      const current = (latest as any).measurements?.[key] || 0;
-      const prev = (previous as any).measurements?.[key] || 0;
+      const current = latest.measurements?.[key] || 0;
+      const prev = previous.measurements?.[key] || 0;
       measurementChanges[key] = {
         current,
         previous: prev,

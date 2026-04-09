@@ -7,6 +7,7 @@ import { aiService } from "../ai";
 import {
   foodRecognitionService,
   MealType,
+  RecognizedFood,
 } from "../services/foodRecognitionService";
 import { recognizedFoodLogger } from "../services/recognizedFoodLogger";
 import { foodRecognitionFeedbackService } from "../services/foodRecognitionFeedbackService";
@@ -20,6 +21,7 @@ import { useAuth } from "./useAuth";
 import { useNutritionData } from "./useNutritionData";
 import { useCalculatedMetrics } from "./useCalculatedMetrics";
 import { DayMeal, WeeklyMealPlan } from "../types/ai";
+import type { FitnessGoals } from "../types/user";
 import { useSubscriptionStore } from "../stores/subscriptionStore";
 // usePaywall import removed â€” triggerPaywall now via subscriptionStore
 import { LogMealScanResult } from "../components/diet/LogMealModal";
@@ -35,6 +37,7 @@ import {
   buildPackagedFoodProvenance as buildSharedPackagedFoodProvenance,
   generatePackagedFoodHealthAssessment,
   mapScannedProductToScanResult as mapSharedScannedProductToScanResult,
+  PackagedFoodHealthAssessment,
 } from "../features/barcode/packagedFood";
 
 const buildMealPhotoProvenance = (confidence?: number): MealLogProvenance => {
@@ -65,11 +68,6 @@ const buildPackagedFoodEntry = (product: ScannedProduct, grams: number) => {
     cuisine: "international",
     barcode:
       packagedFoodSource === "barcode" ? product.barcode : undefined,
-    portionSize: {
-      estimatedGrams: safeGrams,
-      confidence: 95,
-      servingType: "medium",
-    },
     nutrition: scaledNutrition,
     confidence: product.confidence,
     enhancementSource: packagedFoodSource,
@@ -81,7 +79,7 @@ const buildPackagedFoodEntry = (product: ScannedProduct, grams: number) => {
       servingSize: 100,
       servingUnit: "g",
     },
-  } as any;
+  };
 };
 
 const getNormalizedRecognizedFoodFiber = (food: any) =>
@@ -186,7 +184,7 @@ export const useAIMealGeneration = (options?: {
     null,
   );
   const [productHealthAssessment, setProductHealthAssessment] =
-    useState<any>(null);
+    useState<PackagedFoodHealthAssessment | null>(null);
   const [showProductModal, setShowProductModal] = useState(false);
   const [isProcessingBarcode, setIsProcessingBarcode] = useState(false);
   const [barcodeCameraState, setBarcodeCameraState] =
@@ -1198,7 +1196,7 @@ export const useAIMealGeneration = (options?: {
 
       const logResult = await recognizedFoodLogger.logRecognizedFoods(
         user.id,
-        [foodEntry],
+        [foodEntry as unknown as RecognizedFood],
         selectedMealType,
         undefined,
         {
@@ -1308,7 +1306,7 @@ export const useAIMealGeneration = (options?: {
         cuisinePreference: options?.cuisinePreference || "any",
         prepTimeLimit: options?.quickEasy ? 20 : 30,
         dietType: mergedDietPrefs?.diet_type || [],
-        dislikes: (mergedDietPrefs as any)?.dislikes || [],
+        dislikes: (mergedDietPrefs as Record<string, unknown> | null)?.dislikes as string[] || [],
         customOptions: options?.customOptions || {},
         suggestions: options?.suggestions || [],
       };
@@ -1324,14 +1322,14 @@ export const useAIMealGeneration = (options?: {
 
       if (specialActionType) {
         actualMealType = "lunch";
-        (preferences as any).specialAction = specialActionType;
+        (preferences as Record<string, unknown>).specialAction = specialActionType;
       }
 
       const response = await aiService.generateMeal(
         profilePersonalInfo!,
-        mergedFitnessGoals as any,
+        mergedFitnessGoals as FitnessGoals,
         actualMealType as "breakfast" | "lunch" | "dinner" | "snack",
-        preferences as any,
+        preferences as Parameters<typeof aiService.generateMeal>[3],
       );
 
       if (response.success && response.data) {
@@ -1436,8 +1434,8 @@ export const useAIMealGeneration = (options?: {
 
       const response = await aiService.generateDailyMealPlan(
         profilePersonalInfo!,
-        mergedFitnessGoals as any,
-        preferences as any,
+        mergedFitnessGoals as FitnessGoals,
+        preferences as Parameters<typeof aiService.generateDailyMealPlan>[2],
       );
 
       if (response.success && response.data) {

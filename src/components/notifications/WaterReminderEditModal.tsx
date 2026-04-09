@@ -19,7 +19,7 @@ import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 const isExpoGo =
   Constants.appOwnership === "expo" ||
   Constants.executionEnvironment === "storeClient" ||
-  (__DEV__ && !Constants.isDevice && !(Constants.platform?.web as any));
+  (__DEV__ && !Constants.isDevice && !(Constants.platform?.web as { uri?: string } | undefined));
 
 // Load water reminders safely
 let useWaterReminders: any = null;
@@ -277,7 +277,7 @@ export const WaterReminderEditModal: React.FC<WaterReminderEditModalProps> = ({
               </View>
               <View style={styles.presetButtons}>
                 {["early", "normal", "late"].map((preset) => {
-                  const time = getPresetTime("morning", preset as any);
+                  const time = getPresetTime("morning", preset as "early" | "normal" | "late");
                   return (
                     <TouchableOpacity
                       key={preset}
@@ -319,7 +319,7 @@ export const WaterReminderEditModal: React.FC<WaterReminderEditModalProps> = ({
               </View>
               <View style={styles.presetButtons}>
                 {["early", "normal", "late"].map((preset) => {
-                  const time = getPresetTime("evening", preset as any);
+                  const time = getPresetTime("evening", preset as "early" | "normal" | "late");
                   return (
                     <TouchableOpacity
                       key={preset}

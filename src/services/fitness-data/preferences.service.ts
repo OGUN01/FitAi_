@@ -74,18 +74,24 @@ export class PreferencesService {
       }
 
       if (!data) {
-        return { success: true, data: null as any };
+        return { success: true, data: undefined };
       }
 
       // Map workout_preferences fields to FitnessGoals shape
+      // data comes from workout_preferences table — access fields directly
+      const wpData = data as Record<string, unknown>;
       return {
         success: true,
         data: {
-          primary_goals: (data as any).primary_goals || [],
-          time_commitment: (data as any).time_commitment || '',
-          experience: (data as any).experience_level || '',
-          experience_level: (data as any).experience_level || '',
-        } as any,
+          id: (wpData.id as string) || '',
+          user_id: (wpData.user_id as string) || '',
+          primary_goals: (wpData.primary_goals as string[]) || [],
+          time_commitment: (wpData.time_commitment as string) || '',
+          experience: (wpData.experience_level as string) || '',
+          experience_level: (wpData.experience_level as string) || '',
+          created_at: (wpData.created_at as string) || '',
+          updated_at: (wpData.updated_at as string) || '',
+        } as FitnessGoals,
       };
     } catch (error) {
       console.error("Error in getUserFitnessGoals:", error);

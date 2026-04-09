@@ -27,8 +27,11 @@ class UserProfileService {
   updateProfile = profileOps.updateProfile;
   deleteProfile = profileOps.deleteProfile;
 
+  /** @deprecated Writes to deprecated fitness_goals table. Use profileStore.updateWorkoutPreferences() instead. */
   createFitnessGoals = fitnessGoalsOps.createFitnessGoals;
+  /** @deprecated Reads from deprecated fitness_goals table. Use profileStore.workoutPreferences instead. */
   getFitnessGoals = fitnessGoalsOps.getFitnessGoals;
+  /** @deprecated Writes to deprecated fitness_goals table. Use profileStore.updateWorkoutPreferences() instead. */
   updateFitnessGoals = fitnessGoalsOps.updateFitnessGoals;
 
   getDietPreferences = preferencesOps.getDietPreferences;
@@ -58,7 +61,7 @@ class UserProfileService {
         userProfile.workoutPreferences = workoutResponse.data;
         // Synthesize fitnessGoals from workout_preferences (SSOT)
         // fitness_goals table is deprecated — all goal data lives in workout_preferences
-        const wp = workoutResponse.data as any;
+        const wp = workoutResponse.data as Record<string, unknown>;
         userProfile.fitnessGoals = {
           primary_goals: wp.primary_goals || wp.primaryGoals || [],
           time_commitment: wp.time_commitment || '',

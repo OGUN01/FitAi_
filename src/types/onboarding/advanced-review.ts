@@ -85,14 +85,13 @@ export interface AdvancedReviewData {
   vo2_max_estimate?: number;
   vo2_max_classification?: string;
   heart_rate_zones?: Record<string, { min: number; max: number }>;
-}
 
-// Form state for UI components
-export interface AdvancedReviewFormState extends AdvancedReviewData {
-  // UI-specific fields
-  is_loading: boolean;
-  calculation_status: "pending" | "calculating" | "complete" | "error";
-  last_calculated_at?: string;
+  // Fallback indicator — true when population-average defaults were used
+  // because the user did not provide height/weight during onboarding
+  usedFallbackDefaults?: boolean;
+
+  // BUG-35: Rate cap indicator — true when the requested deficit was reduced for safety
+  was_rate_capped?: boolean;
 }
 
 // Database row type (matching database schema)
@@ -153,9 +152,3 @@ export interface AdvancedReviewRow {
   created_at?: string | null;
   updated_at?: string | null;
 }
-
-// Validation rules for health scores
-export const HEALTH_SCORES_VALIDATION = {
-  min: 0,
-  max: 100,
-} as const;

@@ -66,7 +66,7 @@ export class ProfileMigration {
         console.error("❌ Profile migration failed:", result.errors);
       }
 
-      return result as any;
+      return result as unknown as MigrationResult;
     } catch (error) {
       console.error("❌ Profile migration error:", error);
 
@@ -80,7 +80,7 @@ export class ProfileMigration {
         migratedData: {},
         conflicts: [],
         duration: 0,
-      } as any;
+      } as unknown as MigrationResult;
     }
   }
 

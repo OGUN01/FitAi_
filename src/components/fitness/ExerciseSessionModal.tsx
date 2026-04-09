@@ -498,14 +498,14 @@ const styles = StyleSheet.create({
   /** Outer wrapper — plain View so position:absolute on timerBadge works correctly.
     Card's renderChildrenSafely() recursively clones children and breaks absolute positioning. */
   cardWrapper: {
-    width: "90%" as any,
+    width: "90%",
     maxWidth: 400,
-    position: "relative" as any,
+    position: "relative",
   },
   sessionCard: {
     width: "100%",
     padding: ResponsiveTheme.spacing.xl,
-    alignItems: "center" as any,
+    alignItems: "center" as const,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.5,

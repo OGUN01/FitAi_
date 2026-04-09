@@ -21,7 +21,7 @@ export interface ProgressEntry {
   created_at: string;
 }
 
-export interface BodyAnalysis {
+export interface ProgressBodyAnalysis {
   id: string;
   user_id: string;
   photos: {

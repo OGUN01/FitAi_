@@ -259,7 +259,7 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
         dp = guestData?.dietPreferences ?? null;
 
         // Initialize weight tracking for guest
-        const guestBodyWeight = ba?.current_weight_kg ?? (ba as any)?.currentWeightKg;
+        const guestBodyWeight = ba?.current_weight_kg;
         if (guestBodyWeight) {
           weightTrackingService.initializeFromBodyAnalysis({
             current_weight_kg: guestBodyWeight,
@@ -467,7 +467,7 @@ function mapToCalculatedMetrics(
   }
 
   // Handle heart_rate_zones stored as JSONB
-  const hrZonesFromJson = (advancedReview as any)?.heart_rate_zones;
+  const hrZonesFromJson = advancedReview?.heart_rate_zones;
   if (hrZonesFromJson && typeof hrZonesFromJson === "object") {
     heartRateZones = {
       fatBurn: {
@@ -496,7 +496,7 @@ function mapToCalculatedMetrics(
       // multiplicative climate formula) are corrected immediately without re-onboarding.
       const weight = bodyAnalysis?.current_weight_kg;
       const activity = mapActivityLevelForHealthCalc(workoutPreferences?.activity_level ?? "sedentary") as ActivityLevel;
-      const climate = ((advancedReview as any)?.detected_climate ?? "temperate") as ClimateType;
+      const climate = (advancedReview?.detected_climate ?? "temperate") as ClimateType;
       if (weight && weight > 0) {
         return waterCalculator.calculate(weight, activity, climate);
       }
@@ -511,13 +511,13 @@ function mapToCalculatedMetrics(
     metabolicAge: advancedReview?.metabolic_age ?? null,
 
     // BMI Classification - NO FALLBACKS
-    bmiCategory: (advancedReview as any)?.bmi_category ?? null,
-    bmiHealthRisk: (advancedReview as any)?.bmi_health_risk ?? null,
+    bmiCategory: advancedReview?.bmi_category ?? null,
+    bmiHealthRisk: advancedReview?.bmi_health_risk ?? null,
 
     // Auto-Detected Context - NO FALLBACKS
-    detectedClimate: (advancedReview as any)?.detected_climate ?? null,
-    detectedEthnicity: (advancedReview as any)?.detected_ethnicity ?? null,
-    bmrFormulaUsed: (advancedReview as any)?.bmr_formula_used ?? null,
+    detectedClimate: advancedReview?.detected_climate ?? null,
+    detectedEthnicity: advancedReview?.detected_ethnicity ?? null,
+    bmrFormulaUsed: advancedReview?.bmr_formula_used ?? null,
 
     // Weight Goals - NO FALLBACKS
     currentWeightKg: bodyAnalysis?.current_weight_kg ?? null,
@@ -557,9 +557,9 @@ function mapToCalculatedMetrics(
 
     // Health Scores - NO FALLBACKS
     healthScore:
-      (advancedReview as any)?.health_score ??
-      advancedReview?.overall_health_score, // DB has both columns
-    healthGrade: (advancedReview as any)?.health_grade ?? null,
+      advancedReview?.health_score ??
+      advancedReview?.overall_health_score ?? null, // DB has both columns
+    healthGrade: advancedReview?.health_grade ?? null,
     fitnessReadinessScore: advancedReview?.fitness_readiness_score ?? null,
     dietReadinessScore: advancedReview?.diet_readiness_score ?? null,
 
@@ -568,10 +568,10 @@ function mapToCalculatedMetrics(
 
     // VO2 Max - NO FALLBACKS
     vo2MaxEstimate:
-      (advancedReview as any)?.vo2_max_estimate ??
-      advancedReview?.estimated_vo2_max, // DB has both columns
+      advancedReview?.vo2_max_estimate ??
+      advancedReview?.estimated_vo2_max ?? null, // DB has both columns
     vo2MaxClassification:
-      (advancedReview as any)?.vo2_max_classification ?? null,
+      advancedReview?.vo2_max_classification ?? null,
   };
 }
 

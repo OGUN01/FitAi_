@@ -152,7 +152,7 @@ class GoogleFitService {
 
       // Start observing step count
       await GoogleFit.startRecording(
-        (callback: any) => {
+        (callback: unknown) => {
         },
         ["step", "distance", "activity"],
       );
@@ -195,7 +195,7 @@ class GoogleFitService {
 
         if (Array.isArray(stepsData) && stepsData.length > 0) {
           // Get total steps from most recent day
-          const latestSteps = stepsData[stepsData.length - 1] as any;
+          const latestSteps = stepsData[stepsData.length - 1] as unknown as { steps?: number };
           googleFitData.steps = latestSteps.steps || 0;
         }
       } catch (error) {
@@ -278,7 +278,7 @@ class GoogleFitService {
             endDate: endDate.toISOString(),
           },
           // @ts-ignore - GoogleFit library type signature issue
-          (err: any, res: any) => {
+          (err: Error | null, res: unknown) => {
             if (err) {
               console.warn("⚠️ Sleep fetch error:", err);
             }
@@ -287,7 +287,7 @@ class GoogleFitService {
 
         if (Array.isArray(sleepData) && sleepData.length > 0) {
           googleFitData.sleepData = sleepData.map(
-            (sleep: any, index: number) => ({
+            (sleep, index: number) => ({
               id: `googlefit_sleep_${index}`,
               startDate: sleep.startDate,
               endDate: sleep.endDate,
@@ -377,7 +377,8 @@ class GoogleFitService {
       };
 
       // Save workout to Google Fit
-      const result = await GoogleFit.saveWorkout(workoutData as any);
+      // SDK types don't match our extended workoutData shape
+      const result = await GoogleFit.saveWorkout(workoutData as unknown as Parameters<typeof GoogleFit.saveWorkout>[0]);
 
       if (result) {
         return true;
@@ -420,10 +421,11 @@ class GoogleFitService {
 
       // Save nutrition to Google Fit (this may not be directly supported)
       // For now, we'll save it as a calories entry
+      // SDK types don't match our extended nutritionEntry shape
       const result = await GoogleFit.saveFood(
-        nutritionEntry as any,
-        (err: any, res: any) => {
-          if (err) {
+        nutritionEntry as unknown as Parameters<typeof GoogleFit.saveFood>[0],
+        (isError: boolean, res: true) => {
+          if (isError) {
             console.warn("⚠️ Nutrition save error:", err);
           }
         },
@@ -457,10 +459,11 @@ class GoogleFitService {
         unit: "kg",
       };
 
+      // SDK types don't match our extended weightData shape
       const result = await GoogleFit.saveWeight(
-        weightData as any,
-        (err: any, res: any) => {
-          if (err) {
+        weightData as unknown as Parameters<typeof GoogleFit.saveWeight>[0],
+        (isError: boolean, res: true) => {
+          if (isError) {
             console.warn("⚠️ Weight save error:", err);
           }
         },
@@ -641,12 +644,12 @@ class GoogleFitService {
         if (Array.isArray(heartRateData) && heartRateData.length > 0) {
           // Calculate average resting heart rate from recent data
           const restingReadings = heartRateData.filter(
-            (hr: any) => hr.value < 100,
+            (hr) => hr.value < 100,
           ); // Filter out exercise readings
           if (restingReadings.length > 0) {
             const avgResting =
               restingReadings.reduce(
-                (sum: number, hr: any) => sum + hr.value,
+                (sum: number, hr) => sum + hr.value,
                 0,
               ) / restingReadings.length;
             restingHR = Math.round(avgResting);
@@ -1036,7 +1039,7 @@ class GoogleFitService {
 
         if (Array.isArray(stepsData) && stepsData.length > 0) {
           const totalSteps =
-            (stepsData[stepsData.length - 1] as any).steps || 0;
+            (stepsData[stepsData.length - 1] as unknown as { steps?: number }).steps || 0;
 
           if (totalSteps > 1000) {
             activities.push({

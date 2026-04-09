@@ -1,7 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import type { StateStorage } from "zustand/middleware";
 import { UserAchievement } from "../../services/achievementEngine";
 
-export const achievementStorage = {
+export const achievementStorage: StateStorage = {
   getItem: async (name: string): Promise<string | null> => {
     try {
       const value = await AsyncStorage.getItem(name);

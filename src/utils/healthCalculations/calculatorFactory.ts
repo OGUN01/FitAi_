@@ -13,7 +13,7 @@ import {
   BMICalculator,
   TDEECalculator,
   WaterCalculator,
-  UserProfile,
+  HealthCalcProfile,
   EthnicityType,
   ClimateType,
   ActivityLevel,
@@ -38,7 +38,7 @@ import { detectBestBMRFormula } from './autoDetection';
  * Reference: Mifflin et al. (1990)
  */
 class MifflinStJeorBMRCalculator implements BMRCalculator {
-  calculate(user: UserProfile): number {
+  calculate(user: HealthCalcProfile): number {
     const { weight, height, age, gender } = user;
     const base = 10 * weight + 6.25 * height - 5 * age;
 
@@ -71,7 +71,7 @@ class MifflinStJeorBMRCalculator implements BMRCalculator {
  * Reference: Katch & McArdle (1996)
  */
 class KatchMcArdleBMRCalculator implements BMRCalculator {
-  calculate(user: UserProfile): number {
+  calculate(user: HealthCalcProfile): number {
     const { weight, bodyFat } = user;
 
     if (!bodyFat) {
@@ -104,7 +104,7 @@ class KatchMcArdleBMRCalculator implements BMRCalculator {
  * Reference: Cunningham (1980)
  */
 class CunninghamBMRCalculator implements BMRCalculator {
-  calculate(user: UserProfile): number {
+  calculate(user: HealthCalcProfile): number {
     const { weight, bodyFat } = user;
 
     if (!bodyFat) {
@@ -139,7 +139,7 @@ class CunninghamBMRCalculator implements BMRCalculator {
  * Reference: Harris & Benedict (1918, revised 1984)
  */
 class HarrisBenedictBMRCalculator implements BMRCalculator {
-  calculate(user: UserProfile): number {
+  calculate(user: HealthCalcProfile): number {
     const { weight, height, age, gender } = user;
 
     if (gender === 'male') {
@@ -368,7 +368,7 @@ export class HealthCalculatorFactory {
    * Create BMR calculator based on user data
    * Auto-selects best formula for maximum accuracy
    */
-  static createBMRCalculator(user: UserProfile): BMRCalculator {
+  static createBMRCalculator(user: HealthCalcProfile): BMRCalculator {
     const selection = detectBestBMRFormula(user);
 
     switch (selection.formula) {

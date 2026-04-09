@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type ComponentProps } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -31,7 +31,7 @@ export const MealHeader: React.FC<MealHeaderProps> = ({
         ]}
       >
         <Ionicons
-          name={mealConfig.icon as any}
+          name={mealConfig.icon as ComponentProps<typeof Ionicons>['name']}
           size={rf(24)}
           color={mealConfig.colors[0]}
         />

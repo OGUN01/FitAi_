@@ -15,6 +15,7 @@ import {
   calculateTDEE as calculateTDEECore,
   calculateBaseTDEE as calculateBaseTDEECore,
 } from "./healthCalculations/core/tdeeCalculation";
+import type { ActivityLevel } from "./healthCalculations/types";
 
 // ============================================================================
 // BASIC METABOLIC CALCULATIONS
@@ -44,7 +45,7 @@ export class MetabolicCalculations {
    * Calculate TDEE (Total Daily Energy Expenditure) - delegates to SSOT
    */
   static calculateTDEE(bmr: number, activityLevel: string): number {
-    return calculateTDEECore(bmr, activityLevel as any);
+    return calculateTDEECore(bmr, activityLevel as ActivityLevel);
   }
 
   /**
@@ -1039,6 +1040,7 @@ export class HealthScoring {
     wakeTime: string,
     sleepTime: string,
   ): number {
+    if (!wakeTime || !sleepTime) return 8; // safe default (normal sleep)
     const [wakeHour, wakeMin] = wakeTime.split(":").map(Number);
     const [sleepHour, sleepMin] = sleepTime.split(":").map(Number);
 
@@ -1071,6 +1073,7 @@ export class SleepAnalysis {
    * Calculate current sleep duration
    */
   static calculateSleepDuration(wakeTime: string, sleepTime: string): number {
+    if (!wakeTime || !sleepTime) return 8; // safe default (normal sleep)
     const [wakeHour, wakeMin] = wakeTime.split(":").map(Number);
     const [sleepHour, sleepMin] = sleepTime.split(":").map(Number);
 

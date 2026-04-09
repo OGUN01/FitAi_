@@ -54,7 +54,7 @@ export class MigrationHandler {
         this.log("Migration completed successfully");
       } else {
         throw new Error(
-          `Migration failed: ${(result as any)?.errors?.[0]?.message || "Unknown error"}`,
+          `Migration failed: ${(result as { errors?: Array<{ message?: string }> })?.errors?.[0]?.message || "Unknown error"}`,
         );
       }
     } catch (error) {

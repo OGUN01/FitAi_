@@ -160,7 +160,7 @@ ${
 USER PROFILE:
 - Age: ${profile.personalInfo.age}
 - Gender: ${profile.personalInfo.gender}
-- Activity Level: ${profile.workoutPreferences?.activity_level || (profile.personalInfo as any).activityLevel}
+- Activity Level: ${profile.workoutPreferences?.activity_level || (profile.personalInfo as { activityLevel?: string }).activityLevel}
 - Fitness Goals: ${profile.fitnessGoals?.primaryGoals?.join(", ") || "General health"}
 `
     : ""
@@ -182,7 +182,7 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
 
       if (response.success && "data" in response && response.data) {
         // Recipe data is already structured - no parsing needed!
-        const structuredRecipe = response.data as any;
+        const structuredRecipe = response.data as Record<string, unknown>;
 
         const recipeData = {
           id: Date.now().toString(),

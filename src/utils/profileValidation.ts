@@ -120,7 +120,7 @@ export function validateRules<T>(
   const errors: string[] = [];
 
   for (const rule of rules) {
-    const value = (data as any)[rule.field];
+    const value = (data as Record<string, unknown>)[rule.field];
 
     if (!rule.validator(value)) {
       missing.push(rule.field);

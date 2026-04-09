@@ -82,7 +82,7 @@ export class FoodRecognitionFeedbackService {
         console.error("❌ Error storing feedback:", error);
         return {
           success: false,
-          error: (error as any).message || "Failed to submit feedback",
+          error: error && typeof error === 'object' && 'message' in error ? (error as { message: string }).message : "Failed to submit feedback",
         };
       }
 
@@ -328,15 +328,15 @@ export class FoodRecognitionFeedbackService {
       // Calculate statistics
       const totalFeedbacks = data.length;
       const averageRating =
-        (data as any[]).reduce(
-          (sum, feedback) => sum + feedback.overall_accuracy_rating,
+        data.reduce(
+          (sum, feedback) => sum + (feedback.overall_accuracy_rating || 0),
           0,
         ) / totalFeedbacks;
 
       // Build accuracy trend
       const dailyAccuracy: Record<string, { correct: number; total: number }> =
         {};
-      (data as any[]).forEach((feedback: any) => {
+      data.forEach((feedback) => {
         const date = feedback.submitted_at.split("T")[0];
         if (!dailyAccuracy[date]) {
           dailyAccuracy[date] = { correct: 0, total: 0 };
@@ -357,16 +357,17 @@ export class FoodRecognitionFeedbackService {
       const cuisinePerformance: Record<string, number> = {};
       const allIssues: string[] = [];
 
-      (data as any[]).forEach((feedback: any) => {
+      data.forEach((feedback) => {
         // Extract cuisine performance from feedback_data if available
         if (feedback.feedback_data?.statistics?.cuisineAccuracy) {
           Object.entries(
             feedback.feedback_data.statistics.cuisineAccuracy,
-          ).forEach(([cuisine, stats]: [string, any]) => {
+          ).forEach(([cuisine, stats]: [string, unknown]) => {
+            const typedStats = stats as { correct: number; total: number };
             if (!cuisinePerformance[cuisine]) {
               cuisinePerformance[cuisine] = 0;
             }
-            cuisinePerformance[cuisine] += (stats.correct / stats.total) * 100;
+            cuisinePerformance[cuisine] += (typedStats.correct / typedStats.total) * 100;
           });
         }
 

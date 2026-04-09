@@ -3,7 +3,7 @@
 // Supports resume capability after interruption and rollback on failure
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { migrationEngine, MigrationProgress } from "./migration";
+import { migrationEngine, MigrationProgress, MigrationResult as EngineMigrationResult } from "./migration";
 import { enhancedLocalStorage } from "./localStorage";
 import { dataBridge } from "./DataBridge";
 import { profileValidator } from "./profileValidator";
@@ -24,6 +24,51 @@ import {
 const MIGRATION_STATE_KEY = "fitai_migration_state";
 const MIGRATION_BACKUP_KEY = "fitai_migration_backup";
 const MIGRATION_CHECKPOINT_KEY = "fitai_migration_checkpoint";
+
+// ============================================================================
+// HELPER: Convert engine result to profileData MigrationResult
+// ============================================================================
+
+function toMigrationResult(result: EngineMigrationResult): MigrationResult {
+  return {
+    success: result.success,
+    migrationId: result.migrationId,
+    progress: {
+      migrationId: result.progress.migrationId,
+      status: result.progress.status,
+      currentStep: result.progress.currentStep,
+      currentStepIndex: result.progress.currentStepIndex,
+      totalSteps: result.progress.totalSteps,
+      percentage: result.progress.percentage,
+      startTime: result.progress.startTime,
+      endTime: result.progress.endTime,
+      message: result.progress.message,
+      errors: result.progress.errors.map((e) => ({
+        step: e.step,
+        code: e.code,
+        message: e.message,
+        timestamp: e.timestamp ?? new Date(),
+        retryCount: e.retryCount ?? 0,
+        recoverable: e.recoverable ?? false,
+      })),
+      warnings: result.progress.warnings,
+    },
+    migratedDataCount: result.migratedDataCount,
+    migratedData: {
+      personalInfo: false,
+      fitnessGoals: false,
+      dietPreferences: false,
+      workoutPreferences: false,
+      bodyAnalysis: false,
+      advancedReview: false,
+      ...(result.migratedData ?? {}),
+    },
+    errors: result.errors.map((e) => typeof e === "string" ? e : e.message),
+    warnings: result.warnings,
+    duration: result.duration,
+    conflicts: [],
+  };
+}
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -222,16 +267,17 @@ export class MigrationManager {
         await this.saveCheckpoint(checkpoint);
       }
 
-      this.currentMigration.result = result as any;
-      this.notifyResultChange(result as any);
+      const convertedResult = toMigrationResult(result);
+      this.currentMigration.result = convertedResult;
+      this.notifyResultChange(convertedResult);
 
       // Save migration attempt to history
-      await this.saveMigrationAttempt(result as any);
+      await this.saveMigrationAttempt(convertedResult);
 
       // Update state
       await this.checkMigrationStatus();
 
-      return result as any;
+      return convertedResult;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
@@ -406,6 +452,24 @@ export class MigrationManager {
   // PRIVATE METHODS
   // ============================================================================
 
+  /**
+   * Create a standardized error MigrationResult
+   */
+  private createErrorMigrationResult(
+    migrationId: string,
+    errors: string[],
+    duration: number,
+  ): MigrationResult {
+    return {
+      success: false,
+      migrationId,
+      errors,
+      migratedData: {},
+      conflicts: [],
+      duration,
+    };
+  }
+
   private async hasLocalDataToMigrate(): Promise<boolean> {
     try {
       const localData = await dataBridge.exportAllData();
@@ -556,39 +620,30 @@ export class MigrationManager {
   async resumeMigration(userId: string): Promise<MigrationResult> {
     const checkpoint = await this.loadCheckpoint();
     if (!checkpoint) {
-      return {
-        success: false,
-        migrationId: `resume_failed_${Date.now()}`,
-        errors: ["No checkpoint found to resume from"],
-        migratedData: {},
-        conflicts: [],
-        duration: 0,
-      } as any;
+      return this.createErrorMigrationResult(
+        `resume_failed_${Date.now()}`,
+        ["No checkpoint found to resume from"],
+        0,
+      );
     }
 
     if (checkpoint.userId !== userId) {
-      return {
-        success: false,
-        migrationId: checkpoint.migrationId,
-        errors: ["Checkpoint belongs to a different user"],
-        migratedData: {},
-        conflicts: [],
-        duration: 0,
-      } as any;
+      return this.createErrorMigrationResult(
+        checkpoint.migrationId,
+        ["Checkpoint belongs to a different user"],
+        0,
+      );
     }
 
     if (
       checkpoint.status !== "in_progress" &&
       checkpoint.status !== "interrupted"
     ) {
-      return {
-        success: false,
-        migrationId: checkpoint.migrationId,
-        errors: [`Cannot resume migration with status: ${checkpoint.status}`],
-        migratedData: {},
-        conflicts: [],
-        duration: 0,
-      } as any;
+      return this.createErrorMigrationResult(
+        checkpoint.migrationId,
+        [`Cannot resume migration with status: ${checkpoint.status}`],
+        0,
+      );
     }
 
     // Update checkpoint to show we're resuming
@@ -631,12 +686,13 @@ export class MigrationManager {
         await this.saveCheckpoint(checkpoint);
       }
 
-      this.currentMigration.result = result as any;
-      this.notifyResultChange(result as any);
-      await this.saveMigrationAttempt(result as any);
+      const convertedResult = toMigrationResult(result);
+      this.currentMigration.result = convertedResult;
+      this.notifyResultChange(convertedResult);
+      await this.saveMigrationAttempt(convertedResult);
       await this.checkMigrationStatus();
 
-      return result as any;
+      return convertedResult;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
@@ -649,14 +705,11 @@ export class MigrationManager {
       });
       await this.saveCheckpoint(checkpoint);
 
-      return {
-        success: false,
-        migrationId: checkpoint.migrationId,
-        errors: [errorMessage],
-        migratedData: {},
-        conflicts: [],
-        duration: Date.now() - new Date(checkpoint.startTime).getTime(),
-      } as any;
+      return this.createErrorMigrationResult(
+        checkpoint.migrationId,
+        [errorMessage],
+        Date.now() - new Date(checkpoint.startTime).getTime(),
+      );
     } finally {
       if (this.currentMigration.unsubscribe) {
         this.currentMigration.unsubscribe();
@@ -783,16 +836,16 @@ export class MigrationManager {
     try {
       const history = await this.getMigrationHistory();
       const attempt: MigrationAttempt = {
-        id: (result as any).migrationId || "",
-        startTime: (result as any).progress?.startTime || new Date(),
-        endTime: (result as any).progress?.endTime,
+        id: result.migrationId || "",
+        startTime: result.progress?.startTime || new Date(),
+        endTime: result.progress?.endTime,
         success: result.success,
-        error: result.success ? undefined : (result.errors as any)[0]?.message,
+        error: result.success ? undefined : result.errors[0],
         dataCount: {
-          workouts: (result.migratedData as any)?.workoutSessions?.length ?? 0,
-          meals: (result.migratedData as any)?.mealLogs?.length ?? 0,
+          workouts: result.migratedData?.workoutSessions?.length ?? 0,
+          meals: result.migratedData?.mealLogs?.length ?? 0,
           measurements:
-            (result.migratedData as any)?.bodyMeasurements?.length ?? 0,
+            result.migratedData?.bodyMeasurements?.length ?? 0,
         },
       };
 
@@ -914,21 +967,30 @@ export class MigrationManager {
         console.error("❌ Profile migration failed:", result.errors);
       }
 
-      return result as any;
+      const bridgeResult: MigrationResult = {
+        success: result.success,
+        migratedData: {},
+        conflicts: [],
+        errors: result.errors,
+        duration: 0,
+        migrationId: `profile_${Date.now()}`,
+        migratedKeys: result.migratedKeys,
+        localSyncKeys: result.localSyncKeys,
+        remoteSyncKeys: result.remoteSyncKeys,
+      };
+
+      return bridgeResult;
     } catch (error) {
       console.error("❌ Profile migration error:", error);
 
       const errorMessage =
         error instanceof Error ? error.message : "Unknown migration error";
 
-      return {
-        success: false,
-        migrationId: `profile_error_${Date.now()}`,
-        errors: [errorMessage],
-        migratedData: {},
-        conflicts: [],
-        duration: 0,
-      } as any;
+      return this.createErrorMigrationResult(
+        `profile_error_${Date.now()}`,
+        [errorMessage],
+        0,
+      );
     }
   }
 

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { recognizedFoodLogger } from "../services/recognizedFoodLogger";
-import { foodRecognitionService } from "../services/foodRecognitionService";
+import { foodRecognitionService, RecognizedFood } from "../services/foodRecognitionService";
 import { nutritionRefreshService } from "../services/nutritionRefreshService";
 import { foodRecognitionFeedbackService } from "../services/foodRecognitionFeedbackService";
 import { nutritionDataService } from "../services/nutritionData";
@@ -187,7 +187,7 @@ export class FoodRecognitionE2ETests {
       // Test meal logging
       const logResult = await recognizedFoodLogger.logRecognizedFoods(
         userId,
-        mockInternationalFoods as any,
+        mockInternationalFoods as RecognizedFood[],
         "dinner",
       );
 
@@ -650,7 +650,7 @@ export class FoodRecognitionE2ETests {
         await foodRecognitionFeedbackService.submitFeedback(
           userId,
           "test-meal",
-          null as any, // Invalid feedback
+          null!, // Invalid feedback
           "test-image",
           [],
         );
@@ -721,7 +721,7 @@ export class FoodRecognitionE2ETests {
 
       await recognizedFoodLogger.logRecognizedFoods(
         userId,
-        geminiMockFoods as any,
+        geminiMockFoods as RecognizedFood[],
         "breakfast",
       );
       benchmarks.mealLoggingTime = Date.now() - mealLogStart;

@@ -12,7 +12,7 @@
  */
 
 import { getBMRCalculator, getBMICalculator } from "./calculators";
-import type { UserProfile, EthnicityType } from "./types";
+import type { HealthCalcProfile, EthnicityType } from "./types";
 
 // ============================================================================
 // TYPES
@@ -42,7 +42,7 @@ export class BMRCalculatorService {
   /**
    * Calculate BMR using appropriate formula
    */
-  static calculate(user: UserProfile, formula?: string): BMRResult {
+  static calculate(user: HealthCalcProfile, formula?: string): BMRResult {
     const calculator = getBMRCalculator(
       !!user.bodyFat,
       user.fitnessLevel === "elite",
@@ -60,7 +60,7 @@ export class BMRCalculatorService {
   /**
    * Get BMR with detailed breakdown
    */
-  static calculateWithBreakdown(user: UserProfile): {
+  static calculateWithBreakdown(user: HealthCalcProfile): {
     bmr: number;
     formula: string;
     accuracy: string;
@@ -106,7 +106,7 @@ export class BMICalculatorService {
     height: number,
     ethnicity: EthnicityType,
   ): BMIResult {
-    const calculator = getBMICalculator(ethnicity as any);
+    const calculator = getBMICalculator(ethnicity);
     const bmi = calculator.calculate(weight, height);
     const classification = calculator.getClassification(bmi);
 
@@ -143,7 +143,13 @@ export class BMICalculatorService {
       "asian" | "african" | "caucasian" | "hispanic" | "general"
     > = ["asian", "african", "caucasian", "hispanic", "general"];
 
-    const classifications: any = {};
+    const classifications = {} as {
+      asian: string;
+      african: string;
+      caucasian: string;
+      hispanic: string;
+      general: string;
+    };
     ethnicities.forEach((eth) => {
       const calc = getBMICalculator(eth);
       const result = calc.getClassification(bmi);

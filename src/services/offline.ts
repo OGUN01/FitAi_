@@ -493,12 +493,12 @@ class OfflineService {
             let createQuery;
             if (
               ["weekly_meal_plans", "weekly_workout_plans"].includes(table) &&
-              (insertData as any).user_id
+              (insertData as Record<string, unknown>).user_id
             ) {
               const activePlanLookup = await supabase
                 .from(table)
                 .select("id")
-                .eq("user_id", (insertData as any).user_id)
+                .eq("user_id", (insertData as Record<string, unknown>).user_id as string)
                 .eq("is_active", true)
                 .order("created_at", { ascending: false })
                 .limit(1);
@@ -513,7 +513,7 @@ class OfflineService {
               }
 
               const activePlanId = (
-                activePlanLookup.data as any[] | undefined
+                activePlanLookup.data as Array<{ id: string }> | null
               )?.[0]?.id;
               if (activePlanId) {
                 const { id: _ignoredId, ...activePlanUpdate } =

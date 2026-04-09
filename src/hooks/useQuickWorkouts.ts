@@ -1,13 +1,13 @@
 import { useState, useMemo, useCallback } from "react";
 import { useFitnessStore } from "../stores/fitnessStore";
 import { useProfileStore } from "../stores/profileStore";
-import { useUserStore } from "../stores/userStore";
 import { generateUUID } from "../utils/uuid";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import {
   getSuggestions,
   generateWorkout,
 } from "../services/extraWorkoutService";
+import type { PersonalInfo, FitnessGoals } from "../types/user";
 import type { ExtraWorkoutTemplate } from "../stores/fitness/types";
 import type { FitnessNavigation } from "./useFitnessLogic";
 import { getLocalDateString } from "../utils/weekUtils";
@@ -38,7 +38,6 @@ export const useQuickWorkouts = (
   const activeExtraSession = useFitnessStore(
     (state) => state.activeExtraSession,
   );
-  const profile = useUserStore((state) => state.profile);
   // SSOT: profileStore is authoritative for personalInfo, bodyAnalysis, workoutPreferences
   const {
     personalInfo: profilePersonalInfo,
@@ -55,8 +54,8 @@ export const useQuickWorkouts = (
     [profilePersonalInfo, bodyAnalysis, profileWorkoutPreferences],
   );
   const fitnessGoals = useMemo(
-    () => buildLegacyFitnessGoals(profileWorkoutPreferences, profile),
-    [profileWorkoutPreferences, profile],
+    () => buildLegacyFitnessGoals(profileWorkoutPreferences),
+    [profileWorkoutPreferences],
   );
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -98,7 +97,7 @@ export const useQuickWorkouts = (
 
   const suggestions = useMemo((): ExtraWorkoutTemplate[] => {
     if (!fitnessGoals?.primary_goals?.length) return [];
-    return getSuggestions(fitnessGoals as any);
+    return getSuggestions(fitnessGoals as FitnessGoals);
   }, [fitnessGoals]);
 
   // Derive per-template status from store — single source of truth
@@ -136,8 +135,8 @@ export const useQuickWorkouts = (
       try {
         const workout = await generateWorkout(
           template,
-          legacyPersonalInfo as any,
-          fitnessGoals as any,
+          legacyPersonalInfo as PersonalInfo,
+          fitnessGoals as FitnessGoals,
         );
         if (!workout) {
           crossPlatformAlert(

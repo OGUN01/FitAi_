@@ -236,19 +236,19 @@ export const usePersistence = (
 
     try {
       const personalInfo = await PersonalInfoService.load(userId);
-      console.warn(`  📋 PersonalInfo: ${personalInfo ? `loaded (name=${(personalInfo as any).first_name})` : 'NULL'}`);
+      console.warn(`  📋 PersonalInfo: ${personalInfo ? `loaded (name=${personalInfo.first_name})` : 'NULL'}`);
 
       const dietPreferences = await DietPreferencesService.load(userId);
-      console.warn(`  📋 DietPreferences: ${dietPreferences ? `loaded (type=${(dietPreferences as any).diet_type})` : 'NULL'}`);
+      console.warn(`  📋 DietPreferences: ${dietPreferences ? `loaded (type=${dietPreferences.diet_type})` : 'NULL'}`);
 
       const bodyAnalysis = await BodyAnalysisService.load(userId);
-      console.warn(`  📋 BodyAnalysis: ${bodyAnalysis ? `loaded (h=${(bodyAnalysis as any).height_cm}cm, w=${(bodyAnalysis as any).current_weight_kg}kg)` : 'NULL'}`);
+      console.warn(`  📋 BodyAnalysis: ${bodyAnalysis ? `loaded (h=${bodyAnalysis.height_cm}cm, w=${bodyAnalysis.current_weight_kg}kg)` : 'NULL'}`);
 
       const workoutPreferences = await WorkoutPreferencesService.load(userId);
-      console.warn(`  📋 WorkoutPreferences: ${workoutPreferences ? `loaded (location=${(workoutPreferences as any).location})` : 'NULL'}`);
+      console.warn(`  📋 WorkoutPreferences: ${workoutPreferences ? `loaded (location=${workoutPreferences.location})` : 'NULL'}`);
 
       const advancedReview = await AdvancedReviewService.load(userId);
-      console.warn(`  📋 AdvancedReview: ${advancedReview ? `loaded (tdee=${(advancedReview as any).calculated_tdee}, cal=${(advancedReview as any).daily_calories})` : 'NULL'}`);
+      console.warn(`  📋 AdvancedReview: ${advancedReview ? `loaded (tdee=${advancedReview.calculated_tdee}, cal=${advancedReview.daily_calories})` : 'NULL'}`);
 
       const progress = await OnboardingProgressService.load(userId);
       console.warn(`  📋 Progress: ${progress ? `tab=${progress.current_tab}, completed=[${progress.completed_tabs}], ${progress.total_completion_percentage}%` : 'NULL'}`);

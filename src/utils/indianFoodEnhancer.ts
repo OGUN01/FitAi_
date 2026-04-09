@@ -381,7 +381,7 @@ export class IndianFoodEnhancer {
     region: string,
   ): number {
     const servingSizes =
-      (TRADITIONAL_SERVING_SIZES as any)[region] ||
+      TRADITIONAL_SERVING_SIZES[region as keyof typeof TRADITIONAL_SERVING_SIZES] ||
       TRADITIONAL_SERVING_SIZES.general;
 
     // Check for specific food in serving sizes

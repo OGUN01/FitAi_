@@ -236,7 +236,7 @@ export class HeartRateCalculator {
     };
 
     return {
-      fitnessLevel: classification.classification as any,
+      fitnessLevel: classification.classification as "Poor" | "Below Average" | "Average" | "Good" | "Excellent",
       score: scoreMap[classification.classification] || 50,
     };
   }

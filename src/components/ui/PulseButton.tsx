@@ -87,7 +87,7 @@ export const PulseButton: React.FC<PulseButtonProps> = ({
       {pulseEnabled && !disabled && !loading && (
         <Animated.View style={[styles.glow, animatedGlowStyle]}>
           <LinearGradient
-            colors={[...gradient, "transparent"] as any}
+            colors={[...gradient, "transparent"] as unknown as readonly [string, string, ...string[]]}
             style={styles.glowGradient}
             start={{ x: 0.5, y: 0.5 }}
             end={{ x: 1, y: 1 }}
@@ -98,7 +98,7 @@ export const PulseButton: React.FC<PulseButtonProps> = ({
       {/* Button */}
       <Animated.View style={[styles.button, animatedButtonStyle]}>
         <LinearGradient
-          colors={(disabled ? [ResponsiveTheme.colors.neutral, ResponsiveTheme.colors.neutral] : gradient) as any}
+          colors={(disabled ? [ResponsiveTheme.colors.neutral, ResponsiveTheme.colors.neutral] : gradient) as unknown as readonly [string, string, ...string[]]}
           style={styles.buttonGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}

@@ -128,7 +128,7 @@ const WebSlider: React.FC<SliderProps> = ({
         step={step}
         value={value}
         disabled={disabled}
-        onChange={(e: any) => {
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
           const newValue = parseFloat(e.target.value);
           const steppedValue = Math.round(newValue / step) * step;
           onValueChange(Math.max(min, Math.min(max, steppedValue)));
@@ -138,7 +138,7 @@ const WebSlider: React.FC<SliderProps> = ({
           background: `linear-gradient(to right, ${activeTrackColor} 0%, ${activeTrackColor} ${percentage}%, ${trackColor} ${percentage}%, ${trackColor} 100%)`,
           width: "100%",
           margin: "8px 0",
-        } as any}
+        } as React.CSSProperties}
       />
 
       {/* Min/Max Labels */}

@@ -127,7 +127,7 @@ export class RecognizedFoodLogger {
       try {
         const existingFood = await this.findExistingFood(
           recognizedFood.name,
-          (recognizedFood as any).barcode,
+          (recognizedFood as RecognizedFood & { barcode?: string }).barcode,
         );
 
         if (existingFood) {
@@ -266,7 +266,7 @@ export class RecognizedFoodLogger {
         fiber_per_100g: per100g.fiber || null,
         sugar_per_100g: recognizedFood.nutritionPer100g?.sugar ?? null,
         sodium_per_100g: recognizedFood.nutritionPer100g?.sodium ?? null,
-        barcode: (recognizedFood as any).barcode ?? null,
+        barcode: (recognizedFood as RecognizedFood & { barcode?: string }).barcode ?? null,
         verified: false,
         created_at: new Date().toISOString(),
       };
@@ -517,7 +517,7 @@ export class RecognizedFoodLogger {
         quantity_grams: food.userGrams ?? food.estimatedGrams,
         name: food.name,
         category: food.category,
-        barcode: (food as any).barcode,
+        barcode: (food as RecognizedFood & { barcode?: string }).barcode,
         serving_unit: "grams",
         calories: food.nutrition.calories,
         protein: food.nutrition.protein,

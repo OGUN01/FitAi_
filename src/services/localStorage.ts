@@ -759,7 +759,8 @@ export class EnhancedLocalStorageService {
       {
         ciphertext: CryptoUtils.enc.Base64.parse(encryptedData.payload),
         tag: CryptoUtils.enc.Base64.parse(encryptedData.tag || ""),
-      } as any,
+      // CryptoUtils decrypt expects CipherParams; construct manually
+      },
       this.encryptionKey,
       {
         iv: CryptoUtils.enc.Base64.parse(encryptedData.iv),

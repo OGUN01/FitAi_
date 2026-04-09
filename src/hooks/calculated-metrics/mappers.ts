@@ -47,7 +47,7 @@ export function mapToCalculatedMetrics(
     };
   }
 
-  const hrZonesFromJson = (advancedReview as any)?.heart_rate_zones;
+  const hrZonesFromJson = advancedReview?.heart_rate_zones;
   if (hrZonesFromJson && typeof hrZonesFromJson === "object") {
     heartRateZones = {
       fatBurn: {
@@ -73,7 +73,7 @@ export function mapToCalculatedMetrics(
     dailyWaterML: (() => {
       const weight = bodyAnalysis?.current_weight_kg;
       const activity = (workoutPreferences?.activity_level ?? "sedentary") as ActivityLevel;
-      const climate = ((advancedReview as any)?.detected_climate ?? "temperate") as ClimateType;
+      const climate = (advancedReview?.detected_climate ?? "temperate") as ClimateType;
       if (weight && weight > 0) {
         return waterCalculator.calculate(weight, activity, climate);
       }
@@ -86,12 +86,12 @@ export function mapToCalculatedMetrics(
     calculatedTDEE: advancedReview?.calculated_tdee ?? null,
     metabolicAge: advancedReview?.metabolic_age ?? null,
 
-    bmiCategory: (advancedReview as any)?.bmi_category ?? null,
-    bmiHealthRisk: (advancedReview as any)?.bmi_health_risk ?? null,
+    bmiCategory: advancedReview?.bmi_category ?? null,
+    bmiHealthRisk: advancedReview?.bmi_health_risk ?? null,
 
-    detectedClimate: (advancedReview as any)?.detected_climate ?? null,
-    detectedEthnicity: (advancedReview as any)?.detected_ethnicity ?? null,
-    bmrFormulaUsed: (advancedReview as any)?.bmr_formula_used ?? null,
+    detectedClimate: advancedReview?.detected_climate ?? null,
+    detectedEthnicity: advancedReview?.detected_ethnicity ?? null,
+    bmrFormulaUsed: advancedReview?.bmr_formula_used ?? null,
 
     currentWeightKg: bodyAnalysis?.current_weight_kg ?? null,
     targetWeightKg: bodyAnalysis?.target_weight_kg ?? null,
@@ -123,18 +123,18 @@ export function mapToCalculatedMetrics(
     mealsPerDay: calculateMealsPerDay(),
 
     healthScore:
-      (advancedReview as any)?.health_score ??
-      advancedReview?.overall_health_score,
-    healthGrade: (advancedReview as any)?.health_grade ?? null,
+      advancedReview?.health_score ??
+      advancedReview?.overall_health_score ?? null,
+    healthGrade: advancedReview?.health_grade ?? null,
     fitnessReadinessScore: advancedReview?.fitness_readiness_score ?? null,
     dietReadinessScore: advancedReview?.diet_readiness_score ?? null,
 
     heartRateZones,
 
     vo2MaxEstimate:
-      (advancedReview as any)?.vo2_max_estimate ??
-      advancedReview?.estimated_vo2_max,
+      advancedReview?.vo2_max_estimate ??
+      advancedReview?.estimated_vo2_max ?? null,
     vo2MaxClassification:
-      (advancedReview as any)?.vo2_max_classification ?? null,
+      advancedReview?.vo2_max_classification ?? null,
   };
 }

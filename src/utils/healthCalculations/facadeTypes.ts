@@ -6,7 +6,7 @@
  * Date: 2026-02-04
  */
 
-import type { ClimateType, EthnicityType, BMRFormula } from "./types";
+import type { ClimateType, EthnicityType, BMRFormula, HeartRateZones, VO2MaxEstimate, HealthScore } from "./types";
 
 // ============================================================================
 // COMPREHENSIVE HEALTH METRICS
@@ -40,33 +40,12 @@ export interface ComprehensiveHealthMetrics {
   };
 
   // Advanced Cardio Metrics (optional)
-  heartRateZones?: {
-    resting: number;
-    fatBurn: { min: number; max: number };
-    cardio: { min: number; max: number };
-    peak: { min: number; max: number };
-    maxHR: number;
-  } | null;
+  heartRateZones?: HeartRateZones | null;
 
-  vo2max?: {
-    vo2max: number;
-    classification: string;
-    fitnessAge: number;
-  } | null;
+  vo2max?: VO2MaxEstimate | null;
 
   // Health Assessment (optional)
-  healthScore?: {
-    totalScore: number;
-    grade: string;
-    breakdown: {
-      bmi: number;
-      bodyFat: number;
-      hydration: number;
-      nutrition: number;
-      cardiovascular: number;
-    };
-    recommendations: string[];
-  } | null;
+  healthScore?: HealthScore | null;
 
   // Goal-Specific Metrics (optional)
   muscleGainLimits?: {

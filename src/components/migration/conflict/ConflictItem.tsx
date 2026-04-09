@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type ComponentProps } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -93,7 +93,7 @@ export const ConflictItem: React.FC<ConflictItemProps> = ({
       <View style={styles.conflictHeader}>
         <View style={styles.conflictInfo}>
           <Ionicons
-            name={getConflictTypeIcon(conflict.type) as any}
+            name={getConflictTypeIcon(conflict.type) as ComponentProps<typeof Ionicons>['name']}
             size={rf(20)}
             color={getSeverityColor(conflict.severity)}
           />

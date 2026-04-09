@@ -36,9 +36,10 @@ export function useExerciseData(exerciseId: string): ExerciseData | null {
         if (workout.exercises) {
           for (const ex of workout.exercises) {
             // WorkoutSet has exercise property or direct id match
-            const exId = ex.id || (ex as any).exercise?.id;
+            const exId = ex.id || (ex as unknown as Record<string, { id?: string }>).exercise?.id;
             if (exId === exerciseId) {
-              const exerciseInfo = (ex as any).exercise || ex;
+              type ExerciseLike = { name?: string; description?: string; difficulty?: string; targetMuscles?: string[]; muscleGroups?: string[]; equipment?: string[]; instructions?: string[]; tips?: string[]; formTips?: string[]; safetyConsiderations?: string[] };
+              const exerciseInfo = ((ex as unknown as { exercise?: ExerciseLike }).exercise || ex) as ExerciseLike;
               return {
                 id: exerciseId,
                 name: exerciseInfo.name || "Exercise",

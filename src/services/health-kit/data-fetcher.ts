@@ -104,7 +104,7 @@ export async function fetchHealthData(
       restingHeartRate,
       heartRateVariability,
       sleepHours,
-      sleepQuality: sleepQuality as any,
+      sleepQuality: sleepQuality as HealthKitData["sleepQuality"],
       bodyWeight: bodyMass?.value,
       workouts: processedWorkouts,
     };

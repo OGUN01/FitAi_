@@ -30,7 +30,7 @@ export interface ProgressEntry {
   created_at: string;
 }
 
-export interface BodyAnalysis {
+export interface ProgressBodyAnalysis {
   id: string;
   user_id: string;
   photos: {
@@ -238,7 +238,7 @@ class ProgressDataService {
         photos: entryData.progress_photos || [],
         notes: entryData.notes,
         syncStatus: "pending",
-      } as any; // measurements assignment deferred for type compatibility
+      };
 
       // Store using Track B's CRUD operations
       await crudOperations.createBodyMeasurement(bodyMeasurement);
@@ -303,7 +303,7 @@ class ProgressDataService {
    */
   async getUserBodyAnalysis(
     userId: string,
-  ): Promise<ProgressDataResponse<BodyAnalysis>> {
+  ): Promise<ProgressDataResponse<ProgressBodyAnalysis>> {
     try {
       const { data, error } = await supabase
         .from("body_analysis")
@@ -410,8 +410,8 @@ class ProgressDataService {
       ] as const;
 
       measurementKeys.forEach((key) => {
-        const current = (latest as any).measurements?.[key] || 0;
-        const prev = (previous as any).measurements?.[key] || 0;
+        const current = latest.measurements?.[key] || 0;
+        const prev = previous.measurements?.[key] || 0;
         measurementChanges[key] = {
           current,
           previous: prev,
@@ -580,7 +580,14 @@ class ProgressDataService {
       weight_kg: measurement.weight ?? 0,
       body_fat_percentage: measurement.bodyFat,
       muscle_mass_kg: measurement.muscleMass,
-      measurements: (measurement as any).measurements || {},
+      measurements: {
+        chest: measurement.chest,
+        waist: measurement.waist,
+        hips: measurement.hips,
+        bicep: measurement.biceps,
+        thigh: measurement.thighs,
+        neck: measurement.neck,
+      },
       progress_photos: measurement.photos || [],
       notes: measurement.notes,
       recorded_at: measurement.date, // kept for legacy consumers; column is optional

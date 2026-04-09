@@ -42,8 +42,8 @@ export interface SyncableData {
   source: "local" | "remote" | "merged";
 }
 
-// Body Analysis Data with progress tracking
-export interface BodyAnalysis extends SyncableData {
+// Body Analysis Data with progress tracking (sync-oriented container)
+export interface SyncableBodyAnalysis extends SyncableData {
   photos: {
     front?: string;
     side?: string;
@@ -67,14 +67,14 @@ export interface BodyAnalysis extends SyncableData {
   };
 }
 
-// Comprehensive User Profile with all data
-export interface UserProfile extends SyncableData {
+// Comprehensive User Profile with all data (sync-oriented container)
+export interface SyncableUserProfile extends SyncableData {
   userId: string;
   personalInfo?: PersonalInfo;
   fitnessGoals?: FitnessGoals;
   dietPreferences?: DietPreferences;
   workoutPreferences?: WorkoutPreferences;
-  bodyAnalysis?: BodyAnalysis[];
+  bodyAnalysis?: SyncableBodyAnalysis[];
   onboardingCompleted: boolean;
   profileCompleteness: number; // 0-100%
   lastActiveAt: string;
@@ -96,7 +96,7 @@ export interface DataValidationSchema {
   validateWorkoutPreferences(
     data: Partial<WorkoutPreferences>,
   ): ValidationResult;
-  validateUserProfile(data: Partial<UserProfile>): ValidationResult;
+  validateUserProfile(data: Partial<SyncableUserProfile>): ValidationResult;
 }
 
 // ============================================================================

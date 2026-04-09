@@ -89,6 +89,7 @@ export const useHomeLogic = () => {
   const waterIntakeML = useHydrationStore((s) => s.waterIntakeML);
   const waterGoal = useHydrationStore((s) => s.dailyGoalML);
   const hydrationAddWater = useHydrationStore((s) => s.addWater);
+  const setDailyGoalFromMetrics = useHydrationStore((s) => s.setDailyGoalFromMetrics);
   const checkAndResetIfNewDay = useHydrationStore(
     (s) => s.checkAndResetIfNewDay,
   );
@@ -97,6 +98,16 @@ export const useHomeLogic = () => {
   );
 
   const { metrics: calculatedMetrics } = useCalculatedMetrics();
+
+  // Bridge: once calculatedMetrics are available, seed hydrationStore.dailyGoalML
+  // if it hasn't been set yet (null = not user-customised). This is the SSOT link
+  // documented in hydrationStore.ts: "Must be set from calculatedMetrics".
+  useEffect(() => {
+    const waterML = calculatedMetrics?.dailyWaterML;
+    if (waterML && waterML > 0) {
+      setDailyGoalFromMetrics(waterML);
+    }
+  }, [calculatedMetrics?.dailyWaterML, setDailyGoalFromMetrics]);
 
   const completedSessions = useFitnessStore((s) => s.completedSessions);
   const workoutProgress = useFitnessStore((s) => s.workoutProgress);

@@ -24,6 +24,9 @@ export const createUtilityActions: StateCreator<
       return false;
     }
 
+    // TODO: profile.fitnessGoals is synthesized from workout_preferences in getCompleteProfile() and mappers.ts.
+    // Once the fitnessGoals field is removed from UserProfile type, read directly from
+    // profileStore.workoutPreferences instead (primary_goals, time_commitment, experience_level).
     const { personalInfo, fitnessGoals } = profile;
 
     if (!personalInfo) {

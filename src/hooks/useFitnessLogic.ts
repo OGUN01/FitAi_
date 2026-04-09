@@ -7,7 +7,6 @@ import {
   useFitnessStore,
   useAppStateStore,
   useProfileStore,
-  useUserStore,
 } from "../stores";
 import { useAchievementStore } from "../stores/achievementStore";
 import { useAuth } from "./useAuth";
@@ -87,7 +86,6 @@ export interface FitnessNavigation {
 export const useFitnessLogic = (navigation: FitnessNavigation) => {
   // Auth & User
   const { user, isGuestMode } = useAuth();
-  const profile = useUserStore((state) => state.profile);
   const {
     bodyAnalysis,
     workoutPreferences: profileWorkoutPreferences,
@@ -104,8 +102,8 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     [profilePersonalInfo, bodyAnalysis, profileWorkoutPreferences],
   );
   const mergedFitnessGoals = useMemo(
-    () => buildLegacyFitnessGoals(profileWorkoutPreferences, profile),
-    [profileWorkoutPreferences, profile],
+    () => buildLegacyFitnessGoals(profileWorkoutPreferences),
+    [profileWorkoutPreferences],
   );
 
   // Fitness Store
@@ -889,7 +887,7 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     );
   }, [generateWeeklyWorkoutPlan]);
 
-  // SSOT: profileStore.personalInfo is authoritative; userStore profile is legacy fallback
+  // SSOT: profileStore.personalInfo is authoritative for user name
   const profileFitnessName =
     `${profilePersonalInfo?.first_name || ""} ${profilePersonalInfo?.last_name || ""}`.trim();
   const userName = profileFitnessName || legacyPersonalInfo?.name;

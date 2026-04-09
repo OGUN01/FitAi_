@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, StyleProp, ViewStyle } from "react-native";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { PremiumMealCard } from "./PremiumMealCard";
@@ -67,9 +67,9 @@ export const MealPlanView: React.FC<MealPlanViewProps> = React.memo(({
                         ? styles.selectedDayButton
                         : undefined,
                       isToday ? styles.todayDayButton : undefined,
-                    ] as any
+                    ] as StyleProp<ViewStyle>
                   }
-                  onPress={() => setSelectedDay(day as any)}
+                  onPress={() => setSelectedDay(day)}
                   scaleValue={0.95}
                 >
                   <Text
@@ -100,7 +100,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = React.memo(({
         <View style={styles.premiumMealsContainer}>
           {todaysMeals.map((meal) => {
             const progress = storeGetMealProgress(meal.id);
-            const mealTime = getMealTime(meal.type as any, mealSchedule);
+            const mealTime = getMealTime(meal.type as "breakfast" | "lunch" | "dinner" | "snack" | "morning_snack" | "afternoon_snack", mealSchedule);
             return (
               <PremiumMealCard
                 key={meal.id}

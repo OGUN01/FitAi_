@@ -15,7 +15,7 @@ import {
   BMRFormula,
   BMRFormulaSelection,
   ActivityLevel,
-  UserProfile,
+  HealthCalcProfile,
 } from './types';
 
 // ============================================================================
@@ -470,7 +470,7 @@ export function detectEthnicity(country: string, state?: string): EthnicityDetec
  * - Katch & McArdle (1996) - Best when body fat % is accurate
  * - Cunningham (1980) - Optimal for athletes
  */
-export function detectBestBMRFormula(user: UserProfile): BMRFormulaSelection {
+export function detectBestBMRFormula(user: HealthCalcProfile): BMRFormulaSelection {
   const {
     bodyFat,
     bodyFatMethod,

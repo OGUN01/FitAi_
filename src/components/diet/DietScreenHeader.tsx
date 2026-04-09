@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { GlassCard } from "../ui/aurora/GlassCard";
@@ -73,7 +73,7 @@ export const DietScreenHeader: React.FC<DietScreenHeaderProps> = React.memo(({
       {/* Action buttons row */}
       <View style={styles.headerButtons}>
         <AnimatedPressable
-          style={[styles.aiButton, isGeneratingPlan ? styles.aiButtonDisabled : undefined] as any}
+          style={[styles.aiButton, isGeneratingPlan ? styles.aiButtonDisabled : undefined] as StyleProp<ViewStyle>}
           onPress={onGenerateWeeklyPlan}
           disabled={isGeneratingPlan}
           scaleValue={0.95}

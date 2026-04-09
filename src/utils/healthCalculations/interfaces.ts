@@ -12,7 +12,7 @@ import {
   ClimateType,
   ActivityLevel,
   EthnicityType,
-  UserProfile,
+  HealthCalcProfile,
   BMIClassification,
   BMICutoffs,
 } from './types';
@@ -31,7 +31,7 @@ export interface IBMRCalculator {
    * @param user - User profile with weight, height, age, gender, body fat
    * @returns BMR in calories per day
    */
-  calculate(user: UserProfile): number;
+  calculate(user: HealthCalcProfile): number;
 
   /**
    * Get the formula name
@@ -148,7 +148,7 @@ export interface IFormulaSelector {
    * @param user - User profile
    * @returns Formula selection with reasoning
    */
-  selectBMRFormula(user: UserProfile): {
+  selectBMRFormula(user: HealthCalcProfile): {
     formula: BMRFormula;
     reason: string;
     accuracy: string;
@@ -170,7 +170,7 @@ export interface IHealthCalculatorFactory {
    * @param user - User profile
    * @returns BMR calculator instance
    */
-  createBMRCalculator(user: UserProfile): IBMRCalculator;
+  createBMRCalculator(user: HealthCalcProfile): IBMRCalculator;
 
   /**
    * Create BMI calculator

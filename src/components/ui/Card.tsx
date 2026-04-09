@@ -65,7 +65,7 @@ export const Card: React.FC<CardProps> = (props) => {
     if (React.isValidElement(child)) {
       if (child.type === React.Fragment) {
         const wrapped = React.Children.map(
-          (child.props as any).children,
+          (child.props as { children?: React.ReactNode }).children,
           wrapChild,
         );
         return (
@@ -80,12 +80,12 @@ export const Card: React.FC<CardProps> = (props) => {
         return child;
       }
 
-      if (child.props && (child.props as any).children) {
+      if (child.props && (child.props as { children?: React.ReactNode }).children) {
         const wrappedChildren = React.Children.map(
-          (child.props as any).children,
+          (child.props as { children?: React.ReactNode }).children,
           wrapChild,
         );
-        if (wrappedChildren !== (child.props as any).children) {
+        if (wrappedChildren !== (child.props as { children?: React.ReactNode }).children) {
           return React.cloneElement(child, child.props, wrappedChildren);
         }
       }

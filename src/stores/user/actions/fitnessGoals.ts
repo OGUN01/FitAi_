@@ -15,6 +15,11 @@ export const createFitnessGoalsActions: StateCreator<
   [],
   FitnessGoalsActions
 > = (set, get) => ({
+  /**
+   * @deprecated The fitness_goals DB table is deprecated. All goal data now lives in workout_preferences.
+   * Use profileStore.updateWorkoutPreferences() instead.
+   * Kept temporarily because integration files (utils/integration.ts, utils/integration/onboarding.ts) still call this.
+   */
   createFitnessGoals: async (
     goalsData: CreateFitnessGoalsRequest,
   ): Promise<FitnessGoalsResponse> => {
@@ -67,6 +72,11 @@ export const createFitnessGoalsActions: StateCreator<
     }
   },
 
+  /**
+   * @deprecated The fitness_goals DB table is deprecated. All goal data now lives in workout_preferences.
+   * Use profileStore.workoutPreferences instead.
+   * Kept temporarily because integration files still call this.
+   */
   getFitnessGoals: async (userId: string): Promise<FitnessGoalsResponse> => {
     set({ isLoading: true, error: null });
 
@@ -115,6 +125,11 @@ export const createFitnessGoalsActions: StateCreator<
     }
   },
 
+  /**
+   * @deprecated The fitness_goals DB table is deprecated. All goal data now lives in workout_preferences.
+   * Use profileStore.updateWorkoutPreferences() instead.
+   * Kept temporarily because integration files still call this.
+   */
   updateFitnessGoals: async (
     userId: string,
     updates: UpdateFitnessGoalsRequest,

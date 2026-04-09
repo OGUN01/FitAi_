@@ -80,7 +80,7 @@ export function transformProfileForWorkoutRequest(
       currentWeightKg ??
       bodyAnalysis.current_weight_kg,
     height: bodyAnalysis.height_cm,
-    fitnessGoal: (fitnessGoals.primaryGoals?.[0] as any) || "get_fit",
+    fitnessGoal: (fitnessGoals.primaryGoals?.[0] as string) || "get_fit",
     experienceLevel:
       (fitnessGoals.experience_level as
         | "beginner"
@@ -117,8 +117,8 @@ export function transformProfileForDietRequest(
       currentWeightKg ??
       bodyAnalysis.current_weight_kg,
     height: bodyAnalysis.height_cm,
-    fitness_goal: (fitnessGoals.primaryGoals?.[0] as any) || "get_fit",
-    activity_level: (workoutPreferences?.activity_level as any) || "moderate",
+    fitness_goal: (fitnessGoals.primaryGoals?.[0] as string) || "get_fit",
+    activity_level: (workoutPreferences?.activity_level as string) || "moderate",
     country: personalInfo.country,
     state: personalInfo.state,
     occupation_type: personalInfo.occupation_type,

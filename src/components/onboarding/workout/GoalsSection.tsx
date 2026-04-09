@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type ComponentProps } from "react";
 import {
   View,
   Text,
@@ -125,7 +125,7 @@ export const GoalsSection: React.FC<GoalsSectionProps> = ({
                   {/* Icon + Info row */}
                   <View style={styles.consistentCardHeader}>
                     <Ionicons
-                      name={goal.iconName as any}
+                      name={goal.iconName as ComponentProps<typeof Ionicons>['name']}
                       size={rf(22)}
                       color={
                         isSelected
@@ -231,7 +231,7 @@ export const GoalsSection: React.FC<GoalsSectionProps> = ({
                     ]}
                   >
                     <Ionicons
-                      name={level.iconName as any}
+                      name={level.iconName as ComponentProps<typeof Ionicons>['name']}
                       size={rf(24)}
                       color={
                         isSelected

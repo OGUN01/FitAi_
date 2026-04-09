@@ -18,11 +18,11 @@ import {
   HealthScoreCalculatorService,
 } from "./fitnessCalculators";
 import { MuscleGainCalculatorService } from "./goalCalculators";
-import type { UserProfile, ActivityLevel, DietType } from "./types";
+import type { HealthCalcProfile, ActivityLevel, DietType, Goal } from "./types";
 import type { ComprehensiveHealthMetrics } from "./facadeTypes";
 
 export class MetricsCalculator {
-  static calculateAllMetrics(user: UserProfile): ComprehensiveHealthMetrics {
+  static calculateAllMetrics(user: HealthCalcProfile): ComprehensiveHealthMetrics {
 
     const climateResult = detectClimate(user.country, user.state);
     const ethnicityResult = detectEthnicity(user.country);
@@ -53,7 +53,7 @@ export class MetricsCalculator {
 
 
     const dietType: DietType = user.dietType || "omnivore";
-    const goalType = (user.goal || "maintenance") as any;
+    const goalType: Goal = user.goal || "maintenance";
     const macroResult = MacroCalculatorService.calculate(
       tdeeResult.tdee,
       user.weight,
@@ -113,8 +113,8 @@ export class MetricsCalculator {
       bmiClassification: {
         category: bmiResult.classification.category,
         healthRisk: bmiResult.classification.healthRisk,
-        ethnicity: bmiResult.classification.ethnicity as any,
-        message: bmiResult.classification.message as any,
+        ethnicity: bmiResult.classification.ethnicity,
+        message: bmiResult.classification.message,
       },
       tdee: tdeeResult.tdee,
       dailyCalories: tdeeResult.tdee,
@@ -132,10 +132,10 @@ export class MetricsCalculator {
         fat_percent: macroResult.percentages.fat_percent,
       },
 
-      heartRateZones: hrZones as any,
-      vo2max: vo2max as any,
-      healthScore: healthScore as any,
-      muscleGainLimits: muscleGainLimits as any,
+      heartRateZones: hrZones,
+      vo2max: vo2max,
+      healthScore: healthScore,
+      muscleGainLimits: muscleGainLimits,
 
       climate: climateResult.climate,
       ethnicity: ethnicityResult.ethnicity,

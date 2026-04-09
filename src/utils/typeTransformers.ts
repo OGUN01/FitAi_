@@ -54,7 +54,7 @@ export function toDisplayLabel(str: string): string {
  */
 export function toAppFormat<T extends Record<string, any>>(
   obj: T,
-): Record<string, any> {
+): Record<string, any> | any[] {
   if (obj === null || obj === undefined) {
     return obj;
   }
@@ -62,7 +62,7 @@ export function toAppFormat<T extends Record<string, any>>(
   if (Array.isArray(obj)) {
     return obj.map((item) =>
       typeof item === "object" && item !== null ? toAppFormat(item) : item,
-    ) as any;
+    );
   }
 
   if (typeof obj !== "object") {
@@ -101,7 +101,7 @@ export function toAppFormat<T extends Record<string, any>>(
  */
 export function toDbFormat<T extends Record<string, any>>(
   obj: T,
-): Record<string, any> {
+): Record<string, any> | any[] {
   if (obj === null || obj === undefined) {
     return obj;
   }
@@ -109,7 +109,7 @@ export function toDbFormat<T extends Record<string, any>>(
   if (Array.isArray(obj)) {
     return obj.map((item) =>
       typeof item === "object" && item !== null ? toDbFormat(item) : item,
-    ) as any;
+    );
   }
 
   if (typeof obj !== "object") {

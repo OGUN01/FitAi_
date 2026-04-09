@@ -1,7 +1,7 @@
 // Migration Progress Component for Track B Infrastructure
 // Provides smooth animations and progress tracking for data migration
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, type ComponentProps } from "react";
 import {
   View,
   Text,
@@ -267,7 +267,7 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
                 ]}
               >
                 <Ionicons
-                  name={isCompleted ? "checkmark" : (step.icon as any)}
+                  name={isCompleted ? "checkmark" : (step.icon as ComponentProps<typeof Ionicons>['name'])}
                   size={rs(20)}
                   color={
                     isCompleted

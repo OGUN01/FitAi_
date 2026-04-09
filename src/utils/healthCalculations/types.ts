@@ -113,7 +113,7 @@ export type BodyFatSource =
 // USER PROFILE TYPES
 // ============================================================================
 
-export interface UserProfile {
+export interface HealthCalcProfile {
   // Personal Info
   age: number;
   gender: "male" | "female" | "other" | "prefer_not_to_say";
@@ -248,7 +248,7 @@ export interface MacroResult {
 // ============================================================================
 
 export interface BMRCalculator {
-  calculate(user: UserProfile): number;
+  calculate(user: HealthCalcProfile): number;
   getFormula(): BMRFormula;
   getAccuracy(): string;
 }

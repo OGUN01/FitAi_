@@ -79,7 +79,7 @@ export const createHealthKitActions = (
 
       const syncResult: HealthSyncResult = {
         success: true,
-        data: {} as any,
+        data: {},
       };
 
       if (syncResult.success && syncResult.data) {

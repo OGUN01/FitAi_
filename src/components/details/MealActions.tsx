@@ -27,7 +27,7 @@ export const MealActions: React.FC<MealActionsProps> = ({
           onPress={onDelete ?? (() => {})}
           disabled={!onDelete}
           variant="outline"
-          style={[styles.actionButton, styles.deleteButton] as any}
+          style={{ ...styles.actionButton, ...styles.deleteButton }}
           textStyle={styles.deleteButtonText}
         />
       </View>

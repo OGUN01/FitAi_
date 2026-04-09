@@ -305,7 +305,7 @@ export const useReviewValidation = ({
         // clamps heavy-but-healthy users to floor=18. New formula uses percentage-based comparison.
         metabolic_age: _legacyMetabolicAge,
         ...legacyNonMetabolicFields
-      } = calculations as any;
+      } = calculations as Partial<AdvancedReviewData>;
 
       // BUG-03: Derive total_calorie_deficit from ValidationEngine's actual capped weekly rate
       const vEngineWeeklyRate = validationResultsData.calculatedMetrics.weeklyRate;
@@ -423,13 +423,13 @@ export const useReviewValidation = ({
           '\ndetected_climate            :', finalCalculations.detected_climate,
           '\n--- Extended Calculated Fields ---',
           '\ncalculated_bmi              :', finalCalculations.calculated_bmi,
-          '\nbmi_category                :', (finalCalculations as any).bmi_category,
-          '\nbmi_health_risk             :', (finalCalculations as any).bmi_health_risk,
-          '\nbmr_formula_used            :', (finalCalculations as any).bmr_formula_used,
-          '\nhealth_grade                :', (finalCalculations as any).health_grade,
-          '\nvo2_max_estimate            :', (finalCalculations as any).vo2_max_estimate,
-          '\nvo2_max_classification      :', (finalCalculations as any).vo2_max_classification,
-          '\nheart_rate_zones            :', JSON.stringify((finalCalculations as any).heart_rate_zones),
+          '\nbmi_category                :', finalCalculations.bmi_category,
+          '\nbmi_health_risk             :', finalCalculations.bmi_health_risk,
+          '\nbmr_formula_used            :', finalCalculations.bmr_formula_used,
+          '\nhealth_grade                :', finalCalculations.health_grade,
+          '\nvo2_max_estimate            :', finalCalculations.vo2_max_estimate,
+          '\nvo2_max_classification      :', finalCalculations.vo2_max_classification,
+          '\nheart_rate_zones            :', JSON.stringify(finalCalculations.heart_rate_zones),
           '\nrefeed_schedule             :', finalCalculations.refeed_schedule,
           '\nmedical_adjustments         :', finalCalculations.medical_adjustments,
           '\nusedFallbackDefaults        :', finalCalculations.usedFallbackDefaults,

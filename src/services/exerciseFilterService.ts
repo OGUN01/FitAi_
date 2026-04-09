@@ -188,7 +188,7 @@ class ExerciseFilterService {
     ).toLowerCase();
     const experienceLevel: "beginner" | "intermediate" | "advanced" =
       level === "beginner" || level === "intermediate" || level === "advanced"
-        ? (level as any)
+        ? level
         : "beginner";
 
     return {

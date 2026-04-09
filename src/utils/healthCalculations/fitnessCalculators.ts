@@ -12,7 +12,7 @@ import {
   healthScoreCalculator,
 } from "./calculators";
 import type {
-  UserProfile,
+  HealthCalcProfile,
   HeartRateZones,
   VO2MaxEstimate,
   HealthScore as BaseHealthScore,
@@ -57,7 +57,7 @@ export class HeartRateCalculatorService {
 }
 
 export class VO2MaxCalculatorService {
-  static estimate(user: UserProfile, restingHR: number): VO2MaxEstimate {
+  static estimate(user: HealthCalcProfile, restingHR: number): VO2MaxEstimate {
     try {
       const result = vo2MaxCalculator.estimateVO2Max(user, restingHR);
       if (!result) {
@@ -107,7 +107,7 @@ export class VO2MaxCalculatorService {
 
 export class HealthScoreCalculatorService {
   static calculate(
-    user: UserProfile,
+    user: HealthCalcProfile,
     metrics: {
       bmi: number;
       bmiCategory: string;

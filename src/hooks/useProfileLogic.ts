@@ -3,7 +3,6 @@ import { Linking, Share } from "react-native";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "./useAuth";
-import { useUser } from "./useUser";
 import { useProfileStore } from "../stores/profileStore";
 import { useUserStore } from "../stores/userStore";
 import { useUnifiedStats } from "./useUnifiedStats";
@@ -46,7 +45,8 @@ function getSubscriptionSubtitle(
 
 export const useProfileLogic = () => {
   const { user, isAuthenticated, isGuestMode, logout, guestId } = useAuth();
-  const { profile: rawProfile, clearProfile } = useUser();
+  const rawProfile = useUserStore((s) => s.profile);
+  const clearProfile = useUserStore((s) => s.clearProfile);
   const userStats = useUnifiedStats();
   const {
     bodyAnalysis,
@@ -126,31 +126,6 @@ export const useProfileLogic = () => {
     });
   }, [profileStorePersonalInfo?.units]);
 
-  // Check for profile edit intent on mount
-  useEffect(() => {
-    const checkEditIntent = async () => {
-      try {
-        const intentData = await AsyncStorage.getItem("profileEditIntent");
-        if (intentData) {
-          const intent = JSON.parse(intentData);
-          const isRecent = Date.now() - intent.timestamp < 5 * 60 * 1000;
-          if (isRecent && intent.section) {
-            console.log("[ProfileScreen] Found edit intent:", intent);
-            await AsyncStorage.removeItem("profileEditIntent");
-            // Handle the intent
-            if (intent.section === "personal-info")
-              setShowEditModal("personal-info");
-            else if (intent.section === "goals") setShowEditModal("goals");
-            else if (intent.section === "measurements")
-              setShowEditModal("measurements");
-          }
-        }
-      } catch (error) {
-        console.error("[ProfileScreen] Error checking edit intent:", error);
-      }
-    };
-    checkEditIntent();
-  }, []);
 
   // Handlers
   const handleEditProfile = () => {
@@ -198,21 +173,6 @@ export const useProfileLogic = () => {
       try {
         await AsyncStorage.setItem(STORAGE_KEY_UNITS, units);
         updatePersonalInfo({ units });
-
-        const currentProfile = useUserStore.getState().profile;
-        if (currentProfile) {
-          useUserStore.getState().setProfile({
-            ...currentProfile,
-            personalInfo: {
-              ...currentProfile.personalInfo,
-              units,
-            },
-            preferences: {
-              ...currentProfile.preferences,
-              units,
-            },
-          });
-        }
 
         if (currentUserId) {
           if (user?.id !== currentUserId) return; // user changed mid-operation
