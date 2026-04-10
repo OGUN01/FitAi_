@@ -829,129 +829,131 @@ class SyncEngine {
   async syncAdvancedReview(userId: string, data: any): Promise<void> {
     const advancedReviewData = {
       user_id: userId,
-      // Calculated metrics
-      calculated_bmi: data.calculated_bmi || data.calculatedBmi || null,
-      calculated_bmr: data.calculated_bmr || data.calculatedBmr || null,
-      calculated_tdee: data.calculated_tdee || data.calculatedTdee || null,
-      metabolic_age: data.metabolic_age || data.metabolicAge || null,
+      // Calculated metrics — use ?? so 0 values (maintenance) are not treated as missing
+      calculated_bmi: data.calculated_bmi ?? data.calculatedBmi ?? null,
+      calculated_bmr: data.calculated_bmr ?? data.calculatedBmr ?? null,
+      calculated_tdee: data.calculated_tdee ?? data.calculatedTdee ?? null,
+      metabolic_age: data.metabolic_age ?? data.metabolicAge ?? null,
       // Daily targets
-      daily_calories: data.daily_calories || data.dailyCalories || null,
-      daily_protein_g: data.daily_protein_g || data.dailyProteinG || null,
-      daily_carbs_g: data.daily_carbs_g || data.dailyCarbsG || null,
-      daily_fat_g: data.daily_fat_g || data.dailyFatG || null,
-      daily_water_ml: data.daily_water_ml || data.dailyWaterMl || null,
-      daily_fiber_g: data.daily_fiber_g || data.dailyFiberG || null,
-      // Weight targets
+      daily_calories: data.daily_calories ?? data.dailyCalories ?? null,
+      daily_protein_g: data.daily_protein_g ?? data.dailyProteinG ?? null,
+      daily_carbs_g: data.daily_carbs_g ?? data.dailyCarbsG ?? null,
+      daily_fat_g: data.daily_fat_g ?? data.dailyFatG ?? null,
+      daily_water_ml: data.daily_water_ml ?? data.dailyWaterMl ?? null,
+      daily_fiber_g: data.daily_fiber_g ?? data.dailyFiberG ?? null,
+      // Weight targets — weekly_weight_loss_rate = 0 for maintenance users
       healthy_weight_min:
-        data.healthy_weight_min || data.healthyWeightMin || null,
+        data.healthy_weight_min ?? data.healthyWeightMin ?? null,
       healthy_weight_max:
-        data.healthy_weight_max || data.healthyWeightMax || null,
+        data.healthy_weight_max ?? data.healthyWeightMax ?? null,
       weekly_weight_loss_rate:
-        data.weekly_weight_loss_rate || data.weeklyWeightLossRate || null,
+        data.weekly_weight_loss_rate ?? data.weeklyWeightLossRate ?? null,
       estimated_timeline_weeks:
-        data.estimated_timeline_weeks || data.estimatedTimelineWeeks || null,
+        data.estimated_timeline_weeks ?? data.estimatedTimelineWeeks ?? null,
       total_calorie_deficit:
-        data.total_calorie_deficit || data.totalCalorieDeficit || null,
+        data.total_calorie_deficit ?? data.totalCalorieDeficit ?? null,
       // Body composition targets
       ideal_body_fat_min:
-        data.ideal_body_fat_min || data.idealBodyFatMin || null,
+        data.ideal_body_fat_min ?? data.idealBodyFatMin ?? null,
       ideal_body_fat_max:
-        data.ideal_body_fat_max || data.idealBodyFatMax || null,
-      lean_body_mass: data.lean_body_mass || data.leanBodyMass || null,
-      fat_mass: data.fat_mass || data.fatMass || null,
+        data.ideal_body_fat_max ?? data.idealBodyFatMax ?? null,
+      lean_body_mass: data.lean_body_mass ?? data.leanBodyMass ?? null,
+      fat_mass: data.fat_mass ?? data.fatMass ?? null,
       // Fitness metrics
-      estimated_vo2_max: data.estimated_vo2_max || data.estimatedVo2Max || null,
-      vo2_max_estimate: data.vo2_max_estimate || data.vo2MaxEstimate || null,
+      estimated_vo2_max: data.estimated_vo2_max ?? data.estimatedVo2Max ?? null,
+      vo2_max_estimate: data.vo2_max_estimate ?? data.vo2MaxEstimate ?? null,
       vo2_max_classification:
-        data.vo2_max_classification || data.vo2MaxClassification || null,
+        data.vo2_max_classification ?? data.vo2MaxClassification ?? null,
       // Heart rate zones
-      heart_rate_zones: data.heart_rate_zones || data.heartRateZones || null,
+      heart_rate_zones: data.heart_rate_zones ?? data.heartRateZones ?? null,
       target_hr_fat_burn_min:
-        data.target_hr_fat_burn_min || data.targetHrFatBurnMin || null,
+        data.target_hr_fat_burn_min ?? data.targetHrFatBurnMin ?? null,
       target_hr_fat_burn_max:
-        data.target_hr_fat_burn_max || data.targetHrFatBurnMax || null,
+        data.target_hr_fat_burn_max ?? data.targetHrFatBurnMax ?? null,
       target_hr_cardio_min:
-        data.target_hr_cardio_min || data.targetHrCardioMin || null,
+        data.target_hr_cardio_min ?? data.targetHrCardioMin ?? null,
       target_hr_cardio_max:
-        data.target_hr_cardio_max || data.targetHrCardioMax || null,
+        data.target_hr_cardio_max ?? data.targetHrCardioMax ?? null,
       target_hr_peak_min:
-        data.target_hr_peak_min || data.targetHrPeakMin || null,
+        data.target_hr_peak_min ?? data.targetHrPeakMin ?? null,
       target_hr_peak_max:
-        data.target_hr_peak_max || data.targetHrPeakMax || null,
+        data.target_hr_peak_max ?? data.targetHrPeakMax ?? null,
       // Workout recommendations
       recommended_workout_frequency:
-        data.recommended_workout_frequency ||
-        data.recommendedWorkoutFrequency ||
+        data.recommended_workout_frequency ??
+        data.recommendedWorkoutFrequency ??
         null,
       recommended_cardio_minutes:
-        data.recommended_cardio_minutes ||
-        data.recommendedCardioMinutes ||
+        data.recommended_cardio_minutes ??
+        data.recommendedCardioMinutes ??
         null,
       recommended_strength_sessions:
-        data.recommended_strength_sessions ||
-        data.recommendedStrengthSessions ||
+        data.recommended_strength_sessions ??
+        data.recommendedStrengthSessions ??
         null,
-      // Health scores
+      // Health scores — 0 is a valid score, not missing
       overall_health_score:
-        data.overall_health_score || data.overallHealthScore || null,
-      health_score: data.health_score || data.healthScore || null,
-      health_grade: data.health_grade || data.healthGrade || null,
+        data.overall_health_score ?? data.overallHealthScore ?? null,
+      health_score: data.health_score ?? data.healthScore ?? null,
+      health_grade: data.health_grade ?? data.healthGrade ?? null,
       diet_readiness_score:
-        data.diet_readiness_score || data.dietReadinessScore || null,
+        data.diet_readiness_score ?? data.dietReadinessScore ?? null,
       fitness_readiness_score:
-        data.fitness_readiness_score || data.fitnessReadinessScore || null,
+        data.fitness_readiness_score ?? data.fitnessReadinessScore ?? null,
       goal_realistic_score:
-        data.goal_realistic_score || data.goalRealisticScore || null,
+        data.goal_realistic_score ?? data.goalRealisticScore ?? null,
       // Sleep metrics
       recommended_sleep_hours:
-        data.recommended_sleep_hours || data.recommendedSleepHours || null,
+        data.recommended_sleep_hours ?? data.recommendedSleepHours ?? null,
       current_sleep_duration:
-        data.current_sleep_duration || data.currentSleepDuration || null,
+        data.current_sleep_duration ?? data.currentSleepDuration ?? null,
       sleep_efficiency_score:
-        data.sleep_efficiency_score || data.sleepEfficiencyScore || null,
-      // Data quality
+        data.sleep_efficiency_score ?? data.sleepEfficiencyScore ?? null,
+      // Data quality — 0 completeness is valid
       data_completeness_percentage:
-        data.data_completeness_percentage ||
-        data.dataCompletenessPercentage ||
+        data.data_completeness_percentage ??
+        data.dataCompletenessPercentage ??
         null,
       reliability_score:
-        data.reliability_score || data.reliabilityScore || null,
+        data.reliability_score ?? data.reliabilityScore ?? null,
       personalization_level:
-        data.personalization_level || data.personalizationLevel || null,
+        data.personalization_level ?? data.personalizationLevel ?? null,
       // Validation
       validation_status:
-        data.validation_status || data.validationStatus || null,
+        data.validation_status ?? data.validationStatus ?? null,
       validation_errors:
-        data.validation_errors || data.validationErrors || null,
+        data.validation_errors ?? data.validationErrors ?? null,
       validation_warnings:
-        data.validation_warnings || data.validationWarnings || null,
+        data.validation_warnings ?? data.validationWarnings ?? null,
       // BMI details
-      bmi_category: data.bmi_category || data.bmiCategory || null,
-      bmi_health_risk: data.bmi_health_risk || data.bmiHealthRisk || null,
-      bmi_cutoffs_used: data.bmi_cutoffs_used || data.bmiCutoffsUsed || null,
+      bmi_category: data.bmi_category ?? data.bmiCategory ?? null,
+      bmi_health_risk: data.bmi_health_risk ?? data.bmiHealthRisk ?? null,
+      bmi_cutoffs_used: data.bmi_cutoffs_used ?? data.bmiCutoffsUsed ?? null,
       // Advanced settings
-      refeed_schedule: data.refeed_schedule || data.refeedSchedule || null,
+      refeed_schedule: data.refeed_schedule ?? data.refeedSchedule ?? null,
       medical_adjustments:
-        data.medical_adjustments || data.medicalAdjustments || null,
+        data.medical_adjustments ?? data.medicalAdjustments ?? null,
       // BMR formula details
-      bmr_formula_used: data.bmr_formula_used || data.bmrFormulaUsed || null,
+      bmr_formula_used: data.bmr_formula_used ?? data.bmrFormulaUsed ?? null,
       bmr_formula_accuracy:
-        data.bmr_formula_accuracy || data.bmrFormulaAccuracy || null,
+        data.bmr_formula_accuracy ?? data.bmrFormulaAccuracy ?? null,
       bmr_formula_confidence:
-        data.bmr_formula_confidence || data.bmrFormulaConfidence || null,
+        data.bmr_formula_confidence ?? data.bmrFormulaConfidence ?? null,
       // Climate and ethnicity
-      climate_used: data.climate_used || data.climateUsed || null,
-      detected_climate: data.detected_climate || data.detectedClimate || null,
+      climate_used: data.climate_used ?? data.climateUsed ?? null,
+      detected_climate: data.detected_climate ?? data.detectedClimate ?? null,
       climate_tdee_modifier:
-        data.climate_tdee_modifier || data.climateTdeeModifier || null,
+        data.climate_tdee_modifier ?? data.climateTdeeModifier ?? null,
       climate_water_modifier:
-        data.climate_water_modifier || data.climateWaterModifier || null,
-      ethnicity_used: data.ethnicity_used || data.ethnicityUsed || null,
+        data.climate_water_modifier ?? data.climateWaterModifier ?? null,
+      ethnicity_used: data.ethnicity_used ?? data.ethnicityUsed ?? null,
       detected_ethnicity:
-        data.detected_ethnicity || data.detectedEthnicity || null,
+        data.detected_ethnicity ?? data.detectedEthnicity ?? null,
       // Version
       calculations_version:
-        data.calculations_version || data.calculationsVersion || null,
+        data.calculations_version ?? data.calculationsVersion ?? null,
+      // Rate cap flag
+      was_rate_capped: data.was_rate_capped ?? null,
       updated_at: new Date().toISOString(),
     };
 

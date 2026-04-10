@@ -35,6 +35,12 @@ export interface WorkoutPreferencesData {
   // Persisted so originalRateRef in useReviewValidation survives tab remounts.
   original_weekly_rate?: number; // DECIMAL(3,2)
 
+  // Boost card selection: extra cardio minutes ON TOP of existing workout plan.
+  // When > 0, ValidationEngine adds the exercise burn to the deficit so the
+  // weekly rate reflects diet + exercise (not diet-only which would floor at BMR).
+  // Set to 0/undefined when a non-boost card is selected.
+  boost_extra_cardio_minutes?: number; // INTEGER, 0-60
+
   // NEW: Enhanced preferences
   preferred_workout_times: string[]; // TEXT[] - 'morning', 'afternoon', 'evening'
   enjoys_cardio: boolean;
@@ -69,6 +75,7 @@ export interface WorkoutPreferencesRow {
   flexibility_level?: "poor" | "fair" | "good" | "excellent" | null;
   weekly_weight_loss_goal?: number | null;
   original_weekly_rate?: number | null;
+  boost_extra_cardio_minutes?: number | null;
   preferred_workout_times?: string[] | null;
   enjoys_cardio?: boolean | null;
   enjoys_strength_training?: boolean | null;

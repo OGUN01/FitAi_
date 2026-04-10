@@ -23,6 +23,7 @@ export const usePersonalInfoForm = ({
     region: data?.region ?? "",
     wake_time: data?.wake_time ?? "07:00",
     sleep_time: data?.sleep_time ?? "23:00",
+    units: data?.units ?? "metric",
   });
 
   const [availableStates, setAvailableStates] = useState<string[]>([]);
@@ -46,6 +47,7 @@ export const usePersonalInfoForm = ({
         region: data.region ?? "",
         wake_time: data.wake_time ?? "07:00",
         sleep_time: data.sleep_time ?? "23:00",
+        units: data.units ?? "metric",
       };
 
       const hasChanged =

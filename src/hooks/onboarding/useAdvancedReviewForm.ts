@@ -171,9 +171,14 @@ export const useAdvancedReviewForm = ({
           : 0;
 
       // BUG-32: Always sync weekly rate to workout preferences (even for "KEEP MY GOAL")
+      // Also persist boost_extra_cardio_minutes so ValidationEngine can account for
+      // the exercise burn component (without this, BMR-floor kicks in and overwrites
+      // the user's selected rate from 0.98 → 0.84).
+      const isBoostCard = alternative.requiresExercise && alternative.exerciseType?.startsWith('boost_');
       if (onUpdateWorkoutPreferences) {
         onUpdateWorkoutPreferences({
           weekly_weight_loss_goal: Math.round(weeklyRate * 100) / 100,
+          boost_extra_cardio_minutes: isBoostCard ? (alternative.exerciseMinutes ?? 0) : 0,
         });
       }
 

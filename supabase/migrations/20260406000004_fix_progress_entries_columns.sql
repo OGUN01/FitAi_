@@ -19,10 +19,26 @@ ALTER TABLE progress_entries ADD COLUMN IF NOT EXISTS muscle_mass_kg NUMERIC(5,2
 ALTER TABLE progress_entries ADD COLUMN IF NOT EXISTS measurements JSONB DEFAULT '{}';
 
 -- Backfill entry_date from the existing `date` column where entry_date is null
-UPDATE progress_entries SET entry_date = date WHERE entry_date IS NULL AND date IS NOT NULL;
+-- Guard: only run if the legacy `date` column still exists
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'progress_entries' AND column_name = 'date'
+  ) THEN
+    UPDATE progress_entries SET entry_date = date WHERE entry_date IS NULL AND date IS NOT NULL;
+  END IF;
+END $$;
 
 -- Backfill weight_kg from the existing `weight` column where weight_kg is null
-UPDATE progress_entries SET weight_kg = weight WHERE weight_kg IS NULL AND weight IS NOT NULL;
+-- Guard: only run if the legacy `weight` column still exists
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'progress_entries' AND column_name = 'weight'
+  ) THEN
+    UPDATE progress_entries SET weight_kg = weight WHERE weight_kg IS NULL AND weight IS NOT NULL;
+  END IF;
+END $$;
 
 -- Add UNIQUE constraint on (user_id, entry_date) required by upsert onConflict
 ALTER TABLE progress_entries DROP CONSTRAINT IF EXISTS progress_entries_user_id_entry_date_key;

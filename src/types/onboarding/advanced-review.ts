@@ -146,6 +146,8 @@ export interface AdvancedReviewRow {
   detected_ethnicity?: string | null;
   was_rate_capped?: boolean | null;
   bmi_category?: string | null;
+  bmi_health_risk?: string | null;
+  bmr_formula_used?: string | null;
   /** @deprecated Use overall_health_score instead — health_score is not a DB column */
   health_score?: number | null;
   health_grade?: string | null;

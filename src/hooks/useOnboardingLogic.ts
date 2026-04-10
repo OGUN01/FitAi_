@@ -374,7 +374,20 @@ export const useOnboardingLogic = ({
 
       // Verification calculations
       const dailyDeficit = (ar?.calculated_tdee ?? 0) - (ar?.daily_calories ?? 0);
-      const impliedWeeklyRateFromDeficit = (dailyDeficit * 7) / 7700;
+      // Boost cards: total deficit includes exercise burn, not just diet deficit
+      const boostExtra = wp?.boost_extra_cardio_minutes ?? 0;
+      const isWeightGainGoal = (ba?.target_weight_kg ?? 0) > (ba?.current_weight_kg ?? 0);
+      const isMaintenanceGoal = !isWeightGainGoal && Math.abs((ba?.target_weight_kg ?? 0) - (ba?.current_weight_kg ?? 0)) < 0.5;
+      const paceCardType = boostExtra > 0
+        ? '🏃 BOOST (diet + cardio burn)'
+        : isWeightGainGoal
+          ? '💪 WEIGHT GAIN (calorie surplus)'
+          : isMaintenanceGoal
+            ? '⚖️ MAINTENANCE / RECOMP'
+            : '🥗 WEIGHT LOSS — DIET-ONLY';
+      const impliedWeeklyRateFromDeficit = boostExtra > 0
+        ? (ar?.weekly_weight_loss_rate ?? 0)  // boost: trust the engine's combined rate
+        : (dailyDeficit * 7) / 7700;
       const weightToLose = Math.abs((ba?.current_weight_kg ?? 0) - (ba?.target_weight_kg ?? 0));
       const weeklyGoal = wp?.weekly_weight_loss_goal ?? 0;
       const impliedTimeline = weightToLose > 0 && weeklyGoal > 0
@@ -406,7 +419,15 @@ export const useOnboardingLogic = ({
         '\n🚀🚀🚀 ====================================================== 🚀🚀🚀',
         '\n',
         '\n====== 🎯 PACE SELECTION STATE (from workoutPreferences) ======',
+        '\ncard_type               :', paceCardType,
         '\nweekly_weight_loss_goal :', wp?.weekly_weight_loss_goal, 'kg/wk  ← SSOT for selected pace card',
+        '\nboost_extra_cardio_min  :', boostExtra, 'min  ← 0 = diet-only card',
+        boostExtra > 0
+          ? '\ndiet_deficit_only_rate  : ' + ((dailyDeficit * 7) / 7700).toFixed(3) + ' kg/wk  ← diet contribution alone'
+          : '',
+        boostExtra > 0
+          ? '\nboost_cardio_contrib    : ' + ((ar?.weekly_weight_loss_rate ?? 0) - (dailyDeficit * 7) / 7700).toFixed(3) + ' kg/wk  ← exercise burn contribution'
+          : '',
         '\nworkout_frequency/week  :', wp?.workout_frequency_per_week, 'sessions',
         '\nactivity_level          :', wp?.activity_level,
         '\nintensity               :', wp?.intensity,
@@ -430,8 +451,16 @@ export const useOnboardingLogic = ({
         '\nvalidation_status       :', ar?.validation_status,
         '\n',
         '\n====== ✅ VERIFICATION CHECKS ======',
-        '\n[VERIFY] Daily deficit (TDEE - calories)    :', dailyDeficit.toFixed(1), 'kcal/day',
-        '\n[VERIFY] Weekly rate implied by deficit      :', impliedWeeklyRateFromDeficit.toFixed(3), 'kg/wk',
+        isWeightGainGoal
+          ? '\n[VERIFY] Daily surplus (calories - TDEE)    : ' + Math.abs(dailyDeficit).toFixed(1) + ' kcal/day'
+          : '\n[VERIFY] Daily deficit (TDEE - calories)    : ' + dailyDeficit.toFixed(1) + ' kcal/day',
+        boostExtra > 0
+          ? '\n[VERIFY] Weekly rate (diet + cardio boost)   : ' + impliedWeeklyRateFromDeficit.toFixed(3) + ' kg/wk  ← engine combined (diet + cardio burn)'
+          : isWeightGainGoal
+            ? '\n[VERIFY] Weekly gain rate implied by surplus : ' + ((Math.abs(dailyDeficit) * 7) / 7700).toFixed(3) + ' kg/wk'
+            : isMaintenanceGoal
+              ? '\n[VERIFY] Weekly rate                         : ~0 (maintenance/recomp mode)'
+              : '\n[VERIFY] Weekly rate implied by deficit      : ' + impliedWeeklyRateFromDeficit.toFixed(3) + ' kg/wk',
         '\n[VERIFY] Rate consistency (deficit ↔ stored):', rateMatch,
         '\n[VERIFY] Weight to lose                      :', weightToLose.toFixed(2), 'kg',
         '\n[VERIFY] Timeline (goal ÷ rate)              :', impliedTimeline, 'weeks',
@@ -448,6 +477,8 @@ export const useOnboardingLogic = ({
         '\nprimaryGoal (raw)       :', primaryGoal,
         '\nfitnessGoal (mapped)    :', mappedFitnessGoal,
         '\ncalorieTarget (diet AI) :', ar?.daily_calories, 'kcal  ← advancedReview.daily_calories',
+        '\nboost_extra_cardio_min  :', boostExtra, 'min  ← extra cardio ON TOP of workout plan',
+        '\nboost_card_active       :', boostExtra > 0 ? `true (${boostExtra} min × ${wp?.workout_frequency_per_week ?? 0} sessions/wk)` : 'false (diet-only pace)',
         '\nrecommended_freq        :', ar?.recommended_workout_frequency,
         '\nrecommended_cardio_min  :', ar?.recommended_cardio_minutes,
         '\nrecommended_strength    :', ar?.recommended_strength_sessions,

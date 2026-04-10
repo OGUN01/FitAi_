@@ -81,7 +81,8 @@ CREATE POLICY "Users can manage their own chat_messages"
 -- (truncated to 80 chars), matching the fallback logic in the handler:
 --   title: conv.title || 'Untitled Conversation'
 -- ============================================================================
-CREATE OR REPLACE VIEW conversation_summaries AS
+DROP VIEW IF EXISTS conversation_summaries;
+CREATE VIEW conversation_summaries AS
 SELECT
   cm.conversation_id,
   cm.user_id,

@@ -158,8 +158,31 @@ export class ValidationEngine {
     } | null = null;
 
     if (isWeightLoss) {
+      // Boost card exercise burn: when the user selected a boost_* pace card,
+      // they commit to extra cardio ON TOP of their existing plan. The deficit
+      // comes from diet (eat at BMR) + exercise burn — not diet alone.
+      // Without this, the BMR floor wipes out the exercise component and drops
+      // the stored rate (e.g. 0.98 → 0.84) causing a timeline mismatch.
+      const boostExtraMin = workoutPreferences.boost_extra_cardio_minutes ?? 0;
+      let boostBurnPerDay = 0;
+      if (boostExtraMin > 0) {
+        const effectiveFreq = workoutPreferences.workout_frequency_per_week > 0
+          ? workoutPreferences.workout_frequency_per_week
+          : 4; // same default as smartAlternatives.ts
+        const burnPerSession = MetabolicCalculations.estimateSessionCalorieBurn(
+          boostExtraMin,
+          workoutPreferences.intensity ?? "beginner",
+          bodyAnalysis.current_weight_kg,
+          ["cardio"],
+        );
+        boostBurnPerDay = (burnPerSession * effectiveFreq) / 7;
+      }
+
       const dailyDeficit = (requiredWeeklyRate * CALORIE_PER_KG) / 7;
-      const initialTargetCalories = tdee - dailyDeficit;
+      // For boost cards the required diet deficit is reduced by the exercise burn.
+      // The remaining gap comes from eating below TDEE (but at or above BMR).
+      const dietOnlyDailyDeficit = dailyDeficit - boostBurnPerDay;
+      const initialTargetCalories = tdee - dietOnlyDailyDeficit;
       if (opts?.bypassDeficitLimit) {
         // Show the user their actual selected goal — clamp at BMR (absolute floor).
         // BUG-47: For high-stress or medical-condition users, also enforce a conservative
@@ -193,7 +216,7 @@ export class ValidationEngine {
 
       if (deficitLimitResult.wasLimited) {
         const actualDailyDeficit = tdee - targetCalories;
-        weeklyRate = (actualDailyDeficit * 7) / CALORIE_PER_KG;
+        weeklyRate = ((actualDailyDeficit + boostBurnPerDay) * 7) / CALORIE_PER_KG;
         warnings.push({
           status: "WARNING",
           code: "DEFICIT_LIMITED_FOR_SAFETY",
@@ -216,7 +239,9 @@ export class ValidationEngine {
           Math.round(initialTargetCalories) < Math.round(bmr);
         if (wasBMRFloored) {
           const actualDailyDeficit = tdee - targetCalories; // targetCalories === bmr here
-          weeklyRate = (actualDailyDeficit * 7) / CALORIE_PER_KG;
+          // Boost cards: total deficit = diet (tdee-bmr) + exercise burn.
+          // Without boostBurnPerDay the rate falsely drops (e.g. 0.98→0.84).
+          weeklyRate = ((actualDailyDeficit + boostBurnPerDay) * 7) / CALORIE_PER_KG;
         } else {
           weeklyRate = requiredWeeklyRate;
         }

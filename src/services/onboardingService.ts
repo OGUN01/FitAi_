@@ -55,6 +55,7 @@ export class PersonalInfoService {
         wake_time: data.wake_time,
         sleep_time: data.sleep_time,
         occupation_type: data.occupation_type,
+        units: data.units ?? "metric",
         updated_at: new Date().toISOString(),
       };
 
@@ -113,6 +114,7 @@ export class PersonalInfoService {
         wake_time: data.wake_time || "07:00",
         sleep_time: data.sleep_time || "23:00",
         occupation_type: data.occupation_type || undefined,
+        units: (data.units as "metric" | "imperial") ?? "metric",
       };
 
       return personalInfo;
@@ -479,6 +481,7 @@ export class WorkoutPreferencesService {
         flexibility_level: data.flexibility_level,
         weekly_weight_loss_goal: data.weekly_weight_loss_goal ?? null,
         original_weekly_rate: data.original_weekly_rate ?? null,
+        boost_extra_cardio_minutes: data.boost_extra_cardio_minutes ?? 0,
         preferred_workout_times: data.preferred_workout_times,
         enjoys_cardio: data.enjoys_cardio,
         enjoys_strength_training: data.enjoys_strength_training,
@@ -549,6 +552,7 @@ export class WorkoutPreferencesService {
         flexibility_level: data.flexibility_level || "fair",
         weekly_weight_loss_goal: data.weekly_weight_loss_goal ?? undefined,
         original_weekly_rate: data.original_weekly_rate ?? undefined,
+        boost_extra_cardio_minutes: data.boost_extra_cardio_minutes ?? 0,
         preferred_workout_times: data.preferred_workout_times || [],
         enjoys_cardio: data.enjoys_cardio ?? true,
         enjoys_strength_training: data.enjoys_strength_training ?? true,
@@ -736,6 +740,8 @@ export class AdvancedReviewService {
         detected_ethnicity: data.detected_ethnicity ?? null,
         was_rate_capped: data.was_rate_capped ?? false,
         bmi_category: data.bmi_category ?? null,
+        bmi_health_risk: data.bmi_health_risk ?? null,
+        bmr_formula_used: data.bmr_formula_used ?? null,
         health_grade: data.health_grade ?? null,
         updated_at: new Date().toISOString(),
       };
@@ -836,6 +842,7 @@ export class AdvancedReviewService {
         detected_climate: data.detected_climate ?? undefined,
         detected_ethnicity: data.detected_ethnicity ?? undefined,
         bmr_formula_used: data.bmr_formula_used ?? undefined,
+        was_rate_capped: data.was_rate_capped ?? false,
         health_grade: data.health_grade ?? undefined,
       };
 

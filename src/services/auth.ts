@@ -594,7 +594,17 @@ class AuthService {
    * Sign in with Google
    */
   async signInWithGoogle(): Promise<GoogleSignInResult> {
-    return await googleAuthService.signInWithGoogle();
+    const result = await googleAuthService.signInWithGoogle();
+
+    // Trigger migration for Google sign-in too (same as email/password login)
+    if (result.success && result.user) {
+      dataBridge.setUserId(result.user.id);
+      this.checkAndTriggerMigration(result.user.id).catch((error) => {
+        console.error('❌ Migration check failed after Google sign-in:', error);
+      });
+    }
+
+    return result;
   }
 
   /**

@@ -185,6 +185,20 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                 showCustomCountry && customCountry
                   ? { ...formData, country: customCountry }
                   : formData;
+              if (__DEV__) {
+                console.warn('\n========== 👤 TAB 1: PERSONAL INFO ==========');
+                console.warn('first_name    :', finalData.first_name);
+                console.warn('last_name     :', finalData.last_name);
+                console.warn('age           :', finalData.age);
+                console.warn('gender        :', finalData.gender);
+                console.warn('country       :', finalData.country);
+                console.warn('state         :', finalData.state);
+                console.warn('region        :', finalData.region);
+                console.warn('wake_time     :', finalData.wake_time);
+                console.warn('sleep_time    :', finalData.sleep_time);
+                console.warn('units         :', finalData.units);
+                console.warn('================================================\n');
+              }
               onUpdate(finalData);
               if (isEditingFromReview && onReturnToReview) {
                 onReturnToReview();

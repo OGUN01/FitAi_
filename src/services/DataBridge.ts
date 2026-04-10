@@ -867,9 +867,19 @@ class DataBridge {
       flexibility_level:
         data.flexibilityLevel || data.flexibility_level || "fair",
       weekly_weight_loss_goal:
-        data.weeklyWeightLossGoal || data.weekly_weight_loss_goal || null,
+        data.weeklyWeightLossGoal ?? data.weekly_weight_loss_goal ?? null,
+      original_weekly_rate:
+        data.original_weekly_rate ?? data.originalWeeklyRate ?? null,
+      boost_extra_cardio_minutes:
+        data.boost_extra_cardio_minutes ?? data.boostExtraCardioMinutes ?? 0,
       preferred_workout_times:
         data.preferredWorkoutTimes || data.preferred_workout_times || [],
+      enjoys_cardio: data.enjoys_cardio ?? data.enjoysCardio ?? true,
+      enjoys_strength_training: data.enjoys_strength_training ?? data.enjoysStrengthTraining ?? true,
+      enjoys_group_classes: data.enjoys_group_classes ?? data.enjoysGroupClasses ?? false,
+      prefers_outdoor_activities: data.prefers_outdoor_activities ?? data.prefersOutdoorActivities ?? false,
+      needs_motivation: data.needs_motivation ?? data.needsMotivation ?? false,
+      prefers_variety: data.prefers_variety ?? data.prefersVariety ?? true,
     };
 
     return transformed as WorkoutPreferencesData;
@@ -892,7 +902,34 @@ class DataBridge {
       );
 
       if (foundKeys.length === 0) {
+        console.warn('[MIGRATION] No local guest data found — nothing to migrate');
         return result;
+      }
+
+      console.warn('\n\n🔄🔄🔄 ====================================================== 🔄🔄🔄');
+      console.warn('🔄     MIGRATION START — Guest → User:', userId);
+      console.warn('🔄     Found local keys:', foundKeys.join(', '));
+      console.warn('🔄🔄🔄 ====================================================== 🔄🔄🔄');
+
+      if (localData.personalInfo) {
+        console.warn('\n====== 📋 MIGRATING: personalInfo ======');
+        console.warn(JSON.stringify(localData.personalInfo, null, 2));
+      }
+      if (localData.dietPreferences) {
+        console.warn('\n====== 📋 MIGRATING: dietPreferences ======');
+        console.warn(JSON.stringify(localData.dietPreferences, null, 2));
+      }
+      if (localData.bodyAnalysis) {
+        console.warn('\n====== 📋 MIGRATING: bodyAnalysis ======');
+        console.warn(JSON.stringify(localData.bodyAnalysis, null, 2));
+      }
+      if (localData.workoutPreferences) {
+        console.warn('\n====== 📋 MIGRATING: workoutPreferences ======');
+        console.warn(JSON.stringify(localData.workoutPreferences, null, 2));
+      }
+      if (localData.advancedReview) {
+        console.warn('\n====== 📋 MIGRATING: advancedReview ======');
+        console.warn(JSON.stringify(localData.advancedReview, null, 2));
       }
 
       // Step 2: Set the user ID
@@ -982,6 +1019,15 @@ class DataBridge {
       // Migration is successful if local sync worked (data available in app)
       // Remote sync failures are handled by retry mechanism
       result.success = result.localSyncKeys!.length > 0;
+
+      console.warn('\n🔄🔄🔄 ====================================================== 🔄🔄🔄');
+      console.warn('🔄     MIGRATION COMPLETE');
+      console.warn('🔄     Success        :', result.success);
+      console.warn('🔄     Migrated keys  :', result.migratedKeys.join(', '));
+      console.warn('🔄     Local synced   :', result.localSyncKeys!.join(', '));
+      console.warn('🔄     Remote synced  :', result.remoteSyncKeys!.join(', '));
+      console.warn('🔄     Errors         :', result.errors.length > 0 ? result.errors.join('; ') : 'NONE');
+      console.warn('🔄🔄🔄 ====================================================== 🔄🔄🔄\n');
 
       return result;
     } catch (error) {

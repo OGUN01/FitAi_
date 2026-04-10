@@ -122,6 +122,7 @@ export const useReviewValidation = ({
         '\nworkout_frequency/week  :', workoutPreferences.workout_frequency_per_week,
         '\ntime_preference (min)   :', workoutPreferences.time_preference,
         '\nweekly_weight_loss_goal :', workoutPreferences.weekly_weight_loss_goal,
+        '\nboost_extra_cardio_min  :', workoutPreferences.boost_extra_cardio_minutes ?? 0,
         '\n--- Diet Preferences (going in) ---',
         '\ndiet_type               :', dietPreferences.diet_type,
         '\nketo_ready              :', dietPreferences.keto_ready,
