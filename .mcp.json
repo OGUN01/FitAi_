@@ -1,7 +1,6 @@
-
 {
   "mcpServers": {
-     "browsermcp": {
+    "browsermcp": {
       "command": "cmd",
       "args": [
         "/c",
@@ -10,8 +9,9 @@
       ],
       "autoapprove": [
         "*"
-      ]},
-      "supabase": {
+      ]
+    },
+    "supabase": {
       "command": "cmd",
       "args": [
         "/c",
@@ -22,6 +22,17 @@
       ],
       "env": {
         "SUPABASE_ACCESS_TOKEN": "sbp_37b87f98d57e0e4d68545b2e9818f136366cdeef"
+      }
+    },
+    "code-review-graph": {
+      "command": "uvx",
+      "args": [
+        "code-review-graph",
+        "serve"
+      ],
+      "type": "stdio",
+      "env": {
+        "CRG_EMBEDDING_MODEL": "local"
       }
     }
   }

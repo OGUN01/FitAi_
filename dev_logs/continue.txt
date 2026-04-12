@@ -1,0 +1,1021 @@
+ndroid Bundled 655ms node_modules\expo\AppEntry.js (1 module)
+ INFO  ℹ️ [FitAI] INFO: 📊 Initializing FitAI Analytics Engine...
+ INFO  ℹ️ [FitAI] INFO: Analytics Engine initialized with 0 data points
+ INFO  ℹ️ [FitAI] INFO: Enhanced Local Storage Service initialized successfully
+ WARN
+============================================================
+ WARN  🚀 [APP DEBUG] loadExistingData START
+ WARN  ============================================================
+ WARN    👤 user=null | isGuestMode=true | guestId=guest-79eed5e1-451b-404c-aa7e-49b74ee7fc8f | hasProfile=false
+ WARN    🔍 [APP DEBUG] onboarding_data at loadExistingData START: NULL/MISSING
+Android Bundled 49ms src\services\DataBridge.ts (1 module)
+ INFO  ℹ️ [FitAI] INFO: Backend initialized successfully
+ WARN
+🔁 [ONBOARDING] loadFromLocal called
+ WARN  📦 [ONBOARDING] AsyncStorage key="onboarding_data" → data NOT FOUND (null)
+ WARN  ⚠️ [ONBOARDING] No saved data found — showing fresh onboarding
+ WARN
+========== 👤 TAB 1: PERSONAL INFO ==========
+ WARN  first_name    : Harsh
+ WARN  last_name     : Sharma
+ WARN  age           : 26
+ WARN  gender        : male
+ WARN  country       : India
+ WARN  state         : Rajasthan
+ WARN  region        :
+ WARN  wake_time     : 07:00
+ WARN  sleep_time    : 23:00
+ WARN  units         : undefined
+ WARN  ================================================
+ WARN
+🔄 handleNextTab called — tab=1 isNavigating=false isSaving=false
+ WARN  📋 Validation tab=1: is_valid=true errors=[]
+ WARN
+💾 [ONBOARDING] saveToLocal called — PI=true DP=false BA=false WP=false tab=1
+ WARN  💾 [ONBOARDING] Writing 342 chars to AsyncStorage key="onboarding_data"
+ WARN  💾 [ONBOARDING] Verify read-back: SUCCESS (342 chars)
+ WARN  ✅ [Onboarding] Tab 1 saved to local storage — moving to tab 2
+ WARN
+💾 [ONBOARDING] saveToLocal called — PI=true DP=false BA=false WP=false tab=1
+ WARN  💾 [ONBOARDING] Writing 342 chars to AsyncStorage key="onboarding_data"
+ WARN  💾 [ONBOARDING] Verify read-back: SUCCESS (342 chars)
+ WARN
+========== 🥗 TAB 2: DIET PREFERENCES ==========
+ WARN  diet_type                  : vegetarian
+ WARN  allergies                  : []
+ WARN  restrictions               : []
+ WARN  keto_ready                 : false
+ WARN  intermittent_fasting_ready : true
+ WARN  mediterranean_ready        : false
+ WARN  high_protein_ready         : false
+ WARN  low_carb_ready             : false
+ WARN  breakfast_enabled          : true
+ WARN  lunch_enabled              : true
+ WARN  dinner_enabled             : true
+ WARN  snacks_enabled             : true
+ WARN  cooking_skill_level        : not_applicable
+ WARN  max_prep_time_minutes      : 30
+ WARN  budget_level               : medium
+ WARN  drinks_enough_water        : true
+ WARN  eats_regular_meals         : false
+ WARN  avoids_late_night_eating   : false
+ WARN  drinks_alcohol             : false
+ WARN  smokes_tobacco             : false
+ WARN  ================================================
+ WARN
+🔄 handleNextTab called — tab=2 isNavigating=false isSaving=false
+ WARN  📋 Validation tab=2: is_valid=true errors=[]
+ WARN
+💾 [ONBOARDING] saveToLocal called — PI=true DP=true BA=false WP=false tab=2
+ WARN  💾 [ONBOARDING] Writing 1147 chars to AsyncStorage key="onboarding_data"
+ WARN  💾 [ONBOARDING] Verify read-back: SUCCESS (1147 chars)
+ WARN  ✅ [Onboarding] Tab 2 saved to local storage — moving to tab 3
+ WARN
+💾 [ONBOARDING] saveToLocal called — PI=true DP=true BA=true WP=false tab=3
+ WARN  💾 [ONBOARDING] Writing 1427 chars to AsyncStorage key="onboarding_data"
+ WARN  💾 [ONBOARDING] Verify read-back: SUCCESS (1427 chars)
+ WARN
+========== 🔎 TAB 3: BODY ANALYSIS ==========
+ WARN  height_cm            : 173
+ WARN  current_weight_kg    : 90
+ WARN  target_weight_kg     : 73
+ WARN  target_timeline_weeks: 16
+ WARN  body_fat_percentage  : undefined
+ WARN  waist_cm             : undefined
+ WARN  hip_cm               : undefined
+ WARN  bmi                  : 30.1
+ WARN  bmr                  : 1856
+ WARN  stress_level         : undefined
+ WARN  medical_conditions   : []
+ WARN  medications          : []
+ WARN  physical_limitations : []
+ WARN  pregnancy_status     : false
+ WARN  ai_body_type         : undefined
+ WARN  ==============================================
+ WARN
+🔄 handleNextTab called — tab=3 isNavigating=false isSaving=false
+ WARN  📋 Validation tab=3: is_valid=true errors=[]
+ WARN
+💾 [ONBOARDING] saveToLocal called — PI=true DP=true BA=true WP=false tab=3
+ WARN  💾 [ONBOARDING] Writing 1427 chars to AsyncStorage key="onboarding_data"
+ WARN  💾 [ONBOARDING] Verify read-back: SUCCESS (1427 chars)
+ WARN  ✅ [Onboarding] Tab 3 saved to local storage — moving to tab 4
+ WARN
+💾 [ONBOARDING] saveToLocal called — PI=true DP=true BA=true WP=true tab=4
+ WARN  💾 [ONBOARDING] Writing 1992 chars to AsyncStorage key="onboarding_data"
+ WARN  💾 [ONBOARDING] Verify read-back: SUCCESS (1992 chars)
+ WARN
+💾 [ONBOARDING] saveToLocal called — PI=true DP=true BA=true WP=true tab=4
+ WARN  💾 [ONBOARDING] Writing 1992 chars to AsyncStorage key="onboarding_data"
+ WARN  💾 [ONBOARDING] Verify read-back: SUCCESS (1992 chars)
+ WARN
+========== 🔎 TAB 3: BODY ANALYSIS ==========
+ WARN  height_cm            : 173
+ WARN  current_weight_kg    : 90
+ WARN  target_weight_kg     : 73
+ WARN  target_timeline_weeks: 16
+ WARN  body_fat_percentage  : undefined
+ WARN  waist_cm             : undefined
+ WARN  hip_cm               : undefined
+ WARN  bmi                  : 30.1
+ WARN  bmr                  : 1856
+ WARN  stress_level         : undefined
+ WARN  medical_conditions   : []
+ WARN  medications          : []
+ WARN  physical_limitations : []
+ WARN  pregnancy_status     : false
+ WARN  ai_body_type         : undefined
+ WARN  ==============================================
+ WARN
+🔄 handleNextTab called — tab=3 isNavigating=false isSaving=false
+ WARN  📋 Validation tab=3: is_valid=true errors=[]
+ WARN
+💾 [ONBOARDING] saveToLocal called — PI=true DP=true BA=true WP=true tab=3
+ WARN  💾 [ONBOARDING] Writing 1992 chars to AsyncStorage key="onboarding_data"
+ WARN  💾 [ONBOARDING] Verify read-back: SUCCESS (1992 chars)
+ WARN  ✅ [Onboarding] Tab 3 saved to local storage — moving to tab 4
+ WARN
+========== 🏋️ TAB 4: WORKOUT PREFERENCES ==========
+ WARN  primary_goals              : ["weight-loss", "muscle-gain"]
+ WARN  activity_level             : light
+ WARN  intensity                  : beginner
+ WARN  workout_experience_years   : 2
+ WARN  workout_frequency_per_week : 5
+ WARN  can_do_pushups             : 20
+ WARN  can_run_minutes            : 5
+ WARN  flexibility_level          : fair
+ WARN  location                   : gym
+ WARN  equipment                  : ["bodyweight", "dumbbells", "barbell", "kettlebells", "pull-up-bar", "treadmill", "stationary-bike", "yoga-mat"]
+ WARN  workout_types              : ["strength", "cardio", "hiit", "yoga", "flexibility"]
+ WARN  time_preference            : 60
+ WARN  preferred_workout_times    : ["evening"]
+ WARN  enjoys_cardio              : true
+ WARN  enjoys_strength_training   : true
+ WARN  enjoys_group_classes       : false
+ WARN  prefers_outdoor_activities : false
+ WARN  needs_motivation           : false
+ WARN  prefers_variety            : true
+ WARN  weekly_weight_loss_goal    : 1.06
+ WARN  =================================================
+ WARN
+🔄 handleNextTab called — tab=4 isNavigating=false isSaving=false
+ WARN  📋 Validation tab=4: is_valid=true errors=[]
+ WARN
+💾 [ONBOARDING] saveToLocal called — PI=true DP=true BA=true WP=true tab=4
+ WARN  💾 [ONBOARDING] Writing 2103 chars to AsyncStorage key="onboarding_data"
+ WARN  💾 [ONBOARDING] Verify read-back: SUCCESS (2103 chars)
+ WARN  ✅ [Onboarding] Tab 4 saved to local storage — moving to tab 5
+ WARN
+========== ⚙️  REVIEW CALC — RAW INPUTS TO ENGINE ==========
+hasBodyData             : true
+bypassDeficitLimit      : true
+--- Personal Info (going in) ---
+age                     : 26
+gender                  : male
+country                 : India
+state                   : Rajasthan
+wake_time               : 07:00
+sleep_time              : 23:00
+--- Body Analysis (going in) ---
+height_cm               : 173
+current_weight_kg       : 90
+target_weight_kg        : 73
+target_timeline_weeks   : 16
+body_fat_percentage     : undefined
+stress_level            : undefined
+pregnancy_status        : false
+breastfeeding_status    : false
+medical_conditions      : []
+physical_limitations    : []
+--- Workout Preferences (going in) ---
+activity_level          : light
+intensity               : beginner
+primary_goals           : ["weight-loss", "muscle-gain"]
+workout_frequency/week  : 5
+time_preference (min)   : 60
+weekly_weight_loss_goal : 1.06
+boost_extra_cardio_min  : 0
+--- Diet Preferences (going in) ---
+diet_type               : vegetarian
+keto_ready              : false
+high_protein_ready      : false
+mediterranean_ready     : false
+drinks_enough_water     : true
+cooking_skill_level     : not_applicable
+budget_level            : medium
+=============================================================
+ WARN
+========== 📊 TAB 5: REVIEW — CALCULATED DATA ==========
+--- Metabolic Core ---
+calculated_bmi              : 30.1
+calculated_bmr              : 1856
+calculated_tdee             : 2777
+metabolic_age               : 21
+--- Daily Nutrition ---
+daily_calories              : 1856
+daily_protein_g             : 185
+daily_carbs_g               : 195
+daily_fat_g                 : 37
+daily_water_ml              : 4350
+daily_fiber_g               : 26
+--- Weight Management ---
+healthy_weight_min          : 61.79
+healthy_weight_max          : 75.52
+weekly_weight_loss_rate     : 0.84
+estimated_timeline_weeks    : 21
+total_calorie_deficit       : 135828
+was_rate_capped             : false
+--- Body Composition ---
+ideal_body_fat_min          : 7
+ideal_body_fat_max          : 18
+lean_body_mass              : 0
+fat_mass                    : 0
+--- Fitness Metrics ---
+estimated_vo2_max           : 48.5
+max_heart_rate              : undefined
+target_hr_fat_burn_min      : 114
+target_hr_fat_burn_max      : 133
+target_hr_cardio_min        : 133
+target_hr_cardio_max        : 162
+target_hr_peak_min          : 162
+target_hr_peak_max          : 181
+recommended_workout_frequency: 4
+recommended_cardio_minutes  : 250
+recommended_strength_sessions: 4
+--- Health Scores (0-100) ---
+overall_health_score        : 85
+diet_readiness_score        : 25
+fitness_readiness_score     : 68
+goal_realistic_score        : 65
+--- Sleep ---
+recommended_sleep_hours     : 7.5
+current_sleep_duration      : 8
+sleep_efficiency_score      : 95
+--- Completion Metrics ---
+data_completeness_percentage: 54
+reliability_score           : 90
+personalization_level       : 49
+--- Validation ---
+validation_status           : warnings
+validation_errors           : undefined
+validation_warnings         : [{"alternatives": [[Object], [Object], [Object]], "canProceed": true, "code": "AGGRESSIVE_TIMELINE", "impact": "Recommended: 0.67kg/week for optimal muscle retention", "message": "Your goal rate (1.06kg/week) is very aggressive", "risks": ["Significant muscle loss risk", "Strong metabolic adaptation", "Higher chance of regaining weight", "May require diet breaks"], "status": "WARNING"}, {"canProceed": true, "code": "BODY_RECOMP_SLOW", "message": "Body recomposition will be very slow", "recommendations": ["Recommend: Cut to goal weight first, then bulk", "Or: Accept very slow progress with recomp"], "status": "WARNING"}, {"canProceed": true, "code": "LOW_DIET_READINESS", "message": "Low diet readiness score (25/100) with aggressive goal", "recommendations": ["Current habits indicate low adherence likelihood", "Option 1: Habit Building Phase First (4 weeks)", "Option 2: Reduce goal aggressiveness", "Option 3: Get accountability support (nutritionist/group)", "Success prediction: 25% adherence probability"], "status": "WARNING"}]
+detected_climate            : tropical
+--- Extended Calculated Fields ---
+calculated_bmi              : 30.1
+bmi_category                : Obese
+bmi_health_risk             : high
+bmr_formula_used            : mifflin_st_jeor
+health_grade                : undefined
+vo2_max_estimate            : undefined
+vo2_max_classification      : Good
+heart_rate_zones            : undefined
+refeed_schedule             : {"dietBreakWeek": 8, "explanation": ["📅 WEEKLY REFEED DAYS PLANNED", "• One day per week: Eat at maintenance calories", "🔄 DIET BREAK SCHEDULED at week 8"], "needsDietBreak": true, "needsRefeeds": true, "refeedFrequency": "weekly"}
+medical_adjustments         : undefined
+usedFallbackDefaults        : undefined
+--- Validation Engine Raw Metrics ---
+vEngine.bmr                 : 1856
+vEngine.tdee                : 2777
+vEngine.targetCalories      : 1856
+vEngine.protein             : 185
+vEngine.carbs               : 195
+vEngine.fat                 : 37
+vEngine.weeklyRate          : 0.84
+vEngine.originalWeeklyRate  : 1.06
+vEngine.wasRateCapped       : false
+vEngine.timeline            : 21
+==========================================================
+ WARN  [PACE MATCH] fallback - goal = 1.06 kg/wk | cards: user_original(1.06), aggressive(1), at_bmr(0.84), challenging(0.8), comfortable(0.69), boost_hard(1.03), boost_cardio(0.98), boost_light(0.93)
+ WARN  [PACE MATCH] fallback result -> user_original
+ WARN
+========== ⚙️  REVIEW CALC — RAW INPUTS TO ENGINE ==========
+hasBodyData             : true
+bypassDeficitLimit      : true
+--- Personal Info (going in) ---
+age                     : 26
+gender                  : male
+country                 : India
+state                   : Rajasthan
+wake_time               : 07:00
+sleep_time              : 23:00
+--- Body Analysis (going in) ---
+height_cm               : 173
+current_weight_kg       : 90
+target_weight_kg        : 73
+target_timeline_weeks   : 16
+body_fat_percentage     : undefined
+stress_level            : undefined
+pregnancy_status        : false
+breastfeeding_status    : false
+medical_conditions      : []
+physical_limitations    : []
+--- Workout Preferences (going in) ---
+activity_level          : light
+intensity               : beginner
+primary_goals           : ["weight-loss", "muscle-gain"]
+workout_frequency/week  : 5
+time_preference (min)   : 60
+weekly_weight_loss_goal : 1.06
+boost_extra_cardio_min  : 0
+--- Diet Preferences (going in) ---
+diet_type               : vegetarian
+keto_ready              : false
+high_protein_ready      : false
+mediterranean_ready     : false
+drinks_enough_water     : true
+cooking_skill_level     : not_applicable
+budget_level            : medium
+=============================================================
+ WARN
+========== 📊 TAB 5: REVIEW — CALCULATED DATA ==========
+--- Metabolic Core ---
+calculated_bmi              : 30.1
+calculated_bmr              : 1856
+calculated_tdee             : 2777
+metabolic_age               : 21
+--- Daily Nutrition ---
+daily_calories              : 1856
+daily_protein_g             : 185
+daily_carbs_g               : 195
+daily_fat_g                 : 37
+daily_water_ml              : 4350
+daily_fiber_g               : 26
+--- Weight Management ---
+healthy_weight_min          : 61.79
+healthy_weight_max          : 75.52
+weekly_weight_loss_rate     : 0.84
+estimated_timeline_weeks    : 21
+total_calorie_deficit       : 135828
+was_rate_capped             : false
+--- Body Composition ---
+ideal_body_fat_min          : 7
+ideal_body_fat_max          : 18
+lean_body_mass              : 0
+fat_mass                    : 0
+--- Fitness Metrics ---
+estimated_vo2_max           : 48.5
+max_heart_rate              : undefined
+target_hr_fat_burn_min      : 114
+target_hr_fat_burn_max      : 133
+target_hr_cardio_min        : 133
+target_hr_cardio_max        : 162
+target_hr_peak_min          : 162
+target_hr_peak_max          : 181
+recommended_workout_frequency: 4
+recommended_cardio_minutes  : 250
+recommended_strength_sessions: 4
+--- Health Scores (0-100) ---
+overall_health_score        : 85
+diet_readiness_score        : 25
+fitness_readiness_score     : 68
+goal_realistic_score        : 65
+--- Sleep ---
+recommended_sleep_hours     : 7.5
+current_sleep_duration      : 8
+sleep_efficiency_score      : 95
+--- Completion Metrics ---
+data_completeness_percentage: 55
+reliability_score           : 90
+personalization_level       : 50
+--- Validation ---
+validation_status           : warnings
+validation_errors           : undefined
+validation_warnings         : [{"alternatives": [[Object], [Object], [Object]], "canProceed": true, "code": "AGGRESSIVE_TIMELINE", "impact": "Recommended: 0.67kg/week for optimal muscle retention", "message": "Your goal rate (1.06kg/week) is very aggressive", "risks": ["Significant muscle loss risk", "Strong metabolic adaptation", "Higher chance of regaining weight", "May require diet breaks"], "status": "WARNING"}, {"canProceed": true, "code": "BODY_RECOMP_SLOW", "message": "Body recomposition will be very slow", "recommendations": ["Recommend: Cut to goal weight first, then bulk", "Or: Accept very slow progress with recomp"], "status": "WARNING"}, {"canProceed": true, "code": "LOW_DIET_READINESS", "message": "Low diet readiness score (25/100) with aggressive goal", "recommendations": ["Current habits indicate low adherence likelihood", "Option 1: Habit Building Phase First (4 weeks)", "Option 2: Reduce goal aggressiveness", "Option 3: Get accountability support (nutritionist/group)", "Success prediction: 25% adherence probability"], "status": "WARNING"}]
+detected_climate            : tropical
+--- Extended Calculated Fields ---
+calculated_bmi              : 30.1
+bmi_category                : Obese
+bmi_health_risk             : high
+bmr_formula_used            : mifflin_st_jeor
+health_grade                : undefined
+vo2_max_estimate            : undefined
+vo2_max_classification      : Good
+heart_rate_zones            : undefined
+refeed_schedule             : {"dietBreakWeek": 8, "explanation": ["📅 WEEKLY REFEED DAYS PLANNED", "• One day per week: Eat at maintenance calories", "🔄 DIET BREAK SCHEDULED at week 8"], "needsDietBreak": true, "needsRefeeds": true, "refeedFrequency": "weekly"}
+medical_adjustments         : undefined
+usedFallbackDefaults        : undefined
+--- Validation Engine Raw Metrics ---
+vEngine.bmr                 : 1856
+vEngine.tdee                : 2777
+vEngine.targetCalories      : 1856
+vEngine.protein             : 185
+vEngine.carbs               : 195
+vEngine.fat                 : 37
+vEngine.weeklyRate          : 0.84
+vEngine.originalWeeklyRate  : 1.06
+vEngine.wasRateCapped       : false
+vEngine.timeline            : 21
+==========================================================
+ WARN  [PACE MATCH] fallback - goal = 1.06 kg/wk | cards: user_original(1.06), aggressive(1), at_bmr(0.84), challenging(0.8), comfortable(0.69), boost_hard(1.03), boost_cardio(0.98), boost_light(0.93)
+ WARN  [PACE MATCH] fallback result -> user_original
+ WARN
+💾 [ONBOARDING] saveToLocal called — PI=true DP=true BA=true WP=true tab=5
+ WARN  💾 [ONBOARDING] Writing 5656 chars to AsyncStorage key="onboarding_data"
+ WARN  💾 [ONBOARDING] Verify read-back: SUCCESS (5656 chars)
+ WARN
+
+🔄🔄🔄 ================================================== 🔄🔄🔄
+🔄     PACE CARD SELECTED (Tab 5: Choose Your Pace)        🔄
+🔄🔄🔄 ================================================== 🔄🔄🔄
+
+====== 🃏 SELECTED CARD ======
+card ID                  : boost_cardio
+card label               : CARDIO BOOST
+isUserOriginal (KEEP MY GOAL): false
+requiresExercise         : true
+exerciseType             : boost_cardio
+exerciseSessions         : 5
+exerciseMinutes          : 30
+isBelowBMR               : false
+isBlocked                : false
+
+====== 📐 RATE & TIMELINE ======
+weeklyRate (selected card): 0.98 kg/wk
+weightToLose             : 17.00 kg
+newTimelineWeeks         : 18 weeks
+
+====== 📝 STORE UPDATES DISPATCHED ======
+workoutPreferences.weekly_weight_loss_goal → 0.98 kg/wk
+[BOOST type] workout plan UNCHANGED (no freq/type/intensity update)
+bodyAnalysis.target_timeline_weeks → 18
+
+🔄🔄🔄 ================================================== 🔄🔄🔄
+ WARN
+========== ⚙️  REVIEW CALC — RAW INPUTS TO ENGINE ==========
+hasBodyData             : true
+bypassDeficitLimit      : true
+--- Personal Info (going in) ---
+age                     : 26
+gender                  : male
+country                 : India
+state                   : Rajasthan
+wake_time               : 07:00
+sleep_time              : 23:00
+--- Body Analysis (going in) ---
+height_cm               : 173
+current_weight_kg       : 90
+target_weight_kg        : 73
+target_timeline_weeks   : 16
+body_fat_percentage     : undefined
+stress_level            : undefined
+pregnancy_status        : false
+breastfeeding_status    : false
+medical_conditions      : []
+physical_limitations    : []
+--- Workout Preferences (going in) ---
+activity_level          : light
+intensity               : beginner
+primary_goals           : ["weight-loss", "muscle-gain"]
+workout_frequency/week  : 5
+time_preference (min)   : 60
+weekly_weight_loss_goal : 1.06
+boost_extra_cardio_min  : 0
+--- Diet Preferences (going in) ---
+diet_type               : vegetarian
+keto_ready              : false
+high_protein_ready      : false
+mediterranean_ready     : false
+drinks_enough_water     : true
+cooking_skill_level     : not_applicable
+budget_level            : medium
+=============================================================
+ WARN
+========== 📊 TAB 5: REVIEW — CALCULATED DATA ==========
+--- Metabolic Core ---
+calculated_bmi              : 30.1
+calculated_bmr              : 1856
+calculated_tdee             : 2777
+metabolic_age               : 21
+--- Daily Nutrition ---
+daily_calories              : 1856
+daily_protein_g             : 185
+daily_carbs_g               : 195
+daily_fat_g                 : 37
+daily_water_ml              : 4350
+daily_fiber_g               : 26
+--- Weight Management ---
+healthy_weight_min          : 61.79
+healthy_weight_max          : 75.52
+weekly_weight_loss_rate     : 0.84
+estimated_timeline_weeks    : 21
+total_calorie_deficit       : 135828
+was_rate_capped             : false
+--- Body Composition ---
+ideal_body_fat_min          : 7
+ideal_body_fat_max          : 18
+lean_body_mass              : 0
+fat_mass                    : 0
+--- Fitness Metrics ---
+estimated_vo2_max           : 48.5
+max_heart_rate              : undefined
+target_hr_fat_burn_min      : 114
+target_hr_fat_burn_max      : 133
+target_hr_cardio_min        : 133
+target_hr_cardio_max        : 162
+target_hr_peak_min          : 162
+target_hr_peak_max          : 181
+recommended_workout_frequency: 4
+recommended_cardio_minutes  : 250
+recommended_strength_sessions: 4
+--- Health Scores (0-100) ---
+overall_health_score        : 85
+diet_readiness_score        : 25
+fitness_readiness_score     : 68
+goal_realistic_score        : 65
+--- Sleep ---
+recommended_sleep_hours     : 7.5
+current_sleep_duration      : 8
+sleep_efficiency_score      : 95
+--- Completion Metrics ---
+data_completeness_percentage: 55
+reliability_score           : 90
+personalization_level       : 50
+--- Validation ---
+validation_status           : warnings
+validation_errors           : undefined
+validation_warnings         : [{"alternatives": [[Object], [Object], [Object]], "canProceed": true, "code": "AGGRESSIVE_TIMELINE", "impact": "Recommended: 0.67kg/week for optimal muscle retention", "message": "Your goal rate (1.06kg/week) is very aggressive", "risks": ["Significant muscle loss risk", "Strong metabolic adaptation", "Higher chance of regaining weight", "May require diet breaks"], "status": "WARNING"}, {"canProceed": true, "code": "BODY_RECOMP_SLOW", "message": "Body recomposition will be very slow", "recommendations": ["Recommend: Cut to goal weight first, then bulk", "Or: Accept very slow progress with recomp"], "status": "WARNING"}, {"canProceed": true, "code": "LOW_DIET_READINESS", "message": "Low diet readiness score (25/100) with aggressive goal", "recommendations": ["Current habits indicate low adherence likelihood", "Option 1: Habit Building Phase First (4 weeks)", "Option 2: Reduce goal aggressiveness", "Option 3: Get accountability support (nutritionist/group)", "Success prediction: 25% adherence probability"], "status": "WARNING"}]
+detected_climate            : tropical
+--- Extended Calculated Fields ---
+calculated_bmi              : 30.1
+bmi_category                : Obese
+bmi_health_risk             : high
+bmr_formula_used            : mifflin_st_jeor
+health_grade                : undefined
+vo2_max_estimate            : undefined
+vo2_max_classification      : Good
+heart_rate_zones            : undefined
+refeed_schedule             : {"dietBreakWeek": 8, "explanation": ["📅 WEEKLY REFEED DAYS PLANNED", "• One day per week: Eat at maintenance calories", "🔄 DIET BREAK SCHEDULED at week 8"], "needsDietBreak": true, "needsRefeeds": true, "refeedFrequency": "weekly"}
+medical_adjustments         : undefined
+usedFallbackDefaults        : undefined
+--- Validation Engine Raw Metrics ---
+vEngine.bmr                 : 1856
+vEngine.tdee                : 2777
+vEngine.targetCalories      : 1856
+vEngine.protein             : 185
+vEngine.carbs               : 195
+vEngine.fat                 : 37
+vEngine.weeklyRate          : 0.84
+vEngine.originalWeeklyRate  : 1.06
+vEngine.wasRateCapped       : false
+vEngine.timeline            : 21
+==========================================================
+ WARN  [PACE MATCH] session ID -> boost_cardio
+ WARN
+========== ⚙️  REVIEW CALC — RAW INPUTS TO ENGINE ==========
+hasBodyData             : true
+bypassDeficitLimit      : true
+--- Personal Info (going in) ---
+age                     : 26
+gender                  : male
+country                 : India
+state                   : Rajasthan
+wake_time               : 07:00
+sleep_time              : 23:00
+--- Body Analysis (going in) ---
+height_cm               : 173
+current_weight_kg       : 90
+target_weight_kg        : 73
+target_timeline_weeks   : 18
+body_fat_percentage     : undefined
+stress_level            : undefined
+pregnancy_status        : false
+breastfeeding_status    : false
+medical_conditions      : []
+physical_limitations    : []
+--- Workout Preferences (going in) ---
+activity_level          : light
+intensity               : beginner
+primary_goals           : ["weight-loss", "muscle-gain"]
+workout_frequency/week  : 5
+time_preference (min)   : 60
+weekly_weight_loss_goal : 0.98
+boost_extra_cardio_min  : 30
+--- Diet Preferences (going in) ---
+diet_type               : vegetarian
+keto_ready              : false
+high_protein_ready      : false
+mediterranean_ready     : false
+drinks_enough_water     : true
+cooking_skill_level     : not_applicable
+budget_level            : medium
+=============================================================
+ WARN
+========== 📊 TAB 5: REVIEW — CALCULATED DATA ==========
+--- Metabolic Core ---
+calculated_bmi              : 30.1
+calculated_bmr              : 1856
+calculated_tdee             : 2777
+metabolic_age               : 21
+--- Daily Nutrition ---
+daily_calories              : 1860
+daily_protein_g             : 185
+daily_carbs_g               : 196
+daily_fat_g                 : 37
+daily_water_ml              : 4350
+daily_fiber_g               : 26
+--- Weight Management ---
+healthy_weight_min          : 61.79
+healthy_weight_max          : 75.52
+weekly_weight_loss_rate     : 0.98
+estimated_timeline_weeks    : 18
+total_calorie_deficit       : 135828
+was_rate_capped             : false
+--- Body Composition ---
+ideal_body_fat_min          : 7
+ideal_body_fat_max          : 18
+lean_body_mass              : 0
+fat_mass                    : 0
+--- Fitness Metrics ---
+estimated_vo2_max           : 48.5
+max_heart_rate              : undefined
+target_hr_fat_burn_min      : 114
+target_hr_fat_burn_max      : 133
+target_hr_cardio_min        : 133
+target_hr_cardio_max        : 162
+target_hr_peak_min          : 162
+target_hr_peak_max          : 181
+recommended_workout_frequency: 4
+recommended_cardio_minutes  : 250
+recommended_strength_sessions: 4
+--- Health Scores (0-100) ---
+overall_health_score        : 85
+diet_readiness_score        : 25
+fitness_readiness_score     : 68
+goal_realistic_score        : 90
+--- Sleep ---
+recommended_sleep_hours     : 7.5
+current_sleep_duration      : 8
+sleep_efficiency_score      : 95
+--- Completion Metrics ---
+data_completeness_percentage: 57
+reliability_score           : 100
+personalization_level       : 52
+--- Validation ---
+validation_status           : warnings
+validation_errors           : undefined
+validation_warnings         : [{"alternatives": [[Object], [Object], [Object]], "canProceed": true, "code": "AGGRESSIVE_TIMELINE", "impact": "Recommended: 0.67kg/week for optimal muscle retention", "message": "Your goal rate (0.98kg/week) is very aggressive", "risks": ["Significant muscle loss risk", "Strong metabolic adaptation", "Higher chance of regaining weight", "May require diet breaks"], "status": "WARNING"}, {"canProceed": true, "code": "BODY_RECOMP_SLOW", "message": "Body recomposition will be very slow", "recommendations": ["Recommend: Cut to goal weight first, then bulk", "Or: Accept very slow progress with recomp"], "status": "WARNING"}, {"canProceed": true, "code": "LOW_DIET_READINESS", "message": "Low diet readiness score (25/100) with aggressive goal", "recommendations": ["Current habits indicate low adherence likelihood", "Option 1: Habit Building Phase First (4 weeks)", "Option 2: Reduce goal aggressiveness", "Option 3: Get accountability support (nutritionist/group)", "Success prediction: 25% adherence probability"], "status": "WARNING"}]
+detected_climate            : tropical
+--- Extended Calculated Fields ---
+calculated_bmi              : 30.1
+bmi_category                : Obese
+bmi_health_risk             : high
+bmr_formula_used            : mifflin_st_jeor
+health_grade                : undefined
+vo2_max_estimate            : undefined
+vo2_max_classification      : Good
+heart_rate_zones            : undefined
+refeed_schedule             : {"dietBreakWeek": 9, "explanation": ["📅 WEEKLY REFEED DAYS PLANNED", "• One day per week: Eat at maintenance calories", "🔄 DIET BREAK SCHEDULED at week 9"], "needsDietBreak": true, "needsRefeeds": true, "refeedFrequency": "weekly"}
+medical_adjustments         : undefined
+usedFallbackDefaults        : undefined
+--- Validation Engine Raw Metrics ---
+vEngine.bmr                 : 1856
+vEngine.tdee                : 2777
+vEngine.targetCalories      : 1860
+vEngine.protein             : 185
+vEngine.carbs               : 196
+vEngine.fat                 : 37
+vEngine.weeklyRate          : 0.98
+vEngine.originalWeeklyRate  : 0.98
+vEngine.wasRateCapped       : false
+vEngine.timeline            : 18
+==========================================================
+ WARN  [PACE MATCH] session ID -> boost_cardio
+ WARN
+
+🚀🚀🚀 ====================================================== 🚀🚀🚀
+🚀     COMPLETE SETUP PRESSED — PRE-SAVE SNAPSHOT              🚀
+🚀🚀🚀 ====================================================== 🚀🚀🚀
+
+====== 🎯 PACE SELECTION STATE (from workoutPreferences) ======
+weekly_weight_loss_goal : 0.98 kg/wk  ← SSOT for selected pace card
+boost_extra_cardio_min  : 30 min  ← 0 = diet-only card
+workout_frequency/week  : 5 sessions
+activity_level          : light
+intensity               : beginner
+workout_types           : ["strength", "cardio", "hiit", "yoga", "flexibility"]
+time_preference         : 60 min/session
+
+====== 🔢 CALCULATION OUTPUTS (from advancedReview) ======
+calculated_bmr          : 1856 kcal/day
+calculated_tdee         : 2777 kcal/day
+daily_calories          : 1860 kcal/day
+daily_protein_g         : 185 g
+daily_carbs_g           : 196 g
+daily_fat_g             : 37 g
+daily_water_ml          : 4350 ml
+daily_fiber_g           : 26 g
+weekly_weight_loss_rate : 0.98 kg/wk  ← must match weekly_weight_loss_goal
+estimated_timeline_weeks: 18 weeks
+total_calorie_deficit   : 135828 kcal
+was_rate_capped         : false
+detected_climate        : tropical
+validation_status       : warnings
+
+====== ✅ VERIFICATION CHECKS ======
+[VERIFY] Daily deficit (TDEE - calories)    : 917.0 kcal/day
+[VERIFY] Weekly rate implied by deficit      : 0.980 kg/wk
+[VERIFY] Rate consistency (deficit ↔ stored): ✅ MATCH
+[VERIFY] Weight to lose                      : 17.00 kg
+[VERIFY] Timeline (goal ÷ rate)              : 18 weeks
+[VERIFY] Timeline consistency (goal ↔ stored): ✅ MATCH
+[VERIFY] Macro calories sum                  : 1857 kcal
+         (P: 740 + C: 784 + F: 333 )
+[VERIFY] Macros ↔ daily_calories             : ✅ MATCH
+
+====== 🏃 AI GENERATION INPUTS (what Cloudflare Workers will receive) ======
+workoutsPerWeek         : 5
+workoutDuration         : 60 min
+experienceLevel         : beginner
+activityLevel           : light
+primaryGoal (raw)       : weight-loss
+fitnessGoal (mapped)    : weight-loss
+calorieTarget (diet AI) : 1860 kcal  ← advancedReview.daily_calories
+recommended_freq        : 4
+recommended_cardio_min  : 250
+recommended_strength    : 4
+
+🚀🚀🚀 ====================================================== 🚀🚀🚀
+ WARN
+💾 [ONBOARDING] saveToLocal called — PI=true DP=true BA=true WP=true tab=5
+ WARN  💾 [ONBOARDING] Writing 5689 chars to AsyncStorage key="onboarding_data"
+ WARN  💾 [ONBOARDING] Verify read-back: SUCCESS (5689 chars)
+ WARN
+============================================================
+ WARN  📱 [APP DEBUG] handleOnboardingComplete called
+ WARN  ============================================================
+ WARN  👤 User: guest | GuestMode: true | GuestId: guest-79eed5e1-451b-404c-aa7e-49b74ee7fc8f
+ WARN  📋 Data received: {
+  "personalInfo": {
+    "first_name": "Harsh",
+    "last_name": "Sharma",
+    "email": "",
+    "age": 26,
+    "gender": "male",
+    "height": 173,
+    "weight": 90,
+    "country": "India",
+    "state": "Rajasthan"
+  },
+  "fitnessGoals": {
+    "primary_goals": [
+      "weight-loss",
+      "muscle-gain"
+    ],
+    "time_commitment": "60 minutes",
+    "experience": "beginner",
+    "experience_level": "beginner"
+  },
+  "dietPreferences": {
+    "dietType": "vegetarian",
+    "allergies": [],
+    "restrictions": [],
+    "calorieTarget": 1860
+  },
+  "workoutPreferences": {
+    "location": "gym",
+    "equipment": [
+      "bodyweight",
+      "dumbbells",
+      "barbell",
+      "kettlebells",
+      "pull-up-bar",
+      "treadmill",
+      "stationary-bike",
+      "yoga-mat"
+    ],
+    "workoutTypes": [
+      "strength",
+      "cardio",
+      "hiit",
+      "yoga",
+      "flexibility"
+    ],
+    "timePreference": 60,
+    "intensity": "beginner",
+    "primary_goals": [
+      "weight-loss",
+      "muscle-gain"
+    ],
+    "activity_level": "light",
+    "workout_frequency_per_week": 5,
+    "workout_experience_years": 2,
+    "can_do_pushups": 20,
+    "can_run_minutes": 5,
+    "flexibility_level": "fair",
+    "weekly_weight_loss_goal": 0.98,
+    "preferred_workout_times": [
+      "evening"
+    ],
+    "enjoys_cardio": true,
+    "enjoys_strength_training": true,
+    "enjoys_group_classes": false,
+    "prefers_outdoor_activities": false,
+    "needs_motivation": false,
+    "prefers_variety": true
+  },
+  "bodyAnalysis": {
+    "photos": {},
+    "height_cm": 173,
+    "current_weight_kg": 90,
+    "target_weight_kg": 73,
+    "target_timeline_weeks": 18,
+    "medical_conditions": [],
+    "medications": [],
+    "physical_limitations": [],
+    "pregnancy_status": false,
+    "breastfeeding_status": false,
+    "bmi": 30.1,
+    "bmr": 1856,
+    "ideal_weight_min": 61.79,
+    "ideal_weight_max": 75.52
+  },
+  "advancedReview": {
+    "calculated_bmi": 30.1,
+    "healthy_weight_min": 61.79,
+    "healthy_weight_max": 75.52,
+    "ideal_body_fat_min": 7,
+    "ideal_body_fat_max": 18,
+    "lean_body_mass": 0,
+    "fat_mass": 0,
+    "estimated_vo2_max": 48.5,
+    "target_hr_fat_burn_min": 114,
+    "target_hr_fat_burn_max": 133,
+    "target_hr_cardio_min": 133,
+    "target_hr_cardio_max": 162,
+    "target_hr_peak_min": 162,
+    "target_hr_peak_max": 181,
+    "recommended_workout_frequency": 4,
+    "recommended_cardio_minutes": 250,
+    "recommended_strength_sessions": 4,
+    "overall_health_score": 85,
+    "diet_readiness_score": 25,
+    "fitness_readiness_score": 68,
+    "goal_realistic_score": 90,
+    "recommended_sleep_hours": 7.5,
+    "current_sleep_duration": 8,
+    "sleep_efficiency_score": 95,
+    "bmi_category": "Obese",
+    "bmi_health_risk": "high",
+    "bmr_formula_used": "mifflin_st_jeor",
+    "vo2_max_classification": "Good",
+    "detected_ethnicity": "asian",
+    "data_completeness_percentage": 57,
+    "reliability_score": 100,
+    "personalization_level": 52,
+    "calculated_bmr": 1856,
+    "metabolic_age": 21,
+    "calculated_tdee": 2777,
+    "daily_calories": 1860,
+    "daily_protein_g": 185,
+    "daily_carbs_g": 196,
+    "daily_fat_g": 37,
+    "daily_water_ml": 4350,
+    "daily_fiber_g": 26,
+    "weekly_weight_loss_rate": 0.98,
+    "estimated_timeline_weeks": 18,
+    "total_calorie_deficit": 135828,
+    "detected_climate": "tropical",
+    "validation_status": "warnings",
+    "validation_warnings": [
+      {
+        "status": "WARNING",
+        "code": "AGGRESSIVE_TIMELINE",
+        "message": "Your goal rate (0.98kg/week) is very aggressive",
+        "impact": "Recommended: 0.67kg/week for optimal muscle retention",
+        "risks": [
+          "Significant muscle loss risk",
+          "Strong metabolic adaptation",
+          "Higher chance of regaining weight",
+          "May require diet breaks"
+        ],
+        "alternatives": [
+          {
+            "option": "keep_aggressive",
+            "name": "Keep My Pace",
+            "description": "0.98 kg/week • 18 weeks",
+            "weeklyRate": 0.98,
+            "newTimeline": 18,
+            "dailyCalories": 1699,
+            "icon": "flame",
+            "iconColor": "#EF4444",
+            "approach": "Very aggressive - monitor closely",
+            "pros": [
+              "Fastest results",
+              "Shortest commitment"
+            ],
+            "cons": [
+              "High muscle loss risk",
+              "Requires strict adherence",
+              "Consider diet breaks every 4-6 weeks"
+            ]
+          },
+          {
+            "option": "optimal",
+            "name": "Recommended Pace",
+            "description": "0.67 kg/week • 26 weeks",
+            "weeklyRate": 0.6749999999999999,
+            "newTimeline": 26,
+            "dailyCalories": 2035,
+            "icon": "shield-checkmark",
+            "iconColor": "#10B981",
+            "approach": "Balanced for muscle retention",
+            "pros": [
+              "Better muscle preservation",
+              "More sustainable"
+            ],
+            "cons": [
+              "Takes longer"
+            ],
+            "isRecommended": true
+          },
+          {
+            "option": "conservative",
+            "name": "Steady & Safe",
+            "description": "0.45 kg/week • 38 weeks",
+            "weeklyRate": 0.45,
+            "newTimeline": 38,
+            "dailyCalories": 2282,
+            "icon": "leaf",
+            "iconColor": "#06B6D4",
+            "approach": "Maximum muscle preservation",
+            "pros": [
+              "Minimal muscle loss",
+              "Easiest to maintain",
+              "Best for long-term success"
+            ],
+            "cons": [
+              "Slowest progress"
+            ]
+          }
+        ],
+        "canProceed": true
+      },
+      {
+        "status": "WARNING",
+        "code": "BODY_RECOMP_SLOW",
+        "message": "Body recomposition will be very slow",
+        "recommendations": [
+          "Recommend: Cut to goal weight first, then bulk",
+          "Or: Accept very slow progress with recomp"
+        ],
+        "canProceed": true
+      },
+      {
+        "status": "WARNING",
+        "code": "LOW_DIET_READINESS",
+        "message": "Low diet readiness score (25/100) with aggressive goal",
+        "recommendations": [
+          "Current habits indicate low adherence likelihood",
+          "Option 1: Habit Building Phase First (4 weeks)",
+          "Option 2: Reduce goal aggressiveness",
+          "Option 3: Get accountability support (nutritionist/group)",
+          "Success prediction: 25% adherence probability"
+        ],
+        "canProceed": true
+      }
+    ],
+    "refeed_schedule": {
+      "needsRefeeds": true,
+      "refeedFrequency": "weekly",
+      "needsDietBreak": true,
+      "dietBreakWeek": 9,
+      "explanation": [
+        "📅 WEEKLY REFEED DAYS PLANNED",
+        "• One day per week: Eat at maintenance calories",
+        "🔄 DIET BREAK SCHEDULED at week 9"
+      ]
+    },
+    "was_rate_capped": false
+  }
+}
+ WARN  ============================================================
+ WARN
+📱 [APP DEBUG] Profile converted from onboarding:
+ WARN    Name: Harsh Sharma
+ WARN    Age: 26 | Gender: male
+ WARN    Goals: [weight_loss, muscle_gain]
+ WARN    Height: 173cm | Weight: 90kg
+ WARN    Diet: vegetarian
+ WARN    Workout: gym | beginner
+ WARN
+💾 [ONBOARDING] saveToLocal called — PI=true DP=true BA=true WP=true tab=5
+ WARN  💾 [ONBOARDING] Writing 5689 chars to AsyncStorage key="onboarding_data"
+ WARN  💾 [ONBOARDING] Verify read-back: SUCCESS (5689 chars)
+ WARN  ✅ [APP DEBUG] Onboarding complete — transitioning to MainNavigation
+ WARN
+============================================================
+ WARN  🏠 [SCREEN DEBUG] HomeScreen MOUNTED
+ WARN  ============================================================
+ WARN  👤 User: Harsh Sharma | Guest: true
+ WARN  🔥 Streak: 0 | Calories Burned: 0 | Consumed: 0
+ WARN  🎯 Calories Goal: 0 | Workout Mins: 0
+ WARN  💧 Water: 0/nullml
+ WARN  ⚖️  Weight: {"currentWeight":90,"goalWeight":73,"startingWeight":90,"weightHistory":[]}
+ WARN  📊 Calculated Metrics: TDEE=? | BMR=? | WaterGoal=?
+ WARN  🏋️ Today's Workout: None
+ WARN  📋 Workout Prefs: Location=gym | Intensity=beginner
+ WARN  ============================================================
+ WARN  [fitnessStore] No auth session during hydration (expected on cold start): Auth session missing!
+ WARN  [nutritionStore] No auth session during hydration (expected on cold start): Auth session missing!
+ WARN  [AnalyticsStore] loadExerciseAnalytics: no userId, skipping
+ DEBUG  🔍 [FitAI] DEBUG: 🔄 Generating month analytics...
+ DEBUG  🔍 [FitAI] DEBUG: 📊 No analytics data yet - user needs to log workouts/meals first
