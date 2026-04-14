@@ -9,7 +9,8 @@
  */
 
 import { Context } from 'hono';
-import { generateObject, createGateway } from 'ai';
+import { generateObject } from 'ai';
+import { createAIProvider } from '../utils/aiProvider';
 import { z } from 'zod';
 import { Env } from '../utils/types';
 import { AuthContext } from '../middleware/auth';
@@ -84,26 +85,6 @@ function sanitizePromptField(value: string | undefined | null): string {
 
 function sanitizePromptArray(arr: string[] | undefined | null): string[] {
   return (arr ?? []).map(sanitizePromptField).filter(s => s.length > 0);
-}
-
-// ============================================================================
-// AI PROVIDER CONFIGURATION
-// ============================================================================
-
-/**
- * Initialize Vercel AI SDK with Vercel AI Gateway
- * Creates gateway instance with explicit API key (Cloudflare Workers don't have process.env)
- * Model format: provider/model (e.g., 'google/gemini-2.5-flash', 'openai/gpt-4-turbo-preview')
- */
-function createAIProvider(env: Env, modelId: string) {
-  // Create gateway instance with explicit API key for Cloudflare Workers
-  const gatewayInstance = createGateway({
-    apiKey: env.AI_GATEWAY_API_KEY,
-  });
-
-  // Return model from gateway
-  const model = modelId || 'google/gemini-2.5-flash';
-  return gatewayInstance(model);
 }
 
 // ============================================================================
@@ -437,7 +418,7 @@ export async function handleWorkoutGeneration(
 
     const cacheResult = await getCachedData(c.env, 'workout', cacheParams, userId);
 
-    if (cacheResult.hit) {
+    if (cacheResult.hit && !request.skipCache) {
       console.log(`[Workout Generation] Cache HIT from ${cacheResult.source}`);
 
       return c.json(
@@ -531,7 +512,7 @@ export async function handleWorkoutGeneration(
       throw error;
     }
 
-    if (error instanceof Error && error.message.includes('timed out after 25s')) {
+    if (error instanceof Error && error.message.includes('timed out after 150s')) {
       throw new APIError(
         'Workout generation timed out. Please try again.',
         408,
@@ -618,17 +599,21 @@ async function generateFreshWorkout(
       // Inject calculated health metrics into the profile so the rule-based engine
       // can use TDEE for calorie calibration and VO2Max for coaching tips.
       // These are optional — engine degrades gracefully if missing.
-      const enrichedRequest: WorkoutGenerationRequest = calculatedMetrics ? {
+      // Also inject userId from auth JWT (not present in request body).
+      const enrichedRequest: WorkoutGenerationRequest = {
         ...request,
-        profile: {
-          ...request.profile,
-          bmr: calculatedMetrics.bmr,
-          tdee: calculatedMetrics.tdee,
-          vo2MaxEstimate: calculatedMetrics.vo2_max_estimate,
-          vo2MaxClassification: calculatedMetrics.vo2_max_classification,
-          heartRateZones: calculatedMetrics.heart_rate_zones,
-        },
-      } : request;
+        userId: userId ?? request.userId, // auth-verified userId takes priority
+        ...(calculatedMetrics ? {
+          profile: {
+            ...request.profile,
+            bmr: calculatedMetrics.bmr,
+            tdee: calculatedMetrics.tdee,
+            vo2MaxEstimate: calculatedMetrics.vo2_max_estimate,
+            vo2MaxClassification: calculatedMetrics.vo2_max_classification,
+            heartRateZones: calculatedMetrics.heart_rate_zones,
+          },
+        } : {}),
+      };
 
       const ruleBasedResult = await generateRuleBasedWorkout(enrichedRequest);
       const endTime = Date.now();
@@ -654,14 +639,23 @@ async function generateFreshWorkout(
         },
       };
     } catch (error) {
-      console.error('[Workout Generation] ❌ Rule-based generation FAILED, falling back to LLM:', error);
-      // Fall through to LLM generation
+      console.error('[Workout Generation] ❌ Rule-based generation FAILED:', error);
+      // Rule-based is the only generation path — do not fall back to LLM.
+      throw new APIError(
+        'Workout generation failed. Please try again.',
+        500,
+        ErrorCode.AI_GENERATION_FAILED,
+        { error: error instanceof Error ? error.message : String(error) }
+      );
     }
   } else {
-    console.log('[Workout Generation] 🤖 Using LLM generation', {
-      userId,
-      rolloutPercentage: RULE_BASED_ROLLOUT_PERCENTAGE,
-    });
+    // LLM generation is DISABLED for workout plans — rule-based only.
+    throw new APIError(
+      'Workout generation is currently unavailable. Please try again later.',
+      503,
+      ErrorCode.AI_GENERATION_FAILED,
+      { reason: 'LLM generation disabled for workouts; RULE_BASED_ROLLOUT_PERCENTAGE must be 100' }
+    );
   }
 
   // ============================================================================
@@ -755,7 +749,7 @@ async function generateFreshWorkout(
 
     const aiStartTime = Date.now();
     const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('AI generation timed out after 25s')), 25000)
+      setTimeout(() => reject(new Error('AI generation timed out after 150s')), 150000)
     );
     const result = await Promise.race([
       generateObject({

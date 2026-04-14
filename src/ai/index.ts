@@ -562,6 +562,7 @@ class UnifiedAIService {
       dietPreferences?: DietPreferences;
       calorieTarget?: number;
       advancedReview?: AdvancedReviewData | null;
+      skipCache?: boolean;
     },
   ): Promise<
     AIResponse<
@@ -584,13 +585,23 @@ class UnifiedAIService {
           currentWeightKg: resolveCurrentWeightFromStores({
             bodyAnalysisWeight: options?.bodyMetrics?.current_weight_kg,
           }).value,
+          skipCache: options?.skipCache ?? false,
         },
       );
 
       const response = await fitaiWorkersClient.generateDietPlanAsync(request);
 
+      console.warn('[DIET:AI] generateWeeklyMealPlanAsync → backend response', {
+        success: response.success,
+        hasDietPlanData: isDietPlanResponse(response.data),
+        hasJobData: isAsyncJobResponse(response.data),
+        error: response.error ?? 'none',
+        requestCalories: request.calorieTarget ?? 'unset',
+        requestDietType: request.dietPreferences?.dietType ?? 'unset',
+      });
+
       if (!response.success || !response.data) {
-        console.error("Backend returned error:", response.error);
+        console.error("[DIET:AI] ❌ Backend returned error:", response.error);
         return {
           success: false,
           error: response.error || "Failed to generate meal plan",
@@ -612,6 +623,13 @@ class UnifiedAIService {
           { requestedDaysCount: 7 },
         );
 
+        console.warn('[DIET:AI] ⚡ cache_hit transform result', {
+          ok: !!weeklyPlan,
+          title: weeklyPlan?.planTitle ?? 'n/a',
+          days: weeklyPlan?.meals?.length ?? 0,
+          totalCals: weeklyPlan?.totalCaloriesPerDay ?? 'n/a',
+        });
+
         if (!weeklyPlan) {
           return {
             success: false,
@@ -627,6 +645,10 @@ class UnifiedAIService {
 
       // Async job was created
       if (isAsyncJobResponse(response.data)) {
+        console.warn('[DIET:AI] 🎯 job_started', {
+          jobId: response.data.jobId,
+          estimatedTimeMinutes: response.data.estimatedTimeMinutes,
+        });
         return {
           success: true,
           data: {
@@ -697,12 +719,30 @@ class UnifiedAIService {
         };
       }
 
+      // Normalize error — worker stores APIError as {code, message, isRetryable}
+      const rawError = jobData.error;
+      const normalizedError: string | undefined =
+        typeof rawError === 'string'
+          ? rawError
+          : rawError && typeof rawError === 'object'
+            ? ((rawError as any).message ?? JSON.stringify(rawError))
+            : undefined;
+
+      console.warn('[DIET:AI] 📡 checkMealPlanJobStatus result', {
+        jobId,
+        status: jobData.status,
+        hasResult: !!jobData.result,
+        rawErrorType: typeof rawError,
+        normalizedError: normalizedError ?? 'none',
+        genMs: jobData.metadata?.generationTimeMs ?? '-',
+      });
+
       // Return current status
       return {
         success: true,
         data: {
           status: jobData.status,
-          error: jobData.error,
+          error: normalizedError,
         },
       };
     } catch (error) {

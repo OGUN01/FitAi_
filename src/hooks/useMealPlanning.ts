@@ -178,8 +178,18 @@ export const useMealPlanning = (navigation: any) => {
   }, [loadNutritionStoreData]);
 
   const handleMealPlanResult = async (weeklyPlan: WeeklyMealPlan) => {
-    await saveWeeklyMealPlan(weeklyPlan);
+    console.warn(
+      `[DIET] ✅ handleMealPlanResult: title="${weeklyPlan.planTitle}" days=${weeklyPlan.meals?.length ?? 0} totalCals=${weeklyPlan.totalCaloriesPerDay ?? 'n/a'}`,
+    );
+    try {
+      await saveWeeklyMealPlan(weeklyPlan);
+      console.warn('[DIET] ✅ saveWeeklyMealPlan: DB save succeeded');
+    } catch (saveErr) {
+      console.error('[DIET] ❌ saveWeeklyMealPlan THREW:', saveErr);
+      throw saveErr;
+    }
     setWeeklyMealPlan(weeklyPlan);
+    console.warn('[DIET] ✅ setWeeklyMealPlan: store updated');
 
     crossPlatformAlert(
       "Meal Plan Generated!",
@@ -190,6 +200,7 @@ export const useMealPlanning = (navigation: any) => {
   };
 
   const startJobPolling = (jobId: string) => {
+    console.warn(`[DIET] 🔄 startJobPolling: jobId=${jobId}`);
     let pollAttempt = 0;
     const maxAttempts = 60;
     const initialInterval = 3000;
@@ -199,6 +210,7 @@ export const useMealPlanning = (navigation: any) => {
 
     const poll = async () => {
       pollAttempt++;
+      console.warn(`[DIET] 🔄 poll #${pollAttempt} jobId=${jobId} elapsed=${Math.round((Date.now() - startTime) / 1000)}s`);
 
       // Wall-clock absolute deadline check
       if (Date.now() - startTime > MAX_WALL_MS) {
@@ -210,30 +222,49 @@ export const useMealPlanning = (navigation: any) => {
         const response = await aiService.checkMealPlanJobStatus(jobId, 1);
 
         if (!response.success || !response.data) {
+          console.warn(
+            `[DIET] ⚠️  poll #${pollAttempt} checkMealPlanJobStatus failed: success=${response.success} error=${response.error}`,
+          );
           if (pollAttempt < maxAttempts) scheduleNextPoll();
           else handlePollTimeout();
           return;
         }
 
         const { status, plan, error, generationTimeMs } = response.data;
+        console.warn(
+          `[DIET] 📡 poll #${pollAttempt} status=${status} hasPlan=${!!plan} genMs=${generationTimeMs ?? '-'} error=${error ?? 'none'}`,
+        );
         setAsyncJob((prev) =>
           prev ? { ...prev, status, error, generationTimeMs } : null,
         );
 
         if (status === "completed" && plan) {
+          console.warn(
+            `[DIET] ✅ poll #${pollAttempt} COMPLETED — plan.title=${(plan as any)?.planTitle ?? '?'} meals=${(plan as any)?.meals?.length ?? '?'}`,
+          );
           await handleMealPlanResult(plan);
           cleanupPolling();
           return;
         }
 
+        if (status === "completed" && !plan) {
+          console.warn(`[DIET] ⚠️  status=completed but plan is null/undefined — will retry or timeout`);
+        }
+
+
         if (status === "failed") {
-          setAiError(error || "Meal plan generation failed");
+          const errMsg =
+            typeof error === 'string'
+              ? error
+              : (error as any)?.message ?? "Meal plan generation failed";
+          setAiError(errMsg);
           crossPlatformAlert(
             "Generation Failed",
-            error || "Failed to generate meal plan.",
+            errMsg,
           );
           cleanupPolling();
           return;
+
         }
 
         if (status === "cancelled") {
@@ -243,7 +274,8 @@ export const useMealPlanning = (navigation: any) => {
 
         if (pollAttempt < maxAttempts) scheduleNextPoll();
         else handlePollTimeout();
-      } catch {
+      } catch (pollErr) {
+        console.error(`[DIET] ❌ poll #${pollAttempt} threw exception:`, pollErr);
         if (pollAttempt < maxAttempts) scheduleNextPoll();
         else handlePollTimeout();
       }
@@ -258,6 +290,7 @@ export const useMealPlanning = (navigation: any) => {
     };
 
     const handlePollTimeout = () => {
+      console.warn(`[DIET] ⏱️  TIMEOUT after ${pollAttempt} attempts (${Math.round((Date.now() - startTime) / 1000)}s) jobId=${jobId}`);
       setAiError("Generation is taking longer than expected.");
       setAsyncJob(null);
       crossPlatformAlert("Taking Longer Than Expected", "Check back later.");
@@ -321,6 +354,21 @@ export const useMealPlanning = (navigation: any) => {
 
     try {
       const userCalorieTarget = getCalorieTarget();
+
+      // ── Step 1: snapshot what we're sending ──────────────────────────────
+      console.warn('[DIET] 🚀 generateWeeklyMealPlan REQUEST SNAPSHOT', {
+        calorieTarget: userCalorieTarget,
+        dietType: profileDietPreferences?.diet_type ?? mergedDietPreferences?.diet_type ?? 'unset',
+        allergies: profileDietPreferences?.allergies ?? [],
+        mealsPerDay: profileDietPreferences?.meals_per_day ?? 'unset',
+        age: legacyPersonalInfo?.age ?? 'unset',
+        weightKg: bodyAnalysis?.current_weight_kg ?? 'unset',
+        targetWeightKg: bodyAnalysis?.target_weight_kg ?? 'unset',
+        advancedReviewCalories: profileAdvancedReview?.daily_calories ?? 'unset',
+        hasBodyAnalysis: !!bodyAnalysis,
+        hasAdvancedReview: !!profileAdvancedReview,
+      });
+
       if (!userCalorieTarget) throw new Error("Calorie target not calculated");
 
       const response = await aiService.generateWeeklyMealPlanAsync(
@@ -335,20 +383,29 @@ export const useMealPlanning = (navigation: any) => {
             undefined) as DietPreferences | undefined,
           calorieTarget: userCalorieTarget,
           advancedReview: profileAdvancedReview || undefined,
+          skipCache: true, // Always bypass cache — user explicitly requested fresh generation
         },
       );
+
+      console.warn('[DIET] 📨 generateWeeklyMealPlanAsync RESPONSE', {
+        success: response.success,
+        type: response.data?.type ?? 'none',
+        error: response.error ?? 'none',
+      });
 
       if (!response.success || !response.data) {
         throw new Error(response.error || "Failed to start generation");
       }
 
       if (response.data.type === "cache_hit") {
+        console.warn('[DIET] ⚡ CACHE HIT — processing immediately');
         await handleMealPlanResult(response.data.plan);
         setGeneratingPlan(false);
         return;
       }
 
       if (response.data.type === "job_started") {
+        console.warn(`[DIET] 🎯 JOB STARTED jobId=${response.data.jobId} estimatedMins=${response.data.estimatedTimeMinutes}`);
         if (asyncJobPollingRef.current) {
           clearTimeout(asyncJobPollingRef.current);
           asyncJobPollingRef.current = null;
@@ -364,6 +421,7 @@ export const useMealPlanning = (navigation: any) => {
       }
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error);
+      console.error('[DIET] ❌ generateWeeklyMealPlan CATCH:', errMsg, error);
       if (
         errMsg.toLowerCase().includes("feature limit exceeded") ||
         errMsg.toLowerCase().includes("limit exceeded")

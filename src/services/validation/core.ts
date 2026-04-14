@@ -51,6 +51,47 @@ import {
 } from "./warningValidations";
 import { calculateSmartAlternatives } from "./smartAlternatives";
 
+// ============================================================================
+// CALORIE & RATE DERIVATION — ARCHITECTURE REFERENCE
+// ============================================================================
+// All values flow through ValidationEngine.validateUserPlan as the SSOT.
+// Downstream consumers (onboardingService, useCalculatedMetrics, AI transformers)
+// must READ from advanced_review — never re-derive independently.
+//
+// For WEIGHT LOSS with a Boost Pace Card (boost_extra_cardio_minutes > 0):
+//
+//   TDEE          = baseTDEE (activity multiplier) + exerciseBurn (planned workouts)
+//   BMR           = Mifflin-St Jeor formula
+//
+//   boostBurnPerDay = estimateSessionCalorieBurn(boostMinutes, intensity, weight, cardio)
+//                     × workoutFrequency / 7
+//     → This is the EXTRA cardio the user commits to ON TOP of their plan.
+//     → It contributes to the weekly rate but NOT to the diet deficit.
+//
+//   dietOnlyDailyDeficit = requiredDailyDeficit - boostBurnPerDay
+//   targetCalories       = TDEE - dietOnlyDailyDeficit
+//                          BUT floored at BMR (absolute safe minimum).
+//
+//   daily_calories (stored in advanced_review) = targetCalories (= BMR when floored)
+//     → This is the INTAKE target shown to the user, NOT BMR itself even if equal.
+//
+//   weekly_weight_loss_rate = ((TDEE - targetCalories) + boostBurnPerDay) × 7 / 7700
+//     → Combines BOTH diet deficit AND exercise boost burn.
+//     → This is why rate (e.g. 1.13 kg/wk) is higher than diet-only math implies.
+//
+// EXAMPLE (user: 90kg, TDEE=2873, BMR=1856, boost=30min×5/wk, rate=1.13kg/wk):
+//   boostBurnPerDay ≈ 193 kcal/day
+//   requiredDailyDeficit = (1.13 × 7700) / 7 ≈ 1243 kcal/day
+//   dietOnlyDeficit = 1243 - 193 = 1050 kcal/day → intake = 1823 kcal
+//   BMR floor applied: 1823 < 1856 → targetCalories = 1856 kcal
+//   weeklyRate = (1017 + 193) × 7 / 7700 = 1.10 ≈ 1.13 kg/wk ✅
+//
+// The Move ring goal on HomeScreen = TDEE - BMR = 2873 - 1856 = 1017 kcal/day.
+//   → This is the ACTIVE calorie burn goal (excludes resting metabolism).
+//   → It is NOT equal to BMR by coincidence; it equals TDEE-BMR because
+//     targetCalories was floored at BMR.
+// ============================================================================
+
 export class ValidationEngine {
   static validateUserPlan(
     personalInfo: PersonalInfoData,

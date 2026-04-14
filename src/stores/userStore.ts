@@ -545,8 +545,9 @@ export const useUserStore = create<UserState>()(
           (personalInfo.name ||
             (personalInfo.first_name && personalInfo.last_name)) &&
           personalInfo.age &&
-          personalInfo.gender &&
-          personalInfo.occupation_type
+          personalInfo.gender
+          // occupation_type intentionally excluded — deprecated field (activity_level
+          // is now the SSOT in workout_preferences). DB value is null for all users.
         );
 
         // SSOT: Read from workoutPreferences (workout_preferences table)

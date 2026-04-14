@@ -279,6 +279,89 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 	console.log(`[Rule-Based] Step 7: Structured ${structuredWorkouts.length} workouts with sets/reps/rest`);
 
 	// ============================================================================
+	// STEP 7b: APPEND CARDIO BOOST BLOCK (when user selected boost pace card)
+	//
+	// Scenarios:
+	//   boost option selected  → boostExtraCardioMinutes > 0 → add explicit cardio
+	//   aggressive / recommended / conservative pace → 0 → no cardio block added
+	//
+	// Equipment priority: treadmill > stationary bike > any cardio
+	// ============================================================================
+
+	const boostMinutes = request.boostExtraCardioMinutes ?? 0;
+
+	if (boostMinutes > 0) {
+		// Find cardio exercises from the filtered pool
+		// Classify: bodyParts includes 'cardio' OR targetMuscles includes 'cardiovascular system'
+		// OR name matches treadmill / stationary bike
+		const cardioPool = exercises.filter((ex) => {
+			const nameLower = ex.name.toLowerCase();
+			const bodyPartsLower = ex.bodyParts.map((b) => b.toLowerCase());
+			const musclesLower = ex.targetMuscles.map((m) => m.toLowerCase());
+			return (
+				bodyPartsLower.includes('cardio') ||
+				musclesLower.includes('cardiovascular system') ||
+				nameLower.includes('treadmill') ||
+				nameLower.includes('stationary bike') ||
+				nameLower.includes('elliptical') ||
+				nameLower.includes('rowing machine')
+			);
+		});
+
+		// Equipment preference order: treadmill → stationary bike → elliptical → any cardio
+		const preferredKeywords = ['treadmill', 'stationary bike', 'elliptical', 'rowing machine'];
+		let primaryCardio = cardioPool[0]; // fallback to first cardio
+		for (const keyword of preferredKeywords) {
+			const match = cardioPool.find((ex) => ex.name.toLowerCase().includes(keyword));
+			if (match) {
+				primaryCardio = match;
+				break;
+			}
+		}
+
+		if (primaryCardio) {
+			const cardioMinutesMain = Math.round(boostMinutes * 0.85); // ~25 min main
+			const cardioMinutesCooldown = boostMinutes - cardioMinutesMain;  // ~5 min cooldown
+
+			const cardioExercise: import('../utils/workoutStructure').WorkoutExercise = {
+				exerciseId: primaryCardio.exerciseId,
+				name: primaryCardio.name,
+				sets: 1,
+				reps: `${cardioMinutesMain} minutes`,
+				restSeconds: 0,
+				notes: `Fat-burn cardio (pace card boost). Steady-state moderate pace — keep heart rate in fat-burn zone throughout. This ${boostMinutes}-min cardio block creates the extra calorie deficit so you can eat at your BMR target.`,
+			};
+
+			// Optional cooldown cardio (lower intensity last 5 min)
+			const cooldownCardioExercise: import('../utils/workoutStructure').WorkoutExercise = cardioMinutesCooldown > 0
+				? {
+					exerciseId: primaryCardio.exerciseId,
+					name: `${primaryCardio.name} — Easy Cooldown`,
+					sets: 1,
+					reps: `${cardioMinutesCooldown} minutes`,
+					restSeconds: 0,
+					notes: 'Reduce speed gradually. Brings heart rate down before stretching.',
+				}
+				: cardioExercise; // won't be used if cooldown minutes = 0
+
+			for (const workout of structuredWorkouts) {
+				workout.exercises.push(cardioExercise);
+				if (cardioMinutesCooldown > 0) {
+					workout.exercises.push(cooldownCardioExercise);
+				}
+				// Extend total duration and estimated calories for the cardio component
+				workout.totalDuration += boostMinutes;
+				// Cardio calorie estimate: ~7 kcal/min for moderate steady-state (conservative)
+				workout.estimatedCalories += Math.round(boostMinutes * 7 * ((enrichedProfile.weight ?? 75) / 75));
+			}
+
+			console.log(`[Rule-Based] Step 7b: Appended ${boostMinutes}-min cardio boost (${primaryCardio.name}) to all ${structuredWorkouts.length} workouts`);
+		} else {
+			console.warn('[Rule-Based] Step 7b: boostExtraCardioMinutes > 0 but no cardio exercises found in filtered pool — check equipment list');
+		}
+	}
+
+	// ============================================================================
 	// STEP 8: FORMAT AS WEEKLY WORKOUT PLAN (SAME SCHEMA AS LLM)
 	// ============================================================================
 
@@ -313,7 +396,7 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 	const response: WorkoutResponse = {
 		id: `rule-based-${Date.now()}-${request.userId || 'guest'}`,
 		planTitle: `${selectedSplit.name} - Week ${weekNumber}`,
-		planDescription: generatePlanDescription(selectedSplit, enrichedProfile, allWarnings),
+		planDescription: generatePlanDescription(selectedSplit, enrichedProfile, allWarnings, boostMinutes),
 		workouts,
 		restDays: computedRestDays,
 		totalEstimatedCalories,
@@ -381,12 +464,20 @@ function generateWorkoutDescription(workoutType: string, splitDescription: strin
 /**
  * Generate plan-level description
  */
-function generatePlanDescription(split: any, profile: any, warnings: string[]): string {
+function generatePlanDescription(split: any, profile: any, warnings: string[], boostExtraCardioMinutes: number): string {
 	let description = `${split.name}: ${split.description}\n\n`;
 
 	description += `🎯 Goal: ${profile.fitnessGoal.replace('_', ' ')}\n`;
 	description += `📊 Experience: ${profile.experienceLevel}\n`;
-	description += `⏱️ Duration: ${profile.workoutDuration || 45} minutes per session\n`;
+
+	const baseMinutes = profile.workoutDuration;
+	const totalMinutes = baseMinutes + boostExtraCardioMinutes;
+	if (boostExtraCardioMinutes > 0) {
+		description += `⏱️ Duration: ${totalMinutes} minutes per session (${baseMinutes} min strength + ${boostExtraCardioMinutes} min cardio boost)\n`;
+	} else {
+		description += `⏱️ Duration: ${baseMinutes} minutes per session\n`;
+	}
+
 	description += `📅 Frequency: ${profile.workoutsPerWeek}x per week\n`;
 
 	if (warnings.length > 0) {

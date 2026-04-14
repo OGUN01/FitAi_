@@ -488,8 +488,9 @@ export function getPrepTimeInstructions(maxMinutes: number): string {
 		return `
 ⏱️ TIME-EFFICIENT (Max ${maxMinutes} minutes):
 - Simple recipes with minimal steps
-- Prefer quick-cooking proteins (eggs, fish, chicken)
-- Suggest batch cooking for efficiency`;
+- Prefer quick-cooking proteins appropriate for the diet type (e.g. eggs, legumes, tofu, paneer)
+- Suggest batch cooking for efficiency
+- Minimize prep steps; use canned/pre-cooked legumes where possible`;
 	} else if (maxMinutes <= 60) {
 		return `
 ⏱️ MODERATE PREP TIME (Max ${maxMinutes} minutes):

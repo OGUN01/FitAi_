@@ -251,6 +251,65 @@ export const useAdvancedReviewForm = ({
           ? (exerciseTypeMap[alternative.exerciseType ?? 'moderate'] ?? exerciseTypeMap.moderate)
           : null;
 
+        // ── Build the derivation explanation for this specific card type ──
+        let derivationLog = '';
+
+        if (isBoostType) {
+          // Boost cards: eat at BMR + add cardio sessions on top.
+          // Rate = (bmrDeficit + extraExerciseBurn) × 7 / 7700
+          const bmr      = alternative.dailyCalories;   // boost cards always set dailyCalories = BMR
+          const tdeeApprox = bmr + ((alternative.bmrDifference ?? 0)); // bmrDifference = 0 for boosts
+          // We can re-derive from what the card stored:
+          const extraBurnPerSession = alternative.exerciseCaloriesBurned ?? 0;
+          const sessions            = alternative.exerciseSessions ?? 0;
+          const extraBurnPerDay     = sessions > 0 ? (extraBurnPerSession * sessions) / 7 : 0;
+          // bmrDeficit = tdee - bmr  (stored in the parent scope via smartAlternatives)
+          // weeklyRate (card) = (combinedDeficit × 7) / 7700
+          const calPerKg = 7700;
+          derivationLog =
+            '\n====== 🔢 HOW THIS RATE WAS DERIVED (CARDIO BOOST) ======'
+            + '\nFormula  : weeklyRate = (bmrDeficit + extraBurnPerDay) × 7 ÷ 7700'
+            + '\n'
+            + '\n  BMR (eat-at floor)         : ' + bmr + ' kcal/day'
+            + '\n  exerciseMinutes / session  : ' + (alternative.exerciseMinutes ?? 0) + ' min'
+            + '\n  exerciseSessions / week    : ' + sessions
+            + '\n  extraBurnPerSession        : ' + extraBurnPerSession + ' kcal  ← estimateSessionCalorieBurn()'
+            + '\n  extraBurnPerDay            : ' + extraBurnPerDay.toFixed(1) + ' kcal  = (' + extraBurnPerSession + ' × ' + sessions + ') ÷ 7'
+            + '\n  bmrDeficit (TDEE − BMR)    : ' + (weeklyRate > 0 ? ((weeklyRate * calPerKg / 7) - extraBurnPerDay).toFixed(1) : '?') + ' kcal/day'
+            + '\n  combinedDeficit            : ' + (weeklyRate > 0 ? (weeklyRate * calPerKg / 7).toFixed(1) : '?') + ' kcal/day  = bmrDeficit + extraBurnPerDay'
+            + '\n  weeklyRate (card)          : ' + weeklyRate.toFixed(3) + ' kg/wk  = combinedDeficit × 7 ÷ ' + calPerKg
+            + '\n  newTimeline                : ceil(' + weightToLose.toFixed(2) + ' ÷ ' + weeklyRate.toFixed(3) + ') = ' + newTimelineWeeks + ' weeks'
+            + '\n========================================================';
+        } else if (isFreqUpgrade) {
+          derivationLog =
+            '\n====== 🔢 HOW THIS RATE WAS DERIVED (FREQUENCY UPGRADE) ======'
+            + '\nFormula  : weeklyRate stays the same; extra sessions raise TDEE → more surplus goes to muscle'
+            + '\n  weeklyRate (unchanged)    : ' + weeklyRate.toFixed(3) + ' kg/wk'
+            + '\n  newFrequency              : ' + (alternative.exerciseSessions ?? 'n/a') + ' sessions/wk'
+            + '\n  newTimeline               : ceil(' + weightToLose.toFixed(2) + ' ÷ ' + weeklyRate.toFixed(3) + ') = ' + newTimelineWeeks + ' weeks'
+            + '\n=============================================================';
+        } else if (isLegacyExercise) {
+          derivationLog =
+            '\n====== 🔢 HOW THIS RATE WAS DERIVED (EXERCISE OPTION) ======'
+            + '\nFormula  : weeklyRate = dailyDeficit × 7 ÷ 7700  (diet-side rate, exercise improves adherence)'
+            + '\n  weeklyRate (card)         : ' + weeklyRate.toFixed(3) + ' kg/wk'
+            + '\n  dailyCalories (card)      : ' + (alternative.dailyCalories ?? 'n/a') + ' kcal'
+            + '\n  newTimeline               : ceil(' + weightToLose.toFixed(2) + ' ÷ ' + weeklyRate.toFixed(3) + ') = ' + newTimelineWeeks + ' weeks'
+            + '\n=============================================================';
+        } else {
+          // Pure diet card (user_original, aggressive, challenging, at_bmr, comfortable)
+          const calPerKg = 7700;
+          const dailyDeficit = weeklyRate > 0 ? (weeklyRate * calPerKg) / 7 : 0;
+          derivationLog =
+            '\n====== 🔢 HOW THIS RATE WAS DERIVED (DIET OPTION) ======'
+            + '\nFormula  : weeklyRate = dailyDeficit × 7 ÷ 7700  |  dailyDeficit = TDEE − targetCalories'
+            + '\n  weeklyRate (card)         : ' + weeklyRate.toFixed(3) + ' kg/wk'
+            + '\n  dailyDeficit              : ' + dailyDeficit.toFixed(1) + ' kcal  = weeklyRate × 7700 ÷ 7'
+            + '\n  dailyCalories (card)      : ' + (alternative.dailyCalories ?? 'n/a') + ' kcal'
+            + '\n  newTimeline               : ceil(' + weightToLose.toFixed(2) + ' ÷ ' + weeklyRate.toFixed(3) + ') = ' + newTimelineWeeks + ' weeks'
+            + '\n=========================================================';
+        }
+
         console.warn(
           '\n\n🔄🔄🔄 ================================================== 🔄🔄🔄',
           '\n🔄     PACE CARD SELECTED (Tab 5: Choose Your Pace)        🔄',
@@ -264,8 +323,11 @@ export const useAdvancedReviewForm = ({
           '\nexerciseType             :', alternative.exerciseType ?? 'n/a',
           '\nexerciseSessions         :', alternative.exerciseSessions ?? 'n/a',
           '\nexerciseMinutes          :', alternative.exerciseMinutes ?? 'n/a',
+          '\nexerciseCaloriesBurned   :', alternative.exerciseCaloriesBurned ?? 'n/a',
           '\nisBelowBMR               :', alternative.isBelowBMR ?? false,
           '\nisBlocked                :', alternative.isBlocked ?? false,
+          '\n',
+          derivationLog,
           '\n',
           '\n====== 📐 RATE & TIMELINE ======',
           '\nweeklyRate (selected card):', weeklyRate, 'kg/wk',
@@ -274,6 +336,7 @@ export const useAdvancedReviewForm = ({
           '\n',
           '\n====== 📝 STORE UPDATES DISPATCHED ======',
           '\nworkoutPreferences.weekly_weight_loss_goal →', Math.round(weeklyRate * 100) / 100, 'kg/wk',
+          '\nworkoutPreferences.boost_extra_cardio_minutes →', isBoostType ? (alternative.exerciseMinutes ?? 0) : 0, 'min',
           isBoostType
             ? '\n[BOOST type] workout plan UNCHANGED (no freq/type/intensity update)'
             : isFreqUpgrade

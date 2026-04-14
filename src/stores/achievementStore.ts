@@ -259,16 +259,14 @@ const achievementStorage: StateStorage = {
       const value = await AsyncStorage.getItem(name);
       if (!value) return null;
 
-      // Parse and convert userAchievementsArray back to Map
+      // Return raw stored string as-is. JSON.stringify cannot serialize a Map
+      // (it becomes {}), so Map reconstruction must NOT happen here.
+      // onRehydrateStorage handles array → Map conversion after Zustand
+      // deserializes the JSON string.
       try {
-        const parsed = JSON.parse(value);
-        if (parsed.state?.userAchievementsArray) {
-          parsed.state.userAchievements = new Map(
-            parsed.state.userAchievementsArray,
-          );
-          delete parsed.state.userAchievementsArray;
-        }
-        return JSON.stringify(parsed);
+        // Validate JSON is parseable (corrupt data guard)
+        JSON.parse(value);
+        return value;
       } catch {
         console.warn(
           `⚠️ [achievementStorage] Corrupt data for key "${name}", clearing`,
@@ -283,37 +281,17 @@ const achievementStorage: StateStorage = {
   },
   setItem: async (name: string, value: string): Promise<void> => {
     try {
-      // Zustand persist may call setItem with the state object directly (not a string)
-      const parsed = typeof value === "string" ? JSON.parse(value) : value;
-      // Bug 9 fix: after JSON round-trip, Map becomes a plain object.
-      // Check for object with entries instead of instanceof Map.
-      const userAchievements = parsed.state?.userAchievements;
-      if (
-        userAchievements &&
-        typeof userAchievements === "object" &&
-        !(userAchievements instanceof Map)
-      ) {
-        // Convert plain object (from JSON round-trip) to array format for storage
-        parsed.state.userAchievementsArray = Object.entries(userAchievements);
-        delete parsed.state.userAchievements;
-      } else if (userAchievements instanceof Map) {
-        parsed.state.userAchievementsArray = Array.from(
-          userAchievements.entries(),
-        );
-        delete parsed.state.userAchievements;
-      }
-      await AsyncStorage.setItem(name, JSON.stringify(parsed));
+      // partialize() already converts Map → [string, UserAchievement][] before
+      // Zustand calls setItem, so `value` is already a valid JSON string with
+      // userAchievements as an array. Just write it directly.
+      // (The old conversion logic was buggy: Object.entries(array) produces keys
+      //  "0","1",... which corrupt achievement IDs on read-back.)
+      await AsyncStorage.setItem(
+        name,
+        typeof value === "string" ? value : JSON.stringify(value),
+      );
     } catch (e) {
       console.warn(`⚠️ [achievementStorage] Failed to write "${name}":`, e);
-      // Fallback: try to write the raw value
-      try {
-        await AsyncStorage.setItem(
-          name,
-          typeof value === "string" ? value : JSON.stringify(value),
-        );
-      } catch {
-        // Silently fail — data will be reloaded from Supabase on next login
-      }
     }
   },
   removeItem: async (name: string): Promise<void> => {
@@ -987,9 +965,21 @@ export const useAchievementStore = create<AchievementStore>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
-        // Convert Array back to Map after rehydration (JSON cannot serialize Map natively)
-        if (state.userAchievements && !(state.userAchievements instanceof Map)) {
-          state.userAchievements = new Map(state.userAchievements as unknown as [string, UserAchievement][]);
+        // Convert Array back to Map after rehydration (JSON cannot serialize Map natively).
+        // `partialize` stores userAchievements as [string, UserAchievement][] so after
+        // JSON.parse it arrives here as a plain array.
+        const ua = (state as any).userAchievements;
+        const uaArray = (state as any).userAchievementsArray; // legacy key from old setItem
+        if (uaArray && Array.isArray(uaArray)) {
+          // Legacy format: old setItem moved the data under userAchievementsArray
+          state.userAchievements = new Map(uaArray as [string, UserAchievement][]);
+          delete (state as any).userAchievementsArray;
+        } else if (ua && !(ua instanceof Map)) {
+          // Current format: partialize stored it as a plain array under userAchievements
+          state.userAchievements = new Map(ua as unknown as [string, UserAchievement][]);
+        } else if (!ua) {
+          // Safety net: no data at all → start with empty Map so .entries() never throws
+          state.userAchievements = new Map();
         }
       },
     },

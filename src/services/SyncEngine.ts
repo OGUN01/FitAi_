@@ -630,7 +630,7 @@ class SyncEngine {
   async syncDietPreferences(userId: string, data: any): Promise<void> {
     const dietPreferencesData = {
       user_id: userId,
-      diet_type: data.diet_type || data.dietType || "omnivore", // NOT NULL - default to omnivore
+      diet_type: data.diet_type || data.dietType || "non-veg", // NOT NULL - constraint: vegetarian|vegan|non-veg|non_veg|pescatarian
       allergies: data.allergies || [],
       restrictions: data.restrictions || [],
       // Diet readiness toggles
@@ -648,7 +648,7 @@ class SyncEngine {
       snacks_enabled: data.snacks_enabled ?? data.snacksEnabled,
       // Cooking preferences
       cooking_skill_level:
-        data.cooking_skill_level || data.cookingSkillLevel || "beginner",
+        data.cooking_skill_level || data.cookingSkillLevel || null, // nullable — never guess the user's skill level
       max_prep_time_minutes:
         data.max_prep_time_minutes ?? data.maxPrepTimeMinutes ?? null,
       budget_level: data.budget_level || data.budgetLevel || "medium",
@@ -779,10 +779,10 @@ class SyncEngine {
       location: data.location ?? "home", // DB NOT NULL
       equipment: data.equipment ?? ["bodyweight"], // DB NOT NULL
       time_preference: data.time_preference ?? data.timePreference,
-      intensity: data.intensity ?? "moderate", // DB NOT NULL
+      intensity: data.intensity ?? "intermediate", // constraint: beginner|intermediate|advanced
       workout_types: data.workout_types ?? data.workoutTypes,
       // Goals and activity
-      primary_goals: data.primary_goals ?? data.primaryGoals, // DB NOT NULL - will fail if missing
+      primary_goals: data.primary_goals ?? data.primaryGoals ?? ["general-fitness"], // NOT NULL - needs at least 1
       activity_level: data.activity_level ?? data.activityLevel, // DB NOT NULL - will fail if missing
       // Fitness assessment
       workout_experience_years:

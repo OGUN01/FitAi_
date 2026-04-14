@@ -27,6 +27,7 @@ export async function generateWeeklyMealPlanAsync(
     dietPreferences?: DietPreferences;
     calorieTarget?: number;
     advancedReview?: AdvancedReviewData | null;
+    skipCache?: boolean;
   } = {},
   updateMetadata: (metadata: AIServiceMetadata) => void,
 ): Promise<
@@ -49,6 +50,7 @@ export async function generateWeeklyMealPlanAsync(
         currentWeightKg: resolveCurrentWeightFromStores({
           bodyAnalysisWeight: options.bodyMetrics?.current_weight_kg,
         }).value,
+        skipCache: options.skipCache ?? false,
       },
     );
 

@@ -702,7 +702,11 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               </View>
             ) : foodsError ? (
               <GlassCard style={styles.errorCard} elevation={1} padding="md">
-                <Text style={styles.errorText}>{foodsError}</Text>
+                <Text style={styles.errorText}>
+                  {typeof foodsError === 'string'
+                    ? foodsError
+                    : (foodsError as any)?.message ?? 'Failed to load nutrition data'}
+                </Text>
                 <Button
                   title="Retry"
                   onPress={() => {

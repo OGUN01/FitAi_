@@ -233,8 +233,10 @@ export const MeasurementsSection: React.FC<MeasurementsSectionProps> = ({
                           numberOfLines={2}
                           ellipsizeMode="tail"
                         >
-                          Weekly rate: {weeklyRate.toFixed(2)}kg/week
-                          {!isHealthyRate && " (Consider slower pace)"}
+                          Your target pace: {weeklyRate.toFixed(2)} kg/week
+                          {!isHealthyRate
+                            ? " — aggressive, your safe rate will be confirmed on the Review tab"
+                            : " (based on your timeline)"}
                         </Text>
                       </View>
                     );

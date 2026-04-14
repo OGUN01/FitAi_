@@ -152,12 +152,65 @@ ${getBudgetInstructions(p.BUDGET_LEVEL)}
 ${getPersonalizedSuggestions(p)}
 
 ════════════════════════════════════════════════════════════════════════════════
+⚖️ REALISTIC PORTION LIMITS — STRICTLY ENFORCE PER MEAL:
+════════════════════════════════════════════════════════════════════════════════
+These are MAXIMUM quantities a real person can eat in ONE sitting.
+DO NOT exceed these limits even to hit protein targets. Use MORE FOODS instead.
+
+🥚 EGGS / EGG WHITES:
+   - Whole eggs: max 3 per meal
+   - Egg whites only: max 6 per meal (NOT 8, 10, or 12)
+   - 4–6 egg whites = realistic breakfast/snack portion
+
+🧀 PANEER:
+   - Max 150g per meal (NOT 200g or 250g)
+   - 100g is a standard serving
+
+🫙 GREEK YOGURT / CURD:
+   - Max 200g per meal (NOT 300g or 400g)
+   - 150–200g is a standard bowl
+
+🫘 LENTILS / DAL (cooked):
+   - Max 1 cup (200g) per meal
+
+🫘 SOY CHUNKS / GRANULES (dry weight):
+   - Max 60g dry per meal (expands 3x when cooked = 180g)
+   - NOT 100g dry (that becomes 300g cooked — too much)
+
+🍚 RICE / ROTI:
+   - Rice: max 1 cup cooked (180g) per meal
+   - Roti: max 2 medium rotis per meal
+
+🌰 NUTS:
+   - Max 20–30g (a small handful) per meal
+
+💪 WHEY PROTEIN:
+   - Max 1 scoop per meal (NOT 1.5 scoops)
+   - Use 1 scoop = 25–30g powder = ~120 kcal
+
+🥦 VEGETABLES (non-starchy):
+   - 1–2 cups per meal is appropriate
+
+RULE: If you need more protein, ADD a second protein source (e.g., whey + dal),
+do NOT increase egg whites beyond 6 or paneer beyond 150g.
+
+════════════════════════════════════════════════════════════════════════════════
+🫒 HEALTHY FATS — MANDATORY (target: ${p.FATS}g/day):
+════════════════════════════════════════════════════════════════════════════════
+Fat target is ${p.FATS}g/day. You MUST include healthy fat sources daily:
+- Use 1 tsp ghee or olive oil in cooking (at least lunch or dinner) — adds ~5g fat
+- Include nuts (almonds/walnuts 20g) OR seeds (flaxseed 1 tbsp) in 1 meal/day
+- Use whole eggs (not just egg whites) in at least 1 meal per week
+- Full-fat paneer (not always low-fat) is acceptable in moderation
+- DO NOT use only zero-fat foods — the user needs ${p.FATS}g fat daily
+
+════════════════════════════════════════════════════════════════════════════════
 📋 OUTPUT REQUIREMENTS:
 ════════════════════════════════════════════════════════════════════════════════
 Generate a complete ${p.DAYS_COUNT === 1 ? 'daily' : `${p.DAYS_COUNT}-day`} meal plan with:
 1. Each meal with name, description, and cooking method
-2. All food items with exact portions (grams/cups)
-3. Accurate nutrition data (calories, protein, carbs, fat) per item
+2. All food items with exact portions (grams/cups) — within the limits above
+3. Accurate nutrition data (calories, protein, carbs, fat, fiber) per item
 4. Meal totals and daily totals
 5. Preparation time and cooking instructions
 6. Tips and substitution suggestions

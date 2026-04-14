@@ -138,13 +138,7 @@ async function getJobFromDatabase(env: Env, jobId: string, userId: string): Prom
 		status: data.status as JobStatus,
 		estimatedTime: estimateTimeRemaining(data.status, data.created_at, data.started_at),
 		result: data.result_data,
-		error: data.error_message
-			? {
-					code: data.error_code || 'UNKNOWN_ERROR',
-					message: data.error_message,
-					isRetryable: data.retry_count < data.max_retries,
-				}
-			: undefined,
+		error: data.error_message ?? undefined,
 		metadata: {
 			createdAt: data.created_at,
 			startedAt: data.started_at,

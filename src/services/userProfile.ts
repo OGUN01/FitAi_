@@ -423,7 +423,7 @@ class UserProfileService {
           snacks_enabled: transformedData.snacksEnabled !== false,
 
           // Cooking preferences
-          cooking_skill_level: transformedData.cookingSkillLevel || "beginner",
+          cooking_skill_level: transformedData.cookingSkillLevel || null, // nullable — never inject a fake skill level
           max_prep_time_minutes: transformedData.maxPrepTimeMinutes || null,
           budget_level: transformedData.budgetLevel || "medium",
 

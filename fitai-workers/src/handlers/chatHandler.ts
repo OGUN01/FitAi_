@@ -8,7 +8,8 @@
  */
 
 import { Context } from 'hono';
-import { streamText, generateText, createGateway } from 'ai';
+import { streamText, generateText } from 'ai';
+import { createAIProvider } from '../utils/aiProvider';
 import { getAIConfig } from '../utils/appConfig';
 import { Env } from '../utils/types';
 import { AuthContext } from '../middleware/auth';

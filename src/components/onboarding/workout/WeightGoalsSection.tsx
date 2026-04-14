@@ -94,14 +94,14 @@ export const WeightGoalsSection: React.FC<WeightGoalsSectionProps> = ({
             bodyAnalysisData.target_timeline_weeks && (
               <View style={styles.weeklyRateInfo}>
                 <Text style={styles.weeklyRateText}>
-                  Weekly rate:{" "}
+                  Target pace (from Body tab):{" "}
                   {(
                     Math.abs(
                       bodyAnalysisData.current_weight_kg -
                         bodyAnalysisData.target_weight_kg,
                     ) / bodyAnalysisData.target_timeline_weeks
-                  ).toFixed(2)}
-                  kg/week
+                  ).toFixed(2)}{" "}
+                  kg/week — safe achievable rate confirmed on Review tab
                 </Text>
               </View>
             )}

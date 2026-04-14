@@ -150,7 +150,7 @@ export interface DietPreferences {
   allergies: string[]; // TEXT[] - REQUIRED (can be empty array)
   restrictions: string[]; // TEXT[] - REQUIRED (can be empty array)
   cuisine_preferences?: string[];
-  snacks_count?: number; // Number of snacks per day (default: 2)
+  snacks_count?: number; // Number of snacks per day (default: 1 — UI has a single Snacks toggle)
 
   // Diet readiness toggles (6 specialized diets)
   keto_ready: boolean;

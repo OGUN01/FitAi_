@@ -11,7 +11,8 @@
  */
 
 import { Context } from 'hono';
-import { generateObject, createGateway } from 'ai';
+import { generateObject } from 'ai';
+import { createAIProvider } from '../utils/aiProvider';
 import { z } from 'zod';
 import { Env } from '../utils/types';
 import { AuthContext } from '../middleware/auth';

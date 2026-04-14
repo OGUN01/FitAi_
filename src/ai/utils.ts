@@ -25,7 +25,8 @@ export function transformWorkoutData(
       id: `${dayOfWeek}_ex_${idx}`,
       exerciseId: ex.exerciseId,
       sets: ex.sets || 3,
-      reps: typeof ex.reps === "number" ? ex.reps : 12,
+      // Worker sends reps as a string range (e.g. "10-13") or number — preserve both.
+      reps: ex.reps ?? 12,
       duration: ex.duration,
       restTime: ex.restSeconds || ex.restTime || 60,
       notes: ex.notes,

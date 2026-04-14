@@ -80,7 +80,7 @@ const FULL_BODY_SPLIT: WorkoutSplit = {
 			suggestedDayOfWeek: 'monday',
 			focusAreas: ['chest', 'back', 'legs', 'shoulders', 'arms', 'core'],
 			workoutType: 'Full Body A',
-			muscleGroups: ['pecs', 'lats', 'quads', 'hamstrings', 'delts', 'biceps', 'triceps', 'abs'],
+			muscleGroups: ['pectorals', 'lats', 'quads', 'hamstrings', 'delts', 'biceps', 'triceps', 'abs'],
 			compoundFocus: true,
 		},
 		{
@@ -88,7 +88,7 @@ const FULL_BODY_SPLIT: WorkoutSplit = {
 			suggestedDayOfWeek: 'wednesday',
 			focusAreas: ['chest', 'back', 'legs', 'shoulders', 'arms', 'core'],
 			workoutType: 'Full Body B',
-			muscleGroups: ['pecs', 'lats', 'quads', 'hamstrings', 'delts', 'biceps', 'triceps', 'abs'],
+			muscleGroups: ['pectorals', 'lats', 'quads', 'hamstrings', 'delts', 'biceps', 'triceps', 'abs'],
 			compoundFocus: true,
 		},
 		{
@@ -96,7 +96,7 @@ const FULL_BODY_SPLIT: WorkoutSplit = {
 			suggestedDayOfWeek: 'friday',
 			focusAreas: ['chest', 'back', 'legs', 'shoulders', 'arms', 'core'],
 			workoutType: 'Full Body C',
-			muscleGroups: ['pecs', 'lats', 'quads', 'hamstrings', 'delts', 'biceps', 'triceps', 'abs'],
+			muscleGroups: ['pectorals', 'lats', 'quads', 'hamstrings', 'delts', 'biceps', 'triceps', 'abs'],
 			compoundFocus: true,
 		},
 	],
@@ -126,7 +126,7 @@ const UPPER_LOWER_SPLIT: WorkoutSplit = {
 			suggestedDayOfWeek: 'monday',
 			focusAreas: ['chest', 'back', 'shoulders', 'arms'],
 			workoutType: 'Upper Body A',
-			muscleGroups: ['pecs', 'lats', 'delts', 'biceps', 'triceps', 'traps'],
+			muscleGroups: ['pectorals', 'lats', 'delts', 'biceps', 'triceps', 'traps'],
 			compoundFocus: true,
 		},
 		{
@@ -142,7 +142,7 @@ const UPPER_LOWER_SPLIT: WorkoutSplit = {
 			suggestedDayOfWeek: 'thursday',
 			focusAreas: ['chest', 'back', 'shoulders', 'arms'],
 			workoutType: 'Upper Body B',
-			muscleGroups: ['pecs', 'lats', 'delts', 'biceps', 'triceps', 'traps'],
+			muscleGroups: ['pectorals', 'lats', 'delts', 'biceps', 'triceps', 'traps'],
 			compoundFocus: true,
 		},
 		{
@@ -180,7 +180,7 @@ const PPL_3X_SPLIT: WorkoutSplit = {
 			suggestedDayOfWeek: 'monday',
 			focusAreas: ['chest', 'shoulders', 'arms'],
 			workoutType: 'Push',
-			muscleGroups: ['pecs', 'delts', 'triceps'],
+			muscleGroups: ['pectorals', 'delts', 'triceps'],
 			compoundFocus: true,
 		},
 		{
@@ -226,7 +226,7 @@ const PPL_6X_SPLIT: WorkoutSplit = {
 			suggestedDayOfWeek: 'monday',
 			focusAreas: ['chest', 'shoulders', 'arms'],
 			workoutType: 'Push A',
-			muscleGroups: ['pecs', 'delts', 'triceps'],
+			muscleGroups: ['pectorals', 'delts', 'triceps'],
 			compoundFocus: true,
 		},
 		{
@@ -250,7 +250,7 @@ const PPL_6X_SPLIT: WorkoutSplit = {
 			suggestedDayOfWeek: 'thursday',
 			focusAreas: ['chest', 'shoulders', 'arms'],
 			workoutType: 'Push B',
-			muscleGroups: ['pecs', 'delts', 'triceps'],
+			muscleGroups: ['pectorals', 'delts', 'triceps'],
 			compoundFocus: true,
 		},
 		{
@@ -296,7 +296,7 @@ const BRO_SPLIT: WorkoutSplit = {
 			suggestedDayOfWeek: 'monday',
 			focusAreas: ['chest'],
 			workoutType: 'Chest',
-			muscleGroups: ['pecs'],
+			muscleGroups: ['pectorals'],
 			compoundFocus: false,
 		},
 		{
@@ -354,7 +354,7 @@ const UL_PPL_HYBRID_SPLIT: WorkoutSplit = {
 			suggestedDayOfWeek: 'monday',
 			focusAreas: ['chest', 'back', 'shoulders', 'arms'],
 			workoutType: 'Upper A',
-			muscleGroups: ['pecs', 'lats', 'delts', 'biceps', 'triceps', 'traps'],
+			muscleGroups: ['pectorals', 'lats', 'delts', 'biceps', 'triceps', 'traps'],
 			compoundFocus: true,
 		},
 		{
@@ -370,7 +370,7 @@ const UL_PPL_HYBRID_SPLIT: WorkoutSplit = {
 			suggestedDayOfWeek: 'wednesday',
 			focusAreas: ['chest', 'shoulders', 'arms'],
 			workoutType: 'Push',
-			muscleGroups: ['pecs', 'delts', 'triceps'],
+			muscleGroups: ['pectorals', 'delts', 'triceps'],
 			compoundFocus: true,
 		},
 		{
@@ -392,7 +392,7 @@ const UL_PPL_HYBRID_SPLIT: WorkoutSplit = {
 	],
 	restDays: ['saturday', 'sunday'],
 	experienceLevels: ['intermediate', 'advanced'],
-	fitnessGoals: ['muscle_gain', 'strength', 'athletic_performance'],
+	fitnessGoals: ['weight_loss', 'muscle_gain', 'strength', 'athletic_performance'],
 	minimumEquipment: ['dumbbell', 'barbell'],
 	volumePerMuscle: 'high',
 	recoveryDemand: 'moderate',

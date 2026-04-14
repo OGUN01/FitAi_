@@ -47,7 +47,7 @@ export class PersonalInfoService {
         first_name: firstName,
         last_name: lastName,
         name: fullName, // Computed full name with fallback
-        age: data.age ?? 0, // NOT NULL - 0 reveals missing data instead of fabricating age
+        age: data.age ?? null, // NULL allowed — 0 would violate check_age_range (>= 13)
         gender: data.gender || "prefer_not_to_say", // NOT NULL - safe default
         country: data.country || null,
         state: data.state,
@@ -159,12 +159,12 @@ export class DietPreferencesService {
     try {
       const dietData: Partial<DietPreferencesRow> = {
         user_id: userId,
-        diet_type: data.diet_type ?? "balanced", // NOT NULL - only default if truly missing
+        diet_type: data.diet_type ?? "non-veg", // NOT NULL - constraint: vegetarian|vegan|non-veg|non_veg|pescatarian
         allergies: data.allergies || [], // NOT NULL - default to empty array
         restrictions: data.restrictions || [], // NOT NULL - default to empty array
         cuisine_preferences: data.cuisine_preferences ?? [],
         cooking_methods: data.cooking_methods || [],
-        snacks_count: data.snacks_count ?? 2,
+        snacks_count: data.snacks_count ?? 1, // UI has 1 snack toggle, not a count picker
 
         // Diet readiness toggles
         keto_ready: data.keto_ready,
@@ -251,12 +251,12 @@ export class DietPreferencesService {
       }
 
       const dietPreferences: DietPreferencesData = {
-        diet_type: data.diet_type ?? "balanced",
+        diet_type: data.diet_type ?? "non-veg",
         allergies: data.allergies || [],
         restrictions: data.restrictions || [],
         cuisine_preferences: data.cuisine_preferences || [],
         cooking_methods: data.cooking_methods || [],
-        snacks_count: data.snacks_count ?? 2,
+        snacks_count: data.snacks_count ?? 1, // UI has 1 snack toggle, not a count picker
 
         // Diet readiness
         keto_ready: data.keto_ready || false,
@@ -273,7 +273,7 @@ export class DietPreferencesService {
         snacks_enabled: data.snacks_enabled ?? true,
 
         // Cooking preferences
-        cooking_skill_level: data.cooking_skill_level || "beginner",
+        cooking_skill_level: data.cooking_skill_level || null, // nullable — return null if not set
         max_prep_time_minutes: data.max_prep_time_minutes ?? 30,
         budget_level: data.budget_level || "medium",
 

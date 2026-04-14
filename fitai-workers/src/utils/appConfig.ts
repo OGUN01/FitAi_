@@ -76,7 +76,7 @@ export async function getAIConfig(env: Env): Promise<AIConfig> {
       for (const row of data) m[row.key] = row.value;
 
       const config: AIConfig = {
-        model: (m['ai_model'] as string) ?? 'google/gemini-2.0-flash-exp',
+        model: (m['ai_model'] as string) ?? 'google/gemini-3-flash',
         temperature: Number(m['ai_temperature'] ?? 0.7),
         maxTokens: Number(m['ai_max_tokens'] ?? 8192),
       };
@@ -100,7 +100,7 @@ export async function getAIConfig(env: Env): Promise<AIConfig> {
 
   // Hard-coded defaults
   return {
-    model: 'google/gemini-2.0-flash-exp',
+    model: 'google/gemini-3-flash',
     temperature: 0.7,
     maxTokens: 8192,
   };

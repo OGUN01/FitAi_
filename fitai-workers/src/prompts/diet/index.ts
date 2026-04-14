@@ -84,7 +84,7 @@ export function buildPlaceholdersFromUserData(
 			// Normalize 'balanced' → 'non-veg' so placeholder and prompt header agree
 			return raw === 'balanced' ? 'non-veg' : raw;
 		})(),
-		AGE: profile?.age || 30,
+		AGE: profile?.age ?? 0,
 		GENDER: profile?.gender || 'unknown',
 		OCCUPATION: profile?.occupation_type || 'general',
 		WAKE_TIME: profile?.wake_time || '07:00',
@@ -99,7 +99,7 @@ export function buildPlaceholdersFromUserData(
 		PROTEIN: metrics.daily_protein_g,
 		CARBS: metrics.daily_carbs_g,
 		FATS: metrics.daily_fat_g,
-		FIBER: (metrics as any).daily_fiber_g || 25,
+		FIBER: metrics.daily_fiber_g ?? 25,
 		WATER_LITERS: Math.round((metrics.daily_water_ml / 1000) * 10) / 10,
 
 		// Health context
@@ -128,35 +128,35 @@ export function buildPlaceholdersFromUserData(
 		// ============================================
 
 		// Cooking capabilities (from diet_preferences)
-		COOKING_SKILL: (prefs as any)?.cooking_skill_level || 'intermediate',
-		MAX_PREP_TIME: (prefs as any)?.max_prep_time_minutes || 60,
-		BUDGET_LEVEL: (prefs as any)?.budget_level || 'medium',
+		COOKING_SKILL: prefs?.cooking_skill_level || 'intermediate',
+		MAX_PREP_TIME: prefs?.max_prep_time_minutes ?? 60,
+		BUDGET_LEVEL: prefs?.budget_level || 'medium',
 
 		// Diet readiness flags
-		KETO_READY: (prefs as any)?.keto_ready || false,
-		LOW_CARB_READY: (prefs as any)?.low_carb_ready || false,
-		HIGH_PROTEIN_READY: (prefs as any)?.high_protein_ready || false,
-		INTERMITTENT_FASTING_READY: (prefs as any)?.intermittent_fasting_ready || false,
-		PALEO_READY: (prefs as any)?.paleo_ready || false,
-		MEDITERRANEAN_READY: (prefs as any)?.mediterranean_ready || false,
+		KETO_READY: prefs?.keto_ready ?? false,
+		LOW_CARB_READY: prefs?.low_carb_ready ?? false,
+		HIGH_PROTEIN_READY: prefs?.high_protein_ready ?? false,
+		INTERMITTENT_FASTING_READY: prefs?.intermittent_fasting_ready ?? false,
+		PALEO_READY: prefs?.paleo_ready ?? false,
+		MEDITERRANEAN_READY: prefs?.mediterranean_ready ?? false,
 
 		// Current eating habits (for personalized suggestions)
-		DRINKS_ENOUGH_WATER: (prefs as any)?.drinks_enough_water ?? true,
-		LIMITS_SUGARY_DRINKS: (prefs as any)?.limits_sugary_drinks ?? true,
-		EATS_REGULAR_MEALS: (prefs as any)?.eats_regular_meals ?? true,
-		AVOIDS_LATE_NIGHT_EATING: (prefs as any)?.avoids_late_night_eating ?? true,
-		CONTROLS_PORTION_SIZES: (prefs as any)?.controls_portion_sizes ?? true,
-		READS_NUTRITION_LABELS: (prefs as any)?.reads_nutrition_labels ?? false,
-		EATS_PROCESSED_FOODS: (prefs as any)?.eats_processed_foods ?? false,
-		EATS_5_SERVINGS_FRUITS_VEGGIES: (prefs as any)?.eats_5_servings_fruits_veggies ?? false,
-		LIMITS_REFINED_SUGAR: (prefs as any)?.limits_refined_sugar ?? true,
-		INCLUDES_HEALTHY_FATS: (prefs as any)?.includes_healthy_fats ?? true,
+		DRINKS_ENOUGH_WATER: prefs?.drinks_enough_water ?? true,
+		LIMITS_SUGARY_DRINKS: prefs?.limits_sugary_drinks ?? true,
+		EATS_REGULAR_MEALS: prefs?.eats_regular_meals ?? true,
+		AVOIDS_LATE_NIGHT_EATING: prefs?.avoids_late_night_eating ?? true,
+		CONTROLS_PORTION_SIZES: prefs?.controls_portion_sizes ?? true,
+		READS_NUTRITION_LABELS: prefs?.reads_nutrition_labels ?? false,
+		EATS_PROCESSED_FOODS: prefs?.eats_processed_foods ?? false,
+		EATS_5_SERVINGS_FRUITS_VEGGIES: prefs?.eats_5_servings_fruits_veggies ?? false,
+		LIMITS_REFINED_SUGAR: prefs?.limits_refined_sugar ?? true,
+		INCLUDES_HEALTHY_FATS: prefs?.includes_healthy_fats ?? true,
 
 		// Lifestyle
-		DRINKS_ALCOHOL: (prefs as any)?.drinks_alcohol ?? false,
-		SMOKES_TOBACCO: (prefs as any)?.smokes_tobacco ?? false,
-		DRINKS_COFFEE: (prefs as any)?.drinks_coffee ?? true,
-		TAKES_SUPPLEMENTS: (prefs as any)?.takes_supplements ?? false,
+		DRINKS_ALCOHOL: prefs?.drinks_alcohol ?? false,
+		SMOKES_TOBACCO: prefs?.smokes_tobacco ?? false,
+		DRINKS_COFFEE: prefs?.drinks_coffee ?? true,
+		TAKES_SUPPLEMENTS: prefs?.takes_supplements ?? false,
 
 		// Generation options
 		DAYS_COUNT: daysCount,

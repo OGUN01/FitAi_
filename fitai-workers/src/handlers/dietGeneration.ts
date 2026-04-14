@@ -15,7 +15,8 @@
  */
 
 import { Context } from 'hono';
-import { generateObject, createGateway } from 'ai';
+import { generateObject } from 'ai';
+import { createAIProvider } from '../utils/aiProvider';
 import { Env } from '../utils/types';
 import { AuthContext } from '../middleware/auth';
 import {
@@ -55,21 +56,8 @@ import { detectCuisine } from '../prompts/diet/types';
 // AI PROVIDER CONFIGURATION
 // ============================================================================
 
-/**
- * Initialize Vercel AI SDK with Vercel AI Gateway
- * Creates gateway instance with explicit API key (Cloudflare Workers don't have process.env)
- * Model format: provider/model (e.g., 'google/gemini-2.0-flash-exp', 'openai/gpt-4-turbo-preview')
- */
-function createAIProvider(env: Env, modelId: string) {
-	// Create gateway instance with explicit API key for Cloudflare Workers
-	const gatewayInstance = createGateway({
-		apiKey: env.AI_GATEWAY_API_KEY,
-	});
-
-	// Return model from gateway - use gemini-2.5-flash which is confirmed working
-	const model = modelId || 'google/gemini-2.5-flash';
-	return gatewayInstance(model);
-}
+// createAIProvider is imported from ../utils/aiProvider
+// Tries Vercel AI Gateway first, falls back to @ai-sdk/google via Cloudflare AI Gateway.
 
 // ============================================================================
 // NOTE: Diet prompts are now handled by specialized prompt files in
@@ -583,13 +571,13 @@ function validateDietPlan(
 		}
 	}
 
-	// 3. EXTREME CALORIE DRIFT CHECK (CRITICAL - >30% off)
+	// 3. EXTREME CALORIE DRIFT CHECK (CRITICAL - >20% off)
 	const totalCal = aiResponse.totalCalories;
 	const targetCal = calorieTarget;
 	const calorieDrift = Math.abs(totalCal - targetCal) / targetCal;
 
-	if (calorieDrift > 0.3) {
-		// More than 30% off target
+	if (calorieDrift > 0.2) {
+		// More than 20% off target — hard block
 		errors.push({
 			severity: 'CRITICAL',
 			code: 'EXTREME_CALORIE_DRIFT',
@@ -855,7 +843,10 @@ export async function handleDietGeneration(c: Context<{ Bindings: Env; Variables
 			excludes: request.excludeIngredients?.sort().join(',') || 'none',
 		};
 
-		const cacheResult = await getCachedData(c.env, 'meal', cacheParams, userId);
+		// 2. Check cache (3-tier: KV → Database → Fresh) — skipped if skipCache=true
+		const cacheResult = request.skipCache
+			? { hit: false, source: 'fresh' as const, cacheKey: undefined }
+			: await getCachedData(c.env, 'meal', cacheParams, userId);
 
 		if (cacheResult.hit) {
 			console.log(`[Diet Generation] Cache HIT from ${cacheResult.source}`);
@@ -1044,7 +1035,7 @@ export async function handleDietGeneration(c: Context<{ Bindings: Env; Variables
 			throw error;
 		}
 
-		if (error instanceof Error && error.message.includes('timed out after 25s')) {
+		if (error instanceof Error && error.message.includes('timed out after 150s')) {
 			throw new APIError('Diet generation timed out. Please try again.', 408, ErrorCode.AI_GENERATION_FAILED, {
 				error: error.message,
 			});
@@ -1123,7 +1114,7 @@ export async function generateFreshDiet(request: DietGenerationRequest, env: Env
 
 	const aiStartTime = Date.now();
 	const timeoutPromise = new Promise<never>((_, reject) =>
-		setTimeout(() => reject(new Error('AI generation timed out after 25s')), 25000)
+		setTimeout(() => reject(new Error('AI generation timed out after 150s')), 150000)
 	);
 	const result = await Promise.race([
 		generateObject({

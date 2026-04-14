@@ -152,12 +152,59 @@ ${getBudgetInstructions(p.BUDGET_LEVEL)}
 ${getPersonalizedSuggestions(p)}
 
 ════════════════════════════════════════════════════════════════════════════════
+⚖️ REALISTIC PORTION LIMITS — STRICTLY ENFORCE PER MEAL:
+════════════════════════════════════════════════════════════════════════════════
+These are MAXIMUM quantities a real person can eat in ONE sitting.
+DO NOT exceed these limits even to hit protein targets. Use MORE FOODS instead.
+
+🍗 CHICKEN / TURKEY / LEAN MEAT:
+   - Max 150g cooked per meal (NOT 200g or 250g)
+   - 100–150g is a standard serving
+
+🐟 FISH / SEAFOOD:
+   - Max 150g per meal
+   - 100–120g is standard
+
+🥚 EGGS / EGG WHITES:
+   - Whole eggs: max 3 per meal
+   - Egg whites only: max 6 per meal (NOT 8, 10, or 12)
+
+🧀 PANEER / COTTAGE CHEESE:
+   - Max 150g per meal
+
+🫙 GREEK YOGURT / CURD:
+   - Max 200g per meal (NOT 300g or 400g)
+
+🍚 RICE / ROTI:
+   - Rice: max 1 cup cooked per meal
+   - Roti: max 2 medium per meal
+
+🌰 NUTS:
+   - Max 20–30g per meal
+
+💪 WHEY PROTEIN:
+   - Max 1 scoop per meal
+
+RULE: If you need more protein, ADD a second lean source — do NOT
+increase a single ingredient beyond its limit.
+
+════════════════════════════════════════════════════════════════════════════════
+🫒 HEALTHY FATS — MANDATORY (target: ${p.FATS}g/day):
+════════════════════════════════════════════════════════════════════════════════
+Fat target is ${p.FATS}g/day. You MUST include healthy fat sources daily:
+- Use 1 tsp ghee or olive oil in cooking (lunch or dinner) — adds ~5g fat
+- Include nuts (almonds/walnuts 20g) OR avocado in at least 1 meal/day
+- Use whole eggs (not just egg whites) in at least 1 meal to hit fat target
+- Salmon/fatty fish counts — include 1–2 times per week
+- DO NOT use only zero-fat foods — the user needs ${p.FATS}g fat per day
+
+════════════════════════════════════════════════════════════════════════════════
 📋 OUTPUT REQUIREMENTS:
 ════════════════════════════════════════════════════════════════════════════════
 Generate a complete ${p.DAYS_COUNT === 1 ? 'daily' : `${p.DAYS_COUNT}-day`} meal plan with:
 1. Each meal with name, description, and cooking method
-2. All food items with exact portions (grams/cups)
-3. Accurate nutrition data (calories, protein, carbs, fat) per item
+2. All food items with exact portions (grams/cups) — within the limits above
+3. Accurate nutrition data (calories, protein, carbs, fat, fiber) per item
 4. Meal totals and daily totals
 5. Preparation time and cooking instructions
 6. Tips and substitution suggestions

@@ -668,8 +668,10 @@ export function validateMuscleBalance(weeklyPlan: WeeklyExercisePlan): string[] 
     }
   }
 
-  // Major muscle groups that should be hit at least 2x per week
-  const majorMuscles = ['pecs', 'lats', 'quads', 'hamstrings', 'delts'];
+  // Major muscle groups that should be hit at least 2x per week.
+  // NOTE: Names must exactly match targetMuscles values in exerciseDatabase.json.
+  // The DB uses 'pectorals' (not 'pecs') — verified from metadata.muscleGroups.
+  const majorMuscles = ['pectorals', 'lats', 'quads', 'hamstrings', 'delts'];
 
   for (const muscle of majorMuscles) {
     const hits = muscleHits.get(muscle) || 0;

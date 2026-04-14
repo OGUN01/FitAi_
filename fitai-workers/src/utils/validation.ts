@@ -254,6 +254,17 @@ export const WorkoutGenerationRequestSchema = z.object({
 	// AI parameters (optional)
 	model: z.string().default('google/gemini-2.5-flash'), // Vercel AI Gateway model ID (format: provider/model)
 	temperature: z.number().min(0).max(2).default(0.7),
+
+	// Cache control — set true to bypass all cache tiers and force fresh generation
+	skipCache: z.boolean().default(false),
+
+	// Boost cardio: extra cardio minutes from the "Cardio Boost" pace card.
+	// When > 0, the rule-based generator appends an explicit cardio block (treadmill/bike)
+	// to every session. Separate from workoutDuration so each component gets correct calorie math.
+	// Scenario map:
+	//   Boost pace selected  → boostExtraCardioMinutes = 30, workoutDuration = base (e.g. 60 min)
+	//   All other pace opts  → boostExtraCardioMinutes = 0,  workoutDuration = base time_preference
+	boostExtraCardioMinutes: z.number().int().min(0).max(60).default(0),
 });
 
 export type WorkoutGenerationRequest = z.infer<typeof WorkoutGenerationRequestSchema>;
@@ -340,7 +351,7 @@ export const NutritionalInfoSchema = z.object({
 	protein: z.number().min(0), // grams
 	carbs: z.number().min(0), // grams
 	fats: z.number().min(0), // grams
-	fiber: z.number().min(0).optional(), // grams
+	fiber: z.number().min(0).default(0), // grams — required, AI must populate
 	sugar: z.number().min(0).optional(), // grams
 	sodium: z.number().min(0).optional(), // mg
 });
@@ -523,6 +534,9 @@ export const DietGenerationRequestSchema = z.object({
 
 	// Async mode (default true to prevent timeout)
 	async: z.boolean().default(true),
+
+	// Cache control — set true to bypass all cache tiers and force fresh generation
+	skipCache: z.boolean().default(false),
 });
 
 export type DietGenerationRequest = z.infer<typeof DietGenerationRequestSchema>;

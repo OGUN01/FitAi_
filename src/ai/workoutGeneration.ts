@@ -105,7 +105,9 @@ export async function generateWeeklyWorkoutPlan(
       options.workoutPreferences,
       {
         requestWeeklyPlan: true,
-        duration: options.workoutPreferences?.time_preference ?? 30,
+        // DO NOT pass duration here — transformer already computes
+        // workoutDuration = time_preference + boost_extra_cardio_minutes.
+        // Passing it here would override that calculation with raw time_preference.
         currentWeightKg: resolveCurrentWeightFromStores({
           bodyAnalysisWeight: options.bodyMetrics?.current_weight_kg,
         }).value,

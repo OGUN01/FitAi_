@@ -164,7 +164,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       case "Profile":
         return "profile";
       case "Analytics":
-        return appConfig.featureAnalytics ? "analytics" : "home";
+        return "analytics";
       default:
         return null;
     }
@@ -342,14 +342,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     scheduleBuilderSession.isActive,
   ]);
 
-  useEffect(() => {
-    if (activeTab === "analytics" && !appConfig.featureAnalytics) {
-      startTransition(() => {
-        ensureTabMounted("home");
-        setActiveTab("home");
-      });
-    }
-  }, [activeTab, appConfig.featureAnalytics]);
+  // Analytics tab is always enabled — no redirect needed
 
   useEffect(() => {
     if (!contributeFoodSession.isActive || appConfig.featureFoodContributions) {
@@ -383,14 +376,6 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       return;
     }
 
-    if (tab === "analytics" && !appConfig.featureAnalytics) {
-      crossPlatformAlert(
-        "Feature Unavailable",
-        "Analytics are currently disabled.",
-        [{ text: "OK" }],
-      );
-      return;
-    }
 
     transitionToTab(tab as MainTabKey, params, params === undefined);
   };
@@ -434,18 +419,13 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       icon: <ProfileIcon />,
       activeIcon: <ProfileIcon active />,
     },
-  ].concat(
-    appConfig.featureAnalytics
-      ? [
-          {
-            key: "analytics",
-            title: "Analytics",
-            icon: <AnalyticsIcon />,
-            activeIcon: <AnalyticsIcon active />,
-          },
-        ]
-      : [],
-  );
+    {
+      key: "analytics",
+      title: "Analytics",
+      icon: <AnalyticsIcon />,
+      activeIcon: <AnalyticsIcon active />,
+    },
+  ];
 
   const renderTabScreen = (tab: MainTabKey, child: React.ReactNode) => {
     if (!mountedTabs[tab]) return null;
@@ -498,18 +478,9 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       )}
       {renderTabScreen(
         "analytics",
-        appConfig.featureAnalytics ? (
-          <ScreenErrorBoundary screenName="AnalyticsScreen">
-            <AnalyticsScreen navigation={navigation} />
-          </ScreenErrorBoundary>
-        ) : (
-          <View style={styles.unavailableContainer}>
-            <Text style={styles.unavailableTitle}>Feature Unavailable</Text>
-            <Text style={styles.unavailableMessage}>
-              Analytics are currently disabled by the administrator.
-            </Text>
-          </View>
-        ),
+        <ScreenErrorBoundary screenName="AnalyticsScreen">
+          <AnalyticsScreen navigation={navigation} />
+        </ScreenErrorBoundary>,
       )}
     </>
   );

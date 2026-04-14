@@ -74,7 +74,7 @@ export const RateComparisonCard: React.FC<RateComparisonCardProps> = ({
         {/* Goal Summary */}
         <View style={styles.goalSummary}>
           <Text style={styles.goalText}>
-            Your Goal:{" "}
+            Requested pace:{" "}
             <Text style={styles.goalHighlight}>
               {typeof originalRequestedRate === 'number' ? originalRequestedRate.toFixed(2) : originalRequestedRate} kg/week
             </Text>{" "}
@@ -194,8 +194,9 @@ export const RateComparisonCard: React.FC<RateComparisonCardProps> = ({
             style={styles.safeRateIcon}
           />
           <Text style={styles.safeRateText}>
-            Safe rate at your BMR:{" "}
+            Diet only:{" "}
             <Text style={styles.safeRateValue}>{rateAtBMR} kg/week</Text>
+            {' — eating less would drop below what your body needs to function'}
           </Text>
         </View>
       </GlassCard>

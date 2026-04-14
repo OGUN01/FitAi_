@@ -333,7 +333,8 @@ export async function loadUserPreferences(env: Env, userId: string) {
           lunch_enabled,
           dinner_enabled,
           snacks_enabled,
-          
+          cooking_methods,
+
           cooking_skill_level,
           max_prep_time_minutes,
           budget_level,

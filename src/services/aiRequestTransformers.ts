@@ -76,7 +76,7 @@ function getRequestedMealsPerDay(dietPreferences?: DietPreferences): number {
   if (dietPreferences.breakfast_enabled !== false) mealsPerDay += 1;
   if (dietPreferences.lunch_enabled !== false) mealsPerDay += 1;
   if (dietPreferences.dinner_enabled !== false) mealsPerDay += 1;
-  if (dietPreferences.snacks_enabled) mealsPerDay += (dietPreferences.snacks_count ?? 2);
+  if (dietPreferences.snacks_enabled) mealsPerDay += (dietPreferences.snacks_count ?? 1);
 
   return mealsPerDay > 0 ? mealsPerDay : 3;
 }
@@ -170,6 +170,7 @@ export function transformForDietRequest(
     currentWeightKg?: number | null;
     weeklyWeightLossGoal?: number | null;
     targetTimelineWeeks?: number | null;
+    skipCache?: boolean;
   } = {},
 ): DietGenerationRequest {
   // Extract activity level from workout preferences or fitness goals
@@ -254,8 +255,8 @@ export function transformForDietRequest(
       country: personalInfo.country,
       state: personalInfo.state,
       occupation_type: personalInfo.occupation_type,
-      wake_time: personalInfo.wake_time,
-      sleep_time: personalInfo.sleep_time,
+      wake_time: personalInfo.wake_time?.slice(0, 5),   // DB stores HH:MM:SS → worker needs HH:MM
+      sleep_time: personalInfo.sleep_time?.slice(0, 5),  // DB stores HH:MM:SS → worker needs HH:MM
     },
     country: personalInfo.country,
     dietPreferences: dietPreferences
@@ -360,6 +361,7 @@ export function transformForDietRequest(
     // AI model configuration
     model: DEFAULT_AI_MODEL,
     temperature: 0.7,
+    skipCache: generationOptions.skipCache ?? false,
   };
 }
 
@@ -568,7 +570,11 @@ export function transformForWorkoutRequest(
       fitnessGoal: primaryGoal,
       experienceLevel: experienceLevel,
       availableEquipment: equipment,
-      workoutDuration: options?.duration ?? workoutPreferences?.time_preference ?? undefined,
+      // Base strength session duration — does NOT include boost cardio minutes.
+      // The boost cardio component is passed separately as boostExtraCardioMinutes
+      // so the rule-based generator can produce explicit cardio exercise blocks
+      // with accurate per-component calorie estimates.
+      workoutDuration: options?.duration ?? (workoutPreferences?.time_preference ?? 45),
       injuries: injuries,
       medications: medications,
       // GAP-04: medicalConditions and stressLevel were missing — Worker safety filter needs them
@@ -603,6 +609,13 @@ export function transformForWorkoutRequest(
     focusMuscles: options?.focusMuscles,
     weekNumber: options?.weekNumber,
     regenerationSeed: options?.regenerationSeed,
+    // Boost cardio minutes (0 for all non-boost pace options, >0 for boost option)
+    // Rule-based generator uses this to append explicit cardio exercise blocks.
+    boostExtraCardioMinutes: workoutPreferences?.boost_extra_cardio_minutes ?? 0,
+    // Always bypass cache for fresh generation (matches diet pipeline behaviour)
+    model: DEFAULT_AI_MODEL,
+    temperature: 0.7,
+    skipCache: true,
   };
 }
 
