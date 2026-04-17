@@ -1,0 +1,28 @@
+# Extends .gitignore for EAS upload — trim project tarball
+# DO NOT exclude android/ — project is bare workflow (android/ committed)
+node_modules/
+.expo/
+.bundle-test/
+.code-review-graph/
+.agents/
+.augment/
+.claude/
+.cursor/
+.kilocode/
+.omx/
+.opencode/
+.playwright-cli/
+.playwright-mcp/
+.roo/
+.ruff_cache/
+.sisyphus/
+.sisyphusevidence/
+dist/
+web-build/
+*.apk
+*.aab
+FitAI-Dev-latest.apk
+FitAI-Preview-latest.apk
+android/app/build/
+android/build/
+android/.gradle/
