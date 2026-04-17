@@ -597,7 +597,7 @@ class UnifiedAIService {
         hasJobData: isAsyncJobResponse(response.data),
         error: response.error ?? 'none',
         requestCalories: request.calorieTarget ?? 'unset',
-        requestDietType: request.dietPreferences?.dietType ?? 'unset',
+        requestDietType: request.dietPreferences?.diet_type ?? 'unset',
       });
 
       if (!response.success || !response.data) {
@@ -627,7 +627,7 @@ class UnifiedAIService {
           ok: !!weeklyPlan,
           title: weeklyPlan?.planTitle ?? 'n/a',
           days: weeklyPlan?.meals?.length ?? 0,
-          totalCals: weeklyPlan?.totalCaloriesPerDay ?? 'n/a',
+          totalCals: weeklyPlan?.totalEstimatedCalories ?? 'n/a',
         });
 
         if (!weeklyPlan) {

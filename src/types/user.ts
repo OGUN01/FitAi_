@@ -222,6 +222,7 @@ export interface WorkoutPreferences {
   can_run_minutes?: number;
   flexibility_level?: string;
   weekly_weight_loss_goal?: number;
+  boost_extra_cardio_minutes?: number;
 
   // Backward compatibility - computed from snake_case fields
   timePreference?: number;

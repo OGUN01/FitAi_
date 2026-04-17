@@ -209,6 +209,7 @@ export interface DietGenerationRequest {
   model?: string;
   temperature?: number;
   async?: boolean; // Enable async job-based generation
+  skipCache?: boolean;
 }
 
 // Async job response types
@@ -310,6 +311,8 @@ export interface WorkoutGenerationRequest {
   regenerationSeed?: number; // Varies exercise selection on regeneration
   model?: string;
   temperature?: number;
+  skipCache?: boolean;
+  boostExtraCardioMinutes?: number;
 }
 
 export class WorkersAPIError extends Error {

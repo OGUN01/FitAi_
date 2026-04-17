@@ -179,7 +179,7 @@ export const useMealPlanning = (navigation: any) => {
 
   const handleMealPlanResult = async (weeklyPlan: WeeklyMealPlan) => {
     console.warn(
-      `[DIET] ✅ handleMealPlanResult: title="${weeklyPlan.planTitle}" days=${weeklyPlan.meals?.length ?? 0} totalCals=${weeklyPlan.totalCaloriesPerDay ?? 'n/a'}`,
+      `[DIET] ✅ handleMealPlanResult: title="${weeklyPlan.planTitle}" days=${weeklyPlan.meals?.length ?? 0} totalCals=${weeklyPlan.totalEstimatedCalories ?? 'n/a'}`,
     );
     try {
       await saveWeeklyMealPlan(weeklyPlan);
@@ -360,7 +360,7 @@ export const useMealPlanning = (navigation: any) => {
         calorieTarget: userCalorieTarget,
         dietType: profileDietPreferences?.diet_type ?? mergedDietPreferences?.diet_type ?? 'unset',
         allergies: profileDietPreferences?.allergies ?? [],
-        mealsPerDay: profileDietPreferences?.meals_per_day ?? 'unset',
+        snacksCount: profileDietPreferences?.snacks_count ?? 'unset',
         age: legacyPersonalInfo?.age ?? 'unset',
         weightKg: bodyAnalysis?.current_weight_kg ?? 'unset',
         targetWeightKg: bodyAnalysis?.target_weight_kg ?? 'unset',

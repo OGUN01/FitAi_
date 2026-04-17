@@ -42,7 +42,7 @@ export default {
       },
       edgeToEdgeEnabled: true,
       package: "com.fitai.app",
-      versionCode: 12,
+      versionCode: 13,
       permissions: [
         "INTERNET",
         "ACCESS_NETWORK_STATE",
