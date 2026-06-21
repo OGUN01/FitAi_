@@ -7,7 +7,7 @@ import {
   ViewStyle,
 } from "react-native";
 import { rw } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, flatShadows as shadows } from "../../theme/aurora-tokens";
 
 interface LoadingSpinnerProps {
   size?: "small" | "large";
@@ -19,7 +19,7 @@ interface LoadingSpinnerProps {
 
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   size = "large",
-  color = ResponsiveTheme.colors.primary,
+  color = colors.primary,
   text,
   style,
   overlay = false,
@@ -47,13 +47,13 @@ const styles = StyleSheet.create({
   container: {
     justifyContent: "center",
     alignItems: "center",
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
   },
 
   text: {
-    marginTop: ResponsiveTheme.spacing.md,
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: spacing.md,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center",
   },
 
@@ -70,18 +70,18 @@ const styles = StyleSheet.create({
   },
 
   overlayContent: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: ResponsiveTheme.spacing.xl,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
     alignItems: "center",
     minWidth: rw(120),
-    ...ResponsiveTheme.shadows.lg,
+    ...shadows.lg,
   },
 
   overlayText: {
-    marginTop: ResponsiveTheme.spacing.md,
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
+    marginTop: spacing.md,
+    fontSize: fontSize.md,
+    color: colors.text,
     textAlign: "center",
   },
 });

@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
 import { rbr, rh } from "../../../utils/responsive";
 
 interface ActionButtonsProps {
@@ -86,56 +86,56 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
 
 const styles = StyleSheet.create({
   actionSection: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    borderTopColor: colors.border,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   navigationButtons: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   navButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
     borderRadius: rbr(12),
     minHeight: rh(48),
   },
   previousButton: {
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
   completeButton: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
   completedButton: {
-    backgroundColor: ResponsiveTheme.colors.success,
+    backgroundColor: colors.success,
   },
   loadingButton: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     opacity: 0.7,
   },
   nextButton: {
     backgroundColor: "#6B7280",
   },
   navButtonText: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     fontWeight: "600",
-    marginHorizontal: ResponsiveTheme.spacing.xs,
+    marginHorizontal: spacing.xs,
   },
   previousButtonText: {
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   completeButtonText: {
-    color: ResponsiveTheme.colors.surface,
+    color: colors.surface,
   },
   nextButtonText: {
-    color: ResponsiveTheme.colors.surface,
+    color: colors.surface,
   },
 });

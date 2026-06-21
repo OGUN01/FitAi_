@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf, rw, rp, rbr } from "../../../utils/responsive";
 
 interface ResetButtonProps {
@@ -31,10 +31,10 @@ export const ResetButton: React.FC<ResetButtonProps> = ({ onPress }) => {
             <View
               style={[
                 styles.iconContainer,
-                { backgroundColor: ResponsiveTheme.colors.errorTint },
+                { backgroundColor: colors.errorTint },
               ]}
             >
-              <Ionicons name="refresh-outline" size={rf(20)} color={ResponsiveTheme.colors.error} />
+              <Ionicons name="refresh-outline" size={rf(20)} color={colors.error} />
             </View>
             <View style={styles.actionTextContainer}>
               <Text style={styles.actionTitle}>Reset to Defaults</Text>
@@ -45,7 +45,7 @@ export const ResetButton: React.FC<ResetButtonProps> = ({ onPress }) => {
             <Ionicons
               name="chevron-forward"
               size={rf(18)}
-              color={ResponsiveTheme.colors.textMuted}
+              color={colors.textMuted}
             />
           </View>
         </GlassCard>
@@ -56,7 +56,7 @@ export const ResetButton: React.FC<ResetButtonProps> = ({ onPress }) => {
 
 const styles = StyleSheet.create({
   actionCard: {
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
   },
   actionContent: {
     flexDirection: "row",
@@ -68,20 +68,20 @@ const styles = StyleSheet.create({
     borderRadius: rbr(12),
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
   actionTextContainer: {
     flex: 1,
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   actionTitle: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(2),
   },
   actionDescription: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
 });

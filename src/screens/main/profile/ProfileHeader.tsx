@@ -16,11 +16,11 @@ import {
   gradientAuroraSpace,
   toLinearGradientProps,
 } from "../../../theme/gradients";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf, rp, rw } from "../../../utils/responsive";
 
 const avatarShadow = {
-  shadowColor: ResponsiveTheme.colors.errorLight,
+  shadowColor: colors.errorLight,
   shadowOffset: { width: 0, height: 4 },
   shadowOpacity: 0.3,
   shadowRadius: 12,
@@ -90,15 +90,15 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: ResponsiveTheme.spacing.lg,
-    paddingBottom: ResponsiveTheme.spacing.lg,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   content: {
     alignItems: "center",
   },
   avatarContainer: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   avatar: {
     width: rw(80),
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: rf(32),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     lineHeight: rw(80),
     textAlignVertical: "center",
     includeFontPadding: false,
@@ -122,14 +122,14 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: rf(22),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     textAlign: "center",
     marginBottom: rp(2),
     letterSpacing: 0.3,
   },
   memberSince: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textAlign: 'center',
     opacity: 0.85,
   },

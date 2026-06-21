@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rs, rbr } from '../../../utils/responsive';
 
 interface CameraOverlayProps {
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     height: rs(30),
     borderTopWidth: 3,
     borderLeftWidth: 3,
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
     top: 0,
     left: 0,
   },
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     width: rs(150),
     height: rs(350),
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
     borderRadius: rbr(75),
     borderStyle: "dashed",
   },
@@ -136,31 +136,31 @@ const styles = StyleSheet.create({
     justifyContent: "center" as const,
     alignItems: "center" as const,
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.primary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderColor: colors.primary,
+    borderRadius: borderRadius.md,
     backgroundColor: "rgba(0,0,0,0.1)",
   },
 
   scanningLine: {
     width: "90%",
     height: 2,
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     opacity: 0.7,
   },
 
   scanningIndicator: {
     position: "absolute",
     top: -30,
-    backgroundColor: ResponsiveTheme.colors.primary,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
   },
 
   scanningText: {
-    color: ResponsiveTheme.colors.white,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
+    color: colors.white,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium as "500",
   },
 
   barcodeCorner: {
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     height: rs(20),
     borderTopWidth: 3,
     borderLeftWidth: 3,
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
     top: -2,
     left: -2,
   },

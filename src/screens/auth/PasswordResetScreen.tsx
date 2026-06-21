@@ -33,7 +33,7 @@ import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { Button, Input, PasswordInput } from "../../components/ui";
 import { rf, rh, rw } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -195,7 +195,7 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
           <Ionicons
             name="arrow-back"
             size={rf(22)}
-            color={ResponsiveTheme.colors.primary}
+            color={colors.primary}
           />
         </AnimatedPressable>
       )}
@@ -237,7 +237,7 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
                 <Ionicons
                   name="alert-circle-outline"
                   size={rf(40)}
-                  color={ResponsiveTheme.colors.error}
+                  color={colors.error}
                 />
                 <Text style={styles.noticeText}>
                   Please request a new password reset link to continue.
@@ -284,7 +284,7 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
                 <Ionicons
                   name="checkmark-circle-outline"
                   size={rf(48)}
-                  color={ResponsiveTheme.colors.primary}
+                  color={colors.primary}
                 />
                 <Text style={styles.noticeText}>
                   For your security, please sign in again with your new password.
@@ -344,7 +344,7 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
                   <Ionicons
                     name="alert-circle"
                     size={rf(16)}
-                    color={ResponsiveTheme.colors.error}
+                    color={colors.error}
                   />
                   <Text style={styles.submitErrorText}>{submitError}</Text>
                 </View>
@@ -378,7 +378,7 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
 
   scrollView: {
@@ -387,35 +387,35 @@ const styles = StyleSheet.create({
 
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: ResponsiveTheme.spacing.xl,
+    paddingBottom: spacing.xl,
   },
 
   centeredState: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
 
   statusText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center",
   },
 
   header: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
-    paddingBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
     alignItems: "center",
   },
 
   backButton: {
     position: "absolute",
-    left: ResponsiveTheme.spacing.lg,
-    top: ResponsiveTheme.spacing.lg,
+    left: spacing.lg,
+    top: spacing.lg,
     zIndex: 1,
-    padding: ResponsiveTheme.spacing.sm,
+    padding: spacing.sm,
   },
 
   titleBlock: {
@@ -424,45 +424,45 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.xxl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.sm,
     textAlign: "center",
   },
 
   subtitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(22),
     maxWidth: rw(280),
   },
 
   form: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
 
   emailFormContainer: {
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.sm,
   },
 
   noticeCard: {
     alignItems: "center",
-    backgroundColor: `${ResponsiveTheme.colors.surface}CC`,
+    backgroundColor: `${colors.surface}CC`,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.border}80`,
-    borderRadius: ResponsiveTheme.borderRadius.xl,
-    paddingVertical: ResponsiveTheme.spacing.xl,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    gap: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    borderColor: `${colors.border}80`,
+    borderRadius: borderRadius.xl,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+    marginBottom: spacing.lg,
   },
 
   noticeText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(22),
   },
@@ -470,45 +470,45 @@ const styles = StyleSheet.create({
   submitErrorContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
-    backgroundColor: `${ResponsiveTheme.colors.error}15`,
+    gap: spacing.sm,
+    backgroundColor: `${colors.error}15`,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.error}40`,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.md,
+    borderColor: `${colors.error}40`,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
   },
 
   submitErrorText: {
     flex: 1,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.error,
+    fontSize: fontSize.sm,
+    color: colors.error,
     lineHeight: rf(18),
   },
 
   actionButton: {
-    marginTop: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
   },
 
   footerRow: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginTop: spacing.lg,
+    marginBottom: spacing.lg,
     flexWrap: "wrap",
   },
 
   footerText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
   },
 
   footerLink: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.md,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.medium,
   },
 });

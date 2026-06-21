@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rs, rbr } from "../../utils/responsive";
 
 interface IconProps {
@@ -12,7 +12,7 @@ interface IconProps {
 // Home Icon
 export const HomeIcon: React.FC<IconProps> = ({
   size = 24,
-  color = ResponsiveTheme.colors.textMuted,
+  color = colors.textMuted,
   active = false,
 }) => (
   <View
@@ -26,8 +26,8 @@ export const HomeIcon: React.FC<IconProps> = ({
       style={[
         styles.homeBase,
         {
-          borderColor: active ? ResponsiveTheme.colors.primary : color,
-          borderBottomColor: active ? ResponsiveTheme.colors.primary : color,
+          borderColor: active ? colors.primary : color,
+          borderBottomColor: active ? colors.primary : color,
         },
       ]}
     />
@@ -35,7 +35,7 @@ export const HomeIcon: React.FC<IconProps> = ({
       style={[
         styles.homeRoof,
         {
-          borderBottomColor: active ? ResponsiveTheme.colors.primary : color,
+          borderBottomColor: active ? colors.primary : color,
         },
       ]}
     />
@@ -45,7 +45,7 @@ export const HomeIcon: React.FC<IconProps> = ({
 // Fitness Icon (Dumbbell)
 export const FitnessIcon: React.FC<IconProps> = ({
   size = 24,
-  color = ResponsiveTheme.colors.textMuted,
+  color = colors.textMuted,
   active = false,
 }) => (
   <View
@@ -58,19 +58,19 @@ export const FitnessIcon: React.FC<IconProps> = ({
     <View
       style={[
         styles.dumbbellBar,
-        { backgroundColor: active ? ResponsiveTheme.colors.primary : color },
+        { backgroundColor: active ? colors.primary : color },
       ]}
     />
     <View
       style={[
         styles.dumbbellWeight1,
-        { backgroundColor: active ? ResponsiveTheme.colors.primary : color },
+        { backgroundColor: active ? colors.primary : color },
       ]}
     />
     <View
       style={[
         styles.dumbbellWeight2,
-        { backgroundColor: active ? ResponsiveTheme.colors.primary : color },
+        { backgroundColor: active ? colors.primary : color },
       ]}
     />
   </View>
@@ -79,7 +79,7 @@ export const FitnessIcon: React.FC<IconProps> = ({
 // Diet Icon (Apple)
 export const DietIcon: React.FC<IconProps> = ({
   size = 24,
-  color = ResponsiveTheme.colors.textMuted,
+  color = colors.textMuted,
   active = false,
 }) => (
   <View
@@ -93,15 +93,15 @@ export const DietIcon: React.FC<IconProps> = ({
       style={[
         styles.apple,
         {
-          borderColor: active ? ResponsiveTheme.colors.primary : color,
-          backgroundColor: active ? `${ResponsiveTheme.colors.primary}20` : "transparent",
+          borderColor: active ? colors.primary : color,
+          backgroundColor: active ? `${colors.primary}20` : "transparent",
         },
       ]}
     />
     <View
       style={[
         styles.appleLeaf,
-        { backgroundColor: active ? ResponsiveTheme.colors.primary : color },
+        { backgroundColor: active ? colors.primary : color },
       ]}
     />
   </View>
@@ -110,7 +110,7 @@ export const DietIcon: React.FC<IconProps> = ({
 // Progress Icon (Chart)
 export const ProgressIcon: React.FC<IconProps> = ({
   size = 24,
-  color = ResponsiveTheme.colors.textMuted,
+  color = colors.textMuted,
   active = false,
 }) => (
   <View
@@ -123,19 +123,19 @@ export const ProgressIcon: React.FC<IconProps> = ({
     <View
       style={[
         styles.chartBar1,
-        { backgroundColor: active ? ResponsiveTheme.colors.primary : color },
+        { backgroundColor: active ? colors.primary : color },
       ]}
     />
     <View
       style={[
         styles.chartBar2,
-        { backgroundColor: active ? ResponsiveTheme.colors.primary : color },
+        { backgroundColor: active ? colors.primary : color },
       ]}
     />
     <View
       style={[
         styles.chartBar3,
-        { backgroundColor: active ? ResponsiveTheme.colors.primary : color },
+        { backgroundColor: active ? colors.primary : color },
       ]}
     />
   </View>
@@ -144,7 +144,7 @@ export const ProgressIcon: React.FC<IconProps> = ({
 // Analytics Icon (Line Chart - redesigned with thicker strokes for web clarity)
 export const AnalyticsIcon: React.FC<IconProps> = ({
   size = 24,
-  color = ResponsiveTheme.colors.textMuted,
+  color = colors.textMuted,
   active = false,
 }) => (
   <View
@@ -158,33 +158,33 @@ export const AnalyticsIcon: React.FC<IconProps> = ({
     <View
       style={[
         styles.analyticsBar1,
-        { backgroundColor: active ? ResponsiveTheme.colors.primary : color },
+        { backgroundColor: active ? colors.primary : color },
       ]}
     />
     <View
       style={[
         styles.analyticsBar2,
-        { backgroundColor: active ? ResponsiveTheme.colors.primary : color },
+        { backgroundColor: active ? colors.primary : color },
       ]}
     />
     <View
       style={[
         styles.analyticsBar3,
-        { backgroundColor: active ? ResponsiveTheme.colors.primary : color },
+        { backgroundColor: active ? colors.primary : color },
       ]}
     />
     {/* Baseline */}
     <View
       style={[
         styles.analyticsBaseline,
-        { backgroundColor: active ? ResponsiveTheme.colors.primary : color },
+        { backgroundColor: active ? colors.primary : color },
       ]}
     />
     {/* Trend dot on top of tallest bar */}
     <View
       style={[
         styles.analyticsDot,
-        { backgroundColor: active ? ResponsiveTheme.colors.primary : color },
+        { backgroundColor: active ? colors.primary : color },
       ]}
     />
   </View>
@@ -193,7 +193,7 @@ export const AnalyticsIcon: React.FC<IconProps> = ({
 // Profile Icon
 export const ProfileIcon: React.FC<IconProps> = ({
   size = 24,
-  color = ResponsiveTheme.colors.textMuted,
+  color = colors.textMuted,
   active = false,
 }) => (
   <View
@@ -207,8 +207,8 @@ export const ProfileIcon: React.FC<IconProps> = ({
       style={[
         styles.profileHead,
         {
-          borderColor: active ? ResponsiveTheme.colors.primary : color,
-          backgroundColor: active ? `${ResponsiveTheme.colors.primary}20` : "transparent",
+          borderColor: active ? colors.primary : color,
+          backgroundColor: active ? `${colors.primary}20` : "transparent",
         },
       ]}
     />
@@ -216,8 +216,8 @@ export const ProfileIcon: React.FC<IconProps> = ({
       style={[
         styles.profileBody,
         {
-          borderColor: active ? ResponsiveTheme.colors.primary : color,
-          backgroundColor: active ? `${ResponsiveTheme.colors.primary}20` : "transparent",
+          borderColor: active ? colors.primary : color,
+          backgroundColor: active ? `${colors.primary}20` : "transparent",
         },
       ]}
     />

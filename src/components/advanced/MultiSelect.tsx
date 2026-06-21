@@ -11,7 +11,7 @@ import {
   ViewStyle,
 } from "react-native";
 import { Button } from "../ui";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rs, rbr } from '../../utils/responsive';
 
 interface Option {
@@ -176,7 +176,7 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
                 <TextInput
                   style={styles.searchInput}
                   placeholder="Search options..."
-                  placeholderTextColor={ResponsiveTheme.colors.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                 />
@@ -268,27 +268,27 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: ResponsiveTheme.spacing.sm,
+    marginVertical: spacing.sm,
   },
 
   label: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.medium as "500",
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
 
   trigger: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     minHeight: 44,
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
 
   triggerDisabled: {
@@ -297,37 +297,37 @@ const styles = StyleSheet.create({
 
   triggerText: {
     flex: 1,
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    color: colors.text,
   },
 
   placeholderText: {
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
 
   triggerIcon: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
 
   selectedPreview: {
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
   },
 
   selectedTag: {
-    backgroundColor: ResponsiveTheme.colors.primary + "20",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs / 2,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
-    marginRight: ResponsiveTheme.spacing.xs,
+    backgroundColor: colors.primary + "20",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs / 2,
+    borderRadius: borderRadius.sm,
+    marginRight: spacing.xs,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primary + "40",
+    borderColor: colors.primary + "40",
   },
 
   selectedTagText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
+    fontSize: fontSize.sm,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.medium as "500",
   },
 
   modalOverlay: {
@@ -337,76 +337,76 @@ const styles = StyleSheet.create({
   },
 
   modalContent: {
-    backgroundColor: ResponsiveTheme.colors.background,
-    borderTopLeftRadius: ResponsiveTheme.borderRadius.xl,
-    borderTopRightRadius: ResponsiveTheme.borderRadius.xl,
+    backgroundColor: colors.background,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
     maxHeight: "80%",
   },
 
   modalHeader: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.border,
+    borderBottomColor: colors.border,
   },
 
   modalTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold as "600",
+    color: colors.text,
     textAlign: "center",
   },
 
   selectionCount: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
-    marginTop: ResponsiveTheme.spacing.xs / 2,
+    marginTop: spacing.xs / 2,
   },
 
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    margin: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    margin: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
 
   searchInput: {
     flex: 1,
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    color: colors.text,
   },
 
   searchIcon: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    marginLeft: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.md,
+    marginLeft: spacing.sm,
   },
 
   optionsContainer: {
     maxHeight: 300,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.md,
   },
 
   optionItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     minHeight: 44,
-    marginVertical: ResponsiveTheme.spacing.xs / 2,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    backgroundColor: ResponsiveTheme.colors.surface,
+    marginVertical: spacing.xs / 2,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
   },
 
   optionItemSelected: {
-    backgroundColor: ResponsiveTheme.colors.primary + "20",
+    backgroundColor: colors.primary + "20",
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primary + "40",
+    borderColor: colors.primary + "40",
   },
 
   optionItemDisabled: {
@@ -420,24 +420,24 @@ const styles = StyleSheet.create({
   },
 
   optionIcon: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    marginRight: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    marginRight: spacing.sm,
   },
 
   optionText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    color: colors.text,
     flex: 1,
     flexShrink: 1,
   },
 
   optionTextSelected: {
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
+    color: colors.primary,
+    fontWeight: typography.fontWeight.semibold as "600",
   },
 
   optionTextDisabled: {
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
 
   checkbox: {
@@ -445,15 +445,15 @@ const styles = StyleSheet.create({
     height: rs(24),
     borderRadius: rbr(4),
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
 
   checkboxSelected: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
 
   checkboxDisabled: {
@@ -461,27 +461,27 @@ const styles = StyleSheet.create({
   },
 
   checkmark: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.white,
-    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
+    fontSize: fontSize.sm,
+    color: colors.white,
+    fontWeight: typography.fontWeight.bold as "700",
   },
 
   noResults: {
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.xl,
+    paddingVertical: spacing.xl,
   },
 
   noResultsText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.md,
+    color: colors.textMuted,
   },
 
   modalActions: {
     flexDirection: "row",
-    padding: ResponsiveTheme.spacing.md,
-    gap: ResponsiveTheme.spacing.sm,
+    padding: spacing.md,
+    gap: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
+    borderTopColor: colors.border,
   },
 
   actionButton: {

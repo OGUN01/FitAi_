@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Card } from "../ui";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw, rh } from '../../utils/responsive';
 import { DayMeal } from "../../types/ai";
 
@@ -59,21 +59,21 @@ export const MealOverviewCard: React.FC<MealOverviewCardProps> = ({
 
 const styles = StyleSheet.create({
   mealOverviewCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
   },
   mealHeader: {
     flexDirection: "row",
     alignItems: "center" as const,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   mealIconContainer: {
     width: rw(60),
     height: rh(60),
     borderRadius: rbr(30),
-    backgroundColor: ResponsiveTheme.colors.primary + "15",
+    backgroundColor: colors.primary + "15",
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
   mealIcon: {
     fontSize: rf(28),
@@ -84,20 +84,20 @@ const styles = StyleSheet.create({
   mealName: {
     fontSize: rf(20),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   mealDescription: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(20),
   },
   mealStats: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingTop: ResponsiveTheme.spacing.md,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
+    borderTopColor: colors.border,
   },
   statItem: {
     alignItems: "center" as const,
@@ -105,11 +105,11 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: rf(18),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   statLabel: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
 });

@@ -9,7 +9,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { rh } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 
 export interface BarData {
   label: string;
@@ -35,7 +35,7 @@ export const GradientBarChart: React.FC<GradientBarChartProps> = ({
   style,
 }) => {
   const barHeight =
-    (height - (data.length - 1) * ResponsiveTheme.spacing.md) / data.length;
+    (height - (data.length - 1) * spacing.md) / data.length;
 
   return (
     <View style={[styles.container, { height }, style]}>
@@ -121,33 +121,33 @@ const styles = StyleSheet.create({
   },
 
   barContainer: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   barHeader: {
     flexDirection: "row",
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
 
   barLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
   },
 
   barValue: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.primary,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
   },
 
   barTrack: {
     width: "100%",
     height: rh(20),
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.full,
     overflow: "hidden",
   },
 
@@ -157,6 +157,6 @@ const styles = StyleSheet.create({
 
   barGradient: {
     flex: 1,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    borderRadius: borderRadius.full,
   },
 });

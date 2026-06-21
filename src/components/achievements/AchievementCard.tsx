@@ -7,7 +7,7 @@ import {
   Achievement,
   UserAchievement,
 } from "../../services/achievements/types";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rh, rw, rs, rbr, rp } from "../../utils/responsive";
 import GlassCard from "../ui/GlassCard";
 import { Ionicons } from "@expo/vector-icons";
@@ -32,15 +32,15 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
   const progressPercent = Math.min((progress / maxProgress) * 100, 100);
 
   const getTierColor = (tier: string) => {
-    const colors = {
+    const tierColors = {
       bronze: "#CD7F32",
       silver: "#C0C0C0",
-      gold: ResponsiveTheme.colors.gold,
+      gold: colors.gold,
       platinum: "#E5E4E2",
       diamond: "#B9F2FF",
-      legendary: ResponsiveTheme.colors.errorLight,
+      legendary: colors.errorLight,
     };
-    return colors[tier as keyof typeof colors] || "#CD7F32";
+    return tierColors[tier as keyof typeof tierColors] || "#CD7F32";
   };
 
   const tierColor = getTierColor(achievement.tier);
@@ -71,7 +71,7 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
                   <Ionicons
                     name="checkmark-circle"
                     size={16}
-                    color={ResponsiveTheme.colors.success}
+                    color={colors.success}
                   />
                 </View>
               )}
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: -rp(4),
     right: -rp(4),
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
     borderRadius: rbr(8),
   },
   info: {
@@ -182,12 +182,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(1.8),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     flex: 1,
     marginRight: rw(2),
   },
   titleLocked: {
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
   tierBadge: {
     borderWidth: 1,
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: rf(1.5),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(2),
   },
   progressSection: {
@@ -226,13 +226,13 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: rf(1.2),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textTertiary,
+    color: colors.textTertiary,
     width: rw(10),
     textAlign: "right",
   },
   unlockedText: {
     fontSize: rf(1.2),
-    color: ResponsiveTheme.colors.success,
+    color: colors.success,
     marginTop: rh(1),
     textAlign: "right",
   },

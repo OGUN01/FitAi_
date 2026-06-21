@@ -12,7 +12,7 @@ import {
   ViewStyle,
 } from "react-native";
 import { Button } from "../ui";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rs, rbr, rp } from '../../utils/responsive';
 
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -300,7 +300,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
                 <TextInput
                   style={styles.searchInput}
                   placeholder="Search options..."
-                  placeholderTextColor={ResponsiveTheme.colors.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                 />
@@ -317,7 +317,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
                 <TextInput
                   style={styles.customTextInput}
                   placeholder={customPlaceholder}
-                  placeholderTextColor={ResponsiveTheme.colors.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   value={customValue}
                   onChangeText={setCustomValue}
                   autoFocus
@@ -451,27 +451,27 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: ResponsiveTheme.spacing.sm,
+    marginVertical: spacing.sm,
   },
 
   label: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.medium as "500",
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
 
   trigger: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     minHeight: 44,
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
 
   triggerDisabled: {
@@ -480,37 +480,37 @@ const styles = StyleSheet.create({
 
   triggerText: {
     flex: 1,
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    color: colors.text,
   },
 
   placeholderText: {
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
 
   triggerIcon: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
 
   selectedPreview: {
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
   },
 
   selectedTag: {
-    backgroundColor: ResponsiveTheme.colors.primary + "20",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs / 2,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
-    marginRight: ResponsiveTheme.spacing.xs,
+    backgroundColor: colors.primary + "20",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs / 2,
+    borderRadius: borderRadius.sm,
+    marginRight: spacing.xs,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primary + "40",
+    borderColor: colors.primary + "40",
   },
 
   selectedTagText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
+    fontSize: fontSize.sm,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.medium as "500",
   },
 
   modalOverlay: {
@@ -520,81 +520,81 @@ const styles = StyleSheet.create({
   },
 
   modalContent: {
-    backgroundColor: ResponsiveTheme.colors.background,
-    borderTopLeftRadius: ResponsiveTheme.borderRadius.xl,
-    borderTopRightRadius: ResponsiveTheme.borderRadius.xl,
+    backgroundColor: colors.background,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
     maxHeight: "80%",
   },
 
   modalHeader: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.border,
+    borderBottomColor: colors.border,
   },
 
   modalTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold as "600",
+    color: colors.text,
     textAlign: "center",
   },
 
   selectionCount: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
-    marginTop: ResponsiveTheme.spacing.xs / 2,
+    marginTop: spacing.xs / 2,
   },
 
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    margin: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    margin: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
 
   searchInput: {
     flex: 1,
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    color: colors.text,
   },
 
   searchIcon: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    marginLeft: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.md,
+    marginLeft: spacing.sm,
   },
 
   customInputContainer: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
   },
 
   customInputLabel: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold as "600",
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
 
   customTextInput: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    fontSize: fontSize.md,
+    color: colors.text,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primary,
-    marginBottom: ResponsiveTheme.spacing.md,
+    borderColor: colors.primary,
+    marginBottom: spacing.md,
   },
 
   customInputActions: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
 
   customActionButton: {
@@ -603,34 +603,34 @@ const styles = StyleSheet.create({
 
   optionsContainer: {
     maxHeight: 300,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.md,
   },
 
   regionHeader: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.xs,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold as "600",
+    color: colors.textSecondary,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+    paddingHorizontal: spacing.sm,
   },
 
   optionItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     minHeight: 44,
-    marginVertical: ResponsiveTheme.spacing.xs / 2,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    backgroundColor: ResponsiveTheme.colors.surface,
+    marginVertical: spacing.xs / 2,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
   },
 
   optionItemSelected: {
-    backgroundColor: ResponsiveTheme.colors.primary + "20",
+    backgroundColor: colors.primary + "20",
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primary + "40",
+    borderColor: colors.primary + "40",
   },
 
   optionItemDisabled: {
@@ -638,9 +638,9 @@ const styles = StyleSheet.create({
   },
 
   optionItemCustom: {
-    backgroundColor: ResponsiveTheme.colors.primary + "10",
+    backgroundColor: colors.primary + "10",
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primary + "30",
+    borderColor: colors.primary + "30",
     borderStyle: "dashed",
   },
 
@@ -651,8 +651,8 @@ const styles = StyleSheet.create({
   },
 
   optionIcon: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    marginRight: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    marginRight: spacing.sm,
   },
 
   optionTextContainer: {
@@ -660,27 +660,27 @@ const styles = StyleSheet.create({
   },
 
   optionText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    color: colors.text,
   },
 
   optionTextSelected: {
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
+    color: colors.primary,
+    fontWeight: typography.fontWeight.semibold as "600",
   },
 
   optionTextDisabled: {
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
 
   optionTextCustom: {
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
+    color: colors.primary,
+    fontWeight: typography.fontWeight.medium as "500",
   },
 
   optionRegion: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
 
@@ -689,15 +689,15 @@ const styles = StyleSheet.create({
     height: rs(24),
     borderRadius: rbr(4),
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
 
   checkboxSelected: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
 
   checkboxDisabled: {
@@ -705,27 +705,27 @@ const styles = StyleSheet.create({
   },
 
   checkmark: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.white,
-    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
+    fontSize: fontSize.sm,
+    color: colors.white,
+    fontWeight: typography.fontWeight.bold as "700",
   },
 
   noResults: {
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.xl,
+    paddingVertical: spacing.xl,
   },
 
   noResultsText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.md,
+    color: colors.textMuted,
   },
 
   modalActions: {
     flexDirection: "row",
-    padding: ResponsiveTheme.spacing.md,
-    gap: ResponsiveTheme.spacing.sm,
+    padding: spacing.md,
+    gap: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
+    borderTopColor: colors.border,
   },
 
   actionButton: {

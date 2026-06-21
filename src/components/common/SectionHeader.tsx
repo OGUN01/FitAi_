@@ -8,7 +8,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf } from "../../utils/responsive";
 
 interface SectionHeaderProps {
@@ -23,7 +23,7 @@ interface SectionHeaderProps {
 export const SectionHeader: React.FC<SectionHeaderProps> = ({
   title,
   icon,
-  iconColor = ResponsiveTheme.colors.primary,
+  iconColor = colors.primary,
   actionText,
   onActionPress,
   accessibilityLabel,
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   titleRow: {
     flexDirection: "row",
@@ -77,24 +77,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   icon: {
-    marginRight: ResponsiveTheme.spacing.xs,
+    marginRight: spacing.xs,
   },
   title: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
   },
   actionButton: {
     minHeight: 44,
     minWidth: 44,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.sm,
   },
   actionText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.medium,
   },
 });
 

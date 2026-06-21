@@ -8,7 +8,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rw } from "../../../utils/responsive";
 
 interface GuestPromptBannerProps {
@@ -39,7 +39,7 @@ export const GuestPromptBanner: React.FC<GuestPromptBannerProps> = ({
             <Ionicons
               name="person-add"
               size={rf(16)}
-              color={ResponsiveTheme.colors.primary}
+              color={colors.primary}
             />
           </View>
           <Text style={styles.text}>Create account to save progress</Text>
@@ -54,40 +54,40 @@ export const GuestPromptBanner: React.FC<GuestPromptBannerProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: `${ResponsiveTheme.colors.primary}08`,
-    borderColor: `${ResponsiveTheme.colors.primary}20`,
+    backgroundColor: `${colors.primary}08`,
+    borderColor: `${colors.primary}20`,
     borderWidth: 1,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   iconCircle: {
     width: rw(32),
     height: rw(32),
     borderRadius: rw(16),
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    backgroundColor: `${colors.primary}15`,
     justifyContent: "center",
     alignItems: "center",
   },
   text: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.text,
+    fontWeight: typography.fontWeight.medium,
     flexShrink: 1,
   },
   button: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
   },
   buttonText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.white,
   },
 });
 

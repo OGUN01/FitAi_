@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
 import { rf, rp, rbr } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { UsageCounter } from "./UsageCounter";
 
 // ============================================================================
@@ -22,9 +22,9 @@ interface PremiumBadgeProps {
 // ============================================================================
 
 const TIER_GRADIENTS: Record<string, readonly [string, string, ...string[]]> = {
-  pro: [ResponsiveTheme.colors.primaryLight, ResponsiveTheme.colors.pink],
-  basic: [ResponsiveTheme.colors.successBright, ResponsiveTheme.colors.blue],
-  free: [ResponsiveTheme.colors.amberBright, ResponsiveTheme.colors.orange],
+  pro: [colors.primaryLight, colors.pink],
+  basic: [colors.successBright, colors.blue],
+  free: [colors.amberBright, colors.orange],
 };
 
 const TIER_LABELS: Record<string, string> = {
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: rbr(9999),
   },
-  badgeText: { color: ResponsiveTheme.colors.white },
+  badgeText: { color: colors.white },
   badgeWithUsage: {
     flexDirection: "row",
     alignItems: "center",
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
   bannerTextContainer: { flex: 1 },
   bannerHeader: { flexDirection: "row", alignItems: "center" },
   bannerIcon: { fontSize: rf(24), marginRight: rp(8) },
-  bannerTitle: { color: ResponsiveTheme.colors.white, fontWeight: "700", fontSize: rf(18) },
+  bannerTitle: { color: colors.white, fontWeight: "700", fontSize: rf(18) },
   bannerSubtitle: {
     color: "rgba(255, 255, 255, 0.9)",
     fontSize: rf(14),
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(16),
     paddingVertical: rp(8),
   },
-  bannerButtonText: { color: ResponsiveTheme.colors.white, fontWeight: "700", fontSize: rf(14) },
+  bannerButtonText: { color: colors.white, fontWeight: "700", fontSize: rf(14) },
   bannerUsageRow: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -279,9 +279,9 @@ const styles = StyleSheet.create({
   },
   inlineContainer: { flexDirection: "row", alignItems: "center" },
   inlineIconYellow: { fontSize: rf(16), marginRight: rp(4) },
-  inlineTextYellow: { color: ResponsiveTheme.colors.warningAlt, fontSize: rf(14), fontWeight: "500" },
-  inlineTextPurple: { color: ResponsiveTheme.colors.purple, fontSize: rf(14), fontWeight: "500" },
-  inlineTextGreen: { color: ResponsiveTheme.colors.successAlt, fontSize: rf(14), fontWeight: "500" },
+  inlineTextYellow: { color: colors.warningAlt, fontSize: rf(14), fontWeight: "500" },
+  inlineTextPurple: { color: colors.purple, fontSize: rf(14), fontWeight: "500" },
+  inlineTextGreen: { color: colors.successAlt, fontSize: rf(14), fontWeight: "500" },
   inlineUsageSpacer: { marginLeft: rp(8) },
 });
 

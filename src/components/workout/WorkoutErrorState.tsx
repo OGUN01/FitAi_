@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Button } from "../../components/ui";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rw } from "../../utils/responsive";
 interface WorkoutErrorStateProps {
   errorType: "no-data" | "no-exercises";
@@ -18,13 +18,13 @@ export const WorkoutErrorState: React.FC<WorkoutErrorStateProps> = ({
     errorType === "no-data"
       ? {
           icon: "alert-circle-outline" as const,
-          iconColor: ResponsiveTheme.colors.error,
+          iconColor: colors.error,
           title: "No Workout Data",
           subtitle: "Unable to load workout information",
         }
       : {
           icon: "barbell-outline" as const,
-          iconColor: ResponsiveTheme.colors.primary,
+          iconColor: colors.primary,
           title: "No Exercises Found",
           subtitle: "This workout appears to be empty",
         };
@@ -55,35 +55,35 @@ export const WorkoutErrorState: React.FC<WorkoutErrorStateProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
   errorContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: ResponsiveTheme.spacing.xl,
+    padding: spacing.xl,
   },
   iconContainer: {
     width: rw(72),
     height: rw(72),
     borderRadius: rw(36),
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   errorText: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.error,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.error,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   errorSubtext: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: spacing.xl,
   },
   errorButton: {
     minWidth: rw(120),

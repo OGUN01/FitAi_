@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { Button } from "../ui";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rp, rw, rh } from "../../utils/responsive";
 
 interface WorkoutNavigationProps {
@@ -50,9 +50,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(16),
     paddingVertical: rp(8),
     gap: rw(12),
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
+    borderTopColor: colors.border,
   },
 
   navButton: {

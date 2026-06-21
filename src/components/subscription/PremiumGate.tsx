@@ -7,7 +7,7 @@ import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { UsageCounter } from "./UsageCounter";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 
 type FeatureKey = "ai_generation" | "barcode_scan";
 
@@ -90,7 +90,7 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
             style={styles.upgradeButton}
           >
             <LinearGradient
-              colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark]}
+              colors={[colors.primary, colors.primaryDark]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.upgradeGradient}
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     padding: rw(24),
     alignItems: "center",
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassBorder,
+    borderColor: colors.glassBorder,
   },
   iconContainer: {
     backgroundColor: "rgba(255, 107, 53, 0.15)",
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     padding: rw(12),
     marginBottom: rh(16),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primaryFaded,
+    borderColor: colors.primaryFaded,
   },
   iconText: {
     fontSize: rf(32),
@@ -134,13 +134,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rh(8),
     textAlign: "center",
   },
   description: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     marginBottom: rh(16),
     lineHeight: rf(20),
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     borderRadius: rw(16),
   },
   upgradeButtonText: {
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     fontWeight: "700",
     fontSize: rf(16),
   },

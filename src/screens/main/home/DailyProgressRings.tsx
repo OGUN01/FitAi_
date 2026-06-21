@@ -16,7 +16,7 @@ import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf, rw } from "../../../utils/responsive";
 import type { MetricSource } from "../../../stores/healthDataStore";
 
@@ -24,19 +24,19 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 // Ring configuration
 const RINGS = {
-  move: { color: ResponsiveTheme.colors.errorLight, gradientEnd: ResponsiveTheme.colors.accent, icon: "flame" as const },
+  move: { color: colors.errorLight, gradientEnd: colors.accent, icon: "flame" as const },
   exercise: {
-    color: ResponsiveTheme.colors.success,
-    gradientEnd: ResponsiveTheme.colors.successLight,
+    color: colors.success,
+    gradientEnd: colors.successLight,
     icon: "barbell" as const,
   },
   nutrition: {
-    color: ResponsiveTheme.colors.info,
+    color: colors.info,
     gradientEnd: "#03A9F4",
     icon: "restaurant" as const,
   },
   steps: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
     gradientEnd: "#E040FB",
     icon: "footsteps" as const,
   },
@@ -162,7 +162,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
             <Ionicons
               name="fitness-outline"
               size={rf(48)}
-              color={ResponsiveTheme.colors.textSecondary}
+              color={colors.textSecondary}
             />
             <Text style={styles.emptyStateTitle}>Set Your Goals</Text>
             <Text style={styles.emptyStateText}>
@@ -388,25 +388,25 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
     minHeight: rw(148),
   },
   emptyStateContainer: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: ResponsiveTheme.spacing.lg,
-    gap: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.lg,
+    gap: spacing.sm,
   },
   emptyStateTitle: {
     fontSize: rf(16),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
-    marginTop: ResponsiveTheme.spacing.sm,
+    color: colors.text,
+    marginTop: spacing.sm,
   },
   emptyStateText: {
     fontSize: rf(13),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
   },
   ringsContainer: {
@@ -425,21 +425,21 @@ const styles = StyleSheet.create({
   scoreText: {
     fontSize: rf(18),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   scoreLabel: {
     fontSize: rf(10),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   statsContainer: {
     flex: 1,
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   statRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   statDot: {
     width: rw(6),
@@ -452,24 +452,24 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: rf(12),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     flex: 1,
   },
   sourceLabel: {
     fontSize: rf(9),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     opacity: 0.7,
   },
   statValue: {
     fontSize: rf(13),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   statUnit: {
     fontSize: rf(10),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
 });
 

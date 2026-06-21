@@ -13,7 +13,7 @@ import Animated, { FadeInRight } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr, rw, rh } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 
@@ -47,7 +47,7 @@ export const ConnectedAccountsCard: React.FC<ConnectedAccountsCardProps> = ({
       id: "google",
       name: "Google",
       icon: "logo-google",
-      iconColor: ResponsiveTheme.colors.white,
+      iconColor: colors.white,
       bgColor: "#EA4335",
       isConnected: isGoogleConnected,
       email: googleEmail,
@@ -58,8 +58,8 @@ export const ConnectedAccountsCard: React.FC<ConnectedAccountsCardProps> = ({
             id: "apple",
             name: "Apple",
             icon: "logo-apple" as keyof typeof Ionicons.glyphMap,
-            iconColor: ResponsiveTheme.colors.white,
-            bgColor: ResponsiveTheme.colors.black,
+            iconColor: colors.white,
+            bgColor: colors.black,
             isConnected: false,
             email: undefined,
           },
@@ -158,17 +158,17 @@ export const ConnectedAccountsCard: React.FC<ConnectedAccountsCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.lg,
   },
   sectionTitle: {
     fontSize: rf(12),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 1.5,
-    marginBottom: ResponsiveTheme.spacing.sm,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.sm,
+    marginLeft: spacing.xs,
   },
   card: {
     overflow: "hidden",
@@ -177,8 +177,8 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
   },
   iconContainer: {
     width: rw(36),
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     borderRadius: rw(10),
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
   infoContainer: {
     flex: 1,
@@ -194,22 +194,22 @@ const styles = StyleSheet.create({
   providerName: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   email: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
   notConnected: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     marginTop: rp(2),
   },
   statusBadge: {
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
   },
   connectedBadge: {
     backgroundColor: "rgba(76, 175, 80, 0.15)",
@@ -222,13 +222,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   connectedText: {
-    color: ResponsiveTheme.colors.success,
+    color: colors.success,
   },
   disconnectedText: {
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   dividerContainer: {
-    paddingLeft: rw(36) + ResponsiveTheme.spacing.md * 2,
+    paddingLeft: rw(36) + spacing.md * 2,
   },
   divider: {
     height: rp(1),

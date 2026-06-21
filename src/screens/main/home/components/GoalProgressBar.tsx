@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import Animated from "react-native-reanimated";
-import { ResponsiveTheme } from "../../../../utils/constants";
+import { spacing } from "../../../../theme/aurora-tokens";
 import { rh } from "../../../../utils/responsive";
 
 interface GoalProgressBarProps {
@@ -34,7 +34,7 @@ export const GoalProgressBar: React.FC<GoalProgressBarProps> = ({
 
 const styles = StyleSheet.create({
   progressBarContainer: {
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   progressBarBg: {
     height: rh(6),

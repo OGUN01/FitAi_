@@ -9,7 +9,7 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../utils/responsive";
 
 export type InsightType =
@@ -35,7 +35,7 @@ const getInsightConfig = (type: InsightType) => {
     case "positive":
       return {
         icon: "checkmark-circle" as const,
-        color: ResponsiveTheme.colors.success,
+        color: colors.success,
         gradientColors: ["rgba(76,175,80,0.15)", "rgba(76,175,80,0.05)"] as [
           string,
           string,
@@ -45,7 +45,7 @@ const getInsightConfig = (type: InsightType) => {
     case "negative":
       return {
         icon: "alert-circle" as const,
-        color: ResponsiveTheme.colors.error,
+        color: colors.error,
         gradientColors: ["rgba(244,67,54,0.15)", "rgba(244,67,54,0.05)"] as [
           string,
           string,
@@ -55,7 +55,7 @@ const getInsightConfig = (type: InsightType) => {
     case "neutral":
       return {
         icon: "information-circle" as const,
-        color: ResponsiveTheme.colors.warning,
+        color: colors.warning,
         gradientColors: ["rgba(255,152,0,0.15)", "rgba(255,152,0,0.05)"] as [
           string,
           string,
@@ -65,7 +65,7 @@ const getInsightConfig = (type: InsightType) => {
     case "achievement":
       return {
         icon: "trophy" as const,
-        color: ResponsiveTheme.colors.gold,
+        color: colors.gold,
         gradientColors: ["rgba(255,215,0,0.15)", "rgba(255,215,0,0.05)"] as [
           string,
           string,
@@ -75,7 +75,7 @@ const getInsightConfig = (type: InsightType) => {
     case "recommendation":
       return {
         icon: "bulb" as const,
-        color: ResponsiveTheme.colors.primary,
+        color: colors.primary,
         gradientColors: [
           "rgba(255,107,53,0.15)",
           "rgba(255,107,53,0.05)",
@@ -85,7 +85,7 @@ const getInsightConfig = (type: InsightType) => {
     default:
       return {
         icon: "information-circle" as const,
-        color: ResponsiveTheme.colors.neutral,
+        color: colors.neutral,
         gradientColors: [
           "rgba(158,158,158,0.15)",
           "rgba(158,158,158,0.05)",
@@ -232,12 +232,12 @@ export const AIRecommendationBanner: React.FC<{
           <View style={styles.aiContent}>
             <View style={styles.aiHeader}>
               <LinearGradient
-                colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.accent]}
+                colors={[colors.primary, colors.accent]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.aiIconContainer}
               >
-                <Ionicons name="sparkles" size={rf(14)} color={ResponsiveTheme.colors.white} />
+                <Ionicons name="sparkles" size={rf(14)} color={colors.white} />
               </LinearGradient>
               <Text style={styles.aiTitle}>AI Recommendation</Text>
             </View>
@@ -245,7 +245,7 @@ export const AIRecommendationBanner: React.FC<{
             {onLearnMore && (
               <View style={styles.aiAction}>
                 <Text style={styles.aiActionText}>Learn More</Text>
-                <Ionicons name="arrow-forward" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+                <Ionicons name="arrow-forward" size={rf(14)} color={colors.primary} />
               </View>
             )}
           </View>
@@ -257,21 +257,21 @@ export const AIRecommendationBanner: React.FC<{
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
     overflow: "hidden",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   gradient: {
     flex: 1,
   },
   content: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   iconContainer: {
     width: rw(36),
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     borderRadius: rw(10),
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   headerContent: {
     flex: 1,
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   title: {
     fontSize: rf(14),
@@ -296,9 +296,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   categoryBadge: {
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs / 2,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs / 2,
+    borderRadius: borderRadius.full,
   },
   categoryText: {
     fontSize: rf(10),
@@ -307,8 +307,8 @@ const styles = StyleSheet.create({
   confidenceRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: ResponsiveTheme.spacing.xs,
-    gap: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.xs,
+    gap: spacing.sm,
   },
   confidenceBar: {
     flex: 1,
@@ -324,29 +324,29 @@ const styles = StyleSheet.create({
   confidenceText: {
     fontSize: rf(10),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     minWidth: rw(30),
     textAlign: "right",
   },
   description: {
     fontSize: rf(13),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     lineHeight: rf(19),
-    marginLeft: rw(36) + ResponsiveTheme.spacing.sm,
+    marginLeft: rw(36) + spacing.sm,
   },
   actionContainer: {
-    marginTop: ResponsiveTheme.spacing.sm,
-    marginLeft: rw(36) + ResponsiveTheme.spacing.sm,
+    marginTop: spacing.sm,
+    marginLeft: rw(36) + spacing.sm,
   },
   actionButton: {
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    gap: ResponsiveTheme.spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
   },
   actionText: {
     fontSize: rf(12),
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
 
   // AI Recommendation Banner Styles
   aiContainer: {
-    borderRadius: ResponsiveTheme.borderRadius.xl,
+    borderRadius: borderRadius.xl,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "rgba(255,107,53,0.3)",
@@ -364,13 +364,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   aiContent: {
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
   },
   aiHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
-    gap: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
+    gap: spacing.sm,
   },
   aiIconContainer: {
     width: rw(32),
@@ -383,25 +383,25 @@ const styles = StyleSheet.create({
   aiTitle: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
     letterSpacing: 0.3,
   },
   aiText: {
     fontSize: rf(13),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     lineHeight: rf(20),
   },
   aiAction: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: ResponsiveTheme.spacing.md,
-    gap: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.md,
+    gap: spacing.xs,
   },
   aiActionText: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
 });
 

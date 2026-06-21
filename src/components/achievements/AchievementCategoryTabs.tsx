@@ -6,7 +6,7 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { AchievementCategory } from "../../services/achievements/types";
 import { rh, rw, rf, rp, rbr } from "../../utils/responsive";
 
@@ -76,23 +76,23 @@ const styles = StyleSheet.create({
     paddingVertical: rh(0.8),
     borderRadius: rbr(20),
     marginRight: rw(2),
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassHighlight,
+    borderColor: colors.glassHighlight,
     minHeight: rp(44),
     justifyContent: "center" as const,
   },
   selectedTab: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   tabText: {
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: rf(1.8),
     fontWeight: "500",
   },
   selectedTabText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     fontWeight: "700",
   },
 });

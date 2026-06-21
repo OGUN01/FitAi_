@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../utils/responsive";
 import { getRecoveryColor } from "../../utils/healthUtils";
 
@@ -31,7 +31,7 @@ export const RecoveryRing: React.FC<RecoveryRingProps> = ({ score, size }) => {
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={ResponsiveTheme.colors.glassHighlight}
+          stroke={colors.glassHighlight}
           strokeWidth={strokeWidth}
           fill="transparent"
         />
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   ringLabel: {
     fontSize: rf(10),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(-2),
   },
 });

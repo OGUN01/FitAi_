@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors } from "../../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 
@@ -28,7 +28,7 @@ export const ProgressTrendsHeader: React.FC<ProgressTrendsHeaderProps> = ({
           <Ionicons
             name="arrow-back"
             size={rf(22)}
-            color={ResponsiveTheme.colors.text}
+            color={colors.text}
           />
         </TouchableOpacity>
         <View style={styles.headerTextContainer}>
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     width: Math.max(rw(40), 44),
     height: Math.max(rw(40), 44),
     borderRadius: Math.max(rw(12), 12),
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     justifyContent: "center",
     alignItems: "center",
     marginRight: rw(12),
@@ -67,11 +67,11 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: rf(28),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   headerSubtitle: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rh(4),
   },
 });

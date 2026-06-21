@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rh } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import {
   AnimatedPressable,
   AnimatedSection,
@@ -123,7 +123,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                 <Ionicons
                   name="cloud-upload-outline"
                   size={rf(16)}
-                  color={ResponsiveTheme.colors.success}
+                  color={colors.success}
                   style={{ marginRight: 4 }}
                 />
                 <Text style={styles.autoSaveText} numberOfLines={1}>
@@ -197,7 +197,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             <Ionicons
               name="chevron-back"
               size={rf(18)}
-              color={ResponsiveTheme.colors.primary}
+              color={colors.primary}
             />
             <Text style={styles.backButtonText}>Back</Text>
           </AnimatedPressable>
@@ -275,84 +275,84 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.xxl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.white,
+    marginBottom: spacing.sm,
     letterSpacing: -0.5,
     textAlign: "center",
   },
   subtitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     color: "rgba(255, 255, 255, 0.85)",
-    lineHeight: ResponsiveTheme.fontSize.md * 1.5,
-    marginBottom: ResponsiveTheme.spacing.md,
+    lineHeight: fontSize.md * 1.5,
+    marginBottom: spacing.md,
     textAlign: "center",
   },
   autoSaveIndicator: {
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
-    backgroundColor: `${ResponsiveTheme.colors.success}20`,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: `${colors.success}20`,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
   },
   autoSaveText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.success,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.success,
+    fontWeight: typography.fontWeight.medium,
   },
   content: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   footer: {
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
     paddingBottom:
       Platform.OS === "ios"
-        ? ResponsiveTheme.spacing.lg
-        : ResponsiveTheme.spacing.xl,
+        ? spacing.lg
+        : spacing.xl,
     backgroundColor: "transparent",
   },
   buttonRow: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   backButtonCompact: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    borderRadius: ResponsiveTheme.borderRadius.xl,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.backgroundSecondary,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
     minWidth: 100,
     minHeight: 52,
   },
   backButtonText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.primary,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary,
+    marginLeft: spacing.xs,
   },
   nextButtonCompact: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    borderRadius: ResponsiveTheme.borderRadius.xl,
-    backgroundColor: ResponsiveTheme.colors.primary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.primary,
     minHeight: 52,
   },
   nextButtonText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
     color: "#FFFFFF",
-    marginRight: ResponsiveTheme.spacing.xs,
+    marginRight: spacing.xs,
   },
 });
 

@@ -22,7 +22,7 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { ResponsiveTheme } from "../../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../../../utils/responsive";
 
 interface GlassFormInputProps extends Omit<TextInputProps, "style"> {
@@ -37,7 +37,7 @@ interface GlassFormInputProps extends Omit<TextInputProps, "style"> {
 export const GlassFormInput: React.FC<GlassFormInputProps> = ({
   label,
   icon,
-  iconColor = ResponsiveTheme.colors.primary,
+  iconColor = colors.primary,
   error,
   hint,
   suffix,
@@ -60,7 +60,7 @@ export const GlassFormInput: React.FC<GlassFormInputProps> = ({
 
   const animatedBorderStyle = useAnimatedStyle(() => ({
     borderColor: error
-      ? ResponsiveTheme.colors.error
+      ? colors.error
       : `rgba(255, 107, 53, ${0.2 + borderOpacity.value * 0.3})`,
   }));
 
@@ -94,8 +94,8 @@ export const GlassFormInput: React.FC<GlassFormInputProps> = ({
           onChangeText={onChangeText}
           onFocus={handleFocus}
           onBlur={handleBlur}
-          placeholderTextColor={ResponsiveTheme.colors.textMuted}
-          selectionColor={ResponsiveTheme.colors.primary}
+          placeholderTextColor={colors.textMuted}
+          selectionColor={colors.primary}
           {...props}
         />
 
@@ -108,7 +108,7 @@ export const GlassFormInput: React.FC<GlassFormInputProps> = ({
           <Ionicons
             name="alert-circle"
             size={rf(12)}
-            color={ResponsiveTheme.colors.error}
+            color={colors.error}
           />
           <Text style={styles.errorText}>{error}</Text>
         </View>
@@ -121,66 +121,66 @@ export const GlassFormInput: React.FC<GlassFormInputProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   label: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+    marginLeft: spacing.xs,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
     overflow: "hidden",
   },
   inputError: {
-    borderColor: ResponsiveTheme.colors.error,
+    borderColor: colors.error,
   },
   iconContainer: {
     width: rw(40),
     height: rw(48),
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    marginLeft: spacing.xs,
+    borderRadius: borderRadius.md,
   },
   input: {
     flex: 1,
     height: rw(48),
     fontSize: rf(15),
-    color: ResponsiveTheme.colors.white,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    color: colors.white,
+    paddingHorizontal: spacing.md,
   },
   inputNoIcon: {
-    paddingLeft: ResponsiveTheme.spacing.md,
+    paddingLeft: spacing.md,
   },
   suffix: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
-    paddingRight: ResponsiveTheme.spacing.md,
+    color: colors.textSecondary,
+    paddingRight: spacing.md,
   },
   errorContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
-    marginTop: ResponsiveTheme.spacing.xs,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+    marginLeft: spacing.xs,
   },
   errorText: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.error,
+    color: colors.error,
   },
   hintText: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textMuted,
-    marginTop: ResponsiveTheme.spacing.xs,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+    marginLeft: spacing.xs,
   },
 });
 

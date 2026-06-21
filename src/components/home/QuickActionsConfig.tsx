@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { haptics } from "../../utils/haptics";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 interface QuickAction {
@@ -43,7 +43,7 @@ export const createQuickActions = ({
     id: "log-weight",
     label: "Log Weight",
     icon: "scale-outline" as keyof typeof Ionicons.glyphMap,
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
     onPress: onLogWeight,
   },
   ...(onScanFood
@@ -52,7 +52,7 @@ export const createQuickActions = ({
           id: "scan-food",
           label: "Scan Food",
           icon: "camera-outline" as keyof typeof Ionicons.glyphMap,
-          color: ResponsiveTheme.colors.errorLight,
+          color: colors.errorLight,
           onPress: onScanFood,
         },
       ]
@@ -63,7 +63,7 @@ export const createQuickActions = ({
           id: "log-meal",
           label: "Log Meal",
           icon: "restaurant-outline" as keyof typeof Ionicons.glyphMap,
-          color: ResponsiveTheme.colors.success,
+          color: colors.success,
           onPress: onLogMeal,
         },
       ]
@@ -74,7 +74,7 @@ export const createQuickActions = ({
           id: "log-water",
           label: "Water",
           icon: "water-outline" as keyof typeof Ionicons.glyphMap,
-          color: ResponsiveTheme.colors.info,
+          color: colors.info,
           onPress: onLogWater,
         },
       ]
@@ -85,7 +85,7 @@ export const createQuickActions = ({
           id: "barcode-scan",
           label: "Barcode",
           icon: "barcode-outline" as keyof typeof Ionicons.glyphMap,
-          color: ResponsiveTheme.colors.teal,
+          color: colors.teal,
           onPress: onBarcodeScan,
         },
       ]
@@ -96,7 +96,7 @@ export const createQuickActions = ({
           id: "scan-label",
           label: "Scan Label",
           icon: "scan-outline" as keyof typeof Ionicons.glyphMap,
-          color: ResponsiveTheme.colors.purple,
+          color: colors.purple,
           onPress: onScanLabel,
         },
       ]
@@ -107,7 +107,7 @@ export const createQuickActions = ({
           id: "recipes",
           label: "Recipes",
           icon: "book-outline" as keyof typeof Ionicons.glyphMap,
-          color: ResponsiveTheme.colors.warning,
+          color: colors.warning,
           onPress: onRecipes,
         },
       ]
@@ -116,7 +116,7 @@ export const createQuickActions = ({
     id: "health-sync",
     label: "Sync",
     icon: "sync-outline" as keyof typeof Ionicons.glyphMap,
-    color: ResponsiveTheme.colors.successAlt,
+    color: colors.successAlt,
     onPress: async () => {
       haptics.medium();
       if (Platform.OS === "ios" && isHealthKitAuthorized) {

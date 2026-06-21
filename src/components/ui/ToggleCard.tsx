@@ -17,7 +17,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { rf, rp, rw } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 
 interface ToggleCardProps {
   title: string;
@@ -36,7 +36,7 @@ export const ToggleCard: React.FC<ToggleCardProps> = ({
   isActive,
   onToggle,
   icon,
-  gradient = [ResponsiveTheme.colors.success, ResponsiveTheme.colors.success],
+  gradient = [colors.success, colors.success],
   disabled = false,
   style,
 }) => {
@@ -55,13 +55,13 @@ export const ToggleCard: React.FC<ToggleCardProps> = ({
     const backgroundColor = interpolateColor(
       toggleAnimation.value,
       [0, 1],
-      [ResponsiveTheme.colors.backgroundSecondary, `${gradient[0]}15`],
+      [colors.backgroundSecondary, `${gradient[0]}15`],
     );
 
     return {
       backgroundColor,
       transform: [{ scale: cardScale.value }],
-      borderColor: isActive ? gradient[0] : ResponsiveTheme.colors.border,
+      borderColor: isActive ? gradient[0] : colors.border,
     };
   });
 
@@ -70,12 +70,12 @@ export const ToggleCard: React.FC<ToggleCardProps> = ({
     const backgroundColor = interpolateColor(
       toggleAnimation.value,
       [0, 1],
-      [ResponsiveTheme.colors.backgroundTertiary, gradient[0]],
+      [colors.backgroundTertiary, gradient[0]],
     );
 
     return {
       backgroundColor,
-      borderColor: isActive ? gradient[0] : ResponsiveTheme.colors.border,
+      borderColor: isActive ? gradient[0] : colors.border,
     };
   });
 
@@ -148,7 +148,7 @@ export const ToggleCard: React.FC<ToggleCardProps> = ({
           <Animated.View style={[styles.toggleSwitch, animatedSwitchStyle]}>
             <Animated.View style={[styles.toggleThumb, animatedThumbStyle]}>
               <LinearGradient
-                colors={[ResponsiveTheme.colors.white, ResponsiveTheme.colors.white]}
+                colors={[colors.white, colors.white]}
                 style={styles.thumbGradient}
               />
             </Animated.View>
@@ -173,9 +173,9 @@ export const ToggleCard: React.FC<ToggleCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: ResponsiveTheme.borderRadius.xl,
+    borderRadius: borderRadius.xl,
     borderWidth: 2,
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
     boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
     elevation: 3,
     overflow: "hidden",
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   },
 
   iconContainer: {
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
     width: rf(40),
     height: rf(40),
     alignItems: "center" as const,
@@ -201,28 +201,28 @@ const styles = StyleSheet.create({
 
   textContent: {
     flex: 1,
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
 
   titleDisabled: {
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
 
   description: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     lineHeight: rf(18),
   },
 
   descriptionDisabled: {
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
 
   toggleSwitch: {

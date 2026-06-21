@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TextInput } from "react-native";
 import { Button } from "../../ui";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 
 interface CustomInputProps {
   customValue: string;
@@ -28,7 +28,7 @@ export const CustomInput: React.FC<CustomInputProps> = ({
       <TextInput
         style={styles.customTextInput}
         placeholder={customPlaceholder}
-        placeholderTextColor={ResponsiveTheme.colors.textMuted}
+        placeholderTextColor={colors.textMuted}
         value={customValue}
         onChangeText={setCustomValue}
         autoFocus
@@ -56,31 +56,31 @@ export const CustomInput: React.FC<CustomInputProps> = ({
 
 const styles = StyleSheet.create({
   customInputContainer: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
   },
 
   customInputLabel: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold as "600",
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
 
   customTextInput: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    fontSize: fontSize.md,
+    color: colors.text,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primary,
-    marginBottom: ResponsiveTheme.spacing.md,
+    borderColor: colors.primary,
+    marginBottom: spacing.md,
   },
 
   customInputActions: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
 
   customActionButton: {

@@ -6,7 +6,7 @@ import {
   MigrationResult,
 } from "../../../services/migration";
 import { rf, rp, rbr } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors } from "../../../theme/aurora-tokens";
 
 interface StatusMessageProps {
   progress: MigrationProgress | null;
@@ -40,7 +40,7 @@ export const StatusMessage: React.FC<StatusMessageProps> = ({
         <Ionicons
           name="checkmark-circle"
           size={rf(32)}
-          color={ResponsiveTheme.colors.successAlt}
+          color={colors.successAlt}
         />
         <Text style={styles.statusTitle}>Migration Complete!</Text>
         <Text style={styles.statusMessage}>
@@ -65,7 +65,7 @@ export const StatusMessage: React.FC<StatusMessageProps> = ({
         <Ionicons
           name="alert-circle"
           size={rf(32)}
-          color={ResponsiveTheme.colors.errorAlt}
+          color={colors.errorAlt}
         />
         <Text style={styles.statusTitle}>Migration Failed</Text>
         <Text style={styles.statusMessage}>
@@ -96,29 +96,29 @@ const styles = StyleSheet.create({
     marginBottom: rp(30),
   },
   statusSuccess: {
-    backgroundColor: ResponsiveTheme.colors.successTint,
+    backgroundColor: colors.successTint,
     borderRadius: rbr(15),
     padding: rp(20),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.successAlt,
+    borderColor: colors.successAlt,
   },
   statusError: {
-    backgroundColor: ResponsiveTheme.colors.errorTint,
+    backgroundColor: colors.errorTint,
     borderRadius: rbr(15),
     padding: rp(20),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.errorAlt,
+    borderColor: colors.errorAlt,
   },
   statusTitle: {
     fontSize: rf(24),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     marginTop: rp(10),
     textAlign: "center",
   },
   statusMessage: {
     fontSize: rf(16),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(8),
     textAlign: "center",
     lineHeight: rf(22),
@@ -126,14 +126,14 @@ const styles = StyleSheet.create({
   migrationStats: {
     marginTop: rp(15),
     padding: rp(10),
-    backgroundColor: ResponsiveTheme.colors.primaryTint,
+    backgroundColor: colors.primaryTint,
     borderRadius: rbr(10),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primaryFaded,
+    borderColor: colors.primaryFaded,
   },
   statsText: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.info,
+    color: colors.info,
     textAlign: "center",
   },
 });

@@ -10,7 +10,7 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp } from '../../utils/responsive';
 
 interface PullToRefreshProps {
@@ -180,8 +180,8 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
                   { scale: scaleValue },
                 ],
                 color: canRefresh
-                  ? ResponsiveTheme.colors.primary
-                  : ResponsiveTheme.colors.textSecondary,
+                  ? colors.primary
+                  : colors.textSecondary,
               },
             ]}
           >
@@ -192,8 +192,8 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
               styles.refreshText,
               {
                 color: canRefresh
-                  ? ResponsiveTheme.colors.primary
-                  : ResponsiveTheme.colors.textSecondary,
+                  ? colors.primary
+                  : colors.textSecondary,
               },
             ]}
           >
@@ -232,7 +232,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
 
   refreshContainer: {
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
     justifyContent: "flex-end",
     alignItems: "center",
     paddingBottom: rp(10),
@@ -258,8 +258,8 @@ const styles = StyleSheet.create({
   },
 
   refreshText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium as "500",
   },
 
   scrollView: {

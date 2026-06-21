@@ -17,7 +17,7 @@ import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../../../utils/responsive";
 
 export interface SelectionOption {
@@ -97,7 +97,7 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
                     <Ionicons
                       name="close"
                       size={rf(18)}
-                      color={ResponsiveTheme.colors.textSecondary}
+                      color={colors.textSecondary}
                     />
                   </AnimatedPressable>
                 </View>
@@ -143,7 +143,7 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
                             color={
                               isSelected
                                 ? iconColor
-                                : ResponsiveTheme.colors.textSecondary
+                                : colors.textSecondary
                             }
                           />
                         </View>
@@ -152,7 +152,7 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
                           <Text
                             style={[
                               styles.optionLabel,
-                              isSelected && { color: ResponsiveTheme.colors.white },
+                              isSelected && { color: colors.white },
                               isDisabled && styles.optionLabelDisabled,
                             ]}
                           >
@@ -183,7 +183,7 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
                     <Ionicons
                       name="information-circle-outline"
                       size={rf(14)}
-                      color={ResponsiveTheme.colors.textMuted}
+                      color={colors.textMuted}
                     />
                     <Text style={styles.footerNoteText}>{footerNote}</Text>
                   </View>
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.overlay,
+    backgroundColor: colors.overlay,
   },
   dialogContainer: {
     width: "88%",
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   headerIconWrap: {
     width: rw(40),
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     borderRadius: rw(12),
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   headerText: {
     flex: 1,
@@ -227,11 +227,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   subtitle: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
   closeBtn: {
@@ -245,18 +245,18 @@ const styles = StyleSheet.create({
   divider: {
     height: rp(1),
     backgroundColor: "rgba(255, 255, 255, 0.08)",
-    marginVertical: ResponsiveTheme.spacing.sm,
+    marginVertical: spacing.sm,
   },
   optionsList: {
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   optionRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
     minHeight: 44,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     backgroundColor: "rgba(255, 255, 255, 0.03)",
   },
   optionRowSelected: {
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.06)",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   optionContent: {
     flex: 1,
@@ -282,26 +282,26 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   optionLabelDisabled: {
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
   optionDescription: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     marginTop: rp(2),
   },
   footerNoteWrap: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
-    marginTop: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.xs,
   },
   footerNoteText: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     fontStyle: "italic",
     flex: 1,
   },

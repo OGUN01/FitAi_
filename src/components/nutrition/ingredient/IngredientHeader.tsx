@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
 import { rf, rbr, rw, rh } from "../../../utils/responsive";
 import { MealItem } from "../../../types/ai";
 
@@ -32,16 +32,16 @@ const styles = StyleSheet.create({
   ingredientHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: spacing.xl,
   },
   ingredientIcon: {
     width: rw(80),
     height: rh(80),
     borderRadius: rbr(20),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.lg,
+    marginRight: spacing.lg,
   },
   iconText: {
     fontSize: rf(40),
@@ -50,19 +50,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   ingredientName: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontSize: fontSize.xxl,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   ingredientCategory: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.primary,
+    fontSize: fontSize.md,
+    color: colors.primary,
     fontWeight: "600",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   quantityText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
 });

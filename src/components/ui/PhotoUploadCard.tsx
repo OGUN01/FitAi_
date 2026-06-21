@@ -15,7 +15,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { rf, rp } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 
 interface PhotoUploadCardProps {
   label: string;
@@ -97,8 +97,8 @@ export const PhotoUploadCard: React.FC<PhotoUploadCardProps> = ({
                   <LinearGradient
                     colors={
                       aiProcessing
-                        ? [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]
-                        : [ResponsiveTheme.colors.success, ResponsiveTheme.colors.success]
+                        ? [colors.primary, colors.primaryLight]
+                        : [colors.success, colors.success]
                     }
                     style={styles.aiBadgeGradient}
                     start={{ x: 0, y: 0 }}
@@ -118,7 +118,7 @@ export const PhotoUploadCard: React.FC<PhotoUploadCardProps> = ({
                   onPress={onDelete}
                 >
                   <LinearGradient
-                    colors={[ResponsiveTheme.colors.error, ResponsiveTheme.colors.error]}
+                    colors={[colors.error, colors.error]}
                     style={styles.deleteButtonGradient}
                   >
                     <Text style={styles.deleteButtonText}>×</Text>
@@ -136,8 +136,8 @@ export const PhotoUploadCard: React.FC<PhotoUploadCardProps> = ({
               {/* Upload Placeholder */}
               <LinearGradient
                 colors={[
-                  ResponsiveTheme.colors.backgroundSecondary,
-                  ResponsiveTheme.colors.backgroundTertiary,
+                  colors.backgroundSecondary,
+                  colors.backgroundTertiary,
                 ]}
                 style={styles.placeholder}
                 start={{ x: 0, y: 0 }}
@@ -167,24 +167,24 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    borderRadius: ResponsiveTheme.borderRadius.xl,
-    backgroundColor: ResponsiveTheme.colors.background,
-    padding: ResponsiveTheme.spacing.md,
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.background,
+    padding: spacing.md,
     boxShadow: '0px 4px 8px rgba(0,0,0,0.1)',
     elevation: 5,
   },
 
   label: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
 
   description: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
     lineHeight: rf(18),
   },
 
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     position: "relative",
     width: "100%",
     aspectRatio: 4 / 3,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     overflow: "hidden",
   },
 
@@ -207,20 +207,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
     borderStyle: "dashed",
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
   },
 
   uploadIcon: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   uploadIconCircle: {
     width: rf(60),
     height: rf(60),
     borderRadius: rf(30),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
     boxShadow: "0px 4px 8px 0px rgba(255,107,53,0.3)",
@@ -229,28 +229,28 @@ const styles = StyleSheet.create({
 
   uploadIconPlus: {
     fontSize: rf(36),
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.white,
     lineHeight: rf(40),
   },
 
   uploadText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
 
   uploadHint: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
 
   aiBadge: {
     position: "absolute",
     top: rp(12),
     right: rp(12),
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    borderRadius: borderRadius.full,
     overflow: "hidden",
     boxShadow: "0px 2px 4px 0px rgba(0,0,0,0.3)",
     elevation: 5,
@@ -262,9 +262,9 @@ const styles = StyleSheet.create({
   },
 
   aiBadgeText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
+    fontSize: fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.white,
   },
 
   deleteButton: {
@@ -288,8 +288,8 @@ const styles = StyleSheet.create({
 
   deleteButtonText: {
     fontSize: rf(24),
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.white,
     lineHeight: rf(28),
   },
 
@@ -298,14 +298,14 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: ResponsiveTheme.colors.overlayDark,
+    backgroundColor: colors.overlayDark,
     paddingVertical: rp(8),
     alignItems: "center",
   },
 
   replaceText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.white,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.white,
   },
 });

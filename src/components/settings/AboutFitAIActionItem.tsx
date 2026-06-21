@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
@@ -58,7 +58,7 @@ export const AboutFitAIActionItem: React.FC<AboutFitAIActionItemProps> = ({
             <Ionicons
               name="chevron-forward"
               size={rf(18)}
-              color={ResponsiveTheme.colors.textMuted}
+              color={colors.textMuted}
             />
           </View>
         </GlassCard>
@@ -69,8 +69,8 @@ export const AboutFitAIActionItem: React.FC<AboutFitAIActionItemProps> = ({
 
 const styles = StyleSheet.create({
   actionCard: {
-    marginBottom: ResponsiveTheme.spacing.sm,
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.glassSurface,
   },
   actionContent: {
     flexDirection: "row",
@@ -82,20 +82,20 @@ const styles = StyleSheet.create({
     borderRadius: rbr(12),
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
   actionTextContainer: {
     flex: 1,
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   actionTitle: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(2),
   },
   actionDescription: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
 });

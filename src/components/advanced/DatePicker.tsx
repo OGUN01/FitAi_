@@ -10,7 +10,7 @@ import {
   ViewStyle,
 } from "react-native";
 import { Button } from "../ui";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 
 interface DatePickerProps {
   value: Date;
@@ -302,27 +302,27 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: ResponsiveTheme.spacing.sm,
+    marginVertical: spacing.sm,
   },
 
   label: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.medium as "500",
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
 
   trigger: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     minHeight: 44,
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
 
   triggerDisabled: {
@@ -330,16 +330,16 @@ const styles = StyleSheet.create({
   },
 
   triggerText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    color: colors.text,
   },
 
   placeholderText: {
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
 
   triggerIcon: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: fontSize.lg,
   },
 
   modalOverlay: {
@@ -349,46 +349,46 @@ const styles = StyleSheet.create({
   },
 
   modalContent: {
-    backgroundColor: ResponsiveTheme.colors.background,
-    borderTopLeftRadius: ResponsiveTheme.borderRadius.xl,
-    borderTopRightRadius: ResponsiveTheme.borderRadius.xl,
+    backgroundColor: colors.background,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
     maxHeight: "80%",
   },
 
   modalHeader: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.border,
+    borderBottomColor: colors.border,
   },
 
   modalTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold as "600",
+    color: colors.text,
     textAlign: "center",
   },
 
   optionsContainer: {
     maxHeight: 300,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.md,
   },
 
   optionItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     minHeight: 44,
-    marginVertical: ResponsiveTheme.spacing.xs / 2,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    backgroundColor: ResponsiveTheme.colors.surface,
+    marginVertical: spacing.xs / 2,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
   },
 
   optionItemSelected: {
-    backgroundColor: ResponsiveTheme.colors.primary + "20",
+    backgroundColor: colors.primary + "20",
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
   },
 
   optionItemPast: {
@@ -398,40 +398,40 @@ const styles = StyleSheet.create({
   optionContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
 
   optionText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    color: colors.text,
   },
 
   optionTextSelected: {
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
+    color: colors.primary,
+    fontWeight: typography.fontWeight.semibold as "600",
   },
 
   optionTextPast: {
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
 
   todayBadge: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
-    paddingVertical: ResponsiveTheme.spacing.xs / 2,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs / 2,
+    borderRadius: borderRadius.sm,
   },
 
   todayText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.white,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
+    fontSize: fontSize.xs,
+    color: colors.white,
+    fontWeight: typography.fontWeight.semibold as "600",
   },
 
   checkmark: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
+    fontSize: fontSize.lg,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.bold as "700",
   },
 
   dateTimeContainer: {
@@ -441,26 +441,26 @@ const styles = StyleSheet.create({
 
   dateTimeSection: {
     flex: 1,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.sm,
   },
 
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold as "600",
+    color: colors.text,
     textAlign: "center",
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.border,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    borderBottomColor: colors.border,
+    marginBottom: spacing.sm,
   },
 
   modalActions: {
     flexDirection: "row",
-    padding: ResponsiveTheme.spacing.md,
-    gap: ResponsiveTheme.spacing.sm,
+    padding: spacing.md,
+    gap: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
+    borderTopColor: colors.border,
   },
 
   actionButton: {

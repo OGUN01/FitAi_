@@ -1,6 +1,6 @@
 ﻿import React from "react";
 import { View, Text, Modal, ActivityIndicator, StyleSheet } from "react-native";
-import { ResponsiveTheme } from '../../utils/constants';
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
 import { rf, rh, rw } from '../../utils/responsive';
 
 
@@ -30,7 +30,7 @@ export const MigrationStatusModal: React.FC<MigrationStatusModalProps> = ({
           <View style={styles.header}>
             <ActivityIndicator
               size="large"
-              color={ResponsiveTheme.colors.primary}
+              color={colors.primary}
               style={styles.spinner}
             />
             <Text style={styles.title}>Syncing Your Data</Text>
@@ -71,19 +71,19 @@ export const MigrationStatusModal: React.FC<MigrationStatusModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.overlayDark,
+    backgroundColor: colors.overlayDark,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   container: {
-    backgroundColor: ResponsiveTheme.colors.background,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    paddingHorizontal: ResponsiveTheme.spacing.xl,
-    paddingVertical: ResponsiveTheme.spacing.xxl,
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xxl,
     width: "100%",
     maxWidth: rw(400),
-    shadowColor: ResponsiveTheme.colors.black,
+    shadowColor: colors.black,
     shadowOffset: {
       width: 0,
       height: 4,
@@ -95,58 +95,58 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: spacing.xl,
   },
   spinner: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   title: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.sm,
     textAlign: "center",
   },
   subtitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(22),
   },
   progressContainer: {
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: spacing.xl,
   },
   progressBar: {
     height: rh(8),
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.full,
     overflow: "hidden",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   progressFill: {
     height: "100%",
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.full,
   },
   progressText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontWeight: typography.fontWeight.medium,
   },
   footer: {
     alignItems: "center",
   },
   footerText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.success || ResponsiveTheme.colors.primary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    color: colors.success || colors.primary,
+    marginBottom: spacing.xs,
     textAlign: "center",
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontWeight: typography.fontWeight.medium,
   },
   footerSubtext: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(16),
   },

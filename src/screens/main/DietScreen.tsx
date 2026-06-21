@@ -14,7 +14,7 @@ import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable"
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
 import { rf, rw, rp, rh } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { Button } from "../../components/ui";
 import { useAuth } from "../../hooks/useAuth";
 import {
@@ -616,8 +616,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                   size={rf(16)}
                   color={
                     status === "logged"
-                      ? ResponsiveTheme.colors.primary
-                      : ResponsiveTheme.colors.warning
+                      ? colors.primary
+                      : colors.warning
                   }
                 />
                 <Text
@@ -658,8 +658,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={ResponsiveTheme.colors.primary}
-              colors={[ResponsiveTheme.colors.primary]}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
             />
           }
         >
@@ -715,7 +715,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                   <Ionicons
                     name="alert-circle-outline"
                     size={rf(22)}
-                    color={ResponsiveTheme.colors.error}
+                    color={colors.error}
                     style={styles.errorBannerIcon}
                   />
                   <Text style={styles.errorText}>
@@ -754,8 +754,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               ) : (
                 <View
                   style={{
-                    paddingTop: ResponsiveTheme.spacing.md,
-                    paddingBottom: ResponsiveTheme.spacing.xl,
+                    paddingTop: spacing.md,
+                    paddingBottom: spacing.xl,
                     alignItems: "center",
                     justifyContent: "center",
                   }}
@@ -763,27 +763,27 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                   <Ionicons
                     name="restaurant-outline"
                     size={rf(48)}
-                    color={ResponsiveTheme.colors.textSecondary}
+                    color={colors.textSecondary}
                     style={{
                       opacity: 0.3,
-                      marginBottom: ResponsiveTheme.spacing.md,
+                      marginBottom: spacing.md,
                     }}
                   />
                   <Text
                     style={{
-                      color: ResponsiveTheme.colors.textSecondary,
-                      fontSize: ResponsiveTheme.fontSize.md,
-                      marginBottom: ResponsiveTheme.spacing.xs,
+                      color: colors.textSecondary,
+                      fontSize: fontSize.md,
+                      marginBottom: spacing.xs,
                     }}
                   >
                     No meal plan yet
                   </Text>
                   <Text
                     style={{
-                      color: ResponsiveTheme.colors.textSecondary,
+                      color: colors.textSecondary,
                       opacity: 0.6,
-                      fontSize: ResponsiveTheme.fontSize.sm,
-                      marginBottom: ResponsiveTheme.spacing.md,
+                      fontSize: fontSize.sm,
+                      marginBottom: spacing.md,
                       textAlign: "center",
                     }}
                   >
@@ -992,7 +992,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                   <Ionicons
                     name="barcode-outline"
                     size={rf(22)}
-                    color={ResponsiveTheme.colors.teal}
+                    color={colors.teal}
                   />
                   <Text style={styles.optionText}>Scan Barcode</Text>
                 </AnimatedPressable>
@@ -1007,7 +1007,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                   <Ionicons
                     name="keypad-outline"
                     size={rf(22)}
-                    color={ResponsiveTheme.colors.text}
+                    color={colors.text}
                   />
                   <Text style={styles.optionText}>Enter Manually</Text>
                 </AnimatedPressable>
@@ -1052,7 +1052,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                       onChangeText={setLabelScanGramsInput}
                       placeholder="grams"
                       placeholderTextColor={
-                        ResponsiveTheme.colors.textSecondary
+                        colors.textSecondary
                       }
                       keyboardType="numeric"
                       maxLength={4}
@@ -1126,7 +1126,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                       onChangeText={setPhotoWeightInput}
                       placeholder="grams"
                       placeholderTextColor={
-                        ResponsiveTheme.colors.textSecondary
+                        colors.textSecondary
                       }
                       keyboardType="numeric"
                       maxLength={4}
@@ -1153,7 +1153,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                   <Ionicons
                     name="camera-outline"
                     size={rf(22)}
-                    color={ResponsiveTheme.colors.teal}
+                    color={colors.teal}
                   />
                   <Text style={styles.optionText}>Recognise Food</Text>
                 </AnimatedPressable>
@@ -1200,53 +1200,53 @@ export const DietScreen: React.FC<DietScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: ResponsiveTheme.colors.background },
+  container: { flex: 1, backgroundColor: colors.background },
   scrollView: { flex: 1 },
   loadingContainer: {
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.xl,
+    paddingVertical: spacing.xl,
   },
   loadingText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
+    marginTop: spacing.md,
   },
   errorCard: {
-    padding: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.md,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     alignItems: "center",
   },
   errorText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.error,
+    fontSize: fontSize.md,
+    color: colors.error,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
     flex: 1,
   },
   errorBannerRow: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
     width: "100%" as const,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   errorBannerIcon: {
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   bottomSpacing: { height: rh(80) },
   manualEntryButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    marginHorizontal: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    gap: ResponsiveTheme.spacing.xs,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
   },
   manualEntryText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.xs,
+    color: colors.text,
     fontWeight: "500" as const,
     opacity: 0.7,
   },
@@ -1258,15 +1258,15 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
   barcodeLoadingCard: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: ResponsiveTheme.spacing.xl,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   barcodeLoadingText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    color: colors.text,
     fontWeight: "500" as const,
   },
   manualEntryOverlay: {
@@ -1275,17 +1275,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   dailyMealsSection: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
   dailyMealsSectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: fontSize.lg,
     fontWeight: "700" as const,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
   dailyMealCard: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   dailyMealRow: {
     flexDirection: "row" as const,
@@ -1296,39 +1296,39 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dailyMealName: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     fontWeight: "600" as const,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xxs,
+    color: colors.text,
+    marginBottom: spacing.xxs,
   },
   dailyMealMacros: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
   },
   dailyMealStatusBadge: {
-    marginLeft: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xxs,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    marginLeft: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
+    borderRadius: borderRadius.full,
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    gap: ResponsiveTheme.spacing.xxs,
+    gap: spacing.xxs,
   },
   dailyMealLoggedBadge: {
-    backgroundColor: `${ResponsiveTheme.colors.primary}18`,
+    backgroundColor: `${colors.primary}18`,
   },
   dailyMealPlannedBadge: {
-    backgroundColor: `${ResponsiveTheme.colors.warning}18`,
+    backgroundColor: `${colors.warning}18`,
   },
   dailyMealBadgeText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: fontSize.xs,
     fontWeight: "600" as const,
   },
   dailyMealLoggedText: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   dailyMealPlannedText: {
-    color: ResponsiveTheme.colors.warning,
+    color: colors.warning,
   },
   // Barcode/Label options modals
   optionsOverlay: {
@@ -1337,89 +1337,89 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end" as const,
   },
   optionsSheet: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderTopLeftRadius: ResponsiveTheme.borderRadius.xl,
-    borderTopRightRadius: ResponsiveTheme.borderRadius.xl,
-    padding: ResponsiveTheme.spacing.lg,
+    backgroundColor: colors.backgroundSecondary,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    padding: spacing.lg,
     paddingBottom: rp(32),
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   optionsTitle: {
-    fontSize: ResponsiveTheme.fontSize.xl,
+    fontSize: fontSize.xl,
     fontWeight: "700" as const,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   optionsSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
   optionButton: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    gap: ResponsiveTheme.spacing.md,
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    padding: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
   },
   optionText: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     fontWeight: "600" as const,
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   optionButtonCancel: {
     backgroundColor: "transparent" as const,
     justifyContent: "center" as const,
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
   },
   optionCancelText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center" as const,
     flex: 1,
   },
   // Label scan grams input
   labelGramsContainer: {
-    backgroundColor: `${ResponsiveTheme.colors.primary}12`,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    padding: ResponsiveTheme.spacing.md,
+    backgroundColor: `${colors.primary}12`,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.primary}30`,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    borderColor: `${colors.primary}30`,
+    marginBottom: spacing.sm,
   },
   labelGramsLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: fontSize.sm,
     fontWeight: "600" as const,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   labelGramsRow: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    gap: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
   },
   labelGramsInputField: {
     width: rw(90),
     height: rh(40),
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.sm,
     paddingHorizontal: rp(12),
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     fontWeight: "600" as const,
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
     textAlign: "center" as const,
   },
   labelGramsUnit: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     fontWeight: "600" as const,
   },
   labelGramsHint: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
   },
 });

@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../utils/responsive";
 import { DayMeal } from "../../types/ai";
 import { completionTrackingService } from "../../services/completionTracking";
@@ -106,7 +106,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
         <View style={styles.modalOverlay}>
           <View style={styles.modal}>
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Ionicons name="close" size={24} color={ResponsiveTheme.colors.text} />
+              <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
             <Text style={styles.errorText}>
               Ingredient information not available for "{ingredientName}"
@@ -127,7 +127,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Ionicons name="close" size={28} color={ResponsiveTheme.colors.text} />
+            <Ionicons name="close" size={28} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Ingredient Details</Text>
           <View style={{ width: 28 }} />
@@ -139,7 +139,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
             <Ionicons
               name="checkmark-circle"
               size={20}
-              color={ResponsiveTheme.colors.success}
+              color={colors.success}
             />
             <Text style={styles.completionBannerText}>
               🎉 This meal has been completed!
@@ -289,7 +289,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
             >
               {isCompleting ? (
                 <>
-                  <ActivityIndicator size="small" color={ResponsiveTheme.colors.white} />
+                  <ActivityIndicator size="small" color={colors.white} />
                   <Text
                     style={[styles.navButtonText, styles.completeButtonText]}
                   >
@@ -305,7 +305,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
                         : "checkmark-circle-outline"
                     }
                     size={24}
-                    color={ResponsiveTheme.colors.white}
+                    color={colors.white}
                   />
                   <Text
                     style={[styles.navButtonText, styles.completeButtonText]}
@@ -363,18 +363,18 @@ const NutritionRow: React.FC<{
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.overlay,
+    backgroundColor: colors.overlay,
     justifyContent: "center",
     alignItems: "center",
   },
   modal: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rbr(16),
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
     width: screenWidth - rp(40),
     maxHeight: "80%",
   },
@@ -382,36 +382,36 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.border,
+    borderBottomColor: colors.border,
   },
   closeButton: {
-    padding: ResponsiveTheme.spacing.sm,
+    padding: spacing.sm,
   },
   headerTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: fontSize.lg,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   content: {
     flex: 1,
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
   },
   ingredientHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: spacing.xl,
   },
   ingredientIcon: {
     width: rp(80),
     height: rp(80),
     borderRadius: rbr(20),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.lg,
+    marginRight: spacing.lg,
   },
   iconText: {
     fontSize: rf(40),
@@ -420,27 +420,27 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   ingredientName: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontSize: fontSize.xxl,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   ingredientCategory: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.primary,
+    fontSize: fontSize.md,
+    color: colors.primary,
     fontWeight: "600",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   quantityText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
   nutritionCard: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rbr(16),
-    padding: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
-    shadowColor: ResponsiveTheme.colors.black,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -448,44 +448,44 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: fontSize.lg,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
   calorieSection: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   calorieLabel: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: fontSize.lg,
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   calorieValue: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontSize: fontSize.xxl,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.errorLight,
+    color: colors.errorLight,
   },
   divider: {
     height: 1,
-    backgroundColor: ResponsiveTheme.colors.border,
-    marginVertical: ResponsiveTheme.spacing.md,
+    backgroundColor: colors.border,
+    marginVertical: spacing.md,
   },
   macroSection: {
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   nutritionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
   },
   nutritionLabel: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    color: colors.text,
     fontWeight: "500",
     flex: 1,
   },
@@ -496,9 +496,9 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   nutritionValue: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     fontWeight: "700",
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
   percentageContainer: {
     flexDirection: "row",
@@ -509,23 +509,23 @@ const styles = StyleSheet.create({
     height: 6,
     flex: 1,
     borderRadius: rbr(3),
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   percentageFill: {
     height: "100%",
     borderRadius: rbr(3),
   },
   percentageText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
     width: rp(30),
   },
   contextCard: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rbr(16),
-    padding: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
-    shadowColor: ResponsiveTheme.colors.black,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -533,19 +533,19 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   contextInfo: {
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   contextText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    color: colors.text,
     lineHeight: 22,
   },
   quantityCard: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rbr(16),
-    padding: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
-    shadowColor: ResponsiveTheme.colors.black,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -553,26 +553,26 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   quantityInfo: {
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   errorText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.error,
+    fontSize: fontSize.md,
+    color: colors.error,
     textAlign: "center",
   },
 
   // Action Section Styles
   actionSection: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    borderTopColor: colors.border,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
 
   navigationButtons: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
 
   navButton: {
@@ -580,28 +580,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
     borderRadius: rbr(12),
     minHeight: rp(48),
   },
 
   previousButton: {
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
 
   completeButton: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
 
   completedButton: {
-    backgroundColor: ResponsiveTheme.colors.success,
+    backgroundColor: colors.success,
   },
 
   loadingButton: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     opacity: 0.7,
   },
 
@@ -610,21 +610,21 @@ const styles = StyleSheet.create({
   },
 
   navButtonText: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     fontWeight: "600",
-    marginHorizontal: ResponsiveTheme.spacing.xs,
+    marginHorizontal: spacing.xs,
   },
 
   previousButtonText: {
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
 
   completeButtonText: {
-    color: ResponsiveTheme.colors.surface,
+    color: colors.surface,
   },
 
   nextButtonText: {
-    color: ResponsiveTheme.colors.surface,
+    color: colors.surface,
   },
 
   // Completion Banner Styles
@@ -632,21 +632,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: ResponsiveTheme.colors.success + "15",
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginHorizontal: ResponsiveTheme.spacing.lg,
-    marginTop: ResponsiveTheme.spacing.sm,
+    backgroundColor: colors.success + "15",
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
     borderRadius: rbr(12),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.success + "30",
+    borderColor: colors.success + "30",
   },
 
   completionBannerText: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     fontWeight: "600",
-    color: ResponsiveTheme.colors.success,
-    marginLeft: ResponsiveTheme.spacing.sm,
+    color: colors.success,
+    marginLeft: spacing.sm,
   },
 });
 

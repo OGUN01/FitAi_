@@ -6,7 +6,7 @@ import {
   ResolutionStrategy,
 } from "../../../services/conflictResolution";
 import { rf, rp, rbr } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors } from "../../../theme/aurora-tokens";
 
 interface ConflictItemProps {
   conflict: DataConflict;
@@ -17,15 +17,15 @@ interface ConflictItemProps {
 const getSeverityColor = (severity: string) => {
   switch (severity) {
     case "critical":
-      return ResponsiveTheme.colors.errorAlt;
+      return colors.errorAlt;
     case "high":
-      return ResponsiveTheme.colors.warningAlt;
+      return colors.warningAlt;
     case "medium":
-      return ResponsiveTheme.colors.info;
+      return colors.info;
     case "low":
-      return ResponsiveTheme.colors.successAlt;
+      return colors.successAlt;
     default:
-      return ResponsiveTheme.colors.textTertiary;
+      return colors.textTertiary;
   }
 };
 
@@ -167,7 +167,7 @@ export const ConflictItem: React.FC<ConflictItemProps> = ({
               <Ionicons
                 name="checkmark-circle"
                 size={rf(20)}
-                color={ResponsiveTheme.colors.successAlt}
+                color={colors.successAlt}
               />
             )}
           </TouchableOpacity>
@@ -179,12 +179,12 @@ export const ConflictItem: React.FC<ConflictItemProps> = ({
 
 const styles = StyleSheet.create({
   conflictItem: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rbr(15),
     padding: rp(20),
     marginBottom: rp(20),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassBorder,
+    borderColor: colors.glassBorder,
   },
   conflictHeader: {
     marginBottom: rp(15),
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   conflictField: {
     fontSize: rf(18),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     flex: 1,
   },
   severityBadge: {
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   severityText: {
     fontSize: rf(10),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   conflictValues: {
     marginBottom: rp(20),
@@ -219,19 +219,19 @@ const styles = StyleSheet.create({
   valueLabel: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rp(6),
   },
   valueBox: {
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
     borderRadius: rbr(8),
     padding: rp(12),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassBorder,
+    borderColor: colors.glassBorder,
   },
   valueText: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     fontFamily: "monospace",
   },
   resolutionOptions: {
@@ -240,21 +240,21 @@ const styles = StyleSheet.create({
   resolutionLabel: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     marginBottom: rp(12),
   },
   resolutionOption: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     borderRadius: rbr(10),
     padding: rp(15),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassBorder,
+    borderColor: colors.glassBorder,
   },
   resolutionOptionSelected: {
-    backgroundColor: ResponsiveTheme.colors.successTint,
-    borderColor: ResponsiveTheme.colors.successAlt,
+    backgroundColor: colors.successTint,
+    borderColor: colors.successAlt,
   },
   resolutionOptionContent: {
     flex: 1,
@@ -262,17 +262,17 @@ const styles = StyleSheet.create({
   resolutionOptionLabel: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(2),
   },
   resolutionOptionLabelSelected: {
-    color: ResponsiveTheme.colors.successAlt,
+    color: colors.successAlt,
   },
   resolutionOptionDescription: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   resolutionOptionDescriptionSelected: {
-    color: ResponsiveTheme.colors.successLight,
+    color: colors.successLight,
   },
 });

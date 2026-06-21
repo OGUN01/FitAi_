@@ -15,7 +15,7 @@ import {
 
 import { dataBridge } from "../../services/DataBridge";
 import { migrationManager } from "../../services/migrationManager";
-import { ResponsiveTheme } from '../../utils/constants';
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 interface TestResult {
@@ -260,50 +260,50 @@ export const MigrationTestComponent: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
-    padding: ResponsiveTheme.spacing.md,
+    backgroundColor: colors.background,
+    padding: spacing.md,
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
 
   subtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.lg,
   },
 
   controls: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
     flexWrap: "wrap",
   },
 
   button: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
     alignItems: "center" as const,
     minWidth: 100,
   },
 
   primaryButton: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
 
   secondaryButton: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
 
   warningButton: {
-    backgroundColor: ResponsiveTheme.colors.warning,
+    backgroundColor: colors.warning,
   },
 
   disabledButton: {
@@ -311,15 +311,15 @@ const styles = StyleSheet.create({
   },
 
   buttonText: {
-    color: ResponsiveTheme.colors.white,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: colors.white,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
   },
 
   buttonTextSecondary: {
-    color: ResponsiveTheme.colors.text,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: colors.text,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
   },
 
   results: {
@@ -327,66 +327,66 @@ const styles = StyleSheet.create({
   },
 
   resultsTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
 
   noResults: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
-    marginTop: ResponsiveTheme.spacing.xl,
+    marginTop: spacing.xl,
   },
 
   resultItem: {
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    padding: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
     borderLeftWidth: 4,
   },
 
   successResult: {
-    borderLeftColor: ResponsiveTheme.colors.success,
+    borderLeftColor: colors.success,
   },
 
   errorResult: {
-    borderLeftColor: ResponsiveTheme.colors.error,
+    borderLeftColor: colors.error,
   },
 
   resultHeader: {
     flexDirection: "row",
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
 
   resultTest: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
     flex: 1,
   },
 
   resultTime: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
   },
 
   resultStatus: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    marginBottom: spacing.xs,
   },
 
   resultData: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
     fontFamily: "monospace",
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    padding: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    backgroundColor: colors.backgroundSecondary,
+    padding: spacing.sm,
+    borderRadius: borderRadius.sm,
   },
 });

@@ -33,7 +33,7 @@ import { GlassCard } from "../../components/ui/aurora/GlassCard";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { ManualMetricEntry } from "../../components/health/ManualMetricEntry";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -453,7 +453,7 @@ export const ManualHealthEntryScreen: React.FC<
             <Ionicons
               name="arrow-back"
               size={rf(24)}
-              color={ResponsiveTheme.colors.text}
+              color={colors.text}
             />
           </AnimatedPressable>
           <Text style={styles.headerTitle}>Log Health Data</Text>
@@ -493,7 +493,7 @@ export const ManualHealthEntryScreen: React.FC<
               <Ionicons
                 name="calendar-outline"
                 size={rf(18)}
-                color={ResponsiveTheme.colors.primary}
+                color={colors.primary}
               />
               <View style={styles.dateLabelCol}>
                 <Text style={styles.dateLabel}>Date</Text>
@@ -506,7 +506,7 @@ export const ManualHealthEntryScreen: React.FC<
                 value={dateStr}
                 onChangeText={setDateStr}
                 placeholder="YYYY-MM-DD"
-                placeholderTextColor={ResponsiveTheme.colors.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 maxLength={10}
                 accessibilityLabel="Date for the manual entry"
               />
@@ -522,7 +522,7 @@ export const ManualHealthEntryScreen: React.FC<
                   <Ionicons
                     name={group.icon}
                     size={rf(16)}
-                    color={ResponsiveTheme.colors.primary}
+                    color={colors.primary}
                   />
                   <Text style={styles.groupTitle}>{group.title}</Text>
                 </View>
@@ -554,7 +554,7 @@ export const ManualHealthEntryScreen: React.FC<
                       <Ionicons
                         name={advancedOpen ? "chevron-up" : "chevron-down"}
                         size={rf(14)}
-                        color={ResponsiveTheme.colors.textSecondary}
+                        color={colors.textSecondary}
                       />
                       <Text style={styles.advancedToggleText}>
                         {advancedOpen ? "Hide" : "Show"} advanced metrics
@@ -599,7 +599,7 @@ export const ManualHealthEntryScreen: React.FC<
               <Ionicons
                 name="save-outline"
                 size={rf(18)}
-                color={ResponsiveTheme.colors.text}
+                color={colors.text}
               />
             )}
             <Text style={styles.saveButtonText}>
@@ -619,14 +619,14 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   backButton: {
     width: rw(40),
     height: rw(40),
     borderRadius: rbr(20),
-    backgroundColor: ResponsiveTheme.colors.glassHighlight,
+    backgroundColor: colors.glassHighlight,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -634,7 +634,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: rf(20),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textAlign: "center",
   },
   headerRight: {
@@ -645,29 +645,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingTop: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
     paddingBottom: rp(120),
   },
   subheader: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(20),
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   prefillRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   prefillText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textTertiary,
-    marginLeft: ResponsiveTheme.spacing.sm,
+    color: colors.textTertiary,
+    marginLeft: spacing.sm,
   },
   dateCard: {
-    marginBottom: ResponsiveTheme.spacing.md,
-    padding: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
+    padding: spacing.md,
   },
   dateRow: {
     flexDirection: "row",
@@ -675,72 +675,72 @@ const styles = StyleSheet.create({
   },
   dateLabelCol: {
     flex: 1,
-    marginLeft: ResponsiveTheme.spacing.sm,
+    marginLeft: spacing.sm,
   },
   dateLabel: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   dateHint: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
   dateInput: {
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     fontSize: rf(14),
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassBorder,
+    borderColor: colors.glassBorder,
     borderRadius: rbr(8),
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.sm,
     paddingVertical: rp(8),
     minWidth: rw(120),
   },
   groupHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
   },
   groupTitle: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginLeft: spacing.xs,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   groupCard: {
-    marginBottom: ResponsiveTheme.spacing.md,
-    padding: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.md,
+    padding: spacing.lg,
   },
   advancedToggle: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: ResponsiveTheme.spacing.sm,
-    paddingTop: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.glassHighlight,
+    borderTopColor: colors.glassHighlight,
   },
   advancedToggleText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    color: colors.textSecondary,
+    marginLeft: spacing.xs,
   },
   advancedRow: {
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.sm,
   },
   saveButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     paddingVertical: rp(16),
     borderRadius: rbr(14),
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.sm,
   },
   saveButtonDisabled: {
     opacity: 0.5,
@@ -748,8 +748,8 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: rf(16),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginLeft: spacing.xs,
   },
 });
 

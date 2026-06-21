@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Switch } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
@@ -57,15 +57,15 @@ export const PrivacyToggle: React.FC<PrivacyToggleProps> = ({
               onToggle();
             }}
             trackColor={{
-              false: ResponsiveTheme.colors.glassHighlight,
-              true: `${ResponsiveTheme.colors.primary}50`,
+              false: colors.glassHighlight,
+              true: `${colors.primary}50`,
             }}
             thumbColor={
               value
-                ? ResponsiveTheme.colors.primary
-                : ResponsiveTheme.colors.glassHighlight
+                ? colors.primary
+                : colors.glassHighlight
             }
-            ios_backgroundColor={ResponsiveTheme.colors.glassHighlight}
+            ios_backgroundColor={colors.glassHighlight}
           />
         </View>
       </GlassCard>
@@ -75,8 +75,8 @@ export const PrivacyToggle: React.FC<PrivacyToggleProps> = ({
 
 const styles = StyleSheet.create({
   toggleCard: {
-    marginBottom: ResponsiveTheme.spacing.sm,
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.glassSurface,
   },
   toggleContent: {
     flexDirection: "row",
@@ -88,21 +88,21 @@ const styles = StyleSheet.create({
     borderRadius: rbr(12),
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
   textContainer: {
     flex: 1,
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   toggleTitle: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(2),
   },
   toggleDescription: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(16),
   },
 });

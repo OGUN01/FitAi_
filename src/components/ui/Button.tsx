@@ -17,7 +17,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, flatShadows as shadows, typography } from "../../theme/aurora-tokens";
 
 // Hoist outside component — expensive factory should only run once
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
@@ -116,8 +116,8 @@ export const Button: React.FC<ButtonProps> = React.memo(({
     <ActivityIndicator
       color={
         variant === "outline" || variant === "ghost"
-          ? ResponsiveTheme.colors.primary
-          : ResponsiveTheme.colors.white
+          ? colors.primary
+          : colors.white
       }
       size="small"
     />
@@ -146,7 +146,7 @@ export const Button: React.FC<ButtonProps> = React.memo(({
         accessibilityLabel={accessibilityLabel ?? title}
       >
         <LinearGradient
-          colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]}
+          colors={[colors.primary, colors.primaryLight]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={[styles.gradientContainer, styles[size]]}
@@ -178,7 +178,7 @@ export const Button: React.FC<ButtonProps> = React.memo(({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
@@ -189,71 +189,71 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
   },
 
   // Sizes
   sm: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     minHeight: 44,
   },
   md: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     minHeight: 48,
   },
   lg: {
-    paddingHorizontal: ResponsiveTheme.spacing.xl,
-    paddingVertical: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
     minHeight: 56,
   },
 
   // Variants
   primary: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    ...ResponsiveTheme.shadows.md,
+    backgroundColor: colors.primary,
+    ...shadows.md,
   },
   secondary: {
-    backgroundColor: ResponsiveTheme.colors.secondary,
-    ...ResponsiveTheme.shadows.md,
+    backgroundColor: colors.secondary,
+    ...shadows.md,
   },
   outline: {
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    backgroundColor: `${colors.primary}15`,
     borderWidth: 1.5,
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
   },
   ghost: {
-    backgroundColor: ResponsiveTheme.colors.transparent,
+    backgroundColor: colors.transparent,
   },
 
   // Text styles
   baseText: {
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    fontWeight: typography.fontWeight.semibold,
     textAlign: "center",
   },
   smText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: fontSize.sm,
   },
   mdText: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
   },
   lgText: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: fontSize.lg,
   },
 
   // Text variants
   primaryText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   secondaryText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   outlineText: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   ghostText: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
 
   // States

@@ -11,7 +11,7 @@ import {
   BodyCompositionCalculations,
 } from "../../utils/healthCalculations";
 import { calculateBMI } from "../../utils/healthCalculations/core/bmiCalculation";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 
 interface UseBodyAnalysisProps {
   data: BodyAnalysisData | null;
@@ -225,24 +225,24 @@ export const useBodyAnalysis = ({
     if (bmi < 18.5)
       return {
         category: "Underweight",
-        color: ResponsiveTheme.colors.warning,
+        color: colors.warning,
         iconName: "alert-circle",
       };
     if (bmi < 25)
       return {
         category: "Normal",
-        color: ResponsiveTheme.colors.success,
+        color: colors.success,
         iconName: "checkmark-circle",
       };
     if (bmi < 30)
       return {
         category: "Overweight",
-        color: ResponsiveTheme.colors.warning,
+        color: colors.warning,
         iconName: "alert-circle",
       };
     return {
       category: "Obese",
-      color: ResponsiveTheme.colors.error,
+      color: colors.error,
       iconName: "alert-circle",
     };
   };

@@ -8,7 +8,7 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rbr, rp } from "../../utils/responsive";
 
 interface LoadingAnimationProps {
@@ -22,7 +22,7 @@ interface LoadingAnimationProps {
 export const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
   type = "spinner",
   size = "md",
-  color = ResponsiveTheme.colors.primary,
+  color = colors.primary,
   text,
   style,
 }) => {
@@ -284,9 +284,9 @@ const styles = StyleSheet.create({
   },
 
   text: {
-    marginTop: ResponsiveTheme.spacing.sm,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    marginTop: spacing.sm,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
     textAlign: "center",
   },
 });

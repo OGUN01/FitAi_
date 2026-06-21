@@ -10,7 +10,7 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf } from "../../utils/responsive";
 import { aiService } from "../../ai";
 
@@ -27,8 +27,8 @@ export const AIStatusIndicator: React.FC<AIStatusIndicatorProps> = ({
 
   const getStatusColor = () => {
     return status.mode === "real"
-      ? ResponsiveTheme.colors.success
-      : ResponsiveTheme.colors.warning;
+      ? colors.success
+      : colors.warning;
   };
 
   const getStatusIcon = () => {
@@ -61,21 +61,21 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
     borderWidth: 1,
-    backgroundColor: ResponsiveTheme.colors.glassHighlight,
+    backgroundColor: colors.glassHighlight,
   },
 
   icon: {
     fontSize: rf(14),
-    marginRight: ResponsiveTheme.spacing.xs,
+    marginRight: spacing.xs,
   },
 
   text: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
   },
 });
 

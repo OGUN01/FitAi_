@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf, rw, rbr } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 
@@ -26,14 +26,14 @@ export const NotificationsHeader: React.FC<NotificationsHeaderProps> = ({
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <View style={styles.backButton}>
-          <Ionicons name="chevron-back" size={rf(20)} color={ResponsiveTheme.colors.text} />
+          <Ionicons name="chevron-back" size={rf(20)} color={colors.text} />
         </View>
       </AnimatedPressable>
       <View style={styles.headerCenter}>
         <Ionicons
           name="notifications-outline"
           size={rf(18)}
-          color={ResponsiveTheme.colors.primary}
+          color={colors.primary}
         />
         <Text style={styles.headerTitle}>Notifications</Text>
       </View>
@@ -47,26 +47,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
   backButton: {
     width: rw(40),
     height: rw(40),
     borderRadius: rbr(20),
-    backgroundColor: ResponsiveTheme.colors.glassBorder,
+    backgroundColor: colors.glassBorder,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
   headerCenter: {
     flexDirection: "row",
     alignItems: "center" as const,
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   headerTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   headerSpacer: {
     width: rw(40),

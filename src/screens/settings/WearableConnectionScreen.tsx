@@ -10,7 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { useWearableConnection } from "../../hooks/useWearableConnection";
@@ -74,7 +74,7 @@ export const WearableConnectionScreen: React.FC<
             hapticFeedback={false}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="arrow-back" size={rf(24)} color={ResponsiveTheme.colors.text} />
+            <Ionicons name="arrow-back" size={rf(24)} color={colors.text} />
           </AnimatedPressable>
           <Text style={styles.headerTitle}>Connect Wearables</Text>
           <View style={styles.headerRight} />
@@ -87,7 +87,7 @@ export const WearableConnectionScreen: React.FC<
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={ResponsiveTheme.colors.text}
+              tintColor={colors.text}
             />
           }
         >
@@ -159,14 +159,14 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   backButton: {
     width: rw(40),
     height: rw(40),
     borderRadius: rbr(20),
-    backgroundColor: ResponsiveTheme.colors.glassHighlight,
+    backgroundColor: colors.glassHighlight,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: rf(20),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textAlign: "center",
   },
   headerRight: {
@@ -185,8 +185,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingTop: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
     paddingBottom: rp(100),
   },
 });

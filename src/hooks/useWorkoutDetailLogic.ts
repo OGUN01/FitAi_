@@ -1,6 +1,6 @@
 import React from "react";
 import { useFitnessStore } from "../stores/fitnessStore";
-import { ResponsiveTheme } from "../utils/constants";
+import { flatColors as colors } from "../theme/aurora-tokens";
 
 interface Exercise {
   id: string;
@@ -88,13 +88,13 @@ export const useWorkoutDetailLogic = (workoutId: string) => {
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Beginner":
-        return ResponsiveTheme.colors.success;
+        return colors.success;
       case "Intermediate":
-        return ResponsiveTheme.colors.warning;
+        return colors.warning;
       case "Advanced":
-        return ResponsiveTheme.colors.error;
+        return colors.error;
       default:
-        return ResponsiveTheme.colors.textSecondary;
+        return colors.textSecondary;
     }
   };
 

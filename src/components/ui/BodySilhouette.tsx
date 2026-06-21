@@ -10,7 +10,7 @@ import {
 } from "react-native-reanimated";
 import Svg, { Path, Circle, Line, G, Text as SvgText } from "react-native-svg";
 import { rf } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 
 interface MeasurementPoint {
   id: string;
@@ -140,16 +140,16 @@ export const BodySilhouette: React.FC<BodySilhouetteProps> = ({
             cx={width / 2}
             cy={width * 0.12 + 10}
             r={width * 0.12}
-            fill={`${ResponsiveTheme.colors.primary}20`}
-            stroke={ResponsiveTheme.colors.primary}
+            fill={`${colors.primary}20`}
+            stroke={colors.primary}
             strokeWidth="2"
           />
 
           {/* Body */}
           <Path
             d={bodyPath}
-            fill={`${ResponsiveTheme.colors.primary}15`}
-            stroke={ResponsiveTheme.colors.primary}
+            fill={`${colors.primary}15`}
+            stroke={colors.primary}
             strokeWidth="2"
           />
 
@@ -172,7 +172,7 @@ export const BodySilhouette: React.FC<BodySilhouetteProps> = ({
                   y1={point.y}
                   x2={lineEndX}
                   y2={point.y}
-                  stroke={ResponsiveTheme.colors.secondary}
+                  stroke={colors.secondary}
                   strokeWidth="1"
                   strokeDasharray="4 2"
                 />
@@ -191,7 +191,7 @@ export const BodySilhouette: React.FC<BodySilhouetteProps> = ({
                   y={point.y - 8}
                   fontSize={rf(11)}
                   fontWeight="600"
-                  fill={ResponsiveTheme.colors.text}
+                  fill={colors.text}
                   textAnchor={point.side === "left" ? "start" : "start"}
                 >
                   {point.label}
@@ -203,7 +203,7 @@ export const BodySilhouette: React.FC<BodySilhouetteProps> = ({
                     y={point.y + 8}
                     fontSize={rf(12)}
                     fontWeight="bold"
-                    fill={ResponsiveTheme.colors.primary}
+                    fill={colors.primary}
                     textAnchor={point.side === "left" ? "start" : "start"}
                   >
                     {point.value}
@@ -259,13 +259,13 @@ const PulsingPoint: React.FC<{
         cy={cy}
         r="8"
         fill="transparent"
-        stroke={ResponsiveTheme.colors.secondary}
+        stroke={colors.secondary}
         strokeWidth="2"
         opacity="0.3"
       />
 
       {/* Inner point */}
-      <Circle cx={cx} cy={cy} r="4" fill={ResponsiveTheme.colors.secondary} />
+      <Circle cx={cx} cy={cy} r="4" fill={colors.secondary} />
     </>
   );
 };
@@ -276,15 +276,15 @@ const styles = StyleSheet.create({
   },
 
   legend: {
-    marginTop: ResponsiveTheme.spacing.md,
-    padding: ResponsiveTheme.spacing.sm,
-    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    marginTop: spacing.md,
+    padding: spacing.sm,
+    backgroundColor: `${colors.primary}10`,
+    borderRadius: borderRadius.md,
   },
 
   legendText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
     fontStyle: "italic",
   },
 });

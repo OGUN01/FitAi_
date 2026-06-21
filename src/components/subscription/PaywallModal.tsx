@@ -9,7 +9,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { usePaywall } from "../../hooks/usePaywall";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../utils/responsive";
 import { useAuthStore } from "../../stores/authStore";
 
@@ -334,7 +334,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
               ]}
             >
               {isLoading ? (
-                <ActivityIndicator color={ResponsiveTheme.colors.text} />
+                <ActivityIndicator color={colors.text} />
               ) : (
                 <Text style={styles.subscribeBtnText}>
                   {plansUnavailable
@@ -364,11 +364,11 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.overlayDark,
+    backgroundColor: colors.overlayDark,
     justifyContent: "flex-end",
   },
   container: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     borderTopLeftRadius: rbr(24),
     borderTopRightRadius: rbr(24),
     maxHeight: "92%",
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassBorder,
+    borderColor: colors.glassBorder,
     // Ensure flex column so ScrollView stretches between header and actions
     display: "flex",
     flexDirection: "column",
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
     paddingTop: rp(16),
     paddingBottom: rp(16),
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.glassBorder,
+    borderBottomColor: colors.glassBorder,
   },
   headerRow: {
     flexDirection: "row",
@@ -401,17 +401,17 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: rf(22),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(6),
   },
   headerDesc: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(20),
   },
   headerReason: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.errorLight,
+    color: colors.errorLight,
     lineHeight: rf(20),
     fontWeight: "500",
   },
@@ -419,13 +419,13 @@ const styles = StyleSheet.create({
     width: rp(32),
     height: rp(32),
     borderRadius: rbr(16),
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
     justifyContent: "center",
     alignItems: "center",
   },
   closeBtnText: {
     fontSize: rf(16),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: "600",
   },
 
@@ -451,13 +451,13 @@ const styles = StyleSheet.create({
   warningBannerTitle: {
     fontSize: rf(13),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.errorLight,
+    color: colors.errorLight,
     marginBottom: rp(4),
   },
   warningBannerText: {
     fontSize: rf(12),
     lineHeight: rf(18),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   authBanner: {
     marginBottom: rp(8),
@@ -470,18 +470,18 @@ const styles = StyleSheet.create({
   authBannerTitle: {
     fontSize: rf(13),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.primaryLight,
+    color: colors.primaryLight,
     marginBottom: rp(4),
   },
   authBannerText: {
     fontSize: rf(12),
     lineHeight: rf(18),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
 
   toggleRow: {
     flexDirection: "row",
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
     borderRadius: rbr(12),
     padding: rp(4),
     marginTop: rp(16),
@@ -496,31 +496,31 @@ const styles = StyleSheet.create({
     borderRadius: rbr(8),
   },
   toggleBtnActive: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     boxShadow: '0px 1px 2px rgba(0,0,0,0.3)',
     elevation: 2,
   },
   toggleText: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   toggleTextActive: {
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   savingsBadge: {
     marginLeft: rp(6),
-    backgroundColor: ResponsiveTheme.colors.successTint,
+    backgroundColor: colors.successTint,
     borderRadius: rbr(4),
     paddingHorizontal: rp(6),
     paddingVertical: rp(2),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.successTint,
+    borderColor: colors.successTint,
   },
   savingsBadgeText: {
     fontSize: rf(11),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.successLight,
+    color: colors.successLight,
   },
 
   plansList: {
@@ -528,19 +528,19 @@ const styles = StyleSheet.create({
   },
   planCard: {
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassHighlight,
+    borderColor: colors.glassHighlight,
     borderRadius: rbr(16),
     padding: rp(18),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     position: "relative",
   },
   planCardSelected: {
-    borderColor: ResponsiveTheme.colors.primary,
-    backgroundColor: ResponsiveTheme.colors.primaryTint,
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryTint,
   },
   planCardCurrent: {
-    borderColor: ResponsiveTheme.colors.glassSurface,
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderColor: colors.glassSurface,
+    backgroundColor: colors.backgroundTertiary,
     opacity: 0.7,
   },
 
@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: rp(-10),
     right: rp(16),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: rbr(8),
     paddingHorizontal: rp(10),
     paddingVertical: rp(3),
@@ -556,14 +556,14 @@ const styles = StyleSheet.create({
   popularBadgeText: {
     fontSize: rf(10),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     letterSpacing: 0.5,
   },
   currentBadge: {
     position: "absolute",
     top: rp(-10),
     right: rp(16),
-    backgroundColor: ResponsiveTheme.colors.textMuted,
+    backgroundColor: colors.textMuted,
     borderRadius: rbr(8),
     paddingHorizontal: rp(10),
     paddingVertical: rp(3),
@@ -571,13 +571,13 @@ const styles = StyleSheet.create({
   currentBadgeText: {
     fontSize: rf(10),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
 
   planName: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(8),
   },
   priceRow: {
@@ -588,16 +588,16 @@ const styles = StyleSheet.create({
   priceAmount: {
     fontSize: rf(28),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   pricePeriod: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginLeft: rp(2),
   },
   billedLabel: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rp(4),
   },
 
@@ -611,14 +611,14 @@ const styles = StyleSheet.create({
   },
   featureCheck: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.success,
+    color: colors.success,
     fontWeight: "700",
     marginRight: rp(8),
     width: rp(18),
   },
   featureText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     flex: 1,
   },
 
@@ -630,7 +630,7 @@ const styles = StyleSheet.create({
     height: rp(22),
     borderRadius: rbr(11),
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -638,7 +638,7 @@ const styles = StyleSheet.create({
     width: rp(12),
     height: rp(12),
     borderRadius: rbr(6),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
 
   actions: {
@@ -646,21 +646,21 @@ const styles = StyleSheet.create({
     paddingTop: rp(16),
     paddingBottom: rp(24),
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.glassBorder,
+    borderTopColor: colors.glassBorder,
   },
   subscribeBtn: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: rbr(12),
     paddingVertical: rp(16),
     alignItems: "center",
     marginBottom: rp(12),
   },
   subscribeBtnDisabled: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
     opacity: 0.6,
   },
   subscribeBtnText: {
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     fontSize: rf(16),
     fontWeight: "700",
   },
@@ -669,7 +669,7 @@ const styles = StyleSheet.create({
   },
   termsText: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     textAlign: "center",
     lineHeight: rf(16),
   },

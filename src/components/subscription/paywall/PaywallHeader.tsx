@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../../utils/responsive";
 
 interface PaywallHeaderProps {
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   header: {
     padding: rp(16),
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.glassBorder,
+    borderBottomColor: colors.glassBorder,
   },
   headerContent: {
     flexDirection: "row",
@@ -64,43 +64,43 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: rf(24),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(8),
   },
   headerDescription: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(20),
   },
   closeButton: {
     width: Math.max(rp(32), 44),
     height: Math.max(rp(32), 44),
     borderRadius: Math.max(rbr(16), 22),
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
     justifyContent: "center",
     alignItems: "center",
   },
   closeButtonText: {
     fontSize: rf(24),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   trialBanner: {
     marginTop: rp(16),
     padding: rp(12),
-    backgroundColor: ResponsiveTheme.colors.primaryTint,
+    backgroundColor: colors.primaryTint,
     borderRadius: rbr(8),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primaryFaded,
+    borderColor: colors.primaryFaded,
   },
   trialTitle: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.primaryLight,
+    color: colors.primaryLight,
     marginBottom: rp(4),
   },
   trialDescription: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
 });
 

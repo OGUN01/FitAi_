@@ -13,7 +13,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassCard } from '../../../components/ui/aurora/GlassCard';
 import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../../utils/constants';
+import { flatColors as colors, spacing, borderRadius } from '../../../theme/aurora-tokens';
 import { rf, rw, rh } from '../../../utils/responsive';
 import { useBodyProgressLogic, WeightEntry } from './useBodyProgressLogic';
 import { TrendChart } from './components/TrendChart';
@@ -65,7 +65,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(({
           style={styles.headerPressable}
         >
           <View style={styles.headerLeft}>
-            <Ionicons name="body" size={rf(16)} color={ResponsiveTheme.colors.primary} />
+            <Ionicons name="body" size={rf(16)} color={colors.primary} />
             <Text style={styles.headerTitle}>Body Progress</Text>
           </View>
           {hasData && (
@@ -102,7 +102,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(({
                   }
                   width={rw(120)}
                   height={rh(50)}
-                  color={ResponsiveTheme.colors.primary}
+                  color={colors.primary}
                 />
               </View>
 
@@ -148,7 +148,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(({
                 <Ionicons
                   name="add-circle-outline"
                   size={rf(16)}
-                  color={ResponsiveTheme.colors.primary}
+                  color={colors.primary}
                 />
                 <Text style={styles.actionButtonText}>Log Weight</Text>
               </AnimatedPressable>
@@ -169,7 +169,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(({
                     <Ionicons
                       name="camera-outline"
                       size={rf(16)}
-                      color={ResponsiveTheme.colors.primary}
+                      color={colors.primary}
                     />
                     <Text style={styles.actionButtonText}>Progress Photo</Text>
                   </AnimatedPressable>
@@ -181,7 +181,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(({
           /* Empty State */
           <View style={styles.emptyState}>
             <View style={styles.emptyIconContainer}>
-              <Ionicons name="scale-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} />
+              <Ionicons name="scale-outline" size={rf(32)} color={colors.primary} />
             </View>
             <Text style={styles.emptyTitle}>Track Your Progress</Text>
             <Text style={styles.emptyDescription}>
@@ -196,7 +196,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(({
               accessibilityRole="button"
               accessibilityLabel="Log first weight"
             >
-              <Ionicons name="add" size={rf(16)} color={ResponsiveTheme.colors.white} />
+              <Ionicons name="add" size={rf(16)} color={colors.white} />
               <Text style={styles.startButtonText}>Log First Weight</Text>
             </AnimatedPressable>
           </View>
@@ -211,26 +211,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   headerTitle: {
     fontSize: rf(14),
     fontWeight: '700',
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     letterSpacing: 0.3,
   },
   trendBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.full,
-    gap: ResponsiveTheme.spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    gap: spacing.xs,
   },
   trendText: {
     fontSize: rf(11),
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   currentWeight: {
     alignItems: 'flex-start',
@@ -248,17 +248,17 @@ const styles = StyleSheet.create({
   weightValue: {
     fontSize: rf(24),
     fontWeight: '800',
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   weightUnit: {
     fontSize: rf(14),
     fontWeight: '600',
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   weightLabel: {
     fontSize: rf(10),
     fontWeight: '500',
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   chartContainer: {
     flex: 1,
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   goalValue: {
     fontSize: rf(18),
     fontWeight: '700',
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   goalUnit: {
     fontSize: rf(12),
@@ -279,21 +279,21 @@ const styles = StyleSheet.create({
   goalLabel: {
     fontSize: rf(10),
     fontWeight: '500',
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   progressSection: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   progressHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   progressLabel: {
     fontSize: rf(11),
     fontWeight: '600',
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   progressPercent: {
     fontSize: rf(12),
@@ -302,37 +302,37 @@ const styles = StyleSheet.create({
   remainingText: {
     fontSize: rf(11),
     fontWeight: '500',
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   actionButtons: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: ResponsiveTheme.spacing.sm,
+    paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.glassBorder,
+    borderTopColor: colors.glassBorder,
   },
   actionButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: ResponsiveTheme.spacing.xs,
-    paddingVertical: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
   },
   actionButtonText: {
     fontSize: rf(12),
     fontWeight: '600',
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   actionDivider: {
     width: 1,
     height: rh(20),
-    backgroundColor: ResponsiveTheme.colors.glassHighlight,
+    backgroundColor: colors.glassHighlight,
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.md,
   },
   emptyIconContainer: {
     width: rw(60),
@@ -341,35 +341,35 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(156, 39, 176, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   emptyTitle: {
     fontSize: rf(14),
     fontWeight: '700',
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   emptyDescription: {
     fontSize: rf(12),
     fontWeight: '500',
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
-    marginBottom: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
   startButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: ResponsiveTheme.spacing.xs,
-    backgroundColor: ResponsiveTheme.colors.primary,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    gap: spacing.xs,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
   },
   startButtonText: {
     fontSize: rf(13),
     fontWeight: '700',
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 });
 

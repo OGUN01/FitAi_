@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text } from "react-native";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { Button } from "../ui";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 
 interface ErrorBannerProps {
   error: string;
@@ -12,23 +12,23 @@ interface ErrorBannerProps {
 export const ErrorBanner: React.FC<ErrorBannerProps> = ({ error, onRetry }) => (
   <View
     style={{
-      paddingHorizontal: ResponsiveTheme.spacing.md,
-      marginBottom: ResponsiveTheme.spacing.md,
+      paddingHorizontal: spacing.md,
+      marginBottom: spacing.md,
     }}
   >
     <GlassCard
       style={{
-        padding: ResponsiveTheme.spacing.md,
+        padding: spacing.md,
         alignItems: "center",
-        borderColor: ResponsiveTheme.colors.error,
+        borderColor: colors.error,
         borderWidth: 1,
       }}
       elevation={1}
     >
       <Text
         style={{
-          color: ResponsiveTheme.colors.error,
-          marginBottom: ResponsiveTheme.spacing.sm,
+          color: colors.error,
+          marginBottom: spacing.sm,
           textAlign: "center",
         }}
       >

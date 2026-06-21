@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rbr } from "../../../utils/responsive";
 import { CalculatedMetrics } from "../../../hooks/useCalculatedMetrics";
 import { getWeightGoalProgress } from "../../../components/progress/goalProgressUtils";
@@ -43,9 +43,9 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     >
       <View style={styles.trendHeader}>
         <View
-          style={[styles.trendIconContainer, { backgroundColor: ResponsiveTheme.colors.primaryTint }]}
+          style={[styles.trendIconContainer, { backgroundColor: colors.primaryTint }]}
         >
-          <Ionicons name="flag-outline" size={rf(20)} color={ResponsiveTheme.colors.primary} />
+          <Ionicons name="flag-outline" size={rf(20)} color={colors.primary} />
         </View>
         <Text style={styles.trendTitle}>Goal Progress</Text>
       </View>
@@ -61,7 +61,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
                     styles.goalProgressFill,
                     {
                       width: `${Math.min(100, weightProgressPercent)}%`,
-                      backgroundColor: ResponsiveTheme.colors.primary,
+                      backgroundColor: colors.primary,
                     },
                   ]}
                 />
@@ -91,7 +91,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
             <Ionicons
               name="compass-outline"
               size={rf(28)}
-              color={ResponsiveTheme.colors.textSecondary}
+              color={colors.textSecondary}
             />
             <Text style={styles.emptyStateValue}>--</Text>
             <Text style={styles.emptyStateText}>
@@ -106,7 +106,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
 
 const styles = StyleSheet.create({
   trendCard: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rbr(16),
     padding: rw(16),
   },
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   trendTitle: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   goalContainer: {
     gap: rh(12),
@@ -136,11 +136,11 @@ const styles = StyleSheet.create({
   },
   goalLabel: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   goalProgressBar: {
     height: rh(8),
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
     borderRadius: rbr(4),
     overflow: "hidden",
   },
@@ -151,12 +151,12 @@ const styles = StyleSheet.create({
   goalText: {
     fontSize: rf(14),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   goalValue: {
     fontSize: rf(18),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   emptyState: {
     alignItems: "center",
@@ -167,11 +167,11 @@ const styles = StyleSheet.create({
   emptyStateValue: {
     fontSize: rf(28),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   emptyStateText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
   },
 });

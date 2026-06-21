@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rp } from "../../utils/responsive";
 
 interface WarningBannerProps {
@@ -30,8 +30,8 @@ export const WarningBanner: React.FC<WarningBannerProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: ResponsiveTheme.spacing.md,
-    padding: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
+    padding: spacing.md,
     backgroundColor: "rgba(255, 167, 38, 0.15)",
   },
   content: {
@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
   },
   text: {
     flex: 1,
-    marginLeft: ResponsiveTheme.spacing.sm,
+    marginLeft: spacing.sm,
   },
   title: {
     fontSize: rf(14),
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(18),
   },
 });

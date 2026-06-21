@@ -16,7 +16,7 @@ import Animated, {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rbr } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 
 export interface FeatureItem {
   id: string;
@@ -86,12 +86,12 @@ const FeatureGridItem: React.FC<{
         colors={
           selectable && item.selected
             ? [
-                ResponsiveTheme.colors.primary,
-                ResponsiveTheme.colors.primaryDark,
+                colors.primary,
+                colors.primaryDark,
               ]
             : [
-                ResponsiveTheme.colors.backgroundSecondary,
-                ResponsiveTheme.colors.backgroundTertiary,
+                colors.backgroundSecondary,
+                colors.backgroundTertiary,
               ]
         }
         style={styles.itemGradient}
@@ -114,10 +114,10 @@ const FeatureGridItem: React.FC<{
       {selectable && item.selected && (
         <View style={styles.selectionIndicator}>
           <LinearGradient
-            colors={[ResponsiveTheme.colors.success, ResponsiveTheme.colors.success]}
+            colors={[colors.success, colors.success]}
             style={styles.selectionIndicatorGradient}
           >
-            <Ionicons name="checkmark" size={rf(14)} color={ResponsiveTheme.colors.white} />
+            <Ionicons name="checkmark" size={rf(14)} color={colors.white} />
           </LinearGradient>
         </View>
       )}
@@ -135,7 +135,7 @@ export const FeatureGrid: React.FC<FeatureGridProps> = ({
 }) => {
   return (
     <View style={[styles.container, style]}>
-      <View style={[styles.grid, { gap: ResponsiveTheme.spacing.md }]}>
+      <View style={[styles.grid, { gap: spacing.md }]}>
         {items.map((item, index) => (
           <View
             key={item.id}
@@ -175,45 +175,45 @@ const styles = StyleSheet.create({
   },
 
   gridItem: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   itemContainer: {
     position: "relative",
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     overflow: "hidden",
     boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
     elevation: 3,
   },
 
   itemGradient: {
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
     alignItems: "center",
     justifyContent: "center",
     minHeight: rp(100),
     borderWidth: 2,
     borderColor: "transparent",
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
   },
 
   iconContainer: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
     alignItems: "center",
     justifyContent: "center",
   },
 
   label: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
     textAlign: "center",
-    lineHeight: ResponsiveTheme.fontSize.sm * 1.15,
+    lineHeight: fontSize.sm * 1.15,
     flexShrink: 1,
   },
 
   labelSelected: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 
   selectionIndicator: {
@@ -236,9 +236,9 @@ const styles = StyleSheet.create({
   },
 
   checkmark: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
-    lineHeight: ResponsiveTheme.fontSize.sm * 1.15,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.white,
+    lineHeight: fontSize.sm * 1.15,
   },
 });

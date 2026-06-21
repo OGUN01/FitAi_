@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw } from "../../utils/responsive";
 import { FAQItem } from "../../hooks/useHelpSupport";
 
@@ -52,7 +52,7 @@ export const FAQList: React.FC<FAQListProps> = ({
                     { backgroundColor: "rgba(255, 107, 53, 0.15)" },
                   ]}
                 >
-                  <Ionicons name={faq.icon} size={rf(16)} color={ResponsiveTheme.colors.primary} />
+                  <Ionicons name={faq.icon} size={rf(16)} color={colors.primary} />
                 </View>
                 <Text style={styles.faqQuestion}>{faq.question}</Text>
                 <View
@@ -66,7 +66,7 @@ export const FAQList: React.FC<FAQListProps> = ({
                       expandedFaq === faq.id ? "chevron-up" : "chevron-down"
                     }
                     size={rf(16)}
-                    color={ResponsiveTheme.colors.textSecondary}
+                    color={colors.textSecondary}
                   />
                 </View>
               </View>
@@ -86,8 +86,8 @@ export const FAQList: React.FC<FAQListProps> = ({
 
 const styles = StyleSheet.create({
   faqCard: {
-    marginBottom: ResponsiveTheme.spacing.sm,
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.glassSurface,
   },
   faqCardExpanded: {
     backgroundColor: "rgba(255, 107, 53, 0.08)",
@@ -102,14 +102,14 @@ const styles = StyleSheet.create({
     borderRadius: rw(8),
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   faqQuestion: {
     flex: 1,
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
-    marginRight: ResponsiveTheme.spacing.sm,
+    color: colors.white,
+    marginRight: spacing.sm,
   },
   expandIcon: {
     width: rw(28),
@@ -120,17 +120,17 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
   },
   expandIconExpanded: {
-    backgroundColor: `${ResponsiveTheme.colors.primary}20`,
+    backgroundColor: `${colors.primary}20`,
   },
   faqAnswer: {
-    marginTop: ResponsiveTheme.spacing.md,
-    paddingTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.06)",
   },
   faqAnswerText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(20),
   },
 });

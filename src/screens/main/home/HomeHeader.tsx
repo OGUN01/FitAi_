@@ -8,11 +8,11 @@ import { View, Text, StyleSheet, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf, rw, rp, rs } from "../../../utils/responsive";
 
 const avatarGradientShadow = {
-  shadowColor: ResponsiveTheme.colors.black,
+  shadowColor: colors.black,
   shadowOffset: { width: 0, height: 4 },
   shadowOpacity: 0.2,
   shadowRadius: 8,
@@ -51,13 +51,13 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
       return {
         greeting: "Good afternoon",
         icon: "partly-sunny" as const,
-        gradientColors: [ResponsiveTheme.colors.errorLight, ResponsiveTheme.colors.accent] as [string, string],
+        gradientColors: [colors.errorLight, colors.accent] as [string, string],
       };
     }
     return {
       greeting: "Good evening",
       icon: "moon" as const,
-      gradientColors: [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark] as [string, string],
+      gradientColors: [colors.primary, colors.primaryDark] as [string, string],
     };
   })();
 
@@ -120,7 +120,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
               accessibilityRole="button"
               accessibilityLabel={`${streak} day streak`}
             >
-              <Ionicons name="flame" size={rf(16)} color={ResponsiveTheme.colors.errorLight} />
+              <Ionicons name="flame" size={rf(16)} color={colors.errorLight} />
               <Text style={styles.streakNumber}>{streak}</Text>
             </AnimatedPressable>
           )}
@@ -138,7 +138,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
             <Ionicons
               name="notifications-outline"
               size={rf(20)}
-              color={ResponsiveTheme.colors.text}
+              color={colors.text}
             />
             {notificationCount > 0 && (
               <View style={styles.notificationBadge}>
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   avatarGradient: {
     width: rs(36),
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: rf(16),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   greetingSection: {
     flex: 1,
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   greetingText: {
     fontSize: rf(13),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   greetingIcon: {
     marginLeft: rp(4),
@@ -196,48 +196,48 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: rf(22),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     letterSpacing: -0.5,
     marginTop: rp(2),
   },
   dateText: {
     fontSize: rf(12),
     fontWeight: '500',
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginTop: rp(2),
     opacity: 0.75,
   },
   rightSection: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   streakBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: rp(4),
-    backgroundColor: ResponsiveTheme.colors.errorTint,
+    backgroundColor: colors.errorTint,
     paddingHorizontal: rp(10),
     paddingVertical: rp(6),
     borderRadius: rw(20),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primaryFaded,
+    borderColor: colors.primaryFaded,
   },
   streakNumber: {
     fontSize: rf(15),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.errorLight,
+    color: colors.errorLight,
   },
   notificationBtn: {
     width: rs(36),
     height: rs(36),
     borderRadius: rs(18),
-    backgroundColor: ResponsiveTheme.colors.glassBorder,
+    backgroundColor: colors.glassBorder,
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassHighlight,
+    borderColor: colors.glassHighlight,
   },
   notificationBadge: {
     position: "absolute",
@@ -246,17 +246,17 @@ const styles = StyleSheet.create({
     minWidth: rw(18),
     height: rw(18),
     borderRadius: rw(9),
-    backgroundColor: ResponsiveTheme.colors.error,
+    backgroundColor: colors.error,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: rp(4),
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.background,
+    borderColor: colors.background,
   },
   notificationBadgeText: {
     fontSize: rf(10),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 });
 

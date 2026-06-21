@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 import { Button } from "../ui";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rbr, rs } from '../../utils/responsive';
 import {
   isProductBarcode,
@@ -167,7 +167,7 @@ const CameraComponent: React.FC<CameraProps> = ({
   if (!permission) {
     return (
       <View style={styles.permissionContainer}>
-        <ActivityIndicator size="large" color={ResponsiveTheme.colors.primary} />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.permissionText}>
           Requesting camera permission...
         </Text>
@@ -451,7 +451,7 @@ const CameraComponent: React.FC<CameraProps> = ({
                 onPortionGramsChange(!isNaN(val) && val > 0 ? val : null);
               }}
               placeholder="grams"
-              placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+              placeholderTextColor={colors.textSecondary}
               keyboardType="numeric"
               maxLength={4}
               returnKeyType="done"
@@ -525,89 +525,89 @@ const CameraComponent: React.FC<CameraProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
 
   permissionContainer: {
     flex: 1,
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    backgroundColor: ResponsiveTheme.colors.background,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.lg,
   },
 
   permissionText: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold as "600",
+    color: colors.text,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   permissionSubtext: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   header: {
     flexDirection: "row",
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingTop: spacing.lg,
   },
 
   closeButton: {
     width: 44,
     height: 44,
     borderRadius: rbr(22),
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     alignItems: "center" as const,
     justifyContent: "center" as const,
   },
 
   closeIcon: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.lg,
+    color: colors.text,
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold as "600",
+    color: colors.text,
   },
 
   flashButton: {
     width: 44,
     height: 44,
     borderRadius: rbr(22),
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     alignItems: "center" as const,
     justifyContent: "center" as const,
   },
 
   flashIcon: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: fontSize.lg,
   },
 
   instructionsContainer: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
 
   instructionsText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
   },
 
   cameraContainer: {
     flex: 1,
-    marginHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    marginHorizontal: spacing.md,
+    borderRadius: borderRadius.lg,
     overflow: "hidden",
   },
 
@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
     height: rs(30),
     borderTopWidth: 3,
     borderLeftWidth: 3,
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
     top: 0,
     left: 0,
   },
@@ -678,7 +678,7 @@ const styles = StyleSheet.create({
     width: rs(150),
     height: rs(350),
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
     borderRadius: rbr(75),
     borderStyle: "dashed",
   },
@@ -695,8 +695,8 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.primary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderColor: colors.primary,
+    borderRadius: borderRadius.md,
     backgroundColor: "rgba(0,0,0,0.08)",
   },
 
@@ -704,15 +704,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
   },
 
   flipButton: {
     width: rs(50),
     height: rs(50),
     borderRadius: rbr(25),
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     alignItems: "center" as const,
     justifyContent: "center" as const,
   },
@@ -725,11 +725,11 @@ const styles = StyleSheet.create({
     width: rs(80),
     height: rs(80),
     borderRadius: rbr(40),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     alignItems: "center" as const,
     justifyContent: "center" as const,
     borderWidth: 4,
-    borderColor: ResponsiveTheme.colors.white,
+    borderColor: colors.white,
   },
 
   captureButtonDisabled: {
@@ -740,7 +740,7 @@ const styles = StyleSheet.create({
     width: rs(60),
     height: rs(60),
     borderRadius: rbr(30),
-    backgroundColor: ResponsiveTheme.colors.white,
+    backgroundColor: colors.white,
   },
 
   placeholder: {
@@ -749,18 +749,18 @@ const styles = StyleSheet.create({
   },
 
   portionHintContainer: {
-    marginHorizontal: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.sm,
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    padding: ResponsiveTheme.spacing.sm,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    backgroundColor: `${colors.primary}15`,
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.primary}30`,
+    borderColor: `${colors.primary}30`,
   },
   portionHintLabel: {
     fontSize: rf(11),
     fontWeight: "600" as const,
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: 4,
   },
   portionHintRow: {
@@ -772,80 +772,80 @@ const styles = StyleSheet.create({
   portionHintInput: {
     width: 72,
     height: 32,
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.sm,
     paddingHorizontal: 8,
     fontSize: rf(13),
     fontWeight: "600" as const,
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
     textAlign: "center" as const,
   },
   portionHintUnit: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: "600" as const,
   },
   portionClearBtn: { padding: 4 },
   portionClearText: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   portionActiveText: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
     fontWeight: "600" as const,
   },
   portionHintSubtext: {
     fontSize: rf(9),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   tipsContainer: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.lg,
   },
 
   tipItem: {
     flexDirection: "row",
     alignItems: "center" as const,
-    backgroundColor: ResponsiveTheme.colors.surface,
-    padding: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.surface,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
   },
 
   tipIcon: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    marginRight: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.md,
+    marginRight: spacing.sm,
   },
 
   tipText: {
     flex: 1,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
 
   errorContainer: {
     flex: 1,
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    backgroundColor: ResponsiveTheme.colors.background,
-    padding: ResponsiveTheme.spacing.xl,
+    backgroundColor: colors.background,
+    padding: spacing.xl,
   },
 
   errorText: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold as "700",
+    color: colors.text,
+    marginBottom: spacing.sm,
     textAlign: "center",
   },
 
   errorSubtext: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: spacing.xl,
   },
 
   // Barcode scanning styles
@@ -863,31 +863,31 @@ const styles = StyleSheet.create({
     justifyContent: "center" as const,
     alignItems: "center" as const,
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.primary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderColor: colors.primary,
+    borderRadius: borderRadius.md,
     backgroundColor: "rgba(0,0,0,0.1)",
   },
 
   scanningLine: {
     width: "90%",
     height: 2,
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     opacity: 0.7,
   },
 
   scanningIndicator: {
     position: "absolute",
     top: -30,
-    backgroundColor: ResponsiveTheme.colors.primary,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
   },
 
   scanningText: {
-    color: ResponsiveTheme.colors.white,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
+    color: colors.white,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium as "500",
   },
 
   barcodeCorner: {
@@ -896,7 +896,7 @@ const styles = StyleSheet.create({
     height: rs(20),
     borderTopWidth: 3,
     borderLeftWidth: 3,
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
     top: -2,
     left: -2,
   },
@@ -934,68 +934,68 @@ const styles = StyleSheet.create({
     width: rs(80),
     height: rs(80),
     borderRadius: rbr(40),
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     alignItems: "center" as const,
     justifyContent: "center" as const,
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
   },
 
   scanningStatusText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
+    fontSize: fontSize.xs,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.medium as "500",
     textAlign: "center",
   },
   barcodeActionRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingBottom: ResponsiveTheme.spacing.md,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
     justifyContent: "center" as const,
   },
   barcodeActionButton: {
     minWidth: rs(110),
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.surface,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     alignItems: "center" as const,
   },
   barcodeActionButtonPrimary: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   barcodeActionText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold as "600",
+    color: colors.text,
   },
   barcodeActionTextPrimary: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   labelLibraryRow: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingBottom: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
     alignItems: "center" as const,
   },
   labelLibraryButton: {
     minWidth: rs(190),
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.surface,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     alignItems: "center" as const,
   },
   labelLibraryButtonText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold as "600",
+    color: colors.text,
   },
 });
 

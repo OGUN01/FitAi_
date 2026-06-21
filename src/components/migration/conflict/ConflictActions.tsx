@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { rf, rp, rbr } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors } from "../../../theme/aurora-tokens";
 
 interface ConflictActionsProps {
   resolved: number;
@@ -44,34 +44,34 @@ const styles = StyleSheet.create({
     paddingBottom: rp(40),
     gap: rp(15),
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.glassBorder,
+    borderTopColor: colors.glassBorder,
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.errorTint,
+    backgroundColor: colors.errorTint,
     paddingVertical: rp(15),
     borderRadius: rbr(12),
     alignItems: "center",
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.errorAlt,
+    borderColor: colors.errorAlt,
   },
   cancelButtonText: {
-    color: ResponsiveTheme.colors.errorAlt,
+    color: colors.errorAlt,
     fontSize: rf(16),
     fontWeight: "600",
   },
   resolveButton: {
     flex: 2,
-    backgroundColor: ResponsiveTheme.colors.successAlt,
+    backgroundColor: colors.successAlt,
     paddingVertical: rp(15),
     borderRadius: rbr(12),
     alignItems: "center",
   },
   resolveButtonDisabled: {
-    backgroundColor: ResponsiveTheme.colors.glassBorder,
+    backgroundColor: colors.glassBorder,
   },
   resolveButtonText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     fontSize: rf(16),
     fontWeight: "600",
   },

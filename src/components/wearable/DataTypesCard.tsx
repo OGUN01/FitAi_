@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, Switch, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../utils/responsive";
 
 export interface HealthDataType {
@@ -28,63 +28,63 @@ export const HEALTH_DATA_TYPES: HealthDataType[] = [
     title: "Steps & Activity",
     description: "Daily steps, distance walked",
     icon: "walk-outline",
-    color: ResponsiveTheme.colors.success,
+    color: colors.success,
   },
   {
     key: "heartRate",
     title: "Heart Rate",
     description: "Heart rate and resting HR",
     icon: "heart-outline",
-    color: ResponsiveTheme.colors.error,
+    color: colors.error,
   },
   {
     key: "workouts",
     title: "Workouts",
     description: "Exercise sessions from watch",
     icon: "fitness-outline",
-    color: ResponsiveTheme.colors.warning,
+    color: colors.warning,
   },
   {
     key: "sleep",
     title: "Sleep Data",
     description: "Sleep duration and quality",
     icon: "bed-outline",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   {
     key: "weight",
     title: "Body Weight",
     description: "Weight measurements",
     icon: "body-outline",
-    color: ResponsiveTheme.colors.info,
+    color: colors.info,
   },
   {
     key: "nutrition",
     title: "Nutrition",
     description: "Calorie tracking from apps",
     icon: "nutrition-outline",
-    color: ResponsiveTheme.colors.cyan,
+    color: colors.cyan,
   },
   {
     key: "hrv",
     title: "Heart Rate Variability",
     description: "HRV for recovery analysis",
     icon: "pulse-outline",
-    color: ResponsiveTheme.colors.secondary,
+    color: colors.secondary,
   },
   {
     key: "spo2",
     title: "Blood Oxygen (SpO2)",
     description: "Oxygen saturation levels",
     icon: "water-outline",
-    color: ResponsiveTheme.colors.teal,
+    color: colors.teal,
   },
   {
     key: "bodyFat",
     title: "Body Fat",
     description: "Body composition from scales",
     icon: "analytics-outline",
-    color: ResponsiveTheme.colors.primaryDark,
+    color: colors.primaryDark,
   },
 ];
 
@@ -121,8 +121,8 @@ export const DataTypesCard: React.FC<DataTypesCardProps> = ({
           <Switch
             value={dataTypesToSync[dataType.key]}
             onValueChange={(value) => onDataTypeToggle(dataType.key, value)}
-            trackColor={{ false: ResponsiveTheme.colors.border, true: dataType.color }}
-            thumbColor={ResponsiveTheme.colors.white}
+            trackColor={{ false: colors.border, true: dataType.color }}
+            thumbColor={colors.white}
           />
         </View>
       ))}
@@ -132,23 +132,23 @@ export const DataTypesCard: React.FC<DataTypesCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: ResponsiveTheme.spacing.md,
-    padding: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.md,
+    padding: spacing.lg,
   },
   title: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
   },
   rowBorder: {
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.glassHighlight,
+    borderTopColor: colors.glassHighlight,
   },
   icon: {
     width: rw(40),
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     borderRadius: rbr(10),
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
   info: {
     flex: 1,
@@ -164,11 +164,11 @@ const styles = StyleSheet.create({
   dataTitle: {
     fontSize: rf(15),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   desc: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
 });

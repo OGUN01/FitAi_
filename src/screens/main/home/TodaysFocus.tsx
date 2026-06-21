@@ -9,7 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rp } from "../../../utils/responsive";
 
 interface WorkoutInfo {
@@ -56,9 +56,9 @@ export const TodaysFocus: React.FC<TodaysFocusProps> = ({
   };
 
   const getWorkoutColor = () => {
-    if (workoutInfo.isRestDay) return ResponsiveTheme.colors.info;
-    if (workoutInfo.isCompleted) return ResponsiveTheme.colors.success;
-    return ResponsiveTheme.colors.primary;
+    if (workoutInfo.isRestDay) return colors.info;
+    if (workoutInfo.isCompleted) return colors.success;
+    return colors.primary;
   };
 
   const getWorkoutTitle = () => {
@@ -154,7 +154,7 @@ export const TodaysFocus: React.FC<TodaysFocusProps> = ({
             <Ionicons
               name={workoutInfo.isCompleted ? "eye-outline" : "play"}
               size={rf(16)}
-              color={ResponsiveTheme.colors.white}
+              color={colors.white}
             />
           </View>
         </View>
@@ -167,12 +167,12 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   iconContainer: {
     width: rw(52),
     height: rw(52),
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -182,23 +182,23 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   subtitle: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
   progressContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
-    marginTop: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
+    marginTop: spacing.xs,
   },
   progressBar: {
     flex: 1,
     height: rh(4),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     borderRadius: rh(2),
     overflow: "hidden",
   },

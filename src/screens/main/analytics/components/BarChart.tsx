@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { ResponsiveTheme } from "../../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
 import { rf, rh, rp } from "../../../../utils/responsive";
 
 export interface ChartData {
@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-end",
     height: rh(120),
-    paddingBottom: ResponsiveTheme.spacing.lg,
+    paddingBottom: spacing.lg,
   },
   barItem: {
     flex: 1,
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   },
   bar: {
     width: "100%",
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    borderRadius: borderRadius.sm,
     overflow: "hidden",
     minHeight: rh(6),
   },
@@ -77,13 +77,13 @@ const styles = StyleSheet.create({
   barLabel: {
     fontSize: rf(9),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.xs,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
   barValue: {
     fontSize: rf(10),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginTop: rp(2),
   },
 });

@@ -7,7 +7,7 @@ import {
   Text,
 } from "react-native";
 import { rp } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatShadows as shadows } from "../../theme/aurora-tokens";
 
 interface CardProps {
   children: React.ReactNode;
@@ -111,24 +111,24 @@ export const Card: React.FC<CardProps> = (props) => {
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.backgroundTertiary,
   },
 
   // Variants
   default: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
   },
 
   elevated: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    ...ResponsiveTheme.shadows.md,
+    backgroundColor: colors.backgroundTertiary,
+    ...shadows.md,
   },
 
   outlined: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
 
   // Padding variants
@@ -137,14 +137,14 @@ const styles = StyleSheet.create({
   },
 
   sm: {
-    padding: ResponsiveTheme.spacing.sm,
+    padding: spacing.sm,
   },
 
   md: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
   },
 
   lg: {
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
   },
 });

@@ -14,7 +14,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { rp } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 
 export interface SegmentOption {
   id: string;
@@ -34,7 +34,7 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
   options,
   selectedId,
   onSelect,
-  gradient = [ResponsiveTheme.colors.success, ResponsiveTheme.colors.success],
+  gradient = [colors.success, colors.success],
   style,
 }) => {
   const [segmentWidths, setSegmentWidths] = useState<number[]>([]);
@@ -125,8 +125,8 @@ const styles = StyleSheet.create({
   container: {
     position: "relative",
     flexDirection: "row",
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.full,
     padding: rp(4),
     overflow: "hidden",
   },
@@ -136,10 +136,10 @@ const styles = StyleSheet.create({
     top: rp(4),
     bottom: rp(4),
     left: rp(4),
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    borderRadius: borderRadius.full,
     overflow: "hidden",
     zIndex: 1,
-    shadowColor: ResponsiveTheme.colors.black,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -159,8 +159,8 @@ const styles = StyleSheet.create({
 
   segment: {
     flex: 1,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
     alignItems: "center" as const,
     justifyContent: "center" as const,
     minWidth: 0,
@@ -168,15 +168,15 @@ const styles = StyleSheet.create({
   },
 
   segmentText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textSecondary,
     textAlign: "center",
     flexShrink: 1,
   },
 
   segmentTextSelected: {
-    color: ResponsiveTheme.colors.white,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: colors.white,
+    fontWeight: typography.fontWeight.bold,
   },
 });

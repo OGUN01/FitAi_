@@ -22,7 +22,7 @@ import {
   PanGestureHandlerGestureEvent,
 } from "react-native-gesture-handler";
 import { rf, rp, rbr } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { hapticSelection } from "../../utils/haptics";
 
 interface SliderProps {
@@ -50,8 +50,8 @@ export const Slider: React.FC<SliderProps> = ({
   showTooltip = true,
   formatValue = (val) => val.toString(),
   style,
-  trackColor = ResponsiveTheme.colors.primary,
-  thumbColor = ResponsiveTheme.colors.primary,
+  trackColor = colors.primary,
+  thumbColor = colors.primary,
   disabled = false,
 }) => {
   const [sliderWidth, setSliderWidth] = useState(0);
@@ -287,7 +287,7 @@ export const Slider: React.FC<SliderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: ResponsiveTheme.spacing.sm, // Reduced from md
+    marginBottom: spacing.sm, // Reduced from md
   },
 
   containerDisabled: {
@@ -295,10 +295,10 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs, // Reduced from sm
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
+    marginBottom: spacing.xs, // Reduced from sm
   },
 
   sliderContainer: {
@@ -323,11 +323,11 @@ const styles = StyleSheet.create({
   },
 
   inactiveTrack: {
-    backgroundColor: ResponsiveTheme.colors.glassHighlight,
+    backgroundColor: colors.glassHighlight,
   },
 
   activeTrack: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
 
   // Refined thumb - smaller and cleaner
@@ -336,13 +336,13 @@ const styles = StyleSheet.create({
     width: rp(22),
     height: rp(22),
     borderRadius: rbr(11),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
     marginLeft: rp(-11),
     // Clean white border
     borderWidth: 3,
-    borderColor: ResponsiveTheme.colors.white,
+    borderColor: colors.white,
     // Subtle shadow
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     width: rp(6),
     height: rp(6),
     borderRadius: rbr(3),
-    backgroundColor: ResponsiveTheme.colors.glassHighlight,
+    backgroundColor: colors.glassHighlight,
   },
 
   // Glow effect behind thumb when dragging
@@ -383,12 +383,12 @@ const styles = StyleSheet.create({
 
   // Smaller, cleaner tooltip bubble
   tooltipBubble: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     paddingHorizontal: rp(8),
     paddingVertical: rp(4),
     borderRadius: rbr(6),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
     // Subtle shadow
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -398,9 +398,9 @@ const styles = StyleSheet.create({
   },
 
   tooltipText: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
     fontSize: rf(11),
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    fontWeight: typography.fontWeight.semibold,
   },
 
   labelsContainer: {
@@ -411,6 +411,6 @@ const styles = StyleSheet.create({
 
   rangeLabel: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
 });

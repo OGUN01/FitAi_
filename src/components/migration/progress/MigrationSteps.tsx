@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { MigrationStepInfo } from "../../../hooks/useMigrationProgress";
 import { rf, rp, rbr } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors } from "../../../theme/aurora-tokens";
 
 interface MigrationStepsProps {
   steps: MigrationStepInfo[];
@@ -55,10 +55,10 @@ export const MigrationSteps: React.FC<MigrationStepsProps> = ({
                 size={rf(20)}
                 color={
                   isCompleted
-                    ? ResponsiveTheme.colors.successAlt
+                    ? colors.successAlt
                     : isCurrent
-                      ? ResponsiveTheme.colors.primaryDark
-                      : ResponsiveTheme.colors.textTertiary
+                      ? colors.primaryDark
+                      : colors.textTertiary
                 }
               />
             </View>
@@ -108,16 +108,16 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   stepIconCompleted: {
-    backgroundColor: ResponsiveTheme.colors.successTint,
-    borderColor: ResponsiveTheme.colors.successAlt,
+    backgroundColor: colors.successTint,
+    borderColor: colors.successAlt,
   },
   stepIconCurrent: {
-    backgroundColor: ResponsiveTheme.colors.primaryTint,
-    borderColor: ResponsiveTheme.colors.primaryDark,
+    backgroundColor: colors.primaryTint,
+    borderColor: colors.primaryDark,
   },
   stepIconUpcoming: {
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
-    borderColor: ResponsiveTheme.colors.textTertiary,
+    backgroundColor: colors.glassSurface,
+    borderColor: colors.textTertiary,
   },
   stepContent: {
     flex: 1,
@@ -125,21 +125,21 @@ const styles = StyleSheet.create({
   stepTitle: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rp(2),
   },
   stepTitleCompleted: {
-    color: ResponsiveTheme.colors.successAlt,
+    color: colors.successAlt,
   },
   stepTitleCurrent: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   stepDescription: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textTertiary,
+    color: colors.textTertiary,
     lineHeight: rf(18),
   },
   stepDescriptionCurrent: {
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
 });

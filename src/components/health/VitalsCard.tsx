@@ -24,7 +24,7 @@ import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rp, rw } from "../../utils/responsive";
 import { useHealthDataStore } from "../../stores/healthDataStore";
 import type { HealthMetrics } from "../../stores/healthDataStore";
@@ -41,7 +41,7 @@ interface VitalTileDef {
   label: string;
   unit: string;
   icon: keyof typeof Ionicons.glyphMap;
-  /** ResponsiveTheme color key for the icon tint. */
+  /** icon color key for the icon tint. */
   colorKey: "primary" | "secondary" | "success" | "warning" | "error";
   /** Pretty-printer for the numeric value. */
   format: (n: number) => string;
@@ -115,7 +115,7 @@ export const VitalsCard: React.FC = () => {
             <Ionicons
               name={def.icon}
               size={rf(22)}
-              color={ResponsiveTheme.colors[def.colorKey]}
+              color={colors[def.colorKey]}
             />
             <Text style={styles.value}>{display}</Text>
             <Text style={styles.label}>{def.label}</Text>
@@ -129,14 +129,14 @@ export const VitalsCard: React.FC = () => {
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: ResponsiveTheme.spacing.md,
-    padding: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.md,
+    padding: spacing.lg,
   },
   title: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
   grid: {
     flexDirection: "row",
@@ -149,17 +149,17 @@ const styles = StyleSheet.create({
   value: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
-    marginTop: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginTop: spacing.xs,
   },
   label: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
   unit: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textTertiary,
+    color: colors.textTertiary,
     marginTop: rp(1),
   },
 });

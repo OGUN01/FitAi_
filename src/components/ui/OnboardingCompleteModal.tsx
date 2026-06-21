@@ -20,7 +20,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AnimatedRN, { FadeInUp, ZoomIn } from "react-native-reanimated";
 import { GlassCard } from "./aurora/GlassCard";
 import { AnimatedPressable } from "./aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw, rh } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
@@ -80,12 +80,12 @@ const AnimatedCheckmark: React.FC = () => {
       ]}
     >
       <LinearGradient
-        colors={[ResponsiveTheme.colors.successAlt, ResponsiveTheme.colors.successAltDark]}
+        colors={[colors.successAlt, colors.successAltDark]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.checkmarkGradient}
       >
-        <Ionicons name="checkmark" size={rf(48)} color={ResponsiveTheme.colors.white} />
+        <Ionicons name="checkmark" size={rf(48)} color={colors.white} />
       </LinearGradient>
     </Animated.View>
   );
@@ -206,7 +206,7 @@ export const OnboardingCompleteModal: React.FC<
               <FloatingParticle
                 key={i}
                 delay={i * 200}
-                color={[ResponsiveTheme.colors.successAlt, ResponsiveTheme.colors.primary, ResponsiveTheme.colors.errorLight, ResponsiveTheme.colors.teal][i % 4]}
+                color={[colors.successAlt, colors.primary, colors.errorLight, colors.teal][i % 4]}
               />
             ))}
           </View>
@@ -253,10 +253,10 @@ export const OnboardingCompleteModal: React.FC<
                         <View
                           style={[
                             styles.statIcon,
-                            { backgroundColor: ResponsiveTheme.colors.errorTint },
+                            { backgroundColor: colors.errorTint },
                           ]}
                         >
-                          <Ionicons name="flag" size={rf(18)} color={ResponsiveTheme.colors.errorLight} />
+                          <Ionicons name="flag" size={rf(18)} color={colors.errorLight} />
                         </View>
                         <Text style={styles.statLabel}>Goal</Text>
                         <Text style={styles.statValue} numberOfLines={1}>
@@ -269,13 +269,13 @@ export const OnboardingCompleteModal: React.FC<
                         <View
                           style={[
                             styles.statIcon,
-                            { backgroundColor: ResponsiveTheme.colors.primaryTint },
+                            { backgroundColor: colors.primaryTint },
                           ]}
                         >
                           <Ionicons
                             name="barbell"
                             size={rf(18)}
-                            color={ResponsiveTheme.colors.primary}
+                            color={colors.primary}
                           />
                         </View>
                         <Text style={styles.statLabel}>Weekly</Text>
@@ -289,13 +289,13 @@ export const OnboardingCompleteModal: React.FC<
                         <View
                           style={[
                             styles.statIcon,
-                            { backgroundColor: ResponsiveTheme.colors.successTint },
+                            { backgroundColor: colors.successTint },
                           ]}
                         >
                           <Ionicons
                             name="flame"
                             size={rf(18)}
-                            color={ResponsiveTheme.colors.successAlt}
+                            color={colors.successAlt}
                           />
                         </View>
                         <Text style={styles.statLabel}>Target</Text>
@@ -317,17 +317,17 @@ export const OnboardingCompleteModal: React.FC<
                   {
                     icon: "sparkles",
                     text: "AI-powered workout plans",
-                    color: ResponsiveTheme.colors.primary,
+                    color: colors.primary,
                   },
                   {
                     icon: "nutrition",
                     text: "Smart meal recommendations",
-                    color: ResponsiveTheme.colors.successAlt,
+                    color: colors.successAlt,
                   },
                   {
                     icon: "trending-up",
                     text: "Progress tracking & insights",
-                    color: ResponsiveTheme.colors.errorLight,
+                    color: colors.errorLight,
                   },
                 ].map((feature, index) => (
                   <View key={index} style={styles.featureItem}>
@@ -354,13 +354,13 @@ export const OnboardingCompleteModal: React.FC<
                   style={styles.button}
                 >
                   <LinearGradient
-                    colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark]}
+                    colors={[colors.primary, colors.primaryDark]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={styles.buttonGradient}
                   >
                     <Text style={styles.buttonText}>Start Your Journey</Text>
-                    <Ionicons name="arrow-forward" size={rf(20)} color={ResponsiveTheme.colors.white} />
+                    <Ionicons name="arrow-forward" size={rf(20)} color={colors.white} />
                   </LinearGradient>
                 </AnimatedPressable>
               </AnimatedRN.View>
@@ -375,7 +375,7 @@ export const OnboardingCompleteModal: React.FC<
 const styles = StyleSheet.create({
   fullScreenContainer: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
   overlay: {
     flex: 1,
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: rp(20),
     paddingVertical: rp(40),
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
   particlesContainer: {
     position: "absolute",
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
   },
   checkmarkContainer: {
     alignSelf: "center",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   checkmarkGradient: {
     width: rp(80),
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     borderRadius: rbr(40),
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: ResponsiveTheme.colors.successAlt,
+    shadowColor: colors.successAlt,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 16,
@@ -423,45 +423,45 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: rf(26),
-    fontWeight: ResponsiveTheme.fontWeight.extrabold,
-    color: ResponsiveTheme.colors.text,
+    fontWeight: typography.fontWeight.extrabold,
+    color: colors.text,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   subtitle: {
     fontSize: rf(16),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   userName: {
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.bold,
   },
   description: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(20),
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   statsContainer: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-around",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   statItem: {
     flex: 1,
     minWidth: rp(70),
     maxWidth: rp(100),
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.glassSurface,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    borderRadius: borderRadius.md,
   },
   statIcon: {
     width: rp(32),
@@ -469,37 +469,37 @@ const styles = StyleSheet.create({
     borderRadius: rbr(16),
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   statLabel: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rp(2),
   },
   statValue: {
     fontSize: rf(10),
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
     textAlign: "center",
   },
   featuresContainer: {
-    marginBottom: ResponsiveTheme.spacing.xl,
-    gap: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.xl,
+    gap: spacing.sm,
   },
   featureItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   featureText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   buttonContainer: {
     width: "100%",
     flexShrink: 0,
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.sm,
   },
   button: {
     width: "100%",
@@ -517,8 +517,8 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: rf(16),
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.white,
     letterSpacing: 0.3,
   },
 });

@@ -4,7 +4,7 @@
  * Loads tiny blurred thumbnail first, then fades in full-resolution image
  */
 
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors } from "../../../theme/aurora-tokens";
 import React, { useState, useRef, useEffect } from "react";
 import {
   View,
@@ -325,7 +325,7 @@ export const ProgressiveAvatar: React.FC<ProgressiveAvatarProps> = ({
   size = 48,
   borderRadius,
   borderWidth = 0,
-  borderColor = ResponsiveTheme.colors.white,
+  borderColor = colors.white,
   style,
   accessibilityLabel,
 }) => {

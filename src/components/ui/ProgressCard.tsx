@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { rf, rp } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { LargeProgressRing } from "./LargeProgressRing";
 
 interface ProgressCardProps {
@@ -24,7 +24,7 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({
   maxValue = 100,
   description,
   icon,
-  gradient = [ResponsiveTheme.colors.success, "#45A049"],
+  gradient = [colors.success, "#45A049"],
   size = 120,
   strokeWidth = 12,
   showGlow = true,
@@ -36,8 +36,8 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({
     <View style={[styles.container, style]}>
       <LinearGradient
         colors={[
-          ResponsiveTheme.colors.backgroundSecondary,
-          ResponsiveTheme.colors.background,
+          colors.backgroundSecondary,
+          colors.background,
         ]}
         style={styles.gradient}
         start={{ x: 0, y: 0 }}
@@ -81,14 +81,14 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: ResponsiveTheme.borderRadius.xl,
+    borderRadius: borderRadius.xl,
     overflow: "hidden",
     boxShadow: '0px 4px 8px rgba(0,0,0,0.1)',
     elevation: 5,
   },
 
   gradient: {
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
     alignItems: "center",
   },
 
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     position: "relative",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   iconContainer: {
@@ -111,35 +111,35 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
 
   valueContainer: {
     flexDirection: "row",
     alignItems: "baseline",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
 
   value: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.primary,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
   },
 
   maxValue: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
     marginLeft: rp(2),
   },
 
   description: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(18),
   },

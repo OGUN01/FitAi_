@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, ActivityIndicator, Text, StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { ResponsiveTheme } from "../utils/constants";
+import { flatColors as colors, typography } from "../theme/aurora-tokens";
 import { rf, rp } from "../utils/responsive";
 import { initializeBackend } from "../utils/integration";
 import { googleAuthService } from "../services/googleAuth";
@@ -101,7 +101,7 @@ export const AsyncInitializer: React.FC<AsyncInitializerProps> = ({
     return (
       <View style={styles.loadingContainer}>
         <StatusBar style="light" />
-        <ActivityIndicator size="large" color={ResponsiveTheme.colors.primary} />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.loadingText}>Initializing FitAI...</Text>
         {initializationError && (
           <Text style={styles.errorText}>Warning: {initializationError}</Text>
@@ -118,16 +118,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
   loadingText: {
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     fontSize: rf(16),
     marginTop: rp(16),
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontWeight: typography.fontWeight.medium,
   },
   errorText: {
-    color: ResponsiveTheme.colors.error || "#ff6b6b",
+    color: colors.error || "#ff6b6b",
     fontSize: rf(14),
     marginTop: rp(8),
     textAlign: "center",

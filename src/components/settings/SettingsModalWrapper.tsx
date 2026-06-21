@@ -29,7 +29,7 @@ import Animated, {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
@@ -52,7 +52,7 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
   title,
   subtitle,
   icon,
-  iconColor = ResponsiveTheme.colors.primary,
+  iconColor = colors.primary,
   onClose,
   onSave,
   isSaving = false,
@@ -103,7 +103,7 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                 <Ionicons
                   name="close"
                   size={rf(22)}
-                  color={ResponsiveTheme.colors.text}
+                  color={colors.text}
                 />
               </AnimatedPressable>
 
@@ -164,7 +164,7 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                 >
                   <LinearGradient
                     colors={
-                      saveDisabled ? ["#666", "#555"] : [ResponsiveTheme.colors.errorLight, ResponsiveTheme.colors.primaryLight]
+                      saveDisabled ? ["#666", "#555"] : [colors.errorLight, colors.primaryLight]
                     }
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
@@ -174,13 +174,13 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                     ]}
                   >
                     {isSaving ? (
-                      <ActivityIndicator color={ResponsiveTheme.colors.white} size="small" />
+                      <ActivityIndicator color={colors.white} size="small" />
                     ) : (
                       <>
                         <Ionicons
                           name="checkmark-circle"
                           size={rf(18)}
-                          color={ResponsiveTheme.colors.white}
+                          color={colors.white}
                         />
                         <Text style={styles.saveButtonText}>{saveLabel}</Text>
                       </>
@@ -199,11 +199,11 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
   keyboardView: {
     flex: 1,
@@ -212,21 +212,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
   closeButton: {
     width: Math.max(rw(40), 44),
     height: Math.max(rw(40), 44),
     borderRadius: Math.max(rbr(20), 22),
-    backgroundColor: ResponsiveTheme.colors.glassBorder,
+    backgroundColor: colors.glassBorder,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
   headerCenter: {
     flexDirection: "row",
     alignItems: "center" as const,
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   headerIcon: {
     width: rw(36),
@@ -238,11 +238,11 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   headerSubtitle: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
   headerSpacer: {
@@ -250,16 +250,16 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: rp(1),
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
-    marginHorizontal: ResponsiveTheme.spacing.md,
+    backgroundColor: colors.glassSurface,
+    marginHorizontal: spacing.md,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingTop: ResponsiveTheme.spacing.lg,
-    paddingBottom: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
   },
   bottomSpacing: {
     height: rh(80),
@@ -269,24 +269,24 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.md,
-    backgroundColor: ResponsiveTheme.colors.background,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.background,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.glassSurface,
+    borderTopColor: colors.glassSurface,
   },
   saveButtonContainer: {
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     overflow: "hidden",
   },
   saveButton: {
     flexDirection: "row",
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    gap: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
     minHeight: 44,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
   },
   saveButtonDisabled: {
     opacity: 0.6,
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
 });
 

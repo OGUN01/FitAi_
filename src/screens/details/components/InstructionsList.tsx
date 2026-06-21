@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Card } from "../../../components/ui";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rbr } from '../../../utils/responsive';
 
 interface ExerciseInstruction {
@@ -82,79 +82,79 @@ export const InstructionsList: React.FC<InstructionsListProps> = ({
 
 const styles = StyleSheet.create({
   instructionsCard: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   instructionsTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
   instructionItem: {
-    marginBottom: ResponsiveTheme.spacing.lg,
-    padding: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    marginBottom: spacing.lg,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: "transparent",
   },
   instructionItemActive: {
-    backgroundColor: ResponsiveTheme.colors.primary + "10",
-    borderColor: ResponsiveTheme.colors.primary + "30",
+    backgroundColor: colors.primary + "10",
+    borderColor: colors.primary + "30",
   },
   instructionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   stepNumber: {
     width: rw(28),
     height: rh(28),
     borderRadius: rbr(14),
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   stepNumberActive: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
   stepNumberText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textSecondary,
   },
   stepNumberTextActive: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   instructionTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
   },
   instructionTitleActive: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   instructionDescription: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     lineHeight: rf(20),
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   tipsContainer: {
-    backgroundColor: ResponsiveTheme.colors.surface,
-    padding: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.surface,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
   },
   tipsTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   tipText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     lineHeight: rf(18),
-    marginBottom: ResponsiveTheme.spacing.xs / 2,
+    marginBottom: spacing.xs / 2,
   },
 });

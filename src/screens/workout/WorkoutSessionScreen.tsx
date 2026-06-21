@@ -13,9 +13,8 @@ import Animated, {
   useAnimatedStyle,
 } from "react-native-reanimated";
 import { AuroraBackground, GlassCard, AnimatedPressable, GlassButton } from "../../components/ui/aurora";
-import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
+import { colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rp, rf } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
 import { DayWorkout } from "../../types/ai";
 import { ExerciseGifPlayer } from "../../components/fitness/ExerciseGifPlayer";
 import { ExerciseInstructionModal } from "../../components/fitness/ExerciseInstructionModal";
@@ -1057,21 +1056,21 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   exerciseContainer: {
-    marginTop: ResponsiveTheme.spacing.lg,
+    marginTop: spacing.lg,
     alignItems: "center",
   },
   exerciseGifPlayer: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
     alignSelf: "center",
     elevation: 4,
   },
   setProgressRow: {
     flexDirection: "row",
     gap: rp(spacing.sm),
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
     justifyContent: "center",
   },
   setDot: {
@@ -1087,14 +1086,14 @@ const styles = StyleSheet.create({
     borderColor: colors.primary.DEFAULT,
   },
   startButton: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   previewNav: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignSelf: "stretch",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    paddingHorizontal: spacing.sm,
+    marginBottom: spacing.xl,
   },
   prevExButton: {
     paddingVertical: 10,
@@ -1102,7 +1101,7 @@ const styles = StyleSheet.create({
   },
   prevExText: {
     color: colors.text.tertiary,
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: fontSize.sm,
   },
   // GAP-05: styles for tappable exercise name → ExerciseHistory
   exerciseNameRow: {
@@ -1110,25 +1109,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'stretch',
     justifyContent: 'space-between',
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.md,
     paddingVertical: 8,
     marginBottom: 4,
   },
   exerciseNameTap: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
     color: colors.primary.DEFAULT,
     flex: 1,
   },
   exerciseHistoryHint: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: fontSize.xs,
     color: colors.text.tertiary,
     marginLeft: 8,
   },
   // Warm-up sets panel — now a GlassCard; these styles style the inner content.
   warmupContainer: {
     alignSelf: 'stretch',
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   warmupContent: {
     width: '100%',
@@ -1150,9 +1149,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   warmupWeight: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: fontSize.sm,
     color: colors.text.primary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontWeight: typography.fontWeight.medium,
   },
   warmupPercent: {
     fontSize: 10,
@@ -1172,9 +1171,9 @@ const styles = StyleSheet.create({
     borderColor: colors.warning.DEFAULT,
   },
   warmupDoneText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: fontSize.xs,
     color: colors.text.secondary,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    fontWeight: typography.fontWeight.semibold,
   },
   warmupDivider: {
     height: 1,

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { ResponsiveTheme } from "../utils/constants";
+import { flatColors as colors } from "../theme/aurora-tokens";
 import { getRecoveryColor, getSleepColor } from "../utils/healthUtils";
 
 interface UseHealthIntelligenceLogicProps {
@@ -85,7 +85,7 @@ export const useHealthIntelligenceLogic = ({
   const { label: recoveryLabel, color: recoveryColor } =
     recoveryScore !== null
       ? getRecoveryColor(recoveryScore)
-      : { label: "No Data", color: ResponsiveTheme.colors.textMuted };
+      : { label: "No Data", color: colors.textMuted };
 
   const sleepColor = getSleepColor(sleepQuality ?? "unknown");
 

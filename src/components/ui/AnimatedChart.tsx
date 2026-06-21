@@ -10,7 +10,7 @@ import {
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 import Svg, { Line, Circle, Path, G, Text as SvgText } from "react-native-svg";
 import { rf } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { ChartTooltip } from "./ChartTooltip";
 import { hapticSelection } from "../../utils/haptics";
 
@@ -267,7 +267,7 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
                     y1={y}
                     x2={padding + chartWidth}
                     y2={y}
-                    stroke={ResponsiveTheme.colors.border}
+                    stroke={colors.border}
                     strokeWidth="1"
                     strokeDasharray="4 4"
                   />
@@ -275,7 +275,7 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
                     x={padding - 10}
                     y={y}
                     fontSize={rf(10)}
-                    fill={ResponsiveTheme.colors.textMuted}
+                    fill={colors.textMuted}
                     textAnchor="end"
                     alignmentBaseline="middle"
                   >
@@ -291,7 +291,7 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
               y1={padding + chartHeight}
               x2={padding + chartWidth}
               y2={padding + chartHeight}
-              stroke={ResponsiveTheme.colors.border}
+              stroke={colors.border}
               strokeWidth="2"
             />
 
@@ -299,7 +299,7 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
             <Path
               d={linePath}
               fill="transparent"
-              stroke={ResponsiveTheme.colors.primary}
+              stroke={colors.primary}
               strokeWidth="3"
               strokeLinecap="round"
             />
@@ -309,8 +309,8 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
               cx={padding}
               cy={valueToY(currentValue)}
               r="6"
-              fill={ResponsiveTheme.colors.secondary}
-              stroke={ResponsiveTheme.colors.white}
+              fill={colors.secondary}
+              stroke={colors.white}
               strokeWidth="2"
             />
 
@@ -319,8 +319,8 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
               cx={padding + chartWidth}
               cy={valueToY(targetValue)}
               r="6"
-              fill={ResponsiveTheme.colors.success}
-              stroke={ResponsiveTheme.colors.white}
+              fill={colors.success}
+              stroke={colors.white}
               strokeWidth="2"
             />
 
@@ -337,14 +337,14 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
                       cx={x}
                       cy={y}
                       r="4"
-                      fill={ResponsiveTheme.colors.primary}
+                      fill={colors.primary}
                       opacity="0.5"
                     />
                     <SvgText
                       x={x}
                       y={padding + chartHeight + 15}
                       fontSize={rf(9)}
-                      fill={ResponsiveTheme.colors.textMuted}
+                      fill={colors.textMuted}
                       textAnchor="middle"
                     >
                       {String(milestone.label || "")}
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   valueBox: {
@@ -394,56 +394,56 @@ const styles = StyleSheet.create({
   },
 
   valueLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
 
   valueCurrent: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.secondary,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.secondary,
   },
 
   valueTarget: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.success,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.success,
   },
 
   arrow: {
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.sm,
   },
 
   arrowText: {
     fontSize: rf(24),
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
 
   changeText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
-    marginTop: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
   },
 
   timeline: {
     alignItems: "center",
-    marginTop: ResponsiveTheme.spacing.md,
-    padding: ResponsiveTheme.spacing.sm,
-    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    marginTop: spacing.md,
+    padding: spacing.sm,
+    backgroundColor: `${colors.primary}10`,
+    borderRadius: borderRadius.md,
   },
 
   timelineText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
   },
 
   timelineSubtext: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
 });

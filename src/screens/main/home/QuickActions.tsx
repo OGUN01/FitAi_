@@ -8,7 +8,7 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView, ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rp } from "../../../utils/responsive";
 
 interface QuickAction {
@@ -32,7 +32,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ actions }) => {
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.scrollContent}
-      snapToInterval={rw(72) + ResponsiveTheme.spacing.md}
+      snapToInterval={rw(72) + spacing.md}
       decelerationRate="fast"
     >
       {actions.map((action) => (
@@ -96,7 +96,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ actions }) => {
                 <Ionicons
                   name="checkmark"
                   size={rf(10)}
-                  color={ResponsiveTheme.colors.white}
+                  color={colors.white}
                 />
               </View>
             )}
@@ -125,8 +125,8 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ actions }) => {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    gap: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
   },
   actionItem: {
     alignItems: "center",
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     borderRadius: rw(28),
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
     position: "relative",
   },
   progressRing: {
@@ -169,11 +169,11 @@ const styles = StyleSheet.create({
     width: rw(18),
     height: rw(18),
     borderRadius: rw(9),
-    backgroundColor: ResponsiveTheme.colors.success,
+    backgroundColor: colors.success,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.background,
+    borderColor: colors.background,
   },
   badge: {
     position: "absolute",
@@ -186,17 +186,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: rp(4),
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.background,
+    borderColor: colors.background,
   },
   badgeText: {
     fontSize: rf(9),
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.white,
   },
   label: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
     textAlign: "center",
   },
 });

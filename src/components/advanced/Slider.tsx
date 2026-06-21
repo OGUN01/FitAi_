@@ -9,7 +9,7 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize, flatShadows as shadows, typography } from "../../theme/aurora-tokens";
 import { rs, rbr } from '../../utils/responsive';
 
 interface SliderProps {
@@ -41,9 +41,9 @@ const WebSlider: React.FC<SliderProps> = ({
   unit = "",
   showValue = true,
   disabled = false,
-  trackColor = ResponsiveTheme.colors.surface,
-  thumbColor = ResponsiveTheme.colors.primary,
-  activeTrackColor = ResponsiveTheme.colors.primary,
+  trackColor = colors.surface,
+  thumbColor = colors.primary,
+  activeTrackColor = colors.primary,
   style,
 }) => {
   const percentage = ((value - min) / (max - min)) * 100;
@@ -161,9 +161,9 @@ const NativeSlider: React.FC<SliderProps> = ({
   unit = "",
   showValue = true,
   disabled = false,
-  trackColor = ResponsiveTheme.colors.surface,
-  thumbColor = ResponsiveTheme.colors.primary,
-  activeTrackColor = ResponsiveTheme.colors.primary,
+  trackColor = colors.surface,
+  thumbColor = colors.primary,
+  activeTrackColor = colors.primary,
   style,
 }) => {
   const [sliderWidth, setSliderWidth] = useState(0);
@@ -306,44 +306,44 @@ export const Slider: React.FC<SliderProps> = (props) => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
   },
 
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   label: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.medium as "500",
+    color: colors.text,
   },
 
   valueContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
 
   value: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
-    color: ResponsiveTheme.colors.primary,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold as "700",
+    color: colors.primary,
   },
 
   percentage: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
 
   track: {
     height: 8,
     borderRadius: rbr(4),
     position: "relative",
-    marginVertical: ResponsiveTheme.spacing.sm,
+    marginVertical: spacing.sm,
   },
 
   activeTrack: {
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
     left: 0,
     alignItems: "center",
     justifyContent: "center",
-    ...ResponsiveTheme.shadows.sm,
+    ...shadows.sm,
   },
 
   thumbDisabled: {
@@ -374,24 +374,24 @@ const styles = StyleSheet.create({
     width: rs(12),
     height: rs(12),
     borderRadius: rbr(6),
-    backgroundColor: ResponsiveTheme.colors.white,
+    backgroundColor: colors.white,
   },
 
   minMaxContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
   },
 
   minMaxText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
   },
 
   stepsContainer: {
     position: "relative",
     height: 4,
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
   },
 
   stepIndicator: {

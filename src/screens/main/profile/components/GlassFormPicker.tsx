@@ -14,7 +14,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
 
@@ -120,21 +120,21 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
                     />
                   )}
 
-                  <View style={[styles.optionContent, columns === 3 && { paddingHorizontal: ResponsiveTheme.spacing.xs }]}>
+                  <View style={[styles.optionContent, columns === 3 && { paddingHorizontal: spacing.xs }]}>
                     {option.icon && (
                       <View
                         style={[
                           styles.optionIcon,
                           selected && styles.optionIconSelected,
-                          columns === 3 && { width: rw(24), height: rw(24), borderRadius: rw(12), marginRight: ResponsiveTheme.spacing.xs },
+                          columns === 3 && { width: rw(24), height: rw(24), borderRadius: rw(12), marginRight: spacing.xs },
                         ]}>
                         <Ionicons
                           name={option.icon}
                           size={columns === 3 ? rf(14) : rf(18)}
                           color={
                             selected
-                              ? ResponsiveTheme.colors.primary
-                              : ResponsiveTheme.colors.textSecondary
+                              ? colors.primary
+                              : colors.textSecondary
                           }
                         />
                       </View>
@@ -165,7 +165,7 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
                         <Ionicons
                           name="checkmark"
                           size={columns === 3 ? rf(10) : rf(14)}
-                          color={ResponsiveTheme.colors.primary}
+                          color={colors.primary}
                         />
                       </View>
                     )}
@@ -183,7 +183,7 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
           <Ionicons
             name="alert-circle"
             size={rf(12)}
-            color={ResponsiveTheme.colors.error}
+            color={colors.error}
           />
           <Text style={styles.errorText}>{error}</Text>
         </View>
@@ -196,30 +196,30 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   label: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+    marginLeft: spacing.xs,
   },
   optionsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   optionsGridSingle: {
     flexDirection: "column",
   },
   optionWrapper: {
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   optionButton: {
     backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.08)",
     overflow: "hidden",
@@ -232,8 +232,8 @@ const styles = StyleSheet.create({
   optionContent: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
   },
   optionIcon: {
     width: rw(32),
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.06)",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   optionIconSelected: {
     backgroundColor: "rgba(255, 107, 53, 0.15)",
@@ -253,15 +253,15 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontSize: rf(14),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   optionLabelSelected: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     fontWeight: "600",
   },
   optionDescription: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     marginTop: rp(2),
   },
   checkmark: {
@@ -275,19 +275,19 @@ const styles = StyleSheet.create({
   errorContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
-    marginTop: ResponsiveTheme.spacing.sm,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+    marginLeft: spacing.xs,
   },
   errorText: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.error,
+    color: colors.error,
   },
   hintText: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textMuted,
-    marginTop: ResponsiveTheme.spacing.sm,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    color: colors.textMuted,
+    marginTop: spacing.sm,
+    marginLeft: spacing.xs,
   },
 });
 

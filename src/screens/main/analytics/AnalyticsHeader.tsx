@@ -16,7 +16,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../../utils/responsive";
 import { PeriodSelector, Period } from "./PeriodSelector";
 import { haptics } from "../../../utils/haptics";
@@ -38,8 +38,8 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
   const topPadding =
     Platform.OS === "android"
       ? Math.max(insets.top, StatusBar.currentHeight || 0) +
-        ResponsiveTheme.spacing.sm
-      : ResponsiveTheme.spacing.md;
+        spacing.sm
+      : spacing.md;
 
   // Get period label for display
   const getPeriodLabel = () => {
@@ -63,12 +63,12 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
       <Animated.View entering={Platform.OS !== 'web' ? FadeInDown.delay(100) : undefined} style={styles.titleRow}>
         <View style={styles.titleLeft}>
           <LinearGradient
-            colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark]}
+            colors={[colors.primary, colors.primaryDark]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.iconContainer}
           >
-            <Ionicons name="analytics" size={rf(18)} color={ResponsiveTheme.colors.white} />
+            <Ionicons name="analytics" size={rf(18)} color={colors.white} />
           </LinearGradient>
           <View>
             <Text style={styles.title}>Analytics</Text>
@@ -93,7 +93,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
               <Ionicons
                 name="fitness-outline"
                 size={rf(18)}
-                color={ResponsiveTheme.colors.primary}
+                color={colors.primary}
               />
             </TouchableOpacity>
           )}
@@ -128,10 +128,10 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
     // paddingTop is applied dynamically via style prop to handle safe area
-    paddingBottom: ResponsiveTheme.spacing.lg,
-    gap: ResponsiveTheme.spacing.sm,
+    paddingBottom: spacing.lg,
+    gap: spacing.sm,
     alignItems: "stretch",
   },
   titleRow: {
@@ -142,25 +142,25 @@ const styles = StyleSheet.create({
   titleLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
     flex: 1,
     minWidth: 0,
   },
   titleRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
     flexShrink: 0,
   },
   navButton: {
     width: Math.max(rw(32), 44),
     height: Math.max(rw(32), 44),
     borderRadius: Math.max(rw(8), 12),
-    backgroundColor: ResponsiveTheme.colors.glassBorder,
+    backgroundColor: colors.glassBorder,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassHighlight,
+    borderColor: colors.glassHighlight,
   },
   iconContainer: {
     width: rw(36),
@@ -172,13 +172,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(20),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: rf(11),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(-2),
   },
   badge: {
@@ -188,8 +188,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    gap: ResponsiveTheme.spacing.xs,
+    paddingHorizontal: spacing.sm,
+    gap: spacing.xs,
     borderWidth: 1,
     borderColor: "rgba(255, 193, 7, 0.25)",
   },
@@ -197,12 +197,12 @@ const styles = StyleSheet.create({
     width: rw(6),
     height: rw(6),
     borderRadius: rw(3),
-    backgroundColor: ResponsiveTheme.colors.gold,
+    backgroundColor: colors.gold,
   },
   badgeText: {
     fontSize: rf(10),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.gold,
+    color: colors.gold,
     letterSpacing: 0.2,
     textAlign: "center",
     lineHeight: rf(10),

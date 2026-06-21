@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect } from "react";
 import { View, StyleSheet, StatusBar } from "react-native";
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { useOnboardingLogic } from "../../hooks/useOnboardingLogic";
 import OnboardingProgressIndicator from "../../components/onboarding/OnboardingProgressIndicator";
 import { AuroraBackground } from "../../components/ui/aurora";
@@ -200,12 +200,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    padding: ResponsiveTheme.spacing.xl,
+    padding: spacing.xl,
   },
 
   placeholderText: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.lg,
+    color: colors.textSecondary,
     textAlign: "center",
     fontStyle: "italic",
   },
@@ -213,16 +213,16 @@ const styles = StyleSheet.create({
   debugContainer: {
     position: "absolute",
     top: "6%",
-    right: ResponsiveTheme.spacing.md,
-    backgroundColor: ResponsiveTheme.colors.primary,
-    padding: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    right: spacing.md,
+    backgroundColor: colors.primary,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
   },
 
   debugText: {
-    color: ResponsiveTheme.colors.white,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: colors.white,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
   },
 });
 

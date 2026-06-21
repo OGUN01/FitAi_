@@ -1,7 +1,7 @@
 import React from "react";
 import { Text, StyleSheet } from "react-native";
 import { Card } from "../../../components/ui";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 
 interface ExerciseTipsCardProps {
   tips: string[];
@@ -41,39 +41,39 @@ export const ExerciseTipsCard: React.FC<ExerciseTipsCardProps> = ({
 
 const styles = StyleSheet.create({
   safetyCard: {
-    marginBottom: ResponsiveTheme.spacing.md,
-    backgroundColor: ResponsiveTheme.colors.success + "10",
+    marginBottom: spacing.md,
+    backgroundColor: colors.success + "10",
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.success + "30",
+    borderColor: colors.success + "30",
   },
   safetyTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.success,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.success,
+    marginBottom: spacing.sm,
   },
   safetyTip: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     lineHeight: 20,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   mistakesCard: {
-    marginBottom: ResponsiveTheme.spacing.xxl,
-    backgroundColor: ResponsiveTheme.colors.warning + "10",
+    marginBottom: spacing.xxl,
+    backgroundColor: colors.warning + "10",
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.warning + "30",
+    borderColor: colors.warning + "30",
   },
   mistakesTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.warning,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.warning,
+    marginBottom: spacing.sm,
   },
   mistakeText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     lineHeight: 20,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
 });

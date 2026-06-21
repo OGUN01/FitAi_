@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw, rbr } from "../../../utils/responsive";
 
 export const ExpoGoMessage: React.FC = () => {
@@ -20,10 +20,10 @@ export const ExpoGoMessage: React.FC = () => {
         >
           <View style={styles.expoGoIconContainer}>
             <LinearGradient
-              colors={[ResponsiveTheme.colors.warning, ResponsiveTheme.colors.primaryDark]}
+              colors={[colors.warning, colors.primaryDark]}
               style={styles.expoGoIcon}
             >
-              <Ionicons name="warning-outline" size={rf(28)} color={ResponsiveTheme.colors.text} />
+              <Ionicons name="warning-outline" size={rf(28)} color={colors.text} />
             </LinearGradient>
           </View>
           <Text style={styles.expoGoTitle}>Notifications Unavailable</Text>
@@ -49,14 +49,14 @@ const styles = StyleSheet.create({
   expoGoContainer: {
     flex: 1,
     justifyContent: "center" as const,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   expoGoCard: {
     alignItems: "center" as const,
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
   },
   expoGoIconContainer: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
     alignItems: "center" as const,
   },
   expoGoIcon: {
@@ -69,15 +69,15 @@ const styles = StyleSheet.create({
   expoGoTitle: {
     fontSize: rf(20),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    color: colors.text,
+    marginBottom: spacing.sm,
     textAlign: "center",
   },
   expoGoMessage: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
     lineHeight: rf(20),
   },
   codeContainer: {
@@ -86,19 +86,19 @@ const styles = StyleSheet.create({
   },
   codeLabel: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textMuted,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.textMuted,
+    marginBottom: spacing.xs,
     textAlign: "center" as const,
   },
   codeBox: {
-    backgroundColor: ResponsiveTheme.colors.overlayDark,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    backgroundColor: colors.overlayDark,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   codeText: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
     fontFamily: "monospace",
   },
 });

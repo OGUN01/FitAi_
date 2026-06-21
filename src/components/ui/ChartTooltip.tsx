@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { rp } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 
 interface ChartTooltipProps {
   visible: boolean;
@@ -86,27 +86,27 @@ const styles = StyleSheet.create({
   },
 
   bubble: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     paddingHorizontal: rp(12),
     paddingVertical: rp(8),
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
     boxShadow: '0px 2px 4px rgba(0,0,0,0.25)',
     elevation: 5,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
 
   label: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
     marginBottom: rp(2),
     textAlign: "center",
   },
 
   value: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.primary,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
     textAlign: "center",
   },
 
@@ -119,6 +119,6 @@ const styles = StyleSheet.create({
     borderTopWidth: rp(6),
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
-    borderTopColor: ResponsiveTheme.colors.surface,
+    borderTopColor: colors.surface,
   },
 });

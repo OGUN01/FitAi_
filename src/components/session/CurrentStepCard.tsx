@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Card, Button } from "../ui";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf } from '../../utils/responsive';
 import { DayMeal } from "../../types/ai";
 
@@ -69,60 +69,60 @@ export const CurrentStepCard: React.FC<CurrentStepCardProps> = ({
 
 const styles = StyleSheet.create({
   currentStepCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
   },
   stepHeader: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   stepNumber: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
     fontWeight: "600",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   stepTitle: {
     fontSize: rf(20),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   stepContent: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   stepDetails: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
+    marginBottom: spacing.md,
   },
   stepQuantity: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   stepCalories: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   stepTime: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   instructionsContainer: {
-    backgroundColor: ResponsiveTheme.colors.background,
-    padding: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.background,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
   },
   instructionsTitle: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   instructionsText: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(20),
   },
   completeButton: {
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.sm,
   },
 });

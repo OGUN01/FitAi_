@@ -12,7 +12,7 @@ import Constants from "expo-constants";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
@@ -120,7 +120,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
                   <Ionicons
                     name="time-outline"
                     size={rf(10)}
-                    color={ResponsiveTheme.colors.primary}
+                    color={colors.primary}
                   />
                   <Text style={styles.timeInfoText}>{timeInfo}</Text>
                 </View>
@@ -143,7 +143,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
                   <Ionicons
                     name="settings-outline"
                     size={rf(14)}
-                    color={ResponsiveTheme.colors.textSecondary}
+                    color={colors.textSecondary}
                   />
                 </View>
               </AnimatedPressable>
@@ -155,15 +155,15 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
                 onToggle();
               }}
               trackColor={{
-                false: ResponsiveTheme.colors.glassHighlight,
-                true: `${ResponsiveTheme.colors.primary}50`,
+                false: colors.glassHighlight,
+                true: `${colors.primary}50`,
               }}
               thumbColor={
                 enabled
-                  ? ResponsiveTheme.colors.primary
-                  : ResponsiveTheme.colors.glassHighlight
+                  ? colors.primary
+                  : colors.glassHighlight
               }
-              ios_backgroundColor={ResponsiveTheme.colors.glassHighlight}
+              ios_backgroundColor={colors.glassHighlight}
             />
           </View>
         </View>
@@ -247,7 +247,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
 
             <NotificationItem
               icon="water-outline"
-              iconColor={ResponsiveTheme.colors.info}
+              iconColor={colors.info}
               title="Water Reminders"
               description="Smart hydration reminders based on your daily schedule"
               timeInfo={
@@ -261,7 +261,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
 
             <NotificationItem
               icon="barbell-outline"
-              iconColor={ResponsiveTheme.colors.errorLight}
+              iconColor={colors.errorLight}
               title="Workout Reminders"
               description="Get notified before your scheduled workouts"
               timeInfo={
@@ -277,7 +277,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
 
             <NotificationItem
               icon="restaurant-outline"
-              iconColor={ResponsiveTheme.colors.success}
+              iconColor={colors.success}
               title="Meal Reminders"
               description="Never miss breakfast, lunch, or dinner"
               timeInfo={
@@ -291,7 +291,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
 
             <NotificationItem
               icon="moon-outline"
-              iconColor={ResponsiveTheme.colors.primary}
+              iconColor={colors.primary}
               title="Sleep Reminders"
               description="Smart bedtime notifications for better recovery"
               timeInfo={
@@ -305,7 +305,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
 
             <NotificationItem
               icon="analytics-outline"
-              iconColor={ResponsiveTheme.colors.warning}
+              iconColor={colors.warning}
               title="Progress Updates"
               description="Weekly summary of your fitness journey"
               timeInfo={
@@ -355,32 +355,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingTop: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
   },
   unavailableContainer: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.lg,
   },
   unavailableTitle: {
     fontSize: rf(16),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(8),
     textAlign: "center" as const,
   },
   unavailableText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(18),
     textAlign: "center" as const,
   },
   section: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   notificationCard: {
-    marginBottom: ResponsiveTheme.spacing.sm,
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.glassSurface,
   },
   notificationContent: {
     flexDirection: "row",
@@ -392,49 +392,49 @@ const styles = StyleSheet.create({
     borderRadius: rbr(12),
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
   textContainer: {
     flex: 1,
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   notificationTitle: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(2),
   },
   notificationDescription: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(16),
   },
   timeInfoBadge: {
     flexDirection: "row",
     alignItems: "center" as const,
     gap: rp(4),
-    marginTop: ResponsiveTheme.spacing.xs,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.sm,
     paddingVertical: rp(3),
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    backgroundColor: `${colors.primary}15`,
+    borderRadius: borderRadius.sm,
     alignSelf: "flex-start",
   },
   timeInfoText: {
     fontSize: rf(10),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   controlsContainer: {
     flexDirection: "row",
     alignItems: "center" as const,
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   editButton: {
     width: rw(30),
     height: rw(30),
     borderRadius: rbr(8),
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
     color: "orange",
     fontSize: rf(13),
     textAlign: "center" as const,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 });
 

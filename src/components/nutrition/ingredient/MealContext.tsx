@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
 import { rbr } from "../../../utils/responsive";
 import { DayMeal, MealItem } from "../../../types/ai";
 
@@ -34,11 +34,11 @@ export const MealContext: React.FC<MealContextProps> = ({
 
 const styles = StyleSheet.create({
   contextCard: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rbr(16),
-    padding: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
-    shadowColor: ResponsiveTheme.colors.black,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -46,17 +46,17 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: fontSize.lg,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
   contextInfo: {
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   contextText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    color: colors.text,
     lineHeight: 22,
   },
 });

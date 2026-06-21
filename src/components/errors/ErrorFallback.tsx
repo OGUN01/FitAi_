@@ -6,7 +6,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { ResponsiveTheme } from '../../utils/constants';
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
 
 
 interface ErrorFallbackProps {
@@ -26,7 +26,7 @@ export const ErrorFallback: React.FC<ErrorFallbackProps> = ({
 }) => {
   return (
     <View style={styles.container}>
-      <Ionicons name={icon} size={48} color={ResponsiveTheme.colors.error} />
+      <Ionicons name={icon} size={48} color={colors.error} />
 
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.message}>{message}</Text>
@@ -99,9 +99,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 }) => {
   return (
     <View style={styles.container}>
-      <Ionicons name={icon} size={48} color={ResponsiveTheme.colors.textSecondary} />
+      <Ionicons name={icon} size={48} color={colors.textSecondary} />
 
-      <Text style={[styles.title, { color: ResponsiveTheme.colors.text }]}>{title}</Text>
+      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
       <Text style={styles.message}>{message}</Text>
 
       {onAction && actionText && (
@@ -118,38 +118,38 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    padding: ResponsiveTheme.spacing.xl,
+    padding: spacing.xl,
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.error,
-    marginTop: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.error,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
     textAlign: "center",
   },
 
   message: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
     lineHeight: 22,
   },
 
   button: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    marginTop: ResponsiveTheme.spacing.md,
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.md,
+    marginTop: spacing.md,
   },
 
   buttonText: {
-    color: ResponsiveTheme.colors.white,
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: colors.white,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
   },
 });
 

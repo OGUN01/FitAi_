@@ -13,7 +13,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { Achievement } from "../../services/achievementEngine";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../utils/responsive";
 import useAchievementStore from "../../stores/achievementStore";
 
@@ -190,15 +190,15 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
   };
 
   const getTierColor = (tier: string) => {
-    const colors = {
+    const tierColors = {
       bronze: "#CD7F32",
       silver: "#C0C0C0",
-      gold: ResponsiveTheme.colors.gold,
+      gold: colors.gold,
       platinum: "#E5E4E2",
       diamond: "#B9F2FF",
-      legendary: ResponsiveTheme.colors.errorLight,
+      legendary: colors.errorLight,
     };
-    return colors[tier as keyof typeof colors] || "#CD7F32";
+    return tierColors[tier as keyof typeof tierColors] || "#CD7F32";
   };
 
   const getTierGradient = (tier: string): [string, string] => {
@@ -242,9 +242,9 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
               {
                 backgroundColor:
                   index % 3 === 0
-                    ? ResponsiveTheme.colors.gold
+                    ? colors.gold
                     : index % 3 === 1
-                      ? ResponsiveTheme.colors.errorLight
+                      ? colors.errorLight
                       : "#4FC3F7",
                 transform: [
                   { translateX: item.x },
@@ -347,7 +347,7 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.overlayDark,
+    backgroundColor: colors.overlayDark,
   },
   confetti: {
     position: "absolute",
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
   achievementCard: {
     borderRadius: rbr(24),
     padding: rp(32),
-    shadowColor: ResponsiveTheme.colors.black,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
     shadowRadius: 20,
@@ -399,14 +399,14 @@ const styles = StyleSheet.create({
   celebrationText: {
     fontSize: rf(24),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     textAlign: "center",
     marginBottom: rp(8),
   },
   titleText: {
     fontSize: rf(20),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     textAlign: "center",
     marginBottom: rp(8),
   },
@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   rewardText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     fontWeight: "600",
     textAlign: "center",
   },
@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   closeButtonText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     fontWeight: "bold",
     fontSize: rf(18),
   },

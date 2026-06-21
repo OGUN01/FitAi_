@@ -21,7 +21,7 @@ import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LineChart } from "react-native-chart-kit";
 import { GlassCard } from "../ui/aurora/GlassCard";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rp, rw } from "../../utils/responsive";
 import { useHealthDataStore } from "../../stores/healthDataStore";
 
@@ -51,7 +51,7 @@ export const HealthTrendChart: React.FC<HealthTrendChartProps> = ({
     (s) => s.metricsHistory?.[metricType],
   ) as HistoryPoint[] | undefined;
 
-  const lineColor = color ?? ResponsiveTheme.colors.primary;
+  const lineColor = color ?? colors.primary;
 
   // chart-kit expects parallel arrays. Filter out non-finite values so a
   // single bad row can't crash the chart (defensive — service should have
@@ -87,14 +87,14 @@ export const HealthTrendChart: React.FC<HealthTrendChartProps> = ({
       backgroundGradientTo: "transparent",
       decimalCount: 0,
       color: () => lineColor,
-      labelColor: () => ResponsiveTheme.colors.textTertiary,
+      labelColor: () => colors.textTertiary,
       propsForDots: {
         r: rp(3),
         strokeWidth: 0,
         stroke: lineColor,
       },
       propsForBackgroundLines: {
-        stroke: ResponsiveTheme.colors.glassHighlight,
+        stroke: colors.glassHighlight,
       },
     }),
     [lineColor],
@@ -156,39 +156,39 @@ const IoniconsVital: React.FC<{ name: keyof typeof Ionicons.glyphMap }> = ({
   <Ionicons
     name={name}
     size={rf(28)}
-    color={ResponsiveTheme.colors.textTertiary}
+    color={colors.textTertiary}
   />
 );
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: ResponsiveTheme.spacing.md,
-    padding: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.md,
+    padding: spacing.lg,
   },
   title: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
   chart: {
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
     borderRadius: rp(8),
   },
   emptyState: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: ResponsiveTheme.spacing.lg,
+    paddingVertical: spacing.lg,
   },
   emptyText: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.sm,
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
   },
   emptySubtext: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textTertiary,
+    color: colors.textTertiary,
     marginTop: rp(2),
     textAlign: "center",
   },

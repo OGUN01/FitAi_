@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 
 interface SelectedPreviewProps {
   selectedLabels: string[];
@@ -32,22 +32,22 @@ export const SelectedPreview: React.FC<SelectedPreviewProps> = ({
 
 const styles = StyleSheet.create({
   selectedPreview: {
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
   },
 
   selectedTag: {
-    backgroundColor: ResponsiveTheme.colors.primary + "20",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs / 2,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
-    marginRight: ResponsiveTheme.spacing.xs,
+    backgroundColor: colors.primary + "20",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs / 2,
+    borderRadius: borderRadius.sm,
+    marginRight: spacing.xs,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primary + "40",
+    borderColor: colors.primary + "40",
   },
 
   selectedTagText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
+    fontSize: fontSize.sm,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.medium as "500",
   },
 });

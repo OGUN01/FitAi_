@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
 import { rf, rh } from "../../../../utils/responsive";
 
 export interface ChartData {
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-end",
     height: rh(120),
-    paddingBottom: ResponsiveTheme.spacing.md,
+    paddingBottom: spacing.md,
   },
   areaBarGroup: {
     flex: 1,
@@ -76,8 +76,8 @@ const styles = StyleSheet.create({
   },
   areaBar: {
     width: "100%",
-    borderTopLeftRadius: ResponsiveTheme.borderRadius.sm,
-    borderTopRightRadius: ResponsiveTheme.borderRadius.sm,
+    borderTopLeftRadius: borderRadius.sm,
+    borderTopRightRadius: borderRadius.sm,
   },
   areaBarConsumed: {
     backgroundColor: "rgba(76,175,80,0.7)",
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   areaLabel: {
     fontSize: rf(9),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.xs,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
 });

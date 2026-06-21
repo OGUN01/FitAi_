@@ -25,7 +25,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../utils/responsive";
 import { gradients, toLinearGradientProps } from "../../theme/gradients";
 import { haptics } from "../../utils/haptics";
@@ -89,7 +89,7 @@ export const HealthConnectDisclosureModal: React.FC<
               <Ionicons
                 name="heart-circle-outline"
                 size={rf(44)}
-                color={ResponsiveTheme.colors.primary}
+                color={colors.primary}
               />
             </View>
 
@@ -109,7 +109,7 @@ export const HealthConnectDisclosureModal: React.FC<
                   <Ionicons
                     name="download-outline"
                     size={rf(14)}
-                    color={ResponsiveTheme.colors.primary}
+                    color={colors.primary}
                   />
                   <Text style={styles.sectionHeaderText}>
                     Data we read
@@ -125,7 +125,7 @@ export const HealthConnectDisclosureModal: React.FC<
                   <Ionicons
                     name="create-outline"
                     size={rf(14)}
-                    color={ResponsiveTheme.colors.success}
+                    color={colors.success}
                   />
                   <Text style={styles.sectionHeaderText}>
                     Data we write back
@@ -141,7 +141,7 @@ export const HealthConnectDisclosureModal: React.FC<
                   <Ionicons
                     name="shield-checkmark-outline"
                     size={rf(14)}
-                    color={ResponsiveTheme.colors.info}
+                    color={colors.info}
                   />
                   <Text style={styles.sectionHeaderText}>
                     How your data is used & stored
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   },
   blurContainer: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: ResponsiveTheme.colors.overlay,
+    backgroundColor: colors.overlay,
   },
   dialogWrapper: {
     width: "90%",
@@ -210,86 +210,86 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   title: {
     fontSize: rf(20),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   subtitle: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(20),
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   scrollArea: {
     maxHeight: rh(280),
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   scrollContent: {
-    paddingBottom: ResponsiveTheme.spacing.sm,
+    paddingBottom: spacing.sm,
   },
   sectionBlock: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   sectionHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
   },
   sectionHeaderText: {
     fontSize: rf(13),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   listText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(19),
   },
   bodyText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(19),
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   actions: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   actionButton: {
     flex: 1,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
     overflow: "hidden",
   },
   cancelButton: {
     backgroundColor: "rgba(255, 255, 255, 0.1)",
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.md,
     alignItems: "center",
   },
   confirmButton: {
     overflow: "hidden",
   },
   confirmButtonGradient: {
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.md,
     alignItems: "center",
   },
   cancelButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   confirmButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 });
 

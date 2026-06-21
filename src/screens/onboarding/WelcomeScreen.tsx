@@ -14,7 +14,7 @@ import { Button, Input, PasswordInput } from "../../components/ui";
 import { useAuth } from "../../hooks/useAuth";
 import { GoogleIcon } from "../../components/icons/GoogleIcon";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { LoginCredentials } from "../../types/user";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
@@ -160,7 +160,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 <Ionicons
                   name="arrow-back"
                   size={rf(22)}
-                  color={ResponsiveTheme.colors.primary}
+                  color={colors.primary}
                 />
               </AnimatedPressable>
               <View style={styles.signInTitleBlock}>
@@ -255,7 +255,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 <Ionicons
                   name="fitness"
                   size={rf(36)}
-                  color={ResponsiveTheme.colors.primary}
+                  color={colors.primary}
                 />
               </View>
             </View>
@@ -276,7 +276,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                   <Ionicons
                     name={feature.icon}
                     size={rf(22)}
-                    color={ResponsiveTheme.colors.primary}
+                    color={colors.primary}
                   />
                 </View>
                 <View style={styles.featureTextBlock}>
@@ -320,7 +320,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
 
   scrollView: {
@@ -329,77 +329,77 @@ const styles = StyleSheet.create({
 
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: ResponsiveTheme.spacing.xl,
+    paddingBottom: spacing.xl,
   },
 
   welcomeScrollContent: {
     flexGrow: 1,
-    paddingBottom: ResponsiveTheme.spacing.md,
+    paddingBottom: spacing.md,
   },
 
   brandingSection: {
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
     paddingTop: rh(40),
-    paddingBottom: ResponsiveTheme.spacing.xl,
+    paddingBottom: spacing.xl,
   },
 
   logoContainer: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   logoIconWrapper: {
     width: rw(76),
     height: rw(76),
     borderRadius: rw(22),
-    backgroundColor: `${ResponsiveTheme.colors.primary}18`,
+    backgroundColor: `${colors.primary}18`,
     borderWidth: 1.5,
-    borderColor: `${ResponsiveTheme.colors.primary}40`,
+    borderColor: `${colors.primary}40`,
     alignItems: "center",
     justifyContent: "center",
   },
 
   appName: {
     fontSize: rf(52),
-    fontWeight: ResponsiveTheme.fontWeight.extrabold,
-    color: ResponsiveTheme.colors.text,
+    fontWeight: typography.fontWeight.extrabold,
+    color: colors.text,
     letterSpacing: -1.5,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   tagline: {
     fontSize: rf(18),
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.primary,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary,
     textAlign: "center",
     letterSpacing: 0.3,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   taglineSecondary: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(22),
     maxWidth: rw(280),
   },
 
   featuresSection: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    gap: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
   },
 
   featureCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: `${ResponsiveTheme.colors.surface}CC`,
+    backgroundColor: `${colors.surface}CC`,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.border}80`,
-    borderRadius: ResponsiveTheme.borderRadius.xl,
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    gap: ResponsiveTheme.spacing.md,
+    borderColor: `${colors.border}80`,
+    borderRadius: borderRadius.xl,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    gap: spacing.md,
   },
 
   featureEmoji: {
@@ -412,9 +412,9 @@ const styles = StyleSheet.create({
     width: rw(44),
     height: rw(44),
     borderRadius: rw(22),
-    backgroundColor: `${ResponsiveTheme.colors.primary}18`,
+    backgroundColor: `${colors.primary}18`,
     borderWidth: 1.5,
-    borderColor: `${ResponsiveTheme.colors.primary}40`,
+    borderColor: `${colors.primary}40`,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -424,25 +424,25 @@ const styles = StyleSheet.create({
   },
 
   featureLabel: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
     marginBottom: rh(2),
   },
 
   featureDescription: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     lineHeight: rf(18),
   },
 
   ctaSection: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.md,
-    paddingBottom: ResponsiveTheme.spacing.lg,
-    gap: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    gap: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: `${ResponsiveTheme.colors.border}40`,
+    borderTopColor: `${colors.border}40`,
   },
 
   signInPromptRow: {
@@ -452,18 +452,18 @@ const styles = StyleSheet.create({
   },
 
   signInHeader: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
-    paddingBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
     alignItems: "center",
   },
 
   backButton: {
     position: "absolute",
-    left: ResponsiveTheme.spacing.lg,
-    top: ResponsiveTheme.spacing.lg,
+    left: spacing.lg,
+    top: spacing.lg,
     zIndex: 1,
-    padding: ResponsiveTheme.spacing.sm,
+    padding: spacing.sm,
   },
 
   signInTitleBlock: {
@@ -472,34 +472,34 @@ const styles = StyleSheet.create({
   },
 
   signInTitle: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.xxl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.sm,
     textAlign: "center",
   },
 
   signInSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(22),
     maxWidth: rw(280),
   },
 
   form: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
 
   googleButton: {
     backgroundColor: "#4285F4",
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
     elevation: 3,
-    shadowColor: ResponsiveTheme.colors.black,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -516,60 +516,60 @@ const styles = StyleSheet.create({
   },
 
   googleIcon: {
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
 
   googleButtonText: {
-    color: ResponsiveTheme.colors.white,
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: colors.white,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
   },
 
   dividerContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: ResponsiveTheme.spacing.lg,
+    marginVertical: spacing.lg,
   },
 
   dividerLine: {
     flex: 1,
     height: rh(1),
-    backgroundColor: ResponsiveTheme.colors.border,
+    backgroundColor: colors.border,
     opacity: 0.3,
   },
 
   dividerText: {
-    marginHorizontal: ResponsiveTheme.spacing.md,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    marginHorizontal: spacing.md,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     fontStyle: "italic",
   },
 
   emailFormContainer: {
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.sm,
   },
 
   signInButton: {
-    marginTop: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
   },
 
   footerContainer: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginTop: spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   footerText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
   },
 
   footerLink: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.md,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.medium,
   },
 });

@@ -13,7 +13,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 
 interface AppInfoCardProps {
@@ -39,7 +39,7 @@ export const AppInfoCard: React.FC<AppInfoCardProps> = ({
       >
         <View style={styles.content}>
           <LinearGradient
-            colors={[ResponsiveTheme.colors.errorLight, ResponsiveTheme.colors.primaryLight]}
+            colors={[colors.errorLight, colors.primaryLight]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.logo}
@@ -66,7 +66,7 @@ export const AppInfoCard: React.FC<AppInfoCardProps> = ({
             <Ionicons
               name="heart"
               size={rf(14)}
-              color={ResponsiveTheme.colors.errorLight}
+              color={colors.errorLight}
               style={styles.heartIcon}
             />
             <Text style={styles.footerText}>for fitness enthusiasts</Text>
@@ -79,11 +79,11 @@ export const AppInfoCard: React.FC<AppInfoCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.lg,
   },
   card: {
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
   },
   content: {
     flexDirection: "row",
@@ -95,14 +95,14 @@ const styles = StyleSheet.create({
     borderRadius: rbr(12),
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
     boxShadow: '0px 2px 4px rgba(255,107,107,0.3)',
     elevation: 4,
   },
   logoText: {
     fontSize: rf(24),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   info: {
     flex: 1,
@@ -115,29 +115,29 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   versionBadge: {
-    marginLeft: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
+    marginLeft: spacing.sm,
+    paddingHorizontal: spacing.xs,
     paddingVertical: rp(2),
-    backgroundColor: ResponsiveTheme.colors.glassHighlight,
+    backgroundColor: colors.glassHighlight,
     borderRadius: rbr(4),
   },
   versionText: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   tagline: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   footer: {
-    marginTop: ResponsiveTheme.spacing.md,
-    paddingTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.glassBorder,
+    borderTopColor: colors.glassBorder,
     alignItems: "center",
   },
   footerContent: {
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
   heartIcon: {
     marginHorizontal: rp(4),

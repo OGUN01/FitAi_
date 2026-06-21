@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../../utils/responsive";
 import { TrendData } from "../../../hooks/useProgressTrendsLogic";
 import { haptics } from "../../../utils/haptics";
@@ -63,7 +63,7 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
               <Text
                 style={[
                   styles.trendStatValue,
-                  { color: trend.change >= 0 ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.error },
+                  { color: trend.change >= 0 ? colors.success : colors.error },
                 ]}
               >
                 {trend.change >= 0 ? "+" : ""}
@@ -113,7 +113,7 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
 
 const styles = StyleSheet.create({
   trendCard: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rbr(16),
     padding: rp(16),
   },
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   trendTitle: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   trendStats: {
     flexDirection: "row",
@@ -145,12 +145,12 @@ const styles = StyleSheet.create({
   },
   trendStatLabel: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   trendStatValue: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginTop: rp(2),
   },
   miniChart: {
@@ -172,16 +172,16 @@ const styles = StyleSheet.create({
   noDataText: {
     fontSize: rf(14),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   noDataSubtext: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(4),
   },
   ctaButton: {
     marginTop: rp(12),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: rbr(24),
     paddingHorizontal: rp(20),
     paddingVertical: rp(10),
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   ctaButtonText: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.background,
+    color: colors.background,
     letterSpacing: 0.3,
   },
 });

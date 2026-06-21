@@ -12,7 +12,7 @@
 import React from "react";
 import { View, Text, TextInput, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../utils/responsive";
 
 export interface ManualMetricEntryProps {
@@ -54,8 +54,8 @@ export const ManualMetricEntry: React.FC<ManualMetricEntryProps> = ({
               styles.iconBadge,
               {
                 backgroundColor: hasError
-                  ? ResponsiveTheme.colors.errorTint
-                  : ResponsiveTheme.colors.glassHighlight,
+                  ? colors.errorTint
+                  : colors.glassHighlight,
               },
             ]}
           >
@@ -64,8 +64,8 @@ export const ManualMetricEntry: React.FC<ManualMetricEntryProps> = ({
               size={rf(18)}
               color={
                 hasError
-                  ? ResponsiveTheme.colors.error
-                  : ResponsiveTheme.colors.primary
+                  ? colors.error
+                  : colors.primary
               }
             />
           </View>
@@ -85,7 +85,7 @@ export const ManualMetricEntry: React.FC<ManualMetricEntryProps> = ({
             value={value}
             onChangeText={onChange}
             placeholder={placeholder}
-            placeholderTextColor={ResponsiveTheme.colors.textTertiary}
+            placeholderTextColor={colors.textTertiary}
             keyboardType="numeric"
             returnKeyType="done"
             accessibilityLabel={`${label} in ${unit}`}
@@ -99,7 +99,7 @@ export const ManualMetricEntry: React.FC<ManualMetricEntryProps> = ({
           <Ionicons
             name="alert-circle"
             size={rf(13)}
-            color={ResponsiveTheme.colors.error}
+            color={colors.error}
           />
           <Text style={styles.errorText}>{error}</Text>
         </View>
@@ -110,7 +110,7 @@ export const ManualMetricEntry: React.FC<ManualMetricEntryProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   row: {
     flexDirection: "row",
@@ -122,57 +122,57 @@ const styles = StyleSheet.create({
     borderRadius: rbr(18),
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   labelCol: {
     flex: 1,
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   label: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   hint: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
   inputWrap: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassBorder,
+    borderColor: colors.glassBorder,
     borderRadius: rbr(10),
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.sm,
     minWidth: rw(130),
   },
   inputWrapError: {
-    borderColor: ResponsiveTheme.colors.error,
+    borderColor: colors.error,
   },
   input: {
     flex: 1,
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     fontSize: rf(15),
     paddingVertical: rp(8),
     minWidth: rw(60),
   },
   unit: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    color: colors.textSecondary,
+    marginLeft: spacing.xs,
   },
   errorRow: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: rp(4),
-    marginLeft: rw(36) + ResponsiveTheme.spacing.sm,
+    marginLeft: rw(36) + spacing.sm,
   },
   errorText: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.error,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    color: colors.error,
+    marginLeft: spacing.xs,
     flex: 1,
   },
 });

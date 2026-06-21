@@ -17,7 +17,7 @@ import {
   MigrationProgress as MigrationProgressType,
   MigrationResult,
 } from "../../services/migration";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rs, rh, rw } from "../../utils/responsive";
 
 // ============================================================================
@@ -212,9 +212,9 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
           >
             <LinearGradient
               colors={[
-                ResponsiveTheme.colors.primaryDark,
+                colors.primaryDark,
                 "#7C3AED",
-                ResponsiveTheme.colors.pink,
+                colors.pink,
               ]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -271,10 +271,10 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
                   size={rs(20)}
                   color={
                     isCompleted
-                      ? ResponsiveTheme.colors.successAlt
+                      ? colors.successAlt
                       : isCurrent
-                        ? ResponsiveTheme.colors.primaryDark
-                        : ResponsiveTheme.colors.textTertiary
+                        ? colors.primaryDark
+                        : colors.textTertiary
                   }
                 />
               </View>
@@ -326,7 +326,7 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
           <Ionicons
             name="checkmark-circle"
             size={rs(32)}
-            color={ResponsiveTheme.colors.successAlt}
+            color={colors.successAlt}
           />
           <Text style={styles.statusTitle}>Migration Complete!</Text>
           <Text style={styles.statusMessage}>
@@ -351,7 +351,7 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
           <Ionicons
             name="alert-circle"
             size={rs(32)}
-            color={ResponsiveTheme.colors.errorAlt}
+            color={colors.errorAlt}
           />
           <Text style={styles.statusTitle}>Migration Failed</Text>
           <Text style={styles.statusMessage}>
@@ -419,8 +419,8 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
         <View style={styles.container}>
           <LinearGradient
             colors={[
-              ResponsiveTheme.colors.backgroundSecondary,
-              ResponsiveTheme.colors.background,
+              colors.backgroundSecondary,
+              colors.background,
             ]}
             style={styles.gradient}
           >
@@ -442,7 +442,7 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.overlayDark,
+    backgroundColor: colors.overlayDark,
     justifyContent: "center",
     alignItems: "center",
     padding: rp(20),
@@ -463,14 +463,14 @@ const styles = StyleSheet.create({
     marginBottom: rp(30),
   },
   statusSuccess: {
-    backgroundColor: ResponsiveTheme.colors.successTint,
+    backgroundColor: colors.successTint,
     borderRadius: rbr(15),
     padding: rp(20),
     borderWidth: 1,
     borderColor: "rgba(16, 185, 129, 0.3)",
   },
   statusError: {
-    backgroundColor: ResponsiveTheme.colors.errorTint,
+    backgroundColor: colors.errorTint,
     borderRadius: rbr(15),
     padding: rp(20),
     borderWidth: 1,
@@ -479,13 +479,13 @@ const styles = StyleSheet.create({
   statusTitle: {
     fontSize: rf(24),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     marginTop: rp(10),
     textAlign: "center",
   },
   statusMessage: {
     fontSize: rf(16),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(8),
     textAlign: "center",
     lineHeight: rf(22),
@@ -500,7 +500,7 @@ const styles = StyleSheet.create({
   },
   statsText: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.info,
+    color: colors.info,
     textAlign: "center",
   },
   progressBarContainer: {
@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
   },
   progressBarBackground: {
     height: rh(8),
-    backgroundColor: ResponsiveTheme.colors.glassBorder,
+    backgroundColor: colors.glassBorder,
     borderRadius: rbr(4),
     overflow: "hidden",
   },
@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: rf(18),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     textAlign: "center",
     marginTop: rp(10),
   },
@@ -546,15 +546,15 @@ const styles = StyleSheet.create({
   },
   stepIconCompleted: {
     backgroundColor: "rgba(16, 185, 129, 0.2)",
-    borderColor: ResponsiveTheme.colors.successAlt,
+    borderColor: colors.successAlt,
   },
   stepIconCurrent: {
     backgroundColor: "rgba(79, 70, 229, 0.2)",
-    borderColor: ResponsiveTheme.colors.primaryDark,
+    borderColor: colors.primaryDark,
   },
   stepIconUpcoming: {
     backgroundColor: "rgba(107, 114, 128, 0.1)",
-    borderColor: ResponsiveTheme.colors.textTertiary,
+    borderColor: colors.textTertiary,
   },
   stepContent: {
     flex: 1,
@@ -562,22 +562,22 @@ const styles = StyleSheet.create({
   stepTitle: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rp(2),
   },
   stepTitleCompleted: {
-    color: ResponsiveTheme.colors.successAlt,
+    color: colors.successAlt,
   },
   stepTitleCurrent: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   stepDescription: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textTertiary,
+    color: colors.textTertiary,
     lineHeight: rf(18),
   },
   stepDescriptionCurrent: {
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   buttonContainer: {
     flexDirection: "row",
@@ -585,26 +585,26 @@ const styles = StyleSheet.create({
     gap: rp(15),
   },
   completeButton: {
-    backgroundColor: ResponsiveTheme.colors.successAlt,
+    backgroundColor: colors.successAlt,
     paddingVertical: rp(15),
     paddingHorizontal: rp(30),
     borderRadius: rbr(12),
     alignItems: "center",
   },
   completeButtonText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     fontSize: rf(16),
     fontWeight: "600",
   },
   retryButton: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.primaryDark,
+    backgroundColor: colors.primaryDark,
     paddingVertical: rp(15),
     borderRadius: rbr(12),
     alignItems: "center",
   },
   retryButtonText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     fontSize: rf(16),
     fontWeight: "600",
   },
@@ -615,10 +615,10 @@ const styles = StyleSheet.create({
     borderRadius: rbr(12),
     alignItems: "center",
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.errorAlt,
+    borderColor: colors.errorAlt,
   },
   cancelButtonText: {
-    color: ResponsiveTheme.colors.errorAlt,
+    color: colors.errorAlt,
     fontSize: rf(16),
     fontWeight: "600",
   },

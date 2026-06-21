@@ -14,9 +14,8 @@ import Animated, {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rp } from "../../../utils/responsive";
-import { colors } from "../../../theme/aurora-tokens";
 import { useProfileStore } from "../../../stores/profileStore";
 
 interface RecoveryTipsModalProps {
@@ -40,7 +39,7 @@ const RECOVERY_TIPS: RecoveryTip[] = [
     title: "Prioritize Sleep",
     description:
       "Aim for 7-9 hours of quality sleep. Your muscles repair and grow during deep sleep cycles.",
-    gradient: [colors.primary.DEFAULT, colors.primary.light],
+    gradient: [colors.primary, colors.primaryLight],
     duration: "7-9 hours",
   },
   {
@@ -163,7 +162,7 @@ const RecoveryTipCard: React.FC<{ tip: RecoveryTip; index: number }> = ({
           end={{ x: 1, y: 1 }}
           style={styles.tipIconContainer}
         >
-          <Ionicons name={tip.icon} size={rf(20)} color={ResponsiveTheme.colors.white} />
+          <Ionicons name={tip.icon} size={rf(20)} color={colors.white} />
         </LinearGradient>
         <View style={styles.tipTextContainer}>
           <View style={styles.tipHeader}>
@@ -173,7 +172,7 @@ const RecoveryTipCard: React.FC<{ tip: RecoveryTip; index: number }> = ({
                 <Ionicons
                   name="time-outline"
                   size={rf(10)}
-                  color={colors.text.secondary}
+                  color={colors.textSecondary}
                 />
                 <Text style={styles.durationText}>{tip.duration}</Text>
               </View>
@@ -221,12 +220,12 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
               {/* Header */}
               <View style={styles.header}>
                 <LinearGradient
-                  colors={[colors.primary.DEFAULT, colors.primary.light]}
+                  colors={[colors.primary, colors.primaryLight]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.headerIconContainer}
                 >
-                  <Ionicons name="leaf" size={rf(24)} color={ResponsiveTheme.colors.white} />
+                  <Ionicons name="leaf" size={rf(24)} color={colors.white} />
                 </LinearGradient>
                 <View style={styles.headerText}>
                   <Text style={styles.headerTitle}>Recovery Tips</Text>
@@ -247,7 +246,7 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
                   <Ionicons
                     name="close"
                     size={rf(24)}
-                    color={colors.text.secondary}
+                    color={colors.textSecondary}
                   />
                 </AnimatedPressable>
               </View>
@@ -261,7 +260,7 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
                 {/* Intro Card */}
                 <Animated.View entering={FadeIn.delay(50).duration(300)}>
                   <View style={styles.introCard}>
-                    <Ionicons name="sparkles" size={rf(18)} color={ResponsiveTheme.colors.gold} />
+                    <Ionicons name="sparkles" size={rf(18)} color={colors.gold} />
                     <Text style={styles.introText}>
                       Rest days are crucial for muscle recovery, preventing
                       overtraining, and achieving your fitness goals. Here's how
@@ -299,7 +298,7 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
                   style={styles.gotItButton}
                 >
                   <LinearGradient
-                    colors={[colors.primary.DEFAULT, colors.primary.light]}
+                    colors={[colors.primary, colors.primaryLight]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={styles.gotItButtonGradient}
@@ -308,7 +307,7 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
                     <Ionicons
                       name="checkmark-circle"
                       size={rf(18)}
-                      color={ResponsiveTheme.colors.white}
+                      color={colors.white}
                     />
                   </LinearGradient>
                 </AnimatedPressable>
@@ -333,15 +332,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     width: "100%",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   modalContainer: {
     width: "100%",
     maxHeight: "85%",
   },
   modalContent: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: ResponsiveTheme.borderRadius.xl,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.xl,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
@@ -349,7 +348,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255, 255, 255, 0.1)",
   },
@@ -362,16 +361,16 @@ const styles = StyleSheet.create({
   },
   headerText: {
     flex: 1,
-    marginLeft: ResponsiveTheme.spacing.md,
+    marginLeft: spacing.md,
   },
   headerTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: colors.text.primary,
+    color: colors.text,
   },
   headerSubtitle: {
     fontSize: rf(12),
-    color: colors.text.secondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
   closeButton: {
@@ -386,35 +385,35 @@ const styles = StyleSheet.create({
     maxHeight: rh(400),
   },
   scrollContent: {
-    padding: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.md,
+    padding: spacing.lg,
+    paddingTop: spacing.md,
   },
   introCard: {
     flexDirection: "row",
     alignItems: "flex-start",
     backgroundColor: "rgba(255, 215, 0, 0.15)",
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.lg,
-    gap: ResponsiveTheme.spacing.sm,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
   },
   introText: {
     flex: 1,
     fontSize: rf(13),
-    color: colors.text.primary,
+    color: colors.text,
     lineHeight: rf(20),
   },
   tipCard: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
     backgroundColor: "rgba(255, 255, 255, 0.08)",
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     overflow: "hidden",
   },
   tipContent: {
     flexDirection: "row",
     alignItems: "flex-start",
-    padding: ResponsiveTheme.spacing.md,
-    gap: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
+    gap: spacing.md,
   },
   tipIconContainer: {
     width: rw(40),
@@ -435,66 +434,66 @@ const styles = StyleSheet.create({
   tipTitle: {
     fontSize: rf(14),
     fontWeight: "700",
-    color: colors.text.primary,
+    color: colors.text,
   },
   durationBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: rp(3),
     backgroundColor: "rgba(255, 255, 255, 0.1)",
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
+    paddingHorizontal: spacing.xs,
     paddingVertical: rp(2),
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    borderRadius: borderRadius.sm,
   },
   durationText: {
     fontSize: rf(10),
-    color: colors.text.secondary,
+    color: colors.textSecondary,
   },
   tipDescription: {
     fontSize: rf(12),
-    color: colors.text.secondary,
+    color: colors.textSecondary,
     lineHeight: rf(18),
   },
   quoteContainer: {
-    marginTop: ResponsiveTheme.spacing.md,
-    padding: ResponsiveTheme.spacing.md,
+    marginTop: spacing.md,
+    padding: spacing.md,
     borderLeftWidth: 3,
-    borderLeftColor: colors.primary.DEFAULT,
+    borderLeftColor: colors.primary,
     backgroundColor: "rgba(255, 107, 53, 0.15)",
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
   },
   quoteText: {
     fontSize: rf(13),
     fontStyle: "italic",
-    color: colors.text.primary,
+    color: colors.text,
     lineHeight: rf(20),
   },
   quoteAuthor: {
     fontSize: rf(11),
-    color: colors.text.secondary,
-    marginTop: ResponsiveTheme.spacing.xs,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
   footer: {
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.1)",
   },
   gotItButton: {
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     overflow: "hidden",
   },
   gotItButtonGradient: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
   gotItButtonText: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     letterSpacing: 0.5,
   },
 });

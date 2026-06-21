@@ -4,7 +4,7 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../../utils/constants";
+import { flatColors as colors, spacing } from "../../../../theme/aurora-tokens";
 import { rf, rw } from "../../../../utils/responsive";
 
 interface ChartCardProps {
@@ -80,13 +80,13 @@ export const ChartCard: React.FC<ChartCardProps> = ({
 
 const styles = StyleSheet.create({
   chartHeader: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   chartTitleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   chartIconContainer: {
     width: rw(28),
@@ -98,18 +98,18 @@ const styles = StyleSheet.create({
   chartTitle: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     letterSpacing: 0.2,
   },
   legendContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   legendItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   legendDot: {
     width: rw(8),
@@ -119,6 +119,6 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: rf(11),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
 });

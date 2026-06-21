@@ -27,7 +27,7 @@ import TemplateLibraryScreen from "../../screens/workouts/TemplateLibraryScreen"
 import CreateWorkoutScreen from "../../screens/workouts/CreateWorkoutScreen";
 import ExerciseHistoryScreen from "../../screens/workouts/ExerciseHistoryScreen";
 import ScheduleBuilderScreen from "../../screens/workouts/ScheduleBuilderScreen";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { DayWorkout, DayMeal } from "../../types/ai";
 import { useAppConfig } from "../../hooks/useAppConfig";
 import { ScreenErrorBoundary } from "../errors/ScreenErrorBoundary";
@@ -687,7 +687,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
 
   screenContainer: {
@@ -709,18 +709,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: rw(24),
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
   unavailableTitle: {
     fontSize: rf(22),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rh(8),
     textAlign: "center",
   },
   unavailableMessage: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(20),
   },

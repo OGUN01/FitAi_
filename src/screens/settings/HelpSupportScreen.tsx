@@ -5,7 +5,7 @@
  * - GlassCard for all cards
  * - Ionicons instead of emojis
  * - AnimatedPressable with haptics
- * - ResponsiveTheme for spacing/colors
+ * - aurora-tokens for spacing/colors
  * - FadeInDown entry animations
  */
 
@@ -22,7 +22,7 @@ import { ResourceItem } from "../../components/help/ResourceItem";
 import { FAQList } from "../../components/help/FAQList";
 import { ContactCard } from "../../components/help/ContactCard";
 
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw, rp, rbr, rh } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { useHelpSupport } from "../../hooks/useHelpSupport";
@@ -63,14 +63,14 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <View style={styles.backButton}>
-              <Ionicons name="chevron-back" size={rf(20)} color={ResponsiveTheme.colors.text} />
+              <Ionicons name="chevron-back" size={rf(20)} color={colors.text} />
             </View>
           </AnimatedPressable>
           <View style={styles.headerCenter}>
             <Ionicons
               name="help-circle-outline"
               size={rf(18)}
-              color={ResponsiveTheme.colors.primary}
+              color={colors.primary}
             />
             <Text style={styles.headerTitle}>Help & Support</Text>
           </View>
@@ -87,7 +87,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
               <Ionicons
                 name="flash-outline"
                 size={rf(14)}
-                color={ResponsiveTheme.colors.textSecondary}
+                color={colors.textSecondary}
               />
               <Text style={styles.sectionTitle}>Quick Actions</Text>
             </View>
@@ -95,32 +95,32 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
             <View style={styles.quickActionsGrid}>
               <QuickAction
                 icon="chatbubbles-outline"
-                iconColor={ResponsiveTheme.colors.text}
-                gradientColors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark]}
+                iconColor={colors.text}
+                gradientColors={[colors.primary, colors.primaryDark]}
                 title="Contact Support"
                 onPress={handleContactSupport}
                 animationDelay={100}
               />
               <QuickAction
                 icon="bug-outline"
-                iconColor={ResponsiveTheme.colors.text}
-                gradientColors={[ResponsiveTheme.colors.errorLight, ResponsiveTheme.colors.primaryLight]}
+                iconColor={colors.text}
+                gradientColors={[colors.errorLight, colors.primaryLight]}
                 title="Report Bug"
                 onPress={handleReportBug}
                 animationDelay={150}
               />
               <QuickAction
                 icon="bulb-outline"
-                iconColor={ResponsiveTheme.colors.text}
-                gradientColors={[ResponsiveTheme.colors.success, ResponsiveTheme.colors.successLight]}
+                iconColor={colors.text}
+                gradientColors={[colors.success, colors.successLight]}
                 title="Feature Request"
                 onPress={handleFeatureRequest}
                 animationDelay={200}
               />
               <QuickAction
                 icon="school-outline"
-                iconColor={ResponsiveTheme.colors.text}
-                gradientColors={[ResponsiveTheme.colors.info, ResponsiveTheme.colors.cyan]}
+                iconColor={colors.text}
+                gradientColors={[colors.info, colors.cyan]}
                 title="Tutorials"
                 onPress={handleTutorials}
                 animationDelay={250}
@@ -133,7 +133,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
               <Ionicons
                 name="help-outline"
                 size={rf(14)}
-                color={ResponsiveTheme.colors.textSecondary}
+                color={colors.textSecondary}
               />
               <Text style={styles.sectionTitle}>
                 Frequently Asked Questions
@@ -152,14 +152,14 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
               <Ionicons
                 name="book-outline"
                 size={rf(14)}
-                color={ResponsiveTheme.colors.textSecondary}
+                color={colors.textSecondary}
               />
               <Text style={styles.sectionTitle}>Resources</Text>
             </View>
 
             <ResourceItem
               icon="document-text-outline"
-              iconColor={ResponsiveTheme.colors.success}
+              iconColor={colors.success}
               title="User Guide"
               description="Complete guide to using all FitAI features"
               onPress={handleUserGuide}
@@ -168,7 +168,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
 
             <ResourceItem
               icon="videocam-outline"
-              iconColor={ResponsiveTheme.colors.errorLight}
+              iconColor={colors.errorLight}
               title="Video Tutorials"
               description="Step-by-step video guides for beginners"
               onPress={handleVideoTutorials}
@@ -177,7 +177,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
 
             <ResourceItem
               icon="people-outline"
-              iconColor={ResponsiveTheme.colors.primary}
+              iconColor={colors.primary}
               title="Community Forum"
               description="Connect with other FitAI users"
               onPress={handleCommunityForum}
@@ -186,7 +186,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
 
             <ResourceItem
               icon="pulse-outline"
-              iconColor={ResponsiveTheme.colors.warning}
+              iconColor={colors.warning}
               title="System Status"
               description="Check if all FitAI services are running smoothly"
               onPress={handleSystemStatus}
@@ -211,26 +211,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
   backButton: {
     width: rw(40),
     height: rw(40),
     borderRadius: rbr(20),
-    backgroundColor: ResponsiveTheme.colors.glassBorder,
+    backgroundColor: colors.glassBorder,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
   headerCenter: {
     flexDirection: "row",
     alignItems: "center" as const,
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   headerTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   headerSpacer: {
     width: rw(40),
@@ -239,31 +239,31 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingTop: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
     paddingBottom: rp(100),
   },
   section: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center" as const,
-    gap: ResponsiveTheme.spacing.xs,
-    marginBottom: ResponsiveTheme.spacing.sm,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+    marginLeft: spacing.xs,
   },
   sectionTitle: {
     fontSize: rf(12),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 1,
   },
   quickActionsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   bottomSpacing: {
     height: rh(80),

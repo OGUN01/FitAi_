@@ -12,7 +12,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { ResponsiveTheme } from '../../utils/constants';
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
 
 
 interface Props {
@@ -78,7 +78,7 @@ export class ScreenErrorBoundary extends Component<Props, State> {
             <Ionicons
               name="alert-circle"
               size={64}
-              color={ResponsiveTheme.colors.error}
+              color={colors.error}
             />
 
             <Text style={styles.title}>Oops! Something went wrong</Text>
@@ -118,10 +118,10 @@ export class ScreenErrorBoundary extends Component<Props, State> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
   },
 
   content: {
@@ -130,60 +130,60 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginTop: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
     textAlign: "center",
   },
 
   message: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: spacing.xl,
     lineHeight: 22,
   },
 
   button: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.xl,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: borderRadius.md,
     minWidth: 150,
   },
 
   buttonText: {
-    color: ResponsiveTheme.colors.white,
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: colors.white,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
     textAlign: "center",
   },
 
   errorDetails: {
-    marginTop: ResponsiveTheme.spacing.xl,
+    marginTop: spacing.xl,
     maxHeight: 200,
     width: "100%",
   },
 
   errorTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.error,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.error,
+    marginBottom: spacing.xs,
   },
 
   errorText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
     fontFamily: "monospace",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   errorStack: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
     fontFamily: "monospace",
   },
 });

@@ -9,7 +9,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../../utils/responsive";
 import { WeeklyWorkoutPlan } from "../../../ai";
 import { DayName } from "../../../stores/appStateStore";
@@ -187,8 +187,8 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
                   size={rf(14)}
                   color={
                     isRegenerating
-                      ? ResponsiveTheme.colors.textSecondary
-                      : ResponsiveTheme.colors.primary
+                      ? colors.textSecondary
+                      : colors.primary
                   }
                 />
                 <Text style={[styles.regenerateText, isRegenerating && styles.regenerateTextDisabled]}>
@@ -208,7 +208,7 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
                 <Ionicons
                   name="chevron-forward"
                   size={rf(14)}
-                  color={ResponsiveTheme.colors.primary}
+                  color={colors.primary}
                 />
               </View>
             </AnimatedPressable>
@@ -249,9 +249,9 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
                   ]}
                 >
                   {status.isCompleted ? (
-                    <Ionicons name="checkmark" size={rf(14)} color={ResponsiveTheme.colors.successAlt} />
+                    <Ionicons name="checkmark" size={rf(14)} color={colors.successAlt} />
                   ) : status.isRestDay ? (
-                    <Ionicons name="moon" size={rf(12)} color={ResponsiveTheme.colors.primary} />
+                    <Ionicons name="moon" size={rf(12)} color={colors.primary} />
                   ) : status.hasWorkout ? (
                     <View
                       style={[
@@ -288,7 +288,7 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
             <Text
               style={[
                 styles.statValue,
-                { color: ResponsiveTheme.colors.primary },
+                { color: colors.primary },
               ]}
             >
               {stats.progressPercent}%
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   headerLeft: {
     flex: 1,
@@ -314,20 +314,20 @@ const styles = StyleSheet.create({
   planTitle: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   planSubtitle: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
   headerActions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   regenerateButton: {
-    padding: ResponsiveTheme.spacing.xs,
+    padding: spacing.xs,
   },
   regenerateButtonInner: {
     flexDirection: "row",
@@ -337,10 +337,10 @@ const styles = StyleSheet.create({
   regenerateText: {
     fontSize: rf(12),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   regenerateTextDisabled: {
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   spinning: {
     // Animation will be added via Reanimated
@@ -353,71 +353,71 @@ const styles = StyleSheet.create({
   seeAllText: {
     fontSize: rf(12),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   calendarContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   dayContainer: {
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   dayLabel: {
     fontSize: rf(10),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textTransform: "uppercase",
   },
   dayLabelToday: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
     fontWeight: "700",
   },
   dayLabelSelected: {
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     fontWeight: "700",
   },
   dayCircle: {
     width: rw(36),
     height: rw(36),
     borderRadius: rbr(18),
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassBorder,
+    borderColor: colors.glassBorder,
   },
   dayCircleSelected: {
-    backgroundColor: `${ResponsiveTheme.colors.primary}20`,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: `${colors.primary}20`,
+    borderColor: colors.primary,
   },
   dayCircleToday: {
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
     borderWidth: 2,
   },
   workoutDot: {
     width: rw(8),
     height: rw(8),
     borderRadius: rbr(4),
-    backgroundColor: ResponsiveTheme.colors.errorLight,
+    backgroundColor: colors.errorLight,
   },
   workoutDotInProgress: {
-    backgroundColor: ResponsiveTheme.colors.primaryLight,
+    backgroundColor: colors.primaryLight,
   },
   emptyDot: {
     width: rw(4),
     height: rw(4),
     borderRadius: rbr(2),
-    backgroundColor: ResponsiveTheme.colors.glassHighlight,
+    backgroundColor: colors.glassHighlight,
   },
   statsRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    paddingTop: ResponsiveTheme.spacing.md,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.glassBorder,
+    borderTopColor: colors.glassBorder,
   },
   statItem: {
     alignItems: "center",
@@ -426,17 +426,17 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: rf(16),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   statLabel: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
   statDivider: {
     width: 1,
     height: rh(24),
-    backgroundColor: ResponsiveTheme.colors.glassBorder,
+    backgroundColor: colors.glassBorder,
   },
 });
 

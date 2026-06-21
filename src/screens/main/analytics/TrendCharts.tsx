@@ -7,7 +7,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf, rh } from "../../../utils/responsive";
 import { SectionHeader } from "../home/SectionHeader";
 import { Period } from "./PeriodSelector";
@@ -42,7 +42,7 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
         <SectionHeader
           title="Detailed Analytics"
           icon="bar-chart"
-          iconColor={ResponsiveTheme.colors.primary}
+          iconColor={colors.primary}
         />
       </View>
 
@@ -50,25 +50,25 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
         <ChartCard
           title="Weight Progress"
           icon="trending-down"
-          iconColor={ResponsiveTheme.colors.primary}
+          iconColor={colors.primary}
           legend={
             hasWeightData
-              ? [{ color: ResponsiveTheme.colors.primary, label: "Weight" }]
+              ? [{ color: colors.primary, label: "Weight" }]
               : undefined
           }
           delay={0}
           onPress={hasWeightData ? () => onChartPress?.("weight") : undefined}
         >
-          <LineChart data={weightData || []} color={ResponsiveTheme.colors.primary} unit="kg" />
+          <LineChart data={weightData || []} color={colors.primary} unit="kg" />
         </ChartCard>
 
         <ChartCard
           title="Calorie Analysis"
           icon="flame"
-          iconColor={ResponsiveTheme.colors.warning}
+          iconColor={colors.warning}
           legend={
             hasCalorieData
-              ? [{ color: ResponsiveTheme.colors.success, label: "Consumed" }]
+              ? [{ color: colors.success, label: "Consumed" }]
               : undefined
           }
           delay={100}
@@ -77,15 +77,15 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
           {hasCalorieData ? (
             <BarChart
               data={safeCalorieData}
-              color={ResponsiveTheme.colors.success}
-              gradientColors={[ResponsiveTheme.colors.success, ResponsiveTheme.colors.successLight]}
+              color={colors.success}
+              gradientColors={[colors.success, colors.successLight]}
             />
           ) : (
             <View style={styles.emptyChart}>
               <Ionicons
                 name="flame-outline"
                 size={rf(32)}
-                color={ResponsiveTheme.colors.textMuted}
+                color={colors.textMuted}
               />
               <Text style={styles.emptyChartText}>
                 No calorie data recorded
@@ -100,15 +100,15 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
         <ChartCard
           title="Workout Consistency"
           icon="barbell"
-          iconColor={ResponsiveTheme.colors.info}
+          iconColor={colors.info}
           delay={200}
           onPress={hasWorkoutData ? () => onChartPress?.("workouts") : undefined}
         >
           {hasWorkoutData ? (
             <BarChart
               data={safeWorkoutData}
-              color={ResponsiveTheme.colors.info}
-              gradientColors={[ResponsiveTheme.colors.info, ResponsiveTheme.colors.info]}
+              color={colors.info}
+              gradientColors={[colors.info, colors.info]}
               maxValue={Math.max(...safeWorkoutData.map((d) => d.value), 4)}
             />
           ) : (
@@ -116,7 +116,7 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
               <Ionicons
                 name="barbell-outline"
                 size={rf(32)}
-                color={ResponsiveTheme.colors.textMuted}
+                color={colors.textMuted}
               />
               <Text style={styles.emptyChartText}>
                 No workout data this {period}
@@ -134,36 +134,36 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: ResponsiveTheme.spacing.xl,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginTop: spacing.xl,
+    marginBottom: spacing.lg,
     zIndex: 1,
   },
   headerContainer: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
   chartsContainer: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    gap: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.lg,
   },
   emptyChart: {
     minHeight: rh(180),
     justifyContent: "center",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   emptyChartText: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textAlign: "center",
   },
   emptyChartSubtext: {
     fontSize: rf(12),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     textAlign: "center",
   },
 });

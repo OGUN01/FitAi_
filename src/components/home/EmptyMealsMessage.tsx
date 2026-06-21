@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/GlassCard";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
 
 interface EmptyMealsMessageProps {
@@ -23,7 +23,7 @@ export const EmptyMealsMessage: React.FC<EmptyMealsMessageProps> = ({
           <Ionicons
             name="restaurant-outline"
             size={rf(28)}
-            color={ResponsiveTheme.colors.primary}
+            color={colors.primary}
           />
         </View>
         <Text style={styles.title}>No meals logged today</Text>
@@ -38,7 +38,7 @@ export const EmptyMealsMessage: React.FC<EmptyMealsMessageProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Log your first meal"
           >
-            <Ionicons name="add-circle-outline" size={rf(16)} color={ResponsiveTheme.colors.white} />
+            <Ionicons name="add-circle-outline" size={rf(16)} color={colors.white} />
             <Text style={styles.ctaText}>Log Meal</Text>
           </TouchableOpacity>
         )}
@@ -49,48 +49,48 @@ export const EmptyMealsMessage: React.FC<EmptyMealsMessageProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.sm,
   },
   container: {
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
   },
   iconContainer: {
     width: rw(52),
     height: rw(52),
     borderRadius: rbr(26),
-    backgroundColor: `${ResponsiveTheme.colors.primary}18`,
+    backgroundColor: `${colors.primary}18`,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   title: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(4),
   },
   subtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
     opacity: 0.8,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   ctaButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: rp(6),
-    backgroundColor: ResponsiveTheme.colors.primary,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     minHeight: 44,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    borderRadius: borderRadius.full,
   },
   ctaText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: fontSize.sm,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 });

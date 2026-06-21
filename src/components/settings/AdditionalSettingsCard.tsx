@@ -1,7 +1,7 @@
 import React from "react";
 import { rf, rp, rbr } from '../../utils/responsive';
 import { View, Text, Switch } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 
 interface AdditionalSettingsCardProps {
   exportToHealthKit: boolean;
@@ -19,7 +19,7 @@ export const AdditionalSettingsCard: React.FC<AdditionalSettingsCardProps> = ({
   return (
     <View
       style={{
-        backgroundColor: ResponsiveTheme.colors.surface,
+        backgroundColor: colors.surface,
         marginHorizontal: rp(16),
         marginBottom: rp(16),
         borderRadius: rbr(12),
@@ -30,7 +30,7 @@ export const AdditionalSettingsCard: React.FC<AdditionalSettingsCardProps> = ({
         style={{
           fontSize: rf(16),
           fontWeight: "600",
-          color: ResponsiveTheme.colors.text,
+          color: colors.text,
           marginBottom: rp(12),
         }}
       >
@@ -49,7 +49,7 @@ export const AdditionalSettingsCard: React.FC<AdditionalSettingsCardProps> = ({
           <Text
             style={{
               fontSize: rf(16),
-              color: ResponsiveTheme.colors.text,
+              color: colors.text,
             }}
           >
             Export FitAI Data to HealthKit
@@ -57,7 +57,7 @@ export const AdditionalSettingsCard: React.FC<AdditionalSettingsCardProps> = ({
           <Text
             style={{
               fontSize: rf(14),
-              color: ResponsiveTheme.colors.textSecondary,
+              color: colors.textSecondary,
               marginTop: rp(2),
             }}
           >
@@ -68,8 +68,8 @@ export const AdditionalSettingsCard: React.FC<AdditionalSettingsCardProps> = ({
           value={exportToHealthKit}
           onValueChange={onToggleExport}
           trackColor={{
-            false: ResponsiveTheme.colors.border,
-            true: ResponsiveTheme.colors.primary,
+            false: colors.border,
+            true: colors.primary,
           }}
         />
       </View>
@@ -82,14 +82,14 @@ export const AdditionalSettingsCard: React.FC<AdditionalSettingsCardProps> = ({
           paddingVertical: rp(8),
           marginTop: rp(8),
           borderTopWidth: 1,
-          borderTopColor: ResponsiveTheme.colors.border,
+          borderTopColor: colors.border,
         }}
       >
         <View style={{ flex: 1 }}>
           <Text
             style={{
               fontSize: rf(16),
-              color: ResponsiveTheme.colors.text,
+              color: colors.text,
             }}
           >
             Background Sync
@@ -97,7 +97,7 @@ export const AdditionalSettingsCard: React.FC<AdditionalSettingsCardProps> = ({
           <Text
             style={{
               fontSize: rf(14),
-              color: ResponsiveTheme.colors.textSecondary,
+              color: colors.textSecondary,
               marginTop: rp(2),
             }}
           >
@@ -108,8 +108,8 @@ export const AdditionalSettingsCard: React.FC<AdditionalSettingsCardProps> = ({
           value={backgroundSyncEnabled}
           onValueChange={onToggleBackgroundSync}
           trackColor={{
-            false: ResponsiveTheme.colors.border,
-            true: ResponsiveTheme.colors.primary,
+            false: colors.border,
+            true: colors.primary,
           }}
         />
       </View>

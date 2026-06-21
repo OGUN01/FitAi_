@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, Switch, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rs } from '../../utils/responsive';
 
 interface HealthKitToggleProps {
@@ -20,7 +20,7 @@ export const HealthKitToggle: React.FC<HealthKitToggleProps> = ({
   return (
     <View
       style={{
-        backgroundColor: ResponsiveTheme.colors.surface,
+        backgroundColor: colors.surface,
         margin: rp(16),
         borderRadius: rbr(12),
         padding: rp(16),
@@ -39,7 +39,7 @@ export const HealthKitToggle: React.FC<HealthKitToggleProps> = ({
             style={{
               fontSize: rf(18),
               fontWeight: "bold",
-              color: ResponsiveTheme.colors.text,
+              color: colors.text,
             }}
           >
             Enable HealthKit Integration
@@ -47,7 +47,7 @@ export const HealthKitToggle: React.FC<HealthKitToggleProps> = ({
           <Text
             style={{
               fontSize: rf(14),
-              color: ResponsiveTheme.colors.textSecondary,
+              color: colors.textSecondary,
               marginTop: rp(4),
             }}
           >
@@ -55,14 +55,14 @@ export const HealthKitToggle: React.FC<HealthKitToggleProps> = ({
           </Text>
         </View>
         {isLoading ? (
-          <ActivityIndicator color={ResponsiveTheme.colors.primary} />
+          <ActivityIndicator color={colors.primary} />
         ) : (
           <Switch
             value={enabled && isAuthorized}
             onValueChange={onToggle}
             trackColor={{
-              false: ResponsiveTheme.colors.border,
-              true: ResponsiveTheme.colors.primary,
+              false: colors.border,
+              true: colors.primary,
             }}
           />
         )}
@@ -75,18 +75,18 @@ export const HealthKitToggle: React.FC<HealthKitToggleProps> = ({
           marginTop: rp(12),
           paddingTop: rp(12),
           borderTopWidth: 1,
-          borderTopColor: ResponsiveTheme.colors.border,
+          borderTopColor: colors.border,
         }}
       >
         <Ionicons
           name={isAuthorized ? "checkmark-circle" : "alert-circle"}
           size={rs(16)}
-          color={isAuthorized ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.warning}
+          color={isAuthorized ? colors.success : colors.warning}
         />
         <Text
           style={{
             fontSize: rf(14),
-            color: isAuthorized ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.warning,
+            color: isAuthorized ? colors.success : colors.warning,
             marginLeft: rp(8),
           }}
         >

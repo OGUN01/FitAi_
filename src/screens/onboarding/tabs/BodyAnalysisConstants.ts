@@ -1,5 +1,3 @@
-import { ResponsiveTheme } from "../../../utils/constants";
-
 export const MEDICAL_CONDITIONS_OPTIONS = [
   { id: "diabetes-type1", label: "Diabetes Type 1", value: "diabetes-type1" },
   { id: "diabetes-type2", label: "Diabetes Type 2", value: "diabetes-type2" },

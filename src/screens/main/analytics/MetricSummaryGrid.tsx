@@ -9,7 +9,7 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rp } from "../../../utils/responsive";
 import { SectionHeader } from "../home/SectionHeader";
 
@@ -90,16 +90,16 @@ const MetricCard: React.FC<{
     // For weight, down is good. For others, up is good.
     if (title.toLowerCase().includes("weight")) {
       return trend === "down"
-        ? ResponsiveTheme.colors.success
+        ? colors.success
         : trend === "up"
-          ? ResponsiveTheme.colors.error
-          : ResponsiveTheme.colors.neutral;
+          ? colors.error
+          : colors.neutral;
     }
     return trend === "up"
-      ? ResponsiveTheme.colors.success
+      ? colors.success
       : trend === "down"
-        ? ResponsiveTheme.colors.error
-        : ResponsiveTheme.colors.neutral;
+        ? colors.error
+        : colors.neutral;
   };
 
   return (
@@ -138,8 +138,8 @@ const MetricCard: React.FC<{
                 {
                   color:
                     value === "--"
-                      ? ResponsiveTheme.colors.textMuted
-                      : ResponsiveTheme.colors.text,
+                      ? colors.textMuted
+                      : colors.text,
                 },
               ]}
             >
@@ -216,7 +216,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
       <SectionHeader
         title="This Period"
         icon="stats-chart"
-        iconColor={ResponsiveTheme.colors.primary}
+        iconColor={colors.primary}
       />
 
       {/* Row 1: Weight + Calories */}
@@ -225,7 +225,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           title="Weight"
           value={formatWeight(data.weight?.current)}
           icon="scale-outline"
-          color={ResponsiveTheme.colors.primary}
+          color={colors.primary}
           trend={hasWeightTrendData ? data.weight?.trend : undefined}
           trendValue={
             hasWeightTrendData &&
@@ -244,7 +244,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           value={hasCaloriesData ? formatCalories(data.calories?.consumed) : "--"}
           subtitle={!hasCaloriesData ? "Log meals to track" : `This ${(data.calories?.period || period).charAt(0).toUpperCase() + (data.calories?.period || period).slice(1)}`}
           icon="flame-outline"
-          color={ResponsiveTheme.colors.warning}
+          color={colors.warning}
           trend={
             hasCaloriesData && data.calories?.change !== undefined
               ? data.calories?.trend
@@ -267,7 +267,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           value={data.workouts?.count?.toString() || "0"}
           subtitle={`This ${period.charAt(0).toUpperCase() + period.slice(1)}`}
           icon="barbell-outline"
-          color={ResponsiveTheme.colors.info}
+          color={colors.info}
           trend={hasWorkoutsData ? data.workouts?.trend : undefined}
           trendValue={
             hasWorkoutsData && data.workouts?.change
@@ -283,7 +283,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           value={data.streak?.days?.toString() ?? "--"}
           subtitle={getStreakMessage()}
           icon="flame"
-          color={ResponsiveTheme.colors.errorLight}
+          color={colors.errorLight}
           delay={300}
           onPress={() => onMetricPress?.("streak")}
         />
@@ -295,7 +295,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           <SectionHeader
             title="Health Metrics"
             icon="fitness-outline"
-            iconColor={ResponsiveTheme.colors.successAlt}
+            iconColor={colors.successAlt}
           />
 
           {/* Row 3: BMI + BMR */}
@@ -315,7 +315,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
                   : undefined
               }
               icon="body-outline"
-              color={ResponsiveTheme.colors.accent}
+              color={colors.accent}
               delay={400}
               onPress={() => onMetricPress?.("bmi")}
             />
@@ -325,7 +325,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
               value={data.bmr ? `${Math.round(data.bmr)}` : "--"}
               subtitle="cal/day"
               icon="pulse-outline"
-              color={ResponsiveTheme.colors.pink}
+              color={colors.pink}
               delay={500}
               onPress={() => onMetricPress?.("bmr")}
             />
@@ -338,7 +338,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
               value={data.tdee ? `${Math.round(data.tdee)}` : "--"}
               subtitle="cal/day"
               icon="flash-outline"
-              color={ResponsiveTheme.colors.warningAlt}
+              color={colors.warningAlt}
               delay={600}
               onPress={() => onMetricPress?.("tdee")}
             />
@@ -352,7 +352,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
               }
               subtitle="daily target"
               icon="water-outline"
-              color={ResponsiveTheme.colors.cyan}
+              color={colors.cyan}
               delay={700}
               onPress={() => onMetricPress?.("water")}
             />
@@ -365,14 +365,14 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.xl,
-    gap: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
+    gap: spacing.md,
     zIndex: 3,
   },
   row: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   cardWrapper: {
     flex: 1,
@@ -395,23 +395,23 @@ const styles = StyleSheet.create({
     borderRadius: rw(16),
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   metricValue: {
     fontSize: rf(22),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(2),
   },
   metricLabel: {
     fontSize: rf(11),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
   subtitleText: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   trendRow: {
     flexDirection: "row",

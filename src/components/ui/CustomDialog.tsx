@@ -12,7 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "./Card";
 import { Button } from "./Button";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { rf, rs, rbr } from "../../utils/responsive";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
@@ -61,13 +61,13 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
   const getTypeColor = () => {
     switch (type) {
       case "success":
-        return ResponsiveTheme.colors.success;
+        return colors.success;
       case "warning":
-        return ResponsiveTheme.colors.warning;
+        return colors.warning;
       case "error":
-        return ResponsiveTheme.colors.error;
+        return colors.error;
       default:
-        return ResponsiveTheme.colors.primary;
+        return colors.primary;
     }
   };
 
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   },
 
   dialogCard: {
-    padding: ResponsiveTheme.spacing.xl,
+    padding: spacing.xl,
     alignItems: "center" as const,
   },
 
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     borderRadius: rbr(30),
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   icon: {
@@ -208,19 +208,19 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.xl,
+    fontSize: fontSize.xl,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   message: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(22),
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: spacing.xl,
   },
 
   actionsContainer: {
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
 
   multipleActions: {
     flexDirection: "column",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
 
   actionButton: {
@@ -247,23 +247,23 @@ const styles = StyleSheet.create({
   // Workout complete styles
   statsContainer: {
     width: "100%",
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: spacing.xl,
   },
 
   statsTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    color: colors.text,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
     lineHeight: rf(22),
   },
 
   statsGrid: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingVertical: ResponsiveTheme.spacing.lg,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
   },
 
   statItem: {
@@ -271,15 +271,15 @@ const styles = StyleSheet.create({
   },
 
   statValue: {
-    fontSize: ResponsiveTheme.fontSize.xl,
+    fontSize: fontSize.xl,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.primary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.primary,
+    marginBottom: spacing.xs,
   },
 
   statLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
 });
 
@@ -365,11 +365,11 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
           {/* Header */}
           <View style={detailStyles.header}>
             <View style={detailStyles.iconCircle}>
-              <Ionicons name="barbell" size={rf(22)} color={ResponsiveTheme.colors.primary} />
+              <Ionicons name="barbell" size={rf(22)} color={colors.primary} />
             </View>
             <Text style={detailStyles.title} numberOfLines={2}>{title}</Text>
             <TouchableOpacity onPress={onClose} style={detailStyles.closeBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Ionicons name="close" size={rf(20)} color={ResponsiveTheme.colors.textSecondary} />
+              <Ionicons name="close" size={rf(20)} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -383,7 +383,7 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
           {/* Stats Row */}
           <View style={detailStyles.statsRow}>
             <View style={detailStyles.statItem}>
-              <Ionicons name="time-outline" size={rf(18)} color={ResponsiveTheme.colors.primary} />
+              <Ionicons name="time-outline" size={rf(18)} color={colors.primary} />
               <Text style={detailStyles.statValue}>{duration} min</Text>
               <Text style={detailStyles.statLabel}>Duration</Text>
             </View>
@@ -395,7 +395,7 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
             </View>
             <View style={detailStyles.divider} />
             <View style={detailStyles.statItem}>
-              <Ionicons name="swap-horizontal-outline" size={rf(18)} color={ResponsiveTheme.colors.success} />
+              <Ionicons name="swap-horizontal-outline" size={rf(18)} color={colors.success} />
               <Text style={detailStyles.statValue}>{exerciseCount}</Text>
               <Text style={detailStyles.statLabel}>Exercises</Text>
             </View>
@@ -415,23 +415,23 @@ const detailStyles = StyleSheet.create({
   card: {
     width: "85%",
     maxWidth: 400,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     borderRadius: rbr(20),
-    padding: ResponsiveTheme.spacing.xl,
+    padding: spacing.xl,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.08)",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.lg,
-    gap: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
   },
   iconCircle: {
     width: rs(36),
     height: rs(36),
     borderRadius: rbr(18),
-    backgroundColor: ResponsiveTheme.colors.primary + "20",
+    backgroundColor: colors.primary + "20",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -439,26 +439,26 @@ const detailStyles = StyleSheet.create({
     flex: 1,
     fontSize: rf(16),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   closeBtn: {
     padding: 4,
   },
   descScroll: {
     maxHeight: 80,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   description: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(19),
   },
   statsRow: {
     flexDirection: "row",
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
     borderRadius: rbr(14),
-    paddingVertical: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    paddingVertical: spacing.lg,
+    marginBottom: spacing.xl,
   },
   statItem: {
     flex: 1,
@@ -473,16 +473,16 @@ const detailStyles = StyleSheet.create({
   statValue: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   statLabel: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   closeButton: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: rbr(12),
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.md,
     alignItems: "center",
   },
   closeButtonText: {
@@ -527,13 +527,13 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
             <View
               style={[
                 styles.iconContainer,
-                { backgroundColor: ResponsiveTheme.colors.success + "20" },
+                { backgroundColor: colors.success + "20" },
               ]}
             >
               <Ionicons
                 name="trophy"
                 size={rf(32)}
-                color={ResponsiveTheme.colors.success}
+                color={colors.success}
               />
             </View>
 
@@ -577,7 +577,7 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
                     <Ionicons
                       name={star <= rating ? "star" : "star-outline"}
                       size={rf(28)}
-                      color={star <= rating ? "#F59E0B" : ResponsiveTheme.colors.textSecondary}
+                      color={star <= rating ? "#F59E0B" : colors.textSecondary}
                     />
                   </TouchableOpacity>
                 ))}
@@ -587,7 +587,7 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
               <TextInput
                 style={completeStyles.notesInput}
                 placeholder="Any notes? (optional)"
-                placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                placeholderTextColor={colors.textSecondary}
                 value={notes}
                 onChangeText={setNotes}
                 multiline
@@ -628,7 +628,7 @@ const completeStyles = StyleSheet.create({
   feedbackLabel: {
     fontSize: rf(14),
     fontWeight: "600" as const,
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rf(8),
   },
   starsRow: {
@@ -639,12 +639,12 @@ const completeStyles = StyleSheet.create({
   notesInput: {
     width: "100%" as const,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
     borderRadius: rf(10),
     padding: rf(10),
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.text,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary ?? ResponsiveTheme.colors.background,
+    color: colors.text,
+    backgroundColor: colors.backgroundSecondary ?? colors.background,
     minHeight: rf(60),
     textAlignVertical: "top" as const,
   },

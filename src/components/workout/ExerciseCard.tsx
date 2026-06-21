@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Card, Button } from "../ui";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../utils/responsive";
 interface ExerciseCardProps {
   exerciseName: string;
@@ -80,7 +80,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           onPress={onStartExercise}
           variant={isCompleted ? "outline" : "primary"}
           disabled={isCompleted}
-          style={{ marginTop: ResponsiveTheme.spacing.md }}
+          style={{ marginTop: spacing.md }}
         />
 
         <View style={styles.exerciseDetails}>
@@ -165,49 +165,49 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
 const styles = StyleSheet.create({
   exerciseCard: {
-    padding: ResponsiveTheme.spacing.xl,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
     width: "100%",
   },
 
   exerciseHeader: {
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: spacing.xl,
   },
 
   exerciseName: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   exerciseDetails: {
     flexDirection: "row",
     justifyContent: "center",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
 
   exerciseDetailText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
+    backgroundColor: colors.backgroundSecondary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
   },
 
   setsContainer: {
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: spacing.xl,
   },
 
   setsTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.md,
     textAlign: "center",
   },
 
@@ -215,35 +215,35 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    gap: spacing.md,
+    marginBottom: spacing.sm,
   },
 
   setButton: {
     width: rw(56),
     height: rw(56),
     borderRadius: rbr(28),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
     position: "relative",
   },
 
   setButtonCompleted: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
 
   setButtonText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textSecondary,
   },
 
   setButtonTextCompleted: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 
   setButtonCheck: {
@@ -251,43 +251,43 @@ const styles = StyleSheet.create({
     top: rp(-2),
     right: rp(2),
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.white,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: colors.white,
+    fontWeight: typography.fontWeight.bold,
   },
 
   setsProgressText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontWeight: typography.fontWeight.medium,
   },
 
   instructionsContainer: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    padding: ResponsiveTheme.spacing.lg,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    backgroundColor: colors.backgroundSecondary,
+    padding: spacing.lg,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.lg,
   },
 
   instructionsTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
 
   instructionsText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    lineHeight: ResponsiveTheme.fontSize.sm * 1.5,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    lineHeight: fontSize.sm * 1.5,
   },
 
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingTop: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
+    borderTopColor: colors.border,
   },
 
   statItem: {
@@ -295,16 +295,16 @@ const styles = StyleSheet.create({
   },
 
   statValue: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.primary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
+    marginBottom: spacing.xs,
   },
 
   statLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
     textTransform: "uppercase",
   },
 });

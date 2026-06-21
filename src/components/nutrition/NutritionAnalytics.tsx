@@ -8,7 +8,7 @@ import {
   Dimensions,
 } from "react-native";
 import { Card } from "../ui";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rh } from "../../utils/responsive";
 import { useNutritionData } from "../../hooks/useNutritionData";
 
@@ -99,9 +99,9 @@ export const NutritionAnalytics: React.FC<NutritionAnalyticsProps> = ({
   };
 
   const getProgressColor = (percentage: number) => {
-    if (percentage >= 80) return ResponsiveTheme.colors.success;
-    if (percentage >= 60) return ResponsiveTheme.colors.warning;
-    return ResponsiveTheme.colors.error;
+    if (percentage >= 80) return colors.success;
+    if (percentage >= 60) return colors.warning;
+    return colors.error;
   };
 
   if (statsLoading) {
@@ -336,25 +336,25 @@ export const NutritionAnalytics: React.FC<NutritionAnalyticsProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    padding: ResponsiveTheme.spacing.lg,
-    margin: ResponsiveTheme.spacing.md,
+    padding: spacing.lg,
+    margin: spacing.md,
   },
 
   header: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
 
   timeRangeSelector: {
     flexDirection: "row",
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.md,
     padding: rp(4),
   },
 
@@ -363,72 +363,72 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.sm,
   },
 
   timeRangeButtonActive: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
 
   timeRangeIcon: {
     fontSize: rf(16),
-    marginRight: ResponsiveTheme.spacing.xs,
+    marginRight: spacing.xs,
   },
 
   timeRangeLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
   },
 
   timeRangeLabelActive: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 
   section: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
 
   progressGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
 
   progressItem: {
     width: "48%",
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    padding: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.backgroundSecondary,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
   },
 
   progressValue: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
 
   progressLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
 
   progressBar: {
     height: rh(6),
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
     borderRadius: rbr(3),
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
 
   progressFill: {
@@ -437,52 +437,52 @@ const styles = StyleSheet.create({
   },
 
   progressTarget: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
   },
 
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
 
   statItem: {
     width: "48%",
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.md,
   },
 
   statValue: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.primary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
+    marginBottom: spacing.xs,
   },
 
   statLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
   },
 
   insightsContainer: {
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
 
   insightText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     lineHeight: rf(20),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    padding: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.backgroundSecondary,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
   },
 
   loadingText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center",
-    paddingVertical: ResponsiveTheme.spacing.xl,
+    paddingVertical: spacing.xl,
   },
 });

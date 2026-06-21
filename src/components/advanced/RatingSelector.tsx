@@ -8,7 +8,7 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rbr } from '../../utils/responsive';
 
 interface RatingSelectorProps {
@@ -61,31 +61,31 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
     const rating = hoveredRating || value;
     const isHighlighted = index < rating;
 
-    if (!isHighlighted) return ResponsiveTheme.colors.textMuted;
+    if (!isHighlighted) return colors.textMuted;
 
     switch (type) {
       case "stars":
-        return ResponsiveTheme.colors.warning;
+        return colors.warning;
       case "difficulty":
         return rating <= 2
-          ? ResponsiveTheme.colors.success
+          ? colors.success
           : rating <= 4
-            ? ResponsiveTheme.colors.warning
-            : ResponsiveTheme.colors.error;
+            ? colors.warning
+            : colors.error;
       case "satisfaction":
         return rating <= 2
-          ? ResponsiveTheme.colors.error
+          ? colors.error
           : rating <= 4
-            ? ResponsiveTheme.colors.warning
-            : ResponsiveTheme.colors.success;
+            ? colors.warning
+            : colors.success;
       case "intensity":
         return rating <= 2
-          ? ResponsiveTheme.colors.info
+          ? colors.info
           : rating <= 4
-            ? ResponsiveTheme.colors.warning
-            : ResponsiveTheme.colors.error;
+            ? colors.warning
+            : colors.error;
       default:
-        return ResponsiveTheme.colors.primary;
+        return colors.primary;
     }
   };
 
@@ -238,14 +238,14 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
   },
 
   label: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.medium as "500",
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
 
   ratingContainer: {
@@ -255,8 +255,8 @@ const styles = StyleSheet.create({
   iconsContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
   },
 
   iconButton: {
@@ -275,40 +275,40 @@ const styles = StyleSheet.create({
 
   valueContainer: {
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs / 2,
+    gap: spacing.xs / 2,
   },
 
   valueText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold as "600",
+    color: colors.text,
   },
 
   numericValue: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
 
   descriptionContainer: {
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.sm,
     alignItems: "center",
   },
 
   descriptionText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
   },
 
   scaleContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.sm,
   },
 
   scaleText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
   },
 });

@@ -8,7 +8,7 @@ import {
   ViewStyle,
 } from "react-native";
 import { DayMeal } from "../../types/ai";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../utils/responsive";
 
 interface MacroDashboardProps {
@@ -147,7 +147,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
       value: meal.totalCalories || 0,
       label: "Calories",
       unit: "cal",
-      color: ResponsiveTheme.colors.errorLight,
+      color: colors.errorLight,
       target: dailyTargets?.calories ?? undefined,
       percentage: calculatePercentage(
         meal.totalCalories || 0,
@@ -158,7 +158,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
       value: meal.totalMacros?.protein || 0,
       label: "Protein",
       unit: "g",
-      color: ResponsiveTheme.colors.teal,
+      color: colors.teal,
       target: dailyTargets?.protein ?? undefined,
       percentage: calculatePercentage(
         meal.totalMacros?.protein || 0,
@@ -229,7 +229,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
                   style={[
                     styles.breakdownBar,
                     {
-                      backgroundColor: ResponsiveTheme.colors.teal,
+                      backgroundColor: colors.teal,
                       flex:
                         (meal.totalMacros.protein * 4) /
                         (meal.totalCalories || 1),
@@ -275,11 +275,11 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rbr(16),
-    padding: ResponsiveTheme.spacing.lg,
-    marginVertical: ResponsiveTheme.spacing.md,
-    shadowColor: ResponsiveTheme.colors.black,
+    padding: spacing.lg,
+    marginVertical: spacing.md,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -287,15 +287,15 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   containerCompact: {
-    padding: ResponsiveTheme.spacing.md,
-    marginVertical: ResponsiveTheme.spacing.sm,
+    padding: spacing.md,
+    marginVertical: spacing.sm,
     borderRadius: rbr(12),
   },
   title: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: fontSize.lg,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    color: colors.text,
+    marginBottom: spacing.md,
     textAlign: "center",
   },
   macroGrid: {
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   macroGridCompact: {
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   macroItem: {
     alignItems: "center",
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
   progressRingContainer: {
     width: rp(60),
     height: rp(60),
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
     position: "relative",
     justifyContent: "center",
     alignItems: "center",
@@ -346,79 +346,79 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   macroValue: {
-    fontSize: ResponsiveTheme.fontSize.xl,
+    fontSize: fontSize.xl,
     fontWeight: "700",
     lineHeight: 24,
   },
   macroValueCompact: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: fontSize.lg,
     lineHeight: 20,
   },
   macroUnit: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
     marginTop: rp(-2),
   },
   macroUnitCompact: {
     fontSize: rf(10),
   },
   macroLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    color: colors.text,
     fontWeight: "600",
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
   },
   macroLabelCompact: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: fontSize.xs,
     marginTop: rp(2),
   },
   macroTarget: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
   macroPercentage: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: fontSize.xs,
     fontWeight: "600",
     marginTop: rp(2),
   },
   additionalInfo: {
-    marginTop: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.lg,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
+    borderTopColor: colors.border,
   },
   fiberInfo: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   fiberLabel: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    color: colors.text,
     fontWeight: "500",
   },
   fiberValue: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.accent,
+    fontSize: fontSize.md,
+    color: colors.accent,
     fontWeight: "700",
   },
   caloricBreakdown: {
-    marginTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.md,
   },
   breakdownTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    color: colors.text,
     fontWeight: "600",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   breakdownBars: {
     flexDirection: "row",
     height: rp(8),
     borderRadius: rbr(4),
     overflow: "hidden",
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
   breakdownItem: {
     justifyContent: "center",
@@ -427,10 +427,10 @@ const styles = StyleSheet.create({
     height: rp(8),
   },
   breakdownLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
     textAlign: "center",
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
   },
 });
 

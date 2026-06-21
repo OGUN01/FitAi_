@@ -8,7 +8,7 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 
 interface ProgressAnimationProps {
   progress: number; // 0-100
@@ -26,8 +26,8 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
   progress,
   type = "linear",
   size = "md",
-  color = ResponsiveTheme.colors.primary,
-  backgroundColor = ResponsiveTheme.colors.surface,
+  color = colors.primary,
+  backgroundColor = colors.surface,
   showPercentage = true,
   label,
   duration = 1000,
@@ -195,7 +195,7 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
             <Text
               style={[
                 styles.circularLabel,
-                { color: ResponsiveTheme.colors.textSecondary },
+                { color: colors.textSecondary },
               ]}
             >
               {label}
@@ -262,7 +262,7 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
           )}
           {label && (
             <Text
-              style={[styles.ringLabel, { color: ResponsiveTheme.colors.textSecondary }]}
+              style={[styles.ringLabel, { color: colors.textSecondary }]}
             >
               {label}
             </Text>
@@ -294,31 +294,31 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
 
   progressRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
 
   linearTrack: {
     flex: 1,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    borderRadius: borderRadius.sm,
     overflow: "hidden",
   },
 
   linearFill: {
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    borderRadius: borderRadius.sm,
   },
 
   percentageText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
     minWidth: 40,
     textAlign: "right",
   },
@@ -348,13 +348,13 @@ const styles = StyleSheet.create({
   },
 
   circularPercentage: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
   },
 
   circularLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    marginTop: ResponsiveTheme.spacing.xs / 2,
+    fontSize: fontSize.xs,
+    marginTop: spacing.xs / 2,
   },
 
   ringContainer: {
@@ -374,12 +374,12 @@ const styles = StyleSheet.create({
   },
 
   ringPercentage: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
   },
 
   ringLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    marginTop: ResponsiveTheme.spacing.xs / 2,
+    fontSize: fontSize.xs,
+    marginTop: spacing.xs / 2,
   },
 });

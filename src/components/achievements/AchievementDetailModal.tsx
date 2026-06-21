@@ -14,7 +14,7 @@ import {
   Achievement,
   UserAchievement,
 } from "../../services/achievements/types";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rh, rw, rp, rbr } from "../../utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -38,7 +38,7 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
       case "silver":
         return "#C0C0C0";
       case "gold":
-        return ResponsiveTheme.colors.gold;
+        return colors.gold;
       case "platinum":
         return "#E5E4E2";
       case "diamond":
@@ -46,7 +46,7 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
       case "legendary":
         return "#FF5555";
       default:
-        return ResponsiveTheme.colors.textSecondary;
+        return colors.textSecondary;
     }
   };
 
@@ -70,7 +70,7 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
         {Platform.OS === "ios" ? (
           <BlurView intensity={20} style={StyleSheet.absoluteFill} tint="dark" />
         ) : (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: ResponsiveTheme.colors.overlayDark }]} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.overlayDark }]} />
         )}
 
         <TouchableOpacity
@@ -96,7 +96,7 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
               <Ionicons
                 name="close"
                 size={24}
-                color={ResponsiveTheme.colors.text}
+                color={colors.text}
               />
             </TouchableOpacity>
           </View>
@@ -128,8 +128,8 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
                     size={20}
                     color={
                       isUnlocked || progress >= req.target
-                        ? ResponsiveTheme.colors.success
-                        : ResponsiveTheme.colors.textTertiary
+                        ? colors.success
+                        : colors.textTertiary
                     }
                   />
                   <Text style={styles.requirementText}>
@@ -176,7 +176,7 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
 
             {isUnlocked && userAchievement?.unlockedAt && (
               <View style={styles.unlockedContainer}>
-                <Ionicons name="trophy" size={20} color={ResponsiveTheme.colors.gold} />
+                <Ionicons name="trophy" size={20} color={colors.gold} />
                 <Text style={styles.unlockedText}>
                   Unlocked on{" "}
                   {new Date(userAchievement.unlockedAt).toLocaleDateString()}
@@ -204,12 +204,12 @@ const styles = StyleSheet.create({
   modalContent: {
     width: "100%",
     maxHeight: rh(70),
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
     borderRadius: rbr(24),
     padding: rw(6),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassHighlight,
-    shadowColor: ResponsiveTheme.colors.black,
+    borderColor: colors.glassHighlight,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
@@ -236,15 +236,15 @@ const styles = StyleSheet.create({
     width: rw(20),
     height: rw(20),
     borderRadius: rw(10),
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassHighlight,
+    borderColor: colors.glassHighlight,
   },
   grayscale: {
     opacity: 0.5,
-    backgroundColor: ResponsiveTheme.colors.overlayDark,
+    backgroundColor: colors.overlayDark,
   },
   icon: {
     fontSize: rf(5),
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(2.4),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textAlign: "center",
     marginBottom: rh(1),
   },
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: rf(1.6),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     marginBottom: rh(3),
     lineHeight: rf(2.2),
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: rf(1.2),
-    color: ResponsiveTheme.colors.textTertiary,
+    color: colors.textTertiary,
     fontWeight: "700",
     marginBottom: rh(1.5),
     letterSpacing: 1,
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
   },
   requirementText: {
     marginLeft: rw(3),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     fontSize: rf(1.6),
   },
   rewardRow: {
@@ -312,12 +312,12 @@ const styles = StyleSheet.create({
     marginRight: rw(2),
   },
   rewardText: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
     fontSize: rf(1.8),
     fontWeight: "700",
   },
   rewardDesc: {
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: rf(1.4),
     marginTop: rh(0.5),
   },
@@ -330,17 +330,17 @@ const styles = StyleSheet.create({
     marginBottom: rh(1),
   },
   progressLabel: {
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: rf(1.4),
   },
   progressValue: {
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     fontWeight: "700",
     fontSize: rf(1.4),
   },
   progressBarBg: {
     height: rp(8),
-    backgroundColor: ResponsiveTheme.colors.glassHighlight,
+    backgroundColor: colors.glassHighlight,
     borderRadius: rbr(4),
     overflow: "hidden",
   },
@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
     marginTop: rh(1),
   },
   unlockedText: {
-    color: ResponsiveTheme.colors.gold,
+    color: colors.gold,
     fontWeight: "700",
     marginLeft: rw(2),
     fontSize: rf(1.4),

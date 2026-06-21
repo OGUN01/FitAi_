@@ -19,7 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
 import { AuroraSpinner } from "../../../../components/ui/aurora/AuroraSpinner";
-import { ResponsiveTheme } from "../../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../../../utils/responsive";
 import { gradients, toLinearGradientProps } from "../../../../theme/gradients";
 import { crossPlatformAlert } from "../../../../utils/crossPlatformAlert";
@@ -74,7 +74,7 @@ export const ClearCacheConfirmModal: React.FC<ClearCacheConfirmModalProps> = ({
                   <Ionicons
                     name="trash-outline"
                     size={rf(48)}
-                    color={ResponsiveTheme.colors.error}
+                    color={colors.error}
                   />
                 </View>
                 <Text style={styles.title}>Clear Cache</Text>
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.overlay,
+    backgroundColor: colors.overlay,
   },
   dialogContainer: {
     width: "85%",
@@ -136,52 +136,52 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   title: {
     fontSize: rf(20),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   message: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(20),
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   actions: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   button: {
     flex: 1,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
     overflow: "hidden",
   },
   cancelButton: {
     backgroundColor: "rgba(255, 255, 255, 0.1)",
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.md,
     alignItems: "center",
   },
   confirmButton: {
     overflow: "hidden",
   },
   confirmGradient: {
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.md,
     alignItems: "center",
   },
   cancelButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   confirmButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 });
 

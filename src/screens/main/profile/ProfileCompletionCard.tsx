@@ -16,7 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle } from "react-native-svg";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr, rw, rh } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 
@@ -99,11 +99,11 @@ export const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
   };
 
   const getColor = () => {
-    if (percentage === 100) return ResponsiveTheme.colors.success;
-    if (percentage >= 75) return ResponsiveTheme.colors.successLight;
-    if (percentage >= 50) return ResponsiveTheme.colors.amber;
-    if (percentage >= 25) return ResponsiveTheme.colors.warning;
-    return ResponsiveTheme.colors.errorLight;
+    if (percentage === 100) return colors.success;
+    if (percentage >= 75) return colors.successLight;
+    if (percentage >= 50) return colors.amber;
+    if (percentage >= 25) return colors.warning;
+    return colors.errorLight;
   };
 
   const incompleteSections = sections.filter((s) => !s.isComplete);
@@ -213,8 +213,8 @@ export const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.md,
   },
   card: {
     backgroundColor: "rgba(255, 255, 255, 0.04)",
@@ -242,22 +242,22 @@ const styles = StyleSheet.create({
   percentageSymbol: {
     fontSize: rf(10),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   infoContainer: {
     flex: 1,
-    marginLeft: ResponsiveTheme.spacing.md,
+    marginLeft: spacing.md,
   },
   title: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     marginBottom: rp(4),
   },
   message: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
   completionBar: {
     height: rh(4),
@@ -272,15 +272,15 @@ const styles = StyleSheet.create({
   },
   completionText: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
   sectionsContainer: {
-    marginTop: ResponsiveTheme.spacing.md,
-    paddingTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.08)",
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   sectionButton: {
     flex: 1,
@@ -288,10 +288,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     minHeight: 44,
     backgroundColor: "rgba(255, 255, 255, 0.05)",
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    gap: ResponsiveTheme.spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
   },
   sectionIcon: {
     width: rw(24),
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: rf(11),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 });
 

@@ -6,7 +6,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
@@ -51,7 +51,7 @@ export const QuickAction: React.FC<QuickActionProps> = ({
             colors={gradientColors}
             style={styles.quickActionIcon}
           >
-            <Ionicons name={icon} size={rf(22)} color={ResponsiveTheme.colors.white} />
+            <Ionicons name={icon} size={rf(22)} color={colors.white} />
           </LinearGradient>
           <Text style={styles.quickActionTitle}>{title}</Text>
         </GlassCard>
@@ -67,8 +67,8 @@ const styles = StyleSheet.create({
   quickActionCard: {
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    paddingVertical: ResponsiveTheme.spacing.lg,
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.glassSurface,
   },
   quickActionIcon: {
     width: rw(48),
@@ -76,12 +76,12 @@ const styles = StyleSheet.create({
     borderRadius: rw(24),
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   quickActionTitle: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     textAlign: "center",
   },
 });

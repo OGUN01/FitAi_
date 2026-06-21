@@ -8,7 +8,7 @@ import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../../utils/responsive";
 import { AchievementViewModel } from "../../../utils/achievementViewModel";
 
@@ -47,7 +47,7 @@ const BadgeCard: React.FC<{
       <Ionicons
         name={resolveIconName(iconName)}
         size={rf(22)}
-        color={ResponsiveTheme.colors.amber}
+        color={colors.amber}
       />
     </View>
     <Text style={styles.badgeTitle} numberOfLines={2}>
@@ -82,7 +82,7 @@ const ProgressBadge: React.FC<{
           style={[
             styles.progressRingFill,
             {
-              borderColor: ResponsiveTheme.colors.primary,
+              borderColor: colors.primary,
               transform: [{ rotate: `${(progress / 100) * 360 - 90}deg` }],
             },
           ]}
@@ -127,7 +127,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
             <Ionicons
               name="trophy"
               size={rf(16)}
-              color={ResponsiveTheme.colors.amber}
+              color={colors.amber}
             />
           </View>
           <Text style={styles.headerTitle}>Achievements</Text>
@@ -153,7 +153,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
             <Ionicons
               name="chevron-forward"
               size={rf(14)}
-              color={ResponsiveTheme.colors.primary}
+              color={colors.primary}
             />
           </View>
         </AnimatedPressable>
@@ -199,21 +199,21 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
                 <Ionicons
                   name="trophy-outline"
                   size={rf(20)}
-                  color={ResponsiveTheme.colors.textSecondary}
+                  color={colors.textSecondary}
                 />
               </View>
               <View style={styles.emptyIconCircle}>
                 <Ionicons
                   name="ribbon-outline"
                   size={rf(20)}
-                  color={ResponsiveTheme.colors.textSecondary}
+                  color={colors.textSecondary}
                 />
               </View>
               <View style={styles.emptyIconCircle}>
                 <Ionicons
                   name="medal-outline"
                   size={rf(20)}
-                  color={ResponsiveTheme.colors.textSecondary}
+                  color={colors.textSecondary}
                 />
               </View>
             </View>
@@ -233,12 +233,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   headerIconBg: {
     width: rw(28),
@@ -251,18 +251,18 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: rf(14),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   countBadge: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
+    backgroundColor: colors.backgroundTertiary,
+    paddingHorizontal: spacing.xs,
     paddingVertical: rp(2),
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    borderRadius: borderRadius.sm,
   },
   countText: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   viewAllBtn: {
     flexDirection: "row",
@@ -272,11 +272,11 @@ const styles = StyleSheet.create({
   viewAllText: {
     fontSize: rf(12),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   scrollContent: {
-    gap: ResponsiveTheme.spacing.md,
-    paddingRight: ResponsiveTheme.spacing.sm,
+    gap: spacing.md,
+    paddingRight: spacing.sm,
   },
   badgeCard: {
     alignItems: "center",
@@ -289,14 +289,14 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 179, 0, 0.12)",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
     borderWidth: 1.5,
     borderColor: "rgba(255, 179, 0, 0.25)",
   },
   badgeTitle: {
     fontSize: rf(10),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textAlign: "center",
     lineHeight: rf(13),
   },
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(156, 39, 176, 0.08)",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
     position: "relative",
   },
   progressRing: {
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
     bottom: -2,
     borderRadius: rw(26),
     borderWidth: 2,
-    borderTopColor: ResponsiveTheme.colors.primary,
+    borderTopColor: colors.primary,
     borderRightColor: "transparent",
     borderBottomColor: "transparent",
     borderLeftColor: "transparent",
@@ -340,40 +340,40 @@ const styles = StyleSheet.create({
   progressBadgeTitle: {
     fontSize: rf(10),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
   },
   progressPercent: {
     fontSize: rf(9),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
     marginTop: rp(2),
   },
   emptyState: {
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
   },
   emptyIconRow: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   emptyIconCircle: {
     width: rw(40),
     height: rw(40),
     borderRadius: rw(20),
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
     justifyContent: "center",
     alignItems: "center",
   },
   emptyTitle: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   emptySubtitle: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
 });

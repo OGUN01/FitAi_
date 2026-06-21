@@ -14,7 +14,7 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 import { rf, rp } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, typography } from "../../theme/aurora-tokens";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -35,7 +35,7 @@ export const LargeProgressRing: React.FC<LargeProgressRingProps> = ({
   maxValue: rawMaxValue = 100,
   size: rawSize = 200,
   strokeWidth: rawStrokeWidth = 16,
-  gradient = [ResponsiveTheme.colors.success, "#45A049"],
+  gradient = [colors.success, "#45A049"],
   showGlow = true,
   showValue = true,
   label,
@@ -103,7 +103,7 @@ export const LargeProgressRing: React.FC<LargeProgressRingProps> = ({
           cx={center}
           cy={center}
           r={radius}
-          stroke={ResponsiveTheme.colors.backgroundTertiary}
+          stroke={colors.backgroundTertiary}
           strokeWidth={strokeWidth}
           fill="none"
         />
@@ -172,13 +172,13 @@ const styles = StyleSheet.create({
   },
 
   valueText: {
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
   },
 
   labelText: {
     marginTop: rp(4),
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
   },
 });

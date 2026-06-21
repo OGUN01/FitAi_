@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { rf, rp, rbr } from "../../utils/responsive";
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 
 // ============================================================================
 // Types
@@ -28,10 +28,10 @@ const PERIOD_LABELS: Record<UsageCounterProps["featureKey"], string> = {
   barcode_scan: "today",
 };
 
-const COLOR_GREEN = ResponsiveTheme.colors.successAlt;
-const COLOR_YELLOW = ResponsiveTheme.colors.warningAlt;
-const COLOR_RED = ResponsiveTheme.colors.errorAlt;
-const COLOR_MUTED = ResponsiveTheme.colors.muted;
+const COLOR_GREEN = colors.successAlt;
+const COLOR_YELLOW = colors.warningAlt;
+const COLOR_RED = colors.errorAlt;
+const COLOR_MUTED = colors.muted;
 
 // ============================================================================
 // Component

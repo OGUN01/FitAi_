@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Card } from "../../ui";
-import { ResponsiveTheme } from '../../../utils/constants';
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../../theme/aurora-tokens';
 
 interface DailyGoalSectionProps {
   dailyGoal: string;
@@ -62,62 +62,62 @@ export const DailyGoalSection: React.FC<DailyGoalSectionProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
   card: {
-    padding: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.md,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
   },
   cardContent: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   inputLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
   textInput: {
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    padding: ResponsiveTheme.spacing.md,
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    fontSize: fontSize.md,
+    color: colors.text,
+    backgroundColor: colors.backgroundSecondary,
   },
   presetButtons: {
     flexDirection: "row",
     justifyContent: "space-around",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   presetButton: {
     flex: 1,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderColor: colors.border,
+    backgroundColor: colors.backgroundSecondary,
     alignItems: "center",
   },
   presetButtonActive: {
-    borderColor: ResponsiveTheme.colors.primary,
-    backgroundColor: ResponsiveTheme.colors.primary + "20",
+    borderColor: colors.primary,
+    backgroundColor: colors.primary + "20",
   },
   presetButtonText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
   },
   presetButtonTextActive: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
 });

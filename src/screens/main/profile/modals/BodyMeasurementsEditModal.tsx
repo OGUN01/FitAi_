@@ -24,7 +24,7 @@ import { useAuth } from "../../../../hooks/useAuth";
 import { BodyAnalysisService } from "../../../../services/onboardingService";
 import type { BodyAnalysisData } from "../../../../types/onboarding";
 import { resolveCurrentWeightForUser } from "../../../../services/currentWeight";
-import { ResponsiveTheme } from "../../../../utils/constants";
+import { flatColors as colors, spacing } from "../../../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
 import { crossPlatformAlert } from "../../../../utils/crossPlatformAlert";
@@ -90,10 +90,10 @@ export const BodyMeasurementsEditModal: React.FC<
   const bmiCategory = useMemo(() => {
     if (!bmi) return null;
     const bmiValue = parseFloat(bmi);
-    if (bmiValue < 18.5) return { label: "Underweight", color: ResponsiveTheme.colors.info };
-    if (bmiValue < 25) return { label: "Normal", color: ResponsiveTheme.colors.success };
-    if (bmiValue < 30) return { label: "Overweight", color: ResponsiveTheme.colors.warning };
-    return { label: "Obese", color: ResponsiveTheme.colors.error };
+    if (bmiValue < 18.5) return { label: "Underweight", color: colors.info };
+    if (bmiValue < 25) return { label: "Normal", color: colors.success };
+    if (bmiValue < 30) return { label: "Overweight", color: colors.warning };
+    return { label: "Obese", color: colors.error };
   }, [bmi]);
 
   // Validation
@@ -509,7 +509,7 @@ export const BodyMeasurementsEditModal: React.FC<
           <Ionicons
             name="information-circle-outline"
             size={rf(18)}
-            color={ResponsiveTheme.colors.textSecondary}
+            color={colors.textSecondary}
           />
           <Text style={styles.infoText}>
             Keep your measurements updated for accurate calorie calculations and
@@ -523,19 +523,19 @@ export const BodyMeasurementsEditModal: React.FC<
 
 const styles = StyleSheet.create({
   bmiCard: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
     overflow: "hidden",
   },
   bmiContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   bmiLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   bmiIcon: {
     width: rw(40),
@@ -546,12 +546,12 @@ const styles = StyleSheet.create({
   },
   bmiLabel: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   bmiCategory: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   bmiRight: {
     alignItems: "flex-end",
@@ -562,10 +562,10 @@ const styles = StyleSheet.create({
   },
   bmiUnit: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
   bmiScale: {
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.sm,
   },
   bmiScaleBarContainer: {
     position: "relative",
@@ -583,11 +583,11 @@ const styles = StyleSheet.create({
     width: rp(10),
     height: rp(10),
     borderRadius: rbr(5),
-    backgroundColor: ResponsiveTheme.colors.white,
+    backgroundColor: colors.white,
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
     marginLeft: rp(-5),
-    shadowColor: ResponsiveTheme.colors.black,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.3,
     shadowRadius: 2,
@@ -605,21 +605,21 @@ const styles = StyleSheet.create({
   },
   bmiScaleLabel: {
     fontSize: rf(9),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
   infoCard: {
-    marginTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.md,
     backgroundColor: "rgba(255, 255, 255, 0.03)",
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   infoText: {
     flex: 1,
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(18),
   },
 });

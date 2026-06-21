@@ -9,7 +9,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { rp, rw } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 
 interface MetricInputProps {
   label: string;
@@ -33,7 +33,7 @@ export const MetricInput: React.FC<MetricInputProps> = ({
   unit,
   step = 1,
   showScale = true,
-  gradient = [ResponsiveTheme.colors.success, ResponsiveTheme.colors.success],
+  gradient = [colors.success, colors.success],
   style,
 }) => {
   const progress = useSharedValue(0);
@@ -126,7 +126,7 @@ export const MetricInput: React.FC<MetricInputProps> = ({
           {/* Scale Track */}
           <View style={styles.scaleTrack}>
             <LinearGradient
-              colors={[ResponsiveTheme.colors.neutral, ResponsiveTheme.colors.neutral]}
+              colors={[colors.neutral, colors.neutral]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.scaleTrackGradient}
@@ -184,42 +184,42 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
 
   inputContainer: {
     flexDirection: "row",
     alignItems: "center" as const,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.border,
-    marginBottom: ResponsiveTheme.spacing.md,
+    borderColor: colors.border,
+    marginBottom: spacing.md,
   },
 
   input: {
     flex: 1,
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
   },
 
   unit: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginLeft: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
+    marginLeft: spacing.sm,
   },
 
   scaleContainer: {
     position: "relative",
     height: rp(60),
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   scaleTrack: {
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
     borderTopWidth: rp(8),
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
-    borderTopColor: ResponsiveTheme.colors.success,
+    borderTopColor: colors.success,
     marginTop: -rp(2),
   },
 
@@ -297,34 +297,34 @@ const styles = StyleSheet.create({
   markerLine: {
     width: rp(1),
     height: rp(8),
-    backgroundColor: ResponsiveTheme.colors.border,
+    backgroundColor: colors.border,
     marginBottom: rp(4),
   },
 
   markerText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
   },
 
   valueDisplay: {
     flexDirection: "row",
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.md,
   },
 
   currentValue: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
   },
 
   currentValueNumber: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.primary,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
   },
 });

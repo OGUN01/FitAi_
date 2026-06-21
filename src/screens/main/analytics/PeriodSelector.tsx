@@ -12,7 +12,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rp } from "../../../utils/responsive";
 
 export type Period = "week" | "month" | "quarter" | "year";
@@ -71,7 +71,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
       {/* Sliding Indicator */}
       <Animated.View style={[styles.indicator, indicatorStyle]}>
         <LinearGradient
-          colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark]}
+          colors={[colors.primary, colors.primaryDark]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.indicatorGradient}
@@ -106,8 +106,8 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    backgroundColor: ResponsiveTheme.colors.glassBorder,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: colors.glassBorder,
+    borderRadius: borderRadius.lg,
     padding: rp(4),
     position: "relative",
   },
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     top: rp(4),
     left: rp(4),
     bottom: rp(4),
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
     overflow: "hidden",
   },
   indicatorGradient: {
@@ -128,18 +128,18 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
     alignItems: "center",
     justifyContent: "center",
   },
   buttonText: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     letterSpacing: 0.3,
   },
   buttonTextActive: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     fontWeight: "700",
   },
 });

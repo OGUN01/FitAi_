@@ -8,7 +8,7 @@ import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../utils/responsive";
 import { PeriodSelector, Period } from "../form/PeriodSelector";
 
@@ -41,12 +41,12 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
       <Animated.View entering={FadeInDown.delay(100)} style={styles.titleRow}>
         <View style={styles.titleLeft}>
           <LinearGradient
-            colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.accent]}
+            colors={[colors.primary, colors.accent]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.iconContainer}
           >
-            <Ionicons name="analytics" size={rf(18)} color={ResponsiveTheme.colors.white} />
+            <Ionicons name="analytics" size={rf(18)} color={colors.white} />
           </LinearGradient>
           <View>
             <Text style={styles.title}>Analytics</Text>
@@ -54,7 +54,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
           </View>
         </View>
         <View style={styles.badge}>
-          <Ionicons name="sparkles" size={rf(12)} color={ResponsiveTheme.colors.gold} />
+          <Ionicons name="sparkles" size={rf(12)} color={colors.gold} />
           <Text style={styles.badgeText}>AI</Text>
         </View>
       </Animated.View>
@@ -75,10 +75,10 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.sm,
-    paddingBottom: ResponsiveTheme.spacing.sm,
-    gap: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
     alignItems: "stretch",
   },
   titleRow: {
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
   titleLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   iconContainer: {
     width: rw(36),
@@ -101,13 +101,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(20),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: rf(11),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: -2,
   },
   badge: {
@@ -115,16 +115,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: rp(4),
     backgroundColor: "rgba(255,215,0,0.12)",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.sm,
     paddingVertical: rp(4),
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    borderRadius: borderRadius.full,
     borderWidth: 1,
     borderColor: "rgba(255,215,0,0.2)",
   },
   badgeText: {
     fontSize: rf(10),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.gold,
+    color: colors.gold,
   },
   periodSelectorWrapper: {
     alignSelf: "stretch",

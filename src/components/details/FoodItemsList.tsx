@@ -1,7 +1,7 @@
 ﻿import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Card } from "../ui";
-import { ResponsiveTheme } from '../../utils/constants';
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
 import { FoodItem } from "../../hooks/useMealDetailLogic";
 
 interface FoodItemsListProps {
@@ -61,25 +61,25 @@ export const FoodItemsList: React.FC<FoodItemsListProps> = ({ foods }) => {
 
 const styles = StyleSheet.create({
   foodSection: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
 
   foodCard: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   foodHeader: {
     flexDirection: "row",
     justifyContent: "space-between" as const,
     alignItems: "flex-start",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   foodInfo: {
@@ -87,29 +87,29 @@ const styles = StyleSheet.create({
   },
 
   foodName: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs / 2,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.xs / 2,
   },
 
   foodQuantity: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
 
   foodCalories: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.primary,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
   },
 
   foodMacros: {
     flexDirection: "row",
     justifyContent: "space-between" as const,
-    paddingTop: ResponsiveTheme.spacing.sm,
+    paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
+    borderTopColor: colors.border,
   },
 
   macroItem: {
@@ -117,21 +117,21 @@ const styles = StyleSheet.create({
   },
 
   macroValue: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
   },
 
   macroLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.xs / 4,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    marginTop: spacing.xs / 4,
   },
 
   noFoodsText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center",
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
   },
 });

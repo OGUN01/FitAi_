@@ -1,7 +1,7 @@
 import React from "react";
 import { Text, StyleSheet } from "react-native";
 import Animated from "react-native-reanimated";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 
 interface SwipeIndicatorsProps {
   leftIndicatorStyle: any;
@@ -32,27 +32,27 @@ export const SwipeIndicators: React.FC<SwipeIndicatorsProps> = ({
 const styles = StyleSheet.create({
   swipeIndicator: {
     position: "absolute",
-    top: ResponsiveTheme.spacing.sm,
-    padding: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    top: spacing.sm,
+    padding: spacing.xs,
+    borderRadius: borderRadius.md,
     borderWidth: 2,
   },
 
   swipeLeft: {
-    left: ResponsiveTheme.spacing.sm,
+    left: spacing.sm,
     borderColor: "#FF4444",
     backgroundColor: "rgba(255, 68, 68, 0.2)",
   },
 
   swipeRight: {
-    right: ResponsiveTheme.spacing.sm,
+    right: spacing.sm,
     borderColor: "#44FF44",
     backgroundColor: "rgba(68, 255, 68, 0.2)",
   },
 
   swipeIndicatorText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
+    fontSize: fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.white,
   },
 });

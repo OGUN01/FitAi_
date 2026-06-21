@@ -1,5 +1,3 @@
-import { ResponsiveTheme } from "../../../utils/constants";
-
 export const FITNESS_GOALS = [
   {
     id: "weight-loss",

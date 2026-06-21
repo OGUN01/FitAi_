@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors } from "../../../theme/aurora-tokens";
 import { rf, rp } from "../../../utils/responsive";
 
 interface PaywallFeaturesListProps {
@@ -51,11 +51,11 @@ const styles = StyleSheet.create({
   featuresTitle: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   featuresToggle: {
     fontSize: rf(24),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   featuresList: {
     marginTop: rp(8),
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     flex: 1,
   },
 });

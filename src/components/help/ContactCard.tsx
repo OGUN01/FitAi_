@@ -6,7 +6,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw } from "../../utils/responsive";
 
 interface ContactCardProps {
@@ -29,10 +29,10 @@ export const ContactCard: React.FC<ContactCardProps> = ({ onContactEmail }) => {
         />
         <View style={styles.contactIconContainer}>
           <LinearGradient
-            colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]}
+            colors={[colors.primary, colors.primaryLight]}
             style={styles.contactIcon}
           >
-            <Ionicons name="headset-outline" size={rf(24)} color={ResponsiveTheme.colors.white} />
+            <Ionicons name="headset-outline" size={rf(24)} color={colors.white} />
           </LinearGradient>
         </View>
         <Text style={styles.contactTitle}>Need immediate help?</Text>
@@ -51,7 +51,7 @@ export const ContactCard: React.FC<ContactCardProps> = ({ onContactEmail }) => {
               <Ionicons
                 name="mail-outline"
                 size={rf(16)}
-                color={ResponsiveTheme.colors.primary}
+                color={colors.primary}
               />
               <Text style={styles.contactMethodText}>support@fitai.app</Text>
             </View>
@@ -65,11 +65,11 @@ export const ContactCard: React.FC<ContactCardProps> = ({ onContactEmail }) => {
 const styles = StyleSheet.create({
   contactCard: {
     alignItems: "center" as const,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
     overflow: "hidden",
   },
   contactIconContainer: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   contactIcon: {
     width: rw(56),
@@ -81,15 +81,15 @@ const styles = StyleSheet.create({
   contactTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.white,
+    marginBottom: spacing.xs,
     textAlign: "center",
   },
   contactDescription: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
     lineHeight: rf(18),
   },
   contactMethods: {
@@ -102,14 +102,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    gap: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.md,
-    backgroundColor: ResponsiveTheme.colors.glassBorder,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.glassBorder,
+    borderRadius: borderRadius.lg,
   },
   contactMethodText: {
     fontSize: rf(14),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
 });

@@ -11,7 +11,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { rf, rp } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 
 interface PulseButtonProps {
   title: string;
@@ -26,7 +26,7 @@ interface PulseButtonProps {
 export const PulseButton: React.FC<PulseButtonProps> = ({
   title,
   onPress,
-  gradient = [ResponsiveTheme.colors.success, ResponsiveTheme.colors.success],
+  gradient = [colors.success, colors.success],
   disabled = false,
   loading = false,
   pulseEnabled = true,
@@ -98,7 +98,7 @@ export const PulseButton: React.FC<PulseButtonProps> = ({
       {/* Button */}
       <Animated.View style={[styles.button, animatedButtonStyle]}>
         <LinearGradient
-          colors={(disabled ? [ResponsiveTheme.colors.neutral, ResponsiveTheme.colors.neutral] : gradient) as unknown as readonly [string, string, ...string[]]}
+          colors={(disabled ? [colors.neutral, colors.neutral] : gradient) as unknown as readonly [string, string, ...string[]]}
           style={styles.buttonGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: "110%",
     height: "110%",
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    borderRadius: borderRadius.full,
     overflow: "hidden",
   },
 
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
 
   button: {
     width: "100%",
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    borderRadius: borderRadius.full,
     overflow: "hidden",
     boxShadow: '0px 4px 8px rgba(0,0,0,0.3)',
     elevation: 8,
@@ -143,19 +143,19 @@ const styles = StyleSheet.create({
   },
 
   buttonGradient: {
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.xl,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
     alignItems: "center" as const,
     justifyContent: "center" as const,
   },
 
   buttonText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.white,
   },
 
   buttonTextDisabled: {
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
 });

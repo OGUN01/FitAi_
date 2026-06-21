@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rs } from '../../utils/responsive';
 
 interface SyncStatusCardProps {
@@ -22,13 +22,13 @@ export const SyncStatusCard: React.FC<SyncStatusCardProps> = ({
   const getSyncStatusColor = () => {
     switch (syncStatus) {
       case "success":
-        return ResponsiveTheme.colors.success;
+        return colors.success;
       case "error":
-        return ResponsiveTheme.colors.error;
+        return colors.error;
       case "syncing":
-        return ResponsiveTheme.colors.warning;
+        return colors.warning;
       default:
-        return ResponsiveTheme.colors.text;
+        return colors.text;
     }
   };
 
@@ -61,7 +61,7 @@ export const SyncStatusCard: React.FC<SyncStatusCardProps> = ({
   return (
     <View
       style={{
-        backgroundColor: ResponsiveTheme.colors.surface,
+        backgroundColor: colors.surface,
         marginHorizontal: rp(16),
         marginBottom: rp(16),
         borderRadius: rbr(12),
@@ -80,7 +80,7 @@ export const SyncStatusCard: React.FC<SyncStatusCardProps> = ({
           style={{
             fontSize: rf(16),
             fontWeight: "600",
-            color: ResponsiveTheme.colors.text,
+            color: colors.text,
           }}
         >
           Sync Status
@@ -99,7 +99,7 @@ export const SyncStatusCard: React.FC<SyncStatusCardProps> = ({
             paddingVertical: rp(6),
             paddingHorizontal: rp(12),
             minHeight: 44,
-            backgroundColor: ResponsiveTheme.colors.primary,
+            backgroundColor: colors.primary,
             borderRadius: rbr(8),
             opacity: syncStatus === "syncing" ? 0.6 : 1,
           }}
@@ -132,12 +132,12 @@ export const SyncStatusCard: React.FC<SyncStatusCardProps> = ({
         <Ionicons
           name="time-outline"
           size={rs(16)}
-          color={ResponsiveTheme.colors.textSecondary}
+          color={colors.textSecondary}
         />
         <Text
           style={{
             fontSize: rf(14),
-            color: ResponsiveTheme.colors.textSecondary,
+            color: colors.textSecondary,
             marginLeft: rp(8),
           }}
         >

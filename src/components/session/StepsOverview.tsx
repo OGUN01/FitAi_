@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Card } from "../ui";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw, rh } from '../../utils/responsive';
 import { DayMeal } from "../../types/ai";
 
@@ -68,23 +68,23 @@ export const StepsOverview: React.FC<StepsOverviewProps> = ({
 
 const styles = StyleSheet.create({
   stepsOverview: {
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   sectionTitle: {
     fontSize: rf(18),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
   stepOverviewCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
   },
   currentStepOverview: {
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
     borderWidth: 2,
   },
   completedStepOverview: {
-    backgroundColor: ResponsiveTheme.colors.success + "10",
+    backgroundColor: colors.success + "10",
   },
   stepOverviewContent: {
     flexDirection: "row",
@@ -100,13 +100,13 @@ const styles = StyleSheet.create({
     width: rw(24),
     height: rh(24),
     borderRadius: rbr(12),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     color: "white",
     textAlign: "center",
     lineHeight: rf(24),
     fontSize: rf(12),
     fontWeight: "600",
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
   stepOverviewInfo: {
     flex: 1,
@@ -114,15 +114,15 @@ const styles = StyleSheet.create({
   stepOverviewName: {
     fontSize: rf(14),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   stepOverviewQuantity: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
   stepOverviewRight: {
-    marginLeft: ResponsiveTheme.spacing.md,
+    marginLeft: spacing.md,
   },
   stepCompleteIcon: {
     fontSize: rf(20),

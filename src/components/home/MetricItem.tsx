@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, type StyleProp, type ViewStyle } from 'react-na
 import Animated, { FadeInRight } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../utils/constants';
+import { flatColors as colors, spacing, borderRadius } from '../../theme/aurora-tokens';
 import { rf, rw, rp } from '../../utils/responsive';
 
 interface MetricItemProps {
@@ -36,13 +36,13 @@ export const MetricItem: React.FC<MetricItemProps> = React.memo(({
       down: 'trending-down' as const,
       stable: 'remove' as const,
     };
-    const colors = {
-      up: ResponsiveTheme.colors.error, // HR going up is usually bad
-      down: ResponsiveTheme.colors.success, // HR going down is usually good
-      stable: ResponsiveTheme.colors.neutral,
+    const trendColors = {
+      up: colors.error, // HR going up is usually bad
+      down: colors.success, // HR going down is usually good
+      stable: colors.neutral,
     };
     return (
-      <Ionicons name={icons[trend]} size={rf(12)} color={colors[trend]} style={styles.trendIcon} />
+      <Ionicons name={icons[trend]} size={rf(12)} color={trendColors[trend]} style={styles.trendIcon} />
     );
   };
 
@@ -79,11 +79,11 @@ const styles = StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
     backgroundColor: 'rgba(255,255,255,0.03)',
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.md,
   },
   metricIconContainer: {
     width: rw(28),
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   metricLabel: {
     fontSize: rf(10),
     fontWeight: '500',
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   metricValueRow: {
     flexDirection: 'row',
@@ -108,14 +108,14 @@ const styles = StyleSheet.create({
   metricValue: {
     fontSize: rf(14),
     fontWeight: '700',
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   metricSubvalue: {
     fontSize: rf(10),
     fontWeight: '500',
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   trendIcon: {
-    marginLeft: ResponsiveTheme.spacing.xs,
+    marginLeft: spacing.xs,
   },
 });

@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 
@@ -70,12 +70,12 @@ export const GuestPromptCard: React.FC<GuestPromptCardProps> = ({
             ]}
           >
             <LinearGradient
-              colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark]}
+              colors={[colors.primary, colors.primaryDark]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.iconGradient}
             >
-              <Ionicons name="lock-open-outline" size={rf(22)} color={ResponsiveTheme.colors.white} />
+              <Ionicons name="lock-open-outline" size={rf(22)} color={colors.white} />
             </LinearGradient>
           </RNAnimated.View>
 
@@ -98,12 +98,12 @@ export const GuestPromptCard: React.FC<GuestPromptCardProps> = ({
             style={styles.buttonWrapper}
           >
             <LinearGradient
-              colors={[ResponsiveTheme.colors.errorLight, "#FF8E53"]}
+              colors={[colors.errorLight, "#FF8E53"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.button}
             >
-              <Ionicons name="person-add-outline" size={rf(16)} color={ResponsiveTheme.colors.white} />
+              <Ionicons name="person-add-outline" size={rf(16)} color={colors.white} />
               <Text style={styles.buttonText}>Sign Up Free</Text>
             </LinearGradient>
           </AnimatedPressable>
@@ -115,9 +115,9 @@ export const GuestPromptCard: React.FC<GuestPromptCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
   },
   card: {
     backgroundColor: "rgba(255, 107, 53, 0.08)",
@@ -127,10 +127,10 @@ const styles = StyleSheet.create({
   },
   content: {
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
   },
   iconContainer: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   iconGradient: {
     width: rw(44),
@@ -143,19 +143,19 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.sm,
   },
   title: {
     fontSize: rf(16),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     textAlign: "center",
     marginBottom: rp(4),
   },
   subtitle: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textAlign: 'center',
     lineHeight: rf(18),
     opacity: 0.75,
@@ -163,22 +163,22 @@ const styles = StyleSheet.create({
   buttonWrapper: {
     width: "100%",
     overflow: "hidden",
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
   },
   button: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: ResponsiveTheme.spacing.xs,
-    paddingVertical: ResponsiveTheme.spacing.sm + 2,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    gap: spacing.xs,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.md,
     overflow: "hidden",
   },
   buttonText: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 });
 

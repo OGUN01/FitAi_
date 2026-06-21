@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import Svg, { Circle, Path, Text as SvgText } from "react-native-svg";
 import { rf, rw, rh } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 
 interface CircularClockProps {
   sleepTime: string; // Format: "HH:MM" (24-hour)
@@ -130,8 +130,8 @@ export const CircularClock: React.FC<CircularClockProps> = ({
           cx={centerX}
           cy={centerY}
           r={clockRadius}
-          fill={`${ResponsiveTheme.colors.surface}30`}
-          stroke={ResponsiveTheme.colors.border}
+          fill={`${colors.surface}30`}
+          stroke={colors.border}
           strokeWidth="1"
           opacity={0.5}
         />
@@ -142,7 +142,7 @@ export const CircularClock: React.FC<CircularClockProps> = ({
           cy={centerY}
           r={clockRadius}
           fill="transparent"
-          stroke={`${ResponsiveTheme.colors.warning}50`}
+          stroke={`${colors.warning}50`}
           strokeWidth={arcWidth}
         />
 
@@ -150,7 +150,7 @@ export const CircularClock: React.FC<CircularClockProps> = ({
         <Path
           d={sleepArcPath}
           fill="transparent"
-          stroke={ResponsiveTheme.colors.primary}
+          stroke={colors.primary}
           strokeWidth={arcWidth}
           strokeLinecap="round"
         />
@@ -162,7 +162,7 @@ export const CircularClock: React.FC<CircularClockProps> = ({
             x={x}
             y={y}
             fontSize={rf(9)}
-            fill={ResponsiveTheme.colors.textMuted}
+            fill={colors.textMuted}
             textAnchor="middle"
             alignmentBaseline="middle"
             fontWeight="500"
@@ -177,7 +177,7 @@ export const CircularClock: React.FC<CircularClockProps> = ({
           y={centerY - 6}
           fontSize={rf(20)}
           fontWeight="bold"
-          fill={ResponsiveTheme.colors.text}
+          fill={colors.text}
           textAnchor="middle"
           alignmentBaseline="middle"
         >
@@ -188,7 +188,7 @@ export const CircularClock: React.FC<CircularClockProps> = ({
           x={centerX}
           y={centerY + 16}
           fontSize={rf(10)}
-          fill={ResponsiveTheme.colors.textSecondary}
+          fill={colors.textSecondary}
           textAnchor="middle"
           alignmentBaseline="middle"
         >
@@ -202,7 +202,7 @@ export const CircularClock: React.FC<CircularClockProps> = ({
           <View
             style={[
               styles.legendDot,
-              { backgroundColor: ResponsiveTheme.colors.primary },
+              { backgroundColor: colors.primary },
             ]}
           />
           <View style={styles.legendTextContainer}>
@@ -215,7 +215,7 @@ export const CircularClock: React.FC<CircularClockProps> = ({
           <View
             style={[
               styles.legendDot,
-              { backgroundColor: ResponsiveTheme.colors.warning },
+              { backgroundColor: colors.warning },
             ]}
           />
           <View style={styles.legendTextContainer}>
@@ -237,18 +237,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: ResponsiveTheme.spacing.lg,
-    backgroundColor: `${ResponsiveTheme.colors.surface}30`,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    marginTop: spacing.lg,
+    backgroundColor: `${colors.surface}30`,
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
   },
 
   legendItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
   },
 
   legendDot: {
@@ -262,20 +262,20 @@ const styles = StyleSheet.create({
   },
 
   legendTime: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    fontSize: fontSize.sm,
+    color: colors.text,
+    fontWeight: typography.fontWeight.semibold,
   },
 
   legendLabel: {
     fontSize: rf(9),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
 
   legendDivider: {
     width: 1,
     height: rh(30),
-    backgroundColor: `${ResponsiveTheme.colors.border}50`,
-    marginHorizontal: ResponsiveTheme.spacing.sm,
+    backgroundColor: `${colors.border}50`,
+    marginHorizontal: spacing.sm,
   },
 });

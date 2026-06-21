@@ -16,19 +16,19 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../../utils/responsive";
 
 // Tip types and their visual styling
 const TIP_STYLES = {
   workout: {
     icon: "fitness" as const,
-    gradient: [ResponsiveTheme.colors.errorLight, "#FF8E53"] as [string, string],
+    gradient: [colors.errorLight, "#FF8E53"] as [string, string],
     bgColor: "rgba(255, 107, 107, 0.1)",
   },
   recovery: {
     icon: "bed" as const,
-    gradient: [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark] as [string, string],
+    gradient: [colors.primary, colors.primaryDark] as [string, string],
     bgColor: "rgba(255, 107, 53, 0.1)",
   },
   nutrition: {
@@ -38,12 +38,12 @@ const TIP_STYLES = {
   },
   hydration: {
     icon: "water" as const,
-    gradient: [ResponsiveTheme.colors.info, "#03A9F4"] as [string, string],
+    gradient: [colors.info, "#03A9F4"] as [string, string],
     bgColor: "rgba(33, 150, 243, 0.1)",
   },
   motivation: {
     icon: "flash" as const,
-    gradient: [ResponsiveTheme.colors.gold, "#FFA500"] as [string, string],
+    gradient: [colors.gold, "#FFA500"] as [string, string],
     bgColor: "rgba(255, 215, 0, 0.1)",
   },
 };
@@ -247,7 +247,7 @@ const RecommendationCard: React.FC<{
             end={{ x: 1, y: 1 }}
             style={styles.iconGradient}
           >
-            <Ionicons name={style.icon} size={rf(16)} color={ResponsiveTheme.colors.white} />
+            <Ionicons name={style.icon} size={rf(16)} color={colors.white} />
           </LinearGradient>
 
           <View style={styles.textContent}>
@@ -306,7 +306,7 @@ export const SmartCoaching: React.FC<SmartCoachingProps> = React.memo((props) =>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.aiIconContainer}>
-            <Ionicons name="sparkles" size={rf(14)} color={ResponsiveTheme.colors.gold} />
+            <Ionicons name="sparkles" size={rf(14)} color={colors.gold} />
           </View>
           <Text style={styles.headerTitle}>Smart Coach</Text>
         </View>
@@ -322,7 +322,7 @@ export const SmartCoaching: React.FC<SmartCoachingProps> = React.memo((props) =>
 
       {recommendations.length === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="checkmark-circle-outline" size={rf(20)} color={ResponsiveTheme.colors.success} />
+          <Ionicons name="checkmark-circle-outline" size={rf(20)} color={colors.success} />
           <Text style={styles.emptyStateText}>Great job! No adjustments needed today.</Text>
         </View>
       ) : (
@@ -347,12 +347,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center" as const,
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   aiIconContainer: {
     width: rw(24),
@@ -365,26 +365,26 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: rf(14),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     letterSpacing: 0.3,
   },
   viewAllText: {
     fontSize: rf(12),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   recommendationsList: {
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   recommendationCard: {
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
     overflow: "hidden",
   },
   cardContent: {
     flexDirection: "row",
     alignItems: "center" as const,
-    padding: ResponsiveTheme.spacing.sm,
-    gap: ResponsiveTheme.spacing.sm,
+    padding: spacing.sm,
+    gap: spacing.sm,
   },
   iconGradient: {
     width: rw(36),
@@ -399,13 +399,13 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: rf(13),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(2),
   },
   cardDescription: {
     fontSize: rf(11),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(15),
   },
   actionContainer: {
@@ -420,13 +420,13 @@ const styles = StyleSheet.create({
   emptyState: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
   },
   emptyStateText: {
     fontSize: rf(13),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     flex: 1,
   },
 });

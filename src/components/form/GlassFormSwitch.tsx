@@ -12,7 +12,7 @@ import React from "react";
 import { View, Text, StyleSheet, Switch, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
@@ -30,7 +30,7 @@ export const GlassFormSwitch: React.FC<GlassFormSwitchProps> = ({
   label,
   description,
   icon,
-  iconColor = ResponsiveTheme.colors.primary,
+  iconColor = colors.primary,
   value,
   onValueChange,
   disabled = false,
@@ -61,7 +61,7 @@ export const GlassFormSwitch: React.FC<GlassFormSwitchProps> = ({
             <Ionicons
               name={icon}
               size={rf(18)}
-              color={disabled ? ResponsiveTheme.colors.textMuted : iconColor}
+              color={disabled ? colors.textMuted : iconColor}
             />
           </View>
         )}
@@ -88,10 +88,10 @@ export const GlassFormSwitch: React.FC<GlassFormSwitchProps> = ({
           disabled={disabled}
           trackColor={{
             false: "rgba(255, 255, 255, 0.1)",
-            true: `${ResponsiveTheme.colors.primary}50`,
+            true: `${colors.primary}50`,
           }}
           thumbColor={
-            value ? ResponsiveTheme.colors.primary : "rgba(255, 255, 255, 0.4)"
+            value ? colors.primary : "rgba(255, 255, 255, 0.4)"
           }
           ios_backgroundColor="rgba(255, 255, 255, 0.1)"
         />
@@ -104,12 +104,12 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center" as const,
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: colors.glassSurface,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassBorder,
-    padding: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    borderColor: colors.glassBorder,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
   },
   containerDisabled: {
     opacity: 0.5,
@@ -120,23 +120,23 @@ const styles = StyleSheet.create({
     borderRadius: rw(12),
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
   textContainer: {
     flex: 1,
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
   label: {
     fontSize: rf(15),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   labelDisabled: {
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
   description: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
     lineHeight: rf(16),
   },

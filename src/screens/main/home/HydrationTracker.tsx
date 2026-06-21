@@ -27,7 +27,7 @@ import Svg, {
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rp } from "../../../utils/responsive";
 
 // Water amount presets (in ml)
@@ -121,7 +121,7 @@ const QuickAddButton: React.FC<{
       accessibilityLabel={`Add ${amount} milliliters ${label}`}
     >
       <View style={styles.quickAddIconContainer}>
-        <Ionicons name={icon} size={rf(18)} color={ResponsiveTheme.colors.info} />
+        <Ionicons name={icon} size={rf(18)} color={colors.info} />
       </View>
       <Text style={styles.quickAddAmount}>{amount}ml</Text>
       <Text style={styles.quickAddLabel}>{label}</Text>
@@ -149,13 +149,13 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
     const expectedProgress = ((hour - 6) / 16) * 100; // Assuming 6am-10pm active period
 
     if (progress >= expectedProgress + 10) {
-      return { status: "Ahead", color: ResponsiveTheme.colors.success, message: "Great hydration!" };
+      return { status: "Ahead", color: colors.success, message: "Great hydration!" };
     } else if (progress >= expectedProgress - 10) {
-      return { status: "On Track", color: ResponsiveTheme.colors.info, message: "Keep it up!" };
+      return { status: "On Track", color: colors.info, message: "Keep it up!" };
     } else {
       return {
         status: "Behind",
-        color: ResponsiveTheme.colors.warning,
+        color: colors.warning,
         message: "Drink more water",
       };
     }
@@ -184,7 +184,7 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Ionicons name="water" size={rf(16)} color={ResponsiveTheme.colors.info} />
+            <Ionicons name="water" size={rf(16)} color={colors.info} />
             <Text style={styles.headerTitle}>Hydration</Text>
           </View>
           <View
@@ -236,7 +236,7 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
               <Text
                 style={[
                   styles.statValue,
-                  remainingGlasses > 0 ? {} : { color: ResponsiveTheme.colors.success },
+                  remainingGlasses > 0 ? {} : { color: colors.success },
                 ]}
               >
                 {remainingGlasses > 0 ? remainingGlasses : "✓"}
@@ -284,26 +284,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   headerTitle: {
     fontSize: rf(14),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     letterSpacing: 0.3,
   },
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.full,
-    gap: ResponsiveTheme.spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    gap: spacing.xs,
   },
   statusDot: {
     width: rw(6),
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   content: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   dropContainer: {
     position: "relative",
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
   dropPercentage: {
     fontSize: rf(18),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.info,
+    color: colors.info,
   },
   statsContainer: {
     flex: 1,
@@ -347,48 +347,48 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: rf(18),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   statUnit: {
     fontSize: rf(12),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   statLabel: {
     fontSize: rf(10),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
   divider: {
     width: 1,
     height: rh(30),
-    backgroundColor: ResponsiveTheme.colors.glassHighlight,
+    backgroundColor: colors.glassHighlight,
   },
   quickAddSection: {
-    marginTop: ResponsiveTheme.spacing.md,
-    paddingTop: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.md,
+    paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.glassBorder,
+    borderTopColor: colors.glassBorder,
   },
   quickAddTitle: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
   quickAddButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: ResponsiveTheme.spacing.xs, // Reduced gap
+    gap: spacing.xs, // Reduced gap
   },
   quickAddButton: {
     flex: 1,
     alignItems: "center",
     backgroundColor: "rgba(33, 150, 243, 0.08)",
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md, // Increased horizontal padding
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md, // Increased horizontal padding
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: "rgba(33, 150, 243, 0.15)",
   },
@@ -404,25 +404,25 @@ const styles = StyleSheet.create({
   quickAddAmount: {
     fontSize: rf(13),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.info,
+    color: colors.info,
   },
   quickAddLabel: {
     fontSize: rf(10),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(1),
   },
   reminderContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: ResponsiveTheme.spacing.xs,
-    marginTop: ResponsiveTheme.spacing.sm,
+    gap: spacing.xs,
+    marginTop: spacing.sm,
   },
   reminderText: {
     fontSize: rf(11),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
 });
 

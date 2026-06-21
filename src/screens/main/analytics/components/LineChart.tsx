@@ -16,7 +16,7 @@ import Svg, {
 } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { ResponsiveTheme } from "../../../../utils/constants";
+import { flatColors as colors, spacing } from "../../../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../../../utils/responsive";
 import {
   GridLines,
@@ -141,7 +141,7 @@ export const LineChart: React.FC<LineChartProps> = ({
           <Ionicons
             name="add-circle-outline"
             size={rf(14)}
-            color={ResponsiveTheme.colors.primary}
+            color={colors.primary}
           />
           <Text style={styles.emptyChartHintText}>
             Open Progress to log weight
@@ -170,20 +170,20 @@ export const LineChart: React.FC<LineChartProps> = ({
               styles.trendBadge,
               {
                 backgroundColor: isPositiveTrend
-                  ? ResponsiveTheme.colors.successTint
-                  : ResponsiveTheme.colors.errorTint,
+                  ? colors.successTint
+                  : colors.errorTint,
               },
             ]}
           >
             <Ionicons
               name={isPositiveTrend ? "trending-up" : "trending-down"}
               size={rf(12)}
-              color={isPositiveTrend ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.error}
+              color={isPositiveTrend ? colors.success : colors.error}
             />
             <Text
               style={[
                 styles.trendText,
-                { color: isPositiveTrend ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.error },
+                { color: isPositiveTrend ? colors.success : colors.error },
               ]}
             >
               {Math.abs(parseFloat(trendPercent))}%
@@ -305,8 +305,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
     width: "100%",
-    marginBottom: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.xs,
   },
   currentValueContainer: {
     alignItems: "flex-start",
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   currentValueLabel: {
     fontSize: rf(10),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: rp(2),
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
   trendBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.sm,
     paddingVertical: rp(4),
     borderRadius: rbr(12),
     gap: rp(4),
@@ -342,31 +342,31 @@ const styles = StyleSheet.create({
   trendPeriod: {
     fontSize: rf(9),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     marginTop: rp(4),
   },
   chartInsight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
-    marginTop: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    gap: spacing.xs,
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.glassSurface,
     borderRadius: rbr(20),
   },
   chartInsightText: {
     fontSize: rf(11),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   emptyChart: {
     minHeight: rh(180),
     justifyContent: "center",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   emptyChartIconContainer: {
     width: rw(70),
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
     borderRadius: rbr(35),
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
     overflow: "hidden",
   },
   emptyChartIconBg: {
@@ -387,28 +387,28 @@ const styles = StyleSheet.create({
   emptyChartText: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textAlign: "center",
   },
   emptyChartSubtext: {
     fontSize: rf(12),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     textAlign: "center",
   },
   emptyChartHint: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
-    marginTop: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    backgroundColor: ResponsiveTheme.colors.primaryTint,
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.primaryTint,
     borderRadius: rbr(16),
   },
   emptyChartHintText: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
 });

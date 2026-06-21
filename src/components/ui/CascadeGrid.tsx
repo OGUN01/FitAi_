@@ -8,7 +8,7 @@ import Animated, {
   withTiming,
   Easing,
 } from "react-native-reanimated";
-import { ResponsiveTheme } from "../../utils/constants";
+import { spacing } from "../../theme/aurora-tokens";
 
 interface CascadeGridProps {
   children: React.ReactNode[];
@@ -91,7 +91,7 @@ export const CascadeGrid: React.FC<CascadeGridProps> = ({
 
   return (
     <View style={[styles.container, style]}>
-      <View style={[styles.grid, { gap: ResponsiveTheme.spacing.md }]}>
+      <View style={[styles.grid, { gap: spacing.md }]}>
         {childArray.map((child, index) => (
           <View
             key={index}
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   },
 
   gridItem: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   item: {

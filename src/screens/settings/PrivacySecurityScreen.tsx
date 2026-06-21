@@ -5,7 +5,7 @@
  * - GlassCard for all cards
  * - Ionicons instead of emojis
  * - AnimatedPressable with haptics
- * - ResponsiveTheme for spacing/colors
+ * - aurora-tokens for spacing/colors
  * - FadeInDown entry animations
  */
 
@@ -24,7 +24,7 @@ import { ActionItem } from "../../components/settings/ActionItem";
 import { SectionHeader } from "../../components/settings/SectionHeader";
 
 import { usePrivacySecurityLogic } from "../../hooks/usePrivacySecurityLogic";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -59,14 +59,14 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <View style={styles.backButton}>
-              <Ionicons name="chevron-back" size={rf(20)} color={ResponsiveTheme.colors.text} />
+              <Ionicons name="chevron-back" size={rf(20)} color={colors.text} />
             </View>
           </AnimatedPressable>
           <View style={styles.headerCenter}>
             <Ionicons
               name="shield-checkmark-outline"
               size={rf(18)}
-              color={ResponsiveTheme.colors.primary}
+              color={colors.primary}
             />
             <Text style={styles.headerTitle}>Privacy & Security</Text>
           </View>
@@ -81,13 +81,13 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
           <View style={styles.section}>
             <SectionHeader
               icon="eye-outline"
-              iconColor={ResponsiveTheme.colors.textSecondary}
+              iconColor={colors.textSecondary}
               title="Data Privacy"
             />
 
             <PrivacyToggle
               icon="share-social-outline"
-              iconColor={ResponsiveTheme.colors.primary}
+              iconColor={colors.primary}
               title="Data Sharing"
               description="Allow sharing anonymous usage data to improve the app"
               value={settings.dataSharing}
@@ -97,7 +97,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             <PrivacyToggle
               icon="analytics-outline"
-              iconColor={ResponsiveTheme.colors.success}
+              iconColor={colors.success}
               title="Analytics"
               description="Help us improve by sharing app usage analytics"
               value={settings.analytics}
@@ -107,7 +107,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             <PrivacyToggle
               icon="bug-outline"
-              iconColor={ResponsiveTheme.colors.warning}
+              iconColor={colors.warning}
               title="Crash Reports"
               description="Automatically send crash reports to help fix issues"
               value={settings.crashReports}
@@ -117,7 +117,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             <PrivacyToggle
               icon="location-outline"
-              iconColor={ResponsiveTheme.colors.info}
+              iconColor={colors.info}
               title="Location Tracking"
               description="Allow location access for workout tracking"
               value={settings.locationTracking}
@@ -129,13 +129,13 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
           <View style={styles.section}>
             <SectionHeader
               icon="lock-closed-outline"
-              iconColor={ResponsiveTheme.colors.textSecondary}
+              iconColor={colors.textSecondary}
               title="Security"
             />
 
             <PrivacyToggle
               icon="finger-print-outline"
-              iconColor={ResponsiveTheme.colors.primary}
+              iconColor={colors.primary}
               title="Biometric Authentication"
               description="Use fingerprint or face recognition to secure your app"
               value={settings.biometricAuth}
@@ -145,7 +145,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             <PrivacyToggle
               icon="lock-open-outline"
-              iconColor={ResponsiveTheme.colors.neutral}
+              iconColor={colors.neutral}
               title="Auto-Lock"
               description="Automatically lock the app when it goes to background"
               value={settings.autoLock}
@@ -157,7 +157,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
           <View style={styles.section}>
             <SectionHeader
               icon="fitness-outline"
-              iconColor={ResponsiveTheme.colors.error}
+              iconColor={colors.error}
               title="Health Connect Privacy"
             />
 
@@ -223,7 +223,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             <ActionItem
               icon="open-outline"
-              iconColor={ResponsiveTheme.colors.info}
+              iconColor={colors.info}
               title="View Full Privacy Policy"
               description="Read the complete policy on our website"
               onPress={() =>
@@ -238,13 +238,13 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
           <View style={styles.section}>
             <SectionHeader
               icon="folder-outline"
-              iconColor={ResponsiveTheme.colors.textSecondary}
+              iconColor={colors.textSecondary}
               title="Data Management"
             />
 
             <ActionItem
               icon="cloud-download-outline"
-              iconColor={ResponsiveTheme.colors.success}
+              iconColor={colors.success}
               title="Export My Data"
               description="Download a copy of all your personal data"
               onPress={handleDataExport}
@@ -253,7 +253,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             <ActionItem
               icon="clipboard-outline"
-              iconColor={ResponsiveTheme.colors.warning}
+              iconColor={colors.warning}
               title="Terms of Service"
               description="Review our terms and conditions"
               onPress={() =>
@@ -268,14 +268,14 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
           <View style={styles.section}>
             <SectionHeader
               icon="warning-outline"
-              iconColor={ResponsiveTheme.colors.error}
+              iconColor={colors.error}
               title="Danger Zone"
               isDanger={true}
             />
 
             <ActionItem
               icon="trash-outline"
-              iconColor={ResponsiveTheme.colors.error}
+              iconColor={colors.error}
               title="Delete Account"
               description="Permanently delete your account and all data"
               onPress={handleDeleteAccount}
@@ -295,7 +295,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                 hapticFeedback={false}
               >
                 <LinearGradient
-                  colors={[ResponsiveTheme.colors.errorLight, ResponsiveTheme.colors.primaryLight]}
+                  colors={[colors.errorLight, colors.primaryLight]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.saveButton}
@@ -303,7 +303,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                   <Ionicons
                     name="checkmark-circle"
                     size={rf(18)}
-                    color={ResponsiveTheme.colors.text}
+                    color={colors.text}
                   />
                   <Text style={styles.saveButtonText}>Save Changes</Text>
                 </LinearGradient>
@@ -326,26 +326,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
   backButton: {
     width: rw(40),
     height: rw(40),
     borderRadius: rbr(20),
-    backgroundColor: ResponsiveTheme.colors.glassBorder,
+    backgroundColor: colors.glassBorder,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
   headerCenter: {
     flexDirection: "row",
     alignItems: "center" as const,
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   headerTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   headerSpacer: {
     width: rw(40),
@@ -354,58 +354,58 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingTop: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
     paddingBottom: rp(100),
   },
   section: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   privacyPolicyCard: {
-    marginBottom: ResponsiveTheme.spacing.sm,
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.glassSurface,
   },
   privacyPolicyHeading: {
     fontSize: rf(16),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
   privacyPolicySubheading: {
     fontSize: rf(13),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.primary,
-    marginTop: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.primary,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   privacyPolicyBody: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(19),
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   privacyPolicyList: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(19),
   },
   saveContainer: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   saveButton: {
     flexDirection: "row",
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    gap: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
   },
   saveButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   bottomSpacing: {
     height: rh(80),

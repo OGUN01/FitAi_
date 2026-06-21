@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf } from "../../utils/responsive";
 
 const COMPATIBLE_DEVICES = {
@@ -46,7 +46,7 @@ export const CompatibleDevicesCard: React.FC<CompatibleDevicesCardProps> = ({
             <Ionicons
               name={device.icon as keyof typeof Ionicons.glyphMap}
               size={rf(18)}
-              color={ResponsiveTheme.colors.primary}
+              color={colors.primary}
             />
             <Text style={styles.name}>{device.name}</Text>
           </View>
@@ -58,19 +58,19 @@ export const CompatibleDevicesCard: React.FC<CompatibleDevicesCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: ResponsiveTheme.spacing.md,
-    padding: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.md,
+    padding: spacing.lg,
   },
   title: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
   subtitle: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
   },
   list: {
     flexDirection: "row",
@@ -79,16 +79,16 @@ const styles = StyleSheet.create({
   item: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
-    marginRight: ResponsiveTheme.spacing.xs,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    backgroundColor: colors.glassSurface,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+    marginRight: spacing.xs,
+    marginBottom: spacing.xs,
   },
   name: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.text,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginLeft: spacing.xs,
   },
 });

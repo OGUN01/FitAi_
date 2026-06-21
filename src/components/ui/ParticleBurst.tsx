@@ -11,7 +11,7 @@ import Animated, {
   Extrapolate,
 } from "react-native-reanimated";
 import { rf } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as tokenColors } from "../../theme/aurora-tokens";
 
 interface ParticleBurstProps {
   particleCount?: number;
@@ -89,7 +89,7 @@ const ParticleItem: React.FC<{
 
 export const ParticleBurst: React.FC<ParticleBurstProps> = ({
   particleCount = 12,
-  colors = [ResponsiveTheme.colors.success, ResponsiveTheme.colors.primary, ResponsiveTheme.colors.info, ResponsiveTheme.colors.warning, ResponsiveTheme.colors.secondary],
+  colors = [tokenColors.success, tokenColors.primary, tokenColors.info, tokenColors.warning, tokenColors.secondary],
   duration = 1500,
   radius = 100,
   autoPlay = true,

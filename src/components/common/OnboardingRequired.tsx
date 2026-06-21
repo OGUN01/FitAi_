@@ -20,7 +20,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { rf, rp, rh, rw } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { haptics } from "../../utils/haptics";
@@ -61,7 +61,7 @@ export const OnboardingRequired: React.FC<OnboardingRequiredProps> = ({
         <Ionicons
           name="information-circle-outline"
           size={rf(14)}
-          color={ResponsiveTheme.colors.textMuted}
+          color={colors.textMuted}
         />
         <Text style={styles.compactText}>
           {message || `Complete onboarding for ${feature}`}
@@ -70,7 +70,7 @@ export const OnboardingRequired: React.FC<OnboardingRequiredProps> = ({
           <Ionicons
             name="chevron-forward"
             size={rf(14)}
-            color={ResponsiveTheme.colors.primary}
+            color={colors.primary}
           />
         )}
       </AnimatedPressable>
@@ -82,12 +82,12 @@ export const OnboardingRequired: React.FC<OnboardingRequiredProps> = ({
       <View style={styles.iconContainer}>
         <LinearGradient
           colors={[
-            ResponsiveTheme.colors.primaryFaded,
-            ResponsiveTheme.colors.primary,
+            colors.primaryFaded,
+            colors.primary,
           ]}
           style={styles.iconGradient}
         >
-          <Ionicons name="clipboard-outline" size={rf(28)} color={ResponsiveTheme.colors.white} />
+          <Ionicons name="clipboard-outline" size={rf(28)} color={colors.white} />
         </LinearGradient>
       </View>
 
@@ -103,7 +103,7 @@ export const OnboardingRequired: React.FC<OnboardingRequiredProps> = ({
           <Ionicons
             name="checkmark-circle"
             size={rf(16)}
-            color={ResponsiveTheme.colors.success}
+            color={colors.success}
           />
           <Text style={styles.benefitText}>Personalized nutrition targets</Text>
         </View>
@@ -111,7 +111,7 @@ export const OnboardingRequired: React.FC<OnboardingRequiredProps> = ({
           <Ionicons
             name="checkmark-circle"
             size={rf(16)}
-            color={ResponsiveTheme.colors.success}
+            color={colors.success}
           />
           <Text style={styles.benefitText}>
             Climate-adjusted hydration goals
@@ -121,7 +121,7 @@ export const OnboardingRequired: React.FC<OnboardingRequiredProps> = ({
           <Ionicons
             name="checkmark-circle"
             size={rf(16)}
-            color={ResponsiveTheme.colors.success}
+            color={colors.success}
           />
           <Text style={styles.benefitText}>BMI-specific recommendations</Text>
         </View>
@@ -137,16 +137,16 @@ export const OnboardingRequired: React.FC<OnboardingRequiredProps> = ({
         >
           <LinearGradient
             colors={[
-              ResponsiveTheme.colors.primary,
-              ResponsiveTheme.colors.primaryDark ||
-                ResponsiveTheme.colors.primary,
+              colors.primary,
+              colors.primaryDark ||
+                colors.primary,
             ]}
             style={styles.buttonGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
           >
             <Text style={styles.buttonText}>Complete Onboarding</Text>
-            <Ionicons name="arrow-forward" size={rf(16)} color={ResponsiveTheme.colors.white} />
+            <Ionicons name="arrow-forward" size={rf(16)} color={colors.white} />
           </LinearGradient>
         </AnimatedPressable>
       )}
@@ -212,13 +212,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rh(8),
     textAlign: "center",
   },
   description: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     textAlign: "center",
     lineHeight: rf(20),
     marginBottom: rh(16),
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   },
   benefitText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginLeft: rw(8),
   },
   button: {
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   // Compact styles
   compactContainer: {
@@ -263,37 +263,37 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
     paddingVertical: rh(8),
     paddingHorizontal: rp(12),
-    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
+    backgroundColor: `${colors.primary}10`,
     borderRadius: rp(8),
     gap: rw(6),
   },
   compactText: {
     flex: 1,
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
   // Metric placeholder styles
   metricPlaceholder: {
     alignItems: "center" as const,
   },
   metricDash: {
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     fontWeight: "600",
   },
   metricLabel: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     marginTop: rh(2),
   },
   // Loading metric styles
   loadingMetric: {
-    backgroundColor: `${ResponsiveTheme.colors.textMuted}20`,
+    backgroundColor: `${colors.textMuted}20`,
     borderRadius: rp(4),
     overflow: "hidden",
   },
   loadingShimmer: {
     flex: 1,
-    backgroundColor: `${ResponsiveTheme.colors.textMuted}30`,
+    backgroundColor: `${colors.textMuted}30`,
   },
 });
 

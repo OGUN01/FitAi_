@@ -25,7 +25,7 @@ import Svg, {
 } from "react-native-svg";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../utils/responsive";
 import { SectionHeader } from "../common/SectionHeader";
 
@@ -101,10 +101,10 @@ const StreakRing: React.FC<{ days: number; maxDays?: number }> = ({
 
   // Get color based on streak length
   const getStreakColor = () => {
-    if (days >= 30) return [ResponsiveTheme.colors.gold, "#FFA500"]; // Gold for 30+
-    if (days >= 14) return [ResponsiveTheme.colors.errorLight, "#FF8E53"]; // Red-orange for 14+
-    if (days >= 7) return [ResponsiveTheme.colors.success, ResponsiveTheme.colors.successLight]; // Green for 7+
-    return [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.accent]; // Aurora primary for starting
+    if (days >= 30) return [colors.gold, "#FFA500"]; // Gold for 30+
+    if (days >= 14) return [colors.errorLight, "#FF8E53"]; // Red-orange for 14+
+    if (days >= 7) return [colors.success, colors.successLight]; // Green for 7+
+    return [colors.primary, colors.accent]; // Aurora primary for starting
   };
 
   const gradientColors = getStreakColor();
@@ -192,16 +192,16 @@ const MetricCard: React.FC<{
     // For weight, down is good. For others, up is good.
     if (title.toLowerCase().includes("weight")) {
       return trend === "down"
-        ? ResponsiveTheme.colors.success
+        ? colors.success
         : trend === "up"
-          ? ResponsiveTheme.colors.error
-          : ResponsiveTheme.colors.neutral;
+          ? colors.error
+          : colors.neutral;
     }
     return trend === "up"
-      ? ResponsiveTheme.colors.success
+      ? colors.success
       : trend === "down"
-        ? ResponsiveTheme.colors.error
-        : ResponsiveTheme.colors.neutral;
+        ? colors.error
+        : colors.neutral;
   };
 
   return (
@@ -307,7 +307,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
       <SectionHeader
         title="This Period"
         icon="stats-chart"
-        iconColor={ResponsiveTheme.colors.primary}
+        iconColor={colors.primary}
       />
 
       {/* Row 1: Weight + Calories */}
@@ -316,7 +316,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           title="Weight"
           value={formatWeight(data.weight?.current)}
           icon="scale-outline"
-          color={ResponsiveTheme.colors.primary}
+          color={colors.primary}
           trend={hasWeightHistory ? data.weight?.trend : undefined}
           trendValue={
             hasWeightHistory && data.weight?.change
@@ -331,7 +331,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           title="Calories"
           value={formatCalories(data.calories?.burned)}
           icon="flame-outline"
-          color={ResponsiveTheme.colors.warning}
+          color={colors.warning}
           trend={hasCaloriesData ? data.calories?.trend : undefined}
           trendValue={
             hasCaloriesData && data.calories?.change
@@ -350,7 +350,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           value={data.workouts?.count?.toString() ?? "--"}
           subtitle={`this ${period}`}
           icon="barbell-outline"
-          color={ResponsiveTheme.colors.info}
+          color={colors.info}
           trend={hasWorkoutsData ? data.workouts?.trend : undefined}
           trendValue={
             hasWorkoutsData && data.workouts?.change
@@ -365,7 +365,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           title="Day Streak"
           value=""
           icon="flame"
-          color={ResponsiveTheme.colors.errorLight}
+          color={colors.errorLight}
           delay={300}
           onPress={() => onMetricPress?.("streak")}
         >
@@ -381,13 +381,13 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
-    gap: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    gap: spacing.md,
   },
   row: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   cardWrapper: {
     flex: 1,
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.xs,
+    paddingVertical: spacing.xs,
   },
   iconCircle: {
     width: rw(36),
@@ -406,30 +406,30 @@ const styles = StyleSheet.create({
     borderRadius: rw(18),
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   metricValue: {
     fontSize: rf(24),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   metricLabel: {
     fontSize: rf(12),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
   subtitleText: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textMuted,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
   },
   trendRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
   },
   trendText: {
     fontSize: rf(12),
@@ -441,8 +441,8 @@ const styles = StyleSheet.create({
     height: rh(20),
     width: "100%",
     gap: rw(2),
-    marginTop: ResponsiveTheme.spacing.xs,
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.xs,
   },
   sparklineBar: {
     flex: 1,
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
   },
   streakContent: {
     alignItems: "center",
-    marginTop: -ResponsiveTheme.spacing.xs,
+    marginTop: -spacing.xs,
   },
   streakRingContainer: {
     position: "relative",
@@ -469,8 +469,8 @@ const styles = StyleSheet.create({
   streakMessage: {
     fontSize: rf(9),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.xs,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
 });
 

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw, rbr } from "../../utils/responsive";
 import { FeatureItem } from "../../hooks/useAboutFitAILogic";
 
@@ -49,8 +49,8 @@ const styles = StyleSheet.create({
   },
   featureCard: {
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.lg,
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.glassSurface,
   },
   featureIcon: {
     width: rw(44),
@@ -58,20 +58,20 @@ const styles = StyleSheet.create({
     borderRadius: rbr(22),
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   featureTitle: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginBottom: spacing.xs,
     textAlign: "center",
   },
   featureDescription: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(15),
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
+    paddingHorizontal: spacing.xs,
   },
 });

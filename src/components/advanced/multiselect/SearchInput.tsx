@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TextInput } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
 
 interface SearchInputProps {
   searchQuery: string;
@@ -16,7 +16,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
       <TextInput
         style={styles.searchInput}
         placeholder="Search options..."
-        placeholderTextColor={ResponsiveTheme.colors.textMuted}
+        placeholderTextColor={colors.textMuted}
         value={searchQuery}
         onChangeText={setSearchQuery}
       />
@@ -29,23 +29,23 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    margin: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    margin: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
 
   searchInput: {
     flex: 1,
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    color: colors.text,
   },
 
   searchIcon: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    marginLeft: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.md,
+    marginLeft: spacing.sm,
   },
 });

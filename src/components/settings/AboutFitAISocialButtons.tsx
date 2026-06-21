@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf } from "../../utils/responsive";
 
 interface AboutFitAISocialButtonsProps {
@@ -79,7 +79,7 @@ export const AboutFitAISocialButtons: React.FC<
 const styles = StyleSheet.create({
   socialGrid: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   socialButtonWrapper: {
     flex: 1,
@@ -88,12 +88,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: ResponsiveTheme.spacing.sm,
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    gap: spacing.sm,
+    backgroundColor: colors.glassSurface,
   },
   socialText: {
     fontSize: rf(12),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
 });

@@ -4,7 +4,7 @@ import { View, StyleSheet, ScrollView, Text, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rbr, rh } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { HeroSection } from "../../../components/ui/aurora";
@@ -156,14 +156,14 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             <Ionicons
               name="alert-circle"
               size={24}
-              color={ResponsiveTheme.colors.error}
+              color={colors.error}
             />
             <Text style={styles.errorText}>{calculationError}</Text>
             <Pressable
               onPress={() => performCalculations()}
-              style={{ paddingHorizontal: rp(12), paddingVertical: rp(6), borderRadius: rbr(8), borderWidth: 1, borderColor: ResponsiveTheme.colors.error }}
+              style={{ paddingHorizontal: rp(12), paddingVertical: rp(6), borderRadius: rbr(8), borderWidth: 1, borderColor: colors.error }}
             >
-              <Text style={{ color: ResponsiveTheme.colors.error, fontSize: rf(14) }}>Retry</Text>
+              <Text style={{ color: colors.error, fontSize: rf(14) }}>Retry</Text>
             </Pressable>
           </GlassCard>
         )}
@@ -173,7 +173,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             <Ionicons
               name="checkmark-circle"
               size={24}
-              color={ResponsiveTheme.colors.success}
+              color={colors.success}
             />
             <Text style={styles.successText}>{successMessage}</Text>
           </GlassCard>
@@ -220,7 +220,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
 
       <View style={styles.footer}>
         <Pressable style={styles.backButtonCompact} onPress={onBack}>
-          <Ionicons name="chevron-back" size={rf(18)} color={ResponsiveTheme.colors.text} />
+          <Ionicons name="chevron-back" size={rf(18)} color={colors.text} />
           <Text style={styles.backButtonText}>Back</Text>
         </Pressable>
         <Pressable
@@ -228,8 +228,8 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             styles.completeButtonCompact,
             {
               backgroundColor: (!isComplete || isCalculating || !!calculationError || ((validationResults?.warnings?.length ?? 0) > 0 && !warningsAcknowledged) || ((validationResults?.errors?.length ?? 0) > 0))
-                ? ResponsiveTheme.colors.textMuted
-                : ResponsiveTheme.colors.primary,
+                ? colors.textMuted
+                : colors.primary,
               opacity: (!isComplete || isCalculating || !!calculationError || ((validationResults?.warnings?.length ?? 0) > 0 && !warningsAcknowledged) || ((validationResults?.errors?.length ?? 0) > 0)) ? 0.5 : 1,
             }
           ]}
@@ -240,7 +240,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
           <Text style={styles.completeButtonText}>
             {isLoading || isCalculating ? 'Processing...' : 'Complete Setup'}
           </Text>
-          <Ionicons name="checkmark-circle" size={rf(18)} color={ResponsiveTheme.colors.white} />
+          <Ionicons name="checkmark-circle" size={rf(18)} color={colors.white} />
         </Pressable>
       </View>
 
@@ -308,7 +308,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
   scrollContent: {
   },
@@ -320,86 +320,86 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
-    backgroundColor: ResponsiveTheme.colors.background,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.background,
     borderTopWidth: 1,
-    borderTopColor: `${ResponsiveTheme.colors.white}0F`,
+    borderTopColor: `${colors.white}0F`,
     elevation: 4,
   },
   backButtonCompact: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: ResponsiveTheme.spacing.xs,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.backgroundSecondary,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
     minHeight: 52,
   },
   backButtonText: {
-    color: ResponsiveTheme.colors.text,
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.medium,
     lineHeight: rf(18),
   },
   completeButtonCompact: {
     flex: 1,
-    marginLeft: ResponsiveTheme.spacing.md,
+    marginLeft: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: ResponsiveTheme.spacing.xs,
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.lg,
     minHeight: 52,
   },
   completeButtonText: {
-    color: ResponsiveTheme.colors.white,
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: colors.white,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.bold,
   },
   successCard: {
     margin: rp(20),
     flexDirection: "row",
     alignItems: "center",
     gap: rp(12),
-    backgroundColor: `${ResponsiveTheme.colors.success}20`,
+    backgroundColor: `${colors.success}20`,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.success}40`,
+    borderColor: `${colors.success}40`,
   },
   successText: {
     flex: 1,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    color: colors.text,
   },
   heroTitle: {
     fontSize: rf(24),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     marginBottom: rp(8),
     textAlign: "center",
   },
   heroSubtitle: {
     fontSize: rf(16),
-    color: `${ResponsiveTheme.colors.white}CC`,
+    color: `${colors.white}CC`,
     textAlign: "center",
     marginBottom: rp(20),
   },
   errorCard: {
     margin: rp(20),
-    backgroundColor: `${ResponsiveTheme.colors.error}1A`,
-    borderColor: `${ResponsiveTheme.colors.error}4D`,
+    backgroundColor: `${colors.error}1A`,
+    borderColor: `${colors.error}4D`,
     borderWidth: 1,
     padding: rp(16),
     alignItems: "center",
     gap: rp(12),
   },
   errorText: {
-    color: ResponsiveTheme.colors.error,
+    color: colors.error,
     fontSize: rf(14),
     textAlign: "center",
   },

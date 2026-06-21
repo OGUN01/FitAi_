@@ -3,7 +3,7 @@
 
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rh } from "../../utils/responsive";
 
 interface AnalyticsCardProps {
@@ -31,15 +31,15 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({
   size = "medium",
 }) => {
   const getBackgroundColor = () => {
-    const colors = {
-      blue: ResponsiveTheme.colors.primary,
+    const bgColors = {
+      blue: colors.primary,
       green: "#10B981",
       purple: "#FF8A5C",
       orange: "#F59E0B",
       red: "#EF4444",
       gray: "#6B7280",
     };
-    return colors[color as keyof typeof colors] || colors.blue;
+    return bgColors[color as keyof typeof bgColors] || bgColors.blue;
   };
 
   const getTrendIcon = () => {

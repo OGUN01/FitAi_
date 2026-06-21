@@ -10,7 +10,7 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, typography } from "../../theme/aurora-tokens";
 import { rf, rp } from '../../utils/responsive';
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
     zIndex: 1,
   },
 
@@ -277,14 +277,14 @@ const styles = StyleSheet.create({
 
   actionIcon: {
     fontSize: rf(20),
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     marginBottom: rp(4),
   },
 
   actionLabel: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.white,
-    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
+    color: colors.white,
+    fontWeight: typography.fontWeight.medium as "500",
     textAlign: "center",
   },
 });

@@ -17,7 +17,7 @@ import {
   MealType,
 } from "../../services/foodRecognitionService";
 import { rf, rp, rbr } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 interface TestResult {
@@ -186,7 +186,7 @@ export const FoodRecognitionTest: React.FC = () => {
         >
           {isLoading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={ResponsiveTheme.colors.white} />
+              <ActivityIndicator size="small" color={colors.white} />
               <Text style={styles.testButtonText}>Testing...</Text>
             </View>
           ) : (
@@ -268,11 +268,11 @@ export const FoodRecognitionTest: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     padding: rp(16),
   },
   card: {
-    backgroundColor: ResponsiveTheme.colors.white,
+    backgroundColor: colors.white,
     borderRadius: rbr(12),
     padding: rp(24),
     marginBottom: rp(24),
@@ -282,18 +282,18 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(24),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(8),
   },
   subtitle: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rp(16),
   },
   sectionTitle: {
     fontSize: rf(18),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(12),
   },
   mealTypeContainer: {
@@ -309,33 +309,33 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   mealTypeButtonSelected: {
-    backgroundColor: ResponsiveTheme.colors.info,
-    borderColor: ResponsiveTheme.colors.info,
+    backgroundColor: colors.info,
+    borderColor: colors.info,
   },
   mealTypeButtonUnselected: {
-    backgroundColor: ResponsiveTheme.colors.white,
-    borderColor: ResponsiveTheme.colors.borderLight,
+    backgroundColor: colors.white,
+    borderColor: colors.borderLight,
   },
   mealTypeText: {
     fontWeight: "500",
   },
   mealTypeTextSelected: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   mealTypeTextUnselected: {
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
   testButton: {
     paddingVertical: rp(16),
     paddingHorizontal: rp(24),
     borderRadius: rbr(12),
-    backgroundColor: ResponsiveTheme.colors.info,
+    backgroundColor: colors.info,
   },
   testButtonDisabled: {
-    backgroundColor: ResponsiveTheme.colors.neutral,
+    backgroundColor: colors.neutral,
   },
   testButtonText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     fontWeight: "600",
     textAlign: "center",
     fontSize: rf(16),
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     justifyContent: "center" as const,
   },
   resultsCard: {
-    backgroundColor: ResponsiveTheme.colors.white,
+    backgroundColor: colors.white,
     borderRadius: rbr(12),
     padding: rp(24),
     boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
@@ -361,21 +361,21 @@ const styles = StyleSheet.create({
   resultsTitle: {
     fontSize: rf(20),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   clearButton: {
     paddingHorizontal: rp(12),
     paddingVertical: rp(4),
-    backgroundColor: ResponsiveTheme.colors.errorTint,
+    backgroundColor: colors.errorTint,
     borderRadius: rbr(8),
   },
   clearButtonText: {
-    color: ResponsiveTheme.colors.error,
+    color: colors.error,
     fontWeight: "500",
   },
   resultItem: {
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.border,
+    borderBottomColor: colors.border,
     paddingBottom: rp(16),
     marginBottom: rp(16),
   },
@@ -400,44 +400,44 @@ const styles = StyleSheet.create({
   },
   resultMealType: {
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textTransform: "capitalize",
   },
   resultTime: {
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: rf(12),
   },
   resultProcessingTime: {
-    color: ResponsiveTheme.colors.info,
+    color: colors.info,
     fontSize: rf(12),
     fontWeight: "500",
   },
   resultError: {
-    color: ResponsiveTheme.colors.error,
+    color: colors.error,
     fontSize: rf(12),
   },
   resultSuccess: {
-    color: ResponsiveTheme.colors.successAlt,
+    color: colors.successAlt,
     fontSize: rf(12),
   },
   resultFoods: {
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: rf(12),
     marginTop: rp(4),
   },
   statusCard: {
-    backgroundColor: ResponsiveTheme.colors.primaryTint,
+    backgroundColor: colors.primaryTint,
     borderRadius: rbr(12),
     padding: rp(16),
     marginTop: rp(24),
   },
   statusTitle: {
-    color: ResponsiveTheme.colors.info,
+    color: colors.info,
     fontWeight: "600",
     marginBottom: rp(8),
   },
   statusText: {
-    color: ResponsiveTheme.colors.info,
+    color: colors.info,
     fontSize: rf(12),
   },
 });

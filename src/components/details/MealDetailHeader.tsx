@@ -1,6 +1,6 @@
 ﻿import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { ResponsiveTheme } from '../../utils/constants';
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
 import { rw, rh, rbr } from '../../utils/responsive';
 
 
@@ -41,42 +41,42 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.border,
+    borderBottomColor: colors.border,
   },
 
   backButton: {
     width: Math.max(rw(40), 44),
     height: Math.max(rh(40), 44),
     borderRadius: Math.max(rbr(20), 22),
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     alignItems: "center" as const,
     justifyContent: "center" as const,
   },
 
   backIcon: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.lg,
+    color: colors.text,
   },
 
   headerTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
   },
 
   editButton: {
     width: Math.max(rw(40), 44),
     height: Math.max(rh(40), 44),
     borderRadius: Math.max(rbr(20), 22),
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     alignItems: "center" as const,
     justifyContent: "center" as const,
   },
 
   editIcon: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
   },
 });

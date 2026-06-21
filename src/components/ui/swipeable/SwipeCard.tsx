@@ -5,7 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
 import { PanGestureHandler } from "react-native-gesture-handler";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rp } from "../../../utils/responsive";
 import { SwipeableCard } from "./types";
 import { SwipeIndicators } from "./SwipeIndicators";
@@ -51,7 +51,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
         <Ionicons
           name={card.iconName as ComponentProps<typeof Ionicons>['name']}
           size={rf(36)}
-          color={ResponsiveTheme.colors.white}
+          color={colors.white}
           style={styles.cardIcon}
         />
         <Text style={styles.cardTitle}>{card.title}</Text>
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   card: {
     width: "80%",
     height: rp(200),
-    borderRadius: ResponsiveTheme.borderRadius.xl,
+    borderRadius: borderRadius.xl,
     position: "absolute",
     overflow: "hidden",
     boxShadow: '0px 4px 8px rgba(0,0,0,0.3)',
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
 
   cardGradient: {
     flex: 1,
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -136,50 +136,50 @@ const styles = StyleSheet.create({
   },
 
   cardIcon: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   cardTitle: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.white,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
 
   cardDescription: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.glassHighlight,
+    fontSize: fontSize.sm,
+    color: colors.glassHighlight,
     textAlign: "center",
     lineHeight: rf(18),
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.md,
   },
 
   detailsContainer: {
-    marginTop: ResponsiveTheme.spacing.lg,
+    marginTop: spacing.lg,
     alignSelf: "stretch",
-    paddingHorizontal: ResponsiveTheme.spacing.xl,
+    paddingHorizontal: spacing.xl,
   },
 
   detailText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.glassHighlight,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    color: colors.glassHighlight,
+    marginBottom: spacing.xs,
   },
 
   progressContainer: {
     position: "absolute",
-    bottom: ResponsiveTheme.spacing.md,
+    bottom: spacing.md,
     alignSelf: "center",
-    backgroundColor: ResponsiveTheme.colors.overlay,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: colors.overlay,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
   },
 
   progressText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.white,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.white,
   },
 });

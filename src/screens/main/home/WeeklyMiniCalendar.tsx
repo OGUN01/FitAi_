@@ -8,7 +8,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../../utils/responsive";
 
 interface DayActivity {
@@ -73,7 +73,7 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
               <Ionicons
                 name="calendar-outline"
                 size={rf(14)}
-                color={ResponsiveTheme.colors.primary}
+                color={colors.primary}
               />
             </View>
             <Text style={styles.headerTitle}>This Week</Text>
@@ -91,7 +91,7 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
             <Ionicons
               name="chevron-forward"
               size={rf(14)}
-              color={ResponsiveTheme.colors.textSecondary}
+              color={colors.textSecondary}
             />
           </AnimatedPressable>
         </View>
@@ -104,14 +104,14 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
             const isPast = day.date < today && !isToday;
 
             let cellStyle = styles.defaultCell;
-            let textColor = ResponsiveTheme.colors.textSecondary;
+            let textColor = colors.textSecondary;
 
             if (isToday) {
               cellStyle = styles.todayCell;
-              textColor = ResponsiveTheme.colors.primary;
+              textColor = colors.primary;
             } else if (day.workoutCompleted) {
               cellStyle = styles.completedCell;
-              textColor = ResponsiveTheme.colors.white;
+              textColor = colors.white;
             } else if (day.isRestDay) {
               cellStyle = styles.restCell;
             } else if (isPast && day.hasWorkout) {
@@ -132,7 +132,7 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
                 </Text>
                 <View style={[styles.dayCell, cellStyle]}>
                   {day.workoutCompleted ? (
-                    <Ionicons name="checkmark" size={rf(14)} color={ResponsiveTheme.colors.white} />
+                    <Ionicons name="checkmark" size={rf(14)} color={colors.white} />
                   ) : (
                     <Text style={[styles.dayNumber, { color: textColor }]}>
                       {day.date.getDate()}
@@ -153,35 +153,35 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   headerIconBg: {
     width: rw(28),
     height: rw(28),
     borderRadius: rw(14),
-    backgroundColor: `${ResponsiveTheme.colors.primary}12`,
+    backgroundColor: `${colors.primary}12`,
     justifyContent: "center",
     alignItems: "center",
   },
   headerTitle: {
     fontSize: rf(14),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   statsRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   statsText: {
     fontSize: rf(12),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   weekGrid: {
     flexDirection: "row",
@@ -194,10 +194,10 @@ const styles = StyleSheet.create({
   dayLabel: {
     fontSize: rf(10),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   todayLabel: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
     fontWeight: "700",
   },
   dayCell: {
@@ -212,21 +212,21 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   defaultCell: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
   },
   todayCell: {
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    backgroundColor: `${colors.primary}15`,
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
   },
   completedCell: {
-    backgroundColor: ResponsiveTheme.colors.success,
+    backgroundColor: colors.success,
   },
   restCell: {
-    backgroundColor: `${ResponsiveTheme.colors.info}10`,
+    backgroundColor: `${colors.info}10`,
   },
   missedCell: {
-    backgroundColor: `${ResponsiveTheme.colors.error}10`,
+    backgroundColor: `${colors.error}10`,
   },
 });
 

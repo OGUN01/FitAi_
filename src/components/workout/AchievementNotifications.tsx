@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../utils/responsive";
 import AchievementCelebration from "../achievements/AchievementCelebration";
 
@@ -102,19 +102,19 @@ const styles = StyleSheet.create({
   achievementToast: {
     position: "absolute",
     top: rp(60),
-    left: ResponsiveTheme.spacing.lg,
-    right: ResponsiveTheme.spacing.lg,
+    left: spacing.lg,
+    right: spacing.lg,
     zIndex: 1000,
   },
 
   achievementToastContent: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.success,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    backgroundColor: colors.success,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderRadius: rbr(12),
-    shadowColor: ResponsiveTheme.colors.black,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
 
   achievementToastIcon: {
     fontSize: rf(28),
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
 
   achievementToastText: {
@@ -132,29 +132,29 @@ const styles = StyleSheet.create({
   },
 
   achievementToastTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.white,
     marginBottom: rp(2),
   },
 
   achievementToastDescription: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.white + "CC",
+    fontSize: fontSize.xs,
+    color: colors.white + "CC",
   },
 
   miniToast: {
     position: "absolute",
     top: rp(120),
     alignSelf: "center",
-    backgroundColor: ResponsiveTheme.colors.primary + "E6",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    backgroundColor: colors.primary + "E6",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderRadius: rbr(20),
     zIndex: 999,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.2)",
-    shadowColor: ResponsiveTheme.colors.black,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -163,9 +163,9 @@ const styles = StyleSheet.create({
   },
 
   miniToastText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.white,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.white,
     textAlign: "center",
   },
 });

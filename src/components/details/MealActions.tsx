@@ -1,7 +1,7 @@
 ﻿import React from "react";
 import { View, StyleSheet } from "react-native";
 import { Button } from "../ui";
-import { ResponsiveTheme } from '../../utils/constants';
+import { flatColors as colors, spacing } from '../../theme/aurora-tokens';
 
 interface MealActionsProps {
   onEdit?: () => void;
@@ -37,15 +37,15 @@ export const MealActions: React.FC<MealActionsProps> = ({
 
 const styles = StyleSheet.create({
   bottomContainer: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.background,
+    borderTopColor: colors.border,
+    backgroundColor: colors.background,
   },
 
   actionButtons: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
 
   actionButton: {
@@ -53,10 +53,10 @@ const styles = StyleSheet.create({
   },
 
   deleteButton: {
-    borderColor: ResponsiveTheme.colors.error,
+    borderColor: colors.error,
   },
 
   deleteButtonText: {
-    color: ResponsiveTheme.colors.error,
+    color: colors.error,
   },
 });

@@ -1,7 +1,7 @@
 ﻿import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Card } from "../ui";
-import { ResponsiveTheme } from '../../utils/constants';
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
 import { rf, rw, rh, rbr } from '../../utils/responsive';
 
 interface WorkoutInfoCardProps {
@@ -108,13 +108,13 @@ export const WorkoutInfoCard: React.FC<WorkoutInfoCardProps> = ({
 
 const styles = StyleSheet.create({
   workoutCard: {
-    marginVertical: ResponsiveTheme.spacing.md,
+    marginVertical: spacing.md,
   },
 
   workoutHeader: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   workoutInfo: {
@@ -122,15 +122,15 @@ const styles = StyleSheet.create({
   },
 
   workoutName: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.xxl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
 
   workoutDescription: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     lineHeight: rf(22),
   },
 
@@ -138,10 +138,10 @@ const styles = StyleSheet.create({
     width: rw(60),
     height: rh(60),
     borderRadius: rbr(30),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: ResponsiveTheme.spacing.md,
+    marginLeft: spacing.md,
   },
 
   workoutEmoji: {
@@ -149,37 +149,37 @@ const styles = StyleSheet.create({
   },
 
   progressContainer: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   progressBar: {
     height: rh(8),
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rbr(4),
     overflow: "hidden",
   },
 
   progressFill: {
     height: "100%",
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: rbr(4),
   },
 
   progressText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.primary,
-    marginTop: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    color: colors.primary,
+    marginTop: spacing.xs,
     textAlign: "center",
   },
 
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.md,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-    marginVertical: ResponsiveTheme.spacing.md,
+    borderColor: colors.border,
+    marginVertical: spacing.md,
   },
 
   statItem: {
@@ -187,75 +187,75 @@ const styles = StyleSheet.create({
   },
 
   statValue: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.primary,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
   },
 
   statLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.xs / 2,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginTop: spacing.xs / 2,
   },
 
   musclesContainer: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   musclesTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
 
   musclesList: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
 
   muscleTag: {
-    backgroundColor: ResponsiveTheme.colors.primary + "20",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs / 2,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.primary + "20",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs / 2,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primary + "40",
+    borderColor: colors.primary + "40",
   },
 
   muscleText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.medium,
   },
 
   equipmentContainer: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   equipmentTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
 
   equipmentList: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
 
   equipmentTag: {
-    backgroundColor: ResponsiveTheme.colors.surface,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs / 2,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs / 2,
+    borderRadius: borderRadius.md,
   },
 
   equipmentText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
 });

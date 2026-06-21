@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import { DayMeal } from "../types/ai";
 import completionTrackingService from "../services/completionTracking";
-import { ResponsiveTheme } from "../utils/constants";
+import { flatColors as colors } from "../theme/aurora-tokens";
 
 interface UseMealSessionLogicProps {
   meal: DayMeal;
@@ -59,13 +59,13 @@ export const useMealSessionLogic = ({
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "easy":
-        return ResponsiveTheme.colors.success;
+        return colors.success;
       case "medium":
-        return ResponsiveTheme.colors.warning;
+        return colors.warning;
       case "hard":
-        return ResponsiveTheme.colors.error;
+        return colors.error;
       default:
-        return ResponsiveTheme.colors.textSecondary;
+        return colors.textSecondary;
     }
   };
 

@@ -8,7 +8,7 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rs, rp, rbr } from "../../utils/responsive";
 import { getLocalDateString } from "../../utils/weekUtils";
 
@@ -64,18 +64,18 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({
 
   // Get intensity color
   const getIntensityColor = (intensity: number) => {
-    if (intensity === 0) return ResponsiveTheme.colors.surface;
+    if (intensity === 0) return colors.surface;
 
-    const colors = [
-      ResponsiveTheme.colors.surface,
+    const intensityColors = [
+      colors.surface,
       "#1a3d2e", // Very light green
       "#2d5a3d", // Light green
       "#40774c", // Medium green
       "#53945b", // Dark green
-      ResponsiveTheme.colors.success, // Darkest green
+      colors.success, // Darkest green
     ];
 
-    return colors[Math.min(intensity, 5)];
+    return intensityColors[Math.min(intensity, 5)];
   };
 
   // Calculate stats
@@ -208,35 +208,35 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: ResponsiveTheme.spacing.md,
-    marginVertical: ResponsiveTheme.spacing.sm,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginVertical: spacing.sm,
   },
 
   header: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
   },
 
   subtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.xs / 2,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginTop: spacing.xs / 2,
   },
 
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    marginBottom: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    marginBottom: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
   },
 
   statItem: {
@@ -244,29 +244,29 @@ const styles = StyleSheet.create({
   },
 
   statValue: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.primary,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
   },
 
   statLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.xs / 2,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    marginTop: spacing.xs / 2,
   },
 
   calendarContainer: {
-    marginVertical: ResponsiveTheme.spacing.md,
+    marginVertical: spacing.md,
   },
 
   dayLabelsContainer: {
     flexDirection: "column",
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
 
   dayLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
     height: rs(14),
     textAlign: "center",
     marginBottom: rp(2),
@@ -295,17 +295,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.md,
   },
 
   legendLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
   },
 
   legendScale: {
     flexDirection: "row",
-    marginHorizontal: ResponsiveTheme.spacing.sm,
+    marginHorizontal: spacing.sm,
   },
 
   legendCell: {
@@ -316,17 +316,17 @@ const styles = StyleSheet.create({
   },
 
   selectedDayContainer: {
-    marginTop: ResponsiveTheme.spacing.md,
-    padding: ResponsiveTheme.spacing.md,
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    marginTop: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
   },
 
   selectedDayDate: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
 
   selectedDayStats: {
@@ -339,14 +339,14 @@ const styles = StyleSheet.create({
   },
 
   selectedDayStatLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
   },
 
   selectedDayStatValue: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.text,
-    marginTop: ResponsiveTheme.spacing.xs / 2,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
+    marginTop: spacing.xs / 2,
   },
 });

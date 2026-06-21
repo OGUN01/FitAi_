@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { GlassCard } from "../ui/aurora/GlassCard";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw } from "../../utils/responsive";
 
 interface HealthIntelligencePlaceholderProps {
@@ -32,25 +32,25 @@ export const HealthIntelligencePlaceholder: React.FC<
             <Ionicons
               name="pulse"
               size={rf(16)}
-              color={ResponsiveTheme.colors.primary}
+              color={colors.primary}
             />
             <Text style={styles.headerTitle}>Health Intelligence</Text>
           </View>
           <View
             style={[
               styles.statusBadge,
-              { backgroundColor: `${ResponsiveTheme.colors.textMuted}40` },
+              { backgroundColor: `${colors.textMuted}40` },
             ]}>
             <View
               style={[
                 styles.statusDot,
-                { backgroundColor: ResponsiveTheme.colors.textMuted },
+                { backgroundColor: colors.textMuted },
               ]}
             />
             <Text
               style={[
                 styles.statusText,
-                { color: ResponsiveTheme.colors.textSecondary },
+                { color: colors.textSecondary },
               ]}
             >
               No Data
@@ -64,7 +64,7 @@ export const HealthIntelligencePlaceholder: React.FC<
             <Ionicons
               name="fitness-outline"
               size={rf(28)}
-              color={ResponsiveTheme.colors.primary}
+              color={colors.primary}
             />
           </View>
           <View style={styles.placeholderTextBlock}>
@@ -77,7 +77,7 @@ export const HealthIntelligencePlaceholder: React.FC<
               <Ionicons
                 name="phone-portrait-outline"
                 size={rf(12)}
-                color={ResponsiveTheme.colors.textMuted}
+                color={colors.textMuted}
               />
               <Text style={styles.placeholderHintText}>
                 Use Health Sync on your phone to get started
@@ -88,7 +88,7 @@ export const HealthIntelligencePlaceholder: React.FC<
             <Ionicons
               name="chevron-forward"
               size={rf(18)}
-              color={ResponsiveTheme.colors.textMuted}
+              color={colors.textMuted}
             />
           ) : null}
         </View>
@@ -102,27 +102,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   headerTitle: {
     fontSize: rf(14),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     letterSpacing: 0.3,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'center',
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.full,
-    gap: ResponsiveTheme.spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    gap: spacing.xs,
   },
   statusDot: {
     width: rw(6),
@@ -136,14 +136,14 @@ const styles = StyleSheet.create({
   placeholderContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
+    paddingVertical: spacing.md,
   },
   placeholderIconContainer: {
     width: rw(44),
     height: rw(44),
     borderRadius: rw(22),
-    backgroundColor: `${ResponsiveTheme.colors.primary}16`,
+    backgroundColor: `${colors.primary}16`,
     justifyContent: "center",
     alignItems: "center",
     flexShrink: 0,
@@ -154,25 +154,25 @@ const styles = StyleSheet.create({
   placeholderTitle: {
     fontSize: rf(14),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   placeholderSubtitle: {
     fontSize: rf(12),
     fontWeight: '400',
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     lineHeight: rf(18),
     opacity: 0.65,
   },
   placeholderHintRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
-    marginTop: ResponsiveTheme.spacing.sm,
+    gap: spacing.xs,
+    marginTop: spacing.sm,
   },
   placeholderHintText: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     flex: 1,
   },
 });

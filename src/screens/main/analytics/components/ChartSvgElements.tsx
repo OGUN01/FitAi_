@@ -2,7 +2,7 @@ import React from "react";
 import { Platform } from "react-native";
 import { Path, Circle, Line, G, Rect, Text as SvgText } from "react-native-svg";
 import Animated from "react-native-reanimated";
-import { ResponsiveTheme } from "../../../../utils/constants";
+import { flatColors as colors } from "../../../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../../../utils/responsive";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -62,7 +62,7 @@ export const YAxisLabels: React.FC<YAxisLabelsProps> = ({
           key={`y-label-${index}`}
           x={paddingLeft - 8}
           y={y + 4}
-          fill={ResponsiveTheme.colors.textMuted}
+          fill={colors.textMuted}
           fontSize={rf(9)}
           textAnchor="end"
           fontWeight="500"
@@ -193,7 +193,7 @@ export const XAxisLabels: React.FC<XAxisLabelsProps> = ({
           key={`x-label-${index}`}
           x={x}
           y={chartHeight - 8}
-          fill={isLast ? color : ResponsiveTheme.colors.textMuted}
+          fill={isLast ? color : colors.textMuted}
           fontSize={rf(10)}
           textAnchor="middle"
           fontWeight={isLast ? "700" : "500"}
@@ -239,7 +239,7 @@ export const SelectedPointTooltip: React.FC<SelectedPointTooltipProps> = ({
       <SvgText
         x={getX(selectedPoint)}
         y={getY(point.value) - rh(18)}
-        fill={ResponsiveTheme.colors.white}
+        fill={colors.white}
         fontSize={rf(11)}
         textAnchor="middle"
         fontWeight="700"

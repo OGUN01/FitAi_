@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
@@ -68,7 +68,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
           <Ionicons
             name={sectionIcon}
             size={rf(14)}
-            color={ResponsiveTheme.colors.textSecondary}
+            color={colors.textSecondary}
             style={styles.sectionIcon}
           />
         )}
@@ -97,7 +97,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
                   style={[
                     styles.iconContainer,
                     {
-                      backgroundColor: `${item.iconColor || ResponsiveTheme.colors.primary}18`,
+                      backgroundColor: `${item.iconColor || colors.primary}18`,
                     },
                     item.isDestructive && styles.destructiveIconBg,
                     item.isPremium && styles.premiumIconBg,
@@ -105,10 +105,10 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
                 >
                   {item.isPremium ? (
                     <LinearGradient
-                      colors={[ResponsiveTheme.colors.gold, ResponsiveTheme.colors.warning]}
+                      colors={[colors.gold, colors.warning]}
                       style={styles.premiumIconGradient}
                     >
-                      <Ionicons name={item.icon} size={rf(18)} color={ResponsiveTheme.colors.white} />
+                      <Ionicons name={item.icon} size={rf(18)} color={colors.white} />
                     </LinearGradient>
                   ) : (
                     <Ionicons
@@ -116,8 +116,8 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
                       size={rf(18)}
                       color={
                         item.isDestructive
-                          ? ResponsiveTheme.colors.error
-                          : item.iconColor || ResponsiveTheme.colors.primary
+                          ? colors.error
+                          : item.iconColor || colors.primary
                       }
                     />
                   )}
@@ -141,7 +141,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
                           styles.badge,
                           {
                             backgroundColor:
-                              item.badgeColor || ResponsiveTheme.colors.primary,
+                              item.badgeColor || colors.primary,
                           },
                           item.isPremium && styles.premiumBadge,
                         ]}
@@ -173,10 +173,10 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
                       size={rf(18)}
                       color={
                         item.isPremium
-                          ? ResponsiveTheme.colors.gold
+                          ? colors.gold
                           : item.isDestructive
-                            ? ResponsiveTheme.colors.error
-                            : ResponsiveTheme.colors.textMuted
+                            ? colors.error
+                            : colors.textMuted
                       }
                     />
                   </View>
@@ -198,38 +198,38 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.lg,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.sm,
+    marginLeft: spacing.xs,
   },
   sectionIcon: {
-    marginRight: ResponsiveTheme.spacing.xs,
+    marginRight: spacing.xs,
   },
   sectionTitle: {
     fontSize: rf(12),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 1.5,
   },
   card: {
     overflow: "hidden",
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
     minHeight: rh(60),
   },
   premiumRow: {
-    backgroundColor: `${ResponsiveTheme.colors.gold}0D`,
+    backgroundColor: `${colors.gold}0D`,
   },
   iconContainer: {
     width: rw(36),
@@ -237,10 +237,10 @@ const styles = StyleSheet.create({
     borderRadius: rw(10),
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
   destructiveIconBg: {
-    backgroundColor: ResponsiveTheme.colors.errorTint,
+    backgroundColor: colors.errorTint,
   },
   premiumIconBg: {
     backgroundColor: "transparent",
@@ -265,36 +265,36 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(15),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   destructiveText: {
-    color: ResponsiveTheme.colors.error,
+    color: colors.error,
   },
   premiumText: {
-    color: ResponsiveTheme.colors.gold,
+    color: colors.gold,
     fontWeight: "600",
   },
   subtitle: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
   premiumSubtitle: {
-    color: `${ResponsiveTheme.colors.gold}B3`,
+    color: `${colors.gold}B3`,
   },
   badge: {
-    marginLeft: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.xs + 2,
+    marginLeft: spacing.sm,
+    paddingHorizontal: spacing.xs + 2,
     paddingVertical: rp(3),
     borderRadius: rbr(4),
   },
   premiumBadge: {
-    backgroundColor: ResponsiveTheme.colors.gold,
+    backgroundColor: colors.gold,
   },
   badgeText: {
     fontSize: rf(9),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
@@ -302,19 +302,19 @@ const styles = StyleSheet.create({
     width: rw(8),
     height: rw(8),
     borderRadius: rw(4),
-    backgroundColor: ResponsiveTheme.colors.warning,
-    marginLeft: ResponsiveTheme.spacing.sm,
+    backgroundColor: colors.warning,
+    marginLeft: spacing.sm,
   },
   chevronContainer: {
     width: rw(24),
     alignItems: "center",
   },
   dividerContainer: {
-    paddingLeft: rw(36) + ResponsiveTheme.spacing.md * 2,
+    paddingLeft: rw(36) + spacing.md * 2,
   },
   divider: {
     height: rp(1),
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
   },
 });
 

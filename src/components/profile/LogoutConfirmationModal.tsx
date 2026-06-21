@@ -12,7 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf } from "../../utils/responsive";
 import { gradients, toLinearGradientProps } from "../../theme/gradients";
 
@@ -47,7 +47,7 @@ export const LogoutConfirmationModal: React.FC<
               <Ionicons
                 name="log-out-outline"
                 size={rf(48)}
-                color={ResponsiveTheme.colors.error}
+                color={colors.error}
               />
             </View>
             <Text style={styles.confirmationTitle}>Sign Out</Text>
@@ -85,7 +85,7 @@ export const LogoutConfirmationModal: React.FC<
                   style={styles.confirmationButtonGradient}
                 >
                   {isLoading ? (
-                    <ActivityIndicator size="small" color={ResponsiveTheme.colors.white} />
+                    <ActivityIndicator size="small" color={colors.white} />
                   ) : (
                     <Text style={styles.confirmationButtonText}>
                       Sign Out
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   },
   blurContainer: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: ResponsiveTheme.colors.overlay,
+    backgroundColor: colors.overlay,
   },
   confirmationDialog: {
     width: "85%",
@@ -117,51 +117,51 @@ const styles = StyleSheet.create({
   },
   confirmationIconContainer: {
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   confirmationTitle: {
     fontSize: rf(20),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   confirmationMessage: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(20),
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   confirmationActions: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   confirmationButton: {
     flex: 1,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
     overflow: "hidden",
   },
   confirmationButtonCancel: {
     backgroundColor: "rgba(255, 255, 255, 0.1)",
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.md,
     alignItems: "center",
   },
   confirmationButtonConfirm: {
     overflow: "hidden",
   },
   confirmationButtonGradient: {
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.md,
     alignItems: "center",
   },
   confirmationButtonTextCancel: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   confirmationButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 });

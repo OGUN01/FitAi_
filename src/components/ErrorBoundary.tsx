@@ -14,7 +14,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
-import { ResponsiveTheme } from "../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../theme/aurora-tokens";
 import { logger } from "../utils/logger";
 
 interface Props {
@@ -134,59 +134,59 @@ export class ErrorBoundary extends React.Component<Props, State> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
     justifyContent: "center",
     alignItems: "center",
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
   },
   errorContainer: {
-    backgroundColor: ResponsiveTheme.colors.surface,
-    padding: ResponsiveTheme.spacing.xl,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: colors.surface,
+    padding: spacing.xl,
+    borderRadius: borderRadius.lg,
     alignItems: "center",
     maxWidth: "90%",
   },
   title: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.error,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.error,
+    marginBottom: spacing.md,
     textAlign: "center",
   },
   message: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    fontSize: fontSize.md,
+    color: colors.text,
+    marginBottom: spacing.lg,
     textAlign: "center",
     lineHeight: 24,
   },
   button: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    paddingHorizontal: ResponsiveTheme.spacing.xl,
-    paddingVertical: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
   },
   buttonText: {
-    color: ResponsiveTheme.colors.white,
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: colors.white,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
   },
   debugContainer: {
-    marginTop: ResponsiveTheme.spacing.lg,
-    padding: ResponsiveTheme.spacing.md,
-    backgroundColor: ResponsiveTheme.colors.background,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    marginTop: spacing.lg,
+    padding: spacing.md,
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.sm,
     maxHeight: 200,
   },
   debugTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
   debugText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
     fontFamily: "monospace",
   },
 });

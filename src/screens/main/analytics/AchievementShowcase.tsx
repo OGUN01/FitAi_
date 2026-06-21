@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../../utils/responsive";
 import { SectionHeader } from "../home/SectionHeader";
 import { useAchievementStore } from "../../../stores/achievementStore";
@@ -52,7 +52,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
         <SectionHeader
           title="Achievements"
           icon="trophy"
-          iconColor={ResponsiveTheme.colors.gold}
+          iconColor={colors.gold}
         />
         {!showLoadingState && !showEmptyState && (
           <Text style={styles.countBadge}>
@@ -72,7 +72,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
             <Ionicons
               name="hourglass-outline"
               size={rf(24)}
-              color={ResponsiveTheme.colors.textMuted}
+              color={colors.textMuted}
             />
             <Text style={styles.stateTitle}>Loading achievements...</Text>
             <Text style={styles.stateSubtitle}>
@@ -84,7 +84,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
             <Ionicons
               name="trophy-outline"
               size={rf(24)}
-              color={ResponsiveTheme.colors.textMuted}
+              color={colors.textMuted}
             />
             <Text style={styles.stateTitle}>No achievements yet</Text>
             <Text style={styles.stateSubtitle}>
@@ -100,7 +100,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
           >
             {displayAchievements.map((item, index) => {
               const accentColor = item.completed
-                ? ResponsiveTheme.colors.success
+                ? colors.success
                 : (rarityColor[item.tier] ?? "#9CA3AF");
               const hasProgress =
                 !item.completed && item.progress > 0 && item.target > 0;
@@ -175,13 +175,13 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
                       <Ionicons
                         name="checkmark-circle"
                         size={rf(16)}
-                        color={ResponsiveTheme.colors.success}
+                        color={colors.success}
                       />
                     ) : (
                       <Ionicons
                         name="lock-closed-outline"
                         size={rf(16)}
-                        color={ResponsiveTheme.colors.textMuted}
+                        color={colors.textMuted}
                       />
                     )}
                   </View>
@@ -197,20 +197,20 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.lg,
     zIndex: 2,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   countBadge: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     backgroundColor: "rgba(255,255,255,0.07)",
     paddingHorizontal: rp(8),
     paddingVertical: rp(3),
@@ -220,19 +220,19 @@ const styles = StyleSheet.create({
     minHeight: ITEM_HEIGHT * 2,
     justifyContent: "center",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.lg,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
   },
   stateTitle: {
     fontSize: rf(14),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textAlign: "center",
   },
   stateSubtitle: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     textAlign: "center",
   },
   listContent: { paddingVertical: rp(4) },
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(12),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     flexShrink: 1,
   },
   categoryTag: {
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   categoryText: { fontSize: rf(8), fontWeight: "700", letterSpacing: 0.4 },
-  description: { fontSize: rf(10), color: ResponsiveTheme.colors.textMuted },
+  description: { fontSize: rf(10), color: colors.textMuted },
   progressRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: rf(9),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     flexShrink: 0,
   },
   rightBlock: {

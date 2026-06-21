@@ -13,7 +13,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr, rw, rh } from "../../../utils/responsive";
 
 interface AppInfoCardProps {
@@ -66,7 +66,7 @@ export const AppInfoCard: React.FC<AppInfoCardProps> = ({
             <Ionicons
               name="heart"
               size={rf(14)}
-              color={ResponsiveTheme.colors.errorLight}
+              color={colors.errorLight}
               style={styles.heartIcon}
             />
             <Text style={styles.footerText}>for fitness enthusiasts</Text>
@@ -79,8 +79,8 @@ export const AppInfoCard: React.FC<AppInfoCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
   },
   card: {
     backgroundColor: "rgba(255, 255, 255, 0.04)",
@@ -95,8 +95,8 @@ const styles = StyleSheet.create({
     borderRadius: rw(12),
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.md,
-    shadowColor: ResponsiveTheme.colors.errorLight,
+    marginRight: spacing.md,
+    shadowColor: colors.errorLight,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: rf(24),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   info: {
     flex: 1,
@@ -119,11 +119,11 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   versionBadge: {
-    marginLeft: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
+    marginLeft: spacing.sm,
+    paddingHorizontal: spacing.xs,
     paddingVertical: rp(2),
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: rf(4),
@@ -131,15 +131,15 @@ const styles = StyleSheet.create({
   versionText: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   tagline: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   footer: {
-    marginTop: ResponsiveTheme.spacing.md,
-    paddingTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.08)",
     alignItems: "center",
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
   heartIcon: {
     marginHorizontal: rf(4),

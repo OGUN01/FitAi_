@@ -9,7 +9,7 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../../utils/responsive";
 
 export type InsightType =
@@ -35,8 +35,8 @@ const getInsightConfig = (type: InsightType) => {
     case "positive":
       return {
         icon: "checkmark-circle" as const,
-        color: ResponsiveTheme.colors.success,
-        gradientColors: [ResponsiveTheme.colors.successTint, "rgba(76,175,80,0.05)"] as [
+        color: colors.success,
+        gradientColors: [colors.successTint, "rgba(76,175,80,0.05)"] as [
           string,
           string,
         ],
@@ -45,8 +45,8 @@ const getInsightConfig = (type: InsightType) => {
     case "negative":
       return {
         icon: "alert-circle" as const,
-        color: ResponsiveTheme.colors.error,
-        gradientColors: [ResponsiveTheme.colors.errorTint, "rgba(244,67,54,0.05)"] as [
+        color: colors.error,
+        gradientColors: [colors.errorTint, "rgba(244,67,54,0.05)"] as [
           string,
           string,
         ],
@@ -55,8 +55,8 @@ const getInsightConfig = (type: InsightType) => {
     case "neutral":
       return {
         icon: "information-circle" as const,
-        color: ResponsiveTheme.colors.warning,
-        gradientColors: [ResponsiveTheme.colors.warningTint, "rgba(255,152,0,0.05)"] as [
+        color: colors.warning,
+        gradientColors: [colors.warningTint, "rgba(255,152,0,0.05)"] as [
           string,
           string,
         ],
@@ -65,7 +65,7 @@ const getInsightConfig = (type: InsightType) => {
     case "achievement":
       return {
         icon: "trophy" as const,
-        color: ResponsiveTheme.colors.gold,
+        color: colors.gold,
         gradientColors: ["rgba(255,215,0,0.15)", "rgba(255,215,0,0.05)"] as [
           string,
           string,
@@ -75,9 +75,9 @@ const getInsightConfig = (type: InsightType) => {
     case "recommendation":
       return {
         icon: "bulb" as const,
-        color: ResponsiveTheme.colors.primary,
+        color: colors.primary,
         gradientColors: [
-          ResponsiveTheme.colors.primaryTint,
+          colors.primaryTint,
           "rgba(255, 107, 53, 0.05)",
         ] as [string, string],
         borderColor: "rgba(255, 107, 53, 0.3)",
@@ -85,7 +85,7 @@ const getInsightConfig = (type: InsightType) => {
     default:
       return {
         icon: "information-circle" as const,
-        color: ResponsiveTheme.colors.neutral,
+        color: colors.neutral,
         gradientColors: [
           "rgba(158,158,158,0.15)",
           "rgba(158,158,158,0.05)",
@@ -212,21 +212,21 @@ export const InsightCard: React.FC<InsightCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     overflow: "hidden",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   gradient: {
     flex: 1,
   },
   content: {
-    padding: ResponsiveTheme.spacing.sm,
+    padding: spacing.sm,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   iconContainer: {
     width: rw(30),
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
     borderRadius: rw(8),
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   headerContent: {
     flex: 1,
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   title: {
     fontSize: rf(14),
@@ -251,9 +251,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   categoryBadge: {
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs / 2,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs / 2,
+    borderRadius: borderRadius.full,
   },
   categoryText: {
     fontSize: rf(10),
@@ -262,13 +262,13 @@ const styles = StyleSheet.create({
   confidenceRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: ResponsiveTheme.spacing.xs,
-    gap: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.xs,
+    gap: spacing.sm,
   },
   confidenceBar: {
     flex: 1,
     height: rh(4),
-    backgroundColor: ResponsiveTheme.colors.glassHighlight,
+    backgroundColor: colors.glassHighlight,
     borderRadius: rh(2),
     overflow: "hidden",
   },
@@ -279,29 +279,29 @@ const styles = StyleSheet.create({
   confidenceText: {
     fontSize: rf(10),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     minWidth: rw(30),
     textAlign: "right",
   },
   description: {
     fontSize: rf(12),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     lineHeight: rf(17),
-    marginLeft: rw(30) + ResponsiveTheme.spacing.sm,
+    marginLeft: rw(30) + spacing.sm,
   },
   actionContainer: {
-    marginTop: ResponsiveTheme.spacing.xs,
-    marginLeft: rw(30) + ResponsiveTheme.spacing.sm,
+    marginTop: spacing.xs,
+    marginLeft: rw(30) + spacing.sm,
   },
   actionButton: {
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    gap: ResponsiveTheme.spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
   },
   actionText: {
     fontSize: rf(12),

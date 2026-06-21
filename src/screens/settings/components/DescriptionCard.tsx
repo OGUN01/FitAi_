@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rp } from "../../../utils/responsive";
 
 interface DescriptionCardProps {
@@ -24,7 +24,7 @@ export const DescriptionCard: React.FC<DescriptionCardProps> = ({
       >
         <View style={styles.descriptionContent}>
           <View style={styles.scheduledBadge}>
-            <Ionicons name="calendar-outline" size={rf(14)} color={ResponsiveTheme.colors.text} />
+            <Ionicons name="calendar-outline" size={rf(14)} color={colors.text} />
             <Text style={styles.scheduledText}>{scheduledCount}</Text>
           </View>
           <Text style={styles.descriptionText}>
@@ -38,31 +38,31 @@ export const DescriptionCard: React.FC<DescriptionCardProps> = ({
 
 const styles = StyleSheet.create({
   descriptionCard: {
-    marginBottom: ResponsiveTheme.spacing.lg,
-    backgroundColor: ResponsiveTheme.colors.primaryTint,
+    marginBottom: spacing.lg,
+    backgroundColor: colors.primaryTint,
   },
   descriptionContent: {
     flexDirection: "row",
     alignItems: "center" as const,
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   scheduledBadge: {
     flexDirection: "row",
     alignItems: "center" as const,
     gap: rp(4),
-    backgroundColor: ResponsiveTheme.colors.primary,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.sm,
     paddingVertical: rp(4),
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    borderRadius: borderRadius.full,
   },
   scheduledText: {
     fontSize: rf(12),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   descriptionText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     flex: 1,
   },
 });

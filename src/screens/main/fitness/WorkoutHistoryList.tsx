@@ -15,7 +15,7 @@ import AnimatedRN, { FadeInDown, FadeInRight } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 import { crossPlatformAlert } from "../../../utils/crossPlatformAlert";
@@ -183,7 +183,7 @@ const WorkoutHistoryCard: React.FC<{
           style={styles.actionButton}
         >
           <View style={[styles.actionContent, styles.repeatAction]}>
-            <Ionicons name="repeat" size={rf(20)} color={ResponsiveTheme.colors.white} />
+            <Ionicons name="repeat" size={rf(20)} color={colors.white} />
             <Text style={styles.actionText}>Repeat</Text>
           </View>
         </AnimatedPressable>
@@ -195,7 +195,7 @@ const WorkoutHistoryCard: React.FC<{
           style={styles.actionButton}
         >
           <View style={[styles.actionContent, styles.deleteAction]}>
-            <Ionicons name="trash-outline" size={rf(20)} color={ResponsiveTheme.colors.white} />
+            <Ionicons name="trash-outline" size={rf(20)} color={colors.white} />
             <Text style={styles.actionText}>Delete</Text>
           </View>
         </AnimatedPressable>
@@ -225,15 +225,15 @@ const WorkoutHistoryCard: React.FC<{
                   styles.iconContainer,
                   {
                     backgroundColor: isCompleted
-                      ? `${ResponsiveTheme.colors.successAlt}25`
-                      : ResponsiveTheme.colors.errorTint,
+                      ? `${colors.successAlt}25`
+                      : colors.errorTint,
                   },
                 ]}
               >
                 <Ionicons
                   name={getCategoryIcon()}
                   size={rf(20)}
-                  color={isCompleted ? ResponsiveTheme.colors.successAlt : ResponsiveTheme.colors.errorLight}
+                  color={isCompleted ? colors.successAlt : colors.errorLight}
                 />
               </View>
 
@@ -257,7 +257,7 @@ const WorkoutHistoryCard: React.FC<{
                     <Ionicons
                       name="checkmark-circle"
                       size={rf(18)}
-                      color={ResponsiveTheme.colors.success}
+                      color={colors.success}
                     />
                   </View>
                 ) : (
@@ -294,7 +294,7 @@ export const WorkoutHistoryList: React.FC<WorkoutHistoryListProps> = ({
               <Ionicons
                 name="barbell-outline"
                 size={rf(36)}
-                color={ResponsiveTheme.colors.primary}
+                color={colors.primary}
               />
             </View>
             <View style={styles.emptyTextContainer}>
@@ -307,7 +307,7 @@ export const WorkoutHistoryList: React.FC<WorkoutHistoryListProps> = ({
               <Ionicons
                 name="arrow-up-circle-outline"
                 size={rf(14)}
-                color={ResponsiveTheme.colors.primary}
+                color={colors.primary}
               />
               <Text style={styles.emptyHintText}>Start a workout above to begin</Text>
             </View>
@@ -325,7 +325,7 @@ export const WorkoutHistoryList: React.FC<WorkoutHistoryListProps> = ({
           <Ionicons
             name="time-outline"
             size={rf(18)}
-            color={ResponsiveTheme.colors.text}
+            color={colors.text}
           />
           <Text style={styles.sectionTitle}>Recent Activity</Text>
         </View>
@@ -349,31 +349,31 @@ export const WorkoutHistoryList: React.FC<WorkoutHistoryListProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   sectionHeaderLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   sectionTitle: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   sectionCount: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   cardWrapper: {
     position: "relative",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   actionsContainer: {
     position: "absolute",
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   actionButton: {
     height: "100%",
@@ -392,27 +392,27 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
     gap: rp(4),
   },
   repeatAction: {
-    backgroundColor: ResponsiveTheme.colors.successAlt,
+    backgroundColor: colors.successAlt,
   },
   deleteAction: {
-    backgroundColor: ResponsiveTheme.colors.errorAlt,
+    backgroundColor: colors.errorAlt,
   },
   actionText: {
     fontSize: rf(9),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   cardContainer: {
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
   cardContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   iconContainer: {
     width: rw(44),
@@ -426,86 +426,86 @@ const styles = StyleSheet.create({
   },
   date: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rp(2),
     fontWeight: "500",
   },
   title: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   meta: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
   statusContainer: {
     alignItems: "flex-end",
   },
   completedBadge: {
-    backgroundColor: `${ResponsiveTheme.colors.successAlt}25`,
-    padding: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: `${colors.successAlt}25`,
+    padding: spacing.xs,
+    borderRadius: borderRadius.full,
   },
   progressBadge: {
-    backgroundColor: ResponsiveTheme.colors.primaryTint,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    backgroundColor: colors.primaryTint,
+    paddingHorizontal: spacing.sm,
     paddingVertical: rp(4),
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    borderRadius: borderRadius.full,
   },
   progressText: {
     fontSize: rf(11),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.accent,
+    color: colors.accent,
   },
   emptyState: {
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.xxl,
-    gap: ResponsiveTheme.spacing.lg,
+    paddingVertical: spacing.xxl,
+    gap: spacing.lg,
   },
   emptyIconContainer: {
     width: rw(72),
     height: rw(72),
     borderRadius: rw(36),
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    backgroundColor: `${colors.primary}15`,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.primary}30`,
+    borderColor: `${colors.primary}30`,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   emptyTextContainer: {
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   emptyTitle: {
     fontSize: rf(16),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   emptySubtitle: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     opacity: 0.7,
     textAlign: "center",
     lineHeight: rf(18),
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.md,
   },
   emptyHint: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
-    marginTop: ResponsiveTheme.spacing.xs,
-    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+    backgroundColor: `${colors.primary}10`,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
   },
   emptyHintText: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
 });
 

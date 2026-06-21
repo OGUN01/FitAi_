@@ -8,7 +8,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
@@ -319,7 +319,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
               <Ionicons
                 name="chevron-back"
                 size={rf(24)}
-                color={ResponsiveTheme.colors.text}
+                color={colors.text}
               />
             </AnimatedPressable>
           )}
@@ -388,7 +388,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
                   <Ionicons
                     name="calendar-outline"
                     size={rf(14)}
-                    color={ResponsiveTheme.colors.textSecondary}
+                    color={colors.textSecondary}
                   />
                   <Text style={styles.renewalText}>
                     Renews on {formatDate(currentPeriodEnd)}
@@ -418,7 +418,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
                 <Ionicons
                   name="bar-chart-outline"
                   size={rf(18)}
-                  color={ResponsiveTheme.colors.text}
+                  color={colors.text}
                 />
                 <Text style={styles.sectionTitle}>Usage</Text>
               </View>
@@ -467,7 +467,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
                   <Ionicons
                     name="settings-outline"
                     size={rf(18)}
-                    color={ResponsiveTheme.colors.text}
+                    color={colors.text}
                   />
                   <Text style={styles.sectionTitle}>Manage</Text>
                 </View>
@@ -680,7 +680,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     letterSpacing: 0.3,
   },
   headerSpacer: {
@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: rw(16),
-    paddingBottom: ResponsiveTheme.spacing.xl,
+    paddingBottom: spacing.xl,
   },
 
   // Card
@@ -736,18 +736,18 @@ const styles = StyleSheet.create({
   planName: {
     fontSize: rf(22),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rh(4),
   },
   planDescription: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rh(4),
     lineHeight: rf(18),
   },
   billingCycle: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rh(8),
     textTransform: "capitalize",
   },
@@ -759,7 +759,7 @@ const styles = StyleSheet.create({
   },
   renewalText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
 
   // Usage section
@@ -772,7 +772,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: rf(16),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   usageRow: {
     marginBottom: rh(10),
@@ -791,11 +791,11 @@ const styles = StyleSheet.create({
   usageLabel: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   usageCount: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: "500",
   },
   unlimitedBadge: {
@@ -833,7 +833,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: rf(12),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   featureFlagDisabled: {
     color: "rgba(107,114,128,0.5)",
@@ -854,7 +854,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   destructiveButton: {
     backgroundColor: "rgba(239,68,68,0.08)",
@@ -878,7 +878,7 @@ const styles = StyleSheet.create({
   pendingNoticeText: {
     flex: 1,
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(18),
   },
 

@@ -4,7 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
@@ -56,7 +56,7 @@ export const ActionItem: React.FC<ActionItemProps> = ({
                 styles.iconContainer,
                 {
                   backgroundColor: isDanger
-                    ? ResponsiveTheme.colors.errorTint
+                    ? colors.errorTint
                     : `${iconColor}15`,
                 },
               ]}
@@ -64,7 +64,7 @@ export const ActionItem: React.FC<ActionItemProps> = ({
               <Ionicons
                 name={icon}
                 size={rf(18)}
-                color={isDanger ? ResponsiveTheme.colors.error : iconColor}
+                color={isDanger ? colors.error : iconColor}
               />
             </View>
             <View style={styles.textContainer}>
@@ -78,7 +78,7 @@ export const ActionItem: React.FC<ActionItemProps> = ({
             <Ionicons
               name="chevron-forward"
               size={rf(18)}
-              color={ResponsiveTheme.colors.textMuted}
+              color={colors.textMuted}
             />
           </View>
         </GlassCard>
@@ -89,13 +89,13 @@ export const ActionItem: React.FC<ActionItemProps> = ({
 
 const styles = StyleSheet.create({
   actionCard: {
-    marginBottom: ResponsiveTheme.spacing.sm,
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.glassSurface,
   },
   dangerCard: {
-    backgroundColor: `${ResponsiveTheme.colors.error}0F`,
+    backgroundColor: `${colors.error}0F`,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.error}33`,
+    borderColor: `${colors.error}33`,
   },
   actionContent: {
     flexDirection: "row",
@@ -107,23 +107,23 @@ const styles = StyleSheet.create({
     borderRadius: rbr(12),
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
   textContainer: {
     flex: 1,
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   actionTitle: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(2),
   },
   dangerTitle: {
-    color: ResponsiveTheme.colors.error,
+    color: colors.error,
   },
   actionDescription: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
 });

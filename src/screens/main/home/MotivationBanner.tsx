@@ -8,7 +8,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rp, rw } from "../../../utils/responsive";
 import { useProfileStore } from "../../../stores/profileStore";
 
@@ -155,7 +155,7 @@ export const MotivationBanner: React.FC<MotivationBannerProps> = ({
         style={styles.gradient}
       >
         <View style={styles.iconContainer}>
-          <Ionicons name={icon} size={rf(16)} color={ResponsiveTheme.colors.white} />
+          <Ionicons name={icon} size={rf(16)} color={colors.white} />
         </View>
         <View style={styles.textContainer}>
           <Text style={styles.quoteText}>{quote.text}</Text>
@@ -168,21 +168,21 @@ export const MotivationBanner: React.FC<MotivationBannerProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     overflow: "hidden",
   },
   gradient: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    gap: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
   },
   iconContainer: {
     width: rw(32),
     height: rw(32),
     borderRadius: rw(16),
-    backgroundColor: ResponsiveTheme.colors.glassHighlight,
+    backgroundColor: colors.glassHighlight,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   quoteText: {
     fontSize: rf(14),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     letterSpacing: 0.3,
     textShadowColor: 'rgba(0,0,0,0.3)',
     textShadowOffset: { width: 0, height: 1 },
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   subtextText: {
     fontSize: rf(12),
     fontWeight: '600',
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     marginTop: rp(1),
     textShadowColor: 'rgba(0,0,0,0.3)',
     textShadowOffset: { width: 0, height: 1 },

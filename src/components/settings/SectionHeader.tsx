@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf } from "../../utils/responsive";
 
 interface SectionHeaderProps {
@@ -31,18 +31,18 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center" as const,
-    gap: ResponsiveTheme.spacing.xs,
-    marginBottom: ResponsiveTheme.spacing.sm,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+    marginLeft: spacing.xs,
   },
   sectionTitle: {
     fontSize: rf(12),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 1,
   },
   dangerTitle: {
-    color: ResponsiveTheme.colors.error,
+    color: colors.error,
   },
 });

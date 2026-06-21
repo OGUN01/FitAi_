@@ -5,7 +5,7 @@ import {
   MigrationResult,
 } from "../../../services/migration";
 import { rf, rp, rbr } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors } from "../../../theme/aurora-tokens";
 
 interface ActionButtonsProps {
   progress: MigrationProgress | null;
@@ -61,40 +61,40 @@ const styles = StyleSheet.create({
     gap: rp(15),
   },
   completeButton: {
-    backgroundColor: ResponsiveTheme.colors.successAlt,
+    backgroundColor: colors.successAlt,
     paddingVertical: rp(15),
     paddingHorizontal: rp(30),
     borderRadius: rbr(12),
     alignItems: "center",
   },
   completeButtonText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     fontSize: rf(16),
     fontWeight: "600",
   },
   retryButton: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.primaryDark,
+    backgroundColor: colors.primaryDark,
     paddingVertical: rp(15),
     borderRadius: rbr(12),
     alignItems: "center",
   },
   retryButtonText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     fontSize: rf(16),
     fontWeight: "600",
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.errorTint,
+    backgroundColor: colors.errorTint,
     paddingVertical: rp(15),
     borderRadius: rbr(12),
     alignItems: "center",
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.errorAlt,
+    borderColor: colors.errorAlt,
   },
   cancelButtonText: {
-    color: ResponsiveTheme.colors.errorAlt,
+    color: colors.errorAlt,
     fontSize: rf(16),
     fontWeight: "600",
   },

@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rw } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { AnimatedPressable } from "./aurora/AnimatedPressable";
 
 export interface DataPlaceholderProps {
@@ -25,7 +25,7 @@ export const DataPlaceholder: React.FC<DataPlaceholderProps> = ({
       <Ionicons
         name={icon}
         size={rf(32)}
-        color={ResponsiveTheme.colors.textMuted}
+        color={colors.textMuted}
       />
     </View>
     <Text style={placeholderStyles.title}>{title}</Text>
@@ -46,31 +46,31 @@ const placeholderStyles = StyleSheet.create({
     alignItems: "center" as const,
     justifyContent: "center" as const,
     padding: rp(24),
-    backgroundColor: `${ResponsiveTheme.colors.surface}40`,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: `${colors.surface}40`,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.border}30`,
+    borderColor: `${colors.border}30`,
     borderStyle: "dashed",
   },
   iconContainer: {
     width: rf(56),
     height: rf(56),
     borderRadius: rf(28),
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    backgroundColor: `${colors.primary}15`,
     alignItems: "center" as const,
     justifyContent: "center" as const,
     marginBottom: rp(12),
   },
   title: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
     marginBottom: rp(4),
     textAlign: "center",
   },
   message: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(18),
     maxWidth: rw(280),
@@ -79,12 +79,12 @@ const placeholderStyles = StyleSheet.create({
     marginTop: rp(12),
     paddingVertical: rp(8),
     paddingHorizontal: rp(16),
-    backgroundColor: `${ResponsiveTheme.colors.primary}20`,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: `${colors.primary}20`,
+    borderRadius: borderRadius.md,
   },
   actionText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.primary,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary,
   },
 });

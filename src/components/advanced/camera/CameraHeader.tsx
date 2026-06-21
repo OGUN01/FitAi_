@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rbr } from '../../../utils/responsive';
 
 interface CameraHeaderProps {
@@ -46,41 +46,41 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingTop: spacing.lg,
   },
 
   closeButton: {
     width: 44,
     height: 44,
     borderRadius: rbr(22),
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     alignItems: "center" as const,
     justifyContent: "center" as const,
   },
 
   closeIcon: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.lg,
+    color: colors.text,
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold as "600",
+    color: colors.text,
   },
 
   flashButton: {
     width: 44,
     height: 44,
     borderRadius: rbr(22),
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     alignItems: "center" as const,
     justifyContent: "center" as const,
   },
 
   flashIcon: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: fontSize.lg,
   },
 });

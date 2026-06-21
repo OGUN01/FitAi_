@@ -5,7 +5,7 @@
  * - GlassCard for all cards
  * - Ionicons instead of emojis
  * - AnimatedPressable with haptics
- * - ResponsiveTheme for spacing/colors
+ * - aurora-tokens for spacing/colors
  * - FadeInDown entry animations
  */
 
@@ -24,7 +24,7 @@ import { AboutFitAIFeatureCard } from "../../components/settings/AboutFitAIFeatu
 import { AboutFitAISocialButtons } from "../../components/settings/AboutFitAISocialButtons";
 import { useAboutFitAILogic } from "../../hooks/useAboutFitAILogic";
 
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../utils/responsive";
 
 interface AboutFitAIScreenProps {
@@ -60,7 +60,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
           <Animated.View entering={FadeInDown.delay(100).duration(400)}>
             <View style={styles.appSection}>
               <LinearGradient
-                colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]}
+                colors={[colors.primary, colors.primaryLight]}
                 style={styles.appLogo}
               >
               <Text style={styles.appLogoText}>F</Text>
@@ -93,10 +93,10 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
               />
               <View style={styles.missionIconContainer}>
                 <LinearGradient
-                  colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark]}
+                  colors={[colors.primary, colors.primaryDark]}
                   style={styles.missionIcon}
                 >
-                  <Ionicons name="heart-outline" size={rf(24)} color={ResponsiveTheme.colors.white} />
+                  <Ionicons name="heart-outline" size={rf(24)} color={colors.white} />
                 </LinearGradient>
               </View>
               <Text style={styles.missionTitle}>Our Mission</Text>
@@ -113,7 +113,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
               <Ionicons
                 name="star-outline"
                 size={rf(14)}
-                color={ResponsiveTheme.colors.textSecondary}
+                color={colors.textSecondary}
               />
               <Text style={styles.sectionTitle}>Key Features</Text>
             </View>
@@ -135,14 +135,14 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
               <Ionicons
                 name="thumbs-up-outline"
                 size={rf(14)}
-                color={ResponsiveTheme.colors.textSecondary}
+                color={colors.textSecondary}
               />
               <Text style={styles.sectionTitle}>Support FitAI</Text>
             </View>
 
             <AboutFitAIActionItem
               icon="star-outline"
-              iconColor={ResponsiveTheme.colors.warning}
+              iconColor={colors.warning}
               title="Rate the App"
               description="Help others discover FitAI by rating us"
               onPress={handleRateApp}
@@ -151,7 +151,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
 
             <AboutFitAIActionItem
               icon="share-social-outline"
-              iconColor={ResponsiveTheme.colors.success}
+              iconColor={colors.success}
               title="Share with Friends"
               description="Invite friends to join your fitness journey"
               onPress={handleShareApp}
@@ -160,7 +160,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
 
             <AboutFitAIActionItem
               icon="globe-outline"
-              iconColor={ResponsiveTheme.colors.info}
+              iconColor={colors.info}
               title="Visit Our Website"
               description="Learn more about FitAI and our services"
               onPress={handleWebsite}
@@ -174,7 +174,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
               <Ionicons
                 name="logo-buffer"
                 size={rf(14)}
-                color={ResponsiveTheme.colors.textSecondary}
+                color={colors.textSecondary}
               />
               <Text style={styles.sectionTitle}>Follow Us</Text>
             </View>
@@ -188,14 +188,14 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
               <Ionicons
                 name="document-outline"
                 size={rf(14)}
-                color={ResponsiveTheme.colors.textSecondary}
+                color={colors.textSecondary}
               />
               <Text style={styles.sectionTitle}>Legal</Text>
             </View>
 
             <AboutFitAIActionItem
               icon="document-text-outline"
-              iconColor={ResponsiveTheme.colors.textSecondary}
+              iconColor={colors.textSecondary}
               title="Terms of Service"
               description="Review our terms and conditions"
               onPress={handleTermsOfService}
@@ -204,7 +204,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
 
             <AboutFitAIActionItem
               icon="shield-outline"
-              iconColor={ResponsiveTheme.colors.textSecondary}
+              iconColor={colors.textSecondary}
               title="Privacy Policy"
               description="Learn how we protect your data"
               onPress={handlePrivacyPolicy}
@@ -213,7 +213,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
 
             <AboutFitAIActionItem
               icon="code-slash-outline"
-              iconColor={ResponsiveTheme.colors.textSecondary}
+              iconColor={colors.textSecondary}
               title="Open Source Licenses"
               description="Third-party libraries we use"
               onPress={handleOpenSourceLicenses}
@@ -231,7 +231,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
             </Text>
             <View style={styles.madeWithRow}>
               <Text style={styles.copyrightText}>Made with </Text>
-              <Ionicons name="heart" size={rf(12)} color={ResponsiveTheme.colors.error} />
+              <Ionicons name="heart" size={rf(12)} color={colors.error} />
               <Text style={styles.copyrightText}> for fitness enthusiasts</Text>
             </View>
           </Animated.View>
@@ -252,12 +252,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingTop: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
   },
   appSection: {
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   appLogo: {
     width: rw(80),
@@ -265,43 +265,43 @@ const styles = StyleSheet.create({
     borderRadius: rw(20),
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   appLogoText: {
     fontSize: rf(32),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   appName: {
     fontSize: rf(24),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.white,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.white,
+    marginBottom: spacing.xs,
   },
   appTagline: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   versionBadge: {
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     backgroundColor: "rgba(255, 255, 255, 0.08)",
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    borderRadius: borderRadius.full,
   },
   versionText: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     fontWeight: "500",
   },
   missionCard: {
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
     overflow: "hidden",
   },
   missionIconContainer: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   missionIcon: {
     width: rw(48),
@@ -313,50 +313,50 @@ const styles = StyleSheet.create({
   missionTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    color: colors.white,
+    marginBottom: spacing.sm,
   },
   missionText: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(22),
   },
   section: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
-    marginBottom: ResponsiveTheme.spacing.sm,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+    marginLeft: spacing.xs,
   },
   sectionTitle: {
     fontSize: rf(12),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 1,
   },
   featuresGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   copyrightSection: {
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   copyrightText: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     textAlign: "center",
   },
   madeWithRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
   },
   bottomSpacing: {
     height: rh(80),

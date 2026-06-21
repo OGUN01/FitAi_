@@ -26,7 +26,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
 import { rf, rp, rh, rw } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { hapticSwipeAction } from "../../utils/haptics";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -230,7 +230,7 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
             <Ionicons
               name={nextCard.iconName as ComponentProps<typeof Ionicons>['name']}
               size={rf(36)}
-              color={ResponsiveTheme.colors.white}
+              color={colors.white}
               style={styles.cardIcon}
             />
             <Text style={styles.cardTitle}>{nextCard.title}</Text>
@@ -276,7 +276,7 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
               <Ionicons
                 name={currentCard.iconName as ComponentProps<typeof Ionicons>['name']}
                 size={rf(36)}
-                color={ResponsiveTheme.colors.white}
+                color={colors.white}
                 style={styles.cardIcon}
               />
               <Text style={styles.cardTitle}>{currentCard.title}</Text>
@@ -341,7 +341,7 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
                 <Ionicons
                   name={currentCard.iconName as ComponentProps<typeof Ionicons>['name']}
                   size={rf(36)}
-                  color={ResponsiveTheme.colors.white}
+                  color={colors.white}
                   style={styles.cardIcon}
                 />
                 <Text style={styles.cardTitle}>{currentCard.title}</Text>
@@ -395,10 +395,10 @@ const styles = StyleSheet.create({
   card: {
     width: SCREEN_WIDTH * 0.8, // Slightly narrower
     height: rh(200), // Reduced from 350
-    borderRadius: ResponsiveTheme.borderRadius.xl,
+    borderRadius: borderRadius.xl,
     position: "absolute",
     overflow: "hidden",
-    shadowColor: ResponsiveTheme.colors.black,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
 
   cardGradient: {
     flex: 1,
-    padding: ResponsiveTheme.spacing.md, // Reduced from xl
+    padding: spacing.md, // Reduced from xl
     justifyContent: "center",
     alignItems: "center",
   },
@@ -425,77 +425,77 @@ const styles = StyleSheet.create({
   },
 
   cardIcon: {
-    marginBottom: ResponsiveTheme.spacing.sm, // Reduced from md
+    marginBottom: spacing.sm, // Reduced from md
   },
 
   cardTitle: {
-    fontSize: ResponsiveTheme.fontSize.xl, // Reduced from xxl
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
+    fontSize: fontSize.xl, // Reduced from xxl
+    fontWeight: typography.fontWeight.bold,
+    color: colors.white,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.xs, // Reduced from sm
+    marginBottom: spacing.xs, // Reduced from sm
   },
 
   cardDescription: {
-    fontSize: ResponsiveTheme.fontSize.sm, // Reduced from md
-    color: ResponsiveTheme.colors.glassHighlight,
+    fontSize: fontSize.sm, // Reduced from md
+    color: colors.glassHighlight,
     textAlign: "center",
     lineHeight: rf(18),
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.md,
   },
 
   detailsContainer: {
-    marginTop: ResponsiveTheme.spacing.lg,
+    marginTop: spacing.lg,
     alignSelf: "stretch",
-    paddingHorizontal: ResponsiveTheme.spacing.xl,
+    paddingHorizontal: spacing.xl,
   },
 
   detailText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.glassHighlight,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    color: colors.glassHighlight,
+    marginBottom: spacing.xs,
   },
 
   swipeIndicator: {
     position: "absolute",
-    top: ResponsiveTheme.spacing.sm, // Reduced from xl
-    padding: ResponsiveTheme.spacing.xs, // Reduced from md
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    top: spacing.sm, // Reduced from xl
+    padding: spacing.xs, // Reduced from md
+    borderRadius: borderRadius.md,
     borderWidth: 2,
   },
 
   swipeLeft: {
-    left: ResponsiveTheme.spacing.sm, // Reduced from xl
-    borderColor: ResponsiveTheme.colors.error,
-    backgroundColor: ResponsiveTheme.colors.errorTint,
+    left: spacing.sm, // Reduced from xl
+    borderColor: colors.error,
+    backgroundColor: colors.errorTint,
   },
 
   swipeRight: {
-    right: ResponsiveTheme.spacing.sm, // Reduced from xl
-    borderColor: ResponsiveTheme.colors.success,
-    backgroundColor: ResponsiveTheme.colors.successTint,
+    right: spacing.sm, // Reduced from xl
+    borderColor: colors.success,
+    backgroundColor: colors.successTint,
   },
 
   swipeIndicatorText: {
-    fontSize: ResponsiveTheme.fontSize.xs, // Reduced from md
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
+    fontSize: fontSize.xs, // Reduced from md
+    fontWeight: typography.fontWeight.bold,
+    color: colors.white,
   },
 
   progressContainer: {
     position: "absolute",
-    bottom: ResponsiveTheme.spacing.md,
+    bottom: spacing.md,
     alignSelf: "center",
-    backgroundColor: ResponsiveTheme.colors.overlay,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: colors.overlay,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
   },
 
   progressText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.white,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.white,
   },
 
   instructions: {
@@ -505,31 +505,31 @@ const styles = StyleSheet.create({
   },
 
   instructionText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
     fontStyle: "italic",
   },
 
   completedContainer: {
     alignItems: "center",
     justifyContent: "center",
-    padding: ResponsiveTheme.spacing.xl,
+    padding: spacing.xl,
   },
 
   completedIcon: {
     fontSize: rf(64),
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   completedText: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
 
   completedSubtext: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
 });

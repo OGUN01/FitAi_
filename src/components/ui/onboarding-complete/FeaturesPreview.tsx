@@ -2,24 +2,24 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AnimatedRN, { FadeInUp } from "react-native-reanimated";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf } from "../../../utils/responsive";
 
 const FEATURES = [
   {
     icon: "sparkles",
     text: "AI-powered workout plans",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   {
     icon: "nutrition",
     text: "Smart meal recommendations",
-    color: ResponsiveTheme.colors.successAlt,
+    color: colors.successAlt,
   },
   {
     icon: "trending-up",
     text: "Progress tracking & insights",
-    color: ResponsiveTheme.colors.errorLight,
+    color: colors.errorLight,
   },
 ];
 
@@ -45,17 +45,17 @@ export const FeaturesPreview: React.FC = () => {
 
 const styles = StyleSheet.create({
   featuresContainer: {
-    marginBottom: ResponsiveTheme.spacing.xl,
-    gap: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.xl,
+    gap: spacing.sm,
   },
   featureItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   featureText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
 });

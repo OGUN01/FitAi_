@@ -1,7 +1,7 @@
 ﻿import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Card } from "../ui";
-import { ResponsiveTheme } from '../../utils/constants';
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
 import { rw, rh, rbr } from '../../utils/responsive';
 
 interface Exercise {
@@ -70,29 +70,29 @@ export const ExerciseListItem: React.FC<ExerciseListItemProps> = ({
 
 const styles = StyleSheet.create({
   exerciseCard: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   exerciseHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   exerciseNumber: {
     width: rw(32),
     height: rh(32),
     borderRadius: rbr(16),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
 
   exerciseNumberText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.white,
   },
 
   exerciseInfo: {
@@ -100,52 +100,52 @@ const styles = StyleSheet.create({
   },
 
   exerciseName: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs / 2,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.xs / 2,
   },
 
   exerciseDetails: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.xs / 2,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs / 2,
   },
 
   exerciseRest: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
   },
 
   exerciseArrow: {
     width: rw(32),
     height: rh(32),
     borderRadius: rbr(16),
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
 
   exerciseArrowText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
   },
 
   exerciseMuscles: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.xs / 2,
+    gap: spacing.xs / 2,
   },
 
   exerciseMuscleTag: {
-    backgroundColor: ResponsiveTheme.colors.secondary + "20",
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
-    paddingVertical: ResponsiveTheme.spacing.xs / 4,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    backgroundColor: colors.secondary + "20",
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs / 4,
+    borderRadius: borderRadius.sm,
   },
 
   exerciseMuscleText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.secondary,
+    fontSize: fontSize.xs,
+    color: colors.secondary,
   },
 });

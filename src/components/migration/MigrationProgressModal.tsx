@@ -15,7 +15,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
 } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rbr, rh, rw } from "../../utils/responsive";
 import { migrationManager } from "../../services/migrationManager";
 import { MigrationStatus } from "../../types/profileData";
@@ -251,10 +251,10 @@ export const MigrationProgressModal: React.FC<MigrationStatusModalProps> = ({
                               outputRange: ["0%", "100%"],
                             }),
                             backgroundColor: hasErrors
-                              ? ResponsiveTheme.colors.error
+                              ? colors.error
                               : isComplete
-                                ? ResponsiveTheme.colors.success
-                                : ResponsiveTheme.colors.primary,
+                                ? colors.success
+                                : colors.primary,
                           },
                         ]}
                       />
@@ -329,16 +329,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
 
   modal: {
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.xl,
-    padding: ResponsiveTheme.spacing.xl,
-    width: SCREEN_WIDTH - ResponsiveTheme.spacing.lg * 2,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl,
+    width: SCREEN_WIDTH - spacing.lg * 2,
     maxWidth: rw(400),
-    shadowColor: ResponsiveTheme.colors.black,
+    shadowColor: colors.black,
     shadowOffset: {
       width: 0,
       height: 8,
@@ -351,55 +351,55 @@ const styles = StyleSheet.create({
 
   header: {
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: spacing.xl,
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.xs,
     textAlign: "center",
   },
 
   subtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(20),
   },
 
   progressSection: {
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: spacing.xl,
   },
 
   stepInfo: {
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   stepIcon: {
     fontSize: rf(32),
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   stepTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
     textAlign: "center",
   },
 
   progressBarContainer: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   progressBarBackground: {
     height: rh(8),
-    backgroundColor: ResponsiveTheme.colors.border,
+    backgroundColor: colors.border,
     borderRadius: rbr(4),
     overflow: "hidden",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   progressBarFill: {
@@ -408,67 +408,67 @@ const styles = StyleSheet.create({
   },
 
   progressText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
     textAlign: "center",
   },
 
   statusMessage: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(20),
   },
 
   errorMessage: {
-    color: ResponsiveTheme.colors.error,
+    color: colors.error,
   },
 
   successMessage: {
-    color: ResponsiveTheme.colors.success,
+    color: colors.success,
   },
 
   actions: {
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
 
   actionButton: {
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.lg,
     alignItems: "center",
   },
 
   continueButton: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
 
   retryButton: {
-    backgroundColor: ResponsiveTheme.colors.error,
+    backgroundColor: colors.error,
   },
 
   actionButtonText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
   },
 
   continueButtonText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 
   retryButtonText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 
   cancelButton: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
     alignItems: "center",
   },
 
   cancelButtonText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
 });
 

@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { rh, rw } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatShadows as shadows } from "../../theme/aurora-tokens";
 
 // REMOVED: Module-level Dimensions.get() causes crash - use rw/rh functions instead
 // const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -114,7 +114,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
               styles.bottomSheetContent,
               {
                 height: height as DimensionValue,
-                paddingBottom: insets.bottom + ResponsiveTheme.spacing.lg,
+                paddingBottom: insets.bottom + spacing.lg,
               },
             ]}
           >
@@ -130,22 +130,22 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.overlayDark,
+    backgroundColor: colors.overlayDark,
   },
   container: {
     flex: 1,
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
 
   content: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: ResponsiveTheme.borderRadius.xl,
-    padding: ResponsiveTheme.spacing.lg,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
     width: "90%", // Use percentage instead of screenWidth calculation
     maxHeight: "80%", // Use percentage instead of screenHeight calculation
-    ...ResponsiveTheme.shadows.lg,
+    ...shadows.lg,
   },
 
   // Bottom Sheet styles
@@ -155,21 +155,21 @@ const styles = StyleSheet.create({
   },
 
   bottomSheetContent: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderTopLeftRadius: ResponsiveTheme.borderRadius.xxl,
-    borderTopRightRadius: ResponsiveTheme.borderRadius.xxl,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingBottom: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.md,
-    ...ResponsiveTheme.shadows.lg,
+    backgroundColor: colors.backgroundSecondary,
+    borderTopLeftRadius: borderRadius.xxl,
+    borderTopRightRadius: borderRadius.xxl,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
+    paddingTop: spacing.md,
+    ...shadows.lg,
   },
 
   bottomSheetHandle: {
     width: rw(40),
     height: rh(4),
-    backgroundColor: ResponsiveTheme.colors.textMuted,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: colors.textMuted,
+    borderRadius: borderRadius.full,
     alignSelf: "center",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
 });

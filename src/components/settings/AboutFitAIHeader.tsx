@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
@@ -25,14 +25,14 @@ export const AboutFitAIHeader: React.FC<AboutFitAIHeaderProps> = ({
         hapticFeedback={false}
       >
         <View style={styles.backButton}>
-          <Ionicons name="chevron-back" size={rf(20)} color={ResponsiveTheme.colors.text} />
+          <Ionicons name="chevron-back" size={rf(20)} color={colors.text} />
         </View>
       </AnimatedPressable>
       <View style={styles.headerCenter}>
         <Ionicons
           name="information-circle-outline"
           size={rf(18)}
-          color={ResponsiveTheme.colors.primary}
+          color={colors.primary}
         />
         <Text style={styles.headerTitle}>About FitAI</Text>
       </View>
@@ -46,26 +46,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
   backButton: {
     width: rw(40),
     height: rw(40),
     borderRadius: rbr(20),
-    backgroundColor: ResponsiveTheme.colors.glassBorder,
+    backgroundColor: colors.glassBorder,
     justifyContent: "center",
     alignItems: "center",
   },
   headerCenter: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   headerTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   headerSpacer: {
     width: rw(40),

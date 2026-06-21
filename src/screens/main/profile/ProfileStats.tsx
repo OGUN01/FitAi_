@@ -14,7 +14,7 @@ import Animated, { FadeInRight } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw, rp } from '../../../utils/responsive';
 import { haptics } from "../../../utils/haptics";
 
@@ -112,40 +112,40 @@ export const ProfileStats: React.FC<ProfileStatsProps> = ({
       label: 'Day Streak',
       value: currentStreak,
       icon: 'flame',
-      color: ResponsiveTheme.colors.errorLight,
-      gradientColors: [ResponsiveTheme.colors.errorLight, ResponsiveTheme.colors.errorAlt],
+      color: colors.errorLight,
+      gradientColors: [colors.errorLight, colors.errorAlt],
     },
     {
       id: 'workouts',
       label: 'Workouts',
       value: totalWorkouts,
       icon: 'barbell',
-      color: ResponsiveTheme.colors.successAlt,
-      gradientColors: [ResponsiveTheme.colors.successAlt, ResponsiveTheme.colors.successAltDark],
+      color: colors.successAlt,
+      gradientColors: [colors.successAlt, colors.successAltDark],
     },
     {
       id: 'calories',
       label: 'Calories',
       value: totalCaloriesBurned,
       icon: 'flash',
-      color: ResponsiveTheme.colors.amber,
-      gradientColors: [ResponsiveTheme.colors.amber, ResponsiveTheme.colors.warningAlt],
+      color: colors.amber,
+      gradientColors: [colors.amber, colors.warningAlt],
     },
     {
       id: 'best-streak',
       label: 'Best Streak',
       value: longestStreak,
       icon: 'trophy',
-      color: ResponsiveTheme.colors.primary,
-      gradientColors: [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark],
+      color: colors.primary,
+      gradientColors: [colors.primary, colors.primaryDark],
     },
     {
       id: 'achievements',
       label: 'Achievements',
       value: achievements,
       icon: 'ribbon',
-      color: ResponsiveTheme.colors.gold,
-      gradientColors: [ResponsiveTheme.colors.gold, ResponsiveTheme.colors.amberBright],
+      color: colors.gold,
+      gradientColors: [colors.gold, colors.amberBright],
     },
   ];
 
@@ -167,24 +167,24 @@ export const ProfileStats: React.FC<ProfileStatsProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.lg,
-    paddingHorizontal: rp(ResponsiveTheme.spacing.lg),
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
+    paddingHorizontal: rp(spacing.lg),
   },
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: rp(ResponsiveTheme.spacing.sm),
+    gap: rp(spacing.sm),
   },
   statCardWrapper: {
     width: "31.5%",
   },
   statCard: {
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
     width: "100%",
     backgroundColor: "rgba(255, 255, 255, 0.03)",
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     borderRadius: rw(16),
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   statValue: {
     fontSize: rf(20),
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: rf(10),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     flexShrink: 1,
   },

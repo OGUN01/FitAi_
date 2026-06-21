@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rbr } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors } from "../../../theme/aurora-tokens";
 
 interface ConflictStats {
   total: number;
@@ -53,7 +53,7 @@ export const ConflictHeader: React.FC<ConflictHeaderProps> = ({
           <Ionicons
             name="flash"
             size={rf(16)}
-            color={ResponsiveTheme.colors.white}
+            color={colors.white}
           />
           <Text style={styles.autoResolveText}>
             Auto-Resolve {stats.autoResolvable} Conflicts
@@ -69,17 +69,17 @@ const styles = StyleSheet.create({
     padding: rp(20),
     paddingTop: rp(60),
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.glassBorder,
+    borderBottomColor: colors.glassBorder,
   },
   title: {
     fontSize: rf(28),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     marginBottom: rp(8),
   },
   subtitle: {
     fontSize: rf(16),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rp(20),
   },
   statsContainer: {
@@ -93,25 +93,25 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: rf(24),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.primaryDark,
+    color: colors.primaryDark,
   },
   statLabel: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(4),
   },
   autoResolveButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: ResponsiveTheme.colors.primaryDark,
+    backgroundColor: colors.primaryDark,
     paddingVertical: rp(12),
     paddingHorizontal: rp(20),
     borderRadius: rbr(10),
     gap: rp(8),
   },
   autoResolveText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     fontSize: rf(14),
     fontWeight: "600",
   },

@@ -7,7 +7,7 @@ import {
   ViewStyle,
 } from "react-native";
 import { PieChart } from "react-native-chart-kit";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rs, rbr, rh } from "../../utils/responsive";
 
 // REMOVED: Module-level Dimensions.get() causes crash
@@ -38,30 +38,30 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
     {
       name: "Carbs",
       population: data.carbs,
-      color: ResponsiveTheme.colors.secondary,
-      legendFontColor: ResponsiveTheme.colors.textSecondary,
+      color: colors.secondary,
+      legendFontColor: colors.textSecondary,
       legendFontSize: rf(12),
     },
     {
       name: "Protein",
       population: data.protein,
-      color: ResponsiveTheme.colors.primary,
-      legendFontColor: ResponsiveTheme.colors.textSecondary,
+      color: colors.primary,
+      legendFontColor: colors.textSecondary,
       legendFontSize: rf(12),
     },
     {
       name: "Fat",
       population: data.fat,
-      color: ResponsiveTheme.colors.warning,
-      legendFontColor: ResponsiveTheme.colors.textSecondary,
+      color: colors.warning,
+      legendFontColor: colors.textSecondary,
       legendFontSize: rf(12),
     },
   ];
 
   const chartConfig = {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    backgroundGradientFrom: ResponsiveTheme.colors.backgroundTertiary,
-    backgroundGradientTo: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
+    backgroundGradientFrom: colors.backgroundTertiary,
+    backgroundGradientTo: colors.backgroundTertiary,
     color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
     labelColor: (opacity = 1) => `rgba(176, 176, 176, ${opacity})`,
   };
@@ -85,19 +85,19 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
       name: "Carbs",
       grams: data.carbs,
       percentage: carbsPercentage,
-      color: ResponsiveTheme.colors.secondary,
+      color: colors.secondary,
     },
     {
       name: "Protein",
       grams: data.protein,
       percentage: proteinPercentage,
-      color: ResponsiveTheme.colors.primary,
+      color: colors.primary,
     },
     {
       name: "Fat",
       grams: data.fat,
       percentage: fatPercentage,
-      color: ResponsiveTheme.colors.warning,
+      color: colors.warning,
     },
   ];
 
@@ -122,8 +122,8 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
                 width: `${Math.min(caloriesProgress, 100)}%`,
                 backgroundColor:
                   caloriesProgress > 100
-                    ? ResponsiveTheme.colors.error
-                    : ResponsiveTheme.colors.primary,
+                    ? colors.error
+                    : colors.primary,
               },
             ]}
           />
@@ -180,23 +180,23 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: ResponsiveTheme.spacing.md,
-    marginVertical: ResponsiveTheme.spacing.sm,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginVertical: spacing.sm,
   },
 
   header: {
     flexDirection: "row",
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
   },
 
   caloriesContainer: {
@@ -204,66 +204,66 @@ const styles = StyleSheet.create({
   },
 
   caloriesValue: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.primary,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
   },
 
   caloriesLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
 
   progressContainer: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   progressBar: {
     height: rh(8),
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.sm,
     overflow: "hidden",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
 
   progressFill: {
     height: "100%",
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    borderRadius: borderRadius.sm,
   },
 
   progressText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
   },
 
   chartContainer: {
     alignItems: "center" as const,
-    marginVertical: ResponsiveTheme.spacing.md,
+    marginVertical: spacing.md,
   },
 
   noDataContainer: {
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    paddingVertical: ResponsiveTheme.spacing.xxl,
+    paddingVertical: spacing.xxl,
   },
 
   noDataText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
 
   noDataSubtext: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
   },
 
   macroStats: {
     flexDirection: "row",
     justifyContent: "space-between" as const,
-    marginTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.md,
   },
 
   macroItem: {
@@ -274,30 +274,30 @@ const styles = StyleSheet.create({
   macroHeader: {
     flexDirection: "row",
     alignItems: "center" as const,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
 
   macroColorDot: {
     width: rs(8),
     height: rs(8),
     borderRadius: rbr(4),
-    marginRight: ResponsiveTheme.spacing.xs,
+    marginRight: spacing.xs,
   },
 
   macroName: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
 
   macroGrams: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs / 2,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.xs / 2,
   },
 
   macroPercentage: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
   },
 });

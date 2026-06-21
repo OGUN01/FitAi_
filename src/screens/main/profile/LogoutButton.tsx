@@ -13,7 +13,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 
@@ -51,7 +51,7 @@ export const LogoutButton: React.FC<LogoutButtonProps> = ({
               <Ionicons
                 name="log-out-outline"
                 size={rf(20)}
-                color={ResponsiveTheme.colors.error}
+                color={colors.error}
               />
             </View>
             <Text style={styles.text}>Sign Out</Text>
@@ -64,8 +64,8 @@ export const LogoutButton: React.FC<LogoutButtonProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
   },
   card: {
     backgroundColor: "rgba(244, 67, 54, 0.08)",
@@ -76,15 +76,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
   },
   iconContainer: {
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   text: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.error,
+    color: colors.error,
   },
 });
 

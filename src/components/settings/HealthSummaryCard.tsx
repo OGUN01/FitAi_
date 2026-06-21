@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rp, rbr } from '../../utils/responsive';
 
 interface HealthSummary {
@@ -20,7 +20,7 @@ export const HealthSummaryCard: React.FC<HealthSummaryCardProps> = ({
   return (
     <View
       style={{
-        backgroundColor: ResponsiveTheme.colors.surface,
+        backgroundColor: colors.surface,
         marginHorizontal: rp(16),
         marginBottom: rp(16),
         borderRadius: rbr(12),
@@ -31,7 +31,7 @@ export const HealthSummaryCard: React.FC<HealthSummaryCardProps> = ({
         style={{
           fontSize: rf(16),
           fontWeight: "600",
-          color: ResponsiveTheme.colors.text,
+          color: colors.text,
           marginBottom: rp(12),
         }}
       >
@@ -56,12 +56,12 @@ export const HealthSummaryCard: React.FC<HealthSummaryCardProps> = ({
             style={{
               fontSize: rf(24),
               fontWeight: "bold",
-              color: ResponsiveTheme.colors.primary,
+              color: colors.primary,
             }}
           >
             {summary.dailySteps?.toLocaleString() || "0"}
           </Text>
-          <Text style={{ fontSize: rf(14), color: ResponsiveTheme.colors.textSecondary }}>
+          <Text style={{ fontSize: rf(14), color: colors.textSecondary }}>
             Steps
           </Text>
         </View>
@@ -77,12 +77,12 @@ export const HealthSummaryCard: React.FC<HealthSummaryCardProps> = ({
             style={{
               fontSize: rf(24),
               fontWeight: "bold",
-              color: ResponsiveTheme.colors.secondary,
+              color: colors.secondary,
             }}
           >
             {summary.dailyCalories || "0"}
           </Text>
-          <Text style={{ fontSize: rf(14), color: ResponsiveTheme.colors.textSecondary }}>
+          <Text style={{ fontSize: rf(14), color: colors.textSecondary }}>
             Calories
           </Text>
         </View>
@@ -99,12 +99,12 @@ export const HealthSummaryCard: React.FC<HealthSummaryCardProps> = ({
               style={{
                 fontSize: rf(24),
                 fontWeight: "bold",
-                color: ResponsiveTheme.colors.success,
+                color: colors.success,
               }}
             >
               {summary.lastWeight.toFixed(1)}
             </Text>
-            <Text style={{ fontSize: rf(14), color: ResponsiveTheme.colors.textSecondary }}>
+            <Text style={{ fontSize: rf(14), color: colors.textSecondary }}>
               kg
             </Text>
           </View>
@@ -122,12 +122,12 @@ export const HealthSummaryCard: React.FC<HealthSummaryCardProps> = ({
               style={{
                 fontSize: rf(24),
                 fontWeight: "bold",
-                color: ResponsiveTheme.colors.info,
+                color: colors.info,
               }}
             >
               {summary.sleepHours.toFixed(1)}
             </Text>
-            <Text style={{ fontSize: rf(14), color: ResponsiveTheme.colors.textSecondary }}>
+            <Text style={{ fontSize: rf(14), color: colors.textSecondary }}>
               Sleep (h)
             </Text>
           </View>

@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { Animated, Easing, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf, rs, rbr } from "../../../utils/responsive";
 
 export const AnimatedCheckmark: React.FC = () => {
@@ -48,12 +48,12 @@ export const AnimatedCheckmark: React.FC = () => {
       ]}
     >
       <LinearGradient
-        colors={[ResponsiveTheme.colors.successAlt, ResponsiveTheme.colors.successAltDark]}
+        colors={[colors.successAlt, colors.successAltDark]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.checkmarkGradient}
       >
-        <Ionicons name="checkmark" size={rf(48)} color={ResponsiveTheme.colors.white} />
+        <Ionicons name="checkmark" size={rf(48)} color={colors.white} />
       </LinearGradient>
     </Animated.View>
   );
@@ -62,7 +62,7 @@ export const AnimatedCheckmark: React.FC = () => {
 const styles = StyleSheet.create({
   checkmarkContainer: {
     alignSelf: "center",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   checkmarkGradient: {
     width: rs(80),

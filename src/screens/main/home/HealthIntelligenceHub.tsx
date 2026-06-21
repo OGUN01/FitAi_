@@ -14,7 +14,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassCard } from '../../../components/ui/aurora/GlassCard';
 import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../../utils/constants';
+import { flatColors as colors, spacing, borderRadius } from '../../../theme/aurora-tokens';
 import { rf, rw } from '../../../utils/responsive';
 import { useHealthIntelligenceLogic } from '../../../hooks/useHealthIntelligenceLogic';
 import { RecoveryRing } from '../../../components/home/RecoveryRing';
@@ -83,7 +83,7 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = React
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Ionicons name="pulse" size={rf(16)} color={ResponsiveTheme.colors.primary} />
+            <Ionicons name="pulse" size={rf(16)} color={colors.primary} />
             <Text style={styles.headerTitle}>Health Intelligence</Text>
           </View>
           <View style={[styles.statusBadge, { backgroundColor: `${recoveryColor}20` }]}>
@@ -104,7 +104,7 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = React
               label="Resting HR"
               value={restingHeartRate ? `${restingHeartRate}` : '--'}
               subvalue="bpm"
-              color={ResponsiveTheme.colors.errorLight}
+              color={colors.errorLight}
               trend={hrTrend}
               onPress={() => onDetailPress?.('heart')}
               delay={100}
@@ -115,7 +115,7 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = React
               label="Sleep"
               value={sleepHours && sleepHours > 0 ? `${sleepHours.toFixed(1)}` : '--'}
               subvalue="hrs"
-              color={ResponsiveTheme.colors.primary}
+              color={colors.primary}
               onPress={() => onDetailPress?.('sleep')}
               delay={200}
               containerStyle={styles.metricCell}
@@ -134,7 +134,7 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = React
 
         {/* Bottom Insight */}
         <View style={styles.insightContainer}>
-          <Ionicons name="bulb-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+          <Ionicons name="bulb-outline" size={rf(14)} color={colors.primary} />
           <Text style={styles.insightText}>{insightText}</Text>
         </View>
       </GlassCard>
@@ -147,26 +147,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   headerTitle: {
     fontSize: rf(14),
     fontWeight: '700',
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     letterSpacing: 0.3,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.full,
-    gap: ResponsiveTheme.spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    gap: spacing.xs,
   },
   statusDot: {
     width: rw(6),
@@ -180,13 +180,13 @@ const styles = StyleSheet.create({
   content: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   metricsGrid: {
     flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   metricCell: {
     width: '47%',
@@ -197,17 +197,17 @@ const styles = StyleSheet.create({
   insightContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: ResponsiveTheme.spacing.sm,
-    marginTop: ResponsiveTheme.spacing.md,
-    paddingTop: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.glassBorder,
+    borderTopColor: colors.glassBorder,
   },
   insightText: {
     flex: 1,
     fontSize: rf(11),
     fontWeight: '500',
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(16),
   },
 });

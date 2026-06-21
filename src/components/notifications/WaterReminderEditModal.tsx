@@ -11,7 +11,7 @@ import {
   Platform,
 } from "react-native";
 import { Card, Button } from "../ui";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import Constants from "expo-constants";
 
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -391,29 +391,29 @@ export const WaterReminderEditModal: React.FC<WaterReminderEditModalProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
 
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.border,
+    borderBottomColor: colors.border,
   },
 
   cancelButton: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.md,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.medium,
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
   },
 
   content: {
@@ -421,121 +421,121 @@ const styles = StyleSheet.create({
   },
 
   section: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
 
   sectionDescription: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
     lineHeight: 20,
   },
 
   card: {
-    padding: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.md,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
   },
 
   cardContent: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   inputLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
 
   textInput: {
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    padding: ResponsiveTheme.spacing.md,
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    fontSize: fontSize.md,
+    color: colors.text,
+    backgroundColor: colors.backgroundSecondary,
   },
 
   presetButtons: {
     flexDirection: "row",
     justifyContent: "space-around",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
 
   presetButton: {
     flex: 1,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderColor: colors.border,
+    backgroundColor: colors.backgroundSecondary,
     alignItems: "center",
   },
 
   presetButtonActive: {
-    borderColor: ResponsiveTheme.colors.primary,
-    backgroundColor: ResponsiveTheme.colors.primary + "20",
+    borderColor: colors.primary,
+    backgroundColor: colors.primary + "20",
   },
 
   presetButtonText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
   },
 
   presetButtonTextActive: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
 
   previewCard: {
-    padding: ResponsiveTheme.spacing.lg,
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    padding: spacing.lg,
+    backgroundColor: colors.backgroundTertiary,
   },
 
   previewRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   previewLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
   },
 
   previewValue: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    fontSize: fontSize.sm,
+    color: colors.text,
+    fontWeight: typography.fontWeight.semibold,
   },
 
   previewNote: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
-    marginTop: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginTop: spacing.sm,
     fontStyle: "italic",
     lineHeight: 16,
   },
 
   buttonContainer: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginTop: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.lg,
   },
 
   bottomSpacing: {
-    height: ResponsiveTheme.spacing.xl,
+    height: spacing.xl,
   },
 });
 

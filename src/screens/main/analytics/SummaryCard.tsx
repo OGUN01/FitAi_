@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../../utils/responsive";
 import { TrendPeriod } from "../../../hooks/useProgressTrendsLogic";
 import { DailyMetrics } from "../../../services/analyticsData";
@@ -56,14 +56,14 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
 
 const styles = StyleSheet.create({
   summaryCard: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rbr(16),
     padding: rp(16),
   },
   summaryTitle: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(12),
   },
   summaryStats: {
@@ -76,11 +76,11 @@ const styles = StyleSheet.create({
   summaryStatValue: {
     fontSize: rf(24),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   summaryStatLabel: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(6),
   },
 });

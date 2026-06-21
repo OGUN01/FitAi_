@@ -17,7 +17,7 @@ import {
   ResolutionStrategy,
   ConflictResolutionResult,
 } from "../../services/conflictResolution";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../utils/responsive";
 
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -51,15 +51,15 @@ const ConflictItem: React.FC<ConflictItemProps> = ({
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case "critical":
-        return ResponsiveTheme.colors.errorAlt;
+        return colors.errorAlt;
       case "high":
-        return ResponsiveTheme.colors.warningAlt;
+        return colors.warningAlt;
       case "medium":
-        return ResponsiveTheme.colors.info;
+        return colors.info;
       case "low":
-        return ResponsiveTheme.colors.successAlt;
+        return colors.successAlt;
       default:
-        return ResponsiveTheme.colors.textTertiary;
+        return colors.textTertiary;
     }
   };
 
@@ -196,7 +196,7 @@ const ConflictItem: React.FC<ConflictItemProps> = ({
               <Ionicons
                 name="checkmark-circle"
                 size={20}
-                color={ResponsiveTheme.colors.successAlt}
+                color={colors.successAlt}
               />
             )}
           </TouchableOpacity>
@@ -286,8 +286,8 @@ export const ConflictResolutionComponent: React.FC<ConflictResolutionProps> = ({
       <View style={styles.container}>
         <LinearGradient
           colors={[
-            ResponsiveTheme.colors.backgroundSecondary,
-            ResponsiveTheme.colors.background,
+            colors.backgroundSecondary,
+            colors.background,
           ]}
           style={styles.gradient}
         >
@@ -320,7 +320,7 @@ export const ConflictResolutionComponent: React.FC<ConflictResolutionProps> = ({
                 <Ionicons
                   name="flash"
                   size={16}
-                  color={ResponsiveTheme.colors.white}
+                  color={colors.white}
                 />
                 <Text style={styles.autoResolveText}>
                   Auto-Resolve {stats.autoResolvable} Conflicts
@@ -383,17 +383,17 @@ const styles = StyleSheet.create({
     padding: rp(20),
     paddingTop: rp(60),
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.glassBorder,
+    borderBottomColor: colors.glassBorder,
   },
   title: {
     fontSize: rf(28),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     marginBottom: rp(8),
   },
   subtitle: {
     fontSize: rf(16),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rp(20),
   },
   statsContainer: {
@@ -407,25 +407,25 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: rf(24),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.primaryDark,
+    color: colors.primaryDark,
   },
   statLabel: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(4),
   },
   autoResolveButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: ResponsiveTheme.colors.primaryDark,
+    backgroundColor: colors.primaryDark,
     paddingVertical: rp(12),
     paddingHorizontal: rp(20),
     borderRadius: rbr(10),
     gap: rp(8),
   },
   autoResolveText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     fontSize: rf(14),
     fontWeight: "600",
   },
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     padding: rp(20),
     marginBottom: rp(20),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassBorder,
+    borderColor: colors.glassBorder,
   },
   conflictHeader: {
     marginBottom: rp(15),
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
   conflictField: {
     fontSize: rf(18),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     flex: 1,
   },
   severityBadge: {
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
   severityText: {
     fontSize: rf(10),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   conflictValues: {
     marginBottom: rp(20),
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
   valueLabel: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rp(6),
   },
   valueBox: {
@@ -482,11 +482,11 @@ const styles = StyleSheet.create({
     borderRadius: rbr(8),
     padding: rp(12),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassBorder,
+    borderColor: colors.glassBorder,
   },
   valueText: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     fontFamily: "monospace",
   },
   resolutionOptions: {
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
   resolutionLabel: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     marginBottom: rp(12),
   },
   resolutionOption: {
@@ -505,11 +505,11 @@ const styles = StyleSheet.create({
     borderRadius: rbr(10),
     padding: rp(15),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassBorder,
+    borderColor: colors.glassBorder,
   },
   resolutionOptionSelected: {
-    backgroundColor: ResponsiveTheme.colors.successTint,
-    borderColor: ResponsiveTheme.colors.successAlt,
+    backgroundColor: colors.successTint,
+    borderColor: colors.successAlt,
   },
   resolutionOptionContent: {
     flex: 1,
@@ -517,18 +517,18 @@ const styles = StyleSheet.create({
   resolutionOptionLabel: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(2),
   },
   resolutionOptionLabelSelected: {
-    color: ResponsiveTheme.colors.successAlt,
+    color: colors.successAlt,
   },
   resolutionOptionDescription: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   resolutionOptionDescriptionSelected: {
-    color: ResponsiveTheme.colors.successAlt,
+    color: colors.successAlt,
   },
   footer: {
     flexDirection: "row",
@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
     paddingBottom: rp(40),
     gap: rp(15),
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.glassBorder,
+    borderTopColor: colors.glassBorder,
   },
   cancelButton: {
     flex: 1,
@@ -545,16 +545,16 @@ const styles = StyleSheet.create({
     borderRadius: rbr(12),
     alignItems: "center",
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.errorAlt,
+    borderColor: colors.errorAlt,
   },
   cancelButtonText: {
-    color: ResponsiveTheme.colors.errorAlt,
+    color: colors.errorAlt,
     fontSize: rf(16),
     fontWeight: "600",
   },
   resolveButton: {
     flex: 2,
-    backgroundColor: ResponsiveTheme.colors.successAlt,
+    backgroundColor: colors.successAlt,
     paddingVertical: rp(15),
     borderRadius: rbr(12),
     alignItems: "center",
@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(107, 114, 128, 0.3)",
   },
   resolveButtonText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     fontSize: rf(16),
     fontWeight: "600",
   },

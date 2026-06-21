@@ -6,7 +6,7 @@ import Animated, {
   withDelay,
 } from "react-native-reanimated";
 import { rp } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 
 interface HeartRateZone {
   zone: number;
@@ -110,11 +110,11 @@ export const ColorCodedZones: React.FC<ColorCodedZonesProps> = ({
 
 // Default color palette for zones
 export const HEART_RATE_ZONE_COLORS = {
-  zone1: ResponsiveTheme.colors.info, // Light blue - Recovery
-  zone2: ResponsiveTheme.colors.success, // Green - Fat burn
-  zone3: ResponsiveTheme.colors.warning, // Yellow - Cardio
-  zone4: ResponsiveTheme.colors.warning, // Orange - Hard
-  zone5: ResponsiveTheme.colors.error, // Red - Max
+  zone1: colors.info, // Light blue - Recovery
+  zone2: colors.success, // Green - Fat burn
+  zone3: colors.warning, // Yellow - Cardio
+  zone4: colors.warning, // Orange - Hard
+  zone5: colors.error, // Red - Max
 };
 
 // Helper function to calculate zones based on max HR
@@ -170,13 +170,13 @@ const styles = StyleSheet.create({
   },
 
   zonesContainer: {
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
 
   zoneRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
 
   zoneInfo: {
@@ -184,27 +184,27 @@ const styles = StyleSheet.create({
   },
 
   zoneNumber: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
   },
 
   zoneName: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
   },
 
   zoneBPM: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
   },
 
   zoneBarContainer: {
     flex: 1,
     height: rp(32),
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.md,
     overflow: "hidden",
   },
 
@@ -212,46 +212,46 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "flex-end",
-    paddingRight: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingRight: spacing.sm,
+    borderRadius: borderRadius.md,
   },
 
   zonePercentage: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
+    fontSize: fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.white,
   },
 
   zonePercentageOutside: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textSecondary,
     width: rp(40),
     textAlign: "right",
   },
 
   legend: {
-    marginTop: ResponsiveTheme.spacing.lg,
-    padding: ResponsiveTheme.spacing.md,
-    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    marginTop: spacing.lg,
+    padding: spacing.md,
+    backgroundColor: `${colors.primary}10`,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.primary}30`,
+    borderColor: `${colors.primary}30`,
   },
 
   legendTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
 
   legendGrid: {
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
 
   legendItem: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
   },
 });

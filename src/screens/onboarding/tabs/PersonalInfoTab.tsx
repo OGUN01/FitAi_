@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { rf } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import {
   AnimatedPressable,
   AnimatedSection,
@@ -117,7 +117,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                 <Ionicons
                   name="cloud-upload-outline"
                   size={rf(16)}
-                  color={ResponsiveTheme.colors.success}
+                  color={colors.success}
                 />
                 <Text style={styles.autoSaveText} numberOfLines={1}>
                   Saving...
@@ -169,7 +169,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             <Ionicons
               name="chevron-back"
               size={rf(18)}
-              color={ResponsiveTheme.colors.primary}
+              color={colors.primary}
             />
             <Text style={styles.backButtonText}>Back</Text>
           </AnimatedPressable>
@@ -239,44 +239,44 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.xxl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.white,
+    marginBottom: spacing.sm,
     textAlign: "center",
     letterSpacing: -0.5,
     flexShrink: 1,
   },
   subtitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     color: "rgba(255, 255, 255, 0.9)",
-    lineHeight: ResponsiveTheme.fontSize.md * 1.5,
-    marginBottom: ResponsiveTheme.spacing.md,
+    lineHeight: fontSize.md * 1.5,
+    marginBottom: spacing.md,
     textAlign: "center",
     flexShrink: 1,
   },
   autoSaveIndicator: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
     alignSelf: "flex-start",
-    backgroundColor: `${ResponsiveTheme.colors.success}20`,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: `${colors.success}20`,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
   },
   autoSaveText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.success,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.success,
+    fontWeight: typography.fontWeight.medium,
   },
   avatarContainer: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   avatarCircle: {
     width: rf(80),
     height: rf(80),
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    borderRadius: borderRadius.full,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     justifyContent: "center",
     alignItems: "center",
@@ -284,50 +284,50 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.4)",
   },
   content: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   footer: {
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
     paddingBottom:
       Platform.OS === "ios"
-        ? ResponsiveTheme.spacing.lg
-        : ResponsiveTheme.spacing.xl,
+        ? spacing.lg
+        : spacing.xl,
     backgroundColor: "transparent",
   },
   buttonRow: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   backButtonCompact: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    borderRadius: ResponsiveTheme.borderRadius.xl,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.backgroundSecondary,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
     minWidth: 100,
     minHeight: 52,
   },
   backButtonText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.primary,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary,
+    marginLeft: spacing.xs,
   },
   nextButtonCompact: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    borderRadius: ResponsiveTheme.borderRadius.xl,
-    backgroundColor: ResponsiveTheme.colors.primary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.primary,
     minHeight: 52,
-    shadowColor: ResponsiveTheme.colors.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -338,10 +338,10 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   nextButtonText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
     color: "#FFFFFF",
-    marginRight: ResponsiveTheme.spacing.xs,
+    marginRight: spacing.xs,
   },
 });
 

@@ -14,7 +14,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { rf, rp } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 
 export interface ChipOption {
   id: string;
@@ -59,13 +59,13 @@ const Chip: React.FC<{
     const backgroundColor = interpolateColor(
       progress.value,
       [0, 1],
-      [ResponsiveTheme.colors.backgroundTertiary, gradient[0]],
+      [colors.backgroundTertiary, gradient[0]],
     );
 
     return {
       backgroundColor,
       transform: [{ scale: scale.value }],
-      borderColor: isSelected ? gradient[0] : ResponsiveTheme.colors.border,
+      borderColor: isSelected ? gradient[0] : colors.border,
     };
   });
 
@@ -73,7 +73,7 @@ const Chip: React.FC<{
     const color = interpolateColor(
       progress.value,
       [0, 1],
-      [ResponsiveTheme.colors.text, ResponsiveTheme.colors.white],
+      [colors.text, colors.white],
     );
 
     return { color };
@@ -114,7 +114,7 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
   onSelectionChange,
   multiSelect = true,
   animated = true,
-  gradient = [ResponsiveTheme.colors.success, "#45A049"],
+  gradient = [colors.success, "#45A049"],
   style,
 }) => {
   const handleChipPress = (id: string) => {
@@ -156,14 +156,14 @@ const styles = StyleSheet.create({
   chipsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
 
   chip: {
     position: "relative",
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.full,
     borderWidth: 2,
     overflow: "hidden",
     boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
@@ -179,8 +179,8 @@ const styles = StyleSheet.create({
   },
 
   chipText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
     textAlign: "center",
   },
 });

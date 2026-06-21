@@ -8,7 +8,7 @@ import Svg, {
   Stop,
   Line,
 } from "react-native-svg";
-import { ResponsiveTheme } from "../../../../utils/constants";
+import { flatColors as colors, borderRadius } from "../../../../theme/aurora-tokens";
 import { rf } from "../../../../utils/responsive";
 
 interface TrendChartProps {
@@ -123,11 +123,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.03)",
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    borderRadius: borderRadius.sm,
   },
   emptyChartText: {
     fontSize: rf(10),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
 });

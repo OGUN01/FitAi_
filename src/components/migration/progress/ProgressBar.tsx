@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { rf, rp, rbr } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors } from "../../../theme/aurora-tokens";
 
 interface ProgressBarProps {
   progressAnimation: Animated.Value;
@@ -29,9 +29,9 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
         >
           <LinearGradient
             colors={[
-              ResponsiveTheme.colors.primaryDark,
-              ResponsiveTheme.colors.secondary,
-              ResponsiveTheme.colors.pink,
+              colors.primaryDark,
+              colors.secondary,
+              colors.pink,
             ]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   },
   progressBarBackground: {
     height: rp(8),
-    backgroundColor: ResponsiveTheme.colors.glassBorder,
+    backgroundColor: colors.glassBorder,
     borderRadius: rbr(4),
     overflow: "hidden",
   },
@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: rf(18),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     textAlign: "center",
     marginTop: rp(10),
   },

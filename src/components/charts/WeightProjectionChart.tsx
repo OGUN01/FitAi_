@@ -17,7 +17,7 @@ import Animated, {
 } from "react-native-reanimated";
 import Svg, { Path, Circle, Line, G, Text as SvgText } from "react-native-svg";
 import { rf, rp, rh } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -153,7 +153,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
               y1={Math.round(padding + chartHeight * fraction)}
               x2={Math.round(padding + chartWidth)}
               y2={Math.round(padding + chartHeight * fraction)}
-              stroke={ResponsiveTheme.colors.border}
+              stroke={colors.border}
               strokeWidth={1}
               strokeDasharray="4,4"
               opacity={0.3}
@@ -164,7 +164,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
         {/* Animated line path */}
         <AnimatedPath
           d={linePath}
-          stroke={ResponsiveTheme.colors.success}
+          stroke={colors.success}
           strokeWidth={3}
           fill="none"
           strokeDasharray={1000}
@@ -176,8 +176,8 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
           cx={getX(0)}
           cy={getY(currentWeight)}
           r={6}
-          fill={ResponsiveTheme.colors.primary}
-          stroke={ResponsiveTheme.colors.white}
+          fill={colors.primary}
+          stroke={colors.white}
           strokeWidth={2}
         />
 
@@ -186,8 +186,8 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
           cx={getX(weeks)}
           cy={getY(targetWeight)}
           r={6}
-          fill={ResponsiveTheme.colors.success}
-          stroke={ResponsiveTheme.colors.white}
+          fill={colors.success}
+          stroke={colors.white}
           strokeWidth={2}
         />
 
@@ -198,8 +198,8 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
               cx={point!.x}
               cy={point!.y}
               r={4}
-              fill={ResponsiveTheme.colors.info}
-              stroke={ResponsiveTheme.colors.white}
+              fill={colors.info}
+              stroke={colors.white}
               strokeWidth={1.5}
             />
           </G>
@@ -209,7 +209,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
         <SvgText
           x={getX(0)}
           y={getY(currentWeight) - 15}
-          fill={ResponsiveTheme.colors.text}
+          fill={colors.text}
           fontSize={rf(12)}
           textAnchor="middle"
           fontWeight="bold"
@@ -220,7 +220,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
         <SvgText
           x={getX(weeks)}
           y={getY(targetWeight) - 15}
-          fill={ResponsiveTheme.colors.text}
+          fill={colors.text}
           fontSize={rf(12)}
           textAnchor="middle"
           fontWeight="bold"
@@ -232,7 +232,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
         <SvgText
           x={padding}
           y={height - 10}
-          fill={ResponsiveTheme.colors.textSecondary}
+          fill={colors.textSecondary}
           fontSize={rf(10)}
           textAnchor="middle"
         >
@@ -242,7 +242,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
         <SvgText
           x={Math.round(padding + chartWidth)}
           y={height - 10}
-          fill={ResponsiveTheme.colors.textSecondary}
+          fill={colors.textSecondary}
           fontSize={rf(10)}
           textAnchor="middle"
         >
@@ -252,16 +252,16 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
 
       <View style={styles.legend}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: ResponsiveTheme.colors.primary }]} />
+          <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
           <Text style={styles.legendText}>Current</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: ResponsiveTheme.colors.success }]} />
+          <View style={[styles.legendDot, { backgroundColor: colors.success }]} />
           <Text style={styles.legendText}>Target</Text>
         </View>
         {milestones.length > 0 && (
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: ResponsiveTheme.colors.info }]} />
+            <View style={[styles.legendDot, { backgroundColor: colors.info }]} />
             <Text style={styles.legendText}>Milestone</Text>
           </View>
         )}
@@ -279,14 +279,14 @@ const styles = StyleSheet.create({
   legend: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: ResponsiveTheme.spacing.sm,
-    gap: ResponsiveTheme.spacing.md,
+    marginTop: spacing.sm,
+    gap: spacing.md,
   },
 
   legendItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
 
   legendDot: {
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   },
 
   legendText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
   },
 });

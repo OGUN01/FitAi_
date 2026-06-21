@@ -8,7 +8,7 @@ import {
   Pressable,
 } from "react-native";
 import { rf, rp } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 
 // ============================================================================
 // TYPES
@@ -77,14 +77,14 @@ export const InfoTooltip: React.FC<InfoTooltipProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginLeft: ResponsiveTheme.spacing.xs,
+    marginLeft: spacing.xs,
   },
 
   iconButton: {
     width: rf(20),
     height: rf(20),
     borderRadius: rf(10),
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    backgroundColor: `${colors.primary}15`,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -95,10 +95,10 @@ const styles = StyleSheet.create({
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.overlay,
+    backgroundColor: colors.overlay,
     justifyContent: "center",
     alignItems: "center",
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
   },
 
   tooltipContainer: {
@@ -107,38 +107,38 @@ const styles = StyleSheet.create({
   },
 
   tooltipContent: {
-    backgroundColor: ResponsiveTheme.colors.background,
-    borderRadius: ResponsiveTheme.borderRadius.xl,
-    padding: ResponsiveTheme.spacing.lg,
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
     boxShadow: '0px 2px 8px rgba(0,0,0,0.25)',
     elevation: 5,
   },
 
   tooltipTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
 
   tooltipDescription: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     lineHeight: rf(22),
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   closeButton: {
     alignSelf: "flex-end",
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
   },
 
   closeButtonText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.white,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.white,
   },
 });

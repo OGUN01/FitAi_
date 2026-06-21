@@ -8,7 +8,7 @@ import {
   Dimensions,
 } from "react-native";
 import { Card } from "../../../components/ui";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rbr } from '../../../utils/responsive';
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -75,7 +75,7 @@ export const ExerciseAnimation: React.FC<ExerciseAnimationProps> = ({
 
 const styles = StyleSheet.create({
   animationCard: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   animationContainer: {
     alignItems: "center",
@@ -83,36 +83,36 @@ const styles = StyleSheet.create({
   exerciseGif: {
     width: screenWidth - 64,
     height: rh(200),
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    marginBottom: ResponsiveTheme.spacing.md,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
   },
   animationPlaceholder: {
     width: screenWidth - 64,
     height: rh(200),
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   animationEmoji: {
     fontSize: rf(48),
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   animationText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
   },
   animationControls: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   playButton: {
     width: rw(48),
     height: rh(48),
     borderRadius: rbr(24),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -121,15 +121,15 @@ const styles = StyleSheet.create({
   },
   stepIndicators: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   stepIndicator: {
     width: rw(8),
     height: rh(8),
     borderRadius: rbr(4),
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
   },
   stepIndicatorActive: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
 });

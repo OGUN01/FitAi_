@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { rf, rp } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, typography } from "../../../theme/aurora-tokens";
 
 // ============================================================================
 // TYPES
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
   },
   innerCircle: {
-    backgroundColor: ResponsiveTheme.colors.background, // Match dark background
+    backgroundColor: colors.background, // Match dark background
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
@@ -405,8 +405,8 @@ const styles = StyleSheet.create({
   overlayMessage: {
     marginTop: rp(16),
     fontSize: rf(16),
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.white,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.white,
     textAlign: "center",
   },
   inlineContainer: {
@@ -419,8 +419,8 @@ const styles = StyleSheet.create({
   },
   inlineMessage: {
     fontSize: rf(14),
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.glassHighlight,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.glassHighlight,
     textAlign: "center",
   },
 });

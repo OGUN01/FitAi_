@@ -26,7 +26,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useEditContext } from "../../contexts/EditContext";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../utils/responsive";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -139,7 +139,7 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({
             <Ionicons
               name="information-circle-outline"
               size={48}
-              color={ResponsiveTheme.colors.primary}
+              color={colors.primary}
             />
           </View>
           <Text style={styles.title}>No Section Selected</Text>
@@ -160,7 +160,7 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({
           <Ionicons
             name={sectionInfo.icon as ComponentProps<typeof Ionicons>['name']}
             size={48}
-              color={ResponsiveTheme.colors.primary}
+              color={colors.primary}
           />
         </View>
         <Text style={styles.title}>{sectionInfo.title}</Text>
@@ -169,7 +169,7 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({
           <Ionicons
             name="bulb-outline"
             size={20}
-            color={ResponsiveTheme.colors.warning}
+            color={colors.warning}
           />
           <Text style={styles.infoText}>
             This overlay is deprecated. Use the edit icons on each section of
@@ -201,7 +201,7 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({
       onRequestClose={onClose}
     >
       <StatusBar
-        backgroundColor={ResponsiveTheme.colors.overlay}
+        backgroundColor={colors.overlay}
         barStyle="light-content"
         translucent={true}
       />
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: ResponsiveTheme.colors.overlay,
+    backgroundColor: colors.overlay,
     zIndex: 1,
   },
 
@@ -296,12 +296,12 @@ const styles = StyleSheet.create({
   },
 
   modalContent: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderTopLeftRadius: rbr(24),
     borderTopRightRadius: rbr(24),
     maxHeight: SCREEN_HEIGHT * 0.6,
     minHeight: SCREEN_HEIGHT * 0.4,
-    shadowColor: ResponsiveTheme.colors.black,
+    shadowColor: colors.black,
     shadowOffset: {
       width: 0,
       height: -4,
@@ -314,22 +314,22 @@ const styles = StyleSheet.create({
 
   modalHeader: {
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.border,
+    borderBottomColor: colors.border,
   },
 
   dragIndicator: {
     width: rp(40),
     height: rp(4),
-    backgroundColor: ResponsiveTheme.colors.textSecondary,
+    backgroundColor: colors.textSecondary,
     borderRadius: rbr(2),
     opacity: 0.3,
   },
 
   contentContainer: {
     flex: 1,
-    padding: ResponsiveTheme.spacing.xl,
+    padding: spacing.xl,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -338,54 +338,54 @@ const styles = StyleSheet.create({
     width: rp(80),
     height: rp(80),
     borderRadius: rbr(40),
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    backgroundColor: `${colors.primary}15`,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   title: {
     fontSize: rf(20),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    color: colors.text,
+    marginBottom: spacing.sm,
     textAlign: "center",
   },
 
   description: {
     fontSize: rf(15),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(22),
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   infoBox: {
     flexDirection: "row",
     alignItems: "flex-start",
-    backgroundColor: `${ResponsiveTheme.colors.warning}15`,
-    padding: ResponsiveTheme.spacing.md,
+    backgroundColor: `${colors.warning}15`,
+    padding: spacing.md,
     borderRadius: rbr(12),
-    marginBottom: ResponsiveTheme.spacing.lg,
-    gap: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
   },
 
   infoText: {
     flex: 1,
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(18),
   },
 
   closeButton: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.xl * 2,
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl * 2,
     borderRadius: rbr(12),
   },
 
   closeButtonText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     fontSize: rf(16),
     fontWeight: "600",
   },
@@ -403,10 +403,10 @@ const styles = StyleSheet.create({
   },
 
   loadingContainer: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rbr(12),
-    padding: ResponsiveTheme.spacing.xl,
-    shadowColor: ResponsiveTheme.colors.black,
+    padding: spacing.xl,
+    shadowColor: colors.black,
     shadowOffset: {
       width: 0,
       height: 4,
@@ -422,8 +422,8 @@ const styles = StyleSheet.create({
     height: rp(40),
     borderRadius: rbr(20),
     borderWidth: 3,
-    borderColor: ResponsiveTheme.colors.border,
-    borderTopColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.border,
+    borderTopColor: colors.primary,
   },
 });
 

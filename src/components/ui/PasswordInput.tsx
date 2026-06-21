@@ -2,7 +2,7 @@ import React, { useState, useCallback } from "react";
 import { ViewStyle, TextStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Input } from "./Input";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 
 interface PasswordInputProps {
   label?: string;
@@ -35,7 +35,7 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
     <Ionicons
       name={isVisible ? "eye-off-outline" : "eye-outline"}
       size={20}
-      color={ResponsiveTheme.colors.textSecondary}
+      color={colors.textSecondary}
     />
   );
 

@@ -13,7 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { AuroraSpinner } from "../../../components/ui/aurora/AuroraSpinner";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw } from "../../../utils/responsive";
 import { useHealthDataStore } from "../../../stores/healthDataStore";
 import { haptics } from "../../../utils/haptics";
@@ -107,10 +107,10 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
 
   // Get status color
   const getStatusColor = () => {
-    if (isSyncing) return ResponsiveTheme.colors.warning;
-    if (syncStatus === "error") return ResponsiveTheme.colors.error;
-    if (syncStatus === "success") return ResponsiveTheme.colors.success;
-    return ResponsiveTheme.colors.textSecondary;
+    if (isSyncing) return colors.warning;
+    if (syncStatus === "error") return colors.error;
+    if (syncStatus === "success") return colors.success;
+    return colors.textSecondary;
   };
 
   // Get status icon
@@ -178,8 +178,8 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
             isError
               ? getStatusColor()
               : isSyncing
-                ? ResponsiveTheme.colors.textSecondary
-                : ResponsiveTheme.colors.primary
+                ? colors.textSecondary
+                : colors.primary
           }
         />
       </View>
@@ -192,10 +192,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.05)",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    gap: ResponsiveTheme.spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
   },
   iconContainer: {
     width: rw(24),
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: rf(12),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   status: {
     fontSize: rf(10),

@@ -15,7 +15,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../utils/responsive";
 
 export interface UnsupportedWatchNoticeProps {
@@ -38,7 +38,7 @@ export const UnsupportedWatchNotice: React.FC<UnsupportedWatchNoticeProps> = ({
           <Ionicons
             name="hand-left-outline"
             size={rf(20)}
-            color={ResponsiveTheme.colors.primary}
+            color={colors.primary}
           />
         </View>
         <Text style={styles.title}>No Health Connect watch?</Text>
@@ -55,7 +55,7 @@ export const UnsupportedWatchNotice: React.FC<UnsupportedWatchNoticeProps> = ({
             <Ionicons
               name="close-circle"
               size={rf(12)}
-              color={ResponsiveTheme.colors.warning}
+              color={colors.warning}
             />
             <Text style={styles.brandName}>{brand}</Text>
           </View>
@@ -73,7 +73,7 @@ export const UnsupportedWatchNotice: React.FC<UnsupportedWatchNoticeProps> = ({
         <Ionicons
           name="create-outline"
           size={rf(16)}
-          color={ResponsiveTheme.colors.text}
+          color={colors.text}
         />
         <Text style={styles.ctaText}>Enter manually</Text>
       </AnimatedPressable>
@@ -83,68 +83,68 @@ export const UnsupportedWatchNotice: React.FC<UnsupportedWatchNoticeProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: ResponsiveTheme.spacing.md,
-    padding: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.md,
+    padding: spacing.lg,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   iconWrap: {
     width: rw(36),
     height: rw(36),
     borderRadius: rbr(18),
-    backgroundColor: ResponsiveTheme.colors.primaryTint,
+    backgroundColor: colors.primaryTint,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   title: {
     flex: 1,
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   body: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(19),
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   brandRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   brandChip: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
+    backgroundColor: colors.glassSurface,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
     borderRadius: rbr(8),
-    marginRight: ResponsiveTheme.spacing.xs,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginRight: spacing.xs,
+    marginBottom: spacing.xs,
   },
   brandName: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.text,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginLeft: spacing.xs,
   },
   cta: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     paddingVertical: rp(12),
     borderRadius: rbr(12),
   },
   ctaText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginLeft: spacing.xs,
   },
 });
 

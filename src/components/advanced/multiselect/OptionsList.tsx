@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rs, rbr, rp } from '../../../utils/responsive';
 import { Option } from "../../../hooks/useMultiSelectWithCustom";
 
@@ -107,33 +107,33 @@ export const OptionsList: React.FC<OptionsListProps> = ({
 const styles = StyleSheet.create({
   optionsContainer: {
     maxHeight: 300,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.md,
   },
 
   regionHeader: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.xs,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold as "600",
+    color: colors.textSecondary,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+    paddingHorizontal: spacing.sm,
   },
 
   optionItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    marginVertical: ResponsiveTheme.spacing.xs / 2,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    backgroundColor: ResponsiveTheme.colors.surface,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginVertical: spacing.xs / 2,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
   },
 
   optionItemSelected: {
-    backgroundColor: ResponsiveTheme.colors.primary + "20",
+    backgroundColor: colors.primary + "20",
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primary + "40",
+    borderColor: colors.primary + "40",
   },
 
   optionItemDisabled: {
@@ -141,9 +141,9 @@ const styles = StyleSheet.create({
   },
 
   optionItemCustom: {
-    backgroundColor: ResponsiveTheme.colors.primary + "10",
+    backgroundColor: colors.primary + "10",
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primary + "30",
+    borderColor: colors.primary + "30",
     borderStyle: "dashed",
   },
 
@@ -154,8 +154,8 @@ const styles = StyleSheet.create({
   },
 
   optionIcon: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    marginRight: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    marginRight: spacing.sm,
   },
 
   optionTextContainer: {
@@ -163,27 +163,27 @@ const styles = StyleSheet.create({
   },
 
   optionText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    color: colors.text,
   },
 
   optionTextSelected: {
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
+    color: colors.primary,
+    fontWeight: typography.fontWeight.semibold as "600",
   },
 
   optionTextDisabled: {
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
 
   optionTextCustom: {
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.medium as "500",
+    color: colors.primary,
+    fontWeight: typography.fontWeight.medium as "500",
   },
 
   optionRegion: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
 
@@ -192,15 +192,15 @@ const styles = StyleSheet.create({
     height: rs(24),
     borderRadius: rbr(4),
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
 
   checkboxSelected: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
 
   checkboxDisabled: {
@@ -208,18 +208,18 @@ const styles = StyleSheet.create({
   },
 
   checkmark: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.white,
-    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
+    fontSize: fontSize.sm,
+    color: colors.white,
+    fontWeight: typography.fontWeight.bold as "700",
   },
 
   noResults: {
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.xl,
+    paddingVertical: spacing.xl,
   },
 
   noResultsText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.md,
+    color: colors.textMuted,
   },
 });
