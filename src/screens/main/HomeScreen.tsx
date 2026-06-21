@@ -26,7 +26,6 @@ import { View, StyleSheet, RefreshControl, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
-import { AuroraSpinner } from '../../components/ui/aurora/AuroraSpinner';
 import { colors, spacing } from '../../theme/aurora-tokens';
 import { rh, rp } from '../../utils/responsive';
 import { GuestSignUpScreen } from './GuestSignUpScreen';
@@ -47,6 +46,7 @@ import {
   EmptyCalendarMessage,
   createQuickActions,
   AchievementShowcase,
+  HomeSkeleton,
 } from './home';
 import { WeightEntryModal } from '../../components/progress/WeightEntryModal';
 import { useHomeLogic } from '../../hooks/useHomeLogic';
@@ -213,9 +213,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   if (isLoading) {
     return (
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <AuroraSpinner size="lg" />
-        </View>
+        <SafeAreaView style={styles.container} edges={['top']}>
+          <Animated.ScrollView
+            contentContainerStyle={{ paddingTop: insets.top + rp(8) }}
+          >
+            <HomeSkeleton />
+          </Animated.ScrollView>
+        </SafeAreaView>
       </AuroraBackground>
     );
   }

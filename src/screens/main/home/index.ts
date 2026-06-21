@@ -15,6 +15,7 @@ export { default as AchievementShowcase } from "./AchievementShowcase";
 export { default as WeeklyMiniCalendar } from "./WeeklyMiniCalendar";
 
 // Premium Features (A, B, D, G)
+export { default as HomeSkeleton } from "./HomeSkeleton";
 export { default as HealthIntelligenceHub } from "./HealthIntelligenceHub";
 export { default as SmartCoaching } from "./SmartCoaching";
 export { default as HydrationTracker } from "./HydrationTracker";
