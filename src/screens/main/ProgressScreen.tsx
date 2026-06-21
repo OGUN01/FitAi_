@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
-import { AuroraSpinner } from '../../components/ui/aurora/AuroraSpinner';
+import { DashboardSkeleton } from '../../components/ui/aurora/DashboardSkeleton';
 import { colors } from '../../theme/aurora-tokens';
 import { rh } from '../../utils/responsive';
 
@@ -69,8 +69,14 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) =>
   if (isLoading) {
     return (
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <AuroraSpinner size="lg" />
+        <View style={[styles.container, { paddingTop: insets.top }]}>
+          <ScrollView style={styles.scrollView}>
+            <DashboardSkeleton
+              cardCount={4}
+              listItemCount={3}
+              showFilterRow
+            />
+          </ScrollView>
         </View>
       </AuroraBackground>
     );

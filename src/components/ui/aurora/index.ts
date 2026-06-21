@@ -17,6 +17,8 @@ export { EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 export { GlassButton } from './GlassButton';
 export type { GlassButtonProps, GlassButtonVariant } from './GlassButton';
+export { DashboardSkeleton } from './DashboardSkeleton';
+export type { DashboardSkeletonProps } from './DashboardSkeleton';
 export { GlassHeader } from './GlassHeader';
 export type { GlassHeaderProps } from './GlassHeader';
 
