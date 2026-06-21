@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 
 interface PeriodSelectorProps {
@@ -47,33 +47,33 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
   },
   periodSelector: {
     flexDirection: "row",
     justifyContent: "space-evenly",
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: ResponsiveTheme.spacing.xs,
-    gap: ResponsiveTheme.spacing.xs,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xs,
+    gap: spacing.xs,
   },
   periodButton: {
     flex: 1,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
     alignItems: "center",
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
   },
   periodButtonActive: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
   periodText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
   },
   periodTextActive: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 });

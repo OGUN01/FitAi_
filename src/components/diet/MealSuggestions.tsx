@@ -13,14 +13,13 @@ import { GlassCard } from "../ui/aurora/GlassCard";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { haptics } from "../../utils/haptics";
-import { ResponsiveTheme } from "../../utils/constants";
+import { colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { rw } from "../../utils/responsive";
 import { useProfileStore } from "../../stores/profileStore";
 import {
   getCuisineDataForCountry,
   type CuisineFoodItem,
 } from "../../data/regionalCuisineData";
-import { colors } from "../../theme/aurora-tokens";
 import { useNutritionStore } from "../../stores";
 import type { Meal } from "../../types/diet";
 
@@ -312,7 +311,7 @@ export const MealSuggestions: React.FC = () => {
                     >
                       <Animated.View style={[
                         StyleSheet.absoluteFill,
-                        { backgroundColor: addBtnBg, borderRadius: ResponsiveTheme.borderRadius.md },
+                        { backgroundColor: addBtnBg, borderRadius: borderRadius.md },
                       ]} />
                       <Text style={styles.addToPlanButtonText}>
                         {isAdded ? "Logged" : "Log"}
@@ -331,33 +330,33 @@ export const MealSuggestions: React.FC = () => {
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.xl,
+    fontSize: fontSize.xl,
     fontWeight: "700",
     color: colors.text.primary,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
-  suggestionsScrollContent: { paddingHorizontal: ResponsiveTheme.spacing.lg },
-  suggestionCard: { width: rw(200), marginRight: ResponsiveTheme.spacing.md },
-  suggestionContent: { padding: ResponsiveTheme.spacing.md },
+  suggestionsScrollContent: { paddingHorizontal: spacing.lg },
+  suggestionCard: { width: rw(200), marginRight: spacing.md },
+  suggestionContent: { padding: spacing.md },
   suggestionName: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     fontWeight: "600",
     color: colors.text.primary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   suggestionMacros: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: fontSize.xs,
     color: colors.text.secondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   addToPlanButton: {
     backgroundColor: colors.primary.DEFAULT,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.xs,
     alignItems: "center",
     overflow: "hidden",
     position: "relative",
@@ -367,16 +366,16 @@ const styles = StyleSheet.create({
   },
   addToPlanButtonText: {
     color: colors.text.primary,
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: fontSize.xs,
     fontWeight: "600",
     zIndex: 1,
   },
   emptyState: {
-    paddingVertical: ResponsiveTheme.spacing.xl,
+    paddingVertical: spacing.xl,
     alignItems: "center",
   },
   emptyStateText: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     color: colors.text.secondary,
     textAlign: "center",
   },

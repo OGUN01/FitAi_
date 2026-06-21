@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { Button, Card } from "../ui";
 import { RecognizedFood } from "../../services/foodRecognitionService";
 import { rf, rh, rw, rbr } from "../../utils/responsive";
@@ -334,7 +334,7 @@ export const FoodRecognitionFeedback: React.FC<
             <View style={styles.submittingIndicator}>
               <ActivityIndicator
                 size="small"
-                color={ResponsiveTheme.colors.primary}
+                color={colors.primary}
               />
               <Text style={styles.submittingText}>Sending feedback...</Text>
             </View>
@@ -348,105 +348,105 @@ export const FoodRecognitionFeedback: React.FC<
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
 
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.border,
+    borderBottomColor: colors.border,
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.xl,
+    fontSize: fontSize.xl,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
 
   closeButton: {
     width: Math.max(rw(32), 44),
     height: Math.max(rh(32), 44),
     borderRadius: Math.max(rbr(16), 22),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
   },
 
   closeText: {
     fontSize: rf(16),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     fontWeight: "600",
   },
 
   progressIndicator: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
 
   progressText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
     textAlign: "center",
   },
 
   progressBar: {
     height: rh(4),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     borderRadius: rbr(2),
   },
 
   progressFill: {
     height: "100%",
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: rbr(2),
   },
 
   content: {
     flex: 1,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
 
   foodCard: {
-    padding: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   foodHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   foodName: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: fontSize.lg,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     flex: 1,
   },
 
   confidenceBadge: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
     borderRadius: rbr(12),
   },
 
   confidenceText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.white,
+    fontSize: fontSize.xs,
+    color: colors.white,
     fontWeight: "600",
   },
 
   detailsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
 
   detailItem: {
@@ -455,37 +455,37 @@ const styles = StyleSheet.create({
   },
 
   detailLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginBottom: spacing.xs,
   },
 
   detailValue: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    color: colors.text,
     fontWeight: "600",
   },
 
   sectionCard: {
-    padding: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
 
   starsContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   starButton: {
-    padding: ResponsiveTheme.spacing.xs,
+    padding: spacing.xs,
   },
 
   star: {
@@ -493,88 +493,88 @@ const styles = StyleSheet.create({
   },
 
   ratingLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     fontStyle: "italic",
   },
 
   correctnessButtons: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
+    marginBottom: spacing.md,
   },
 
   correctnessButton: {
     flex: 1,
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.background,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
     alignItems: "center",
   },
 
   correctnessButtonActive: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
 
   correctnessButtonText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    color: colors.text,
     fontWeight: "600",
   },
 
   correctnessButtonTextActive: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 
   correctionSection: {
-    marginTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.md,
   },
 
   correctionLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    color: colors.text,
+    marginBottom: spacing.sm,
     fontWeight: "600",
   },
 
   correctionInput: {
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
-    backgroundColor: ResponsiveTheme.colors.surface,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontSize: fontSize.md,
+    color: colors.text,
+    backgroundColor: colors.surface,
   },
 
   notesInput: {
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
-    backgroundColor: ResponsiveTheme.colors.surface,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontSize: fontSize.md,
+    color: colors.text,
+    backgroundColor: colors.surface,
     minHeight: rh(80),
     textAlignVertical: "top",
   },
 
   navigationContainer: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
+    borderTopColor: colors.border,
   },
 
   navigationButtons: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
 
   navButton: {
@@ -585,13 +585,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.md,
   },
 
   submittingText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginLeft: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginLeft: spacing.sm,
   },
 });
 

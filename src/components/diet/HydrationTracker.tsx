@@ -27,7 +27,7 @@ import Svg, {
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../utils/responsive";
 
 // Water amount presets (in ml)
@@ -269,26 +269,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   headerTitle: {
     fontSize: rf(14),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     letterSpacing: 0.3,
   },
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.full,
-    gap: ResponsiveTheme.spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    gap: spacing.xs,
   },
   statusDot: {
     width: rw(6),
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
   content: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   dropContainer: {
     position: "relative",
@@ -332,17 +332,17 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: rf(18),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   statUnit: {
     fontSize: rf(12),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   statLabel: {
     fontSize: rf(10),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   divider: {
@@ -351,29 +351,29 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.1)",
   },
   quickAddSection: {
-    marginTop: ResponsiveTheme.spacing.md,
-    paddingTop: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.md,
+    paddingTop: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: "rgba(255,255,255,0.08)",
   },
   quickAddTitle: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
   quickAddButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   quickAddButton: {
     flex: 1,
     alignItems: "center",
     backgroundColor: "rgba(33, 150, 243, 0.1)",
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: "rgba(33, 150, 243, 0.2)",
     minHeight: rh(90),
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(33, 150, 243, 0.2)",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   quickAddAmount: {
     fontSize: rf(14),
@@ -397,20 +397,20 @@ const styles = StyleSheet.create({
   quickAddLabel: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   reminderContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: ResponsiveTheme.spacing.xs,
-    marginTop: ResponsiveTheme.spacing.sm,
+    gap: spacing.xs,
+    marginTop: spacing.sm,
   },
   reminderText: {
     fontSize: rf(11),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
 });
 

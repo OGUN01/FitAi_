@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
 
 interface WearableActivityCardProps {
@@ -26,7 +26,7 @@ export const WearableActivityCard: React.FC<WearableActivityCardProps> = ({
           <Ionicons
             name="watch-outline"
             size={rf(20)}
-            color={ResponsiveTheme.colors.primary}
+            color={colors.primary}
           />
           <Text style={styles.wearableLabel}>From your smartwatch</Text>
         </View>
@@ -36,9 +36,9 @@ export const WearableActivityCard: React.FC<WearableActivityCardProps> = ({
             <Ionicons
               name="walk-outline"
               size={rf(24)}
-              color={ResponsiveTheme.colors.success}
+              color={colors.success}
               style={{
-                marginBottom: ResponsiveTheme.spacing.xs,
+                marginBottom: spacing.xs,
               }}
             />
             <View style={styles.todaysStatContent}>
@@ -54,9 +54,9 @@ export const WearableActivityCard: React.FC<WearableActivityCardProps> = ({
             <Ionicons
               name="flame-outline"
               size={rf(24)}
-              color={ResponsiveTheme.colors.warning}
+              color={colors.warning}
               style={{
-                marginBottom: ResponsiveTheme.spacing.xs,
+                marginBottom: spacing.xs,
               }}
             />
             <View style={styles.todaysStatContent}>
@@ -72,9 +72,9 @@ export const WearableActivityCard: React.FC<WearableActivityCardProps> = ({
             <Ionicons
               name="heart-outline"
               size={rf(24)}
-              color={ResponsiveTheme.colors.error}
+              color={colors.error}
               style={{
-                marginBottom: ResponsiveTheme.spacing.xs,
+                marginBottom: spacing.xs,
               }}
             />
             <View style={styles.todaysStatContent}>
@@ -91,9 +91,9 @@ export const WearableActivityCard: React.FC<WearableActivityCardProps> = ({
               <Ionicons
                 name="bed-outline"
                 size={rf(24)}
-                color={ResponsiveTheme.colors.primary}
+                color={colors.primary}
                 style={{
-                  marginBottom: ResponsiveTheme.spacing.xs,
+                  marginBottom: spacing.xs,
                 }}
               />
               <View style={styles.todaysStatContent}>
@@ -112,31 +112,31 @@ export const WearableActivityCard: React.FC<WearableActivityCardProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
   todaysCard: {
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
   },
   wearableHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: rp(8),
-    marginBottom: ResponsiveTheme.spacing.md,
-    paddingBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.glassBorder,
+    borderBottomColor: colors.glassBorder,
   },
   wearableLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
   },
   todaysStats: {
     flexDirection: "row",
@@ -150,13 +150,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   todaysStatLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
   todaysStatValue: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
 });

@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
 
 interface TodaysProgress {
@@ -59,9 +59,9 @@ export const TodaysProgressCard: React.FC<TodaysProgressCardProps> = ({
             <Ionicons
               name="barbell-outline"
               size={rf(24)}
-              color={ResponsiveTheme.colors.primary}
+              color={colors.primary}
               style={{
-                marginBottom: ResponsiveTheme.spacing.xs,
+                marginBottom: spacing.xs,
               }}
             />
             <View style={styles.todaysStatContent}>
@@ -79,9 +79,9 @@ export const TodaysProgressCard: React.FC<TodaysProgressCardProps> = ({
             <Ionicons
               name="restaurant-outline"
               size={rf(24)}
-              color={ResponsiveTheme.colors.primary}
+              color={colors.primary}
               style={{
-                marginBottom: ResponsiveTheme.spacing.xs,
+                marginBottom: spacing.xs,
               }}
             />
             <View style={styles.todaysStatContent}>
@@ -101,9 +101,9 @@ export const TodaysProgressCard: React.FC<TodaysProgressCardProps> = ({
             <Ionicons
               name="flame-outline"
               size={rf(24)}
-              color={ResponsiveTheme.colors.primary}
+              color={colors.primary}
               style={{
-                marginBottom: ResponsiveTheme.spacing.xs,
+                marginBottom: spacing.xs,
               }}
             />
             <View style={styles.todaysStatContent}>
@@ -129,25 +129,25 @@ export const TodaysProgressCard: React.FC<TodaysProgressCardProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
   todaysCard: {
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
   },
   todaysHeader: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   todaysDate: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: fontSize.lg,
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textAlign: "center",
   },
   todaysStats: {
@@ -162,13 +162,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   todaysStatLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
   todaysStatValue: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
 });

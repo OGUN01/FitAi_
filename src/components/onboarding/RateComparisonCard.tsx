@@ -1,9 +1,8 @@
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rw, rh, rp } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
-import {
+import { rf, rw, rh, rp } from "../../utils/responsive";import {
   SmartAlternative,
   SmartAlternativesResult,
 } from "../../services/validationEngine";
@@ -65,7 +64,7 @@ export const RateComparisonCard: React.FC<RateComparisonCardProps> = ({
             <Ionicons
               name="scale-outline"
               size={rf(20)}
-              color={ResponsiveTheme.colors.primary}
+              color={colors.primary}
             />
             <Text style={styles.headerTitle}>Your Weight Loss Plan</Text>
           </View>
@@ -116,7 +115,7 @@ export const RateComparisonCard: React.FC<RateComparisonCardProps> = ({
               <Ionicons
                 name="information-circle"
                 size={rf(20)}
-                color={ResponsiveTheme.colors.primary}
+                color={colors.primary}
               />
             </TouchableOpacity>
           </TouchableOpacity>
@@ -156,7 +155,7 @@ export const RateComparisonCard: React.FC<RateComparisonCardProps> = ({
                 <Ionicons
                   name="fitness-outline"
                   size={rf(14)}
-                  color={ResponsiveTheme.colors.textSecondary}
+                  color={colors.textSecondary}
                 />
                 <Text style={styles.dividerText}>
                   {showExerciseOptions ? "HIDE" : "OR ADD"} EXERCISE
@@ -164,7 +163,7 @@ export const RateComparisonCard: React.FC<RateComparisonCardProps> = ({
                 <Ionicons
                   name={showExerciseOptions ? "chevron-up" : "chevron-down"}
                   size={rf(14)}
-                  color={ResponsiveTheme.colors.textSecondary}
+                  color={colors.textSecondary}
                 />
               </View>
               <View style={styles.dividerLine} />
@@ -233,7 +232,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: rf(16),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   goalSummary: {
     backgroundColor: "rgba(59, 130, 246, 0.08)",
@@ -243,16 +242,16 @@ const styles = StyleSheet.create({
   },
   goalText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
   },
   goalHighlight: {
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   weightToLose: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     textAlign: "center",
     marginTop: rp(4),
   },
@@ -295,7 +294,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: rf(11),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 1,
   },
@@ -323,7 +322,7 @@ const styles = StyleSheet.create({
   dividerText: {
     fontSize: rf(10),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     letterSpacing: 0.5,
   },
   safeRateInfo: {
@@ -340,7 +339,7 @@ const styles = StyleSheet.create({
   },
   safeRateText: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   safeRateValue: {
     fontWeight: "700",

@@ -1,6 +1,11 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import {
+  spacing,
+  borderRadius,
+  flatFontSize as fontSize,
+  typography,
+} from "../../../theme/aurora-tokens";
 import { rf } from "../../../utils/responsive";
 
 interface ProfileStatusBannerProps {
@@ -28,19 +33,19 @@ const styles = StyleSheet.create({
   statusBanner: {
     flexDirection: "row",
     alignItems: "center",
-    margin: ResponsiveTheme.spacing.lg,
-    padding: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    margin: spacing.lg,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
   },
 
   statusIcon: {
     fontSize: rf(16),
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
 
   statusText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: fontSize.sm,
     flex: 1,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontWeight: typography.fontWeight.medium,
   },
 });

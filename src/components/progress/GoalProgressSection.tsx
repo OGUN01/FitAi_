@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { GlassCard } from '../ui/aurora/GlassCard';
 import type { ProgressStats } from '../../services/progressData';
 import type { CalculatedMetrics } from '../../hooks/useCalculatedMetrics';
-import { ResponsiveTheme } from '../../utils/constants';
+import { flatColors as colors, spacing } from '../../theme/aurora-tokens';
 import { rf, rp, rh, rbr, rs } from '../../utils/responsive';
 import { type WeightUnit, toDisplayWeight } from '../../utils/units';
 import { getWeightGoalProgress } from './goalProgressUtils';
@@ -83,7 +83,7 @@ const GoalBar: React.FC<GoalBarProps> = ({
         <Text
           style={[
             styles.goalBarPct,
-            { color: isComplete ? ResponsiveTheme.colors.success : iconColor },
+            { color: isComplete ? colors.success : iconColor },
           ]}
         >
           {pct}%
@@ -95,7 +95,7 @@ const GoalBar: React.FC<GoalBarProps> = ({
             styles.barFill,
             {
               width: `${Math.min(100, pct)}%` as const,
-              backgroundColor: isComplete ? ResponsiveTheme.colors.success : iconColor,
+              backgroundColor: isComplete ? colors.success : iconColor,
             },
           ]}
         />
@@ -150,7 +150,7 @@ export const GoalProgressSection: React.FC<GoalProgressSectionProps> = ({
           colors={['rgba(255,107,53,0.25)', 'rgba(255,107,53,0.05)']}
           style={styles.iconBg}
         >
-          <Ionicons name="flag" size={rf(16)} color={ResponsiveTheme.colors.primary} />
+          <Ionicons name="flag" size={rf(16)} color={colors.primary} />
         </LinearGradient>
         <Text style={styles.sectionTitle}>Goal Progress</Text>
       </View>
@@ -158,7 +158,7 @@ export const GoalProgressSection: React.FC<GoalProgressSectionProps> = ({
       {weightProgress != null && (
         <View style={styles.goalBarContainer}>
           <View style={styles.goalBarHeader}>
-            <Ionicons name="scale-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+            <Ionicons name="scale-outline" size={rf(14)} color={colors.primary} />
             <Text style={styles.goalBarLabel}>Weight Goal</Text>
             <Text
               style={[
@@ -166,8 +166,8 @@ export const GoalProgressSection: React.FC<GoalProgressSectionProps> = ({
                 {
                   color:
                     weightProgress >= 1
-                      ? ResponsiveTheme.colors.success
-                      : ResponsiveTheme.colors.primary,
+                      ? colors.success
+                      : colors.primary,
                 },
               ]}
             >
@@ -182,8 +182,8 @@ export const GoalProgressSection: React.FC<GoalProgressSectionProps> = ({
                   width: `${Math.min(100, Math.round(weightProgress * 100))}%` as const,
                   backgroundColor:
                     weightProgress >= 1
-                      ? ResponsiveTheme.colors.success
-                      : ResponsiveTheme.colors.primary,
+                      ? colors.success
+                      : colors.primary,
                 },
               ]}
             />
@@ -234,7 +234,7 @@ export const GoalProgressSection: React.FC<GoalProgressSectionProps> = ({
 
       {weightProgress == null && workoutsCompleted == null && (
         <View style={styles.emptyState}>
-          <Ionicons name="flag-outline" size={rf(28)} color={ResponsiveTheme.colors.textMuted} />
+          <Ionicons name="flag-outline" size={rf(28)} color={colors.textMuted} />
           <Text style={styles.emptyText}>Complete onboarding to see your goal progress</Text>
         </View>
       )}
@@ -244,8 +244,8 @@ export const GoalProgressSection: React.FC<GoalProgressSectionProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
     padding: rp(16),
   },
   header: {
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: rf(16),
     fontWeight: '700',
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   goalBarContainer: {
     marginBottom: rp(14),
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: rf(13),
     fontWeight: '600',
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   goalBarPct: {
     fontSize: rf(13),
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   },
   barTrack: {
     height: rh(7),
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
     borderRadius: rbr(4),
     overflow: 'hidden',
   },
@@ -302,17 +302,17 @@ const styles = StyleSheet.create({
   },
   goalBarSub: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
   timelineHint: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
     marginTop: rp(3),
     fontStyle: 'italic',
   },
   noDataText: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     marginTop: rp(4),
   },
   emptyState: {
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
   },
 });

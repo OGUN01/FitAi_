@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr, rs } from "../../../utils/responsive";
 import { Exercise, WorkoutSet } from "../../../types/workout";
 
@@ -73,23 +73,23 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center" as const,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   exerciseNumber: {
     width: rs(32),
     height: rs(32),
     borderRadius: rbr(16),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
 
   exerciseNumberText: {
-    color: ResponsiveTheme.colors.white,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: colors.white,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
   },
 
   titleSection: {
@@ -97,14 +97,14 @@ const styles = StyleSheet.create({
   },
 
   exerciseName: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
     marginBottom: rp(4),
   },
 
   exerciseNameCompleted: {
-    color: ResponsiveTheme.colors.success,
+    color: colors.success,
   },
 
   metaRow: {
@@ -113,8 +113,8 @@ const styles = StyleSheet.create({
   },
 
   metaText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
 
   statusSection: {
@@ -125,13 +125,13 @@ const styles = StyleSheet.create({
     width: rs(32),
     height: rs(32),
     borderRadius: rbr(16),
-    backgroundColor: ResponsiveTheme.colors.success,
+    backgroundColor: colors.success,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
 
   completedIcon: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     fontSize: rf(16),
     fontWeight: "bold",
   },
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: rbr(22),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },

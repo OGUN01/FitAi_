@@ -16,7 +16,7 @@ import { GlassCard } from '../ui/aurora/GlassCard';
 import { LineChart, type ChartData } from '../../screens/main/analytics/components/LineChart';
 import type { ProgressEntry } from '../../services/progressData';
 import type { CalculatedMetrics } from '../../hooks/useCalculatedMetrics';
-import { ResponsiveTheme } from '../../utils/constants';
+import { flatColors as colors, spacing } from '../../theme/aurora-tokens';
 import { rf, rp, rh, rbr, rs } from '../../utils/responsive';
 import { type WeightUnit, toDisplayWeight } from '../../utils/units';
 
@@ -171,7 +171,7 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
             colors={['rgba(255,107,53,0.25)', 'rgba(255,107,53,0.05)']}
             style={styles.iconBg}
           >
-            <Ionicons name="trending-down" size={rf(16)} color={ResponsiveTheme.colors.primary} />
+            <Ionicons name="trending-down" size={rf(16)} color={colors.primary} />
           </LinearGradient>
           <Text style={styles.sectionTitle}>Weight Journey</Text>
         </View>
@@ -182,14 +182,14 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
           accessibilityRole="button"
           accessibilityLabel="Log weight"
         >
-          <Ionicons name="add" size={rf(14)} color={ResponsiveTheme.colors.white} />
+          <Ionicons name="add" size={rf(14)} color={colors.white} />
           <Text style={styles.logButtonText}>Log</Text>
         </TouchableOpacity>
       </View>
 
       {displayTargetWeight != null && displayGoalToGo != null && goalDirection != null && (
         <View style={styles.goalRow}>
-          <Ionicons name="flag-outline" size={rf(12)} color={ResponsiveTheme.colors.primary} />
+          <Ionicons name="flag-outline" size={rf(12)} color={colors.primary} />
           <Text style={styles.goalText}>
             Goal: {displayTargetWeight.toFixed(1)} {unit} - {displayGoalToGo.toFixed(1)} {unit}{' '}
             {goalDirection}
@@ -235,7 +235,7 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
               name={totalChangePct <= 0 ? 'trending-down' : 'trending-up'}
               size={rf(12)}
               color={
-                totalChangePct <= 0 ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.error
+                totalChangePct <= 0 ? colors.success : colors.error
               }
             />
             <Text
@@ -244,8 +244,8 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
                 {
                   color:
                     totalChangePct <= 0
-                      ? ResponsiveTheme.colors.success
-                      : ResponsiveTheme.colors.error,
+                      ? colors.success
+                      : colors.error,
                 },
               ]}
             >
@@ -260,7 +260,7 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
       <View style={styles.chartWrapper}>
         <LineChart
           data={chartData}
-          color={ResponsiveTheme.colors.primary}
+          color={colors.primary}
           unit={unit}
           showValues
           showHeader={false}
@@ -278,14 +278,14 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>MIN</Text>
-            <Text style={[styles.statValue, { color: ResponsiveTheme.colors.success }]}>
+            <Text style={[styles.statValue, { color: colors.success }]}>
               {displayStats.min?.toFixed(1)} {unit}
             </Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>MAX</Text>
-            <Text style={[styles.statValue, { color: ResponsiveTheme.colors.error }]}>
+            <Text style={[styles.statValue, { color: colors.error }]}>
               {displayStats.max?.toFixed(1)} {unit}
             </Text>
           </View>
@@ -300,8 +300,8 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
                     {
                       color:
                         stats.weeklyRateKg <= 0
-                          ? ResponsiveTheme.colors.success
-                          : ResponsiveTheme.colors.error,
+                          ? colors.success
+                          : colors.error,
                     },
                   ]}
                 >
@@ -319,8 +319,8 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
     padding: rp(16),
   },
   header: {
@@ -344,13 +344,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: rf(16),
     fontWeight: '700',
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   logButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: rp(4),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: rp(10),
     paddingVertical: rp(6),
     borderRadius: rbr(12),
@@ -360,14 +360,14 @@ const styles = StyleSheet.create({
   logButtonText: {
     fontSize: rf(12),
     fontWeight: '600',
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   goalRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: rp(6),
     marginBottom: rp(10),
-    backgroundColor: ResponsiveTheme.colors.primaryTint,
+    backgroundColor: colors.primaryTint,
     paddingHorizontal: rp(10),
     paddingVertical: rp(5),
     borderRadius: rbr(10),
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
   goalText: {
     fontSize: rf(11),
     fontWeight: '600',
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   periodRow: {
     flexDirection: 'row',
@@ -387,23 +387,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(12),
     paddingVertical: rp(5),
     borderRadius: rbr(10),
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassBorder,
+    borderColor: colors.glassBorder,
     minHeight: 44,
     justifyContent: 'center',
   },
   periodTabActive: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   periodLabel: {
     fontSize: rf(11),
     fontWeight: '600',
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
   periodLabelActive: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   weightRow: {
     flexDirection: 'row',
@@ -414,14 +414,14 @@ const styles = StyleSheet.create({
   currentLabel: {
     fontSize: rf(10),
     fontWeight: '600',
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     letterSpacing: 0.8,
     marginBottom: rp(2),
   },
   currentWeight: {
     fontSize: rf(32),
     fontWeight: '800',
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   changeBadge: {
     flexDirection: 'row',
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
   },
   changeBadgeVs: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     fontWeight: '500',
   },
   chartWrapper: {
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
     marginTop: rp(12),
     paddingTop: rp(12),
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.glassBorder,
+    borderTopColor: colors.glassBorder,
   },
   statItem: {
     alignItems: 'center',
@@ -460,18 +460,18 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: rf(9),
     fontWeight: '700',
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     letterSpacing: 0.6,
     marginBottom: rp(3),
   },
   statValue: {
     fontSize: rf(13),
     fontWeight: '700',
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   statDivider: {
     width: 1,
     height: rh(28),
-    backgroundColor: ResponsiveTheme.colors.glassBorder,
+    backgroundColor: colors.glassBorder,
   },
 });

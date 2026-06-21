@@ -4,7 +4,7 @@ import { FoodRecognitionPanel } from "./FoodRecognitionPanel";
 import MealTypeSelector from "./MealTypeSelector";
 import JobStatusIndicator from "./JobStatusIndicator";
 import CreateRecipeModal from "./CreateRecipeModal";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 
 interface DietModalsProps {
   showCamera: boolean;
@@ -124,9 +124,9 @@ export const DietModals: React.FC<DietModalsProps> = (props) => {
 const styles = StyleSheet.create({
   asyncJobModalOverlay: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.overlay,
+    backgroundColor: colors.overlay,
     justifyContent: "center",
     alignItems: "center",
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
   },
 });

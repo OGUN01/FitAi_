@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rs, rbr, rp, rh } from "../../utils/responsive";
 
 /**
@@ -58,13 +58,13 @@ const ActivityCard: React.FC<{
   const getActivityColor = (type: string) => {
     switch (type) {
       case "workout":
-        return ResponsiveTheme.colors.success;
+        return colors.success;
       case "meal":
-        return ResponsiveTheme.colors.primary;
+        return colors.primary;
       case "achievement":
-        return ResponsiveTheme.colors.warning;
+        return colors.warning;
       default:
-        return ResponsiveTheme.colors.textMuted;
+        return colors.textMuted;
     }
   };
 
@@ -203,75 +203,75 @@ export const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
   },
   viewAllButton: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.primary,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.primary,
   },
   activityList: {
     maxHeight: rh(300),
   },
   activityCard: {
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
   activityHeader: {
     flexDirection: "row",
     alignItems: "flex-start",
   },
   activityIconContainer: {
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   activityIcon: {
     fontSize: rf(20),
   },
   activityContent: {
     flex: 1,
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   activityTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   activityDescription: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.normal,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
   activityDetails: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textMuted,
   },
   activityMeta: {
     alignItems: "flex-end",
   },
   activityTime: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.textMuted,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textMuted,
+    marginBottom: spacing.xs,
   },
   activityIndicator: {
     width: rs(8),
@@ -280,24 +280,24 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.xxl,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: spacing.xxl,
+    paddingHorizontal: spacing.lg,
   },
   emptyIcon: {
     fontSize: rf(48),
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   emptyTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
     textAlign: "center",
   },
   emptyDescription: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.normal,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(20),
   },

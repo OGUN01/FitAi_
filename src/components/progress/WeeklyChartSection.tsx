@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { rp, rh, rw, rs } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
 
 interface WeeklyChartSectionProps {
@@ -76,13 +76,13 @@ export const WeeklyChartSection: React.FC<WeeklyChartSectionProps> = ({
             <View
               style={[
                 styles.legendDot,
-                { backgroundColor: ResponsiveTheme.colors.primary },
+                { backgroundColor: colors.primary },
               ]}
             />
             <Text style={styles.legendText}>Workouts</Text>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: ResponsiveTheme.colors.success }]} />
+            <View style={[styles.legendDot, { backgroundColor: colors.success }]} />
             <Text style={styles.legendText}>Meals</Text>
           </View>
           <View style={styles.legendItem}>
@@ -90,7 +90,7 @@ export const WeeklyChartSection: React.FC<WeeklyChartSectionProps> = ({
               style={[
                 styles.legendDot,
                 {
-                  backgroundColor: ResponsiveTheme.colors.secondary,
+                  backgroundColor: colors.secondary,
                 },
               ]}
             />
@@ -104,37 +104,37 @@ export const WeeklyChartSection: React.FC<WeeklyChartSectionProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
   chartCard: {
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
   },
   chartHeader: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   chartTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
   },
   chartSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
   chart: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-end",
     height: rh(100),
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   chartDay: {
     alignItems: "center",
@@ -144,30 +144,30 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-end",
     height: rh(80),
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   chartBar: {
     width: rw(8),
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    borderRadius: borderRadius.sm,
     marginHorizontal: rp(1),
   },
   workoutBar: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
   mealBar: {
-    backgroundColor: ResponsiveTheme.colors.success,
+    backgroundColor: colors.success,
   },
   calorieBar: {
-    backgroundColor: ResponsiveTheme.colors.secondary,
+    backgroundColor: colors.secondary,
   },
   chartDayLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
   },
   chartLegend: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: ResponsiveTheme.spacing.lg,
+    gap: spacing.lg,
   },
   legendItem: {
     flexDirection: "row",
@@ -177,10 +177,10 @@ const styles = StyleSheet.create({
     width: rw(8),
     height: rh(8),
     borderRadius: rs(4),
-    marginRight: ResponsiveTheme.spacing.xs,
+    marginRight: spacing.xs,
   },
   legendText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
   },
 });

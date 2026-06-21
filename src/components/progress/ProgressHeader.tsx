@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 
 interface ProgressHeaderProps {
@@ -38,7 +38,7 @@ export const ProgressHeader: React.FC<ProgressHeaderProps> = React.memo(({
           <Ionicons
             name="arrow-back"
             size={rf(20)}
-            color={ResponsiveTheme.colors.text}
+            color={colors.text}
           />
         </AnimatedPressable>
       )}
@@ -50,7 +50,7 @@ export const ProgressHeader: React.FC<ProgressHeaderProps> = React.memo(({
             <Ionicons
               name="checkmark-circle"
               size={rf(16)}
-              color={ResponsiveTheme.colors.success}
+              color={colors.success}
             />
           </View>
         )}
@@ -66,7 +66,7 @@ export const ProgressHeader: React.FC<ProgressHeaderProps> = React.memo(({
           <Ionicons
             name="add"
             size={rf(16)}
-            color={ResponsiveTheme.colors.white}
+            color={colors.white}
           />
         </AnimatedPressable>
         <AnimatedPressable
@@ -79,7 +79,7 @@ export const ProgressHeader: React.FC<ProgressHeaderProps> = React.memo(({
           <Ionicons
             name="share-outline"
             size={rf(20)}
-            color={ResponsiveTheme.colors.text}
+            color={colors.text}
           />
         </AnimatedPressable>
       </View>
@@ -92,24 +92,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
-    paddingBottom: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
   },
   title: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.xxl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
     flex: 1,
   },
   backButton: {
     width: Math.max(rw(40), 44),
     height: Math.max(rh(40), 44),
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.backgroundTertiary,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   headerButtons: {
     flexDirection: "row",
@@ -119,35 +119,35 @@ const styles = StyleSheet.create({
   statusButton: {
     width: rw(32),
     height: rh(32),
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.backgroundTertiary,
     justifyContent: "center",
     alignItems: "center",
   },
   analyticsButton: {
     width: rw(32),
     height: rh(32),
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.backgroundTertiary,
     justifyContent: "center",
     alignItems: "center",
   },
   analyticsButtonActive: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
   addButton: {
     width: Math.max(rs(36), 44),
     height: Math.max(rs(36), 44),
     borderRadius: Math.max(rs(18), 22),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
   },
   shareButton: {
     width: Math.max(rw(40), 44),
     height: Math.max(rh(40), 44),
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.backgroundTertiary,
     justifyContent: "center",
     alignItems: "center",
   },

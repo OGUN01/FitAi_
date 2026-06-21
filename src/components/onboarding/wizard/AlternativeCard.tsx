@@ -1,3 +1,4 @@
+import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import React, { useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import Animated, {
@@ -10,7 +11,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rw, rp } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
 import { Alternative } from "../../../hooks/adjustment-wizard";
 import { MetricPill } from "./MetricPill";
 
@@ -64,8 +64,8 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
         <Animated.View style={[styles.selectionBorder, animatedBorderStyle]}>
           <LinearGradient
             colors={[
-              ResponsiveTheme.colors.primary,
-              ResponsiveTheme.colors.secondary,
+              colors.primary,
+              colors.secondary,
             ]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -105,7 +105,7 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
                 </Text>
                 {isRecommended && (
                   <View style={styles.recommendedBadge}>
-                    <Ionicons name="star" size={rf(10)} color={ResponsiveTheme.colors.warningAlt} />
+                    <Ionicons name="star" size={rf(10)} color={colors.warningAlt} />
                     <Text style={styles.recommendedText}>Recommended</Text>
                   </View>
                 )}
@@ -119,7 +119,7 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
                 ]}
               >
                 {isSelected && (
-                  <Ionicons name="checkmark" size={rf(14)} color={ResponsiveTheme.colors.white} />
+                  <Ionicons name="checkmark" size={rf(14)} color={colors.white} />
                 )}
               </View>
             </View>
@@ -142,7 +142,7 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
                   icon="fitness-outline"
                   label="Target"
                   value={`${alternative.newTargetWeight} kg`}
-                  color={ResponsiveTheme.colors.successAlt}
+                  color={colors.successAlt}
                 />
               )}
               <MetricPill
@@ -156,14 +156,14 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
                   icon="barbell-outline"
                   label="Workouts"
                   value={`${alternative.newWorkoutFrequency}×/wk`}
-                  color={ResponsiveTheme.colors.accent}
+                  color={colors.accent}
                 />
               )}
               <MetricPill
                 icon="trending-down-outline"
                 label="Rate"
                 value={`${alternative.weeklyRate != null ? alternative.weeklyRate.toFixed(2) : "--"} kg/wk`}
-                color={ResponsiveTheme.colors.pink}
+                color={colors.pink}
               />
             </View>
 
@@ -175,7 +175,7 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
                   <Ionicons
                     name="checkmark-circle"
                     size={rf(14)}
-                    color={ResponsiveTheme.colors.successAlt}
+                    color={colors.successAlt}
                   />
                   <Text style={styles.prosTitle}>Benefits</Text>
                 </View>
@@ -192,7 +192,7 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
               {/* Cons */}
               <View style={styles.consSection}>
                 <View style={styles.consHeader}>
-                  <Ionicons name="alert-circle" size={rf(14)} color={ResponsiveTheme.colors.warningAlt} />
+                  <Ionicons name="alert-circle" size={rf(14)} color={colors.warningAlt} />
                   <Text style={styles.consTitle}>Trade-offs</Text>
                 </View>
                 {(alternative.cons || []).slice(0, 2).map((con, i) => (
@@ -211,8 +211,8 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
 
 const styles = StyleSheet.create({
   alternativeCard: {
-    marginBottom: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.lg,
     overflow: "hidden",
     position: "relative",
   },
@@ -222,27 +222,27 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     padding: rp(2),
   },
   selectionGradient: {
     flex: 1,
-    borderRadius: ResponsiveTheme.borderRadius.lg - 2,
+    borderRadius: borderRadius.lg - 2,
   },
   cardBlur: {
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.08)",
   },
   cardInner: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
     backgroundColor: "rgba(30, 30, 45, 0.85)",
   },
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   iconCircle: {
     width: rw(40),
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     borderRadius: rw(20),
     alignItems: "center",
     justifyContent: "center",
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   titleContainer: {
     flex: 1,
@@ -258,25 +258,25 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(2),
   },
   cardTitleSelected: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   recommendedBadge: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(245, 158, 11, 0.15)",
     paddingVertical: rp(2),
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    paddingHorizontal: spacing.xs,
+    borderRadius: borderRadius.sm,
     alignSelf: "flex-start",
   },
   recommendedText: {
     fontSize: rf(9),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.warningAlt,
+    color: colors.warningAlt,
     marginLeft: rp(3),
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -291,26 +291,26 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   selectionIndicatorActive: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   approachText: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
     lineHeight: rf(16),
   },
   metricsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.xs,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
   },
   prosConsRow: {
     flexDirection: "row",
     backgroundColor: "rgba(0,0,0,0.2)",
-    borderRadius: ResponsiveTheme.borderRadius.sm,
-    padding: ResponsiveTheme.spacing.sm,
+    borderRadius: borderRadius.sm,
+    padding: spacing.sm,
   },
   prosSection: {
     flex: 1,
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   prosConsDivider: {
     width: 1,
     backgroundColor: "rgba(255,255,255,0.1)",
-    marginHorizontal: ResponsiveTheme.spacing.sm,
+    marginHorizontal: spacing.sm,
   },
   prosHeader: {
     flexDirection: "row",
@@ -336,25 +336,25 @@ const styles = StyleSheet.create({
   prosTitle: {
     fontSize: rf(10),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.successAlt,
+    color: colors.successAlt,
     marginLeft: rp(4),
     textTransform: "uppercase",
   },
   consTitle: {
     fontSize: rf(10),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.warningAlt,
+    color: colors.warningAlt,
     marginLeft: rp(4),
     textTransform: "uppercase",
   },
   prosText: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rp(2),
   },
   consText: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rp(2),
   },
 });

@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rh } from "../../../utils/responsive";
 
 interface RecipePrompt {
@@ -53,7 +53,7 @@ export const RecipePromptInput: React.FC<RecipePromptInputProps> = ({
           value && styles.textInputFilled,
         ]}
         placeholder={prompt.placeholder}
-        placeholderTextColor={ResponsiveTheme.colors.textMuted}
+        placeholderTextColor={colors.textMuted}
         value={value}
         onChangeText={onChangeText}
         onFocus={onFocus}
@@ -91,89 +91,89 @@ export const RecipePromptInput: React.FC<RecipePromptInputProps> = ({
 
 const styles = StyleSheet.create({
   promptSection: {
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.border,
+    borderBottomColor: colors.border,
   },
 
   promptHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   promptIcon: {
     fontSize: rf(20),
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
 
   promptTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
     flex: 1,
   },
 
   requiredIndicator: {
     fontSize: rf(16),
-    color: ResponsiveTheme.colors.error,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: colors.error,
+    fontWeight: typography.fontWeight.bold,
   },
 
   textInput: {
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    padding: ResponsiveTheme.spacing.md,
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    fontSize: fontSize.md,
+    color: colors.text,
+    marginBottom: spacing.md,
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
     minHeight: rh(44),
   },
 
   textInputFocused: {
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
   },
 
   textInputFilled: {
-    backgroundColor: ResponsiveTheme.colors.primary + "08",
+    backgroundColor: colors.primary + "08",
   },
 
   examplesLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+    fontWeight: typography.fontWeight.medium,
   },
 
   examplesContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
 
   exampleChip: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: colors.backgroundSecondary,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
 
   exampleChipSelected: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
 
   exampleText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
 
   exampleTextSelected: {
-    color: ResponsiveTheme.colors.white,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: colors.white,
+    fontWeight: typography.fontWeight.medium,
   },
 });

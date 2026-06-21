@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../ui";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw, rs } from "../../utils/responsive";
 import { Exercise, WorkoutSet } from "../../types/workout";
 
@@ -75,7 +75,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
       cardio: "#FF7675",
       flexibility: "#A29BFE",
     };
-    return colors[group.toLowerCase()] || ResponsiveTheme.colors.primary;
+    return colors[group.toLowerCase()] || colors.primary;
   };
 
   const getDifficultyIcon = (
@@ -96,13 +96,13 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "beginner":
-        return ResponsiveTheme.colors.success;
+        return colors.success;
       case "intermediate":
-        return ResponsiveTheme.colors.warning;
+        return colors.warning;
       case "advanced":
-        return ResponsiveTheme.colors.error;
+        return colors.error;
       default:
-        return ResponsiveTheme.colors.textMuted;
+        return colors.textMuted;
     }
   };
 
@@ -154,7 +154,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                 <Ionicons
                   name="checkmark"
                   size={rf(16)}
-                  color={ResponsiveTheme.colors.white}
+                  color={colors.white}
                 />
               </View>
             ) : (
@@ -162,7 +162,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                 <Ionicons
                   name="play"
                   size={rf(14)}
-                  color={ResponsiveTheme.colors.textSecondary}
+                  color={colors.textSecondary}
                 />
               </TouchableOpacity>
             )}
@@ -198,7 +198,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                   <Ionicons
                     name="time-outline"
                     size={rf(14)}
-                    color={ResponsiveTheme.colors.textSecondary}
+                    color={colors.textSecondary}
                     style={styles.detailIcon}
                   />
                   <Text style={styles.detailLabel}>Rest time:</Text>
@@ -213,7 +213,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                   <Ionicons
                     name="flame-outline"
                     size={rf(14)}
-                    color={ResponsiveTheme.colors.textSecondary}
+                    color={colors.textSecondary}
                     style={styles.detailIcon}
                   />
                   <Text style={styles.detailLabel}>Calories:</Text>
@@ -310,7 +310,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
           <Ionicons
             name={isExpanded ? "chevron-up" : "chevron-down"}
             size={rf(14)}
-            color={ResponsiveTheme.colors.textMuted}
+            color={colors.textMuted}
           />
         </Pressable>
       </View>
@@ -320,22 +320,22 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   cardCompleted: {
-    backgroundColor: `${ResponsiveTheme.colors.success}08`,
-    borderColor: ResponsiveTheme.colors.success,
+    backgroundColor: `${colors.success}08`,
+    borderColor: colors.success,
   },
 
   cardContent: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
   },
 
   header: {
     flexDirection: "row",
     alignItems: "center" as const,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   headerPressable: {
@@ -348,16 +348,16 @@ const styles = StyleSheet.create({
     width: rs(32),
     height: rs(32),
     borderRadius: rbr(16),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
 
   exerciseNumberText: {
-    color: ResponsiveTheme.colors.white,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: colors.white,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
   },
 
   titleSection: {
@@ -365,14 +365,14 @@ const styles = StyleSheet.create({
   },
 
   exerciseName: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
     marginBottom: rp(4),
   },
 
   exerciseNameCompleted: {
-    color: ResponsiveTheme.colors.success,
+    color: colors.success,
   },
 
   metaRow: {
@@ -381,8 +381,8 @@ const styles = StyleSheet.create({
   },
 
   metaText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
 
   statusSection: {
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     width: rs(32),
     height: rs(32),
     borderRadius: rbr(16),
-    backgroundColor: ResponsiveTheme.colors.success,
+    backgroundColor: colors.success,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
@@ -402,79 +402,79 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: rbr(22),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
 
   timerSection: {
     alignItems: "center" as const,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   timerDisplay: {
-    backgroundColor: ResponsiveTheme.colors.warning,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.warning,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
   },
 
   timerText: {
-    color: ResponsiveTheme.colors.white,
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: colors.white,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.bold,
   },
 
   expandedContent: {
-    marginTop: ResponsiveTheme.spacing.md,
-    paddingTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
+    borderTopColor: colors.border,
   },
 
   detailsSection: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   detailRow: {
     flexDirection: "row",
     alignItems: "center" as const,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
 
   detailIcon: {
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
     width: rw(20),
   },
 
   detailLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginRight: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginRight: spacing.sm,
     minWidth: 80,
   },
 
   detailValue: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.text,
+    fontWeight: typography.fontWeight.medium,
   },
 
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
 
   muscleGroupsSection: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   muscleGroupsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
 
   muscleGroupChip: {
@@ -484,104 +484,104 @@ const styles = StyleSheet.create({
   },
 
   muscleGroupText: {
-    color: ResponsiveTheme.colors.white,
-    fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: colors.white,
+    fontSize: fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
     textTransform: "capitalize",
   },
 
   equipmentSection: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   equipmentContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
 
   equipmentChip: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     paddingHorizontal: rp(8),
     paddingVertical: rp(4),
     borderRadius: rbr(12),
   },
 
   equipmentText: {
-    color: ResponsiveTheme.colors.text,
-    fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: colors.text,
+    fontSize: fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
     textTransform: "capitalize",
   },
 
   instructionsSection: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   instructionItem: {
     flexDirection: "row",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   instructionNumber: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.primary,
-    marginRight: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
+    marginRight: spacing.sm,
     minWidth: 20,
   },
 
   instructionText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    color: colors.text,
     flex: 1,
     lineHeight: rf(20),
   },
 
   tipsSection: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   tipText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
     lineHeight: rf(18),
   },
 
   actionButtons: {
     alignItems: "center" as const,
-    marginTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.md,
   },
 
   completeButton: {
-    backgroundColor: ResponsiveTheme.colors.success,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.success,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
     minHeight: 44,
     justifyContent: "center",
   },
 
   completeButtonText: {
-    color: ResponsiveTheme.colors.white,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: colors.white,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
   },
 
   completedStatus: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
 
   completedStatusText: {
-    color: ResponsiveTheme.colors.success,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: colors.success,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
   },
 
   expandIndicator: {
     alignItems: "center" as const,
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.sm,
   },
 });

@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors } from "../../../theme/aurora-tokens";
 import { rf, rh, rw, rp, rbr } from "../../../utils/responsive";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rh(8),
   },
   typeSelector: {
@@ -61,21 +61,21 @@ const styles = StyleSheet.create({
     paddingVertical: rh(12),
     paddingHorizontal: rw(16),
     borderRadius: rbr(12),
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
     alignItems: "center" as const,
   },
   typeButtonActive: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   typeButtonText: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   typeButtonTextActive: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 });

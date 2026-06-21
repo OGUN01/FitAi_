@@ -1,9 +1,7 @@
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { rh } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
-
-interface ProgressBarProps {
+import { rh } from "../../../utils/responsive";interface ProgressBarProps {
   overallCompletion: number;
   completedTabs: number;
   totalTabs: number;
@@ -33,24 +31,24 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 
 const styles = StyleSheet.create({
   overallProgressSection: {
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: spacing.xl,
   },
   overallProgressBar: {
     width: "100%",
     height: rh(8),
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.full,
     overflow: "hidden",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   overallProgressFill: {
     height: "100%",
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.full,
   },
   overallProgressText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
   },
 });

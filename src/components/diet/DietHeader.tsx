@@ -9,7 +9,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 
 interface DietHeaderProps {
@@ -41,10 +41,10 @@ export const DietHeader: React.FC<DietHeaderProps> = ({
       caloriesGoal > 0
         ? ((caloriesGoal - caloriesRemaining) / caloriesGoal) * 100
         : 0;
-    if (percentage >= 100) return { text: "Goal reached!", color: ResponsiveTheme.colors.success };
-    if (percentage >= 75) return { text: "Almost there", color: ResponsiveTheme.colors.warning };
-    if (percentage >= 50) return { text: "On track", color: ResponsiveTheme.colors.info };
-    return { text: "Keep going", color: ResponsiveTheme.colors.primary };
+    if (percentage >= 100) return { text: "Goal reached!", color: colors.success };
+    if (percentage >= 75) return { text: "Almost there", color: colors.warning };
+    if (percentage >= 50) return { text: "On track", color: colors.info };
+    return { text: "Keep going", color: colors.primary };
   }, [caloriesRemaining, caloriesGoal]);
 
   return (
@@ -87,7 +87,7 @@ export const DietHeader: React.FC<DietHeaderProps> = ({
             <Ionicons
               name="settings-outline"
               size={rf(20)}
-              color={ResponsiveTheme.colors.textSecondary}
+              color={colors.textSecondary}
             />
           </AnimatedPressable>
         )}
@@ -101,9 +101,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.md,
-    paddingBottom: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
   leftSection: {
     flex: 1,
@@ -111,26 +111,26 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: rf(14),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rp(2),
   },
   title: {
     fontSize: rf(28),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     letterSpacing: -0.5,
   },
   rightSection: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   calorieBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
     gap: rp(4),
   },
   calorieText: {
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     width: Math.max(rw(44), 44),
     height: Math.max(rw(44), 44),
     borderRadius: Math.max(rw(22), 22),
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
     justifyContent: "center",
     alignItems: "center",
   },

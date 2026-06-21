@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Card } from "../../ui";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf } from "../../../utils/responsive";
 
 export const RecipeAIFeatures: React.FC = () => {
@@ -20,24 +20,24 @@ export const RecipeAIFeatures: React.FC = () => {
 
 const styles = StyleSheet.create({
   aiCard: {
-    margin: ResponsiveTheme.spacing.lg,
-    padding: ResponsiveTheme.spacing.lg,
+    margin: spacing.lg,
+    padding: spacing.lg,
   },
 
   aiTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
 
   aiFeatures: {
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
 
   aiFeature: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     lineHeight: rf(18),
   },
 });

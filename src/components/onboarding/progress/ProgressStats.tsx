@@ -1,8 +1,6 @@
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
-
-interface ProgressStatsProps {
+import { View, Text, StyleSheet } from "react-native";interface ProgressStatsProps {
   completedTabs: number;
   totalTabs: number;
   totalErrors: number;
@@ -35,22 +33,22 @@ const styles = StyleSheet.create({
   statsSection: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingTop: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
+    borderTopColor: colors.border,
   },
   statItem: {
     alignItems: "center",
   },
   statValue: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.primary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
+    marginBottom: spacing.xs,
   },
   statLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
   },
 });

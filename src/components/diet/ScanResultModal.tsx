@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rp } from "../../utils/responsive";
 import { gradients, toLinearGradientProps } from "../../theme/gradients";
 
@@ -190,7 +190,7 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
             <Ionicons
               name="information-circle-outline"
               size={rf(14)}
-              color={ResponsiveTheme.colors.textSecondary}
+              color={colors.textSecondary}
             />
             <Text style={styles.disclaimerText}>
               AI estimate — review before logging
@@ -225,7 +225,7 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
               <Ionicons
                 name="resize-outline"
                 size={rf(16)}
-                color={ResponsiveTheme.colors.primary}
+                color={colors.primary}
               />
               <Text style={styles.outlineButtonText}>Adjust Portions</Text>
             </TouchableOpacity>
@@ -237,7 +237,7 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
               <Ionicons
                 name="chatbubble-outline"
                 size={rf(16)}
-                color={ResponsiveTheme.colors.primary}
+                color={colors.primary}
               />
               <Text style={styles.outlineButtonText}>Feedback</Text>
             </TouchableOpacity>
@@ -289,10 +289,10 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderTopLeftRadius: ResponsiveTheme.borderRadius.xl,
-    borderTopRightRadius: ResponsiveTheme.borderRadius.xl,
-    padding: ResponsiveTheme.spacing.lg,
+    backgroundColor: colors.backgroundSecondary,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    padding: spacing.lg,
     paddingBottom: rp(32),
     maxHeight: "85%",
   },
@@ -300,29 +300,29 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   title: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   headerBadges: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   badge: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: rp(8),
     paddingVertical: rp(3),
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    borderRadius: borderRadius.sm,
     gap: 4,
   },
   badgeDot: {
@@ -335,47 +335,47 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   mealTypeBadge: {
-    backgroundColor: `${ResponsiveTheme.colors.primary}20`,
+    backgroundColor: `${colors.primary}20`,
     paddingHorizontal: rp(8),
     paddingVertical: rp(3),
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    borderRadius: borderRadius.sm,
   },
   mealTypeText: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   foodList: {
     maxHeight: 280,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   foodCard: {
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    padding: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
   },
   foodHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   foodName: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     flex: 1,
   },
   foodServing: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: "500",
-    marginLeft: ResponsiveTheme.spacing.sm,
+    marginLeft: spacing.sm,
   },
   macroRow: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
     flexWrap: "wrap",
   },
   macroChip: {
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     gap: 3,
     paddingHorizontal: rp(7),
     paddingVertical: rp(3),
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    borderRadius: borderRadius.sm,
   },
   macroChipLabel: {
     fontSize: rf(10),
@@ -397,17 +397,17 @@ const styles = StyleSheet.create({
   totalBar: {
     flexDirection: "row",
     justifyContent: "space-around",
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    padding: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
   },
   totalItem: {
     alignItems: "center",
   },
   totalLabel: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: "500",
     marginBottom: 2,
   },
@@ -420,24 +420,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 4,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   disclaimerText: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   primaryButton: {
-    marginBottom: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    marginBottom: spacing.sm,
+    borderRadius: borderRadius.md,
     overflow: "hidden",
   },
   primaryButtonGradient: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
     paddingVertical: rp(14),
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
   },
   primaryButtonText: {
     fontSize: rf(15),
@@ -446,24 +446,24 @@ const styles = StyleSheet.create({
   },
   secondaryRow: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   outlineButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
     paddingVertical: rp(11),
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
   },
   outlineButtonText: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   cancelButton: {
     alignItems: "center",
@@ -471,6 +471,6 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
 });

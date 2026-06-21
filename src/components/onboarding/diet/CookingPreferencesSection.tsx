@@ -1,8 +1,8 @@
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import React, { type ComponentProps } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rw, rh } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
 import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
 import { Slider } from "../../../components/ui";
 import { COOKING_SKILL_LEVELS } from "../../../screens/onboarding/tabs/DietPreferencesConstants";
@@ -101,8 +101,8 @@ export const CookingPreferencesSection: React.FC<
                       size={rf(22)}
                       color={
                         isSelected
-                          ? ResponsiveTheme.colors.primary
-                          : ResponsiveTheme.colors.textSecondary
+                          ? colors.primary
+                          : colors.textSecondary
                       }
                     />
                   </View>
@@ -135,7 +135,7 @@ export const CookingPreferencesSection: React.FC<
                       <Ionicons
                         name="checkmark"
                         size={rf(12)}
-                        color={ResponsiveTheme.colors.white}
+                        color={colors.white}
                       />
                     )}
                   </View>
@@ -165,7 +165,7 @@ export const CookingPreferencesSection: React.FC<
               <Ionicons
                 name="information-circle-outline"
                 size={rf(16)}
-                color={ResponsiveTheme.colors.textSecondary}
+                color={colors.textSecondary}
               />
               <Text
                 style={styles.disabledText}
@@ -265,8 +265,8 @@ export const CookingPreferencesSection: React.FC<
                       size={rf(14)}
                       color={
                         isSelected
-                          ? ResponsiveTheme.colors.primary
-                          : ResponsiveTheme.colors.textSecondary
+                          ? colors.primary
+                          : colors.textSecondary
                       }
                     />
                     <Text
@@ -293,82 +293,82 @@ export const CookingPreferencesSection: React.FC<
 
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
-    marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.xl,
-    marginHorizontal: -ResponsiveTheme.spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.xl,
+    marginHorizontal: -spacing.lg,
   },
   sectionTitlePadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
     letterSpacing: -0.3,
     flexShrink: 1,
   },
   sectionSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: ResponsiveTheme.fontSize.sm * 1.4,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+    lineHeight: fontSize.sm * 1.4,
     flexShrink: 1,
   },
   edgeToEdgeContentPadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   fieldLabel: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
+    marginBottom: spacing.sm,
     flexShrink: 1,
   },
   scrollContainerInset: {
-    marginHorizontal: ResponsiveTheme.spacing.lg,
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
     overflow: "hidden",
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
   },
   scrollContentInset: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
     gap: rw(10),
   },
   consistentCardItem: {
     width: rw(105),
   },
   consistentCard: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: "transparent",
-    padding: ResponsiveTheme.spacing.sm,
+    padding: spacing.sm,
     minHeight: rh(12),
     alignItems: "center",
   },
   consistentCardSelected: {
-    borderColor: ResponsiveTheme.colors.primary,
-    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}10`,
   },
   consistentCardIconCenter: {
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   consistentCardTitle: {
     fontSize: rf(11),
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   consistentCardTitleSelected: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   consistentCardDesc: {
     fontSize: rf(9),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     textAlign: "center",
     lineHeight: rf(12),
   },
@@ -381,39 +381,39 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
   },
   consistentCardIndicatorSelected: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   disabledCardInline: {
-    backgroundColor: `${ResponsiveTheme.colors.textSecondary}10`,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    backgroundColor: `${colors.textSecondary}10`,
+    marginBottom: spacing.lg,
   },
   disabledContent: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   disabledText: {
     flex: 1,
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
     lineHeight: rf(16),
   },
   sectionBottomPad: {
-    height: ResponsiveTheme.spacing.lg,
+    height: spacing.lg,
   },
   methodsHint: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
   },
   methodsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: rw(8),
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   methodChip: {
     flexDirection: "row",
@@ -421,21 +421,21 @@ const styles = StyleSheet.create({
     gap: rw(4),
     paddingHorizontal: rw(12),
     paddingVertical: rh(0.8),
-    borderRadius: ResponsiveTheme.borderRadius.full,
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundTertiary,
     borderWidth: 1,
     borderColor: "transparent",
   },
   methodChipSelected: {
-    borderColor: ResponsiveTheme.colors.primary,
-    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}10`,
   },
   methodChipText: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   methodChipTextSelected: {
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.medium,
   },
 });

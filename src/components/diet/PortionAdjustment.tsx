@@ -14,7 +14,7 @@ import {
   ViewStyle,
 } from "react-native";
 import { SafeAreaView } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { Button, Card } from "../ui";
 import { RecognizedFood } from "../../services/foodRecognitionService";
 import { rf, rh, rw, rbr } from "../../utils/responsive";
@@ -426,7 +426,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
                   style={styles.manualInput}
                   keyboardType="numeric"
                   placeholder="Enter grams"
-                  placeholderTextColor={ResponsiveTheme.colors.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   value={String(currentAdjustment.adjustedGrams)}
                   onChangeText={(text) => {
                     const numValue = parseInt(text.replace(/[^0-9]/g, ""), 10);
@@ -537,7 +537,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
             <View style={styles.processingIndicator}>
               <ActivityIndicator
                 size="small"
-                color={ResponsiveTheme.colors.primary}
+                color={colors.primary}
               />
               <Text style={styles.processingText}>
                 Recalculating nutrition...
@@ -553,116 +553,116 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
 
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.border,
+    borderBottomColor: colors.border,
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.xl,
+    fontSize: fontSize.xl,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
 
   closeButton: {
     width: rw(32),
     height: rh(32),
     borderRadius: rbr(16),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
   },
 
   closeText: {
     fontSize: rf(16),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     fontWeight: "600",
   },
 
   progressIndicator: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
 
   progressText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
     textAlign: "center",
   },
 
   progressBar: {
     height: rh(4),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     borderRadius: rbr(2),
   },
 
   progressFill: {
     height: "100%",
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: rbr(2),
   },
 
   content: {
     flex: 1,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
 
   foodCard: {
-    padding: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   foodHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   foodName: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: fontSize.lg,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     flex: 1,
   },
 
   originalBadge: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
+    backgroundColor: colors.backgroundTertiary,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
     borderRadius: rbr(12),
   },
 
   originalText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
     fontWeight: "600",
   },
 
   nutritionPreview: {
-    marginTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.md,
   },
 
   previewTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
 
   nutritionGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
 
   nutritionItem: {
@@ -672,61 +672,61 @@ const styles = StyleSheet.create({
   },
 
   nutritionLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginBottom: spacing.xs,
   },
 
   nutritionValue: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    color: colors.text,
     fontWeight: "700",
   },
 
   sliderCard: {
-    padding: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
 
   currentPortionDisplay: {
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   currentPortionGrams: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontSize: fontSize.xxl,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
 
   currentPortionLabel: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
 
   adjustmentRatio: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
     fontStyle: "italic",
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
   },
 
   slider: {
     width: "100%",
     height: rh(40),
-    marginVertical: ResponsiveTheme.spacing.md,
+    marginVertical: spacing.md,
   },
 
   sliderThumb: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     width: rw(24),
     height: rh(24),
   },
@@ -742,21 +742,21 @@ const styles = StyleSheet.create({
   },
 
   sliderLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
   },
 
   manualInputContainer: {
-    marginTop: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.lg,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
+    borderTopColor: colors.border,
   },
 
   manualInputLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
     textAlign: "center",
   },
 
@@ -764,109 +764,109 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
 
   manualInput: {
     width: rw(100),
     height: rh(48),
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.primary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    fontSize: ResponsiveTheme.fontSize.lg,
+    borderColor: colors.primary,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    fontSize: fontSize.lg,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textAlign: "center",
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
 
   manualInputUnit: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     fontWeight: "600",
   },
 
   quickPortionsCard: {
-    padding: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   quickPortionsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
 
   quickPortionButton: {
     flex: 1,
     minWidth: "45%",
-    padding: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.background,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
     alignItems: "center",
   },
 
   quickPortionButtonActive: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
 
   quickPortionLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    color: colors.text,
     fontWeight: "600",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
 
   quickPortionLabelActive: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 
   quickPortionGrams: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
   },
 
   quickPortionGramsActive: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 
   resetCard: {
-    padding: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   resetButton: {
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.backgroundTertiary,
     alignItems: "center",
   },
 
   resetButtonText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    color: colors.text,
     fontWeight: "600",
   },
 
   resetButtonTextDisabled: {
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
 
   navigationContainer: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
+    borderTopColor: colors.border,
   },
 
   navigationButtons: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
 
   navButton: {
@@ -877,13 +877,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.md,
   },
 
   processingText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginLeft: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginLeft: spacing.sm,
   },
 
   // Custom Slider Styles
@@ -891,19 +891,19 @@ const styles = StyleSheet.create({
     width: "100%",
     height: rh(40),
     justifyContent: "center",
-    marginVertical: ResponsiveTheme.spacing.md,
+    marginVertical: spacing.md,
   },
 
   customSliderTrack: {
     height: rh(4),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     borderRadius: rbr(2),
     position: "relative",
   },
 
   customSliderFill: {
     height: "100%",
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: rbr(2),
     position: "absolute",
     left: 0,
@@ -915,11 +915,11 @@ const styles = StyleSheet.create({
     top: rh(-10),
     width: rw(24),
     height: rh(24),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: rbr(12),
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.white,
-    shadowColor: ResponsiveTheme.colors.black,
+    borderColor: colors.white,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,

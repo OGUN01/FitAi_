@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
 import { Button } from "../../components/ui";
@@ -56,7 +56,7 @@ export const ProgressErrorStates: React.FC<ProgressErrorStatesProps> = ({
           <Ionicons
             name="warning-outline"
             size={rf(24)}
-            color={ResponsiveTheme.colors.error}
+            color={colors.error}
           />
           <Text style={styles.errorText}>{error}</Text>
         </View>
@@ -85,7 +85,7 @@ export const ProgressErrorStates: React.FC<ProgressErrorStatesProps> = ({
           <Ionicons
             name="lock-closed-outline"
             size={rf(24)}
-            color={ResponsiveTheme.colors.error}
+            color={colors.error}
           />
           <Text style={styles.errorText}>
             Please sign in to track your progress
@@ -117,7 +117,7 @@ export const ProgressErrorStates: React.FC<ProgressErrorStatesProps> = ({
           <Ionicons
             name="stats-chart-outline"
             size={rf(24)}
-            color={ResponsiveTheme.colors.textSecondary}
+            color={colors.textSecondary}
           />
           <Text style={styles.noDataText}>No body measurements yet</Text>
         </View>
@@ -141,52 +141,52 @@ export const ProgressErrorStates: React.FC<ProgressErrorStatesProps> = ({
 const styles = StyleSheet.create({
   loadingContainer: {
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.xl,
+    paddingVertical: spacing.xl,
     zIndex: 10,
-    backgroundColor: ResponsiveTheme.colors.overlay, // Semi-transparent background
+    backgroundColor: colors.overlay, // Semi-transparent background
     justifyContent: "center",
   },
   loadingText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
+    marginTop: spacing.md,
   },
   errorCard: {
-    padding: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.md,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     alignItems: "center",
-    marginHorizontal: ResponsiveTheme.spacing.lg,
+    marginHorizontal: spacing.lg,
   },
   errorHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: rp(8),
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   errorText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.error,
+    fontSize: fontSize.md,
+    color: colors.error,
     textAlign: "center",
     flex: 1,
   },
   errorSubtext: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   retryButton: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   noDataHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: rp(8),
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   noDataText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center",
     flex: 1,
   },

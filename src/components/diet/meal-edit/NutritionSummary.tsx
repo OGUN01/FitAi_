@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors } from "../../../theme/aurora-tokens";
 import { rf, rh, rw, rp } from "../../../utils/responsive";
 
 interface NutritionData {
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rh(8),
   },
   nutritionGrid: {
@@ -68,19 +68,19 @@ const styles = StyleSheet.create({
   nutritionItem: {
     flex: 1,
     minWidth: "45%",
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rf(12),
     padding: rp(12),
     alignItems: "center" as const,
   },
   nutritionLabel: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rh(4),
   },
   nutritionValue: {
     fontSize: rf(18),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
 });

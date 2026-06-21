@@ -1,3 +1,4 @@
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import React from "react";
 import {
   View,
@@ -9,8 +10,6 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
-
 interface InfoTooltipModalProps {
   visible: boolean;
   title: string;
@@ -47,7 +46,7 @@ export const InfoTooltipModal: React.FC<InfoTooltipModalProps> = ({
               <Ionicons
                 name="close-circle"
                 size={rf(24)}
-                color={ResponsiveTheme.colors.textSecondary}
+                color={colors.textSecondary}
               />
             </TouchableOpacity>
           </View>
@@ -60,7 +59,7 @@ export const InfoTooltipModal: React.FC<InfoTooltipModalProps> = ({
                   <Ionicons
                     name="checkmark-circle"
                     size={rf(16)}
-                    color={ResponsiveTheme.colors.success}
+                    color={colors.success}
                   />
                   <Text style={styles.modalBenefitText}>{benefit}</Text>
                 </View>
@@ -79,12 +78,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.7)",
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   modalContent: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: ResponsiveTheme.borderRadius.xl,
-    padding: ResponsiveTheme.spacing.xl,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl,
     width: "100%",
     maxWidth: 360,
     borderWidth: 1,
@@ -94,12 +93,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   modalTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
     flex: 1,
   },
   modalCloseButton: {
@@ -109,31 +108,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalDescription: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     lineHeight: rf(22),
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   modalBenefits: {
-    backgroundColor: `${ResponsiveTheme.colors.success}10`,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    padding: ResponsiveTheme.spacing.md,
+    backgroundColor: `${colors.success}10`,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
   },
   modalBenefitsTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.success,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.success,
+    marginBottom: spacing.sm,
   },
   modalBenefitItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
   },
   modalBenefitText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    color: colors.text,
     flex: 1,
   },
 });

@@ -1,3 +1,4 @@
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import React, { useState, useRef, useEffect } from "react";
 import {
   View,
@@ -8,7 +9,6 @@ import {
   ScrollView,
 } from "react-native";
 import { rh, rw } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
 import { Button } from "../ui";
 
 // ============================================================================
@@ -318,100 +318,100 @@ const styles = StyleSheet.create({
   },
 
   modalContainer: {
-    backgroundColor: ResponsiveTheme.colors.background,
-    borderTopLeftRadius: ResponsiveTheme.borderRadius.xl,
-    borderTopRightRadius: ResponsiveTheme.borderRadius.xl,
-    paddingBottom: ResponsiveTheme.spacing.xl,
+    backgroundColor: colors.background,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    paddingBottom: spacing.xl,
     maxHeight: "80%",
   },
 
   header: {
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.border,
+    borderBottomColor: colors.border,
     alignItems: "center",
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
 
   selectedTime: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.primary,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
   },
 
   // Picker Container
   pickersContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    paddingVertical: ResponsiveTheme.spacing.lg,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
   },
 
   pickerSection: {
     alignItems: "center",
-    marginHorizontal: ResponsiveTheme.spacing.sm,
+    marginHorizontal: spacing.sm,
   },
 
   pickerLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
 
   // Wheel Styles
   wheelContainer: {
     height: rh(150),
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.backgroundSecondary,
   },
 
   wheelContent: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
   },
 
   wheelItem: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     minHeight: 44,
     alignItems: "center",
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    marginVertical: ResponsiveTheme.spacing.xs,
-    marginHorizontal: ResponsiveTheme.spacing.sm,
+    borderRadius: borderRadius.md,
+    marginVertical: spacing.xs,
+    marginHorizontal: spacing.sm,
   },
 
   wheelItemSelected: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
 
   wheelItemText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
   },
 
   wheelItemTextSelected: {
-    color: ResponsiveTheme.colors.white,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: colors.white,
+    fontWeight: typography.fontWeight.bold,
   },
 
   // Quick Times
   quickTimesContainer: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   quickTimesTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.md,
     textAlign: "center",
   },
 
@@ -419,31 +419,31 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
 
   quickTimeButton: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     minHeight: 44,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderColor: colors.border,
+    backgroundColor: colors.backgroundTertiary,
     justifyContent: "center",
   },
 
   quickTimeText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.text,
+    fontWeight: typography.fontWeight.medium,
   },
 
   // Actions
   actionsContainer: {
     flexDirection: "row",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    gap: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
   },
 
   cancelButton: {

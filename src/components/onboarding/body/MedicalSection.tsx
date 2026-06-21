@@ -1,9 +1,8 @@
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rs, rbr, rp } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
-import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
+import { rf, rs, rbr, rp } from "../../../utils/responsive";import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
 import { Input, Slider } from "../../../components/ui";
 import { MultiSelectWithCustom } from "../../../components/advanced/MultiSelectWithCustom";
 import {
@@ -258,7 +257,7 @@ export const MedicalSection: React.FC<MedicalSectionProps> = ({
                 <Ionicons
                   name="bulb-outline"
                   size={rf(18)}
-                  color={ResponsiveTheme.colors.primary}
+                  color={colors.primary}
                 />
                 <Text style={styles.infoText}>
                   Skip for now? You can connect a fitness band or smartwatch in
@@ -280,7 +279,7 @@ export const MedicalSection: React.FC<MedicalSectionProps> = ({
                 <Ionicons
                   name="alert-circle"
                   size={rf(18)}
-                  color={ResponsiveTheme.colors.warning}
+                  color={colors.warning}
                 />
                 <Text style={styles.warningText}>
                   High stress detected - we'll use conservative calorie targets
@@ -298,144 +297,144 @@ export const MedicalSection: React.FC<MedicalSectionProps> = ({
 
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
-    marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.md,
-    marginHorizontal: -ResponsiveTheme.spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+    marginHorizontal: -spacing.lg,
   },
   sectionTitlePadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
     letterSpacing: -0.3,
     flexShrink: 1,
   },
   sectionSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: ResponsiveTheme.fontSize.sm * 1.4,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+    lineHeight: fontSize.sm * 1.4,
     flexShrink: 1,
   },
   edgeToEdgeContentPadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   medicalField: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   fieldLabel: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   fieldHint: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
     lineHeight: rf(18),
   },
   checkboxContainer: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   checkbox: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   checkboxBox: {
     width: rs(24),
     height: rs(24),
     borderRadius: rbr(6),
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
     backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
   },
   checkboxBoxChecked: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
   checkboxLabel: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    color: colors.text,
   },
   trimesterSelector: {
     marginLeft: rp(32),
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   inputLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
   requiredAsterisk: {
-    color: ResponsiveTheme.colors.error,
+    color: colors.error,
   },
   trimesterButtons: {
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   trimesterButton: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.backgroundTertiary,
     borderWidth: 1,
     borderColor: "transparent",
   },
   trimesterButtonSelected: {
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: `${colors.primary}15`,
+    borderColor: colors.primary,
   },
   trimesterButtonText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    color: colors.text,
   },
   trimesterButtonTextSelected: {
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.semibold,
   },
   stressSlider: {
     width: "100%",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   infoCard: {
-    backgroundColor: `${ResponsiveTheme.colors.primary}05`,
-    borderColor: ResponsiveTheme.colors.border,
+    backgroundColor: `${colors.primary}05`,
+    borderColor: colors.border,
     borderWidth: 1,
   },
   infoContent: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   infoText: {
     flex: 1,
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
     lineHeight: rf(16),
   },
   warningCard: {
-    backgroundColor: `${ResponsiveTheme.colors.warning}10`,
-    borderColor: `${ResponsiveTheme.colors.warning}30`,
+    backgroundColor: `${colors.warning}10`,
+    borderColor: `${colors.warning}30`,
     borderWidth: 1,
   },
   warningRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   warningText: {
     flex: 1,
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.warning,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.xs,
+    color: colors.warning,
+    fontWeight: typography.fontWeight.medium,
   },
   sectionBottomPad: {
-    height: ResponsiveTheme.spacing.lg,
+    height: spacing.lg,
   },
 });

@@ -1,3 +1,4 @@
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import React, { type ComponentProps } from "react";
 import {
   View,
@@ -8,7 +9,6 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rw, rh } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
 import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
 import { MultiSelect } from "../../../components/advanced/MultiSelect";
 import {
@@ -112,8 +112,8 @@ export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                       size={rf(22)}
                       color={
                         isSelected
-                          ? ResponsiveTheme.colors.primary
-                          : ResponsiveTheme.colors.textSecondary
+                          ? colors.primary
+                          : colors.textSecondary
                       }
                     />
                     <TouchableOpacity
@@ -128,7 +128,7 @@ export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                       <Ionicons
                         name="information-circle-outline"
                         size={rf(14)}
-                        color={ResponsiveTheme.colors.textMuted}
+                        color={colors.textMuted}
                       />
                     </TouchableOpacity>
                   </View>
@@ -153,7 +153,7 @@ export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                       <Ionicons
                         name="checkmark"
                         size={rf(12)}
-                        color={ResponsiveTheme.colors.white}
+                        color={colors.white}
                       />
                     )}
                   </View>
@@ -193,8 +193,8 @@ export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                 <Ionicons
                   name="fitness-outline"
                   size={rf(24)}
-                  color={ResponsiveTheme.colors.primary}
-                  style={{ marginBottom: ResponsiveTheme.spacing.sm }}
+                  color={colors.primary}
+                  style={{ marginBottom: spacing.sm }}
                 />
                 <Text style={styles.gymEquipmentTitle} numberOfLines={1}>
                   Full Gym Access
@@ -217,8 +217,8 @@ export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                         <Ionicons
                           name={equipment.iconName as ComponentProps<typeof Ionicons>['name']}
                           size={rf(16)}
-                          color={ResponsiveTheme.colors.text}
-                          style={{ marginRight: ResponsiveTheme.spacing.xs }}
+                          color={colors.text}
+                          style={{ marginRight: spacing.xs }}
                         />
                         <Text style={styles.gymEquipmentItemLabel}>
                           {equipment.label}
@@ -312,8 +312,8 @@ export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                       size={rf(22)}
                       color={
                         isSelected
-                          ? ResponsiveTheme.colors.primary
-                          : ResponsiveTheme.colors.textSecondary
+                          ? colors.primary
+                          : colors.textSecondary
                       }
                     />
                   </View>
@@ -342,7 +342,7 @@ export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                       <Ionicons
                         name="checkmark"
                         size={rf(12)}
-                        color={ResponsiveTheme.colors.white}
+                        color={colors.white}
                       />
                     )}
                   </View>
@@ -359,89 +359,89 @@ export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
 
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
-    marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.md,
-    marginHorizontal: -ResponsiveTheme.spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+    marginHorizontal: -spacing.lg,
   },
   sectionTitlePadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
     letterSpacing: -0.3,
     flexShrink: 1,
   },
   sectionSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: ResponsiveTheme.fontSize.sm * 1.4,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+    lineHeight: fontSize.sm * 1.4,
     flexShrink: 1,
   },
   edgeToEdgeContentPadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   fieldLabel: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
+    marginBottom: spacing.sm,
     flexShrink: 1,
   },
   scrollContainerInset: {
-    marginHorizontal: ResponsiveTheme.spacing.lg,
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
     overflow: "hidden",
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
   },
   scrollContentInset: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
     gap: rw(10),
   },
   consistentCardItem: {
     width: rw(105),
   },
   consistentCard: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: "transparent",
-    padding: ResponsiveTheme.spacing.sm,
+    padding: spacing.sm,
     minHeight: rh(12),
     alignItems: "center",
   },
   consistentCardSelected: {
-    borderColor: ResponsiveTheme.colors.primary,
-    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}10`,
   },
   consistentCardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     width: "100%",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   consistentCardIconCenter: {
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   consistentCardTitle: {
     fontSize: rf(11),
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   consistentCardTitleSelected: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   consistentCardDesc: {
     fontSize: rf(9),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     textAlign: "center",
     lineHeight: rf(12),
   },
@@ -454,82 +454,82 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
   },
   consistentCardIndicatorSelected: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   preferenceField: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   gymEquipmentCard: {
-    padding: ResponsiveTheme.spacing.md,
-    backgroundColor: `${ResponsiveTheme.colors.success}08`,
-    borderColor: `${ResponsiveTheme.colors.success}30`,
+    padding: spacing.md,
+    backgroundColor: `${colors.success}08`,
+    borderColor: `${colors.success}30`,
     borderWidth: 1,
   },
   gymEquipmentContent: {
     alignItems: "center",
   },
   gymEquipmentTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.success,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.success,
+    marginBottom: spacing.xs,
     textAlign: "center",
   },
   gymEquipmentDescription: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
     lineHeight: rf(18),
   },
   gymEquipmentList: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   gymEquipmentItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    backgroundColor: colors.backgroundTertiary,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.xs,
   },
   gymEquipmentItemLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.text,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.xs,
+    color: colors.text,
+    fontWeight: typography.fontWeight.medium,
   },
   durationPill: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.full,
     borderWidth: 1,
     borderColor: "transparent",
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
     minWidth: rw(70),
     alignItems: "center",
   },
   durationPillSelected: {
-    borderColor: ResponsiveTheme.colors.primary,
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}15`,
   },
   durationPillText: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.text,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: colors.text,
+    fontWeight: typography.fontWeight.medium,
   },
   durationPillTextSelected: {
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.semibold,
   },
   sectionBottomPad: {
-    height: ResponsiveTheme.spacing.lg,
+    height: spacing.lg,
   },
 });

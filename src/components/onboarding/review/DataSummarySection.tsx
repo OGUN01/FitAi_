@@ -1,9 +1,8 @@
+import { flatColors as colors, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rp, rw, rh } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
-import { GlassCard } from "../../ui/aurora/GlassCard";
+import { rf, rp, rw, rh } from "../../../utils/responsive";import { GlassCard } from "../../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../ui/aurora/AnimatedPressable";
 import {
   PersonalInfoData,
@@ -44,7 +43,7 @@ export const DataSummarySection: React.FC<DataSummarySectionProps> = ({
           <Ionicons
             name="document-text-outline"
             size={rf(18)}
-            color={ResponsiveTheme.colors.primary}
+            color={colors.primary}
             style={styles.sectionTitleIcon}
           />
           <Text style={styles.sectionTitle} numberOfLines={1}>
@@ -80,13 +79,13 @@ export const DataSummarySection: React.FC<DataSummarySectionProps> = ({
                   <Ionicons
                     name="person"
                     size={rf(18)}
-                    color={ResponsiveTheme.colors.primary}
+                    color={colors.primary}
                   />
                 </View>
                 <Ionicons
                   name="create-outline"
                   size={rf(14)}
-                  color={ResponsiveTheme.colors.textMuted}
+                  color={colors.textMuted}
                 />
               </View>
               <Text style={styles.summaryScrollTitle}>Personal Info</Text>
@@ -119,19 +118,19 @@ export const DataSummarySection: React.FC<DataSummarySectionProps> = ({
                 <View
                   style={[
                     styles.summaryScrollIconBg,
-                    { backgroundColor: `${ResponsiveTheme.colors.success}20` },
+                    { backgroundColor: `${colors.success}20` },
                   ]}
                 >
                   <Ionicons
                     name="restaurant"
                     size={rf(18)}
-                    color={ResponsiveTheme.colors.success}
+                    color={colors.success}
                   />
                 </View>
                 <Ionicons
                   name="create-outline"
                   size={rf(14)}
-                  color={ResponsiveTheme.colors.textMuted}
+                  color={colors.textMuted}
                 />
               </View>
               <Text style={styles.summaryScrollTitle}>Diet</Text>
@@ -161,19 +160,19 @@ export const DataSummarySection: React.FC<DataSummarySectionProps> = ({
                 <View
                   style={[
                     styles.summaryScrollIconBg,
-                    { backgroundColor: `${ResponsiveTheme.colors.warning}20` },
+                    { backgroundColor: `${colors.warning}20` },
                   ]}
                 >
                   <Ionicons
                     name="body"
                     size={rf(18)}
-                    color={ResponsiveTheme.colors.warning}
+                    color={colors.warning}
                   />
                 </View>
                 <Ionicons
                   name="create-outline"
                   size={rf(14)}
-                  color={ResponsiveTheme.colors.textMuted}
+                  color={colors.textMuted}
                 />
               </View>
               <Text style={styles.summaryScrollTitle}>Body Analysis</Text>
@@ -207,19 +206,19 @@ export const DataSummarySection: React.FC<DataSummarySectionProps> = ({
                 <View
                   style={[
                     styles.summaryScrollIconBg,
-                    { backgroundColor: `${ResponsiveTheme.colors.error}20` },
+                    { backgroundColor: `${colors.error}20` },
                   ]}
                 >
                   <Ionicons
                     name="barbell"
                     size={rf(18)}
-                    color={ResponsiveTheme.colors.error}
+                    color={colors.error}
                   />
                 </View>
                 <Ionicons
                   name="create-outline"
                   size={rf(14)}
-                  color={ResponsiveTheme.colors.textMuted}
+                  color={colors.textMuted}
                 />
               </View>
               <Text style={styles.summaryScrollTitle}>Workout</Text>
@@ -260,9 +259,9 @@ const styles = StyleSheet.create({
     marginRight: rp(8),
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
     flex: 1,
   },
   summaryScrollContainer: {
@@ -290,24 +289,24 @@ const styles = StyleSheet.create({
     width: rf(32),
     height: rf(32),
     borderRadius: rf(16),
-    backgroundColor: `${ResponsiveTheme.colors.primary}20`,
+    backgroundColor: `${colors.primary}20`,
     alignItems: "center",
     justifyContent: "center",
   },
   summaryScrollTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
     marginTop: rp(8),
   },
   summaryScrollValue: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
   },
   summaryScrollSub: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
   },
   summaryScrollMeals: {
     flexDirection: "row",

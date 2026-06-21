@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { useFitnessStore } from "../../stores/fitnessStore";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rp, rh, rbr, rs } from "../../utils/responsive";
 
 const DAYS_SHOWN = 35; // 5 weeks
@@ -161,8 +161,8 @@ const CELL_GAP = rp(4);
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
     padding: rp(16),
   },
   header: {
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: rf(16),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   streakBadge: {
     flexDirection: "row",
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-around",
     marginBottom: rp(14),
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
     borderRadius: rbr(10),
     paddingVertical: rp(10),
   },
@@ -218,17 +218,17 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: rf(20),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   statLabel: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     marginTop: rp(2),
   },
   statDivider: {
     width: 1,
     height: rh(28),
-    backgroundColor: ResponsiveTheme.colors.glassBorder,
+    backgroundColor: colors.glassBorder,
   },
   dayLabels: {
     flexDirection: "row",
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: rf(10),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
   grid: {
     flexDirection: "row",
@@ -256,23 +256,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cellEmpty: {
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassBorder,
+    borderColor: colors.glassBorder,
   },
   cellWorked: {
     backgroundColor: "#3B82F6",
   },
   cellToday: {
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
     // No backgroundColor here — cellWorked/cellEmpty handles it
   },
   todayDot: {
     width: rp(5),
     height: rp(5),
     borderRadius: rp(3),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
   legend: {
     flexDirection: "row",
@@ -293,12 +293,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#3B82F6",
   },
   legendDotEmpty: {
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassBorder,
+    borderColor: colors.glassBorder,
   },
   legendText: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
 });

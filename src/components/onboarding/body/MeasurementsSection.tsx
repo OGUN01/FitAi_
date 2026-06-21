@@ -1,9 +1,8 @@
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import React, { type ComponentProps } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
-import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
+import { rf } from "../../../utils/responsive";import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
 import { Input } from "../../../components/ui";
 import { BodyAnalysisData } from "../../../types/onboarding";
 
@@ -217,8 +216,8 @@ export const MeasurementsSection: React.FC<MeasurementsSectionProps> = ({
                           size={rf(16)}
                           color={
                             isHealthyRate
-                              ? ResponsiveTheme.colors.success
-                              : ResponsiveTheme.colors.warning
+                              ? colors.success
+                              : colors.warning
                           }
                         />
                         <Text
@@ -226,8 +225,8 @@ export const MeasurementsSection: React.FC<MeasurementsSectionProps> = ({
                             styles.weightLossRate,
                             {
                               color: isHealthyRate
-                                ? ResponsiveTheme.colors.success
-                                : ResponsiveTheme.colors.warning,
+                                ? colors.success
+                                : colors.warning,
                             },
                           ]}
                           numberOfLines={2}
@@ -254,122 +253,122 @@ export const MeasurementsSection: React.FC<MeasurementsSectionProps> = ({
 
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
-    marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.md,
-    marginHorizontal: -ResponsiveTheme.spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+    marginHorizontal: -spacing.lg,
   },
   sectionTitlePadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
     letterSpacing: -0.3,
     flexShrink: 1,
   },
   sectionSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: ResponsiveTheme.fontSize.sm * 1.4,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+    lineHeight: fontSize.sm * 1.4,
     flexShrink: 1,
   },
   edgeToEdgeContentPadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   measurementsGrid: {
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   measurementItem: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   inputLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
   timelineSlider: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   timelineOption: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.backgroundTertiary,
     borderWidth: 1,
     borderColor: "transparent",
   },
   timelineOptionSelected: {
-    borderColor: ResponsiveTheme.colors.primary,
-    backgroundColor: `${ResponsiveTheme.colors.primary}25`,
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}25`,
   },
   timelineText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.text,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.xs,
+    color: colors.text,
+    fontWeight: typography.fontWeight.medium,
   },
   timelineTextSelected: {
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.semibold,
   },
   errorText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.error,
-    marginTop: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.xs,
+    color: colors.error,
+    marginTop: spacing.xs,
   },
   bmiCard: {
-    marginTop: ResponsiveTheme.spacing.lg,
-    backgroundColor: `${ResponsiveTheme.colors.primary}05`,
-    borderColor: `${ResponsiveTheme.colors.primary}20`,
+    marginTop: spacing.lg,
+    backgroundColor: `${colors.primary}05`,
+    borderColor: `${colors.primary}20`,
     borderWidth: 1,
   },
   bmiContent: {
     alignItems: "center",
   },
   bmiTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   bmiCategory: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
   },
   bmiCategoryText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
   },
   idealWeightText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
   },
   weightLossInfo: {
     width: "100%",
-    paddingTop: ResponsiveTheme.spacing.sm,
+    paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
+    borderTopColor: colors.border,
     alignItems: "center",
   },
   weightLossRateRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   weightLossRate: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
   },
   sectionBottomPad: {
-    height: ResponsiveTheme.spacing.lg,
+    height: spacing.lg,
   },
 });

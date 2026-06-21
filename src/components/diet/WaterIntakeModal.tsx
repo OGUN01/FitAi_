@@ -26,7 +26,7 @@ import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { haptics } from "../../utils/haptics";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rp } from "../../utils/responsive";
 
 interface WaterIntakeModalProps {
@@ -127,7 +127,7 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                   <Ionicons
                     name="water"
                     size={rf(24)}
-                    color={ResponsiveTheme.colors.primary}
+                    color={colors.primary}
                   />
                   <Text style={styles.title}>Log Water Intake</Text>
                 </View>
@@ -136,7 +136,7 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                   style={styles.closeButton}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <Ionicons name="close" size={24} color={ResponsiveTheme.colors.white} />
+                  <Ionicons name="close" size={24} color={colors.white} />
                 </TouchableOpacity>
               </View>
 
@@ -152,8 +152,8 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                   <LinearGradient
                     colors={
                       isGoalReached
-                        ? [ResponsiveTheme.colors.successAlt, ResponsiveTheme.colors.successAltDark]
-                        : [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]
+                        ? [colors.successAlt, colors.successAltDark]
+                        : [colors.primary, colors.primaryLight]
                     }
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
@@ -165,7 +165,7 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                     <Ionicons
                       name="checkmark-circle"
                       size={16}
-                      color={ResponsiveTheme.colors.successAlt}
+                      color={colors.successAlt}
                     />
                     <Text style={styles.goalReachedText}>
                       Daily goal achieved!
@@ -186,8 +186,8 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                   >
                     <LinearGradient
                       colors={[
-                        `${ResponsiveTheme.colors.primary}33`,
-                        `${ResponsiveTheme.colors.primaryLight}33`,
+                        `${colors.primary}33`,
+                        `${colors.primaryLight}33`,
                       ]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
@@ -196,7 +196,7 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                       <Ionicons
                         name={option.icon}
                         size={rf(28)}
-                        color={ResponsiveTheme.colors.primary}
+                        color={colors.primary}
                       />
                       <Text style={styles.quickOptionLabel}>
                         {option.label}
@@ -214,7 +214,7 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                 <Ionicons
                   name="water-outline"
                   size={20}
-                  color={ResponsiveTheme.colors.primary}
+                  color={colors.primary}
                   style={styles.inputIcon}
                 />
                 <TextInput
@@ -239,7 +239,7 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                   <Ionicons
                     name="alert-circle"
                     size={16}
-                    color={ResponsiveTheme.colors.errorLight}
+                    color={colors.errorLight}
                   />
                   <Text style={styles.errorText}>{error}</Text>
                 </View>
@@ -252,12 +252,12 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                 activeOpacity={0.8}
               >
                 <LinearGradient
-                  colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]}
+                  colors={[colors.primary, colors.primaryLight]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.submitButtonGradient}
                 >
-                  <Ionicons name="add" size={20} color={ResponsiveTheme.colors.white} />
+                  <Ionicons name="add" size={20} color={colors.white} />
                   <Text style={styles.submitButtonText}>Add Water</Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -272,15 +272,15 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.overlayDark,
+    backgroundColor: colors.overlayDark,
     justifyContent: "flex-end",
   },
   keyboardView: {
     justifyContent: "flex-end",
   },
   blurContainer: {
-    borderTopLeftRadius: ResponsiveTheme.borderRadius.xxl,
-    borderTopRightRadius: ResponsiveTheme.borderRadius.xxl,
+    borderTopLeftRadius: borderRadius.xxl,
+    borderTopRightRadius: borderRadius.xxl,
     overflow: "hidden",
   },
   modalContent: {
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(20),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   closeButton: {
     padding: rp(4),
@@ -323,11 +323,11 @@ const styles = StyleSheet.create({
   progressValue: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   progressBar: {
     height: rp(8),
-    backgroundColor: ResponsiveTheme.colors.glassHighlight,
+    backgroundColor: colors.glassHighlight,
     borderRadius: rp(4),
     overflow: "hidden",
   },
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
   },
   goalReachedText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.successAlt,
+    color: colors.successAlt,
     fontWeight: "500",
   },
   sectionTitle: {
@@ -364,14 +364,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: rp(20),
-    borderRadius: ResponsiveTheme.borderRadius.xl,
+    borderRadius: borderRadius.xl,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.primary}4D`,
+    borderColor: `${colors.primary}4D`,
   },
   quickOptionLabel: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     marginTop: rp(8),
   },
   customButton: {
@@ -380,25 +380,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: rp(8),
     paddingVertical: rp(14),
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.primary}4D`,
+    borderColor: `${colors.primary}4D`,
     borderStyle: "dashed",
   },
   customButtonText: {
     fontSize: rf(14),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.glassBorder,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: colors.glassBorder,
+    borderRadius: borderRadius.lg,
     paddingHorizontal: rp(16),
     marginBottom: rp(16),
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.primary}4D`,
+    borderColor: `${colors.primary}4D`,
   },
   inputIcon: {
     marginRight: rp(12),
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: rf(18),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     paddingVertical: rp(16),
   },
   unitLabel: {
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.errorLight,
+    color: colors.errorLight,
   },
   actionButtons: {
     flexDirection: "row",
@@ -436,17 +436,17 @@ const styles = StyleSheet.create({
     paddingVertical: rp(14),
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    backgroundColor: ResponsiveTheme.colors.glassHighlight,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.glassHighlight,
   },
   cancelButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   submitButton: {
     overflow: "hidden",
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     marginTop: rp(8),
   },
   submitButtonGradient: {
@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
   submitButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 });
 

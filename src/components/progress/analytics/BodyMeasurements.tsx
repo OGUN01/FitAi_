@@ -1,6 +1,6 @@
 ﻿import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { ResponsiveTheme } from '../../../utils/constants';
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../../theme/aurora-tokens';
 
 
 interface MeasurementData {
@@ -54,39 +54,39 @@ export const BodyMeasurements: React.FC<BodyMeasurementsProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
   measurementsContainer: {
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   measurementItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    padding: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.backgroundSecondary,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
   },
   measurementHeader: {
     flex: 1,
   },
   measurementName: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.md,
+    color: colors.text,
+    fontWeight: typography.fontWeight.medium,
   },
   measurementValue: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
   measurementChange: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
   },
 });

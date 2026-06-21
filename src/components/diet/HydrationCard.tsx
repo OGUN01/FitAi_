@@ -11,7 +11,7 @@ import Svg, { Path, Defs, LinearGradient, Stop } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../utils/responsive";
 
 // Quick add options
@@ -190,34 +190,34 @@ export const HydrationCard: React.FC<HydrationCardProps> = React.memo(({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   cardWrapper: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   sectionTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
     gap: 6,
   },
   statusDot: {
@@ -232,8 +232,8 @@ const styles = StyleSheet.create({
   content: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.lg,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    gap: spacing.lg,
+    paddingHorizontal: spacing.sm,
   },
   dropContainer: {
     position: "relative",
@@ -255,33 +255,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   mainStat: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   intakeValue: {
     fontSize: rf(28),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   intakeUnit: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   goalText: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   quickAddRow: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   quickAddButton: {
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
     minHeight: 44,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
     backgroundColor: "rgba(33, 150, 243, 0.12)",
     borderWidth: 1,
     borderColor: "rgba(33, 150, 243, 0.2)",
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   },
   remainingText: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
 });
 

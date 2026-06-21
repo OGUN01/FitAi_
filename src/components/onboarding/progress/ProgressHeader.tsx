@@ -1,8 +1,6 @@
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
-
-interface ProgressHeaderProps {
+import { View, Text, StyleSheet } from "react-native";interface ProgressHeaderProps {
   currentTab: number;
   totalTabs: number;
   overallCompletion: number;
@@ -26,17 +24,17 @@ export const ProgressHeader: React.FC<ProgressHeaderProps> = ({
 const styles = StyleSheet.create({
   headerSection: {
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   headerTitle: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   headerSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center",
   },
 });

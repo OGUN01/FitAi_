@@ -1,9 +1,8 @@
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
-import { GlassCard } from "../../../components/ui/aurora";
+import { rf } from "../../../utils/responsive";import { GlassCard } from "../../../components/ui/aurora";
 import {
   WorkoutPreferencesData,
   BodyAnalysisData,
@@ -35,7 +34,7 @@ export const WeightGoalsSection: React.FC<WeightGoalsSectionProps> = ({
             <Ionicons
               name="document-text-outline"
               size={rf(12)}
-              color={ResponsiveTheme.colors.warning}
+              color={colors.warning}
               style={{ marginRight: 4 }}
             />
             <Text style={styles.readOnlyText}>READ ONLY</Text>
@@ -65,7 +64,7 @@ export const WeightGoalsSection: React.FC<WeightGoalsSectionProps> = ({
             <Ionicons
               name="arrow-forward-outline"
               size={rf(20)}
-              color={ResponsiveTheme.colors.textSecondary}
+              color={colors.textSecondary}
             />
 
             <View style={styles.weightGoalItem}>
@@ -78,7 +77,7 @@ export const WeightGoalsSection: React.FC<WeightGoalsSectionProps> = ({
             <Ionicons
               name="time-outline"
               size={rf(20)}
-              color={ResponsiveTheme.colors.textSecondary}
+              color={colors.textSecondary}
             />
 
             <View style={styles.weightGoalItem}>
@@ -114,85 +113,85 @@ export const WeightGoalsSection: React.FC<WeightGoalsSectionProps> = ({
 
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
-    marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.md,
-    marginHorizontal: -ResponsiveTheme.spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+    marginHorizontal: -spacing.lg,
   },
   sectionTitlePadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
     letterSpacing: -0.3,
     flexShrink: 1,
   },
   readOnlyBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: `${ResponsiveTheme.colors.warning}20`,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: `${colors.warning}20`,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
   },
   readOnlyText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.warning,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    fontSize: fontSize.xs,
+    color: colors.warning,
+    fontWeight: typography.fontWeight.semibold,
   },
   sectionSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: ResponsiveTheme.fontSize.sm * 1.4,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+    lineHeight: fontSize.sm * 1.4,
     flexShrink: 1,
   },
   edgeToEdgeContentPadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   weightGoalsCardInline: {
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
   },
   weightGoalsContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   weightGoalItem: {
     alignItems: "center",
   },
   weightGoalLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
   weightGoalValue: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.secondary,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.secondary,
   },
   weeklyRateInfo: {
     alignItems: "center",
-    paddingTop: ResponsiveTheme.spacing.md,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
+    borderTopColor: colors.border,
   },
   weeklyRateText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.success,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.success,
+    fontWeight: typography.fontWeight.medium,
   },
   sectionBottomPad: {
-    height: ResponsiveTheme.spacing.lg,
+    height: spacing.lg,
   },
 });

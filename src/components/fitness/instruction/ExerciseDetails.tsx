@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf } from "../../../utils/responsive";
 import { ExerciseTipsCard } from "./ExerciseTipsCard";
 
@@ -100,103 +100,103 @@ export const ExerciseDetails: React.FC<ExerciseDetailsProps> = ({
 
 const styles = StyleSheet.create({
   detailsContainer: {
-    paddingBottom: ResponsiveTheme.spacing.xl,
+    paddingBottom: spacing.xl,
   },
 
   detailSection: {
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: spacing.xl,
   },
 
   detailSectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
 
   chipContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
 
   chip: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg,
   },
 
   primaryChip: {
-    backgroundColor: ResponsiveTheme.colors.primary + "20",
+    backgroundColor: colors.primary + "20",
   },
 
   primaryChipText: {
-    color: ResponsiveTheme.colors.primary,
-    fontSize: ResponsiveTheme.fontSize.sm,
+    color: colors.primary,
+    fontSize: fontSize.sm,
     fontWeight: "600",
     textTransform: "capitalize",
   },
 
   secondaryChip: {
-    backgroundColor: ResponsiveTheme.colors.warning + "20",
+    backgroundColor: colors.warning + "20",
   },
 
   secondaryChipText: {
-    color: ResponsiveTheme.colors.warning,
-    fontSize: ResponsiveTheme.fontSize.sm,
+    color: colors.warning,
+    fontSize: fontSize.sm,
     fontWeight: "600",
     textTransform: "capitalize",
   },
 
   equipmentChip: {
-    backgroundColor: ResponsiveTheme.colors.info + "20",
+    backgroundColor: colors.info + "20",
   },
 
   equipmentChipText: {
-    color: ResponsiveTheme.colors.info,
-    fontSize: ResponsiveTheme.fontSize.sm,
+    color: colors.info,
+    fontSize: fontSize.sm,
     fontWeight: "600",
     textTransform: "capitalize",
   },
 
   bodyPartChip: {
-    backgroundColor: ResponsiveTheme.colors.success + "20",
+    backgroundColor: colors.success + "20",
   },
 
   bodyPartChipText: {
-    color: ResponsiveTheme.colors.success,
-    fontSize: ResponsiveTheme.fontSize.sm,
+    color: colors.success,
+    fontSize: fontSize.sm,
     fontWeight: "600",
     textTransform: "capitalize",
   },
 
   tipContainer: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    padding: ResponsiveTheme.spacing.lg,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: colors.backgroundSecondary,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
   },
 
   tipText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    color: colors.text,
     lineHeight: rf(20),
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   noDataContainer: {
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.xl,
+    paddingVertical: spacing.xl,
   },
 
   noDataEmoji: {
     fontSize: rf(48),
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   noDataText: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
 });

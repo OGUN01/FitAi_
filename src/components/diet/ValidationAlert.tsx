@@ -10,7 +10,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { GlassCard } from "../ui/aurora/GlassCard";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rp } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import type {
@@ -41,27 +41,27 @@ export interface ValidationAlertProps {
 const SEVERITY_CONFIG = {
   error: {
     icon: "alert-circle" as const,
-    color: ResponsiveTheme.colors.errorAlt,
-    backgroundColor: `${ResponsiveTheme.colors.errorAlt}26`,
-    borderColor: `${ResponsiveTheme.colors.errorAlt}4D`,
+    color: colors.errorAlt,
+    backgroundColor: `${colors.errorAlt}26`,
+    borderColor: `${colors.errorAlt}4D`,
   },
   warning: {
     icon: "warning" as const,
-    color: ResponsiveTheme.colors.warningAlt,
-    backgroundColor: `${ResponsiveTheme.colors.warningAlt}26`,
-    borderColor: `${ResponsiveTheme.colors.warningAlt}4D`,
+    color: colors.warningAlt,
+    backgroundColor: `${colors.warningAlt}26`,
+    borderColor: `${colors.warningAlt}4D`,
   },
   info: {
     icon: "information-circle" as const,
-    color: ResponsiveTheme.colors.blue,
-    backgroundColor: `${ResponsiveTheme.colors.blue}26`,
-    borderColor: `${ResponsiveTheme.colors.blue}4D`,
+    color: colors.blue,
+    backgroundColor: `${colors.blue}26`,
+    borderColor: `${colors.blue}4D`,
   },
   success: {
     icon: "checkmark-circle" as const,
-    color: ResponsiveTheme.colors.successAlt,
-    backgroundColor: `${ResponsiveTheme.colors.successAlt}26`,
-    borderColor: `${ResponsiveTheme.colors.successAlt}4D`,
+    color: colors.successAlt,
+    backgroundColor: `${colors.successAlt}26`,
+    borderColor: `${colors.successAlt}4D`,
   },
 };
 
@@ -132,7 +132,7 @@ export const ValidationAlert: React.FC<ValidationAlertProps> = ({
                   <Ionicons
                     name="close"
                     size={rf(18)}
-                    color={ResponsiveTheme.colors.textSecondary}
+                    color={colors.textSecondary}
                   />
                 </TouchableOpacity>
               )}
@@ -150,7 +150,7 @@ export const ValidationAlert: React.FC<ValidationAlertProps> = ({
                     <Ionicons
                       name="ellipse"
                       size={rf(6)}
-                      color={ResponsiveTheme.colors.textSecondary}
+                      color={colors.textSecondary}
                     />
                     <Text style={styles.itemText}>{item}</Text>
                   </View>
@@ -167,7 +167,7 @@ export const ValidationAlert: React.FC<ValidationAlertProps> = ({
                     <Ionicons
                       name="bulb-outline"
                       size={rf(14)}
-                      color={ResponsiveTheme.colors.textSecondary}
+                      color={colors.textSecondary}
                     />
                     <Text style={styles.suggestionText}>{suggestion}</Text>
                   </View>
@@ -181,7 +181,7 @@ export const ValidationAlert: React.FC<ValidationAlertProps> = ({
                 onPress={handleRetry}
                 style={styles.retryButton}
               >
-                <Ionicons name="refresh" size={rf(16)} color={ResponsiveTheme.colors.white} />
+                <Ionicons name="refresh" size={rf(16)} color={colors.white} />
                 <Text style={styles.retryText}>Regenerate Plan</Text>
               </TouchableOpacity>
             )}
@@ -234,25 +234,25 @@ export const validationWarningToAlertProps = (
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
   card: {
     borderWidth: 1,
   },
   content: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
     flex: 1,
   },
   title: {
@@ -264,18 +264,18 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     lineHeight: rf(18),
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   itemsList: {
-    marginTop: ResponsiveTheme.spacing.xs,
-    paddingLeft: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.xs,
+    paddingLeft: spacing.sm,
   },
   itemsHeader: {
     fontSize: rf(12),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(4),
   },
   itemRow: {
@@ -286,18 +286,18 @@ const styles = StyleSheet.create({
   },
   itemText: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   suggestionsList: {
-    marginTop: ResponsiveTheme.spacing.sm,
-    paddingTop: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.glassHighlight,
+    borderTopColor: colors.glassHighlight,
   },
   suggestionsHeader: {
     fontSize: rf(12),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(4),
   },
   suggestionRow: {
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   suggestionText: {
     flex: 1,
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(16),
   },
   retryButton: {
@@ -317,15 +317,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: rp(8),
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    marginTop: ResponsiveTheme.spacing.sm,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.sm,
   },
   retryText: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 });
 

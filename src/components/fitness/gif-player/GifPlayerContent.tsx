@@ -7,9 +7,8 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Image } from "expo-image";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr, rs } from "../../../utils/responsive";
-import { colors } from "../../../theme/aurora-tokens";
 
 interface GifPlayerContentProps {
   exercise: any;
@@ -53,7 +52,7 @@ export const GifPlayerContent: React.FC<GifPlayerContentProps> = ({
     <View style={[styles.gifContainer, { height, width }]}>
       {isLoading && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={ResponsiveTheme.colors.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Loading demonstration...</Text>
         </View>
       )}
@@ -114,15 +113,15 @@ export const GifPlayerContent: React.FC<GifPlayerContentProps> = ({
 const styles = StyleSheet.create({
   gifContainer: {
     position: "relative",
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
-    borderTopLeftRadius: ResponsiveTheme.borderRadius.lg,
-    borderTopRightRadius: ResponsiveTheme.borderRadius.lg,
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
     alignSelf: "center",
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primary + "20",
-    shadowColor: ResponsiveTheme.colors.text,
+    borderColor: colors.primary + "20",
+    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -131,11 +130,11 @@ const styles = StyleSheet.create({
   },
 
   gif: {
-    borderTopLeftRadius: ResponsiveTheme.borderRadius.lg,
-    borderTopRightRadius: ResponsiveTheme.borderRadius.lg,
-    backgroundColor: colors.background.secondary,
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
+    backgroundColor: colors.backgroundSecondary,
     borderWidth: 0.5,
-    borderColor: ResponsiveTheme.colors.primary + "10",
+    borderColor: colors.primary + "10",
   },
 
   loadingOverlay: {
@@ -146,20 +145,20 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     zIndex: 2,
   },
 
   loadingText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
   },
 
   playbackOverlay: {
     position: "absolute",
-    top: ResponsiveTheme.spacing.sm,
-    right: ResponsiveTheme.spacing.sm,
+    top: spacing.sm,
+    right: spacing.sm,
     zIndex: 3,
   },
 
@@ -177,24 +176,24 @@ const styles = StyleSheet.create({
   },
 
   placeholder: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
-    borderTopLeftRadius: ResponsiveTheme.borderRadius.lg,
-    borderTopRightRadius: ResponsiveTheme.borderRadius.lg,
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
   },
 
   placeholderText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
     fontWeight: "500",
   },
 
   placeholderSubtext: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
   },
 
@@ -206,26 +205,26 @@ const styles = StyleSheet.create({
 
   errorEmoji: {
     fontSize: rf(32),
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   errorText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.error,
+    fontSize: fontSize.sm,
+    color: colors.error,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   retryButton: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
   },
 
   retryButtonText: {
-    color: ResponsiveTheme.colors.surface,
-    fontSize: ResponsiveTheme.fontSize.sm,
+    color: colors.surface,
+    fontSize: fontSize.sm,
     fontWeight: "600",
   },
 
@@ -244,7 +243,7 @@ const styles = StyleSheet.create({
   },
 
   zoomHintText: {
-    color: colors.text.primary,
+    color: colors.text,
     fontSize: rf(10),
     fontWeight: "500",
   },

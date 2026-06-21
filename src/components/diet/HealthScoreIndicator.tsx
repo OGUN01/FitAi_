@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
-import { colors } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, typography } from "../../theme/aurora-tokens";
 import { rf, rw, rh, rbr } from "../../utils/responsive";
 
 interface HealthScoreIndicatorProps {
@@ -116,33 +115,33 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.background.secondary,
+    backgroundColor: colors.backgroundSecondary,
   },
 
   scoreText: {
-    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
+    fontWeight: typography.fontWeight.bold as "700",
     lineHeight: rf(20),
   },
 
   scoreUnit: {
     fontSize: rf(8),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: -2,
   },
 
   labelContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
   },
 
   iconText: {
     fontSize: rf(12),
-    marginRight: ResponsiveTheme.spacing.xs,
+    marginRight: spacing.xs,
   },
 
   labelText: {
-    fontWeight: ResponsiveTheme.fontWeight.semibold as "600",
+    fontWeight: typography.fontWeight.semibold as "600",
     textAlign: "center",
   },
 });

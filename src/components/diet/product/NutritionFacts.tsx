@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import type { ScannedProduct } from "../../../services/barcodeService";
 
 interface NutritionFactsProps {
@@ -51,13 +51,13 @@ export const NutritionFacts: React.FC<NutritionFactsProps> = ({
 
 const styles = StyleSheet.create({
   nutritionContainer: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold as "700",
+    color: colors.text,
+    marginBottom: spacing.md,
   },
   nutritionGrid: {
     flexDirection: "row",
@@ -66,20 +66,20 @@ const styles = StyleSheet.create({
   },
   nutritionItem: {
     width: "48%",
-    backgroundColor: ResponsiveTheme.colors.surface,
-    padding: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    backgroundColor: colors.surface,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
     alignItems: "center",
   },
   nutritionLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
   nutritionValue: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.bold as "700",
+    color: colors.text,
   },
 });

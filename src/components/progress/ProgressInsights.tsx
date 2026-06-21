@@ -1,6 +1,6 @@
 ﻿import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp } from "../../utils/responsive";
 import type { ProgressStats } from "../../services/progressData";
 
@@ -34,25 +34,25 @@ const InsightCard: React.FC<{
   onAction?: (insight: InsightItem) => void;
 }> = ({ insight, onAction }) => {
   const getCardStyle = (type: string, priority: string) => {
-    let backgroundColor = ResponsiveTheme.colors.surface;
-    let borderColor = ResponsiveTheme.colors.border;
+    let backgroundColor = colors.surface;
+    let borderColor = colors.border;
 
     switch (type) {
       case "achievement":
-        backgroundColor = ResponsiveTheme.colors.surface;
-        borderColor = ResponsiveTheme.colors.success;
+        backgroundColor = colors.surface;
+        borderColor = colors.success;
         break;
       case "tip":
-        backgroundColor = ResponsiveTheme.colors.surface;
-        borderColor = ResponsiveTheme.colors.primary;
+        backgroundColor = colors.surface;
+        borderColor = colors.primary;
         break;
       case "motivation":
-        backgroundColor = ResponsiveTheme.colors.surface;
-        borderColor = ResponsiveTheme.colors.secondary;
+        backgroundColor = colors.surface;
+        borderColor = colors.secondary;
         break;
       case "goal":
-        backgroundColor = ResponsiveTheme.colors.surface;
-        borderColor = ResponsiveTheme.colors.warning;
+        backgroundColor = colors.surface;
+        borderColor = colors.warning;
         break;
     }
 
@@ -315,25 +315,25 @@ export const ProgressInsights: React.FC<ProgressInsightsProps> = React.memo(({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingBottom: ResponsiveTheme.spacing.xxl, // Extra bottom padding for tab bar
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xxl, // Extra bottom padding for tab bar
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
   prioritySection: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   regularSection: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   insightCard: {
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
   },
   insightHeader: {
     flexDirection: "row",
@@ -341,58 +341,58 @@ const styles = StyleSheet.create({
   },
   insightIcon: {
     fontSize: rf(24),
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
     marginTop: rp(2),
   },
   insightContent: {
     flex: 1,
   },
   insightTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   insightMessage: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.normal,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textSecondary,
     lineHeight: rf(18),
   },
   actionButton: {
     alignSelf: "flex-start",
-    marginTop: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
     minHeight: 44,
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
     justifyContent: "center",
   },
   actionText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.white,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.white,
   },
   motivationalFooter: {
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: ResponsiveTheme.spacing.lg,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
     alignItems: "center" as const,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
   footerText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
     textAlign: "center",
     fontStyle: "italic",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   footerAuthor: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.normal,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textMuted,
   },
 });

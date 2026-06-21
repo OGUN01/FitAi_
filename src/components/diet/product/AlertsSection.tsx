@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
-import { colors } from "../../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography, colors as nestedColors } from "../../../theme/aurora-tokens";
 
 interface AlertsSectionProps {
   alerts?: string[];
@@ -52,52 +51,52 @@ export const AlertsSection: React.FC<AlertsSectionProps> = ({
 
 const styles = StyleSheet.create({
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold as "700",
+    color: colors.text,
+    marginBottom: spacing.md,
   },
   alertsContainer: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
+    borderTopColor: colors.border,
   },
   alertItem: {
     backgroundColor: "rgba(244, 67, 54, 0.12)",
-    padding: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
     borderLeftWidth: 4,
-    borderLeftColor: colors.error.DEFAULT,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    borderLeftColor: colors.error,
+    marginBottom: spacing.sm,
   },
   alertText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: colors.error.light,
+    fontSize: fontSize.sm,
+    color: colors.errorLight,
   },
   benefitsContainer: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
+    borderTopColor: colors.border,
   },
   benefitItem: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   benefitText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: colors.success.light,
+    fontSize: fontSize.sm,
+    color: colors.successLight,
     lineHeight: 20,
   },
   concernsContainer: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
+    borderTopColor: colors.border,
   },
   concernItem: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   concernText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: colors.warning.light,
+    fontSize: fontSize.sm,
+    color: nestedColors.warning.light,
     lineHeight: 20,
   },
 });

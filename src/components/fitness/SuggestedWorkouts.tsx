@@ -10,7 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../utils/responsive";
 import { ExtraWorkoutTemplate } from "../../stores/fitness/types";
 
@@ -74,7 +74,7 @@ const getDifficultyConfig = (difficulty: string) => {
     case "advanced":
       return { label: "Advanced", color: "#ef4444" };
     default:
-      return { label: difficulty, color: ResponsiveTheme.colors.textSecondary };
+      return { label: difficulty, color: colors.textSecondary };
   }
 };
 
@@ -96,7 +96,7 @@ export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
           <Ionicons
             name="sparkles-outline"
             size={rf(18)}
-            color={ResponsiveTheme.colors.text}
+            color={colors.text}
           />
           <Text style={styles.sectionTitle}>Quick Workouts</Text>
         </View>
@@ -108,7 +108,7 @@ export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         decelerationRate="fast"
-        snapToInterval={rw(160) + ResponsiveTheme.spacing.md}
+        snapToInterval={rw(160) + spacing.md}
       >
         {workouts.map((workout, index) => {
           const categoryConfig = getCategoryConfig(workout.category);
@@ -157,7 +157,7 @@ export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
                   <Ionicons
                     name={categoryConfig.icon}
                     size={rf(28)}
-                    color={ResponsiveTheme.colors.white}
+                    color={colors.white}
                   />
                 </LinearGradient>
 
@@ -172,7 +172,7 @@ export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
                     <Ionicons
                       name="time-outline"
                       size={rf(12)}
-                      color={ResponsiveTheme.colors.textSecondary}
+                      color={colors.textSecondary}
                     />
                     <Text style={styles.metaText}>{workout.duration} min</Text>
                   </View>
@@ -180,7 +180,7 @@ export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
                     <Ionicons
                       name="flame-outline"
                       size={rf(12)}
-                      color={ResponsiveTheme.colors.textSecondary}
+                      color={colors.textSecondary}
                     />
                     <Text style={styles.metaText}>
                       {displayCalories} cal
@@ -247,22 +247,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
   sectionHeaderLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   sectionTitle: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   scrollContent: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    gap: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
   },
   card: {
     width: rw(160),
@@ -274,21 +274,21 @@ const styles = StyleSheet.create({
     borderRadius: rw(30),
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   title: {
     fontSize: rf(13),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
     minHeight: rf(36),
   },
   metaContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    gap: spacing.md,
+    marginBottom: spacing.sm,
   },
   metaItem: {
     flexDirection: "row",
@@ -297,13 +297,13 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   difficultyBadge: {
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.sm,
     paddingVertical: rp(3),
-    borderRadius: ResponsiveTheme.borderRadius.full,
-    marginBottom: ResponsiveTheme.spacing.md,
+    borderRadius: borderRadius.full,
+    marginBottom: spacing.md,
   },
   difficultyText: {
     fontSize: rf(10),
@@ -311,8 +311,8 @@ const styles = StyleSheet.create({
   },
   startButton: {
     width: "100%",
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "center",
@@ -322,13 +322,13 @@ const styles = StyleSheet.create({
   startButtonText: {
     fontSize: rf(11),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     letterSpacing: 0.5,
   },
   completedButton: {
     width: "100%",
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "center",
@@ -346,8 +346,8 @@ const styles = StyleSheet.create({
   generatingText: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    color: colors.textSecondary,
+    paddingVertical: spacing.sm,
     textAlign: "center",
   },
 });

@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rp } from "../../../utils/responsive";
 
 interface QuickAddOptionsProps {
@@ -32,7 +32,7 @@ export const QuickAddOptions: React.FC<QuickAddOptionsProps> = ({
             activeOpacity={0.7}
           >
             <LinearGradient
-              colors={[`${ResponsiveTheme.colors.primary}33`, `${ResponsiveTheme.colors.primaryLight}33`]}
+              colors={[`${colors.primary}33`, `${colors.primaryLight}33`]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.quickOptionGradient}
@@ -40,7 +40,7 @@ export const QuickAddOptions: React.FC<QuickAddOptionsProps> = ({
               <Ionicons
                 name={option.icon}
                 size={rf(28)}
-                color={ResponsiveTheme.colors.primary}
+                color={colors.primary}
               />
               <Text style={styles.quickOptionLabel}>{option.label}</Text>
             </LinearGradient>
@@ -56,7 +56,7 @@ export const QuickAddOptions: React.FC<QuickAddOptionsProps> = ({
         <Ionicons
           name="add-circle-outline"
           size={20}
-          color={ResponsiveTheme.colors.primary}
+          color={colors.primary}
         />
         <Text style={styles.customButtonText}>Custom Amount</Text>
       </TouchableOpacity>
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: `${ResponsiveTheme.colors.white}B3`,
+    color: `${colors.white}B3`,
     marginBottom: rp(12),
   },
   quickOptionsContainer: {
@@ -83,14 +83,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: rp(20),
-    borderRadius: ResponsiveTheme.borderRadius.xl,
+    borderRadius: borderRadius.xl,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.primary}4D`,
+    borderColor: `${colors.primary}4D`,
   },
   quickOptionLabel: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     marginTop: rp(8),
   },
   customButton: {
@@ -99,14 +99,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: rp(8),
     paddingVertical: rp(14),
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.primary}4D`,
+    borderColor: `${colors.primary}4D`,
     borderStyle: "dashed",
   },
   customButtonText: {
     fontSize: rf(14),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
 });

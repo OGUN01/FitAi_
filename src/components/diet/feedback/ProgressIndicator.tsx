@@ -1,6 +1,10 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import {
+  flatColors as colors,
+  spacing,
+  flatFontSize as fontSize,
+} from "../../../theme/aurora-tokens";
 import { rh, rbr } from "../../../utils/responsive";
 
 interface ProgressIndicatorProps {
@@ -35,26 +39,26 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
 
 const styles = StyleSheet.create({
   progressIndicator: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
 
   progressText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
     textAlign: "center",
   },
 
   progressBar: {
     height: rh(4),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     borderRadius: rbr(2),
   },
 
   progressFill: {
     height: "100%",
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: rbr(2),
   },
 });

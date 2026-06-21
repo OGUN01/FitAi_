@@ -1,9 +1,8 @@
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../../theme/aurora-tokens";
 import React, { type ComponentProps } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../../../utils/responsive";
-import { ResponsiveTheme } from "../../../../utils/constants";
-import { GlassCard } from "../../../../components/ui/aurora";
+import { rf } from "../../../../utils/responsive";import { GlassCard } from "../../../../components/ui/aurora";
 import { MultiSelect } from "../../../../components/advanced/MultiSelect";
 import {
   EQUIPMENT_OPTIONS,
@@ -50,8 +49,8 @@ export const EquipmentSelector: React.FC<EquipmentSelectorProps> = ({
               <Ionicons
                 name="fitness-outline"
                 size={rf(24)}
-                color={ResponsiveTheme.colors.primary}
-                style={{ marginBottom: ResponsiveTheme.spacing.sm }}
+                color={colors.primary}
+                style={{ marginBottom: spacing.sm }}
               />
               <Text style={styles.gymEquipmentTitle} numberOfLines={1}>
                 Full Gym Access
@@ -74,8 +73,8 @@ export const EquipmentSelector: React.FC<EquipmentSelectorProps> = ({
                       <Ionicons
                         name={equipment.iconName as ComponentProps<typeof Ionicons>['name']}
                         size={rf(16)}
-                        color={ResponsiveTheme.colors.text}
-                        style={{ marginRight: ResponsiveTheme.spacing.xs }}
+                        color={colors.text}
+                        style={{ marginRight: spacing.xs }}
                       />
                       <Text style={styles.gymEquipmentItemLabel}>
                         {equipment.label}
@@ -94,59 +93,59 @@ export const EquipmentSelector: React.FC<EquipmentSelectorProps> = ({
 
 const styles = StyleSheet.create({
   edgeToEdgeContentPadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   fieldLabel: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
+    marginBottom: spacing.sm,
     flexShrink: 1,
   },
   preferenceField: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   gymEquipmentCard: {
-    padding: ResponsiveTheme.spacing.md,
-    backgroundColor: `${ResponsiveTheme.colors.success}08`,
-    borderColor: `${ResponsiveTheme.colors.success}30`,
+    padding: spacing.md,
+    backgroundColor: `${colors.success}08`,
+    borderColor: `${colors.success}30`,
     borderWidth: 1,
   },
   gymEquipmentContent: {
     alignItems: "center",
   },
   gymEquipmentTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.success,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.success,
+    marginBottom: spacing.xs,
     textAlign: "center",
   },
   gymEquipmentDescription: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
     lineHeight: rf(18),
   },
   gymEquipmentList: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   gymEquipmentItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    backgroundColor: colors.backgroundTertiary,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.xs,
   },
   gymEquipmentItemLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.text,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.xs,
+    color: colors.text,
+    fontWeight: typography.fontWeight.medium,
   },
 });

@@ -1,9 +1,8 @@
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import React, { type ComponentProps } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
-import { GlassCard } from "../../../components/ui/aurora";
+import { rf } from "../../../utils/responsive";import { GlassCard } from "../../../components/ui/aurora";
 import { Slider } from "../../../components/ui";
 import {
   INTENSITY_OPTIONS,
@@ -69,8 +68,8 @@ export const FitnessLevelSection: React.FC<FitnessLevelSectionProps> = ({
               <Ionicons
                 name={(levelInfo?.iconName as ComponentProps<typeof Ionicons>['name']) || "leaf-outline"}
                 size={rf(24)}
-                color={ResponsiveTheme.colors.primary}
-                style={{ marginRight: ResponsiveTheme.spacing.sm }}
+                color={colors.primary}
+                style={{ marginRight: spacing.sm }}
               />
               <View style={styles.calculatedLevelText}>
                 <Text style={styles.calculatedLevelTitle} numberOfLines={1}>
@@ -89,13 +88,13 @@ export const FitnessLevelSection: React.FC<FitnessLevelSectionProps> = ({
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
-                    marginTop: ResponsiveTheme.spacing.xs,
+                    marginTop: spacing.xs,
                   }}
                 >
                   <Ionicons
                     name="bulb-outline"
                     size={rf(12)}
-                    color={ResponsiveTheme.colors.primary}
+                    color={colors.primary}
                     style={{ marginRight: 4 }}
                   />
                   <Text
@@ -123,8 +122,8 @@ export const FitnessLevelSection: React.FC<FitnessLevelSectionProps> = ({
             <Ionicons
               name="flag-outline"
               size={rf(20)}
-              color={ResponsiveTheme.colors.primary}
-              style={{ marginRight: ResponsiveTheme.spacing.xs }}
+              color={colors.primary}
+              style={{ marginRight: spacing.xs }}
             />
             <Text style={styles.recommendedTypesTitle} numberOfLines={1}>
               Recommended Workout Types
@@ -147,8 +146,8 @@ export const FitnessLevelSection: React.FC<FitnessLevelSectionProps> = ({
                   <Ionicons
                     name={workoutType.iconName as ComponentProps<typeof Ionicons>['name']}
                     size={rf(16)}
-                    color={ResponsiveTheme.colors.text}
-                    style={{ marginRight: ResponsiveTheme.spacing.xs }}
+                    color={colors.text}
+                    style={{ marginRight: spacing.xs }}
                   />
                   <Text style={styles.recommendedTypeLabel} numberOfLines={1}>
                     {workoutType.label}
@@ -266,34 +265,34 @@ export const FitnessLevelSection: React.FC<FitnessLevelSectionProps> = ({
 
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
-    marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.md,
-    marginHorizontal: -ResponsiveTheme.spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+    marginHorizontal: -spacing.lg,
   },
   sectionTitlePadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
     letterSpacing: -0.3,
     flexShrink: 1,
   },
   sectionSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: ResponsiveTheme.fontSize.sm * 1.4,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+    lineHeight: fontSize.sm * 1.4,
     flexShrink: 1,
   },
   edgeToEdgeContentPadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   calculatedLevelCardInline: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   calculatedLevelContent: {
     flexDirection: "row",
@@ -303,64 +302,64 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   calculatedLevelTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.primary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary,
+    marginBottom: spacing.xs,
   },
   calculatedLevelDescription: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     lineHeight: rf(18),
   },
   calculatedLevelHint: {
     flex: 1,
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
   },
   recommendedTypesCard: {
-    padding: ResponsiveTheme.spacing.md,
-    backgroundColor: `${ResponsiveTheme.colors.secondary}10`,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    padding: spacing.md,
+    backgroundColor: `${colors.secondary}10`,
+    marginBottom: spacing.lg,
   },
   recommendedTypesHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   recommendedTypesTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
   },
   recommendedTypesDescription: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
   },
   recommendedTypesList: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   recommendedTypeItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.backgroundTertiary,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
   },
   recommendedTypeLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.text,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.xs,
+    color: colors.text,
+    fontWeight: typography.fontWeight.medium,
   },
   fitnessGrid: {
-    gap: ResponsiveTheme.spacing.lg,
+    gap: spacing.lg,
   },
   fitnessItem: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   experienceSlider: {
     width: "100%",
@@ -376,6 +375,6 @@ const styles = StyleSheet.create({
   },
   flexibilityGrid: {},
   sectionBottomPad: {
-    height: ResponsiveTheme.spacing.lg,
+    height: spacing.lg,
   },
 });

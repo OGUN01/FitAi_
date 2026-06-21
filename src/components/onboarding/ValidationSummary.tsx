@@ -1,10 +1,9 @@
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { GlassCard } from "../../components/ui/aurora";
 import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
-import { TabValidationResult } from "../../types/onboarding";
+import { rf } from "../../utils/responsive";import { TabValidationResult } from "../../types/onboarding";
 
 interface ValidationSummaryProps {
   validationResult: TabValidationResult;
@@ -30,8 +29,8 @@ export const ValidationSummary: React.FC<ValidationSummaryProps> = ({
             size={rf(20)}
             color={
               validationResult.is_valid
-                ? ResponsiveTheme.colors.secondary
-                : ResponsiveTheme.colors.warning
+                ? colors.secondary
+                : colors.warning
             }
           />
           <Text
@@ -80,59 +79,59 @@ export const ValidationSummary: React.FC<ValidationSummaryProps> = ({
 
 const styles = StyleSheet.create({
   validationSummary: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
   },
   validationCard: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
   },
   validationTitleRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
-    gap: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
+    gap: spacing.xs,
   },
   validationTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.warning,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.warning,
   },
   validationTitleSuccess: {
-    color: ResponsiveTheme.colors.secondary,
+    color: colors.secondary,
   },
   validationPercentage: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
   },
   validationErrors: {
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.sm,
   },
   validationErrorTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.error,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.error,
+    marginBottom: spacing.xs,
   },
   validationErrorText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.error,
+    fontSize: fontSize.xs,
+    color: colors.error,
     marginBottom: 2,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    marginLeft: spacing.xs,
   },
   validationWarnings: {
-    marginTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.md,
   },
   validationWarningTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.warning,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.warning,
+    marginBottom: spacing.xs,
   },
   validationWarningText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.warning,
+    fontSize: fontSize.xs,
+    color: colors.warning,
     marginBottom: 2,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    marginLeft: spacing.xs,
   },
 });

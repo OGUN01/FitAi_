@@ -9,7 +9,7 @@ import {
   Dimensions,
 } from "react-native";
 import { Image } from "expo-image";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr, rs } from "../../../utils/responsive";
 
 interface FullscreenModalProps {
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
 
   fullscreenContainer: {
     alignItems: "center",
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
   },
 
   closeButton: {
@@ -105,24 +105,24 @@ const styles = StyleSheet.create({
 
   fullscreenTitle: {
     color: "white",
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
     textTransform: "capitalize",
   },
 
   fullscreenGif: {
     backgroundColor: "rgba(255, 255, 255, 0.05)",
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
   },
 
   fullscreenHint: {
     color: "rgba(255, 255, 255, 0.7)",
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: fontSize.sm,
     textAlign: "center",
-    marginTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.md,
   },
 });

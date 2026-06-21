@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rbr, rs } from "../../../utils/responsive";
 
 interface ModalHeaderProps {
@@ -40,36 +40,36 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.surface,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
   },
 
   headerContent: {
     flex: 1,
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
 
   modalTitle: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
 
   qualityBadge: {
-    backgroundColor: ResponsiveTheme.colors.success + "20",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    backgroundColor: colors.success + "20",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
     alignSelf: "flex-start",
   },
 
   qualityBadgeText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.success,
+    fontSize: fontSize.xs,
+    color: colors.success,
     fontWeight: "600",
   },
 
@@ -77,14 +77,14 @@ const styles = StyleSheet.create({
     width: Math.max(rs(40), 44),
     height: Math.max(rs(40), 44),
     borderRadius: Math.max(rbr(20), 22),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
   },
 
   closeButtonText: {
     fontSize: rf(18),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: "bold",
   },
 });

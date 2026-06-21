@@ -1,6 +1,10 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import {
+  flatColors as colors,
+  spacing,
+  flatFontSize as fontSize,
+} from "../../../theme/aurora-tokens";
 import { Card } from "../../ui";
 import { rbr } from "../../../utils/responsive";
 import { RecognizedFood } from "../../../services/foodRecognitionService";
@@ -47,41 +51,41 @@ export const FoodCard: React.FC<FoodCardProps> = ({ food }) => {
 
 const styles = StyleSheet.create({
   foodCard: {
-    padding: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   foodHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   foodName: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: fontSize.lg,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     flex: 1,
   },
 
   confidenceBadge: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
     borderRadius: rbr(12),
   },
 
   confidenceText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.white,
+    fontSize: fontSize.xs,
+    color: colors.white,
     fontWeight: "600",
   },
 
   detailsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
 
   detailItem: {
@@ -90,14 +94,14 @@ const styles = StyleSheet.create({
   },
 
   detailLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginBottom: spacing.xs,
   },
 
   detailValue: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    color: colors.text,
     fontWeight: "600",
   },
 });

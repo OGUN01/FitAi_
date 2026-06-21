@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../../utils/responsive";
 
 interface WaterProgressSectionProps {
@@ -30,8 +30,8 @@ export const WaterProgressSection: React.FC<WaterProgressSectionProps> = ({
         <LinearGradient
           colors={
             isGoalReached
-              ? [ResponsiveTheme.colors.successAlt, ResponsiveTheme.colors.successAltDark]
-              : [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]
+              ? [colors.successAlt, colors.successAltDark]
+              : [colors.primary, colors.primaryLight]
           }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
@@ -40,7 +40,7 @@ export const WaterProgressSection: React.FC<WaterProgressSectionProps> = ({
       </View>
       {isGoalReached && (
         <View style={styles.goalReachedBadge}>
-          <Ionicons name="checkmark-circle" size={16} color={ResponsiveTheme.colors.successAlt} />
+          <Ionicons name="checkmark-circle" size={16} color={colors.successAlt} />
           <Text style={styles.goalReachedText}>Daily goal achieved!</Text>
         </View>
       )}
@@ -65,11 +65,11 @@ const styles = StyleSheet.create({
   progressValue: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   progressBar: {
     height: rp(8),
-    backgroundColor: ResponsiveTheme.colors.glassHighlight,
+    backgroundColor: colors.glassHighlight,
     borderRadius: rbr(4),
     overflow: "hidden",
   },
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   },
   goalReachedText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.successAlt,
+    color: colors.successAlt,
     fontWeight: "500",
   },
 });

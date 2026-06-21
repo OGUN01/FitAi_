@@ -1,9 +1,8 @@
+import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
-
 interface MetricPillProps {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
@@ -37,8 +36,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.05)",
     paddingVertical: rp(4),
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    paddingHorizontal: spacing.xs,
+    borderRadius: borderRadius.sm,
     borderWidth: 1,
   },
   metricIcon: {
@@ -51,7 +50,7 @@ const styles = StyleSheet.create({
   },
   metricLabel: {
     fontSize: rf(9),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     textTransform: "uppercase",
   },
   metricValue: {

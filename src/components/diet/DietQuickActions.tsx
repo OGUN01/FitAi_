@@ -9,7 +9,7 @@ import { View, Text, StyleSheet, ScrollView } from "react-native";
 import Animated from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../utils/responsive";
 
 interface QuickAction {
@@ -45,14 +45,14 @@ export const DietQuickActions: React.FC<DietQuickActionsProps> = React.memo(
         id: "scan-food",
         label: "Scan Food",
         icon: "camera-outline",
-        color: ResponsiveTheme.colors.errorLight,
+        color: colors.errorLight,
         onPress: onScanFood,
       },
       {
         id: "barcode",
         label: "Barcode",
         icon: "barcode-outline",
-        color: ResponsiveTheme.colors.teal,
+        color: colors.teal,
         onPress: onScanBarcode,
       },
       {
@@ -66,21 +66,21 @@ export const DietQuickActions: React.FC<DietQuickActionsProps> = React.memo(
         id: "log-meal",
         label: "Log Meal",
         icon: "restaurant-outline",
-        color: ResponsiveTheme.colors.success,
+        color: colors.success,
         onPress: onLogMeal,
       },
       {
         id: "water",
         label: "Log Water",
         icon: "water-outline",
-        color: ResponsiveTheme.colors.info,
+        color: colors.info,
         onPress: onLogWater,
       },
       {
         id: "recipes",
         label: "Recipes",
         icon: "book-outline",
-        color: ResponsiveTheme.colors.warning,
+        color: colors.warning,
         onPress: onViewRecipes,
       },
     ];
@@ -148,10 +148,10 @@ export const DietQuickActions: React.FC<DietQuickActionsProps> = React.memo(
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   scrollContent: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
     gap: rp(4),
   },
   actionItem: {
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     borderRadius: rw(24),
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
     position: "relative",
   },
   badge: {
@@ -182,17 +182,17 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
     paddingHorizontal: rp(4),
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.background,
+    borderColor: colors.background,
   },
   badgeText: {
     fontSize: rf(9),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   label: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textAlign: "center",
   },
 });

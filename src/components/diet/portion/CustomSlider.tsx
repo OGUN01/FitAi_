@@ -5,7 +5,7 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rh, rw, rbr } from "../../../utils/responsive";
 
 interface CustomSliderProps {
@@ -74,17 +74,17 @@ const styles = StyleSheet.create({
     width: "100%",
     height: rh(40),
     justifyContent: "center",
-    marginVertical: ResponsiveTheme.spacing.md,
+    marginVertical: spacing.md,
   },
   track: {
     height: rh(4),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     borderRadius: rbr(2),
     position: "relative",
   },
   fill: {
     height: "100%",
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: rbr(2),
     position: "absolute",
     left: 0,
@@ -95,10 +95,10 @@ const styles = StyleSheet.create({
     top: rh(-10),
     width: rw(24),
     height: rh(24),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: rbr(12),
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.white,
+    borderColor: colors.white,
     boxShadow: '0px 2px 4px rgba(0,0,0,0.2)',
     elevation: 4,
   },

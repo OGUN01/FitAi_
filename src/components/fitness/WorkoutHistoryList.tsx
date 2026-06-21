@@ -15,7 +15,7 @@ import AnimatedRN, { FadeInDown, FadeInRight } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
@@ -183,7 +183,7 @@ const WorkoutHistoryCard: React.FC<{
           style={styles.actionButton}
         >
           <View style={[styles.actionContent, styles.repeatAction]}>
-            <Ionicons name="repeat" size={rf(20)} color={ResponsiveTheme.colors.white} />
+            <Ionicons name="repeat" size={rf(20)} color={colors.white} />
             <Text style={styles.actionText}>Repeat</Text>
           </View>
         </AnimatedPressable>
@@ -195,7 +195,7 @@ const WorkoutHistoryCard: React.FC<{
           style={styles.actionButton}
         >
           <View style={[styles.actionContent, styles.deleteAction]}>
-            <Ionicons name="trash-outline" size={rf(20)} color={ResponsiveTheme.colors.white} />
+            <Ionicons name="trash-outline" size={rf(20)} color={colors.white} />
             <Text style={styles.actionText}>Delete</Text>
           </View>
         </AnimatedPressable>
@@ -233,7 +233,7 @@ const WorkoutHistoryCard: React.FC<{
                 <Ionicons
                   name={getCategoryIcon()}
                   size={rf(20)}
-                  color={isCompleted ? ResponsiveTheme.colors.successAlt : ResponsiveTheme.colors.errorLight}
+                  color={isCompleted ? colors.successAlt : colors.errorLight}
                 />
               </View>
 
@@ -257,7 +257,7 @@ const WorkoutHistoryCard: React.FC<{
                     <Ionicons
                       name="checkmark-circle"
                       size={rf(18)}
-                      color={ResponsiveTheme.colors.successAlt}
+                      color={colors.successAlt}
                     />
                   </View>
                 ) : (
@@ -293,7 +293,7 @@ export const WorkoutHistoryList: React.FC<WorkoutHistoryListProps> = ({
             <Ionicons
               name="time-outline"
               size={rf(32)}
-              color={ResponsiveTheme.colors.textSecondary}
+              color={colors.textSecondary}
             />
             <Text style={styles.emptyTitle}>No Workout History</Text>
             <Text style={styles.emptySubtitle}>
@@ -313,7 +313,7 @@ export const WorkoutHistoryList: React.FC<WorkoutHistoryListProps> = ({
           <Ionicons
             name="time-outline"
             size={rf(18)}
-            color={ResponsiveTheme.colors.text}
+            color={colors.text}
           />
           <Text style={styles.sectionTitle}>Recent Activity</Text>
         </View>
@@ -337,31 +337,31 @@ export const WorkoutHistoryList: React.FC<WorkoutHistoryListProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   sectionHeaderLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   sectionTitle: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   sectionCount: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   cardWrapper: {
     position: "relative",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   actionsContainer: {
     position: "absolute",
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   actionButton: {
     height: "100%",
@@ -380,27 +380,27 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
     gap: rp(4),
   },
   repeatAction: {
-    backgroundColor: ResponsiveTheme.colors.successAlt,
+    backgroundColor: colors.successAlt,
   },
   deleteAction: {
-    backgroundColor: ResponsiveTheme.colors.errorAlt,
+    backgroundColor: colors.errorAlt,
   },
   actionText: {
     fontSize: rf(9),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   cardContainer: {
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
   cardContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   iconContainer: {
     width: rw(44),
@@ -414,17 +414,17 @@ const styles = StyleSheet.create({
   },
   date: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rp(2),
   },
   title: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   meta: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
   statusContainer: {
@@ -432,33 +432,33 @@ const styles = StyleSheet.create({
   },
   completedBadge: {
     backgroundColor: "rgba(16, 185, 129, 0.15)",
-    padding: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    padding: spacing.xs,
+    borderRadius: borderRadius.full,
   },
   progressBadge: {
     backgroundColor: "rgba(255, 142, 83, 0.15)",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.sm,
     paddingVertical: rp(4),
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    borderRadius: borderRadius.full,
   },
   progressText: {
     fontSize: rf(11),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.accent,
+    color: colors.accent,
   },
   emptyState: {
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.lg,
-    gap: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.lg,
+    gap: spacing.sm,
   },
   emptyTitle: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   emptySubtitle: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
   },
 });

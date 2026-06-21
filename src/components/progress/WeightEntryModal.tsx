@@ -27,7 +27,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { haptics } from "../../utils/haptics";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rs, rh } from "../../utils/responsive";
 import { progressDataService } from "../../services/progressData";
 import { BodyAnalysisService } from "../../services/onboardingService";
@@ -255,7 +255,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                     <Ionicons
                       name="close"
                       size={rf(24)}
-                      color={ResponsiveTheme.colors.white}
+                      color={colors.white}
                     />
                   </TouchableOpacity>
                 </View>
@@ -275,7 +275,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                       <Ionicons
                         name="scale-outline"
                         size={rs(20)}
-                        color={ResponsiveTheme.colors.primary}
+                        color={colors.primary}
                         style={styles.inputIcon}
                       />
                       <TextInput
@@ -283,7 +283,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                         value={weight}
                         onChangeText={setWeight}
                         placeholder={placeholder}
-                        placeholderTextColor={ResponsiveTheme.colors.textMuted}
+                        placeholderTextColor={colors.textMuted}
                         keyboardType="decimal-pad"
                         returnKeyType="next"
                         onSubmitEditing={() => bodyFatRef.current?.focus()}
@@ -300,7 +300,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                       <Ionicons
                         name="fitness-outline"
                         size={rs(20)}
-                        color={ResponsiveTheme.colors.errorLight}
+                        color={colors.errorLight}
                         style={styles.inputIcon}
                       />
                       <TextInput
@@ -309,7 +309,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                         value={bodyFat}
                         onChangeText={setBodyFat}
                         placeholder="e.g., 18.5"
-                        placeholderTextColor={ResponsiveTheme.colors.textMuted}
+                        placeholderTextColor={colors.textMuted}
                         keyboardType="decimal-pad"
                         returnKeyType="done"
                         editable={!isSubmitting}
@@ -329,7 +329,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                         value={notes}
                         onChangeText={setNotes}
                         placeholder="How are you feeling?"
-                        placeholderTextColor={ResponsiveTheme.colors.textMuted}
+                        placeholderTextColor={colors.textMuted}
                         multiline
                         numberOfLines={3}
                         textAlignVertical="top"
@@ -344,7 +344,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                       <Ionicons
                         name="alert-circle"
                         size={rf(16)}
-                        color={ResponsiveTheme.colors.errorLight}
+                        color={colors.errorLight}
                       />
                       <Text style={styles.errorText}>{error}</Text>
                     </View>
@@ -365,7 +365,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                 >
                   {isSubmitting ? (
                     <ActivityIndicator
-                      color={ResponsiveTheme.colors.white}
+                      color={colors.white}
                       size="small"
                     />
                   ) : (
@@ -373,7 +373,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                       <Ionicons
                         name="checkmark-circle"
                         size={rs(20)}
-                        color={ResponsiveTheme.colors.white}
+                        color={colors.white}
                       />
                       <Text style={styles.submitButtonText}>Save Entry</Text>
                     </>
@@ -396,7 +396,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.overlay,
+    backgroundColor: colors.overlay,
     justifyContent: "flex-end",
   },
   keyboardView: {
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(22),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   closeButton: {
     minWidth: 44,
@@ -437,19 +437,19 @@ const styles = StyleSheet.create({
   label: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rp(8),
   },
   required: {
-    color: ResponsiveTheme.colors.errorLight,
+    color: colors.errorLight,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
     borderRadius: rbr(12),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassBorder,
+    borderColor: colors.glassBorder,
     paddingHorizontal: rp(12),
     height: rh(50),
   },
@@ -459,12 +459,12 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: rf(16),
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     height: "100%",
   },
   unitLabel: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     marginLeft: rp(8),
   },
   notesContainer: {
@@ -478,13 +478,13 @@ const styles = StyleSheet.create({
   errorContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.errorTint,
+    backgroundColor: colors.errorTint,
     padding: rp(12),
     borderRadius: rbr(8),
     marginBottom: rp(16),
   },
   errorText: {
-    color: ResponsiveTheme.colors.errorLight,
+    color: colors.errorLight,
     fontSize: rf(14),
     marginLeft: rp(8),
     flex: 1,
@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: rbr(12),
     paddingVertical: rp(14),
     minHeight: 44,
@@ -504,13 +504,13 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   submitButtonText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     fontSize: rf(16),
     fontWeight: "600",
   },
   infoText: {
     textAlign: "center",
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     fontSize: rf(12),
     marginTop: rp(12),
   },

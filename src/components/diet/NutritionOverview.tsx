@@ -17,7 +17,7 @@ import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -25,20 +25,20 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 // Macro ring colors
 const MACROS = {
   protein: {
-    color: ResponsiveTheme.colors.errorLight,
+    color: colors.errorLight,
     gradientEnd: "#FF8E53",
     icon: "fitness" as const,
     label: "Protein",
   },
   carbs: {
-    color: ResponsiveTheme.colors.teal,
+    color: colors.teal,
     gradientEnd: "#44A08D",
     icon: "leaf" as const,
     label: "Carbs",
   },
   fat: {
-    color: ResponsiveTheme.colors.amber,
-    gradientEnd: ResponsiveTheme.colors.warning,
+    color: colors.amber,
+    gradientEnd: colors.warning,
     icon: "water" as const,
     label: "Fat",
   },
@@ -164,8 +164,8 @@ export const NutritionOverview: React.FC<NutritionOverviewProps> = ({
                 progress={calorieProgress}
                 size={outerSize}
                 strokeWidth={strokeWidth}
-                color={ResponsiveTheme.colors.primary}
-                gradientEnd={ResponsiveTheme.colors.primaryLight}
+                color={colors.primary}
+                gradientEnd={colors.primaryLight}
                 gradientId="calorieGrad"
                 delay={0}
               />
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.lg,
+    gap: spacing.lg,
   },
   ringContainer: {
     position: "relative",
@@ -280,28 +280,28 @@ const styles = StyleSheet.create({
   calorieValue: {
     fontSize: rf(28),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   calorieLabel: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
   calorieTarget: {
     fontSize: rf(10),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textMuted || `${ResponsiveTheme.colors.white}66`,
+    color: colors.textMuted || `${colors.white}66`,
     marginTop: rp(2),
   },
   macrosContainer: {
     flex: 1,
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   macroRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   macroIconContainer: {
     width: rw(32),
@@ -322,22 +322,22 @@ const styles = StyleSheet.create({
   macroLabel: {
     fontSize: rf(12),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   macroValue: {
     fontSize: rf(12),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   macroUnit: {
     fontSize: rf(10),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   progressBarBg: {
     height: rh(4),
     borderRadius: rbr(2),
-    backgroundColor: ResponsiveTheme.colors.glassBorder,
+    backgroundColor: colors.glassBorder,
     overflow: "hidden",
   },
   progressBarFill: {

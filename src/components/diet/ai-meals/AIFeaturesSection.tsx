@@ -1,6 +1,12 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  flatFontSize as fontSize,
+  typography,
+} from "../../../theme/aurora-tokens";
 import { rf } from "../../../utils/responsive";
 
 export const AIFeaturesSection: React.FC = () => {
@@ -30,7 +36,7 @@ const styles = StyleSheet.create({
   featuresGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
 
   featureItem: {
@@ -38,20 +44,20 @@ const styles = StyleSheet.create({
     minWidth: "47%",
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    padding: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.backgroundSecondary,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
   },
 
   featureEmoji: {
     fontSize: rf(16),
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
 
   featureText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.text,
+    fontWeight: typography.fontWeight.medium,
     flex: 1,
   },
 });

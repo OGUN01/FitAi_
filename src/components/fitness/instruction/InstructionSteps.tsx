@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr, rs } from "../../../utils/responsive";
 
 interface InstructionStepsProps {
@@ -46,19 +46,19 @@ export const InstructionSteps: React.FC<InstructionStepsProps> = ({
 
 const styles = StyleSheet.create({
   instructionsContainer: {
-    paddingBottom: ResponsiveTheme.spacing.xl,
+    paddingBottom: spacing.xl,
   },
 
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.lg,
   },
 
   instructionItem: {
     flexDirection: "row",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
     alignItems: "flex-start",
   },
 
@@ -66,46 +66,46 @@ const styles = StyleSheet.create({
     width: rs(28),
     height: rs(28),
     borderRadius: rbr(14),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
     marginTop: rp(2),
   },
 
   stepNumberText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: fontSize.sm,
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.surface,
+    color: colors.surface,
   },
 
   instructionText: {
     flex: 1,
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    color: colors.text,
     lineHeight: rf(22),
   },
 
   noDataContainer: {
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.xl,
+    paddingVertical: spacing.xl,
   },
 
   noDataEmoji: {
     fontSize: rf(48),
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   noDataText: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
 
   noDataSubtext: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
   },
 });

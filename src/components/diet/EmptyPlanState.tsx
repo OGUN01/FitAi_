@@ -10,7 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 
 interface EmptyPlanStateProps {
@@ -53,15 +53,15 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
           {/* Icon */}
           <View style={styles.iconWrapper}>
             <LinearGradient
-              colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]}
+              colors={[colors.primary, colors.primaryLight]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.iconContainer}
             >
-              <Ionicons name="sparkles" size={rf(40)} color={ResponsiveTheme.colors.white} />
+              <Ionicons name="sparkles" size={rf(40)} color={colors.white} />
             </LinearGradient>
             <View style={styles.iconAccent}>
-              <Ionicons name="fitness" size={rf(20)} color={ResponsiveTheme.colors.errorLight} />
+              <Ionicons name="fitness" size={rf(20)} color={colors.errorLight} />
             </View>
           </View>
 
@@ -81,21 +81,21 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
                 <Ionicons
                   name="calendar-outline"
                   size={rf(16)}
-                  color={ResponsiveTheme.colors.primary}
+                  color={colors.primary}
                 />
                 <Text style={styles.previewText}>
                   {planDetails.workouts} workouts
                 </Text>
               </View>
               <View style={styles.previewItem}>
-                <Ionicons name="time-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} />
+                <Ionicons name="time-outline" size={rf(16)} color={colors.primary} />
                 <Text style={styles.previewText}>{planDetails.duration}</Text>
               </View>
             </View>
 
             <View style={styles.previewRow}>
               <View style={styles.previewItem}>
-                <Ionicons name="trophy-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} />
+                <Ionicons name="trophy-outline" size={rf(16)} color={colors.primary} />
                 <Text style={styles.previewText} numberOfLines={1}>
                   {experienceLevel.charAt(0).toUpperCase() +
                     experienceLevel.slice(1)}{" "}
@@ -104,7 +104,7 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
               </View>
               {primaryGoals.length > 0 && (
                 <View style={styles.previewItem}>
-                  <Ionicons name="flag-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} />
+                  <Ionicons name="flag-outline" size={rf(16)} color={colors.primary} />
                   <Text style={styles.previewText} numberOfLines={1}>
                     {primaryGoals[0]}
                   </Text>
@@ -127,7 +127,7 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
                 <Ionicons
                   name={feature.icon as keyof typeof Ionicons.glyphMap}
                   size={rf(16)}
-                  color={ResponsiveTheme.colors.successAlt}
+                  color={colors.successAlt}
                 />
                 <Text style={styles.featureText}>{feature.text}</Text>
               </View>
@@ -145,7 +145,7 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
           >
             <LinearGradient
               colors={
-                isGenerating ? [ResponsiveTheme.colors.neutral, "#4b5563"] : [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]
+                isGenerating ? [colors.neutral, "#4b5563"] : [colors.primary, colors.primaryLight]
               }
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -153,12 +153,12 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
             >
               {isGenerating ? (
                 <>
-                  <Ionicons name="sync" size={rf(20)} color={ResponsiveTheme.colors.white} />
+                  <Ionicons name="sync" size={rf(20)} color={colors.white} />
                   <Text style={styles.generateButtonText}>Generating...</Text>
                 </>
               ) : (
                 <>
-                  <Ionicons name="sparkles" size={rf(20)} color={ResponsiveTheme.colors.white} />
+                  <Ionicons name="sparkles" size={rf(20)} color={colors.white} />
                   <Text style={styles.generateButtonText}>
                     Generate My Plan
                   </Text>
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
   },
   iconWrapper: {
     position: "relative",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   iconContainer: {
     width: rw(80),
@@ -194,89 +194,89 @@ const styles = StyleSheet.create({
     width: rw(36),
     height: rw(36),
     borderRadius: rw(18),
-    backgroundColor: `${ResponsiveTheme.colors.errorLight}26`,
+    backgroundColor: `${colors.errorLight}26`,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.background,
+    borderColor: colors.background,
   },
   title: {
     fontSize: rf(20),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   subtitle: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(20),
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.lg,
   },
   previewContainer: {
     width: "100%",
-    backgroundColor: `${ResponsiveTheme.colors.primary}14`,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    backgroundColor: `${colors.primary}14`,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
   },
   previewTitle: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   previewRow: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    gap: spacing.lg,
+    marginBottom: spacing.xs,
   },
   previewItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
     flex: 1,
   },
   previewText: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     flex: 1,
   },
   featuresContainer: {
     width: "100%",
-    gap: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
   },
   featureItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   featureText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   generateButton: {
     width: "100%",
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     overflow: "hidden",
   },
   generateButtonGradient: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.md + 2,
-    paddingHorizontal: ResponsiveTheme.spacing.xl,
+    gap: spacing.sm,
+    paddingVertical: spacing.md + 2,
+    paddingHorizontal: spacing.xl,
   },
   generateButtonText: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 });
 

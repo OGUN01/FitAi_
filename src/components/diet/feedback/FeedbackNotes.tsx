@@ -1,6 +1,11 @@
 import React from "react";
 import { Text, StyleSheet, TextInput } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  flatFontSize as fontSize,
+} from "../../../theme/aurora-tokens";
 import { Card } from "../../ui";
 import { FoodFeedback } from "./types";
 import { rh } from "../../../utils/responsive";
@@ -31,26 +36,26 @@ export const FeedbackNotes: React.FC<FeedbackNotesProps> = ({
 
 const styles = StyleSheet.create({
   sectionCard: {
-    padding: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
 
   notesInput: {
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
-    backgroundColor: ResponsiveTheme.colors.surface,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontSize: fontSize.md,
+    color: colors.text,
+    backgroundColor: colors.surface,
     minHeight: rh(80),
     textAlignVertical: "top",
   },

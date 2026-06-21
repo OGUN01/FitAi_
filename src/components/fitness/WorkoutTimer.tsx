@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, PropsWithChildren } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Modal } from "react-native";
 import { Card } from "../ui";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rs, rh } from "../../utils/responsive";
 
 interface WorkoutTimerProps {
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   timerCard: {
     width: "90%",
     maxWidth: 400,
-    padding: ResponsiveTheme.spacing.xl,
+    padding: spacing.xl,
     alignItems: "center",
   },
 
@@ -231,17 +231,17 @@ const styles = StyleSheet.create({
   },
 
   timerTitle: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.lg,
     textAlign: "center",
   },
 
   circularTimer: {
     width: rs(200),
     height: rs(200),
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
     position: "relative",
     justifyContent: "center",
     alignItems: "center",
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     height: rs(200),
     borderRadius: rbr(100),
     borderWidth: 8,
-    borderColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderColor: colors.backgroundSecondary,
   },
 
   progressFill: {
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     height: rs(200),
     borderRadius: rbr(100),
     borderWidth: 8,
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
     borderRightColor: "transparent",
     borderBottomColor: "transparent",
     transform: [{ rotate: "-90deg" }],
@@ -274,38 +274,38 @@ const styles = StyleSheet.create({
 
   timeText: {
     fontSize: rf(48),
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
     fontFamily: "monospace",
   },
 
   timeLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     marginTop: rp(4),
   },
 
   progressBarContainer: {
     width: "100%",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   progressBar: {
     height: rh(8),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     borderRadius: rbr(4),
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   progressBarFill: {
     height: "100%",
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: rbr(4),
   },
 
   progressText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
   },
 
@@ -313,41 +313,41 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
-    marginBottom: ResponsiveTheme.spacing.md,
-    gap: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.md,
+    gap: spacing.sm,
   },
 
   modernControlButton: {
     flex: 1,
     height: 44,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
   },
 
   primaryButton: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
 
   outlineButton: {
     backgroundColor: "transparent",
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
 
   modernControlText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: fontSize.sm,
     fontWeight: "600",
     textAlign: "center",
   },
 
   primaryButtonText: {
-    color: ResponsiveTheme.colors.surface,
+    color: colors.surface,
   },
 
   outlineButtonText: {
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
 
   controlButton: {
@@ -358,19 +358,19 @@ const styles = StyleSheet.create({
   quickAdjustments: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: ResponsiveTheme.spacing.lg,
+    gap: spacing.lg,
   },
 
   adjustButton: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.backgroundSecondary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
   },
 
   adjustButtonText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
   },
 });

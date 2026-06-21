@@ -1,6 +1,6 @@
 ﻿import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { ResponsiveTheme } from '../../../utils/constants';
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../../theme/aurora-tokens';
 import { rf, rp } from "../../../utils/responsive";
 
 
@@ -54,8 +54,8 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 const styles = StyleSheet.create({
   timeRangeSelector: {
     flexDirection: "row",
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.md,
     padding: rp(4),
   },
   timeRangeButton: {
@@ -63,23 +63,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.sm,
   },
   timeRangeButtonActive: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
   timeRangeIcon: {
     fontSize: rf(16),
-    marginRight: ResponsiveTheme.spacing.xs,
+    marginRight: spacing.xs,
   },
   timeRangeLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
   },
   timeRangeLabelActive: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 });

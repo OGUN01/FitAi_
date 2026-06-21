@@ -24,7 +24,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rh, rw, rp, rbr } from "../../utils/responsive";
 import { useNutritionStore } from "../../stores/nutritionStore";
 import { haptics } from "../../utils/haptics";
@@ -485,7 +485,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                 <Ionicons
                   name="close"
                   size={rf(24)}
-                  color={ResponsiveTheme.colors.text}
+                  color={colors.text}
                 />
               </TouchableOpacity>
             </View>
@@ -502,7 +502,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                   <Ionicons
                     name="information-circle-outline"
                     size={rf(16)}
-                    color={ResponsiveTheme.colors.primary}
+                    color={colors.primary}
                   />
                   <Text style={styles.scanNoticeText}>{scanReviewNote}</Text>
                 </View>
@@ -515,7 +515,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                   value={mealName}
                   onChangeText={setMealName}
                   placeholder="e.g. Dal Rice, Chicken Salad"
-                  placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                  placeholderTextColor={colors.textSecondary}
                   autoFocus
                 />
               </View>
@@ -543,8 +543,8 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                         size={rf(14)}
                         color={
                           mealType === type
-                            ? ResponsiveTheme.colors.white
-                            : ResponsiveTheme.colors.textSecondary
+                            ? colors.white
+                            : colors.textSecondary
                         }
                       />
                       <Text
@@ -574,8 +574,8 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                     size={rf(14)}
                     color={
                       mode === "ingredients"
-                        ? ResponsiveTheme.colors.white
-                        : ResponsiveTheme.colors.textSecondary
+                        ? colors.white
+                        : colors.textSecondary
                     }
                   />
                   <Text
@@ -599,8 +599,8 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                     size={rf(14)}
                     color={
                       mode === "simple"
-                        ? ResponsiveTheme.colors.white
-                        : ResponsiveTheme.colors.textSecondary
+                        ? colors.white
+                        : colors.textSecondary
                     }
                   />
                   <Text
@@ -628,7 +628,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                       <Ionicons
                         name="camera-outline"
                         size={rf(14)}
-                        color={ResponsiveTheme.colors.primary}
+                        color={colors.primary}
                       />
                       <Text style={styles.scanChipText}>Scan Dish</Text>
                     </TouchableOpacity>
@@ -641,7 +641,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                       <Ionicons
                         name="document-text-outline"
                         size={rf(14)}
-                        color={ResponsiveTheme.colors.primary}
+                        color={colors.primary}
                       />
                       <Text style={styles.scanChipText}>Label</Text>
                     </TouchableOpacity>
@@ -654,7 +654,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                       <Ionicons
                         name="barcode-outline"
                         size={rf(14)}
-                        color={ResponsiveTheme.colors.primary}
+                        color={colors.primary}
                       />
                       <Text style={styles.scanChipText}>Barcode</Text>
                     </TouchableOpacity>
@@ -674,7 +674,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                       <Ionicons
                         name="add-circle"
                         size={rf(20)}
-                        color={ResponsiveTheme.colors.primary}
+                        color={colors.primary}
                       />
                       <Text style={styles.addIngredientText}>Add</Text>
                     </TouchableOpacity>
@@ -729,7 +729,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                             }
                             placeholder={`Item ${idx + 1}`}
                             placeholderTextColor={
-                              ResponsiveTheme.colors.textSecondary
+                              colors.textSecondary
                             }
                           />
                           <TextInput
@@ -740,7 +740,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                             }
                             placeholder="0"
                             placeholderTextColor={
-                              ResponsiveTheme.colors.textSecondary
+                              colors.textSecondary
                             }
                             keyboardType="numeric"
                           />
@@ -752,7 +752,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                             }
                             placeholder="0"
                             placeholderTextColor={
-                              ResponsiveTheme.colors.textSecondary
+                              colors.textSecondary
                             }
                             keyboardType="numeric"
                           />
@@ -764,7 +764,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                             }
                             placeholder="0"
                             placeholderTextColor={
-                              ResponsiveTheme.colors.textSecondary
+                              colors.textSecondary
                             }
                             keyboardType="numeric"
                           />
@@ -776,7 +776,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                             }
                             placeholder="0"
                             placeholderTextColor={
-                              ResponsiveTheme.colors.textSecondary
+                              colors.textSecondary
                             }
                             keyboardType="numeric"
                           />
@@ -788,7 +788,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                             }
                             placeholder="0"
                             placeholderTextColor={
-                              ResponsiveTheme.colors.textSecondary
+                              colors.textSecondary
                             }
                             keyboardType="numeric"
                           />
@@ -802,8 +802,8 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                               size={rf(18)}
                               color={
                                 ingredients.length === 1
-                                  ? ResponsiveTheme.colors.textSecondary
-                                  : ResponsiveTheme.colors.error
+                                  ? colors.textSecondary
+                                  : colors.error
                               }
                             />
                           </TouchableOpacity>
@@ -822,7 +822,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                       <Text
                         style={[
                           styles.totalValue,
-                          { color: ResponsiveTheme.colors.errorLight },
+                          { color: colors.errorLight },
                         ]}
                       >
                         {totalProtein.toFixed(1)}g
@@ -833,7 +833,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                       <Text
                         style={[
                           styles.totalValue,
-                          { color: ResponsiveTheme.colors.teal },
+                          { color: colors.teal },
                         ]}
                       >
                         {totalCarbs.toFixed(1)}g
@@ -844,7 +844,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                       <Text
                         style={[
                           styles.totalValue,
-                          { color: ResponsiveTheme.colors.amber },
+                          { color: colors.amber },
                         ]}
                       >
                         {totalFat.toFixed(1)}g
@@ -855,7 +855,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                       <Text
                         style={[
                           styles.totalValue,
-                          { color: ResponsiveTheme.colors.textSecondary },
+                          { color: colors.textSecondary },
                         ]}
                       >
                         {totalFiber.toFixed(1)}g
@@ -874,7 +874,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                       <Ionicons
                         name="scale-outline"
                         size={rf(13)}
-                        color={ResponsiveTheme.colors.textSecondary}
+                        color={colors.textSecondary}
                       />
                       <Text style={styles.portionBadgeText}>
                         Assuming {portionAssumptionGrams}g serving
@@ -914,7 +914,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                     value={simpleCalories}
                     onChangeText={setSimpleCalories}
                     placeholder="0"
-                    placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                    placeholderTextColor={colors.textSecondary}
                     keyboardType="numeric"
                   />
                   <Text style={[styles.label, { marginTop: rh(12) }]}>
@@ -929,7 +929,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                         onChangeText={setSimpleProtein}
                         placeholder="0"
                         placeholderTextColor={
-                          ResponsiveTheme.colors.textSecondary
+                          colors.textSecondary
                         }
                         keyboardType="numeric"
                       />
@@ -942,7 +942,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                         onChangeText={setSimpleCarbs}
                         placeholder="0"
                         placeholderTextColor={
-                          ResponsiveTheme.colors.textSecondary
+                          colors.textSecondary
                         }
                         keyboardType="numeric"
                       />
@@ -955,7 +955,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                         onChangeText={setSimpleFat}
                         placeholder="0"
                         placeholderTextColor={
-                          ResponsiveTheme.colors.textSecondary
+                          colors.textSecondary
                         }
                         keyboardType="numeric"
                       />
@@ -970,7 +970,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                         onChangeText={setSimpleFiber}
                         placeholder="0"
                         placeholderTextColor={
-                          ResponsiveTheme.colors.textSecondary
+                          colors.textSecondary
                         }
                         keyboardType="numeric"
                       />
@@ -996,7 +996,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                 <Ionicons
                   name="checkmark"
                   size={rf(18)}
-                  color={ResponsiveTheme.colors.white}
+                  color={colors.white}
                 />
                 <Text style={styles.saveButtonText}>
                   {isSubmitting ? "Logging..." : "Log Meal"}
@@ -1013,7 +1013,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.overlayDark,
+    backgroundColor: colors.overlayDark,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
@@ -1024,7 +1024,7 @@ const styles = StyleSheet.create({
   content: {
     borderRadius: rbr(20),
     padding: rp(20),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
   },
   header: {
     flexDirection: "row",
@@ -1035,7 +1035,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(22),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   closeButton: {
     padding: rp(8),
@@ -1053,21 +1053,21 @@ const styles = StyleSheet.create({
   label: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rh(6),
   },
   required: {
-    color: ResponsiveTheme.colors.error,
+    color: colors.error,
   },
   input: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rbr(12),
     paddingHorizontal: rp(12),
     paddingVertical: rh(11),
     fontSize: rf(15),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
   typeSelector: {
     flexDirection: "row",
@@ -1082,27 +1082,27 @@ const styles = StyleSheet.create({
     paddingVertical: rh(8),
     paddingHorizontal: rw(4),
     borderRadius: rbr(10),
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
   typeChipActive: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   typeChipText: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   typeChipTextActive: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   modeToggleRow: {
     flexDirection: "row",
     gap: rw(8),
     marginBottom: rh(14),
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rbr(12),
     padding: rp(4),
   },
@@ -1116,15 +1116,15 @@ const styles = StyleSheet.create({
     borderRadius: rbr(10),
   },
   modeToggleBtnActive: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
   modeToggleText: {
     fontSize: rf(12),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   modeToggleTextActive: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   ingredientsHeader: {
     flexDirection: "row",
@@ -1140,7 +1140,7 @@ const styles = StyleSheet.create({
   addIngredientText: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   colFixed: {
     width: rw(50),
@@ -1154,7 +1154,7 @@ const styles = StyleSheet.create({
   colHeader: {
     fontSize: rf(10),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center" as const,
   },
   ingredientRow: {
@@ -1164,14 +1164,14 @@ const styles = StyleSheet.create({
     marginBottom: rh(6),
   },
   ingredientInput: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rbr(8),
     paddingHorizontal: rp(6),
     paddingVertical: rh(8),
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
     textAlign: "center" as const,
   },
   removeBtn: {
@@ -1181,7 +1181,7 @@ const styles = StyleSheet.create({
   },
   totalsSummary: {
     flexDirection: "row",
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    backgroundColor: `${colors.primary}15`,
     borderRadius: rbr(12),
     paddingVertical: rh(10),
     paddingHorizontal: rp(8),
@@ -1194,11 +1194,11 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   totalLabel: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rh(2),
   },
   macroRow: {
@@ -1210,25 +1210,25 @@ const styles = StyleSheet.create({
   },
   macroLabel: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rh(4),
   },
   macroInput: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rbr(10),
     paddingHorizontal: rp(8),
     paddingVertical: rh(10),
     fontSize: rf(15),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
     textAlign: "center" as const,
   },
   scanNotice: {
     flexDirection: "row" as const,
     alignItems: "flex-start" as const,
     gap: rw(8),
-    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
+    backgroundColor: `${colors.primary}10`,
     borderRadius: rbr(12),
     paddingHorizontal: rp(12),
     paddingVertical: rh(10),
@@ -1238,7 +1238,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: rf(12),
     lineHeight: rf(17),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   scanRow: {
     flexDirection: "row" as const,
@@ -1249,7 +1249,7 @@ const styles = StyleSheet.create({
   },
   scanRowLabel: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   scanChip: {
     flexDirection: "row" as const,
@@ -1259,13 +1259,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: rw(10),
     borderRadius: rbr(20),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.primary,
-    backgroundColor: `${ResponsiveTheme.colors.primary}12`,
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}12`,
   },
   scanChipText: {
     fontSize: rf(11),
     fontWeight: "600" as const,
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   portionBadgeRow: {
     flexDirection: "row" as const,
@@ -1275,7 +1275,7 @@ const styles = StyleSheet.create({
   },
   portionBadgeText: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   multiplierRow: {
     flexDirection: "row" as const,
@@ -1287,21 +1287,21 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
     paddingVertical: rh(8),
     borderRadius: rbr(10),
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
   multiplierBtnActive: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   multiplierBtnText: {
     fontSize: rf(13),
     fontWeight: "600" as const,
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   multiplierBtnTextActive: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   footer: {
     flexDirection: "row",
@@ -1318,22 +1318,22 @@ const styles = StyleSheet.create({
     borderRadius: rbr(12),
   },
   cancelButton: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
   cancelButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   saveButton: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
   saveButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 });
 

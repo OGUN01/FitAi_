@@ -1,8 +1,8 @@
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
 import { SmartAlternative, RiskLevel } from "../../services/validationEngine";
 
 // ============================================================================
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
@@ -342,15 +342,15 @@ const styles = StyleSheet.create({
   rate: {
     fontSize: rf(12),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   separator: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
   calories: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   caloriesRow: {
     flexDirection: "row",
@@ -385,12 +385,12 @@ const styles = StyleSheet.create({
   },
   exercise: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
     fontWeight: "500",
   },
   timeline: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
 
   badge: {

@@ -1,9 +1,8 @@
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rw, rh } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
-import { TabValidationResult } from "../../../types/onboarding";
+import { rf, rw, rh } from "../../../utils/responsive";import { TabValidationResult } from "../../../types/onboarding";
 
 interface ProgressStepProps {
   stepNumber: number;
@@ -114,7 +113,7 @@ const styles = StyleSheet.create({
   stepContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.md,
   },
   stepCircle: {
     width: rw(40),
@@ -122,58 +121,58 @@ const styles = StyleSheet.create({
     borderRadius: rw(20),
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
     position: "relative",
   },
   stepCircleCompleted: {
-    backgroundColor: ResponsiveTheme.colors.success,
+    backgroundColor: colors.success,
   },
   stepCircleActive: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
   stepCircleAccessible: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
   stepCircleDisabled: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
     opacity: 0.6,
   },
   stepNumber: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.bold,
   },
   stepNumberCompleted: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   stepNumberActive: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   stepNumberAccessible: {
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   stepNumberDisabled: {
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
   stepTitle: {
     flex: 1,
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.medium,
   },
   stepTitleCompleted: {
-    color: ResponsiveTheme.colors.success,
+    color: colors.success,
   },
   stepTitleActive: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   stepTitleAccessible: {
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   stepTitleDisabled: {
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
   errorBadge: {
     position: "absolute",
@@ -182,14 +181,14 @@ const styles = StyleSheet.create({
     width: rw(16),
     height: rw(16),
     borderRadius: rw(8),
-    backgroundColor: ResponsiveTheme.colors.error,
+    backgroundColor: colors.error,
     justifyContent: "center",
     alignItems: "center",
   },
   errorBadgeText: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.white,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: colors.white,
+    fontWeight: typography.fontWeight.bold,
   },
   warningBadge: {
     position: "absolute",
@@ -198,26 +197,26 @@ const styles = StyleSheet.create({
     width: rw(16),
     height: rw(16),
     borderRadius: rw(8),
-    backgroundColor: ResponsiveTheme.colors.warning,
+    backgroundColor: colors.warning,
     justifyContent: "center",
     alignItems: "center",
   },
   warningBadgeText: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.white,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: colors.white,
+    fontWeight: typography.fontWeight.bold,
   },
   validationDetails: {
-    marginLeft: ResponsiveTheme.spacing.sm,
+    marginLeft: spacing.sm,
   },
   errorCount: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.error,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.xs,
+    color: colors.error,
+    fontWeight: typography.fontWeight.medium,
   },
   warningCount: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.warning,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.xs,
+    color: colors.warning,
+    fontWeight: typography.fontWeight.medium,
   },
 });

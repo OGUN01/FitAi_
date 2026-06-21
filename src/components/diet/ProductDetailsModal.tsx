@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { Modal } from '@/components/ui/Modal';
-import { ResponsiveTheme } from '../../utils/constants';
+import { flatColors as colors, spacing, borderRadius, typography } from '../../theme/aurora-tokens';
 import { HealthScoreIndicator } from './HealthScoreIndicator';
 import type { ScannedProduct } from '../../services/barcodeService';
 import { rf, rp } from '../../utils/responsive';
@@ -86,11 +86,11 @@ const getProductSourceLabel = (product: ScannedProduct): string =>
   isVisionLabelProduct(product) ? 'Label scan' : product.source;
 
 const getBreakdownColor = (score: number) => {
-  if (score >= 80) return ResponsiveTheme.colors.successAlt;
+  if (score >= 80) return colors.successAlt;
   if (score >= 60) return '#84cc16';
   if (score >= 40) return '#eab308';
   if (score >= 20) return '#f97316';
-  return ResponsiveTheme.colors.errorAlt;
+  return colors.errorAlt;
 };
 
 const NutritionCard: React.FC<{
@@ -254,7 +254,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                     {
                       backgroundColor:
                         NUTRI_SCORE_COLORS[product.nutriScore.toLowerCase()] ??
-                        ResponsiveTheme.colors.neutral,
+                        colors.neutral,
                     },
                   ]}
                 >
@@ -410,7 +410,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                   onChangeText={(value) => setAmountText(sanitizeGramInput(value))}
                   keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
                   placeholder="100"
-                  placeholderTextColor={ResponsiveTheme.colors.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   returnKeyType="done"
                 />
                 <Text style={styles.amountUnit}>g</Text>
@@ -446,7 +446,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                   accessibilityRole="button"
                 >
                   {isSubmitting ? (
-                    <ActivityIndicator color={ResponsiveTheme.colors.white} />
+                    <ActivityIndicator color={colors.white} />
                   ) : (
                     <Text style={styles.primaryButtonText}>Add to meal</Text>
                   )}
@@ -475,87 +475,87 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
-    paddingBottom: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.border,
-    gap: ResponsiveTheme.spacing.md,
+    borderBottomColor: colors.border,
+    gap: spacing.md,
   },
   headerContent: {
     flex: 1,
     flexDirection: 'row',
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   productImage: {
     width: rp(72),
     height: rp(72),
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.surface,
   },
   headerText: {
     flex: 1,
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   productName: {
     fontSize: rf(20),
-    fontWeight: ResponsiveTheme.fontWeight.bold as '700',
-    color: ResponsiveTheme.colors.text,
+    fontWeight: typography.fontWeight.bold as '700',
+    color: colors.text,
   },
   productBrand: {
     fontSize: rf(15),
     fontWeight: '600',
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   productMeta: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   closeButton: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.full,
-    backgroundColor: ResponsiveTheme.colors.surface,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.surface,
   },
   closeButtonText: {
     fontSize: rf(13),
     fontWeight: '600',
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   scrollView: {
     maxHeight: '100%',
   },
   scrollContent: {
-    paddingBottom: ResponsiveTheme.spacing.lg,
-    gap: ResponsiveTheme.spacing.md,
+    paddingBottom: spacing.lg,
+    gap: spacing.md,
   },
   disclaimerCard: {
     backgroundColor: 'rgba(245, 158, 11, 0.14)',
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: ResponsiveTheme.spacing.md,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
     borderWidth: 1,
     borderColor: 'rgba(245, 158, 11, 0.24)',
   },
   disclaimerTitle: {
     fontSize: rf(14),
     fontWeight: '700',
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   disclaimerText: {
     fontSize: rf(13),
     lineHeight: rf(18),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   badgesRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   scoreBadge: {
     minWidth: rp(104),
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: ResponsiveTheme.spacing.md,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
   },
   scoreBadgeLabel: {
     fontSize: rf(12),
@@ -567,100 +567,100 @@ const styles = StyleSheet.create({
     fontSize: rf(24),
     fontWeight: '800',
     color: '#fff',
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
   },
   infoBadge: {
     flex: 1,
     minWidth: rp(110),
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: ResponsiveTheme.spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
   },
   infoBadgeTitle: {
     fontSize: rf(12),
     fontWeight: '700',
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   infoBadgeText: {
     fontSize: rf(12),
     lineHeight: rf(16),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   healthCard: {
     alignItems: 'center',
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.xl,
-    padding: ResponsiveTheme.spacing.lg,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
   },
   healthMeta: {
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.sm,
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   sectionBlock: {
-    backgroundColor: ResponsiveTheme.colors.surface,
-    borderRadius: ResponsiveTheme.borderRadius.xl,
-    padding: ResponsiveTheme.spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    padding: spacing.md,
   },
   sectionTitle: {
     fontSize: rf(16),
     fontWeight: '700',
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   sectionCaption: {
     fontSize: rf(13),
     lineHeight: rf(18),
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
   },
   nutritionGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   nutritionItem: {
     width: '48%',
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: ResponsiveTheme.spacing.md,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
   },
   nutritionLabel: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
   nutritionValue: {
     fontSize: rf(20),
     fontWeight: '700',
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   breakdownItem: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: ResponsiveTheme.spacing.md,
-    marginTop: ResponsiveTheme.spacing.sm,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginTop: spacing.sm,
   },
   breakdownHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   breakdownLabel: {
     fontSize: rf(14),
     fontWeight: '600',
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   breakdownScore: {
     minWidth: rp(36),
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: ResponsiveTheme.borderRadius.full,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    borderRadius: borderRadius.full,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
   },
   breakdownScoreText: {
     fontSize: rf(12),
@@ -670,65 +670,65 @@ const styles = StyleSheet.create({
   breakdownMessage: {
     fontSize: rf(13),
     lineHeight: rf(18),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   listItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: ResponsiveTheme.colors.border,
+    borderBottomColor: colors.border,
   },
   warningListItem: {
     backgroundColor: 'rgba(239, 68, 68, 0.04)',
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.sm,
   },
   positiveListItem: {
     backgroundColor: 'rgba(16, 185, 129, 0.05)',
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.sm,
   },
   listBullet: {
     width: rf(10),
     fontSize: rf(14),
     fontWeight: '700',
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginTop: 1,
   },
   listText: {
     flex: 1,
     fontSize: rf(13),
     lineHeight: rf(18),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   infoSection: {
-    marginTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.md,
   },
   infoSectionTitle: {
     fontSize: rf(13),
     fontWeight: '700',
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   infoSectionText: {
     fontSize: rf(13),
     lineHeight: rf(18),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   footer: {
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.md,
-    paddingBottom: Platform.OS === 'ios' ? ResponsiveTheme.spacing.lg : ResponsiveTheme.spacing.md,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    gap: ResponsiveTheme.spacing.sm,
+    borderTopColor: colors.border,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: Platform.OS === 'ios' ? spacing.lg : spacing.md,
+    backgroundColor: colors.backgroundSecondary,
+    gap: spacing.sm,
   },
   amountRow: {
     flexDirection: 'row',
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
     alignItems: 'center',
   },
   amountTextBlock: {
@@ -737,26 +737,26 @@ const styles = StyleSheet.create({
   amountLabel: {
     fontSize: rf(14),
     fontWeight: '700',
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   amountHint: {
     fontSize: rf(12),
     lineHeight: rf(17),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   amountInputWrap: {
     minWidth: rp(108),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    backgroundColor: ResponsiveTheme.colors.surface,
+    borderColor: colors.border,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.surface,
   },
   amountInput: {
     flex: 1,
@@ -764,47 +764,47 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     fontSize: rf(18),
     fontWeight: '700',
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textAlign: 'right',
   },
   amountInputInvalid: {
-    color: ResponsiveTheme.colors.errorAlt,
+    color: colors.errorAlt,
   },
   amountUnit: {
     fontSize: rf(14),
     fontWeight: '600',
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   amountError: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.errorAlt,
+    color: colors.errorAlt,
   },
   footerButtons: {
     flexDirection: 'row',
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   secondaryButton: {
     flex: 1,
     minHeight: rp(48),
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
   secondaryButtonText: {
     fontSize: rf(14),
     fontWeight: '700',
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   primaryButton: {
     flex: 1.4,
     minHeight: rp(48),
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    backgroundColor: ResponsiveTheme.colors.primary,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.primary,
   },
   primaryButtonDisabled: {
     opacity: 0.55,
@@ -812,6 +812,6 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: rf(14),
     fontWeight: '700',
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 });

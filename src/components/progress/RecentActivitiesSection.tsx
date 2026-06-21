@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rs, rbr } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 
@@ -53,7 +53,7 @@ export const RecentActivitiesSection: React.FC<
                         : "restaurant-outline"
                     }
                     size={rf(20)}
-                    color={ResponsiveTheme.colors.primary}
+                    color={colors.primary}
                   />
                 </View>
                 <View style={styles.activityInfo}>
@@ -73,7 +73,7 @@ export const RecentActivitiesSection: React.FC<
                   <Ionicons
                     name="checkmark"
                     size={rf(14)}
-                    color={ResponsiveTheme.colors.white}
+                    color={colors.white}
                   />
                 </View>
               </View>
@@ -100,28 +100,28 @@ export const RecentActivitiesSection: React.FC<
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
   },
   viewAllText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.medium,
   },
   activityCard: {
-    marginBottom: ResponsiveTheme.spacing.sm,
-    padding: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.sm,
+    padding: spacing.md,
   },
   activityContent: {
     flexDirection: "row",
@@ -130,51 +130,51 @@ const styles = StyleSheet.create({
   activityIcon: {
     width: rs(40),
     height: rs(40),
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.backgroundTertiary,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
   activityInfo: {
     flex: 1,
   },
   activityName: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
     marginBottom: rp(2),
   },
   activityDetails: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     marginBottom: rp(2),
   },
   activityDate: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textTertiary,
+    fontSize: fontSize.xs,
+    color: colors.textTertiary,
   },
   activityBadge: {
     width: rs(24),
     height: rs(24),
     borderRadius: rbr(12),
-    backgroundColor: ResponsiveTheme.colors.success,
+    backgroundColor: colors.success,
     justifyContent: "center",
     alignItems: "center",
   },
   emptyCard: {
-    padding: ResponsiveTheme.spacing.xl,
+    padding: spacing.xl,
     alignItems: "center",
   },
   emptyText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   emptySubtext: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textTertiary,
+    fontSize: fontSize.sm,
+    color: colors.textTertiary,
     textAlign: "center",
   },
 });

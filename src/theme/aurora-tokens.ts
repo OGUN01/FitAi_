@@ -285,6 +285,134 @@ export const auroraTokens = {
   zIndex,
 } as const;
 
+// ============================================================================
+// FLAT TOKEN PROJECTIONS — canonical non-deprecated flat API
+//
+// The nested `colors` (colors.primary.DEFAULT, colors.background.DEFAULT, …)
+// is the source of truth, but legacy consumers use a FLAT color API
+// (colors.primary, colors.surface, colors.glassSurface, colors.successAlt…).
+// These projections expose that flat shape, sourced from the nested tokens,
+// so consumers migrate from the deprecated `ResponsiveTheme`/`THEME`
+// (src/utils/constants.ts) to `flatColors`/`flatShadows`/`flatFontSize` here —
+// one non-deprecated design-token source of truth.
+// `src/utils/constants.ts` re-exports these as `THEME`/`ResponsiveTheme` for
+// back-compat; new code should import these directly.
+// ============================================================================
+
+/**
+ * Flat color map — every value sourced from the nested `colors` tokens above.
+ * Keys mirror the legacy ResponsiveTheme flat names for a 1:1 migration.
+ */
+export const flatColors = {
+  // Primary
+  primary: colors.primary.DEFAULT,
+  primaryDark: colors.primary.dark,
+  primaryLight: colors.primary.light,
+  primaryFaded: 'rgba(255, 107, 53, 0.3)',
+
+  // Secondary
+  secondary: colors.secondary.DEFAULT,
+  secondaryDark: colors.secondary.dark,
+  secondaryLight: colors.secondary.light,
+
+  // Background
+  background: colors.background.DEFAULT,
+  backgroundSecondary: colors.background.secondary,
+  backgroundTertiary: colors.background.tertiary,
+
+  // Surface (derived from background tiers)
+  surface: colors.background.secondary,
+  surfaceLight: colors.background.tertiary,
+
+  // Text
+  text: colors.text.primary,
+  textSecondary: colors.text.secondary,
+  textMuted: colors.text.muted,
+  textTertiary: colors.text.tertiary,
+
+  // Status
+  success: colors.success.DEFAULT,
+  warning: colors.warning.DEFAULT,
+  error: colors.error.DEFAULT,
+  info: colors.info.DEFAULT,
+  accent: colors.primary.light,
+
+  // Extended status
+  successAlt: '#10B981',
+  successAltDark: '#059669',
+  successLight: colors.success.light,
+  errorLight: colors.error.light,
+  errorAlt: '#EF4444',
+  warningAlt: '#F59E0B',
+
+  // Accent / macro palette (no nested aurora equivalent — semantic)
+  gold: '#FFD700',
+  amber: '#FFC107',
+  teal: '#4ECDC4',
+  pink: '#EC4899',
+  cyan: '#06B6D4',
+  neutral: '#9E9E9E',
+  purple: '#9333EA',
+  orange: '#F97316',
+  blue: '#3B82F6',
+  amberBright: '#FBBF24',
+  successBright: '#4ADE80',
+  muted: '#9CA3AF',
+
+  // Glass
+  glassSurface: colors.glass.backgroundDark,
+  glassBorder: colors.glass.border,
+  glassHighlight: colors.glass.backgroundLight,
+
+  // Overlay
+  overlay: 'rgba(0, 0, 0, 0.5)',
+  overlayDark: 'rgba(0, 0, 0, 0.7)',
+
+  // Tints
+  primaryTint: 'rgba(255, 107, 53, 0.1)',
+  successTint: 'rgba(76, 175, 80, 0.15)',
+  errorTint: 'rgba(244, 67, 54, 0.15)',
+  warningTint: 'rgba(255, 152, 0, 0.15)',
+
+  // Utility
+  white: '#ffffff',
+  black: '#000000',
+  transparent: 'transparent',
+
+  // Gradient
+  gradientStart: colors.aurora.space.base,
+  gradientEnd: colors.aurora.space.mid,
+
+  // Border
+  border: colors.background.tertiary,
+  borderLight: colors.glass.border,
+} as Record<string, string>;
+
+/**
+ * Flat font-size scale mirroring the legacy 8-step names. `xs` (13) is
+ * legacy-only (nested typography has no `xs`); `sm`/`md`/`lg`/`xl`/`xxl`/
+ * `display` map to typography.fontSize.{caption,body,h3,h2,h1,display}.
+ */
+export const flatFontSize = {
+  micro: typography.fontSize.micro,
+  xs: 13,
+  sm: typography.fontSize.caption,
+  md: typography.fontSize.body,
+  lg: typography.fontSize.h3,
+  xl: typography.fontSize.h2,
+  xxl: typography.fontSize.h1,
+  display: typography.fontSize.display,
+} as const;
+
+/**
+ * Flat shadow map (sm/md/lg → aurora level1/2/3).
+ */
+export const flatShadows = {
+  sm: shadows.level1,
+  md: shadows.level2,
+  lg: shadows.level3,
+} as const;
+
 // Type exports for TypeScript
 export type AuroraTokens = typeof auroraTokens;
 export type Colors = typeof colors;

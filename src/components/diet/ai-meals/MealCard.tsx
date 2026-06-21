@@ -6,7 +6,13 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  flatFontSize as fontSize,
+  typography,
+} from "../../../theme/aurora-tokens";
 import { rf, rh, rw, rs } from "../../../utils/responsive";
 
 /** Locally-defined type — original module `useAIMealsPanel` was removed. */
@@ -71,11 +77,11 @@ export const MealCard: React.FC<MealCardProps> = ({
 
 const styles = StyleSheet.create({
   mealCard: {
-    backgroundColor: ResponsiveTheme.colors.background,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    marginBottom: ResponsiveTheme.spacing.md,
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
 
   mealCardDisabled: {
@@ -85,7 +91,7 @@ const styles = StyleSheet.create({
   mealCardContent: {
     flexDirection: "row",
     alignItems: "center",
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
   },
 
   mealEmoji: {
@@ -94,7 +100,7 @@ const styles = StyleSheet.create({
     borderRadius: rs(12),
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
 
   mealEmojiText: {
@@ -106,48 +112,48 @@ const styles = StyleSheet.create({
   },
 
   mealTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
 
   mealDescription: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
     lineHeight: rf(16),
   },
 
   mealMeta: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
 
   mealTime: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
   },
 
   mealSuggestions: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
     flex: 1,
   },
 
   generateButton: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
     minWidth: rw(70),
   },
 
   generateButtonText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
   },
 });

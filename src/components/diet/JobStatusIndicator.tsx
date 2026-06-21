@@ -14,7 +14,7 @@ import {
   Animated,
   Easing,
 } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rh, rw, rs } from "../../utils/responsive";
 import { AsyncMealJob, JobStatus } from "../../hooks/useAsyncMealGeneration";
 
@@ -42,25 +42,25 @@ const STATUS_CONFIG: Record<
   },
   pending: {
     emoji: "⏳",
-    color: ResponsiveTheme.colors.warningAlt,
+    color: colors.warningAlt,
     bgColor: "#fffbeb",
     message: "Waiting in queue...",
   },
   processing: {
     emoji: "🧠",
-    color: ResponsiveTheme.colors.blue,
+    color: colors.blue,
     bgColor: "#eff6ff",
     message: "AI is cooking up your meals...",
   },
   completed: {
     emoji: "✅",
-    color: ResponsiveTheme.colors.successAlt,
+    color: colors.successAlt,
     bgColor: "#ecfdf5",
     message: "Meal plan ready!",
   },
   failed: {
     emoji: "❌",
-    color: ResponsiveTheme.colors.errorAlt,
+    color: colors.errorAlt,
     bgColor: "#fef2f2",
     message: "Generation failed",
   },
@@ -279,21 +279,21 @@ export const JobStatusIndicator: React.FC<JobStatusIndicatorProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: ResponsiveTheme.spacing.lg,
-    marginVertical: ResponsiveTheme.spacing.md,
-    padding: ResponsiveTheme.spacing.lg,
-    borderRadius: ResponsiveTheme.borderRadius.xl,
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.md,
+    padding: spacing.lg,
+    borderRadius: borderRadius.xl,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
 
   compactContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    gap: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    gap: spacing.sm,
   },
 
   compactEmoji: {
@@ -301,27 +301,27 @@ const styles = StyleSheet.create({
   },
 
   compactText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
     flex: 1,
   },
 
   compactTime: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
   },
 
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
 
   emoji: {
@@ -329,8 +329,8 @@ const styles = StyleSheet.create({
   },
 
   statusText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.bold,
   },
 
   dismissButton: {
@@ -344,17 +344,17 @@ const styles = StyleSheet.create({
 
   dismissText: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
 
   message: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.md,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
 
   progressSection: {
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
 
   timeRow: {
@@ -364,13 +364,13 @@ const styles = StyleSheet.create({
   },
 
   timeLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
 
   timeValue: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
   },
 
   progressBar: {
@@ -387,50 +387,50 @@ const styles = StyleSheet.create({
 
   cancelButton: {
     minHeight: 44,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
 
   cancelText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
   },
 
   completionInfo: {
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.sm,
   },
 
   completionLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
 
   errorInfo: {
-    marginTop: ResponsiveTheme.spacing.sm,
-    padding: ResponsiveTheme.spacing.sm,
-    backgroundColor: `${ResponsiveTheme.colors.errorAlt}1A`,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    marginTop: spacing.sm,
+    padding: spacing.sm,
+    backgroundColor: `${colors.errorAlt}1A`,
+    borderRadius: borderRadius.sm,
   },
 
   errorText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.errorAlt,
+    fontSize: fontSize.sm,
+    color: colors.errorAlt,
   },
 
   tipsSection: {
-    marginTop: ResponsiveTheme.spacing.md,
-    paddingTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
     borderTopColor: "rgba(0,0,0,0.05)",
   },
 
   tipText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
     fontStyle: "italic",
   },
 });

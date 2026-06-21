@@ -10,7 +10,7 @@ import Animated, { FadeIn, FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw, rh, rp } from "../../utils/responsive";
 
 interface DayData {
@@ -33,7 +33,7 @@ interface WeeklyNutritionChartProps {
 // Macro colors
 const COLORS = {
   protein: "#FF6B9D",
-  carbs: ResponsiveTheme.colors.teal,
+  carbs: colors.teal,
   fat: "#FFA726",
 };
 
@@ -88,7 +88,7 @@ export const WeeklyNutritionChart: React.FC<WeeklyNutritionChartProps> = React.m
           <Ionicons
             name="bar-chart-outline"
             size={rf(18)}
-            color={ResponsiveTheme.colors.primary}
+            color={colors.primary}
           />
           <Text style={styles.sectionTitle}>Weekly Trends</Text>
         </View>
@@ -203,43 +203,43 @@ export const WeeklyNutritionChart: React.FC<WeeklyNutritionChartProps> = React.m
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   cardWrapper: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   seeAllButton: {
     minHeight: 44,
     justifyContent: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.sm,
   },
   sectionTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   seeAllText: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   legend: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    gap: spacing.lg,
+    marginBottom: spacing.lg,
   },
   legendItem: {
     flexDirection: "row",
@@ -254,12 +254,12 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: rf(11),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   legendAvg: {
     fontSize: rf(10),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     opacity: 0.7,
   },
   chart: {
@@ -267,8 +267,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-end",
     height: rh(140),
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.sm,
+    marginBottom: spacing.md,
   },
   dayColumn: {
     flex: 1,
@@ -294,18 +294,18 @@ const styles = StyleSheet.create({
   dayLabel: {
     fontSize: rf(10),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.xs,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
   dayLabelToday: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
     fontWeight: "700",
   },
   todayIndicator: {
     width: rw(4),
     height: rw(4),
     borderRadius: rw(2),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     marginTop: rp(4),
   },
   targetLine: {
@@ -319,12 +319,12 @@ const styles = StyleSheet.create({
     borderStyle: "dashed",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.15)",
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
   targetLineText: {
     fontSize: rf(10),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     fontStyle: "italic",
   },
 });

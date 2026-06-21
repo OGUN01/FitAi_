@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { View, Text, StyleSheet, Modal } from "react-native";
 import { AuroraSpinner } from "../ui/aurora/AuroraSpinner";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf } from "../../utils/responsive";
 
 const CYCLING_TEXTS = [
@@ -58,18 +58,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   card: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: ResponsiveTheme.borderRadius.xl,
-    paddingVertical: ResponsiveTheme.spacing.xl,
-    paddingHorizontal: ResponsiveTheme.spacing.xl * 1.5,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.xl,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.xl * 1.5,
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.lg,
+    gap: spacing.lg,
     minWidth: 220,
   },
   text: {
     fontSize: rf(15),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textAlign: "center",
   },
 });

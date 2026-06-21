@@ -14,7 +14,7 @@ import {
   } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MealType } from "../../services/foodRecognitionService";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rh, rw, rs, rp, rbr } from "../../utils/responsive";
 
 interface MealTypeSelectorProps {
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   },
 
   modalContent: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderTopLeftRadius: rs(24),
     borderTopRightRadius: rs(24),
     maxHeight: "80%",
@@ -295,9 +295,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.border,
+    borderBottomColor: colors.border,
   },
 
   headerContent: {
@@ -307,19 +307,19 @@ const styles = StyleSheet.create({
 
   headerEmoji: {
     fontSize: rf(32),
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   headerTitle: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
 
   headerSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(18),
   },
@@ -328,59 +328,59 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: rbr(22),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
     position: "absolute",
-    right: ResponsiveTheme.spacing.lg,
-    top: ResponsiveTheme.spacing.lg,
+    right: spacing.lg,
+    top: spacing.lg,
   },
 
   closeButtonText: {
     fontSize: rf(16),
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.bold,
   },
 
   suggestionBanner: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fef3c7", // amber-100
-    margin: ResponsiveTheme.spacing.lg,
-    padding: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    margin: spacing.lg,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
   },
 
   suggestionIcon: {
     fontSize: rf(16),
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
 
   suggestionText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: fontSize.sm,
     color: "#92400e", // amber-800
     flex: 1,
   },
 
   suggestionMeal: {
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    fontWeight: typography.fontWeight.semibold,
   },
 
   optionsContainer: {
-    padding: ResponsiveTheme.spacing.lg,
-    gap: ResponsiveTheme.spacing.md,
+    padding: spacing.lg,
+    gap: spacing.md,
   },
 
   optionCard: {
-    backgroundColor: ResponsiveTheme.colors.background,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.lg,
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
     overflow: "hidden",
   },
 
   optionCardSelected: {
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
     transform: [{ scale: 0.98 }],
   },
 
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
   optionContent: {
     flexDirection: "row",
     alignItems: "center",
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
   },
 
   optionEmoji: {
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     borderRadius: rs(16),
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
 
   optionEmojiText: {
@@ -420,13 +420,13 @@ const styles = StyleSheet.create({
   optionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
 
   optionLabel: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
     flex: 1,
   },
 
@@ -439,21 +439,21 @@ const styles = StyleSheet.create({
 
   suggestedBadgeText: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.white,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: colors.white,
+    fontWeight: typography.fontWeight.semibold,
   },
 
   optionDescription: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
     lineHeight: rf(16),
   },
 
   optionTime: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    fontWeight: typography.fontWeight.medium,
   },
 
   selectIndicator: {
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: ResponsiveTheme.spacing.md,
+    marginLeft: spacing.md,
   },
 
   selectIndicatorInner: {
@@ -475,20 +475,20 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    margin: ResponsiveTheme.spacing.lg,
-    padding: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.backgroundSecondary,
+    margin: spacing.lg,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
   },
 
   footerIcon: {
     fontSize: rf(16),
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
 
   footerText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
     flex: 1,
     lineHeight: rf(16),
   },

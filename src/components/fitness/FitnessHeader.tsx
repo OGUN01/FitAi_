@@ -8,7 +8,7 @@ import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
 
 interface FitnessHeaderProps {
@@ -53,7 +53,7 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
             <Ionicons
               name="calendar-outline"
               size={rf(12)}
-              color={ResponsiveTheme.colors.primary}
+              color={colors.primary}
             />
             <Text style={styles.weekText}>Week {weekNumber}</Text>
           </View>
@@ -79,7 +79,7 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
           <Ionicons
             name="calendar"
             size={rf(20)}
-            color={ResponsiveTheme.colors.text}
+            color={colors.text}
           />
           {progressPercent > 0 && progressPercent < 100 && (
             <View style={styles.progressIndicator}>
@@ -99,9 +99,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
-    paddingBottom: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
   },
   textContainer: {
     flex: 1,
@@ -109,51 +109,51 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: rf(22),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     letterSpacing: -0.5,
   },
   subtitleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
-    marginTop: ResponsiveTheme.spacing.xs,
+    gap: spacing.sm,
+    marginTop: spacing.xs,
   },
   weekBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: rp(4),
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    backgroundColor: `${colors.primary}15`,
+    paddingHorizontal: spacing.sm,
     paddingVertical: rp(4),
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    borderRadius: borderRadius.full,
   },
   weekText: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   progressText: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   calendarButton: {
-    marginLeft: ResponsiveTheme.spacing.md,
+    marginLeft: spacing.md,
   },
   calendarIconContainer: {
     width: rw(44),
     height: rw(44),
     borderRadius: rw(22),
-    backgroundColor: ResponsiveTheme.colors.glassBorder,
+    backgroundColor: colors.glassBorder,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassHighlight,
+    borderColor: colors.glassHighlight,
   },
   progressIndicator: {
     position: "absolute",
     bottom: -4,
     right: -4,
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: rp(5),
     paddingVertical: rp(2),
     borderRadius: rbr(8),
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   progressIndicatorText: {
     fontSize: rf(9),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 });
 

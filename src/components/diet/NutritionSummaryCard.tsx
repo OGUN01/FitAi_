@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, DimensionValue } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { LargeProgressRing } from "../ui/aurora/ProgressRing";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { rf, rh, rw, rbr } from "../../utils/responsive";
 
 interface NutritionSummaryCardProps {
@@ -48,7 +48,7 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = React.m
           <Ionicons
             name="document-text-outline"
             size={rf(12)}
-            color={ResponsiveTheme.colors.warning}
+            color={colors.warning}
           />
           <Text style={styles.defaultsNoticeText}>
             Complete your profile to see personalized nutrition targets
@@ -225,57 +225,57 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = React.m
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
   },
   defaultsNotice: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
-    backgroundColor: `${ResponsiveTheme.colors.warning}18`,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    gap: spacing.xs,
+    backgroundColor: `${colors.warning}18`,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.warning}30`,
+    borderColor: `${colors.warning}30`,
   },
   defaultsNoticeText: {
     flex: 1,
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(14),
   },
   calorieOverviewCenter: {
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: spacing.xl,
   },
   calorieCenter: { alignItems: "center", justifyContent: "center" },
   caloriesRemaining: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontSize: fontSize.xxl,
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   caloriesLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
   caloriesTarget: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginLeft: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    color: colors.textSecondary,
+    marginLeft: spacing.sm,
   },
   macroList: {
-    marginTop: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
+    marginTop: spacing.lg,
+    paddingTop: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
-    gap: ResponsiveTheme.spacing.md,
+    borderTopColor: colors.border,
+    gap: spacing.md,
   },
   macroRow: {
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   macroRowHeader: {
     flexDirection: "row",
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
   macroLabelRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   macroDot: {
     width: rw(8),
@@ -293,25 +293,25 @@ const styles = StyleSheet.create({
     borderRadius: rbr(4),
   },
   macroLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: fontSize.sm,
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   macroAmount: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: fontSize.sm,
   },
   macroValue: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: fontSize.sm,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   macroTarget: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
   },
   progressTrack: {
     height: rh(6),
-    backgroundColor: ResponsiveTheme.colors.border,
+    backgroundColor: colors.border,
     borderRadius: rbr(3),
     overflow: "hidden",
     minWidth: rw(4),
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   emptyStateTitle: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(20),
     marginBottom: rh(1.5),
@@ -342,6 +342,6 @@ const styles = StyleSheet.create({
   emptyStateAction: {
     fontSize: rf(13),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
 });

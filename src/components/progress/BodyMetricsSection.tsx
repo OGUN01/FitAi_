@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { View, Text, StyleSheet, DimensionValue } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rh } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
 
 // Helper for date formatting
@@ -46,8 +46,8 @@ export const BodyMetricsSection: React.FC<BodyMetricsSectionProps> = ({
         size={rf(16)}
         color={
           trend === "decreasing"
-            ? ResponsiveTheme.colors.success
-            : ResponsiveTheme.colors.error
+            ? colors.success
+            : colors.error
         }
       />
     );
@@ -66,7 +66,7 @@ export const BodyMetricsSection: React.FC<BodyMetricsSectionProps> = ({
       <Ionicons
         name="create-outline"
         size={rf(12)}
-        color={ResponsiveTheme.colors.textSecondary}
+        color={colors.textSecondary}
         style={{ marginRight: rp(4) }}
       />
       <Text style={styles.manualEntryText}>
@@ -91,7 +91,7 @@ export const BodyMetricsSection: React.FC<BodyMetricsSectionProps> = ({
           <Ionicons
             name="body-outline"
             size={rf(32)}
-            color={ResponsiveTheme.colors.textSecondary}
+            color={colors.textSecondary}
             style={styles.emptyIcon}
           />
           <Text style={styles.emptyTitle}>Start tracking to see progress</Text>
@@ -219,8 +219,8 @@ export const BodyMetricsSection: React.FC<BodyMetricsSectionProps> = ({
                     size={rf(16)}
                     color={
                       stats.muscle.trend === "decreasing"
-                        ? ResponsiveTheme.colors.error
-                        : ResponsiveTheme.colors.success
+                        ? colors.error
+                        : colors.success
                     }
                   />
                 )}
@@ -266,7 +266,7 @@ export const BodyMetricsSection: React.FC<BodyMetricsSectionProps> = ({
                   <Ionicons
                     name="calculator-outline"
                     size={rf(12)}
-                    color={ResponsiveTheme.colors.textSecondary}
+                    color={colors.textSecondary}
                     style={{ marginRight: rp(4) }}
                   />
                   <Text style={styles.manualEntryText}>Calculated</Text>
@@ -282,52 +282,52 @@ export const BodyMetricsSection: React.FC<BodyMetricsSectionProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
   emptyCard: {
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
     minHeight: rh(120),
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
   },
   emptyIcon: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
     opacity: 0.6,
   },
   emptyTitle: {
     fontSize: rf(18),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: "500",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   emptySubtitle: {
     fontSize: rf(16),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     opacity: 0.6,
   },
   statsGrid: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
+    marginBottom: spacing.md,
   },
   statCard: {
     flex: 1,
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
     alignItems: "center",
   },
   statHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
     width: "100%",
   },
   statValueRow: {
@@ -336,33 +336,33 @@ const styles = StyleSheet.create({
     gap: rp(2),
   },
   statValue: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.xxl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
   },
   statUnit: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
     marginBottom: rp(2),
   },
   statLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.xs,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+    marginBottom: spacing.xs,
   },
   statChange: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
   },
   statChangePositive: {
-    color: ResponsiveTheme.colors.success,
+    color: colors.success,
   },
   statChangeNegative: {
-    color: ResponsiveTheme.colors.error,
+    color: colors.error,
   },
   statChangeNeutral: {
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   manualEntry: {
     flexDirection: "row",
@@ -371,27 +371,27 @@ const styles = StyleSheet.create({
   },
   manualEntryText: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   goalProgress: {
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.sm,
     width: "100%",
   },
   goalText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
     marginBottom: rp(4),
   },
   progressBar: {
     height: rh(4),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.sm,
+    marginBottom: spacing.xs,
     width: "100%",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.sm,
   },
 });

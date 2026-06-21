@@ -26,7 +26,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rh, rw, rs, rp, rbr } from "../../utils/responsive";
 import type { DayMeal } from "../../types/ai";
 import { useNutritionStore } from "../../stores/nutritionStore";
@@ -250,7 +250,7 @@ export const MealEditModal: React.FC<MealEditModalProps> = ({
                 <Ionicons
                   name="close"
                   size={rf(24)}
-                  color={ResponsiveTheme.colors.text}
+                  color={colors.text}
                 />
               </TouchableOpacity>
             </View>
@@ -268,7 +268,7 @@ export const MealEditModal: React.FC<MealEditModalProps> = ({
                   value={mealName}
                   onChangeText={setMealName}
                   placeholder="Enter meal name"
-                  placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                  placeholderTextColor={colors.textSecondary}
                 />
               </View>
 
@@ -310,7 +310,7 @@ export const MealEditModal: React.FC<MealEditModalProps> = ({
                   value={mealTime}
                   onChangeText={setMealTime}
                   placeholder="HH:MM"
-                  placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+                  placeholderTextColor={colors.textSecondary}
                 />
               </View>
 
@@ -336,7 +336,7 @@ export const MealEditModal: React.FC<MealEditModalProps> = ({
                           <Ionicons
                             name="remove"
                             size={rf(16)}
-                            color={ResponsiveTheme.colors.primary}
+                            color={colors.primary}
                           />
                         </TouchableOpacity>
                         <Text style={styles.quantityText}>
@@ -351,7 +351,7 @@ export const MealEditModal: React.FC<MealEditModalProps> = ({
                           <Ionicons
                             name="add"
                             size={rf(16)}
-                            color={ResponsiveTheme.colors.primary}
+                            color={colors.primary}
                           />
                         </TouchableOpacity>
                       </View>
@@ -366,7 +366,7 @@ export const MealEditModal: React.FC<MealEditModalProps> = ({
                       <Ionicons
                         name="trash-outline"
                         size={rf(20)}
-                        color={ResponsiveTheme.colors.error}
+                        color={colors.error}
                       />
                     </TouchableOpacity>
                   </View>
@@ -420,7 +420,7 @@ export const MealEditModal: React.FC<MealEditModalProps> = ({
                 disabled={isSaving}
               >
                 {isSaving ? (
-                  <ActivityIndicator color={ResponsiveTheme.colors.white} />
+                  <ActivityIndicator color={colors.white} />
                 ) : (
                   <Text style={styles.saveButtonText}>Save Changes</Text>
                 )}
@@ -436,7 +436,7 @@ export const MealEditModal: React.FC<MealEditModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.overlay,
+    backgroundColor: colors.overlay,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(24),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   closeButton: {
     padding: rp(8),
@@ -475,17 +475,17 @@ const styles = StyleSheet.create({
   label: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rh(8),
   },
   input: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rbr(12),
     padding: rp(12),
     fontSize: rf(16),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
   typeSelector: {
     flexDirection: "row",
@@ -496,27 +496,27 @@ const styles = StyleSheet.create({
     paddingVertical: rh(12),
     paddingHorizontal: rw(16),
     borderRadius: rbr(12),
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
     alignItems: "center" as const,
   },
   typeButtonActive: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   typeButtonText: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   typeButtonTextActive: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   ingredientRow: {
     flexDirection: "row",
     alignItems: "center" as const,
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rbr(12),
     padding: rp(12),
     marginBottom: rh(8),
@@ -527,7 +527,7 @@ const styles = StyleSheet.create({
   ingredientName: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rh(4),
   },
   quantityControl: {
@@ -540,14 +540,14 @@ const styles = StyleSheet.create({
   },
   quantityText: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginHorizontal: rw(8),
     minWidth: rw(50),
     textAlign: "center",
   },
   ingredientCalories: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   removeButton: {
     padding: rp(8),
@@ -560,20 +560,20 @@ const styles = StyleSheet.create({
   nutritionItem: {
     flex: 1,
     minWidth: "45%",
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rbr(12),
     padding: rp(12),
     alignItems: "center" as const,
   },
   nutritionLabel: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rh(4),
   },
   nutritionValue: {
     fontSize: rf(18),
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   footer: {
     flexDirection: "row",
@@ -588,22 +588,22 @@ const styles = StyleSheet.create({
     justifyContent: "center" as const,
   },
   cancelButton: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
   cancelButtonText: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   saveButton: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
   saveButtonText: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 });
 

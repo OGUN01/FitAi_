@@ -1,6 +1,12 @@
 import React from "react";
 import { Text, TouchableOpacity, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  flatFontSize as fontSize,
+  typography,
+} from "../../../theme/aurora-tokens";
 import { rf } from "../../../utils/responsive";
 
 /** Locally-defined type — original module `useAIMealsPanel` was removed. */
@@ -38,30 +44,30 @@ const styles = StyleSheet.create({
   quickActionCard: {
     flex: 1,
     minWidth: "47%",
-    backgroundColor: ResponsiveTheme.colors.background,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    padding: ResponsiveTheme.spacing.md,
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
 
   quickActionEmoji: {
     fontSize: rf(24),
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
 
   quickActionTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
 
   quickActionDescription: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(14),
   },

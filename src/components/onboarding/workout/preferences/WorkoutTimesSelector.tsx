@@ -1,9 +1,8 @@
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../../theme/aurora-tokens";
 import React, { type ComponentProps } from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rw } from "../../../../utils/responsive";
-import { ResponsiveTheme } from "../../../../utils/constants";
-import { AnimatedPressable } from "../../../../components/ui/aurora";
+import { rf, rw } from "../../../../utils/responsive";import { AnimatedPressable } from "../../../../components/ui/aurora";
 import { WORKOUT_TIMES } from "../../../../screens/onboarding/tabs/WorkoutPreferencesConstants";
 
 interface WorkoutTimesSelectorProps {
@@ -50,8 +49,8 @@ export const WorkoutTimesSelector: React.FC<WorkoutTimesSelectorProps> = ({
                       size={rf(22)}
                       color={
                         isSelected
-                          ? ResponsiveTheme.colors.primary
-                          : ResponsiveTheme.colors.textSecondary
+                          ? colors.primary
+                          : colors.textSecondary
                       }
                     />
                   </View>
@@ -77,7 +76,7 @@ export const WorkoutTimesSelector: React.FC<WorkoutTimesSelectorProps> = ({
                       <Ionicons
                         name="checkmark"
                         size={rf(12)}
-                        color={ResponsiveTheme.colors.white}
+                        color={colors.white}
                       />
                     )}
                   </View>
@@ -93,58 +92,58 @@ export const WorkoutTimesSelector: React.FC<WorkoutTimesSelectorProps> = ({
 
 const styles = StyleSheet.create({
   edgeToEdgeContentPadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   fieldLabel: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
+    marginBottom: spacing.sm,
     flexShrink: 1,
   },
   scrollContainerInset: {
-    marginHorizontal: ResponsiveTheme.spacing.lg,
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
     overflow: "hidden",
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
   },
   scrollContentInset: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
     gap: rw(10),
   },
   consistentCardItem: {
     width: rw(105),
   },
   consistentCard: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: "transparent",
-    padding: ResponsiveTheme.spacing.sm,
+    padding: spacing.sm,
     minHeight: 120,
     alignItems: "center",
   },
   consistentCardSelected: {
-    borderColor: ResponsiveTheme.colors.primary,
-    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}10`,
   },
   consistentCardIconCenter: {
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   consistentCardTitle: {
     fontSize: rf(11),
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   consistentCardTitleSelected: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   consistentCardDesc: {
     fontSize: rf(9),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     textAlign: "center",
     lineHeight: rf(12),
   },
@@ -157,10 +156,10 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
   },
   consistentCardIndicatorSelected: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
 });

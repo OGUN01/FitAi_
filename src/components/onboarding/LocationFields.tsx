@@ -1,9 +1,8 @@
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { GlassCard, AnimatedPressable } from "../../components/ui/aurora";
-import { Input } from "../../components/ui";
-import { ResponsiveTheme } from "../../utils/constants";
-import { COUNTRIES_WITH_STATES } from "./PersonalInfoConstants";
+import { Input } from "../../components/ui";import { COUNTRIES_WITH_STATES } from "./PersonalInfoConstants";
 import { PersonalInfoData } from "../../types/onboarding";
 
 interface LocationFieldsProps {
@@ -185,103 +184,103 @@ export const LocationFields: React.FC<LocationFieldsProps> = ({
 
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
-    marginTop: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.sm,
-    marginHorizontal: -ResponsiveTheme.spacing.lg,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+    marginHorizontal: -spacing.lg,
   },
   sectionTitlePadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
     letterSpacing: -0.3,
     flexShrink: 1,
   },
   edgeToEdgeContentPadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   sectionBottomPad: {
-    height: ResponsiveTheme.spacing.lg,
+    height: spacing.lg,
   },
   locationField: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   inputLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
     flexShrink: 1,
   },
   countryGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   countryOption: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: "transparent",
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
     minWidth: "30%",
     alignItems: "center",
     justifyContent: "center",
   },
   countryOptionSelected: {
-    borderColor: ResponsiveTheme.colors.primary,
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}15`,
   },
   countryOptionText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
     textAlign: "center",
     flexShrink: 1,
   },
   countryOptionTextSelected: {
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.semibold,
   },
   errorText: {
-    color: ResponsiveTheme.colors.error,
-    fontSize: ResponsiveTheme.fontSize.xs,
-    marginTop: ResponsiveTheme.spacing.xs,
+    color: colors.error,
+    fontSize: fontSize.xs,
+    marginTop: spacing.xs,
   },
   stateGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   stateOption: {
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.sm,
     borderWidth: 1,
     borderColor: "transparent",
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    backgroundColor: colors.backgroundTertiary,
+    marginBottom: spacing.xs,
     alignItems: "center",
     justifyContent: "center",
   },
   stateOptionSelected: {
-    borderColor: ResponsiveTheme.colors.primary,
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}15`,
   },
   stateOptionText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
     textAlign: "center",
     flexShrink: 1,
   },
   stateOptionTextSelected: {
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.semibold,
   },
 });

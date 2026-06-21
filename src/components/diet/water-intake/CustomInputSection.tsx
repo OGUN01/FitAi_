@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rp } from "../../../utils/responsive";
 
 interface CustomInputSectionProps {
@@ -35,7 +35,7 @@ export const CustomInputSection: React.FC<CustomInputSectionProps> = ({
         <Ionicons
           name="water-outline"
           size={20}
-          color={ResponsiveTheme.colors.primary}
+          color={colors.primary}
           style={styles.inputIcon}
         />
         <TextInput
@@ -46,7 +46,7 @@ export const CustomInputSection: React.FC<CustomInputSectionProps> = ({
             onErrorChange(null);
           }}
           placeholder="e.g., 0.5"
-          placeholderTextColor={`${ResponsiveTheme.colors.white}66`}
+          placeholderTextColor={`${colors.white}66`}
           keyboardType="decimal-pad"
           returnKeyType="done"
           autoFocus
@@ -57,7 +57,7 @@ export const CustomInputSection: React.FC<CustomInputSectionProps> = ({
 
       {error && (
         <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle" size={16} color={ResponsiveTheme.colors.errorLight} />
+          <Ionicons name="alert-circle" size={16} color={colors.errorLight} />
           <Text style={styles.errorText}>{error}</Text>
         </View>
       )}
@@ -76,12 +76,12 @@ export const CustomInputSection: React.FC<CustomInputSectionProps> = ({
           activeOpacity={0.8}
         >
           <LinearGradient
-            colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryLight]}
+            colors={[colors.primary, colors.primaryLight]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.submitButtonGradient}
           >
-            <Ionicons name="add" size={20} color={ResponsiveTheme.colors.white} />
+            <Ionicons name="add" size={20} color={colors.white} />
             <Text style={styles.submitButtonText}>Add Water</Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -94,18 +94,18 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: `${ResponsiveTheme.colors.white}B3`,
+    color: `${colors.white}B3`,
     marginBottom: rp(12),
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.glassBorder,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: colors.glassBorder,
+    borderRadius: borderRadius.lg,
     paddingHorizontal: rp(16),
     marginBottom: rp(16),
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.primary}4D`,
+    borderColor: `${colors.primary}4D`,
   },
   inputIcon: {
     marginRight: rp(12),
@@ -114,13 +114,13 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: rf(18),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     paddingVertical: rp(16),
   },
   unitLabel: {
     fontSize: rf(16),
     fontWeight: "500",
-    color: `${ResponsiveTheme.colors.white}80`,
+    color: `${colors.white}80`,
     marginLeft: rp(8),
   },
   errorContainer: {
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.errorLight,
+    color: colors.errorLight,
   },
   actionButtons: {
     flexDirection: "row",
@@ -143,18 +143,18 @@ const styles = StyleSheet.create({
     paddingVertical: rp(14),
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    backgroundColor: ResponsiveTheme.colors.glassHighlight,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.glassHighlight,
   },
   cancelButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   submitButton: {
     flex: 0.6,
     overflow: "hidden",
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
   },
   submitButtonGradient: {
     flexDirection: "row",
@@ -166,6 +166,6 @@ const styles = StyleSheet.create({
   submitButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 });

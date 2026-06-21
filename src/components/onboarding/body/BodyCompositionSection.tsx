@@ -1,9 +1,8 @@
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
-import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
+import { rf } from "../../../utils/responsive";import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
 import { Input } from "../../../components/ui";
 import { BodyAnalysisData, PersonalInfoData } from "../../../types/onboarding";
 
@@ -57,7 +56,7 @@ export const BodyCompositionSection: React.FC<BodyCompositionSectionProps> = ({
             <Ionicons
               name="information-circle-outline"
               size={rf(18)}
-              color={ResponsiveTheme.colors.primary}
+              color={colors.primary}
             />
             <Text style={styles.measurementGuideText} numberOfLines={1}>
               How to measure correctly
@@ -160,8 +159,8 @@ export const BodyCompositionSection: React.FC<BodyCompositionSectionProps> = ({
                       size={rf(16)}
                       color={
                         isHealthy
-                          ? ResponsiveTheme.colors.secondary
-                          : ResponsiveTheme.colors.warning
+                          ? colors.secondary
+                          : colors.warning
                       }
                     />
                     <Text
@@ -169,8 +168,8 @@ export const BodyCompositionSection: React.FC<BodyCompositionSectionProps> = ({
                         styles.ratioDescription,
                         {
                           color: isHealthy
-                            ? ResponsiveTheme.colors.secondary
-                            : ResponsiveTheme.colors.warning,
+                            ? colors.secondary
+                            : colors.warning,
                         },
                       ]}
                       numberOfLines={1}
@@ -190,88 +189,88 @@ export const BodyCompositionSection: React.FC<BodyCompositionSectionProps> = ({
 
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
-    marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.md,
-    marginHorizontal: -ResponsiveTheme.spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+    marginHorizontal: -spacing.lg,
   },
   sectionTitlePadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
     letterSpacing: -0.3,
     flexShrink: 1,
   },
   sectionSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: ResponsiveTheme.fontSize.sm * 1.4,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+    lineHeight: fontSize.sm * 1.4,
     flexShrink: 1,
   },
   edgeToEdgeContentPadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   measurementGuideButton: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   measurementGuideContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   measurementGuideText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.medium,
   },
   measurementGuideInline: {
-    marginBottom: ResponsiveTheme.spacing.lg,
-    backgroundColor: `${ResponsiveTheme.colors.primary}05`,
+    marginBottom: spacing.lg,
+    backgroundColor: `${colors.primary}05`,
   },
   guideTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
   guideText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
     lineHeight: rf(18),
   },
   guideBold: {
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
   },
   compositionGrid: {
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   compositionItem: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   ratioCardInline: {
-    marginTop: ResponsiveTheme.spacing.lg,
+    marginTop: spacing.lg,
   },
   ratioTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   ratioStatusRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   ratioDescription: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: fontSize.sm,
   },
   sectionBottomPad: {
-    height: ResponsiveTheme.spacing.lg,
+    height: spacing.lg,
   },
 });

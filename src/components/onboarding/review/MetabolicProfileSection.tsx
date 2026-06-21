@@ -1,9 +1,8 @@
+import { flatColors as colors, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rp, rbr } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
-import { GlassCard } from "../../ui/aurora/GlassCard";
+import { rf, rp, rbr } from "../../../utils/responsive";import { GlassCard } from "../../ui/aurora/GlassCard";
 import { ProgressRing } from "../../ui/aurora";
 import { InfoTooltip } from "../../ui/InfoTooltip";
 import { AdvancedReviewData } from "../../../types/onboarding";
@@ -21,10 +20,10 @@ export const MetabolicProfileSection: React.FC<
 
   const getBMIColor = () => {
     const bmi = calculatedData.calculated_bmi || 0;
-    if (bmi < 18.5) return [ResponsiveTheme.colors.amber, ResponsiveTheme.colors.warning];
-    if (bmi < 25) return [ResponsiveTheme.colors.success, ResponsiveTheme.colors.successAltDark];
-    if (bmi < 30) return [ResponsiveTheme.colors.warning, ResponsiveTheme.colors.error];
-    return [ResponsiveTheme.colors.error, ResponsiveTheme.colors.error];
+    if (bmi < 18.5) return [colors.amber, colors.warning];
+    if (bmi < 25) return [colors.success, colors.successAltDark];
+    if (bmi < 30) return [colors.warning, colors.error];
+    return [colors.error, colors.error];
   };
 
   const getBMICategory = () => {
@@ -37,10 +36,10 @@ export const MetabolicProfileSection: React.FC<
 
   const getMetabolicAgeColor = () => {
     const age = calculatedData.metabolic_age || null;
-    if (age === null) return [ResponsiveTheme.colors.text + '40', ResponsiveTheme.colors.text + '40'];
-    if (age < 30) return [ResponsiveTheme.colors.success, ResponsiveTheme.colors.successAltDark];
-    if (age < 50) return [ResponsiveTheme.colors.amber, ResponsiveTheme.colors.warning];
-    return [ResponsiveTheme.colors.warning, ResponsiveTheme.colors.error];
+    if (age === null) return [colors.text + '40', colors.text + '40'];
+    if (age < 30) return [colors.success, colors.successAltDark];
+    if (age < 50) return [colors.amber, colors.warning];
+    return [colors.warning, colors.error];
   };
 
   return (
@@ -56,7 +55,7 @@ export const MetabolicProfileSection: React.FC<
           <Ionicons
             name="flame-outline"
             size={rf(18)}
-            color={ResponsiveTheme.colors.primary}
+            color={colors.primary}
             style={styles.sectionTitleIcon}
           />
           <Text style={styles.sectionTitle} numberOfLines={1}>
@@ -126,7 +125,7 @@ export const MetabolicProfileSection: React.FC<
               size={72}
               strokeWidth={6}
               gradient={true}
-              gradientColors={[ResponsiveTheme.colors.info, ResponsiveTheme.colors.info]}
+              gradientColors={[colors.info, colors.info]}
               duration={800}
               showText={true}
               text={
@@ -168,7 +167,7 @@ export const MetabolicProfileSection: React.FC<
               size={72}
               strokeWidth={6}
               gradient={true}
-              gradientColors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark]}
+              gradientColors={[colors.primary, colors.primaryDark]}
               duration={800}
               showText={true}
               text={
@@ -245,9 +244,9 @@ const styles = StyleSheet.create({
     marginRight: rp(8),
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
     flex: 1,
   },
   edgeToEdgeContentPadded: {
@@ -261,8 +260,8 @@ const styles = StyleSheet.create({
   },
   metabolicGridCard: {
     width: "48%",
-    backgroundColor: `${ResponsiveTheme.colors.surface}40`,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: `${colors.surface}40`,
+    borderRadius: borderRadius.lg,
     padding: rp(12),
     alignItems: "center",
   },
@@ -275,15 +274,15 @@ const styles = StyleSheet.create({
     gap: rp(4),
   },
   metabolicCardLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
   },
   metabolicCardCategory: {
     marginTop: rp(8),
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
   },
   sectionBottomPadSmall: {
     height: rp(12),

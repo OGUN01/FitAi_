@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AuroraSpinner } from "../ui/aurora/AuroraSpinner";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
 
 interface DietScreenHeaderProps {
@@ -84,7 +84,7 @@ export const DietScreenHeader: React.FC<DietScreenHeaderProps> = React.memo(({
             <AuroraSpinner size="sm" theme="white" />
           ) : (
             <View style={styles.buttonInner}>
-              <Ionicons name="calendar-outline" size={rf(13)} color={ResponsiveTheme.colors.white} />
+              <Ionicons name="calendar-outline" size={rf(13)} color={colors.white} />
               <Text style={styles.aiButtonText}>
                 {hasPlan ? "Refresh Week" : "Generate Week"}
               </Text>
@@ -98,7 +98,7 @@ export const DietScreenHeader: React.FC<DietScreenHeaderProps> = React.memo(({
           accessibilityRole="button"
           accessibilityLabel="Log Meal"
         >
-          <Ionicons name="add-circle-outline" size={rf(20)} color={ResponsiveTheme.colors.white} />
+          <Ionicons name="add-circle-outline" size={rf(20)} color={colors.white} />
         </AnimatedPressable>
       </View>
     </View>
@@ -109,15 +109,15 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "column",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
-    paddingBottom: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.sm,
     gap: rp(10),
   },
   title: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontSize: fontSize.xxl,
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     alignSelf: "flex-start",
   },
   dateSelector: {
@@ -129,30 +129,30 @@ const styles = StyleSheet.create({
   dateNavButton: {
     width: Math.max(rw(44), 44),
     height: Math.max(rh(44), 44),
-    borderRadius: ResponsiveTheme.borderRadius.full,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
   },
   dateNavIcon: {
     fontSize: rf(24),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     fontWeight: "bold",
   },
   dateBadge: {
     flex: 1,
-    marginHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    marginHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     alignItems: "center",
   },
   dateText: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   dateSubtext: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
   headerButtons: {
@@ -169,24 +169,24 @@ const styles = StyleSheet.create({
   aiButton: {
     flex: 1,
     minHeight: 44,
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: rp(14),
     paddingVertical: rp(8),
     borderRadius: rs(20),
     alignItems: "center",
     justifyContent: "center",
   },
-  aiButtonDisabled: { backgroundColor: ResponsiveTheme.colors.textMuted },
+  aiButtonDisabled: { backgroundColor: colors.textMuted },
   aiButtonText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     fontSize: rf(12),
     fontWeight: "600",
   },
   addButton: {
     width: Math.max(rw(44), 44),
     height: Math.max(rh(44), 44),
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    backgroundColor: ResponsiveTheme.colors.primary,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
   },

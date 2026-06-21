@@ -1,9 +1,8 @@
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { GlassCard } from "../../components/ui/aurora";
-import { Input, SegmentedControl } from "../../components/ui";
-import { ResponsiveTheme } from "../../utils/constants";
-import { GENDER_OPTIONS } from "./PersonalInfoConstants";
+import { Input, SegmentedControl } from "../../components/ui";import { GENDER_OPTIONS } from "./PersonalInfoConstants";
 import { PersonalInfoData } from "../../types/onboarding";
 
 interface PersonalInfoFieldsProps {
@@ -114,7 +113,7 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
               onSelect={(id) =>
                 updateField("gender", id as PersonalInfoData["gender"])
               }
-              gradient={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.accent]}
+              gradient={[colors.primary, colors.accent]}
               style={styles.genderSegmentedControl}
             />
             {hasFieldError("gender") && (
@@ -130,57 +129,57 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
 
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
-    marginTop: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.sm,
-    marginHorizontal: -ResponsiveTheme.spacing.lg,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+    marginHorizontal: -spacing.lg,
   },
   sectionTitlePadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
     letterSpacing: -0.3,
     flexShrink: 1,
   },
   edgeToEdgeContentPadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   sectionBottomPad: {
-    height: ResponsiveTheme.spacing.lg,
+    height: spacing.lg,
   },
   row: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   halfWidth: {
     flex: 1,
   },
   ageRow: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   ageField: {
     width: "50%",
   },
   genderField: {
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
   },
   inputLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
     flexShrink: 1,
   },
   genderSegmentedControl: {
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginTop: spacing.sm,
   },
   errorText: {
-    color: ResponsiveTheme.colors.error,
-    fontSize: ResponsiveTheme.fontSize.xs,
-    marginTop: ResponsiveTheme.spacing.xs,
+    color: colors.error,
+    fontSize: fontSize.xs,
+    marginTop: spacing.xs,
   },
 });

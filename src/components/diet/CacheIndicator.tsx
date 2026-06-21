@@ -9,7 +9,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rp } from "../../utils/responsive";
 import type { APIMetadata } from "../../services/fitaiWorkersClient";
 
@@ -45,7 +45,7 @@ export const CacheIndicator: React.FC<CacheIndicatorProps> = ({
         <Ionicons
           name={cached ? "flash" : "sparkles"}
           size={rf(12)}
-          color={cached ? ResponsiveTheme.colors.successAlt : ResponsiveTheme.colors.primary}
+          color={cached ? colors.successAlt : colors.primary}
         />
         <Text
           style={[
@@ -63,7 +63,7 @@ export const CacheIndicator: React.FC<CacheIndicatorProps> = ({
           <Ionicons
             name="time-outline"
             size={rf(12)}
-            color={ResponsiveTheme.colors.textSecondary}
+            color={colors.textSecondary}
           />
           <Text style={styles.metaBadgeText}>
             {(generationTime / 1000).toFixed(1)}s
@@ -77,7 +77,7 @@ export const CacheIndicator: React.FC<CacheIndicatorProps> = ({
           <Ionicons
             name="location-outline"
             size={rf(12)}
-            color={ResponsiveTheme.colors.textSecondary}
+            color={colors.textSecondary}
           />
           <Text style={styles.metaBadgeText}>{cuisineDetected} Cuisine</Text>
         </View>
@@ -94,38 +94,38 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.xs,
-    marginBottom: ResponsiveTheme.spacing.md,
+    gap: spacing.xs,
+    marginBottom: spacing.md,
   },
   badge: {
     flexDirection: "row",
     alignItems: "center",
     gap: rp(4),
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.sm,
     paddingVertical: rp(4),
-    borderRadius: ResponsiveTheme.borderRadius.full,
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.glassSurface,
   },
   cachedBadge: {
-    backgroundColor: `${ResponsiveTheme.colors.successAlt}26`,
+    backgroundColor: `${colors.successAlt}26`,
   },
   freshBadge: {
-    backgroundColor: `${ResponsiveTheme.colors.primary}26`,
+    backgroundColor: `${colors.primary}26`,
   },
   badgeText: {
     fontSize: rf(11),
     fontWeight: "600",
   },
   cachedText: {
-    color: ResponsiveTheme.colors.successAlt,
+    color: colors.successAlt,
   },
   freshText: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   metaBadgeText: {
     fontSize: rf(11),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
 });
 

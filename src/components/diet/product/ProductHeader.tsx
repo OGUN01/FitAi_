@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, Image } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import type { ScannedProduct } from "../../../services/barcodeService";
 
 interface ProductHeaderProps {
@@ -37,39 +37,39 @@ export const ProductHeader: React.FC<ProductHeaderProps> = ({ product }) => (
 const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: "row",
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.border,
+    borderBottomColor: colors.border,
   },
   productImage: {
     width: 80,
     height: 80,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    marginRight: ResponsiveTheme.spacing.md,
+    borderRadius: borderRadius.md,
+    marginRight: spacing.md,
   },
   productInfo: {
     flex: 1,
     justifyContent: "center",
   },
   productName: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold as "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold as "700",
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   productBrand: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.primary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    color: colors.primary,
+    marginBottom: spacing.xs,
   },
   productCategory: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
   barcodeText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     fontFamily: "monospace",
   },
 });

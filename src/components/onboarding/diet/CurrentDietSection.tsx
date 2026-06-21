@@ -1,3 +1,4 @@
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import React, { type ComponentProps } from "react";
 import {
   View,
@@ -8,7 +9,6 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rw, rh } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
 import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
 import { DIET_TYPE_OPTIONS } from "../../../screens/onboarding/tabs/DietPreferencesConstants";
 import { DietPreferencesData } from "../../../types/onboarding";
@@ -92,8 +92,8 @@ export const CurrentDietSection: React.FC<CurrentDietSectionProps> = ({
                       size={rf(22)}
                       color={
                         isSelected
-                          ? ResponsiveTheme.colors.primary
-                          : ResponsiveTheme.colors.textSecondary
+                          ? colors.primary
+                          : colors.textSecondary
                       }
                     />
                     <TouchableOpacity
@@ -108,7 +108,7 @@ export const CurrentDietSection: React.FC<CurrentDietSectionProps> = ({
                       <Ionicons
                         name="information-circle-outline"
                         size={rf(14)}
-                        color={ResponsiveTheme.colors.textMuted}
+                        color={colors.textMuted}
                       />
                     </TouchableOpacity>
                   </View>
@@ -133,7 +133,7 @@ export const CurrentDietSection: React.FC<CurrentDietSectionProps> = ({
                       <Ionicons
                         name="checkmark"
                         size={rf(12)}
-                        color={ResponsiveTheme.colors.white}
+                        color={colors.white}
                       />
                     )}
                   </View>
@@ -151,71 +151,71 @@ export const CurrentDietSection: React.FC<CurrentDietSectionProps> = ({
 
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
-    marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.xl,
-    marginHorizontal: -ResponsiveTheme.spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.xl,
+    marginHorizontal: -spacing.lg,
   },
   sectionTitlePadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
     letterSpacing: -0.3,
     flexShrink: 1,
   },
   sectionSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: ResponsiveTheme.fontSize.sm * 1.4,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+    lineHeight: fontSize.sm * 1.4,
     flexShrink: 1,
   },
   scrollContainerInset: {
-    marginHorizontal: ResponsiveTheme.spacing.lg,
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
     overflow: "hidden",
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
   },
   scrollContentInset: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
     gap: rw(10),
   },
   consistentCardItem: {
     width: rw(105),
   },
   consistentCard: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: "transparent",
-    padding: ResponsiveTheme.spacing.sm,
+    padding: spacing.sm,
     minHeight: rh(12),
     alignItems: "center",
   },
   consistentCardSelected: {
-    borderColor: ResponsiveTheme.colors.primary,
-    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}10`,
   },
   consistentCardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     width: "100%",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   consistentCardTitle: {
     fontSize: rf(11),
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   consistentCardTitleSelected: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   consistentCardIndicator: {
     width: rf(18),
@@ -226,13 +226,13 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
   },
   consistentCardIndicatorSelected: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   sectionBottomPad: {
-    height: ResponsiveTheme.spacing.lg,
+    height: spacing.lg,
   },
 });

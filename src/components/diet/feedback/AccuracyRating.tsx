@@ -1,6 +1,10 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import {
+  flatColors as colors,
+  spacing,
+  flatFontSize as fontSize,
+} from "../../../theme/aurora-tokens";
 import { Card } from "../../ui";
 import { rf } from "../../../utils/responsive";
 
@@ -43,7 +47,7 @@ export const AccuracyRating: React.FC<AccuracyRatingProps> = ({
             <Text
               style={[
                 styles.star,
-                { color: star <= rating ? ResponsiveTheme.colors.amberBright : "#d1d5db" },
+                { color: star <= rating ? colors.amberBright : "#d1d5db" },
               ]}
             >
               ⭐
@@ -58,25 +62,25 @@ export const AccuracyRating: React.FC<AccuracyRatingProps> = ({
 
 const styles = StyleSheet.create({
   sectionCard: {
-    padding: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
   },
 
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
 
   starsContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   starButton: {
-    padding: ResponsiveTheme.spacing.xs,
+    padding: spacing.xs,
   },
 
   star: {
@@ -84,8 +88,8 @@ const styles = StyleSheet.create({
   },
 
   ratingLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     fontStyle: "italic",
   },
 });

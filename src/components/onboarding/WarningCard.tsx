@@ -1,3 +1,4 @@
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,
@@ -12,7 +13,6 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
 import { ValidationResult } from "../../services/validationEngine";
 import {
   SmartAlternative,
@@ -129,7 +129,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
           <Ionicons
             name="options"
             size={rf(20)}
-            color={ResponsiveTheme.colors.warningAlt}
+            color={colors.warningAlt}
           />
         </View>
         <Text style={styles.headerTitle}>Choose Your Pace</Text>
@@ -191,7 +191,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
             <Ionicons
               name="information-circle"
               size={rf(20)}
-              color={ResponsiveTheme.colors.primary}
+              color={colors.primary}
             />
           </TouchableOpacity>
         </TouchableOpacity>
@@ -207,7 +207,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
               <Ionicons
                 name="flash-outline"
                 size={rf(12)}
-                color={ResponsiveTheme.colors.warningAlt}
+                color={colors.warningAlt}
               />
               <Text style={styles.impactText}>{warning.impact}</Text>
             </View>
@@ -219,7 +219,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
                 <Ionicons
                   name="warning-outline"
                   size={rf(12)}
-                  color={ResponsiveTheme.colors.warning}
+                  color={colors.warning}
                 />
                 <Text style={styles.risksTitle}>Risks</Text>
               </View>
@@ -307,14 +307,14 @@ export const WarningCard: React.FC<WarningCardProps> = ({
                   >
                     <View style={styles.dividerLine} />
                     <View style={styles.dividerContent}>
-                      <Ionicons name="fitness-outline" size={rf(14)} color={ResponsiveTheme.colors.textSecondary} />
+                      <Ionicons name="fitness-outline" size={rf(14)} color={colors.textSecondary} />
                       <Text style={styles.dividerText}>
                         {showExerciseOptions ? "HIDE" : "OR ADD"} EXERCISE
                       </Text>
                       <Ionicons
                         name={showExerciseOptions ? "chevron-up" : "chevron-down"}
                         size={rf(14)}
-                        color={ResponsiveTheme.colors.textSecondary}
+                        color={colors.textSecondary}
                       />
                     </View>
                     <View style={styles.dividerLine} />
@@ -372,14 +372,14 @@ export const WarningCard: React.FC<WarningCardProps> = ({
                   >
                     <View style={styles.dividerLine} />
                     <View style={styles.dividerContent}>
-                      <Ionicons name="barbell-outline" size={rf(14)} color={ResponsiveTheme.colors.textSecondary} />
+                      <Ionicons name="barbell-outline" size={rf(14)} color={colors.textSecondary} />
                       <Text style={styles.dividerText}>
                         {showExerciseOptions ? "HIDE" : "OR ADD MORE"} TRAINING
                       </Text>
                       <Ionicons
                         name={showExerciseOptions ? "chevron-up" : "chevron-down"}
                         size={rf(14)}
-                        color={ResponsiveTheme.colors.textSecondary}
+                        color={colors.textSecondary}
                       />
                     </View>
                     <View style={styles.dividerLine} />
@@ -428,7 +428,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
               <Ionicons
                 name="flash-outline"
                 size={rf(12)}
-                color={ResponsiveTheme.colors.warningAlt}
+                color={colors.warningAlt}
               />
               <Text style={styles.impactText}>{warning.impact}</Text>
             </View>
@@ -440,7 +440,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
                 <Ionicons
                   name="warning-outline"
                   size={rf(12)}
-                  color={ResponsiveTheme.colors.warning}
+                  color={colors.warning}
                 />
                 <Text style={styles.risksTitle}>Risks</Text>
               </View>
@@ -459,7 +459,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
                   <Ionicons
                     name="checkmark-circle"
                     size={rf(14)}
-                    color={ResponsiveTheme.colors.successAlt}
+                    color={colors.successAlt}
                   />
                   <Text style={styles.recommendationText}>{rec}</Text>
                 </View>
@@ -487,7 +487,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
               <Ionicons
                 name="checkmark"
                 size={rf(14)}
-                color={ResponsiveTheme.colors.white}
+                color={colors.white}
               />
             )}
           </Animated.View>
@@ -515,33 +515,33 @@ export const WarningCard: React.FC<WarningCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: ResponsiveTheme.colors.warningTint,
+    backgroundColor: colors.warningTint,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.warning}4D`,
-    borderRadius: rbr(ResponsiveTheme.borderRadius.lg),
-    padding: rp(ResponsiveTheme.spacing.md),
-    marginBottom: rp(ResponsiveTheme.spacing.md),
+    borderColor: `${colors.warning}4D`,
+    borderRadius: rbr(borderRadius.lg),
+    padding: rp(spacing.md),
+    marginBottom: rp(spacing.md),
   },
 
   // Header
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: rp(ResponsiveTheme.spacing.md),
+    marginBottom: rp(spacing.md),
   },
   headerIcon: {
     width: rw(32),
     height: rw(32),
     borderRadius: rw(16),
-    backgroundColor: `${ResponsiveTheme.colors.warningAlt}26`,
+    backgroundColor: `${colors.warningAlt}26`,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: rp(ResponsiveTheme.spacing.sm),
+    marginRight: rp(spacing.sm),
   },
   headerTitle: {
     fontSize: rf(16),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.warning,
+    color: colors.warning,
     letterSpacing: -0.3,
   },
 
@@ -554,16 +554,16 @@ const styles = StyleSheet.create({
   },
   goalText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
   },
   goalHighlight: {
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   weightToLose: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     textAlign: "center",
     marginTop: rp(4),
   },
@@ -605,50 +605,50 @@ const styles = StyleSheet.create({
 
   // Warning Context
   warningItem: {
-    marginBottom: rp(ResponsiveTheme.spacing.md),
+    marginBottom: rp(spacing.md),
   },
   warningMessage: {
     fontSize: rf(13),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     lineHeight: rf(18),
   },
   impactContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: rp(ResponsiveTheme.spacing.xs),
-    gap: rp(ResponsiveTheme.spacing.xs),
+    marginTop: rp(spacing.xs),
+    gap: rp(spacing.xs),
   },
   impactText: {
     flex: 1,
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.warning,
+    color: colors.warning,
     fontWeight: "500",
   },
   risksContainer: {
-    marginTop: rp(ResponsiveTheme.spacing.sm),
-    backgroundColor: `${ResponsiveTheme.colors.warning}1A`,
-    padding: rp(ResponsiveTheme.spacing.sm),
-    borderRadius: rbr(ResponsiveTheme.borderRadius.sm),
+    marginTop: rp(spacing.sm),
+    backgroundColor: `${colors.warning}1A`,
+    padding: rp(spacing.sm),
+    borderRadius: rbr(borderRadius.sm),
   },
   riskHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: rp(ResponsiveTheme.spacing.xs),
-    marginBottom: rp(ResponsiveTheme.spacing.xs),
+    gap: rp(spacing.xs),
+    marginBottom: rp(spacing.xs),
   },
   risksTitle: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.warning,
+    color: colors.warning,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   riskText: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(16),
-    marginLeft: rp(ResponsiveTheme.spacing.sm),
+    marginLeft: rp(spacing.sm),
   },
 
   // Inline Rate Picker (from RateComparisonCard)
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: rf(11),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 1,
   },
@@ -687,7 +687,7 @@ const styles = StyleSheet.create({
   dividerText: {
     fontSize: rf(10),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     letterSpacing: 0.5,
   },
   unlockBanner: {
@@ -730,7 +730,7 @@ const styles = StyleSheet.create({
   },
   safeRateText: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   safeRateValue: {
     fontWeight: "700",
@@ -739,18 +739,18 @@ const styles = StyleSheet.create({
 
   // Recommendations (non-actionable warnings)
   recommendationsContainer: {
-    marginTop: rp(ResponsiveTheme.spacing.sm),
-    gap: rp(ResponsiveTheme.spacing.xs),
+    marginTop: rp(spacing.sm),
+    gap: rp(spacing.xs),
   },
   recommendationItem: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: rp(ResponsiveTheme.spacing.xs),
+    gap: rp(spacing.xs),
   },
   recommendationText: {
     flex: 1,
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(16),
   },
 
@@ -758,30 +758,30 @@ const styles = StyleSheet.create({
   checkboxContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: rp(ResponsiveTheme.spacing.md),
-    paddingTop: rp(ResponsiveTheme.spacing.md),
+    marginTop: rp(spacing.md),
+    paddingTop: rp(spacing.md),
     borderTopWidth: 1,
-    borderTopColor: `${ResponsiveTheme.colors.warning}33`,
+    borderTopColor: `${colors.warning}33`,
   },
   checkboxBox: {
     width: rw(22),
     height: rw(22),
-    borderRadius: rbr(ResponsiveTheme.borderRadius.sm),
+    borderRadius: rbr(borderRadius.sm),
     borderWidth: 2,
-    borderColor: `${ResponsiveTheme.colors.warning}80`,
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    borderColor: `${colors.warning}80`,
+    backgroundColor: colors.glassSurface,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: rp(ResponsiveTheme.spacing.sm),
+    marginRight: rp(spacing.sm),
   },
   checkboxBoxChecked: {
-    borderColor: ResponsiveTheme.colors.successAlt,
-    backgroundColor: ResponsiveTheme.colors.successAlt,
+    borderColor: colors.successAlt,
+    backgroundColor: colors.successAlt,
   },
   checkboxLabel: {
     flex: 1,
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: "500",
   },
 });

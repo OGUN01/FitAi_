@@ -1,3 +1,4 @@
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import React from "react";
 import {
   View,
@@ -7,9 +8,7 @@ import {
 } from "react-native";
 import { GlassCard } from "../../components/ui/aurora";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rw, rh } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
-import { PersonalInfoData } from "../../types/onboarding";
+import { rf, rw, rh } from "../../utils/responsive";import { PersonalInfoData } from "../../types/onboarding";
 import TimePicker from "./TimePicker";
 
 interface LifestyleFieldsProps {
@@ -95,7 +94,7 @@ export const LifestyleFields: React.FC<LifestyleFieldsProps> = ({
                   <Ionicons
                     name="sunny-outline"
                     size={rf(20)}
-                    color={ResponsiveTheme.colors.warningAlt}
+                    color={colors.warningAlt}
                   />
                   <Text style={styles.timeText} numberOfLines={1}>
                     {formatTimeForDisplay(formData.wake_time)}
@@ -113,7 +112,7 @@ export const LifestyleFields: React.FC<LifestyleFieldsProps> = ({
                 onPress={() => setShowSleepTimePicker(true)}
               >
                 <View style={styles.timeIconContainer}>
-                  <Ionicons name="moon-outline" size={rf(20)} color={ResponsiveTheme.colors.primary} />
+                  <Ionicons name="moon-outline" size={rf(20)} color={colors.primary} />
                   <Text style={styles.timeText} numberOfLines={1}>
                     {formatTimeForDisplay(formData.sleep_time)}
                   </Text>
@@ -142,8 +141,8 @@ export const LifestyleFields: React.FC<LifestyleFieldsProps> = ({
                     size={rf(24)}
                     color={
                       isHealthySleep
-                        ? ResponsiveTheme.colors.success
-                        : ResponsiveTheme.colors.warning
+                        ? colors.success
+                        : colors.warning
                     }
                   />
                 </View>
@@ -206,140 +205,140 @@ export const LifestyleFields: React.FC<LifestyleFieldsProps> = ({
 
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
-    marginTop: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.sm,
-    marginHorizontal: -ResponsiveTheme.spacing.lg,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+    marginHorizontal: -spacing.lg,
   },
   sectionTitlePadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
     letterSpacing: -0.3,
     flexShrink: 1,
   },
   sectionSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: ResponsiveTheme.fontSize.sm * 1.4,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+    lineHeight: fontSize.sm * 1.4,
     flexShrink: 1,
   },
   edgeToEdgeContentPadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   sectionBottomPad: {
-    height: ResponsiveTheme.spacing.lg,
+    height: spacing.lg,
   },
   scrollContainerInset: {
-    marginHorizontal: ResponsiveTheme.spacing.lg,
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
     overflow: "hidden",
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
   },
   scrollContentInset: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
     gap: rw(10),
   },
   activityCardItem: {
     width: rw(105),
   },
   activityCard: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: "transparent",
-    padding: ResponsiveTheme.spacing.sm,
+    padding: spacing.sm,
     minHeight: rh(12),
     alignItems: "center",
     justifyContent: "center",
   },
   activityCardSelected: {
-    borderColor: ResponsiveTheme.colors.primary,
-    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}10`,
   },
   activityIconContainer: {
     width: rf(44),
     height: rf(44),
     borderRadius: rf(22),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.backgroundSecondary,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   activityIconContainerSelected: {
-    backgroundColor: `${ResponsiveTheme.colors.primary}20`,
+    backgroundColor: `${colors.primary}20`,
   },
   activityCardTitle: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(14),
   },
   activityCardTitleSelected: {
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.semibold,
   },
   errorText: {
-    color: ResponsiveTheme.colors.error,
-    fontSize: ResponsiveTheme.fontSize.xs,
-    marginTop: ResponsiveTheme.spacing.xs,
+    color: colors.error,
+    fontSize: fontSize.xs,
+    marginTop: spacing.xs,
   },
   row: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
   },
   halfWidth: {
     flex: 1,
   },
   inputLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
     flexShrink: 1,
   },
   timeSelector: {
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: "transparent",
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
     alignItems: "center",
   },
   timeIconContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   timeText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.md,
+    color: colors.text,
+    fontWeight: typography.fontWeight.medium,
     flexShrink: 1,
   },
   sleepDurationCardInline: {
-    marginTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.md,
   },
   sleepDurationHealthy: {
-    backgroundColor: `${ResponsiveTheme.colors.success}10`,
-    borderColor: `${ResponsiveTheme.colors.success}30`,
+    backgroundColor: `${colors.success}10`,
+    borderColor: `${colors.success}30`,
     borderWidth: 1,
   },
   sleepDurationWarning: {
-    backgroundColor: `${ResponsiveTheme.colors.warning}10`,
-    borderColor: `${ResponsiveTheme.colors.warning}30`,
+    backgroundColor: `${colors.warning}10`,
+    borderColor: `${colors.warning}30`,
     borderWidth: 1,
   },
   sleepDurationContent: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.md,
+    gap: spacing.md,
     alignItems: "center",
   },
   sleepDurationIconContainer: {
@@ -349,14 +348,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sleepDurationTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   sleepDurationSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    lineHeight: ResponsiveTheme.fontSize.sm * 1.4,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    lineHeight: fontSize.sm * 1.4,
   },
 });

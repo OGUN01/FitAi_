@@ -8,7 +8,7 @@ import React, { useMemo } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 
 interface DayInfo {
@@ -92,7 +92,7 @@ export const WeekDaySelector: React.FC<WeekDaySelectorProps> = ({
         contentOffset={{
           x: Math.max(
             0,
-            (todayIndex - 1) * (rw(56) + ResponsiveTheme.spacing.sm),
+            (todayIndex - 1) * (rw(56) + spacing.sm),
           ),
           y: 0,
         }}
@@ -164,16 +164,16 @@ export const WeekDaySelector: React.FC<WeekDaySelectorProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   scrollContent: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    gap: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
   },
   dayItem: {
     width: rw(56),
     height: rh(80),
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
     backgroundColor: "rgba(255,255,255,0.03)",
     justifyContent: "center" as const,
     alignItems: "center" as const,
@@ -182,21 +182,21 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.05)",
   },
   dayItemSelected: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   dayItemToday: {
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
     borderWidth: 1.5,
   },
   dayLabel: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: rp(4),
   },
   dayLabelSelected: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   dayLabelPast: {
     color: "rgba(255,255,255,0.3)",
@@ -204,10 +204,10 @@ const styles = StyleSheet.create({
   dayDate: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   dayDateSelected: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   dayDatePast: {
     color: "rgba(255,255,255,0.4)",
@@ -226,10 +226,10 @@ const styles = StyleSheet.create({
   mealCount: {
     fontSize: rf(9),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   mealCountSelected: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
   todayDot: {
     position: "absolute",
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     width: rw(6),
     height: rw(6),
     borderRadius: rw(3),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
   },
 });
 

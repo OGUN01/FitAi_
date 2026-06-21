@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, StyleProp, ViewStyle } from "react-
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { PremiumMealCard } from "./PremiumMealCard";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { getMealTime } from "../../utils/mealSchedule";
 import { rs, rw, rh, rbr } from "../../utils/responsive";
 
@@ -116,7 +116,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = React.memo(({
                   fat: macroTargets.fat ?? 0,
                   calories: calorieTarget ?? 0,
                 }}
-                style={{ marginBottom: ResponsiveTheme.spacing.md }}
+                style={{ marginBottom: spacing.md }}
               />
             );
           })}
@@ -141,64 +141,64 @@ export const MealPlanView: React.FC<MealPlanViewProps> = React.memo(({
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
   },
   daySelectorContainer: {
-    marginBottom: ResponsiveTheme.spacing.md,
-    marginTop: -ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.md,
+    marginTop: -spacing.sm,
   },
   dayButton: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
-    marginRight: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    marginRight: spacing.sm,
     borderRadius: rs(20),
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
     position: "relative",
     alignItems: "center",
   },
   todayDayButton: {
-    borderColor: ResponsiveTheme.colors.primary,
+    borderColor: colors.primary,
     borderWidth: 2,
   },
   todayIndicator: {
     width: rw(6),
     height: rh(6),
     borderRadius: rbr(3),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     position: "absolute",
     bottom: -2,
   },
   selectedDayButton: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   dayButtonText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: fontSize.sm,
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     opacity: 0.75,
   },
-  selectedDayButtonText: { color: ResponsiveTheme.colors.surface },
+  selectedDayButtonText: { color: colors.surface },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.xl,
+    fontSize: fontSize.xl,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    color: colors.text,
+    marginBottom: spacing.lg,
   },
-  premiumMealsContainer: { gap: ResponsiveTheme.spacing.md },
+  premiumMealsContainer: { gap: spacing.md },
   emptyMealsText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
 });

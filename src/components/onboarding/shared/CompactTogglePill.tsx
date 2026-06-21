@@ -1,3 +1,4 @@
+import { flatColors as colors, spacing, borderRadius, typography } from "../../../theme/aurora-tokens";
 import React, { useEffect, type ComponentProps } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Animated, {
@@ -8,7 +9,6 @@ import Animated, {
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rs, rbr, rp } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
 import { AnimatedPressable } from "../../../components/ui/aurora";
 
 interface CompactTogglePillProps {
@@ -38,8 +38,8 @@ export const CompactTogglePill: React.FC<CompactTogglePillProps> = ({
     return {
       backgroundColor:
         toggleAnimation.value === 1
-          ? ResponsiveTheme.colors.primary
-          : ResponsiveTheme.colors.backgroundTertiary,
+          ? colors.primary
+          : colors.backgroundTertiary,
     };
   });
 
@@ -66,8 +66,8 @@ export const CompactTogglePill: React.FC<CompactTogglePillProps> = ({
               size={rf(16)}
               color={
                 isActive
-                  ? ResponsiveTheme.colors.primary
-                  : ResponsiveTheme.colors.textSecondary
+                  ? colors.primary
+                  : colors.textSecondary
               }
             />
           </View>
@@ -98,7 +98,7 @@ export const CompactTogglePill: React.FC<CompactTogglePillProps> = ({
             <Ionicons
               name="information-circle-outline"
               size={rf(16)}
-              color={ResponsiveTheme.colors.textMuted}
+              color={colors.textMuted}
             />
           </TouchableOpacity>
 
@@ -121,23 +121,23 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   compactPill: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: "transparent",
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     minHeight: 44,
     justifyContent: "center",
   },
   compactPillActive: {
-    borderColor: ResponsiveTheme.colors.primary,
-    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}10`,
   },
   compactPillRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   compactPillIconWrap: {
     width: rf(24),
@@ -150,22 +150,22 @@ const styles = StyleSheet.create({
   compactPillTitle: {
     flex: 1,
     fontSize: rf(13),
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.text,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
     lineHeight: rf(18),
   },
   compactPillTitleActive: {
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.semibold,
   },
   compactPillInfoBtn: {
-    padding: ResponsiveTheme.spacing.xs,
+    padding: spacing.xs,
   },
   compactToggleSwitch: {
     width: rs(38),
     height: rs(22),
     borderRadius: rbr(11),
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
     justifyContent: "center",
     paddingHorizontal: rp(2),
     borderWidth: 1,
@@ -175,6 +175,6 @@ const styles = StyleSheet.create({
     width: rs(18),
     height: rs(18),
     borderRadius: rbr(9),
-    backgroundColor: ResponsiveTheme.colors.white,
+    backgroundColor: colors.white,
   },
 });

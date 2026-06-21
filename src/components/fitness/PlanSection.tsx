@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { spacing } from "../../theme/aurora-tokens";
 import { DayName } from "../../stores/appStateStore";
 
 // Importing from screens/main/fitness as they are currently located there
@@ -57,7 +57,7 @@ export const PlanSection: React.FC<PlanSectionProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
   },
 });

@@ -1,3 +1,4 @@
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import React from "react";
 import {
   View,
@@ -13,7 +14,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
 import { ValidationResult } from "../../services/validationEngine";
 import {
   useAdjustmentWizard,
@@ -72,8 +72,8 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
               {/* ── Header ── */}
               <LinearGradient
                 colors={[
-                  ResponsiveTheme.colors.background,
-                  ResponsiveTheme.colors.backgroundSecondary,
+                  colors.background,
+                  colors.backgroundSecondary,
                 ]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -90,7 +90,7 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
                   <Ionicons
                     name="close"
                     size={rf(20)}
-                    color={ResponsiveTheme.colors.textSecondary}
+                    color={colors.textSecondary}
                   />
                 </TouchableOpacity>
 
@@ -98,15 +98,15 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
                 <View style={styles.headerIconContainer}>
                   <LinearGradient
                     colors={[
-                      ResponsiveTheme.colors.primary,
-                      ResponsiveTheme.colors.secondary,
+                      colors.primary,
+                      colors.secondary,
                     ]}
                     style={styles.headerIconGradient}
                   >
                     <Ionicons
                       name="analytics"
                       size={rf(24)}
-                      color={ResponsiveTheme.colors.white}
+                      color={colors.white}
                     />
                   </LinearGradient>
                 </View>
@@ -123,7 +123,7 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
                     <Ionicons
                       name="warning"
                       size={rf(16)}
-                      color={ResponsiveTheme.colors.errorAlt}
+                      color={colors.errorAlt}
                     />
                   </View>
                   <Text style={styles.errorMessage} numberOfLines={2}>
@@ -183,12 +183,12 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
                     colors={
                       selectedIndex !== null
                         ? [
-                            ResponsiveTheme.colors.primary,
-                            ResponsiveTheme.colors.secondary,
+                            colors.primary,
+                            colors.secondary,
                           ]
                         : [
-                            ResponsiveTheme.colors.surfaceLight,
-                            ResponsiveTheme.colors.surfaceLight,
+                            colors.surfaceLight,
+                            colors.surfaceLight,
                           ]
                     }
                     start={{ x: 0, y: 0 }}
@@ -202,7 +202,7 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
                       <Ionicons
                         name="checkmark-circle"
                         size={rf(18)}
-                        color={ResponsiveTheme.colors.white}
+                        color={colors.white}
                       />
                     )}
                   </LinearGradient>
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
 
   modalContainer: {
     maxHeight: "92%",
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
     borderTopLeftRadius: rbr(24),
     borderTopRightRadius: rbr(24),
     overflow: "hidden",
@@ -232,26 +232,26 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    paddingTop: ResponsiveTheme.spacing.xl,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingBottom: ResponsiveTheme.spacing.lg,
+    paddingTop: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
     alignItems: "center",
   },
 
   closeButton: {
     position: "absolute",
-    top: ResponsiveTheme.spacing.md,
-    right: ResponsiveTheme.spacing.md,
+    top: spacing.md,
+    right: spacing.md,
     width: Math.max(rw(32), 44),
     height: Math.max(rw(32), 44),
     borderRadius: Math.max(rw(16), 22),
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
     alignItems: "center",
     justifyContent: "center",
   },
 
   headerIconContainer: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   headerIconGradient: {
@@ -265,29 +265,29 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(22),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    color: colors.text,
+    marginBottom: spacing.xs,
     letterSpacing: -0.5,
   },
 
   subtitle: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(18),
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
 
   errorAlert: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.errorTint,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.errorTint,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.errorAlt}4D`,
+    borderColor: `${colors.errorAlt}4D`,
     width: "100%",
   },
 
@@ -295,16 +295,16 @@ const styles = StyleSheet.create({
     width: rw(28),
     height: rw(28),
     borderRadius: rw(14),
-    backgroundColor: `${ResponsiveTheme.colors.errorAlt}33`,
+    backgroundColor: `${colors.errorAlt}33`,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
   },
 
   errorMessage: {
     flex: 1,
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.errorLight,
+    color: colors.errorLight,
     fontWeight: "500",
     lineHeight: rf(16),
   },
@@ -315,50 +315,50 @@ const styles = StyleSheet.create({
   },
 
   scrollContent: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingTop: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
   },
 
   scrollPadding: {
-    height: ResponsiveTheme.spacing.lg,
+    height: spacing.lg,
   },
 
   sectionLabel: {
     fontSize: rf(12),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 1,
-    marginBottom: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.xs,
   },
 
   // Footer
   footer: {
-    padding: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.md,
-    backgroundColor: `${ResponsiveTheme.colors.backgroundSecondary}F2`,
+    padding: spacing.lg,
+    paddingTop: spacing.md,
+    backgroundColor: `${colors.backgroundSecondary}F2`,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.glassSurface,
+    borderTopColor: colors.glassSurface,
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.md,
-    paddingBottom: ResponsiveTheme.spacing.xl,
+    gap: spacing.md,
+    paddingBottom: spacing.xl,
   },
 
   cancelButton: {
     flex: 1,
     minHeight: 44,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassHighlight,
+    borderColor: colors.glassHighlight,
   },
 
   cancelButtonText: {
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: rf(14),
     fontWeight: "600",
   },
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
   applyButton: {
     flex: 2,
     minHeight: 44,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
     overflow: "hidden",
     elevation: 4,
   },
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
   },
 
   applyButtonText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     fontSize: rf(14),
     fontWeight: "700",
   },

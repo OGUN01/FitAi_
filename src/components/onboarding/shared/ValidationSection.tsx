@@ -1,9 +1,8 @@
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
-import { GlassCard } from "../../../components/ui/aurora";
+import { rf } from "../../../utils/responsive";import { GlassCard } from "../../../components/ui/aurora";
 import { TabValidationResult } from "../../../types/onboarding";
 
 interface ValidationSectionProps {
@@ -28,7 +27,7 @@ export const ValidationSection: React.FC<ValidationSectionProps> = ({
           style={{
             flexDirection: "row",
             alignItems: "center",
-            marginBottom: ResponsiveTheme.spacing.xs,
+            marginBottom: spacing.xs,
           }}
         >
           <Ionicons
@@ -40,10 +39,10 @@ export const ValidationSection: React.FC<ValidationSectionProps> = ({
             size={rf(20)}
             color={
               validationResult.is_valid
-                ? ResponsiveTheme.colors.success
-                : ResponsiveTheme.colors.warning
+                ? colors.success
+                : colors.warning
             }
-            style={{ marginRight: ResponsiveTheme.spacing.xs }}
+            style={{ marginRight: spacing.xs }}
           />
           <Text style={styles.validationTitle}>
             {validationResult.is_valid
@@ -85,50 +84,50 @@ export const ValidationSection: React.FC<ValidationSectionProps> = ({
 
 const styles = StyleSheet.create({
   validationSummary: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
   },
   validationCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
   },
   validationTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   validationPercentage: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: fontSize.sm,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.medium,
+    marginBottom: spacing.md,
   },
   validationErrors: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   validationErrorTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.error,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.error,
+    marginBottom: spacing.xs,
   },
   validationErrorText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.error,
-    lineHeight: ResponsiveTheme.fontSize.sm * 1.3,
+    fontSize: fontSize.sm,
+    color: colors.error,
+    lineHeight: fontSize.sm * 1.3,
   },
   validationWarnings: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   validationWarningTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.warning,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.warning,
+    marginBottom: spacing.xs,
   },
   validationWarningText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.warning,
-    lineHeight: ResponsiveTheme.fontSize.sm * 1.3,
+    fontSize: fontSize.sm,
+    color: colors.warning,
+    lineHeight: fontSize.sm * 1.3,
   },
 });

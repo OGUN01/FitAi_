@@ -1,8 +1,8 @@
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import React, { type ComponentProps } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rw, rh, rs, rbr, rp } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
 import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
 import { DietPreferencesData } from "../../../types/onboarding";
 
@@ -54,7 +54,7 @@ export const MealPreferencesSection: React.FC<MealPreferencesSectionProps> = ({
               <Ionicons
                 name="alert-circle-outline"
                 size={rf(18)}
-                color={ResponsiveTheme.colors.warning}
+                color={colors.warning}
               />
               <Text
                 style={styles.warningText}
@@ -141,8 +141,8 @@ export const MealPreferencesSection: React.FC<MealPreferencesSectionProps> = ({
                       size={rf(22)}
                       color={
                         isEnabled
-                          ? ResponsiveTheme.colors.primary
-                          : ResponsiveTheme.colors.textSecondary
+                          ? colors.primary
+                          : colors.textSecondary
                       }
                     />
                     <View
@@ -193,7 +193,7 @@ export const MealPreferencesSection: React.FC<MealPreferencesSectionProps> = ({
               <Ionicons
                 name="bulb-outline"
                 size={rf(18)}
-                color={ResponsiveTheme.colors.primary}
+                color={colors.primary}
               />
               <Text
                 style={styles.infoText}
@@ -213,54 +213,54 @@ export const MealPreferencesSection: React.FC<MealPreferencesSectionProps> = ({
 
 const styles = StyleSheet.create({
   sectionEdgeToEdge: {
-    marginTop: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.xl,
-    marginHorizontal: -ResponsiveTheme.spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.xl,
+    marginHorizontal: -spacing.lg,
   },
   sectionTitlePadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
     letterSpacing: -0.3,
     flexShrink: 1,
   },
   sectionSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: ResponsiveTheme.fontSize.sm * 1.4,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+    lineHeight: fontSize.sm * 1.4,
     flexShrink: 1,
   },
   edgeToEdgeContentPadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   warningCardInline: {
-    backgroundColor: `${ResponsiveTheme.colors.warning}10`,
-    marginBottom: ResponsiveTheme.spacing.md,
+    backgroundColor: `${colors.warning}10`,
+    marginBottom: spacing.md,
   },
   warningContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   warningText: {
     flex: 1,
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.warning,
+    fontSize: fontSize.xs,
+    color: colors.warning,
   },
   scrollContainerInset: {
-    marginHorizontal: ResponsiveTheme.spacing.lg,
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
     overflow: "hidden",
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
   },
   scrollContentInset: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
     gap: rw(10),
   },
   consistentCardItem: {
@@ -270,17 +270,17 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   consistentCard: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: "transparent",
-    padding: ResponsiveTheme.spacing.sm,
+    padding: spacing.sm,
     minHeight: rh(12),
     alignItems: "center",
   },
   consistentCardSelected: {
-    borderColor: ResponsiveTheme.colors.primary,
-    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}10`,
   },
   consistentCardDisabled: {
     opacity: 0.8,
@@ -290,63 +290,63 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     width: "100%",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   miniToggle: {
     width: rs(24),
     height: rs(14),
     borderRadius: rbr(7),
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
     justifyContent: "center",
     paddingHorizontal: rp(1),
   },
   miniToggleActive: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   miniToggleThumb: {
     width: rs(10),
     height: rs(10),
     borderRadius: rbr(5),
-    backgroundColor: ResponsiveTheme.colors.textSecondary,
+    backgroundColor: colors.textSecondary,
   },
   miniToggleThumbActive: {
-    backgroundColor: ResponsiveTheme.colors.white,
+    backgroundColor: colors.white,
     alignSelf: "flex-end",
   },
   consistentCardTitle: {
     fontSize: rf(11),
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
     textAlign: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
   consistentCardTitleSelected: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   consistentCardDesc: {
     fontSize: rf(9),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     textAlign: "center",
     lineHeight: rf(12),
   },
   infoCardInline: {
-    backgroundColor: `${ResponsiveTheme.colors.primary}05`,
-    marginTop: ResponsiveTheme.spacing.md,
+    backgroundColor: `${colors.primary}05`,
+    marginTop: spacing.md,
   },
   infoContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   infoText: {
     flex: 1,
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
   },
   sectionBottomPad: {
-    height: ResponsiveTheme.spacing.lg,
+    height: spacing.lg,
   },
 });

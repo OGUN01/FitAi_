@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TextInput, Keyboard } from "react-native";
 import { Card } from "../../ui";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
 import { rh, rw } from "../../../utils/responsive";
 import { CustomSlider } from "./CustomSlider";
 import { PortionAdjustment } from "../../../hooks/usePortionAdjustment";
@@ -64,7 +64,7 @@ export const PortionSliderCard: React.FC<PortionSliderCardProps> = ({
             style={styles.manualInput}
             keyboardType="numeric"
             placeholder="Enter grams"
-            placeholderTextColor={ResponsiveTheme.colors.textMuted}
+            placeholderTextColor={colors.textMuted}
             value={String(currentAdjustment.adjustedGrams)}
             onChangeText={(text) => {
               const numValue = parseInt(text.replace(/[^0-9]/g, ""), 10);
@@ -86,82 +86,82 @@ export const PortionSliderCard: React.FC<PortionSliderCardProps> = ({
 
 const styles = StyleSheet.create({
   sliderCard: {
-    padding: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: fontSize.md,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
   currentPortionDisplay: {
     alignItems: "center" as const,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
   },
   currentPortionGrams: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontSize: fontSize.xxl,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   currentPortionLabel: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginTop: ResponsiveTheme.spacing.xs,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
   adjustmentRatio: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
     fontStyle: "italic",
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: spacing.xs,
   },
   slider: {
     width: "100%",
     height: rh(40),
-    marginVertical: ResponsiveTheme.spacing.md,
+    marginVertical: spacing.md,
   },
   sliderLabels: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
   sliderLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
   },
   manualInputContainer: {
-    marginTop: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.md,
+    marginTop: spacing.lg,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
+    borderTopColor: colors.border,
   },
   manualInputLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
     textAlign: "center",
   },
   manualInputRow: {
     flexDirection: "row",
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   manualInput: {
     width: rw(100),
     height: rh(48),
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.primary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    fontSize: ResponsiveTheme.fontSize.lg,
+    borderColor: colors.primary,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    fontSize: fontSize.lg,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     textAlign: "center",
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
   manualInputUnit: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     fontWeight: "600",
   },
 });

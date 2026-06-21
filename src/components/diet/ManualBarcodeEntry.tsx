@@ -13,7 +13,7 @@ import barcodeService, {
   ProductLookupResult,
 } from "@/services/barcodeService";
 import { getCountryFromBarcode } from "@/utils/countryMapping";
-import { ResponsiveTheme } from "@/utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "@/theme/aurora-tokens";
 import { rbr, rf, rp } from "@/utils/responsive";
 
 interface ManualBarcodeEntryProps {
@@ -148,7 +148,7 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
             keyboardType="number-pad"
             maxLength={13}
             placeholder="Enter barcode number"
-            placeholderTextColor={ResponsiveTheme.colors.textMuted}
+            placeholderTextColor={colors.textMuted}
             autoFocus
             returnKeyType="search"
             onSubmitEditing={handleLookUp}
@@ -217,7 +217,7 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
             <View style={styles.loadingRow}>
               <ActivityIndicator
                 size="small"
-                color={ResponsiveTheme.colors.white}
+                color={colors.white}
               />
               <Text style={styles.lookUpButtonText}>Looking up...</Text>
             </View>
@@ -251,154 +251,154 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   container: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: ResponsiveTheme.borderRadius.xl,
-    padding: ResponsiveTheme.spacing.lg,
-    marginHorizontal: ResponsiveTheme.spacing.md,
-    marginVertical: ResponsiveTheme.spacing.md,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    marginHorizontal: spacing.md,
+    marginVertical: spacing.md,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   title: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     letterSpacing: 0.3,
   },
   closeButton: {
     width: 32,
     height: 32,
     borderRadius: rbr(16),
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
     alignItems: "center",
     justifyContent: "center",
   },
   closeButtonText: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 16,
   },
   subtitle: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
     lineHeight: 18,
   },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.xs,
   },
   input: {
     flex: 1,
     height: 48,
     fontSize: rf(17),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     letterSpacing: 1.5,
     fontVariant: ["tabular-nums"],
   },
   inputError: {
-    borderColor: ResponsiveTheme.colors.error,
+    borderColor: colors.error,
   },
   clearButton: {
     width: 28,
     height: 28,
     borderRadius: rbr(14),
-    backgroundColor: ResponsiveTheme.colors.surfaceLight,
+    backgroundColor: colors.surfaceLight,
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: ResponsiveTheme.spacing.xs,
+    marginLeft: spacing.xs,
   },
   clearButtonText: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 16,
   },
   metaRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.md,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   helperText: {
     flex: 1,
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
   countryText: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.secondary,
+    color: colors.secondary,
     fontWeight: "600",
   },
   errorCard: {
-    backgroundColor: ResponsiveTheme.colors.errorTint,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    backgroundColor: colors.errorTint,
+    borderRadius: borderRadius.sm,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.error,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.md,
-    gap: ResponsiveTheme.spacing.xs,
+    borderColor: colors.error,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+    gap: spacing.xs,
   },
   errorText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.error,
+    color: colors.error,
     lineHeight: 18,
   },
   retryLink: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   fallbackActions: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.md,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   secondaryAction: {
     flex: 1,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.surface,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingVertical: spacing.sm,
     alignItems: "center",
   },
   secondaryActionText: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   lookUpButton: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
     height: 50,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   lookUpButtonDisabled: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: colors.border,
   },
   lookUpButtonText: {
     fontSize: rf(16),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
     letterSpacing: 0.5,
   },
   lookUpButtonTextDisabled: {
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
   loadingRow: {
     flexDirection: "row",
@@ -407,11 +407,11 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
   },
   cancelText: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
 });
 

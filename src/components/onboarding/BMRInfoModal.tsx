@@ -1,3 +1,4 @@
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import React from "react";
 import {
   View,
@@ -10,8 +11,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
-
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -72,7 +71,7 @@ export const BMRInfoModal: React.FC<BMRInfoModalProps> = ({
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.headerIcon}>
-                <Ionicons name="warning" size={rf(28)} color={ResponsiveTheme.colors.warningAlt} />
+                <Ionicons name="warning" size={rf(28)} color={colors.warningAlt} />
               </View>
               <Text style={styles.headerTitle}>Eating Below BMR</Text>
               <TouchableOpacity
@@ -85,7 +84,7 @@ export const BMRInfoModal: React.FC<BMRInfoModalProps> = ({
                 <Ionicons
                   name="close"
                   size={rf(24)}
-                  color={ResponsiveTheme.colors.textSecondary}
+                  color={colors.textSecondary}
                 />
               </TouchableOpacity>
             </View>
@@ -111,7 +110,7 @@ export const BMRInfoModal: React.FC<BMRInfoModalProps> = ({
                   <Ionicons
                     name="heart"
                     size={rf(16)}
-                    color={ResponsiveTheme.colors.error}
+                    color={colors.error}
                   />
                   <Text style={styles.functionText}>
                     Keep your heart beating
@@ -121,7 +120,7 @@ export const BMRInfoModal: React.FC<BMRInfoModalProps> = ({
                   <Ionicons
                     name="bulb"
                     size={rf(16)}
-                    color={ResponsiveTheme.colors.warning}
+                    color={colors.warning}
                   />
                   <Text style={styles.functionText}>
                     Maintain brain function
@@ -131,7 +130,7 @@ export const BMRInfoModal: React.FC<BMRInfoModalProps> = ({
                   <Ionicons
                     name="body"
                     size={rf(16)}
-                    color={ResponsiveTheme.colors.primary}
+                    color={colors.primary}
                   />
                   <Text style={styles.functionText}>
                     Support breathing and organ function
@@ -150,7 +149,7 @@ export const BMRInfoModal: React.FC<BMRInfoModalProps> = ({
                       <Ionicons
                         name={risk.icon}
                         size={rf(18)}
-                        color={ResponsiveTheme.colors.errorAlt}
+                        color={colors.errorAlt}
                       />
                     </View>
                     <View style={styles.riskContent}>
@@ -167,7 +166,7 @@ export const BMRInfoModal: React.FC<BMRInfoModalProps> = ({
                 <Ionicons
                   name="information-circle"
                   size={rf(18)}
-                  color={ResponsiveTheme.colors.primary}
+                  color={colors.primary}
                   style={styles.noteIcon}
                 />
                 <Text style={styles.noteText}>
@@ -212,7 +211,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   modalContent: {
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rbr(20),
     padding: rp(20),
   },
@@ -225,7 +224,7 @@ const styles = StyleSheet.create({
     width: rf(44),
     height: rf(44),
     borderRadius: rbr(22),
-    backgroundColor: `${ResponsiveTheme.colors.warningAlt}26`,
+    backgroundColor: `${colors.warningAlt}26`,
     justifyContent: "center",
     alignItems: "center",
     marginRight: rp(12),
@@ -234,7 +233,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   closeButton: {
     minWidth: 44,
@@ -246,18 +245,18 @@ const styles = StyleSheet.create({
     maxHeight: rh(400),
   },
   bmrCard: {
-    backgroundColor: `${ResponsiveTheme.colors.info}1A`,
+    backgroundColor: `${colors.info}1A`,
     borderRadius: rbr(12),
     padding: rp(16),
     alignItems: "center",
     marginBottom: rp(16),
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.info}33`,
+    borderColor: `${colors.info}33`,
   },
   bmrLabel: {
     fontSize: rf(12),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 1,
     marginBottom: rp(4),
@@ -265,16 +264,16 @@ const styles = StyleSheet.create({
   bmrValue: {
     fontSize: rf(32),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   bmrUnit: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: rp(2),
   },
   explanation: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(20),
     marginBottom: rp(12),
   },
@@ -289,17 +288,17 @@ const styles = StyleSheet.create({
   },
   functionText: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   divider: {
     height: 1,
-    backgroundColor: ResponsiveTheme.colors.border,
+    backgroundColor: colors.border,
     marginVertical: rp(16),
   },
   risksTitle: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(12),
   },
   risksList: {
@@ -314,7 +313,7 @@ const styles = StyleSheet.create({
     width: rf(32),
     height: rf(32),
     borderRadius: rbr(8),
-    backgroundColor: `${ResponsiveTheme.colors.errorAlt}1A`,
+    backgroundColor: `${colors.errorAlt}1A`,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -324,17 +323,17 @@ const styles = StyleSheet.create({
   riskTitle: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(2),
   },
   riskDescription: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(16),
   },
   noteCard: {
     flexDirection: "row",
-    backgroundColor: `${ResponsiveTheme.colors.info}14`,
+    backgroundColor: `${colors.info}14`,
     borderRadius: rbr(10),
     padding: rp(12),
     marginTop: rp(8),
@@ -346,11 +345,11 @@ const styles = StyleSheet.create({
   noteText: {
     flex: 1,
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(18),
   },
   actionButton: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: rbr(12),
     paddingVertical: rp(14),
     minHeight: 44,
@@ -361,7 +360,7 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.white,
   },
 });
 

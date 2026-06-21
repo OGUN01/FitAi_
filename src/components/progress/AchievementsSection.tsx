@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rw } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
 
 interface Achievement {
@@ -57,7 +57,7 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
           <Ionicons
             name="trophy"
             size={rf(16)}
-            color={ResponsiveTheme.colors.gold}
+            color={colors.gold}
           />
           <Text style={styles.sectionTitle}>Achievements</Text>
         </View>
@@ -81,7 +81,7 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
           {sorted.map((achievement, index) => {
             const rarity = achievement.rarity ?? "common";
             const accentColor = achievement.completed
-              ? ResponsiveTheme.colors.success
+              ? colors.success
               : (rarityColor[rarity] ?? "#9CA3AF");
             const hasProgress =
               !achievement.completed &&
@@ -167,13 +167,13 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
                     <Ionicons
                       name="checkmark-circle"
                       size={rf(16)}
-                      color={ResponsiveTheme.colors.success}
+                      color={colors.success}
                     />
                   ) : (
                     <Ionicons
                       name="lock-closed-outline"
                       size={rf(16)}
-                      color={ResponsiveTheme.colors.textMuted}
+                      color={colors.textMuted}
                     />
                   )}
                 </View>
@@ -188,14 +188,14 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   titleRow: {
     flexDirection: "row",
@@ -203,14 +203,14 @@ const styles = StyleSheet.create({
     gap: rw(6),
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
   },
   countBadge: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     backgroundColor: "rgba(255,255,255,0.07)",
     paddingHorizontal: rp(8),
     paddingVertical: rp(3),
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(12),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     flexShrink: 1,
   },
   categoryTag: {
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
   },
   progressRow: {
     flexDirection: "row",
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: rf(9),
-    color: ResponsiveTheme.colors.textMuted,
+    color: colors.textMuted,
     flexShrink: 0,
   },
   rightBlock: {

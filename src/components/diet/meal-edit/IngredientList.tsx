@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors } from "../../../theme/aurora-tokens";
 import { rf, rh, rw, rp } from "../../../utils/responsive";
 
 interface IngredientListProps {
@@ -34,7 +34,7 @@ export const IngredientList: React.FC<IngredientListProps> = ({
                 <Ionicons
                   name="remove"
                   size={rf(16)}
-                  color={ResponsiveTheme.colors.primary}
+                  color={colors.primary}
                 />
               </TouchableOpacity>
               <Text style={styles.quantityText}>{item.quantity || 100}g</Text>
@@ -47,7 +47,7 @@ export const IngredientList: React.FC<IngredientListProps> = ({
                 <Ionicons
                   name="add"
                   size={rf(16)}
-                  color={ResponsiveTheme.colors.primary}
+                  color={colors.primary}
                 />
               </TouchableOpacity>
             </View>
@@ -64,7 +64,7 @@ export const IngredientList: React.FC<IngredientListProps> = ({
             <Ionicons
               name="trash-outline"
               size={rf(20)}
-              color={ResponsiveTheme.colors.error}
+              color={colors.error}
             />
           </TouchableOpacity>
         </View>
@@ -80,13 +80,13 @@ const styles = StyleSheet.create({
   label: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rh(8),
   },
   ingredientRow: {
     flexDirection: "row",
     alignItems: "center" as const,
-    backgroundColor: ResponsiveTheme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: rf(12),
     padding: rp(12),
     marginBottom: rh(8),
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   ingredientName: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rh(4),
   },
   quantityControl: {
@@ -113,14 +113,14 @@ const styles = StyleSheet.create({
   },
   quantityText: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginHorizontal: rw(8),
     minWidth: rw(50),
     textAlign: "center",
   },
   ingredientCalories: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   removeButton: {
     minWidth: 44,

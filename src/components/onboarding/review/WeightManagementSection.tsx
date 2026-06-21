@@ -1,9 +1,8 @@
+import { flatColors as colors, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rp } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
-import { GlassCard } from "../../ui/aurora/GlassCard";
+import { rf, rp } from "../../../utils/responsive";import { GlassCard } from "../../ui/aurora/GlassCard";
 import { WeightProjectionChart } from "../../ui";
 import { DataPlaceholder } from "../../ui/DataPlaceholder";
 import {
@@ -40,7 +39,7 @@ export const WeightManagementSection: React.FC<
           <Ionicons
             name="scale-outline"
             size={rf(18)}
-            color={ResponsiveTheme.colors.primary}
+            color={colors.primary}
             style={styles.sectionTitleIcon}
           />
           <Text style={styles.sectionTitle} numberOfLines={1}>
@@ -59,7 +58,7 @@ export const WeightManagementSection: React.FC<
         >
           {calculatedData.was_rate_capped && (
             <View style={styles.capBanner}>
-              <Ionicons name="shield-checkmark-outline" size={rf(14)} color={ResponsiveTheme.colors.warning ?? '#f59e0b'} />
+              <Ionicons name="shield-checkmark-outline" size={rf(14)} color={colors.warning ?? '#f59e0b'} />
               <Text style={styles.capBannerText}>
                 Your pace was reduced for safety. See warnings below.
               </Text>
@@ -135,9 +134,9 @@ const styles = StyleSheet.create({
     marginRight: rp(8),
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
     flex: 1,
   },
   edgeToEdgeContentPadded: {
@@ -156,7 +155,7 @@ const styles = StyleSheet.create({
     gap: rp(6),
   },
   capBannerText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: fontSize.sm,
     color: '#f59e0b',
     flex: 1,
   },
@@ -167,14 +166,14 @@ const styles = StyleSheet.create({
     marginBottom: rp(16),
   },
   weightTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
   },
   timelineWeeks: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.primary,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
   },
   chartContainer: {
     marginBottom: rp(16),

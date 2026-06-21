@@ -2,7 +2,7 @@ import React, { useRef } from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { WaterIntakeModal } from "./WaterIntakeModal";
 
 interface HydrationPanelProps {
@@ -93,8 +93,8 @@ export const HydrationPanel: React.FC<HydrationPanelProps> = ({
                 {
                   width: progressWidth,
                   backgroundColor: isGoalReached
-                    ? ResponsiveTheme.colors.success
-                    : ResponsiveTheme.colors.primary,
+                    ? colors.success
+                    : colors.primary,
                 },
               ]}
             />
@@ -192,43 +192,43 @@ export const HydrationPanel: React.FC<HydrationPanelProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.xl,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
   },
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.xl,
+    fontSize: fontSize.xl,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    color: colors.text,
+    marginBottom: spacing.lg,
   },
-  waterTrackerContainer: { marginTop: ResponsiveTheme.spacing.md },
+  waterTrackerContainer: { marginTop: spacing.md },
   amountRow: {
     flexDirection: "row",
     alignItems: "baseline",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   waterAmountConsumed: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontSize: fontSize.xxl,
     fontWeight: "bold",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   waterTargetAmount: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
   },
   goalReachedBadge: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: fontSize.sm,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.success,
+    color: colors.success,
   },
   progressBarContainer: {
     height: 8,
-    backgroundColor: ResponsiveTheme.colors.border,
+    backgroundColor: colors.border,
     borderRadius: 4,
     overflow: "hidden",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   progressBarFill: {
     height: 8,
@@ -237,14 +237,14 @@ const styles = StyleSheet.create({
   },
   waterQuickAddButtons: {
     flexDirection: "row",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: spacing.sm,
   },
   waterQuickAddButton: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
     minHeight: 44,
     alignItems: "center",
     justifyContent: "center",
@@ -252,21 +252,21 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   waterCustomButton: {
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    backgroundColor: `${colors.primary}15`,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.primary}35`,
+    borderColor: `${colors.primary}35`,
   },
   waterQuickAddButtonText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.sm,
+    color: colors.text,
     fontWeight: "600",
   },
   waterCustomButtonText: {
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary,
   },
   rippleOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: 999,
     opacity: 0,
   },

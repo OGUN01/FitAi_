@@ -12,7 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { AuroraSpinner } from "../ui/aurora/AuroraSpinner";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 
 interface MealPlanGeneratorProps {
@@ -38,7 +38,7 @@ export const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({
       {/* Section Header */}
       <View style={styles.sectionHeader}>
         <View style={styles.headerLeft}>
-          <Ionicons name="sparkles" size={rf(18)} color={ResponsiveTheme.colors.primary} />
+          <Ionicons name="sparkles" size={rf(18)} color={colors.primary} />
           <Text style={styles.sectionTitle}>AI Meal Planning</Text>
         </View>
         {hasPlan && (
@@ -63,7 +63,7 @@ export const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({
           borderRadius="lg"
         >
           <LinearGradient
-            colors={[ResponsiveTheme.colors.primaryTint, `${ResponsiveTheme.colors.primaryDark}1A`]}
+            colors={[colors.primaryTint, `${colors.primaryDark}1A`]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.gradientBg}
@@ -74,7 +74,7 @@ export const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({
                 {isGenerating ? (
                   <AuroraSpinner size="md" theme="primary" />
                 ) : (
-                  <Ionicons name="restaurant" size={rf(32)} color={ResponsiveTheme.colors.primary} />
+                  <Ionicons name="restaurant" size={rf(32)} color={colors.primary} />
                 )}
               </View>
 
@@ -104,7 +104,7 @@ export const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({
                 <Ionicons
                   name={isGenerating ? "hourglass-outline" : "chevron-forward"}
                   size={rf(20)}
-                  color={ResponsiveTheme.colors.textSecondary}
+                  color={colors.textSecondary}
                 />
               </View>
             </View>
@@ -133,7 +133,7 @@ const FeatureTag: React.FC<{
     <Ionicons
       name={icon}
       size={rf(12)}
-      color={ResponsiveTheme.colors.textSecondary}
+      color={colors.textSecondary}
     />
     <Text style={styles.featureText}>{text}</Text>
   </View>
@@ -141,47 +141,47 @@ const FeatureTag: React.FC<{
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: ResponsiveTheme.spacing.lg,
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center" as const,
-    gap: ResponsiveTheme.spacing.xs,
+    gap: spacing.xs,
   },
   sectionTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
   },
   activeBadge: {
     flexDirection: "row",
     alignItems: "center" as const,
-    backgroundColor: ResponsiveTheme.colors.successTint,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: colors.successTint,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
     gap: rp(6),
   },
   activeDot: {
     width: rw(6),
     height: rw(6),
     borderRadius: rw(3),
-    backgroundColor: ResponsiveTheme.colors.success,
+    backgroundColor: colors.success,
   },
   activeText: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.success,
+    color: colors.success,
   },
   gradientBg: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: spacing.md,
   },
   content: {
     flexDirection: "row",
@@ -191,10 +191,10 @@ const styles = StyleSheet.create({
     width: rw(56),
     height: rw(56),
     borderRadius: rw(16),
-    backgroundColor: ResponsiveTheme.colors.primaryTint,
+    backgroundColor: colors.primaryTint,
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
   info: {
     flex: 1,
@@ -202,54 +202,54 @@ const styles = StyleSheet.create({
   planName: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(2),
   },
   planDetails: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   title: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text,
     marginBottom: rp(2),
   },
   subtitle: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: rf(16),
   },
   arrowContainer: {
     width: rw(32),
     height: rw(32),
     borderRadius: rw(16),
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
+    backgroundColor: colors.glassSurface,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
   features: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.sm,
-    marginTop: ResponsiveTheme.spacing.md,
-    paddingTop: ResponsiveTheme.spacing.md,
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.glassSurface,
+    borderTopColor: colors.glassSurface,
   },
   featureTag: {
     flexDirection: "row",
     alignItems: "center" as const,
-    backgroundColor: ResponsiveTheme.colors.glassSurface,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    backgroundColor: colors.glassSurface,
+    paddingHorizontal: spacing.sm,
     paddingVertical: rp(4),
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    borderRadius: borderRadius.sm,
     gap: rp(4),
   },
   featureText: {
     fontSize: rf(10),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.textSecondary,
   },
 });
 

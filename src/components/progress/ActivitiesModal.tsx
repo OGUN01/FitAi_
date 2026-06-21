@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Modal, FlatList, Platform } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
-import { ResponsiveTheme } from "../../utils/constants";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
@@ -45,7 +45,7 @@ export const ActivitiesModal: React.FC<ActivitiesModalProps> = ({
             <Ionicons
               name="close"
               size={rf(20)}
-              color={ResponsiveTheme.colors.textSecondary}
+              color={colors.textSecondary}
             />
           </AnimatedPressable>
         </View>
@@ -81,7 +81,7 @@ export const ActivitiesModal: React.FC<ActivitiesModalProps> = ({
                           : "restaurant-outline"
                       }
                       size={rf(20)}
-                      color={ResponsiveTheme.colors.primary}
+                      color={colors.primary}
                     />
                   </View>
                   <View style={styles.activityInfo}>
@@ -101,7 +101,7 @@ export const ActivitiesModal: React.FC<ActivitiesModalProps> = ({
                     <Ionicons
                       name="checkmark"
                       size={rf(14)}
-                      color={ResponsiveTheme.colors.white}
+                      color={colors.white}
                     />
                   </View>
                 </View>
@@ -141,35 +141,35 @@ export const ActivitiesModal: React.FC<ActivitiesModalProps> = ({
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.border,
+    borderBottomColor: colors.border,
   },
   modalTitle: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
   },
   modalCloseButton: {
     width: Math.max(rw(32), 44),
     height: Math.max(rh(32), 44),
     borderRadius: Math.max(rs(16), 22),
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
     justifyContent: "center",
     alignItems: "center",
   },
   modalContent: {
-    padding: ResponsiveTheme.spacing.lg,
+    padding: spacing.lg,
   },
   modalActivityCard: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
   activityContent: {
     flexDirection: "row",
@@ -178,35 +178,35 @@ const styles = StyleSheet.create({
   activityIcon: {
     width: rw(40),
     height: rh(40),
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.backgroundTertiary,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: spacing.md,
   },
   activityInfo: {
     flex: 1,
   },
   activityName: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
     marginBottom: rp(2),
   },
   activityDetails: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
     marginBottom: rp(2),
   },
   activityDate: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textTertiary,
+    fontSize: fontSize.xs,
+    color: colors.textTertiary,
   },
   activityBadge: {
     width: rw(24),
     height: rh(24),
     borderRadius: rs(12),
-    backgroundColor: ResponsiveTheme.colors.success,
+    backgroundColor: colors.success,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -214,37 +214,37 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.lg,
+    paddingVertical: spacing.lg,
   },
   loadingText: {
-    marginLeft: ResponsiveTheme.spacing.sm,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    marginLeft: spacing.sm,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
   endFooter: {
-    paddingVertical: ResponsiveTheme.spacing.lg,
+    paddingVertical: spacing.lg,
     alignItems: "center",
   },
   endText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textTertiary,
+    fontSize: fontSize.sm,
+    color: colors.textTertiary,
     fontStyle: "italic",
   },
   emptyModalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.xxl,
+    paddingVertical: spacing.xxl,
   },
   emptyModalText: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
   emptyModalSubtext: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textTertiary,
+    fontSize: fontSize.sm,
+    color: colors.textTertiary,
     textAlign: "center",
   },
 });

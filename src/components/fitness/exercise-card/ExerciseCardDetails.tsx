@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../../utils/constants";
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rw } from "../../../utils/responsive";
 import { Exercise, WorkoutSet } from "../../../types/workout";
 
@@ -50,31 +50,31 @@ export const ExerciseCardDetails: React.FC<ExerciseCardDetailsProps> = ({
 
 const styles = StyleSheet.create({
   detailsSection: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: spacing.md,
   },
 
   detailRow: {
     flexDirection: "row",
     alignItems: "center" as const,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: spacing.xs,
   },
 
   detailIcon: {
     fontSize: rf(16),
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: spacing.sm,
     width: rw(20),
   },
 
   detailLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginRight: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginRight: spacing.sm,
     minWidth: 80,
   },
 
   detailValue: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: fontSize.sm,
+    color: colors.text,
+    fontWeight: typography.fontWeight.medium,
   },
 });

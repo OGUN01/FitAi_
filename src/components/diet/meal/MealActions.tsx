@@ -3,13 +3,13 @@ import { View, Text, StyleSheet, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import {
-  colors,
+  colors as nestedColors,
+  flatColors,
   typography,
   spacing,
   borderRadius,
 } from "../../../theme/aurora-tokens";
 import { rf, rw } from "../../../utils/responsive";
-import { ResponsiveTheme } from "../../../utils/constants";
 
 interface MealActionsProps {
   onStartMeal?: () => void;
@@ -46,7 +46,7 @@ export const MealActions: React.FC<MealActionsProps> = ({
             end={{ x: 1, y: 0 }}
             style={styles.actionButtonGradient}
           >
-            <Ionicons name="play" size={rf(18)} color={colors.text.primary} />
+            <Ionicons name="play" size={rf(18)} color={nestedColors.text.primary} />
             <Text style={styles.actionButtonText}>
               {isInProgress
                 ? `Continue (${Math.round(progress)}%)`
@@ -72,8 +72,8 @@ export const MealActions: React.FC<MealActionsProps> = ({
           <LinearGradient
             colors={
               isCompleted
-                ? ([colors.success.DEFAULT, colors.success.light] as const)
-                : ([ResponsiveTheme.colors.successAlt, ResponsiveTheme.colors.successAltDark] as const)
+                ? ([nestedColors.success.DEFAULT, nestedColors.success.light] as const)
+                : ([flatColors.successAlt, flatColors.successAltDark] as const)
             }
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
@@ -82,7 +82,7 @@ export const MealActions: React.FC<MealActionsProps> = ({
             <Ionicons
               name={isCompleted ? "checkmark-circle" : "checkbox-outline"}
               size={rf(18)}
-              color={colors.text.primary}
+              color={nestedColors.text.primary}
             />
             <Text style={styles.actionButtonText}>
               {isCompleted ? "Completed" : "Mark Complete"}
@@ -123,6 +123,6 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: typography.fontSize.body,
     fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
+    color: nestedColors.text.primary,
   },
 });

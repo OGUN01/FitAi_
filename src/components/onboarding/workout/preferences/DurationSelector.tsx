@@ -1,8 +1,7 @@
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../../theme/aurora-tokens";
 import React from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
-import { rf, rw } from "../../../../utils/responsive";
-import { ResponsiveTheme } from "../../../../utils/constants";
-import { AnimatedPressable } from "../../../../components/ui/aurora";
+import { rf, rw } from "../../../../utils/responsive";import { AnimatedPressable } from "../../../../components/ui/aurora";
 import { formatTime } from "../../../../hooks/useWorkoutPreferences";
 
 interface DurationSelectorProps {
@@ -64,46 +63,46 @@ export const DurationSelector: React.FC<DurationSelectorProps> = ({
 
 const styles = StyleSheet.create({
   edgeToEdgeContentPadded: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   fieldLabel: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
+    marginBottom: spacing.sm,
     flexShrink: 1,
   },
   scrollContainerInset: {
-    marginHorizontal: ResponsiveTheme.spacing.lg,
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
     overflow: "hidden",
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: borderRadius.md,
   },
   scrollContentInset: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingVertical: spacing.sm,
     gap: rw(10),
   },
   durationPill: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.full,
     borderWidth: 1,
     borderColor: "transparent",
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    backgroundColor: colors.backgroundTertiary,
     minWidth: rw(70),
     alignItems: "center",
   },
   durationPillSelected: {
-    borderColor: ResponsiveTheme.colors.primary,
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}15`,
   },
   durationPillText: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.text,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: colors.text,
+    fontWeight: typography.fontWeight.medium,
   },
   durationPillTextSelected: {
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.semibold,
   },
 });
