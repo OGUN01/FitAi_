@@ -62,6 +62,16 @@ export interface Workout {
     | "hybrid";
   difficulty: "beginner" | "intermediate" | "advanced";
   duration: number; // in minutes
+  /**
+   * DISPLAY-ONLY — never used in calculations.
+   *
+   * Pre-generation calorie estimate shown on workout cards. The authoritative
+   * calories burned for a completed session come from the MET calc at
+   * completion (completionTrackingService.completeWorkout /
+   * extraWorkoutService) and are stored on workout_sessions.calories_burned +
+   * WorkoutProgress.caloriesBurned. Never seed caloriesBurned from this value
+   * (see P1-11 in the workout tracking audit).
+   */
   estimatedCalories: number;
   exercises: WorkoutSet[];
   warmup?: WorkoutSet[];

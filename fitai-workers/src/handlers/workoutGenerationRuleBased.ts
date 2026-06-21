@@ -240,18 +240,19 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 		// Generate progression notes
 		const progressionNotes = generateProgressionNotes(enrichedProfile, weekNumber);
 
-		// Estimate calories
+		// Estimate calories for the strength component only.
+		// Cardio boost calories are added separately in Step 7b.
 		const estimatedCalories = estimateCalories(
 			exercises.length,
-			enrichedProfile.workoutDuration || 45,
+			enrichedProfile.workoutDuration,
 			enrichedProfile.experienceLevel,
 			enrichedProfile.weight,
 			enrichedProfile.fitnessGoal,
 			enrichedProfile.tdee, // TDEE from advanced_review — used for precision calorie estimates
 		);
 
-		// Calculate total duration
-		const totalDuration = enrichedProfile.workoutDuration || 45;
+		// Strength session duration only; cardio minutes added in Step 7b
+		const totalDuration = enrichedProfile.workoutDuration;
 
 		// Generate title and description
 		const title = `${workoutDay.workoutType} - ${selectedSplit.name}`;
@@ -285,81 +286,83 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 	//   boost option selected  → boostExtraCardioMinutes > 0 → add explicit cardio
 	//   aggressive / recommended / conservative pace → 0 → no cardio block added
 	//
-	// Equipment priority: treadmill > stationary bike > any cardio
+	// Equipment priority: stationary bike > treadmill/leverage > any bodyweight cardio
+	// Rotation: different exercise per day for variety (matches prefers_variety preference)
 	// ============================================================================
 
 	const boostMinutes = request.boostExtraCardioMinutes ?? 0;
 
 	if (boostMinutes > 0) {
-		// Find cardio exercises from the filtered pool
-		// Classify: bodyParts includes 'cardio' OR targetMuscles includes 'cardiovascular system'
-		// OR name matches treadmill / stationary bike
+		// Build cardio pool: bodyParts='cardio' OR target='cardiovascular system'
 		const cardioPool = exercises.filter((ex) => {
-			const nameLower = ex.name.toLowerCase();
 			const bodyPartsLower = ex.bodyParts.map((b) => b.toLowerCase());
 			const musclesLower = ex.targetMuscles.map((m) => m.toLowerCase());
 			return (
 				bodyPartsLower.includes('cardio') ||
-				musclesLower.includes('cardiovascular system') ||
-				nameLower.includes('treadmill') ||
-				nameLower.includes('stationary bike') ||
-				nameLower.includes('elliptical') ||
-				nameLower.includes('rowing machine')
+				musclesLower.includes('cardiovascular system')
 			);
 		});
 
-		// Equipment preference order: treadmill → stationary bike → elliptical → any cardio
-		const preferredKeywords = ['treadmill', 'stationary bike', 'elliptical', 'rowing machine'];
-		let primaryCardio = cardioPool[0]; // fallback to first cardio
-		for (const keyword of preferredKeywords) {
-			const match = cardioPool.find((ex) => ex.name.toLowerCase().includes(keyword));
-			if (match) {
-				primaryCardio = match;
-				break;
-			}
-		}
+		// Sort pool: machine-based first (stationary bike, then leverage machine), then bodyweight
+		const machinePriority = (ex: typeof cardioPool[0]) => {
+			const eq = ex.equipments.map((e) => e.toLowerCase());
+			if (eq.includes('stationary bike')) return 0;
+			if (eq.includes('leverage machine')) return 1;
+			return 2; // bodyweight cardio
+		};
+		const sortedCardioPool = [...cardioPool].sort((a, b) => machinePriority(a) - machinePriority(b));
 
-		if (primaryCardio) {
-			const cardioMinutesMain = Math.round(boostMinutes * 0.85); // ~25 min main
-			const cardioMinutesCooldown = boostMinutes - cardioMinutesMain;  // ~5 min cooldown
+		// Exclude 'walking on incline treadmill' (needs treadmill equipment — prefer bike for fat-burn)
+		// and ensure we have enough variety for rotation
+		const rotationPool = sortedCardioPool.length > 0 ? sortedCardioPool : cardioPool;
 
-			const cardioExercise: import('../utils/workoutStructure').WorkoutExercise = {
-				exerciseId: primaryCardio.exerciseId,
-				name: primaryCardio.name,
-				sets: 1,
-				reps: `${cardioMinutesMain} minutes`,
-				restSeconds: 0,
-				notes: `Fat-burn cardio (pace card boost). Steady-state moderate pace — keep heart rate in fat-burn zone throughout. This ${boostMinutes}-min cardio block creates the extra calorie deficit so you can eat at your BMR target.`,
-			};
+		if (rotationPool.length > 0) {
+			const cardioMinutesMain = Math.round(boostMinutes * 0.85); // e.g. 25 min main
+			const cardioMinutesCooldown = boostMinutes - cardioMinutesMain;  // e.g. 5 min cooldown
 
-			// Optional cooldown cardio (lower intensity last 5 min)
-			const cooldownCardioExercise: import('../utils/workoutStructure').WorkoutExercise = cardioMinutesCooldown > 0
-				? {
+			// Calorie rate: ~7 kcal/min for moderate steady-state, weight-scaled
+			const cardioCaloriesPerSession = Math.round(boostMinutes * 7 * ((enrichedProfile.weight ?? 75) / 75));
+
+			structuredWorkouts.forEach((workout, dayIndex) => {
+				// Rotate through pool per day — day 0 gets pool[0], day 1 gets pool[1], etc.
+				const primaryCardio = rotationPool[dayIndex % rotationPool.length];
+				// Cooldown always uses the same exercise (lower intensity variant)
+				const cooldownCardio = rotationPool[(dayIndex + 1) % rotationPool.length];
+
+				const cardioExercise: import('../utils/workoutStructure').WorkoutExercise = {
 					exerciseId: primaryCardio.exerciseId,
-					name: `${primaryCardio.name} — Easy Cooldown`,
+					name: primaryCardio.name,
 					sets: 1,
-					reps: `${cardioMinutesCooldown} minutes`,
+					reps: `${cardioMinutesMain} minutes`,
 					restSeconds: 0,
-					notes: 'Reduce speed gradually. Brings heart rate down before stretching.',
-				}
-				: cardioExercise; // won't be used if cooldown minutes = 0
+					notes: `🔥 Cardio boost (${boostMinutes}-min fat-burn block). Maintain a steady moderate pace — keep heart rate in fat-burn zone (60–70% max HR). This block creates the extra calorie deficit needed to hit your weight-loss target.`,
+				};
 
-			for (const workout of structuredWorkouts) {
 				workout.exercises.push(cardioExercise);
-				if (cardioMinutesCooldown > 0) {
-					workout.exercises.push(cooldownCardioExercise);
-				}
-				// Extend total duration and estimated calories for the cardio component
-				workout.totalDuration += boostMinutes;
-				// Cardio calorie estimate: ~7 kcal/min for moderate steady-state (conservative)
-				workout.estimatedCalories += Math.round(boostMinutes * 7 * ((enrichedProfile.weight ?? 75) / 75));
-			}
 
-			console.log(`[Rule-Based] Step 7b: Appended ${boostMinutes}-min cardio boost (${primaryCardio.name}) to all ${structuredWorkouts.length} workouts`);
+				if (cardioMinutesCooldown > 0) {
+					const cooldownExercise: import('../utils/workoutStructure').WorkoutExercise = {
+						exerciseId: cooldownCardio.exerciseId,
+						name: `${cooldownCardio.name} — Easy Cooldown`,
+						sets: 1,
+						reps: `${cardioMinutesCooldown} minutes`,
+						restSeconds: 0,
+						notes: 'Drop intensity to easy pace. Gradually bring heart rate down before your cooldown stretch.',
+					};
+					workout.exercises.push(cooldownExercise);
+				}
+
+				// Extend duration + calories for the cardio block
+				workout.totalDuration += boostMinutes;
+				workout.estimatedCalories += cardioCaloriesPerSession;
+			});
+
+			console.log(`[Rule-Based] Step 7b: Appended ${boostMinutes}-min rotating cardio boost to all ${structuredWorkouts.length} workouts (pool size: ${rotationPool.length})`);
 		} else {
 			console.warn('[Rule-Based] Step 7b: boostExtraCardioMinutes > 0 but no cardio exercises found in filtered pool — check equipment list');
 		}
 	}
+
 
 	// ============================================================================
 	// STEP 8: FORMAT AS WEEKLY WORKOUT PLAN (SAME SCHEMA AS LLM)

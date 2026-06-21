@@ -13,16 +13,18 @@ import {
   TextInput,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../services/supabase";
-import { ResponsiveTheme } from "../utils/constants";
+import { colors, spacing, borderRadius } from "../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../utils/responsive";
+import { AuroraBackground } from "../components/ui/aurora";
+import { AnimatedPressable } from "../components/ui/aurora";
+import { AuroraSpinner } from "../components/ui/aurora";
+import { EmptyState } from "../components/ui/aurora";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -157,7 +159,7 @@ const FormField: React.FC<FieldProps> = ({
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder}
-      placeholderTextColor={ResponsiveTheme.colors.textSecondary}
+      placeholderTextColor={colors.text.tertiary}
       keyboardType={keyboardType}
       autoCorrect={false}
       autoCapitalize={keyboardType === "default" ? "words" : "none"}
@@ -180,32 +182,32 @@ const fieldStyles = StyleSheet.create({
   label: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text.primary,
   },
   required: {
-    color: ResponsiveTheme.colors.errorLight,
+    color: colors.error.light,
   },
   unit: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.text.secondary,
   },
   input: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.glass.backgroundDark,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassBorder,
-    borderRadius: rbr(10),
+    borderColor: colors.glass.border,
+    borderRadius: rbr(borderRadius.lg),
     paddingHorizontal: rp(14),
     paddingVertical: rp(12),
     fontSize: rf(15),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text.primary,
   },
   inputError: {
-    borderColor: ResponsiveTheme.colors.errorLight,
+    borderColor: colors.error.light,
   },
   errorText: {
     marginTop: rp(4),
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.errorLight,
+    color: colors.error.light,
   },
 });
 
@@ -299,36 +301,26 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
   // ---- Success state ----
   if (submitted) {
     return (
-      <View style={styles.container}>
+      <AuroraBackground theme="space" animated intensity={0.3}>
         <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
           <View style={styles.successContainer}>
-            <View style={styles.successIconWrap}>
-              <Ionicons
-                name="checkmark-circle"
-                size={rf(64)}
-                color={ResponsiveTheme.colors.success}
-              />
-            </View>
-            <Text style={styles.successTitle}>Thank you!</Text>
-            <Text style={styles.successMessage}>
-              Your contribution will be reviewed and added to the database soon.
-            </Text>
-            <TouchableOpacity
-              style={styles.backBtn}
-              onPress={() => navigation.goBack()}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.backBtnText}>Go Back</Text>
-            </TouchableOpacity>
+            <EmptyState
+              icon="checkmark-circle"
+              iconColor={colors.success.DEFAULT}
+              title="Thank you!"
+              subtitle="Your contribution will be reviewed and added to the database soon."
+              ctaText="Go Back"
+              onCta={() => navigation.goBack()}
+            />
           </View>
         </SafeAreaView>
-      </View>
+      </AuroraBackground>
     );
   }
 
   // ---- Form state ----
   return (
-    <View style={styles.container}>
+    <AuroraBackground theme="space" animated intensity={0.3}>
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
         <KeyboardAvoidingView
           style={styles.flex}
@@ -337,23 +329,26 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
         >
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.headerBackBtn}
               onPress={() => navigation.goBack()}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              activeOpacity={0.7}
+              scaleValue={0.9}
+              springConfig="snappy"
+              hapticType="light"
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
             >
               <Ionicons
                 name="chevron-back"
                 size={rf(22)}
-                color={ResponsiveTheme.colors.text}
+                color={colors.text.primary}
               />
-            </TouchableOpacity>
+            </AnimatedPressable>
             <View style={styles.headerCenter}>
               <Ionicons
                 name="add-circle-outline"
                 size={rf(18)}
-                color={ResponsiveTheme.colors.primary}
+                color={colors.primary.DEFAULT}
               />
               <Text style={styles.headerTitle}>Add Missing Food</Text>
             </View>
@@ -371,7 +366,7 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
               <Ionicons
                 name="barcode-outline"
                 size={rf(16)}
-                color={ResponsiveTheme.colors.primary}
+                color={colors.primary.DEFAULT}
               />
               <View style={styles.barcodeBadge}>
                 <Text style={styles.barcodeBadgeLabel}>Barcode</Text>
@@ -391,7 +386,7 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
               <Ionicons
                 name="star-outline"
                 size={rf(13)}
-                color={ResponsiveTheme.colors.primary}
+                color={colors.primary.DEFAULT}
               />
               <Text style={styles.sectionTitle}>Required</Text>
             </View>
@@ -450,7 +445,7 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
               <Ionicons
                 name="information-circle-outline"
                 size={rf(13)}
-                color={ResponsiveTheme.colors.textSecondary}
+                color={colors.text.secondary}
               />
               <Text style={[styles.sectionTitle, styles.sectionTitleSecondary]}>
                 Optional
@@ -494,43 +489,44 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
                 <Ionicons
                   name="alert-circle-outline"
                   size={rf(16)}
-                  color={ResponsiveTheme.colors.errorLight}
+                  color={colors.error.light}
                 />
                 <Text style={styles.submitErrorText}>{submitError}</Text>
               </View>
             ) : null}
 
             {/* Submit button */}
-            <TouchableOpacity
+            <AnimatedPressable
               style={[styles.submitBtn, isSubmitting && styles.submitBtnDisabled]}
               onPress={handleSubmit}
               disabled={isSubmitting}
-              activeOpacity={0.85}
+              scaleValue={0.97}
+              springConfig="smooth"
+              hapticType="medium"
+              accessibilityRole="button"
+              accessibilityLabel="Submit nutrition data"
             >
               {isSubmitting ? (
-                <ActivityIndicator
-                  size="small"
-                  color={ResponsiveTheme.colors.white}
-                />
+                <AuroraSpinner size="sm" theme="white" />
               ) : (
                 <>
                   <Ionicons
                     name="cloud-upload-outline"
                     size={rf(18)}
-                    color={ResponsiveTheme.colors.white}
+                    color={colors.text.primary}
                   />
                   <Text style={styles.submitBtnText}>
                     Submit Nutrition Data
                   </Text>
                 </>
               )}
-            </TouchableOpacity>
+            </AnimatedPressable>
 
             <View style={styles.bottomSpacing} />
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </View>
+    </AuroraBackground>
   );
 };
 
@@ -539,10 +535,6 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
-  },
   safeArea: {
     flex: 1,
   },
@@ -554,16 +546,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(12),
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.glassBorder,
+    borderBottomColor: colors.glass.border,
   },
   headerBackBtn: {
     width: rw(40),
     height: rw(40),
-    borderRadius: rbr(20),
-    backgroundColor: ResponsiveTheme.colors.glassBorder,
+    borderRadius: rbr(borderRadius.full),
+    backgroundColor: colors.glass.background,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -575,7 +567,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text.primary,
   },
   headerSpacer: {
     width: rw(40),
@@ -585,7 +577,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingHorizontal: rp(spacing.md),
     paddingTop: rp(20),
     paddingBottom: rp(40),
   },
@@ -594,10 +586,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: rp(10),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    backgroundColor: colors.background.secondary,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.primary}30`,
-    borderRadius: rbr(12),
+    borderColor: `${colors.primary.DEFAULT}30`,
+    borderRadius: rbr(borderRadius.xl),
     paddingHorizontal: rp(14),
     paddingVertical: rp(12),
     marginBottom: rp(16),
@@ -608,7 +600,7 @@ const styles = StyleSheet.create({
   barcodeBadgeLabel: {
     fontSize: rf(11),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary.DEFAULT,
     textTransform: "uppercase",
     letterSpacing: 0.8,
     marginBottom: rp(2),
@@ -616,12 +608,12 @@ const styles = StyleSheet.create({
   barcodeBadgeValue: {
     fontSize: rf(15),
     fontWeight: "500",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text.primary,
     fontVariant: ["tabular-nums"],
   },
   hint: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.text.secondary,
     lineHeight: rf(19),
     marginBottom: rp(20),
   },
@@ -636,29 +628,29 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: rf(11),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary.DEFAULT,
     textTransform: "uppercase",
     letterSpacing: 1.2,
   },
   sectionTitleSecondary: {
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.text.secondary,
   },
   // Submit error
   submitErrorBox: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: rp(8),
-    backgroundColor: `${ResponsiveTheme.colors.errorLight}15`,
+    backgroundColor: `${colors.error.light}15`,
     borderWidth: 1,
-    borderColor: `${ResponsiveTheme.colors.errorLight}40`,
-    borderRadius: rbr(10),
+    borderColor: `${colors.error.light}40`,
+    borderRadius: rbr(borderRadius.lg),
     padding: rp(12),
     marginBottom: rp(16),
   },
   submitErrorText: {
     flex: 1,
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.errorLight,
+    color: colors.error.light,
     lineHeight: rf(18),
   },
   // Submit button
@@ -667,8 +659,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: rp(8),
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderRadius: rbr(14),
+    backgroundColor: colors.primary.DEFAULT,
+    borderRadius: rbr(borderRadius.xxl),
     paddingVertical: rp(16),
     marginTop: rp(8),
   },
@@ -678,7 +670,7 @@ const styles = StyleSheet.create({
   submitBtnText: {
     fontSize: rf(16),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    color: colors.text.primary,
   },
   bottomSpacing: {
     height: rh(40),
@@ -688,35 +680,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: ResponsiveTheme.spacing.xl,
-  },
-  successIconWrap: {
-    marginBottom: rp(20),
-  },
-  successTitle: {
-    fontSize: rf(28),
-    fontWeight: "800",
-    color: ResponsiveTheme.colors.text,
-    marginBottom: rp(12),
-    textAlign: "center",
-  },
-  successMessage: {
-    fontSize: rf(15),
-    color: ResponsiveTheme.colors.textSecondary,
-    textAlign: "center",
-    lineHeight: rf(22),
-    marginBottom: rp(32),
-  },
-  backBtn: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderRadius: rbr(14),
-    paddingVertical: rp(14),
-    paddingHorizontal: rp(40),
-  },
-  backBtnText: {
-    fontSize: rf(16),
-    fontWeight: "700",
-    color: ResponsiveTheme.colors.white,
+    paddingHorizontal: rp(spacing.xl),
   },
 });
 

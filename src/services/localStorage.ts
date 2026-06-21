@@ -64,7 +64,36 @@ const CryptoUtils = {
 
   // NOTE: This is a placeholder encryption that does NOT provide real security.
   // Data is stored as-is (no actual encryption). This exists for API compatibility only.
-  // TODO: Implement real encryption before storing sensitive user data.
+  //
+  // RISK ASSESSMENT (P2 — downgrade from the original "blocker" framing):
+  // As of the audit, EnhancedLocalStorageService is used ONLY for:
+  //   - Migration history metadata (counts/timestamps — no PII)
+  //   - Migration backups (full user data export: workouts, meals, body
+  //     measurements, onboarding profile) — created transiently during
+  //     schema migrations and cleaned up after.
+  //   - Backup/Recovery exports (user-initiated data backups)
+  //   - Track-A integration state (userId, email, sessionId for a 3rd-party
+  //     fitness service — low-sensitivity, not Supabase tokens)
+  //   - Storage quota metadata
+  //
+  // NO Supabase access/refresh tokens, passwords, or JWTs are stored here —
+  // the canonical auth session lives in Supabase's SecureStore adapter
+  // (see src/services/supabase.ts persistSession:true and auth.ts AUTH_USER_CACHE_KEY
+  // which caches only the display AuthUser).
+  //
+  // The migration backups DO contain health/fitness PII (body measurements,
+  // meal logs, workout history) while they exist, so the placeholder crypto
+  // is not ideal — but:
+  //   1. Backups are short-lived (deleted post-migration in cleanupBackup).
+  //   2. AsyncStorage on iOS/Android is already sandboxed per-app.
+  //   3. A real fix requires a vetted crypto dep (expo-crypto AES / a pure-JS
+  //      AES-GCM lib) plus a key-management strategy (OS Keychain for the
+  //      encryption key, not AsyncStorage) — out of scope for this pass.
+  //
+  // Verdict: P2 (not P1). The data is low-sensitivity and short-lived;
+  // genuinely sensitive auth tokens are NOT stored here. A future hardening
+  // task should swap CryptoUtils.AES for a real AES-GCM implementation and
+  // store the encryption key in the OS keychain.
   // AES encryption (simplified for web)
   AES: {
     encrypt: (data: string, key: string, options?: any) => {

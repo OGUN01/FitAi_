@@ -19,7 +19,6 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -31,6 +30,7 @@ import Animated, {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
+import { AuroraSpinner } from "../../../../components/ui/aurora/AuroraSpinner";
 import { ResponsiveTheme } from "../../../../utils/constants";
 import { rf, rp, rbr, rw, rh } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
@@ -177,7 +177,7 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                     ]}
                   >
                     {isSaving ? (
-                      <ActivityIndicator color={ResponsiveTheme.colors.white} size="small" />
+                      <AuroraSpinner customSize={rf(16)} theme="white" />
                     ) : (
                       <>
                         <Ionicons

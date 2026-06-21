@@ -131,13 +131,14 @@ jest.mock("@/services/progressData", () => ({
   },
 }));
 
-jest.mock("@/stores/profileStore", () => ({
-  useProfileStore: {
-    getState: () => ({
-      updateBodyAnalysis: jest.fn(),
-    }),
-  },
-}));
+jest.mock("@/stores/profileStore", () => {
+  const state = {
+    updateBodyAnalysis: jest.fn(),
+  };
+  const fn = jest.fn(() => state);
+  (fn as any).getState = jest.fn(() => state);
+  return { useProfileStore: fn };
+});
 
 jest.mock("@/stores/analyticsStore", () => ({
   useAnalyticsStore: {
@@ -271,9 +272,12 @@ describe("onboarding and analytics touch targets", () => {
     expect(
       StyleSheet.flatten(analytics.getByLabelText("Progress").props.style),
     ).toMatchObject({ width: 44, height: 44 });
-    expect(
-      StyleSheet.flatten(analytics.getByLabelText("AI Insights").props.style),
-    ).toMatchObject({ width: 44, height: 44 });
+    // The "AI Insights" CTA was intentionally removed from AnalyticsHeader — the
+    // AI insights feature is not available yet, so rendering a fake touchable
+    // CTA would mislead users. The non-interactive "AI Soon" badge has no
+    // touch target to assert. See AnalyticsHeader.tsx (badge with
+    // accessibilityLabel "AI insights coming soon").
+    expect(analytics.queryByLabelText("AI Insights")).toBeNull();
     expect(
       StyleSheet.flatten(paywall.getByLabelText("Close paywall").props.style),
     ).toMatchObject({ width: 44, height: 44 });

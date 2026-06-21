@@ -13,6 +13,11 @@ try {
     cryptoUUID = crypto.randomUUID.bind(crypto);
   }
 } catch (error) {
+  // P3-19: log before falling back. A silent failure here hides that the
+  // crypto-strong path is unavailable, and the Math.random fallback below is
+  // NOT cryptographically strong → PK collision risk on meal_logs /
+  // workout_sessions / weekly_meal_plans primary keys.
+  console.error("[uuid] crypto.randomUUID unavailable, will use fallback:", error);
 }
 
 // Expo UUID fallback
@@ -23,6 +28,8 @@ try {
     expoUUID = uuid.v4;
   }
 } catch (error) {
+  // P3-19: log so the Expo fallback path's unavailability is visible.
+  console.error("[uuid] expo-modules-core UUID unavailable:", error);
 }
 
 /**
@@ -35,6 +42,8 @@ export const generateUUID = (): string => {
     try {
       return cryptoUUID();
     } catch (error) {
+      // P3-19: log before falling back to non-crypto-strong Math.random.
+      console.error("[uuid] crypto.randomUUID threw, falling back:", error);
     }
   }
 
@@ -43,10 +52,15 @@ export const generateUUID = (): string => {
     try {
       return expoUUID();
     } catch (error) {
+      // P3-19: log before falling back to non-crypto-strong Math.random.
+      console.error("[uuid] expo UUID threw, falling back:", error);
     }
   }
 
-  // Manual fallback implementation (RFC 4122 v4 compliant)
+  // Manual fallback implementation (RFC 4122 v4 compliant).
+  // NOTE: uses Math.random — not cryptographically strong. Logged above when
+  // we land here so PK collision risk on meal_logs / workout_sessions /
+  // weekly_meal_plans is visible in dev.
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     const v = c === "x" ? r : (r & 0x3) | 0x8;

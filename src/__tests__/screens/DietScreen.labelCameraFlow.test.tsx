@@ -61,6 +61,15 @@ jest.mock("../../stores", () => ({
       dailyMeals: [],
       setWeeklyMealPlan: jest.fn(),
       saveWeeklyMealPlan: jest.fn(),
+      // DietScreen calls useNutritionStore((s) => s.getConsumedNutritionForDate)(dateKey)
+      // — the selector returns this function, which is then invoked. Must be callable.
+      getConsumedNutritionForDate: jest.fn(() => ({
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        meals: [],
+      })),
     };
     return selector ? selector(state) : state;
   }),
@@ -107,16 +116,18 @@ jest.mock("../../stores/userStore", () => ({
   }),
 }));
 
-jest.mock("../../stores/profileStore", () => ({
-  useProfileStore: jest.fn((selector?: (state: any) => unknown) => {
-    const state = {
-      personalInfo: null,
-      workoutPreferences: null,
-      dietPreferences: null,
-    };
-    return selector ? selector(state) : state;
-  }),
-}));
+jest.mock("../../stores/profileStore", () => {
+  const state = {
+    personalInfo: null,
+    workoutPreferences: null,
+    dietPreferences: null,
+  };
+  const fn = jest.fn((selector?: (state: any) => unknown) =>
+    selector ? selector(state) : state,
+  );
+  (fn as any).getState = jest.fn(() => state);
+  return { useProfileStore: fn };
+});
 
 jest.mock("../../hooks/useMealPlanning", () => ({
   useMealPlanning: () => ({

@@ -19,6 +19,13 @@ interface SuggestedWorkoutsProps {
   onStartWorkout: (workout: ExtraWorkoutTemplate) => void;
   onResumeWorkout: (workout: ExtraWorkoutTemplate) => void;
   getTemplateStatus: (workout: ExtraWorkoutTemplate) => 'idle' | 'in_progress' | 'completed';
+  /**
+   * P2-cal-ssot: returns the ACTUAL calories burned for a completed extra
+   * workout today, or null. When provided and non-null, overrides
+   * workout.estimatedCalories (the pre-generation display-only estimate).
+   * CLAUDE.md #9: actual calories come from completedSession.caloriesBurned.
+   */
+  getCompletedCalories?: (workout: ExtraWorkoutTemplate) => number | null;
   isGenerating?: boolean;
 }
 
@@ -76,6 +83,7 @@ export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
   onStartWorkout,
   onResumeWorkout,
   getTemplateStatus,
+  getCompletedCalories,
   isGenerating,
 }) => {
   if (workouts.length === 0) return null;
@@ -106,6 +114,18 @@ export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
           const categoryConfig = getCategoryConfig(workout.category);
           const difficultyConfig = getDifficultyConfig(workout.difficulty);
           const status = getTemplateStatus(workout);
+
+          // P2-cal-ssot: prefer ACTUAL burned calories over the pre-generation
+          // estimate when the workout is completed (CLAUDE.md #9). Falls back
+          // to estimatedCalories for idle / in_progress / unknown.
+          const actualBurned =
+            status === 'completed' && getCompletedCalories
+              ? getCompletedCalories(workout)
+              : null;
+          const displayCalories =
+            actualBurned !== null
+              ? actualBurned
+              : workout.estimatedCalories || 0;
 
           const handlePress = () => {
             if (status === 'in_progress') onResumeWorkout(workout);
@@ -163,7 +183,7 @@ export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
                       color={ResponsiveTheme.colors.textSecondary}
                     />
                     <Text style={styles.metaText}>
-                      {workout.estimatedCalories || 0} cal
+                      {displayCalories} cal
                     </Text>
                   </View>
                 </View>

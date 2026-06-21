@@ -4,7 +4,16 @@
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Platform, Animated, InteractionManager } from "react-native";
+import {
+  Platform,
+  InteractionManager,
+  AppState,
+  AppStateStatus,
+} from "react-native";
+import {
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { haptics } from "../utils/haptics";
 import { useDashboardIntegration } from "../utils/integration";
 import { useAuth } from "./useAuth";
@@ -89,7 +98,6 @@ export const useHomeLogic = () => {
   const waterIntakeML = useHydrationStore((s) => s.waterIntakeML);
   const waterGoal = useHydrationStore((s) => s.dailyGoalML);
   const hydrationAddWater = useHydrationStore((s) => s.addWater);
-  const setDailyGoalFromMetrics = useHydrationStore((s) => s.setDailyGoalFromMetrics);
   const checkAndResetIfNewDay = useHydrationStore(
     (s) => s.checkAndResetIfNewDay,
   );
@@ -99,15 +107,11 @@ export const useHomeLogic = () => {
 
   const { metrics: calculatedMetrics } = useCalculatedMetrics();
 
-  // Bridge: once calculatedMetrics are available, seed hydrationStore.dailyGoalML
-  // if it hasn't been set yet (null = not user-customised). This is the SSOT link
-  // documented in hydrationStore.ts: "Must be set from calculatedMetrics".
-  useEffect(() => {
-    const waterML = calculatedMetrics?.dailyWaterML;
-    if (waterML && waterML > 0) {
-      setDailyGoalFromMetrics(waterML);
-    }
-  }, [calculatedMetrics?.dailyWaterML, setDailyGoalFromMetrics]);
+  // P1-10 (H22): Hydration goal is set EXCLUSIVELY in useNutritionTracking
+  // (the SSOT). Previously this hook ALSO called setDailyGoalFromMetrics, which
+  // raced with useNutritionTracking's setHydrationGoal() — if this hook's
+  // effect ran after a user customized their goal, it would overwrite the
+  // custom value and lock out auto-updates (isGoalUserSet=true). Removed.
 
   const completedSessions = useFitnessStore((s) => s.completedSessions);
   const workoutProgress = useFitnessStore((s) => s.workoutProgress);
@@ -125,7 +129,8 @@ export const useHomeLogic = () => {
     [mealProgress, dailyMeals],
   );
 
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  // Entrance fade — Reanimated shared value (replaces legacy Animated.Value).
+  const fadeAnim = useSharedValue(0);
   const isLoadingDataRef = useRef(false);
   // Keep a ref to the current user id so the subscription callback always reads
   // the latest value without needing to re-subscribe when user changes.
@@ -165,6 +170,25 @@ export const useHomeLogic = () => {
     checkAndResetProgressIfNewDay,
     syncHydrationWithSupabase,
   ]);
+
+  // Wave 5A: populate metricsHistory (30 days) on mount so the new
+  // HealthTrendChart / VitalsCard read-paths on Home have data. Fire-and-
+  // forget — failure here doesn't break the dashboard, just leaves the
+  // trend chart in its empty-state (handled by HealthTrendChart). Reads
+  // the store action directly via getState() to avoid subscribing this
+  // effect to the action reference (which would re-trigger on any store
+  // update). Empty dep array = runs once on mount.
+  useEffect(() => {
+    useHealthDataStore
+      .getState()
+      .loadHealthMetricsHistory(30)
+      .catch((err) => {
+        console.error(
+          "[useHomeLogic] Failed to load health metrics history:",
+          err,
+        );
+      });
+  }, []);
 
   useEffect(() => {
     if (!user?.id || achievementsInitialized) {
@@ -213,11 +237,7 @@ export const useHomeLogic = () => {
       loadData();
     });
 
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 250,
-      useNativeDriver: true,
-    }).start();
+    fadeAnim.value = withTiming(1, { duration: 250 });
     // Completion events update the stores; useMemo consumers re-render automatically.
     const unsubscribe = completionTrackingService.subscribe(() => {
       if (!isLoadingDataRef.current) {
@@ -234,6 +254,8 @@ export const useHomeLogic = () => {
       unsubscribe();
     };
   }, [fadeAnim, user?.id]);
+  // NOTE: fadeAnim is a Reanimated SharedValue (stable across renders); kept
+  // in deps only to satisfy exhaustive-deps lint without functional change.
 
   useEffect(() => {
     const analyticsTask = InteractionManager.runAfterInteractions(() => {
@@ -294,6 +316,64 @@ export const useHomeLogic = () => {
     syncHealthData,
     setHistoryData,
     user?.id,
+  ]);
+
+  // Android-only: resume-sync via AppState. Mirrors the iOS HealthKit pattern
+  // in useHealthKitSync.ts but for Health Connect. When the user returns to
+  // the app after using a watch/health app, refresh HC data — but debounce so
+  // a quick app-switch doesn't hammer the sync. Gate: HC authorized + enabled.
+  // SEPARATE useEffect (do not merge with the mount/auto-sync effect above —
+  // another agent may be editing this file for history-load).
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+    if (!isHealthConnectAuthorized) return;
+    if (!healthSettings.healthConnectEnabled) return;
+
+    const RESUME_SYNC_DEBOUNCE_MS = 60_000;
+
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState !== "active") return;
+
+      try {
+        const store = useHealthDataStore.getState();
+        const last = store.lastSyncTime;
+        const now = Date.now();
+        if (last) {
+          const lastMs = new Date(last).getTime();
+          if (!isNaN(lastMs) && now - lastMs < RESUME_SYNC_DEBOUNCE_MS) {
+            // Synced recently — skip to avoid duplicate work.
+            return;
+          }
+        }
+        // Fire and forget; the store handles its own loading/error state.
+        // Errors are logged inside syncFromHealthConnect (no silent swallow).
+        store.syncFromHealthConnect(7).catch((err) => {
+          console.error(
+            "[useHomeLogic] HC resume-sync failed:",
+            err instanceof Error ? err.message : String(err),
+          );
+        });
+      } catch (err) {
+        console.error(
+          "[useHomeLogic] HC resume-sync handler error:",
+          err instanceof Error ? err.message : String(err),
+        );
+      }
+    };
+
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange,
+    );
+    return () => {
+      subscription?.remove();
+    };
+    // hcLastSyncTime intentionally NOT in deps: reading it would re-subscribe
+    // on every sync (it updates after each sync). We read the latest value
+    // via getState() inside the handler instead — see CLAUDE.md #10.
+  }, [
+    isHealthConnectAuthorized,
+    healthSettings.healthConnectEnabled,
   ]);
 
   // Memoized values

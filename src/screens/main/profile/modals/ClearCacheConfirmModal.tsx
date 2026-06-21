@@ -12,13 +12,13 @@ import {
   StyleSheet,
   Modal,
   Pressable,
-  ActivityIndicator,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
+import { AuroraSpinner } from "../../../../components/ui/aurora/AuroraSpinner";
 import { ResponsiveTheme } from "../../../../utils/constants";
 import { rf, rp, rbr } from "../../../../utils/responsive";
 import { gradients, toLinearGradientProps } from "../../../../theme/gradients";
@@ -105,7 +105,7 @@ export const ClearCacheConfirmModal: React.FC<ClearCacheConfirmModalProps> = ({
                       style={styles.confirmGradient}
                     >
                       {isClearing ? (
-                        <ActivityIndicator color={ResponsiveTheme.colors.white} size="small" />
+                        <AuroraSpinner customSize={rf(16)} theme="white" />
                       ) : (
                         <Text style={styles.confirmButtonText}>
                           Clear Cache

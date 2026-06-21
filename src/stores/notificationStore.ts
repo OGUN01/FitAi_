@@ -35,11 +35,32 @@ interface NotificationState {
   getScheduledCount: () => Promise<number>;
 }
 
+// P1-hyd-1 SSOT: hydrationStore.dailyGoalML is the SINGLE source of truth for
+// the water goal. This default is only a fallback used before hydrationStore
+// has computed a goal from the user's profile (weight/activity). Once
+// hydrationStore has a real dailyGoalML, it is mirrored here via
+// updateWaterConfig (see below) and into the reminder schedule. The literal
+// `4` is kept only as the pre-onboarding fallback so a brand-new install still
+// shows a sensible value before any profile metrics exist.
+const getHydrationGoalLiters = (): number => {
+  try {
+    // Lazy require to avoid a circular import at module load time.
+    const hydrationStore = require("./hydrationStore");
+    const goalML = hydrationStore.useHydrationStore.getState().dailyGoalML;
+    if (goalML && goalML > 0) {
+      return Math.round((goalML / 1000) * 10) / 10; // ML → L, 1 decimal
+    }
+  } catch {
+    // hydrationStore not yet available — fall through to the literal default.
+  }
+  return 4;
+};
+
 // Default preferences - defined at module level without native API calls
 const getDefaultPreferences = (): NotificationPreferences => ({
   water: {
     enabled: true,
-    dailyGoalLiters: 4,
+    dailyGoalLiters: getHydrationGoalLiters(),
     wakeUpTime: "07:00",
     sleepTime: "23:00",
   },
@@ -117,6 +138,34 @@ export const useNotificationStore = create<NotificationState>()(
         const notificationService = getNotificationService();
         await notificationService.savePreferences(updatedPrefs);
         await notificationService.scheduleWaterReminders(updatedPrefs.water);
+
+        // P1-hyd-1 SSOT: when the user edits the water goal (e.g. in
+        // WaterReminderEditModal → updateWaterConfig({ dailyGoalLiters })),
+        // mirror it into hydrationStore.dailyGoalML so the water PROGRESS RING
+        // (which reads hydrationStore.dailyGoalML) and the water REMINDERS
+        // (which read preferences.water.dailyGoalLiters) stay in sync. Until
+        // the broader notification refactor routes reminders through
+        // hydrationStore directly, this mirror keeps the two from diverging.
+        if (config.dailyGoalLiters !== undefined && config.dailyGoalLiters > 0) {
+          try {
+            const hydrationStore = require("./hydrationStore");
+            const goalML = Math.round(config.dailyGoalLiters * 1000);
+            // Skip if hydrationStore already holds this exact value — avoids a
+            // redundant setDailyGoal (which would flip isGoalUserSet=true on a
+            // fresh boot where hydrationStore just seeded from metrics) and
+            // prevents a mirror ping-pong.
+            const currentML =
+              hydrationStore.useHydrationStore.getState().dailyGoalML;
+            if (currentML !== goalML) {
+              hydrationStore.useHydrationStore.getState().setDailyGoal(goalML);
+            }
+          } catch (err) {
+            console.error(
+              "[notificationStore] Failed to mirror water goal to hydrationStore:",
+              err,
+            );
+          }
+        }
       },
 
       updateWorkoutConfig: async (config) => {

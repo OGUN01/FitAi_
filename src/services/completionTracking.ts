@@ -2,6 +2,7 @@ import { useFitnessStore } from "../stores/fitnessStore";
 import { useNutritionStore } from "../stores/nutritionStore";
 import { useProfileStore } from "../stores/profileStore";
 import { useAchievementStore } from "../stores/achievementStore";
+import { useHealthDataStore } from "../stores/healthDataStore";
 import { DayWorkout, DayMeal, WorkoutSet } from "../ai";
 import crudOperations from "./crudOperations";
 import { MealLog, SyncStatus } from "../types/localData";
@@ -19,6 +20,7 @@ import { getCurrentWeekStart, getWeekStartForDate } from "../utils/weekUtils";
 import { getWorkoutDayKey, getWorkoutSlotKey } from "../utils/workoutIdentity";
 import { generateUUID } from "../utils/uuid";
 import { MealLogProvenance } from "../types/nutritionLogging";
+import { offlineService } from "./offline";
 
 export interface CompletionEvent {
   id: string;
@@ -168,11 +170,19 @@ class CompletionTrackingService {
         const completedExercises =
           sessionData?.stats?.exercises || workout.exercises || [];
 
-        // Update workout progress to 100%, persisting calories in the store
+        // Update workout progress to 100%, persisting calories in the store.
+        // P1-cal-zero FIX: previously `actualCaloriesBurned || undefined`
+        // collapsed a legitimately-computed 0 (e.g. no weight available per
+        // CLAUDE.md #8 — surface as 0, never a fake fallback) into `undefined`,
+        // which the store treats as "not computed" and skips writing. Passing
+        // the number directly lets 0 be recorded explicitly so downstream
+        // readers can distinguish "computed zero" from "never computed".
+        // calculateActualCalories always returns a number here (0 when weight
+        // is unavailable — it logs a warning internally).
         await fitnessStore.completeWorkout(
           workoutId,
           sessionData?.sessionId,
-          actualCaloriesBurned || undefined,
+          actualCaloriesBurned,
         );
 
         // Will be set to the Supabase-generated row ID after a successful insert.
@@ -182,31 +192,43 @@ class CompletionTrackingService {
 
         // Sync workout completion to Supabase (only for logged-in users)
         if (userId) {
-          try {
-            const completionPayload = {
-              user_id: userId,
-              workout_id: workoutId,
-              workout_plan_id: workoutSourcePlan?.databaseId || null,
-              planned_day_key: getWorkoutDayKey(workout),
-              plan_slot_key: getWorkoutSlotKey(
-                workout,
-                workoutSourcePlan || undefined,
-              ),
-              workout_name: workout.title,
-              workout_type: workout.category || "general",
-              is_extra: false,
-              duration: completedDurationMinutes || null, // H18: canonical column for reads
-              total_duration_minutes: completedDurationMinutes || null, // kept for backward compat
-              calories_burned: actualCaloriesBurned,
-              exercises_completed: completedExercises,
-              started_at: sessionData?.startedAt || completedAt,
-              completed_at: completedAt,
-              is_completed: true,
-              rating: sessionData?.rating || null, // H18: canonical — read by dataTransformation.ts
-              notes:
-                sessionData?.notes || `Weekly workout plan: ${workout.title}`,
-            };
+          // BUG-4 fix: hoist completionPayload so it is visible to the catch
+          // block below. On any Supabase failure (error response OR thrown
+          // exception) we enqueue the same payload via offlineService so the
+          // OfflineService retries the insert on reconnect. Without this, an
+          // offline workout completion was lost from Supabase — the local store
+          // showed it, but the cloud never got it → desync. Pattern matches
+          // crudOperations.ts (workout_sessions queue on sync failure).
+          const completionPayload = {
+            user_id: userId,
+            workout_id: workoutId,
+            workout_plan_id: workoutSourcePlan?.databaseId || null,
+            planned_day_key: getWorkoutDayKey(workout),
+            plan_slot_key: getWorkoutSlotKey(
+              workout,
+              workoutSourcePlan || undefined,
+            ),
+            workout_name: workout.title,
+            workout_type: workout.category || "general",
+            is_extra: false,
+            // P0-5: total_duration_minutes is the CANONICAL column (minutes).
+            // The legacy `duration` column is documented as seconds in the
+            // migration; we stop writing minutes into it here to avoid the
+            // units mix-up. `duration` is left untouched (defaults to 0 for
+            // new rows) — the read path prefers total_duration_minutes and
+            // only falls back to `duration` for old rows.
+            total_duration_minutes: completedDurationMinutes || null,
+            calories_burned: actualCaloriesBurned,
+            exercises_completed: completedExercises,
+            started_at: sessionData?.startedAt || completedAt,
+            completed_at: completedAt,
+            is_completed: true,
+            rating: sessionData?.rating || null, // H18: canonical — read by dataTransformation.ts
+            notes:
+              sessionData?.notes || `Weekly workout plan: ${workout.title}`,
+          };
 
+          try {
             let supabaseResult;
             if (sessionData?.sessionId) {
               supabaseResult = await supabase
@@ -237,6 +259,26 @@ class CompletionTrackingService {
                 `⚠️ Supabase workout_sessions insert error:`,
                 supabaseResult.error,
               );
+              // BUG-4 fix: queue for offline retry so the session reaches
+              // Supabase on reconnect. Payload is snake_case (matches the
+              // insert above) and passes OfflineService's workout_sessions
+              // CREATE purge checks (no camelCase fields, calories_burned is
+              // a number, rating is null-or-positive). Wrapped per CLAUDE.md
+              // #5 — no silent failures.
+              try {
+                await offlineService.queueAction({
+                  type: "CREATE",
+                  table: "workout_sessions",
+                  data: completionPayload,
+                  userId,
+                  maxRetries: 3,
+                });
+              } catch (queueError) {
+                console.error(
+                  "⚠️ Failed to queue workout_sessions for offline retry:",
+                  queueError,
+                );
+              }
             } else {
               // Use the Supabase-generated row ID as sessionId so loadData() dedup works
               if (supabaseResult.data?.id) {
@@ -287,6 +329,24 @@ class CompletionTrackingService {
               `❌ Failed to sync workout to Supabase:`,
               supabaseError,
             );
+            // BUG-4 fix: thrown exception (e.g. network failure while offline)
+            // — same queue path as the error-response branch above so the
+            // session is retried on reconnect. The local addCompletedSession
+            // below still runs so the UI shows completion immediately.
+            try {
+              await offlineService.queueAction({
+                type: "CREATE",
+                table: "workout_sessions",
+                data: completionPayload,
+                userId,
+                maxRetries: 3,
+              });
+            } catch (queueError) {
+              console.error(
+                "⚠️ Failed to queue workout_sessions for offline retry:",
+                queueError,
+              );
+            }
             // Continue - local storage succeeded
           }
         }
@@ -348,6 +408,40 @@ class CompletionTrackingService {
         };
 
         this.emit(event);
+
+        // B-2: Write the completed workout back to Health Connect (Android)
+        // so other health apps see it. Mirrors the iOS HealthKit path
+        // (healthDataStore.exportWorkoutToHealthKit). Fire-and-forget: failure
+        // here must NOT block the completion flow or surface to the user. The
+        // store action self-gates on authorization and logs errors per
+        // CLAUDE.md #5 (no silent failures). runBackgroundSyncOnce /
+        // syncFromHealthConnect will pick the record up on the next sync
+        // regardless, so a missed write is recoverable.
+        const workoutStartTime =
+          sessionData?.startedAt || completedAt;
+        const startDate = new Date(workoutStartTime);
+        const endDate = new Date(completedAt);
+        // Only attempt the write if the session actually has a duration;
+        // a zero-duration workout has nothing meaningful to export.
+        if (endDate.getTime() > startDate.getTime()) {
+          useHealthDataStore
+            .getState()
+            .exportWorkoutToHealthConnect({
+              type: workout.category || "general",
+              startDate,
+              endDate,
+              calories: actualCaloriesBurned,
+              title: workout.title,
+            })
+            .catch((hcError) => {
+              // Already logged inside the action; catch prevents unhandled
+              // promise rejection from bubbling into the completion flow.
+              console.error(
+                "[completionTracking] Health Connect write-back failed:",
+                hcError,
+              );
+            });
+        }
 
         return true;
       }
@@ -460,6 +554,7 @@ class CompletionTrackingService {
                   },
                   notes: logData?.reviewNote || null,
                   logged_at: completedAt,
+                  is_completed: true,
                 })
                 .select("id")
                 .single();
@@ -619,14 +714,33 @@ class CompletionTrackingService {
           data: {
             workout,
             exerciseData,
+            // P1-8 fix: partial calories now use the SAME per-exercise MET calc
+            // as the final completion (calculateWorkoutCalories), prorated by
+            // progress. Previously this used estimatedCalories*progress (or a
+            // 6*weight*dur heuristic), which was discontinuous with the final
+            // MET-based number at 100%. Now at progress=100 the partial equals
+            // the final, so the displayed value ramps smoothly to the real
+            // total instead of jumping. Rule 8: no hardcoded fallback — returns
+            // 0 if weight is unavailable (calculateWorkoutCalories logs a warn).
             partialCalories: (() => {
               const trackedW = weightTrackingService.getCurrentWeight();
               const fallbackW = useProfileStore.getState().bodyAnalysis?.current_weight_kg;
               const resolvedW = (trackedW && trackedW > 0) ? trackedW : (fallbackW ?? 0);
-              const base = workout.estimatedCalories && workout.estimatedCalories > 0
-                ? workout.estimatedCalories
-                : Math.round(6 * resolvedW * ((workout.duration || 45) / 60));
-              return Math.round(base * (progress / 100));
+              if (!resolvedW || resolvedW <= 0 || !workout.exercises?.length) {
+                return 0;
+              }
+              const inputs: ExerciseCalorieInput[] = workout.exercises.map(
+                (ex: any) => ({
+                  exerciseId: ex.exerciseId || ex.id,
+                  name: ex.exerciseName || ex.name,
+                  sets: ex.sets,
+                  reps: ex.reps,
+                  duration: ex.duration,
+                  restTime: ex.restTime,
+                }),
+              );
+              const full = calculateWorkoutCalories(inputs, resolvedW).totalCalories;
+              return Math.round(full * (progress / 100));
             })(),
           },
         };
@@ -855,9 +969,111 @@ class CompletionTrackingService {
     }
   }
 
+  /**
+   * Persist partial workout progress on exit (P0-1 + P3-19).
+   *
+   * Called by WorkoutSessionScreen.exitWorkout when the user leaves mid-workout.
+   * Does three things, all non-atomic-but-ordered so the most important data
+   * (logged sets) is written first:
+   *   1. Writes the user's actually-logged sets to exercise_sets (incremental,
+   *      per-set weight/reps/rpe). This is the data that was previously LOST on
+   *      exit — only _writeExerciseSets (full completion) persisted it before.
+   *   2. Updates the workout_sessions row with partialCompletion=true and
+   *      exitedAt timestamp so resume state is explicit on the server.
+   *   3. Leaves currentWorkoutSession in the Zustand store INTACT so that on
+   *      resume the hook's derived exerciseProgress restores the actual logged
+   *      weight/reps/rpe from the SSOT (currentWorkoutSession.exercises[].sets[]).
+   *
+   * The caller (screen) is responsible for nulling currentWorkoutSession only
+   * when it does NOT want resume (e.g. user explicitly discards). Here we keep
+   * it so the standard resume path works.
+   */
+  async savePartialExit(
+    workoutId: string,
+    sessionData: {
+      sessionId?: string;
+      userId?: string;
+      progress: number;
+      exerciseIndex: number;
+      exitedAt: string;
+      stats?: { caloriesBurned?: number; exercises?: any[] };
+    },
+  ): Promise<void> {
+    try {
+      const userId = sessionData.userId;
+      const sessionId = sessionData.sessionId;
+      const loggedExercises =
+        sessionData.stats?.exercises ??
+        useFitnessStore.getState().currentWorkoutSession?.exercises ??
+        [];
+
+      // 1. Persist logged sets to exercise_sets (only if user is authenticated
+      //    AND we have a real session row id). Fire-and-forget — failure here
+      //    must not block the exit; the store SSOT retains the data for resume.
+      if (userId && sessionId && sessionId !== "unknown") {
+        this._writeExerciseSets(userId, sessionId, loggedExercises).catch(
+          (err) => {
+            console.error("⚠️ savePartialExit: _writeExerciseSets failed:", err);
+          },
+        );
+
+        // 2. Update the workout_sessions row with partial flags (P3-19).
+        try {
+          const { error } = await supabase
+            .from("workout_sessions")
+            .update({
+              // is_completed stays false — partial exit is NOT a completion.
+              // total_duration_minutes is intentionally NOT set here: duration
+              // is only meaningful once the workout is finished. We record the
+              // partial calories + logged exercises + exitedAt (via updated_at)
+              // so resume state is explicit on the server.
+              calories_burned: sessionData.stats?.caloriesBurned ?? 0,
+              exercises_completed: loggedExercises,
+              updated_at: sessionData.exitedAt,
+            })
+            .eq("id", sessionId)
+            .eq("user_id", userId);
+          if (error) {
+            console.error(
+              "⚠️ savePartialExit: workout_sessions update error:",
+              error,
+            );
+          }
+        } catch (updateErr) {
+          console.error(
+            "⚠️ savePartialExit: failed to update workout_sessions:",
+            updateErr,
+          );
+        }
+      }
+
+      // 3. Update workoutProgress metadata in the store so the resume dialog
+      //    can surface the right exercise index + partial calories. The
+      //    currentWorkoutSession itself is LEFT INTACT (not nulled) so resume
+      //    restores actual logged set values.
+      useFitnessStore.getState().updateWorkoutProgress(workoutId, sessionData.progress, {
+        exerciseIndex: sessionData.exerciseIndex,
+        ...(sessionData.stats?.caloriesBurned !== undefined && {
+          caloriesBurned: sessionData.stats.caloriesBurned,
+        }),
+      });
+    } catch (error) {
+      console.error("❌ savePartialExit failed:", error);
+    }
+  }
+
   // Dual-write per-set data to exercise_sets table (fire-and-forget)
   // Also runs belt-and-suspenders PR detection for time-based exercises
   // (SetLogModal handles PR detection for normal sets; this covers auto-logged sets)
+  //
+  // P3-18 fix: the flat-exercise fallback previously inferred one row per
+  // planned set using the plan's high-end rep count (parseInt("8-12")[1] = 12)
+  // with weight_kg: null and is_completed: true — fabricating set data the user
+  // never logged. Now the flat fallback is REMOVED: only exercises that carry an
+  // actual sets[] array (the store SSOT shape from currentWorkoutSession) are
+  // written, and only sets whose `completed` flag is true are marked
+  // is_completed. If no per-set data exists, nothing is written (the session
+  // row still records that the workout happened).
   private async _writeExerciseSets(
     userId: string,
     sessionId: string,
@@ -874,9 +1090,15 @@ class CompletionTrackingService {
       const sets = exercise.sets || exercise.completedSets || [];
 
       if (Array.isArray(sets) && sets.length > 0) {
-        // Per-set data available
+        // Per-set data available — write one row per logged set. Only sets the
+        // user actually completed are marked is_completed: true; in-progress
+        // sets (completed: false) are recorded with is_completed: false so the
+        // history reflects the true attempt, not a fabricated completion.
         for (let i = 0; i < sets.length; i++) {
           const set = sets[i];
+          const isCompleted = Boolean(
+            set.completed ?? set.is_completed ?? false,
+          );
           rows.push({
             user_id: userId,
             session_id: sessionId,
@@ -887,38 +1109,18 @@ class CompletionTrackingService {
             reps: set.reps ?? null,
             duration_seconds: set.duration_seconds ?? null,
             set_type: set.setType ?? set.set_type ?? "normal",
-            is_completed: set.completed ?? set.is_completed ?? true,
-            rpe: set.rpe ?? null,                          // NEW: RPE from three-tap UI
-            is_calibration: set.isCalibration ?? false,    // NEW: calibration session flag
-            completed_at: now,
-          });
-        }
-      } else {
-        // Flat exercise data — infer from sets/reps fields
-        const numSets = typeof exercise.sets === "number" ? exercise.sets : 1;
-        const reps =
-          typeof exercise.reps === "string"
-            ? parseInt(exercise.reps.split("-")[1] || exercise.reps, 10)
-            : (exercise.reps ?? null);
-
-        for (let i = 0; i < numSets; i++) {
-          rows.push({
-            user_id: userId,
-            session_id: sessionId,
-            exercise_id: exerciseId,
-            exercise_name: exerciseName,
-            set_number: i + 1,
-            weight_kg: null,
-            reps: reps,
-            duration_seconds: null,
-            set_type: "normal",
-            is_completed: true,
-            rpe: null,            // flat exercise path — no RPE available
-            is_calibration: false,
+            is_completed: isCompleted,
+            rpe: set.rpe ?? null,
+            is_calibration: set.isCalibration ?? false,
             completed_at: now,
           });
         }
       }
+      // NOTE: the previous "flat exercise data" fallback that fabricated
+      // numSets rows with the plan's high-end rep count and null weight has
+      // been intentionally removed. Callers must pass actual logged sets[]
+      // (the store SSOT). If a caller only has plan-level data, no rows are
+      // written — preferable to silently storing fabricated values.
     }
 
     if (rows.length === 0) return;

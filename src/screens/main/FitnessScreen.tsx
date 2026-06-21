@@ -25,7 +25,7 @@ import {
   WorkoutDetailsDialog,
 } from "../../components/ui/CustomDialog";
 import { SegmentedControl } from "../../components/ui/SegmentedControl";
-import { ResponsiveTheme } from "../../utils/constants";
+import { colors, spacing, shadows } from "../../theme/aurora-tokens";
 import { rh, rf, rp, rbr } from "../../utils/responsive";
 import { useFitnessStore } from "../../stores/fitnessStore";
 import { DayWorkout } from "../../types/ai";
@@ -160,18 +160,6 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
   const quickWorkouts = useQuickWorkouts(navigation);
   const currentWeekStart = getCurrentWeekStart();
 
-  // ========== SCREEN DEBUG LOG ==========
-  React.useEffect(() => {
-    console.warn(`\n${'='.repeat(60)}`);
-    console.warn(`🏋️ [SCREEN DEBUG] FitnessScreen MOUNTED`);
-    console.warn(`${'='.repeat(60)}`);
-    console.warn(`📋 Has Plan: ${!!state.weeklyWorkoutPlan} | Plan Error: ${planError || 'None'}`);
-    console.warn(`📅 Selected Day: ${state.selectedDay} | Is Generating: ${state.isGeneratingPlan}`);
-    console.warn(`📊 Completed Sessions: ${state.completedSessions?.length || 0}`);
-    console.warn(`💪 Workout Progress Keys: [${Object.keys(state.workoutProgress || {}).join(', ')}]`);
-    console.warn(`${'='.repeat(60)}\n`);
-  }, []);
-
   // Dual plan state
   const activePlanSource = useFitnessStore((s) => s.activePlanSource);
   const setActivePlanSource = useFitnessStore((s) => s.setActivePlanSource);
@@ -268,8 +256,8 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
               <RefreshControl
                 refreshing={state.refreshing}
                 onRefresh={actions.handleRefresh}
-                tintColor={ResponsiveTheme.colors.primary}
-                colors={[ResponsiveTheme.colors.primary]}
+                tintColor={colors.primary.DEFAULT}
+                colors={[colors.primary.DEFAULT]}
               />
             }
           >
@@ -406,6 +394,7 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
                   onStartWorkout={quickWorkouts.startQuickWorkout}
                   onResumeWorkout={quickWorkouts.resumeQuickWorkout}
                   getTemplateStatus={quickWorkouts.getTemplateStatus}
+                  getCompletedCalories={quickWorkouts.getCompletedCalories}
                   isGenerating={quickWorkouts.isGenerating}
                 />
               </View>
@@ -485,7 +474,7 @@ export const FitnessScreen = React.memo(FitnessScreenInner);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background.DEFAULT,
   },
   animatedContainer: {
     flex: 1,
@@ -497,30 +486,31 @@ const styles = StyleSheet.create({
     paddingBottom: rp(20),
   },
   section: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: rp(spacing.lg),
+    marginBottom: rp(spacing.lg),
   },
   sectionNoHorizontalPadding: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: rp(spacing.lg),
   },
   errorCard: {
-    marginHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
-    padding: ResponsiveTheme.spacing.md,
-    backgroundColor: "rgba(239, 68, 68, 0.12)",
+    marginHorizontal: rp(spacing.lg),
+    marginBottom: rp(spacing.lg),
+    padding: rp(spacing.md),
+    backgroundColor: `${colors.error.DEFAULT}1F`,
     borderRadius: rbr(12),
     borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.35)",
+    borderColor: `${colors.error.DEFAULT}59`,
+    ...shadows.level2,
   },
   errorTitle: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.error,
+    color: colors.error.DEFAULT,
     marginBottom: rp(4),
   },
   errorMessage: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.error,
+    color: colors.error.DEFAULT,
     lineHeight: rf(18),
   },
   guestSignUpOverlay: {
@@ -535,44 +525,44 @@ const styles = StyleSheet.create({
     flexDirection: "row" as const,
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
-    backgroundColor: "rgba(76, 175, 80, 0.12)",
+    backgroundColor: `${colors.success.DEFAULT}1F`,
     borderRadius: rbr(12),
     paddingVertical: rp(14),
     paddingHorizontal: rp(16),
     borderWidth: 1,
-    borderColor: "rgba(76, 175, 80, 0.3)",
+    borderColor: `${colors.success.DEFAULT}4D`,
   },
   templateLibraryText: {
     fontSize: rf(15),
     fontWeight: "600" as const,
-    color: "#4CAF50",
+    color: colors.success.DEFAULT,
   },
   templateLibraryArrow: {
     fontSize: rf(18),
-    color: "#4CAF50",
+    color: colors.success.DEFAULT,
   },
   planToggleContainer: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: rp(spacing.lg),
     marginBottom: rp(12),
   },
   customPlanCta: {
-    backgroundColor: "rgba(76, 175, 80, 0.08)",
+    backgroundColor: `${colors.success.DEFAULT}14`,
     borderRadius: rbr(16),
     padding: rp(20),
     borderWidth: 1,
-    borderColor: "rgba(76, 175, 80, 0.2)",
+    borderColor: `${colors.success.DEFAULT}33`,
     borderStyle: "dashed" as const,
     alignItems: "center" as const,
   },
   customPlanCtaTitle: {
     fontSize: rf(16),
     fontWeight: "700" as const,
-    color: ResponsiveTheme.colors.text,
+    color: colors.text.primary,
     marginBottom: rp(8),
   },
   customPlanCtaSubtitle: {
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.text.secondary,
     textAlign: "center" as const,
     lineHeight: rf(18),
     marginBottom: rp(12),
@@ -580,7 +570,7 @@ const styles = StyleSheet.create({
   customPlanCtaAction: {
     fontSize: rf(15),
     fontWeight: "600" as const,
-    color: "#4CAF50",
+    color: colors.success.DEFAULT,
   },
 });
 

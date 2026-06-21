@@ -10,12 +10,6 @@ import { supabase } from "../services/supabase";
 import { generateUUID, isValidUUID } from "../utils/uuid";
 import { getCurrentUserId, getUserIdOrGuest } from "../services/authUtils";
 import { RealtimeChannel } from "@supabase/supabase-js";
-import { useProfileStore } from "./profileStore";
-import { resolveCurrentWeightFromStores } from "../services/currentWeight";
-import {
-  calculateWorkoutCalories,
-  ExerciseCalorieInput,
-} from "../services/calorieCalculator";
 import {
   findPlanWorkoutBySessionIdentity,
   getWorkoutSlotKey,
@@ -485,74 +479,38 @@ export const useFitnessStore = create<FitnessState>()(
       },
 
       completeWorkout: async (workoutId, sessionId, caloriesBurned) => {
+        // P0-2 fix: the workout_sessions ROW is owned by completionTracking
+        // service (Path B), which carries the richer payload (workout_name,
+        // workout_type, planned_day_key, plan_slot_key, is_extra,
+        // exercises_completed, total_duration_minutes) and is the entry point
+        // from WorkoutSessionScreen. This store action ONLY updates the local
+        // Zustand cache so the UI reflects completion immediately — it does NOT
+        // write to Supabase. (Previous Path A write caused a non-atomic
+        // double-write + duplicate-row insert-on-error fallback.)
         const completedAt = new Date().toISOString();
-        const plannedDuration = get().weeklyWorkoutPlan?.workouts.find(
-          (w) => w.id === workoutId,
-        )?.duration ?? get().customWeeklyPlan?.workouts.find(
-          (w) => w.id === workoutId,
-        )?.duration;
 
-        try {
-          // DATABASE-FIRST PATTERN: Update database FIRST
-          if (sessionId) {
-            await crudOperations.updateWorkoutSession(sessionId, {
+        // P3-20 fix: null currentWorkoutSession on completion. The session is
+        // persisted (partialize below) so it survives cold restarts as the SSOT
+        // for set-level resume data — but a COMPLETED workout must clear it so it
+        // isn't mistaken for a live partial. Without this, GAP-18's
+        // live-session check would treat other workouts' partial entries as
+        // stale (because the completed workout's id would mismatch them).
+        set((state) => ({
+          workoutProgress: {
+            ...state.workoutProgress,
+            [workoutId]: {
+              workoutId,
+              progress: 100,
               completedAt,
-              isCompleted: true,
-              ...(plannedDuration !== undefined && {
-                duration: plannedDuration,
-              }),
+              sessionId,
               ...(caloriesBurned !== undefined && { caloriesBurned }),
-              syncMetadata: {
-                lastModifiedAt: completedAt,
-                syncVersion: 1,
-                deviceId: Platform.OS ?? "unknown",
-              },
-            });
-          }
-
-          // THEN update Zustand cache
-          set((state) => ({
-            workoutProgress: {
-              ...state.workoutProgress,
-              [workoutId]: {
-                workoutId,
-                progress: 100,
-                completedAt,
-                sessionId,
-                ...(caloriesBurned !== undefined && { caloriesBurned }),
-              },
             },
-          }));
-        } catch (error) {
-          console.error(`❌ Failed to complete workout ${workoutId}:`, error);
-
-          // FALLBACK: Queue for offline sync if database update fails
-          await offlineService.queueAction({
-            type: "UPDATE",
-            table: "workout_sessions",
-            data: {
-              id: sessionId,
-              completed_at: completedAt,
-              is_completed: true,
-            },
-            userId: getUserIdOrGuest(),
-            maxRetries: 3,
-          });
-
-          // Still update local cache for optimistic UI
-          set((state) => ({
-            workoutProgress: {
-              ...state.workoutProgress,
-              [workoutId]: {
-                workoutId,
-                progress: 100,
-                completedAt,
-                sessionId,
-                ...(caloriesBurned !== undefined && { caloriesBurned }),
-              },
-            },
-          }));
-        }
+          },
+          currentWorkoutSession:
+            state.currentWorkoutSession?.workoutId === workoutId
+              ? null
+              : state.currentWorkoutSession,
+        }));
       },
 
       getWorkoutProgress: (workoutId) => {
@@ -691,9 +649,15 @@ export const useFitnessStore = create<FitnessState>()(
               duration: workout.duration
                 ? Math.max(5, Math.min(300, workout.duration))
                 : null, // NO FALLBACK - null if missing
-              caloriesBurned: workout.estimatedCalories
-                ? Math.max(0, Math.min(10000, workout.estimatedCalories))
-                : null, // NO FALLBACK - null if missing
+              // P1-11: do NOT seed caloriesBurned from estimatedCalories.
+              // estimatedCalories is DISPLAY-ONLY (pre-generation estimate).
+              // Seeding it here made actualCaloriesBurned equal the estimate at
+              // start; if updateWorkoutProgress never set it, completeWorkout
+              // received undefined and the DB kept the seeded estimated value —
+              // violating the "display-only — never used in calculations" rule.
+              // Start at null; actual calories are set only by the MET calc at
+              // completion (completionTrackingService / extraWorkoutService).
+              caloriesBurned: null,
               exercises: workout.exercises.map((exercise) => ({
                 exerciseId: exercise.exerciseId,
                 sets: Array.from({ length: exercise.sets }, (_, index) => ({
@@ -704,7 +668,14 @@ export const useFitnessStore = create<FitnessState>()(
                   weight: exercise.weight || 0,
                   duration: 0,
                   restTime: exercise.restTime || 60,
-                  rpe: 5, // Default RPE
+                  // RPE capture domain is 1|2|3 (three-tap in SetLogModal).
+                  // Previously seeded `rpe: 5` (a leftover from a 1-10 RPE era) —
+                  // an out-of-domain value that never reached the DB (SetLogModal
+                  // overwrites on save) but was a latent inconsistency if any
+                  // path read the seeded value before logging. Seed the middle
+                  // value (2) — matches handleTimeBasedSetComplete's auto-log —
+                  // so it stays in-domain until the user logs a real value.
+                  rpe: 2,
                   completed: false,
                 })),
                 notes: exercise.notes || "",
@@ -766,8 +737,14 @@ export const useFitnessStore = create<FitnessState>()(
             is_extra: true,
             is_completed: false,
             started_at: now,
-            exercises: template.exercises,
-            duration: template.estimatedDurationMinutes ?? null,
+            // P1-9: standardize on exercises_completed as the SINGLE column for
+            // session exercises. The legacy `exercises` column is no longer
+            // written; the read path falls back exercises_completed → exercises
+            // for old rows only. Template exercises are recorded here as the
+            // starting snapshot; actual logged sets overwrite them at completion
+            // via completionTrackingService._writeExerciseSets / savePartialExit.
+            exercises_completed: template.exercises,
+            total_duration_minutes: template.estimatedDurationMinutes ?? null,
           });
 
           if (error) {
@@ -799,24 +776,45 @@ export const useFitnessStore = create<FitnessState>()(
       },
 
       endWorkoutSession: async (sessionId) => {
+        // P1-7: previously this did a partial crudOperations.updateWorkoutSession
+        // write then called store.completeWorkout (Path A only) — skipping the
+        // completionTracking service entirely, so exercise_sets was never
+        // populated and PR detection was skipped. Now routed through the service
+        // so the full completion pipeline runs. (Currently has no production
+        // callers — only the test suite. Retained for correctness if revived.)
         try {
           const currentSession = get().currentWorkoutSession;
           if (!currentSession) {
             throw new Error("No active workout session");
           }
 
-          // Update session as completed
-          await crudOperations.updateWorkoutSession(sessionId, {
-            completedAt: new Date().toISOString(),
-          });
-
-          // Complete the workout — pass actual MET-based calories from workoutProgress if available
+          // Pull actual MET-based calories from workoutProgress if available
           const actualCalories =
             get().workoutProgress[currentSession.workoutId]?.caloriesBurned;
-          await get().completeWorkout(currentSession.workoutId, sessionId, actualCalories);
+
+          // Dynamic import to avoid a circular dependency at module load
+          // (completionTrackingService imports useFitnessStore).
+          const { completionTrackingService } = await import(
+            "../services/completionTracking"
+          );
+          await completionTrackingService.completeWorkout(
+            currentSession.workoutId,
+            {
+              sessionId,
+              stats: {
+                caloriesBurned: actualCalories ?? 0,
+              },
+            },
+            getCurrentUserId() || undefined,
+          );
 
           set({ currentWorkoutSession: null });
         } catch (error) {
+          // P1-7: Even when the completion pipeline throws (e.g. a mocked or
+          // failed DB write), clear the local session so the UI is not left in
+          // an "active workout" state. The user explicitly ended the session;
+          // persistence failures are logged separately by the completion service.
+          set({ currentWorkoutSession: null });
           console.error("❌ Failed to end workout session:", error);
           throw error;
         }
@@ -1056,6 +1054,11 @@ export const useFitnessStore = create<FitnessState>()(
                       : 0;
                   const weekStart = getWeekStartForDate(s.completed_at);
 
+                  // P1-9: exercises_completed is the CANONICAL column for
+                  // session exercises. The legacy `exercises` column fallback
+                  // is kept ONLY for rows written before this standardization
+                  // (startTemplateSession and completion writers now all use
+                  // exercises_completed). Do not write `exercises` for new rows.
                   const rawExercises = Array.isArray(s.exercises_completed)
                     ? s.exercises_completed
                     : Array.isArray(s.exercises)
@@ -1070,31 +1073,17 @@ export const useFitnessStore = create<FitnessState>()(
                     restTime: ex.restTime,
                   }));
 
-                  if (caloriesBurned <= 0 && planWorkout?.exercises?.length) {
-                    const userWeight = resolveCurrentWeightFromStores({
-                      bodyAnalysisWeight:
-                        useProfileStore.getState().bodyAnalysis
-                          ?.current_weight_kg,
-                    }).value;
-                    if (userWeight && userWeight > 0) {
-                      const exerciseInputs: ExerciseCalorieInput[] =
-                        planWorkout.exercises.map((exercise: any) => ({
-                          exerciseId: exercise.exerciseId || exercise.id,
-                          name: exercise.exerciseName || exercise.name,
-                          sets: exercise.sets,
-                          reps: exercise.reps,
-                          duration: exercise.duration,
-                          restTime: exercise.restTime,
-                        }));
-                      const estimatedCalories = calculateWorkoutCalories(
-                        exerciseInputs,
-                        userWeight,
-                      ).totalCalories;
-                      if (estimatedCalories > 0) {
-                        caloriesBurned = estimatedCalories;
-                      }
-                    }
-                  }
+                  // P0-6 fix: do NOT re-derive calories client-side from the
+                  // PLANNED reps when the server has no value. The previous
+                  // logic overwrote the server-stored actualCaloriesBurned
+                  // (computed from ACTUAL logged sets at completion) with a
+                  // planned-reps estimate, and on every realtime event it
+                  // re-ran, clobbering any value the completion pipeline wrote.
+                  // The authoritative calories_burned is set by
+                  // completionTrackingService.completeWorkout (MET calc on
+                  // actuals) and by extraWorkoutService. If it's missing/0 we
+                  // leave it 0 (Rule 8: no hardcoded fallbacks) rather than
+                  // fabricating a planned-reps estimate.
 
                   return {
                     sessionId: s.id,
@@ -1178,33 +1167,64 @@ export const useFitnessStore = create<FitnessState>()(
           // If workoutProgress[id].progress === 100 but there is NO matching
           // completedSession in the current week, reset progress to 0.
           // This prevents stale "Completed" badges when the DB write failed.
+          //
+          // P3-20 extension: also reconcile PARTIAL entries. A partial entry
+          // (progress < 100) is only valid while there is a live
+          // currentWorkoutSession for that workoutId — once the session is gone
+          // (user exited and the store cleared it, or a new day began), the
+          // partial is stale and would falsely show an in-progress badge.
+          // Stale partials are removed entirely (not reset to 0) so the workout
+          // appears unstarted, matching the absence of a live session.
+          // Full removal of workoutProgress (deriving it from
+          // completedSessions + currentWorkoutSession) is flagged for a
+          // follow-up — too large a change for this pass.
           try {
             const currentWeekStart = getCurrentWeekStart();
             const state = get();
             const desyncedIds: string[] = [];
+            const stalePartialIds: string[] = [];
+            const liveSessionWorkoutId = state.currentWorkoutSession?.workoutId;
 
             Object.entries(state.workoutProgress).forEach(([workoutId, entry]) => {
-              if (entry.progress < 100) return;
-              if (!entry.completedAt) return;
-              // Only check entries that are in the current week
-              if (getWeekStartForDate(entry.completedAt) !== currentWeekStart) return;
+              if (entry.progress >= 100) {
+                if (!entry.completedAt) return;
+                // Only check completed entries in the current week
+                if (getWeekStartForDate(entry.completedAt) !== currentWeekStart) return;
 
-              const hasSession = state.completedSessions.some(
-                (s) => s.sessionId === entry.sessionId ||
-                        s.workoutId === workoutId,
-              );
-              if (!hasSession) {
-                desyncedIds.push(workoutId);
+                const hasSession = state.completedSessions.some(
+                  (s) => s.sessionId === entry.sessionId ||
+                          s.workoutId === workoutId,
+                );
+                if (!hasSession) {
+                  desyncedIds.push(workoutId);
+                }
+              } else {
+                // Partial entry — stale ONLY if a DIFFERENT live
+                // currentWorkoutSession exists for another workoutId (which
+                // would mean the user has moved on to a different workout).
+                // A missing liveSessionWorkoutId (cold restart —
+                // currentWorkoutSession is null until the user re-enters a
+                // workout) must NOT delete the partial: that would wipe the
+                // persisted resume state the user expects to find.
+                if (
+                  liveSessionWorkoutId !== undefined &&
+                  workoutId !== liveSessionWorkoutId
+                ) {
+                  stalePartialIds.push(workoutId);
+                }
               }
             });
 
-            if (desyncedIds.length > 0) {
+            if (desyncedIds.length > 0 || stalePartialIds.length > 0) {
               set((state) => {
                 const cleaned = { ...state.workoutProgress };
                 desyncedIds.forEach((id) => {
                   if (cleaned[id]) {
                     cleaned[id] = { ...cleaned[id], progress: 0 };
                   }
+                });
+                stalePartialIds.forEach((id) => {
+                  delete cleaned[id];
                 });
                 return { workoutProgress: cleaned };
               });
@@ -1275,11 +1295,166 @@ export const useFitnessStore = create<FitnessState>()(
               table: "workout_sessions",
               filter: `user_id=eq.${userId}`,
             },
+            // P0-6 fix: previously any workout_sessions event triggered a full
+            // loadData() — which re-fetched everything AND re-derived calories
+            // client-side from planned reps, clobbering server-stored actuals.
+            // Now we do a TARGETED refresh of just the affected session so
+            // stats update without the expensive reload and without the
+            // calorie-clobbering path. A full reload is still triggered on
+            // login via loadData() directly — realtime only needs incremental.
             (payload) => {
-              get().loadData();
+              const row = (payload.new || payload.old) as
+                | {
+                    id: string;
+                    is_completed?: boolean;
+                    user_id?: string;
+                  }
+                | undefined;
+              if (!row?.id) return;
+              // Only completed rows belong in completedSessions; for inserts/
+              // updates of completed sessions we re-fetch that one row. For
+              // non-completed updates (partial-exit writes) we don't need to
+              // touch completedSessions at all — the active session lives in
+              // currentWorkoutSession (the SSOT), not here.
+              if (!row.is_completed) return;
+              void get().refreshSingleSession(row.id, userId);
             },
           )
           .subscribe();
+      },
+
+      // Incremental realtime refresh: fetch ONE session row and merge it into
+      // completedSessions + workoutProgress without a full reload. Avoids the
+      // planned-reps calorie re-derivation that loadData() previously ran.
+      refreshSingleSession: async (sessionId: string, userId: string) => {
+        try {
+          const { data, error } = await supabase
+            .from("workout_sessions")
+            .select(
+              "id, workout_id, planned_day_key, plan_slot_key, workout_name, workout_type, total_duration_minutes, calories_burned, completed_at, started_at, is_extra, exercises_completed, is_completed",
+            )
+            .eq("id", sessionId)
+            .eq("user_id", userId)
+            .single();
+
+          if (error) {
+            console.error(
+              "[fitnessStore] refreshSingleSession fetch error:",
+              error,
+            );
+            return;
+          }
+          if (!data) return;
+
+          const planWorkout = findPlanWorkoutBySessionIdentity({
+            plan: get().weeklyWorkoutPlan,
+            workoutId: data.workout_id,
+            plannedDayKey: data.planned_day_key,
+            planSlotKey: data.plan_slot_key,
+          }) || findPlanWorkoutBySessionIdentity({
+            plan: get().customWeeklyPlan,
+            workoutId: data.workout_id,
+            plannedDayKey: data.planned_day_key,
+            planSlotKey: data.plan_slot_key,
+          });
+
+          const durationMinutes =
+            typeof data.total_duration_minutes === "number" &&
+            data.total_duration_minutes > 0
+              ? data.total_duration_minutes
+              : typeof (data as any).duration === "number" &&
+                (data as any).duration > 0
+                ? (data as any).duration
+                : planWorkout?.duration || 0;
+          // Authoritative calories from the server — NO client-side re-derive.
+          const caloriesBurned =
+            typeof data.calories_burned === "number"
+              ? data.calories_burned
+              : 0;
+
+          const rawExercises = Array.isArray(data.exercises_completed)
+            ? data.exercises_completed
+            : [];
+          const exercises = rawExercises.map((ex: any) => ({
+            name: ex.exerciseName || ex.name || "",
+            sets: Number(ex.sets) || 0,
+            reps: Number(ex.reps) || 0,
+            exerciseId: ex.exerciseId || ex.id,
+            duration: ex.duration,
+            restTime: ex.restTime,
+          }));
+
+          const resolvedWorkoutId =
+            planWorkout?.id ||
+            (data.is_extra ? data.workout_id || data.id : null);
+
+          // Update workoutProgress for the resolved workout id (plan checkmarks)
+          if (resolvedWorkoutId) {
+            set((state) => ({
+              workoutProgress: {
+                ...state.workoutProgress,
+                [resolvedWorkoutId]: {
+                  workoutId: resolvedWorkoutId,
+                  progress: 100,
+                  completedAt: data.completed_at,
+                  sessionId: data.id,
+                  ...(caloriesBurned !== undefined && { caloriesBurned }),
+                },
+              },
+            }));
+          }
+
+          // Idempotent upsert into completedSessions
+          set((state) => {
+            const existingIdx = state.completedSessions.findIndex(
+              (s) => s.sessionId === data.id,
+            );
+            if (existingIdx !== -1) {
+              // Already tracked — don't duplicate (realtime can fire multiple times)
+              return state;
+            }
+            const newSession: CompletedSession = {
+              sessionId: data.id,
+              type: data.is_extra ? "extra" : "planned",
+              workoutId: resolvedWorkoutId || data.workout_id || data.id,
+              plannedDayKey: data.is_extra
+                ? undefined
+                : data.planned_day_key ||
+                  planWorkout?.dayOfWeek ||
+                  undefined,
+              planSlotKey: !data.is_extra
+                ? data.plan_slot_key ||
+                  (planWorkout
+                    ? getWorkoutSlotKey(
+                        planWorkout,
+                        get().weeklyWorkoutPlan || undefined,
+                      )
+                    : undefined)
+                : undefined,
+              workoutSnapshot: {
+                title: data.workout_name || planWorkout?.title || "Workout",
+                category:
+                  data.workout_type || planWorkout?.category || "general",
+                duration: durationMinutes,
+                exercises,
+              },
+              caloriesBurned,
+              durationMinutes,
+              completedAt: data.completed_at,
+              weekStart: getWeekStartForDate(data.completed_at),
+            };
+            let sessions = [...state.completedSessions, newSession];
+            if (sessions.length > 90) {
+              console.warn(
+                `[fitnessStore] completedSessions capped at 90 — ${sessions.length - 90} oldest dropped`,
+              );
+              sessions = sessions.slice(-90);
+            }
+            return { completedSessions: sessions };
+          });
+        } catch (err) {
+          console.error("[fitnessStore] refreshSingleSession error:", err);
+        }
       },
 
       cleanupRealtimeSubscription: () => {
@@ -1321,6 +1496,12 @@ export const useFitnessStore = create<FitnessState>()(
         activeExtraSession: state.activeExtraSession,
         mesocycleStartDate: state.mesocycleStartDate,
         restTimerEnabled: state.restTimerEnabled,
+        // P3-20 fix: currentWorkoutSession is the SSOT for set-level data
+        // (weight/reps/rpe) and must survive cold restarts so resume restores
+        // actual logged values. It's nulled on completion (completeWorkout) and
+        // on new-day reset (checkAndResetProgressIfNewDay), so it never outlives
+        // its intended lifetime.
+        currentWorkoutSession: state.currentWorkoutSession,
         // completedSessionsHydrated: intentionally excluded (resets on cold start)
         // _hasHydrated: intentionally excluded (set by onRehydrateStorage)
       }),

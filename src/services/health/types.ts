@@ -196,6 +196,15 @@ export function mapWorkoutTypeToHealthConnect(workoutType: string): number {
     climbing: HealthConnectExerciseType.ROCK_CLIMBING,
     dancing: HealthConnectExerciseType.DANCING,
     dance: HealthConnectExerciseType.DANCING,
+    // FitAI WorkoutType / Workout.category union members not already covered.
+    // cardio: no single HC exercise type fits all cardio; map to EXERCISE_CLASS
+    // (generic guided exercise) rather than UNKNOWN so the session is at least
+    // categorized. UI can refine if user picks a specific cardio subtype.
+    cardio: HealthConnectExerciseType.EXERCISE_CLASS,
+    // functional training: bodyweight + compound movement patterns — closest
+    // HC equivalent is CALISTHENICS.
+    functional: HealthConnectExerciseType.CALISTHENICS,
+    functional_training: HealthConnectExerciseType.CALISTHENICS,
     aerobics: HealthConnectExerciseType.EXERCISE_CLASS,
     class: HealthConnectExerciseType.EXERCISE_CLASS,
     bootcamp: HealthConnectExerciseType.BOOT_CAMP,

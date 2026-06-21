@@ -11,6 +11,12 @@ jest.mock("react-native", () => {
       RealReact.createElement("View", { testID, style, ...props }, children),
     Text: ({ children, style, ...props }: any) =>
       RealReact.createElement("Text", { style, ...props }, children),
+    Pressable: ({ children, testID, onPress, style, ...props }: any) =>
+      RealReact.createElement(
+        "Pressable",
+        { testID, onPress, style, ...props },
+        children,
+      ),
     FlatList: ({
       data,
       renderItem,
@@ -42,6 +48,9 @@ jest.mock("react-native", () => {
     SafeAreaView: ({ children, ...props }: any) =>
       RealReact.createElement("View", props, children),
     ActivityIndicator: () => null,
+    Dimensions: {
+      get: () => ({ width: 393, height: 852, scale: 1, fontScale: 1 }),
+    },
     StyleSheet: {
       create: (s: any) => s,
       flatten: (style: any) =>
@@ -98,15 +107,13 @@ describe("ExerciseHistoryScreen", () => {
   it("renders empty state when no history", async () => {
     mockGetHistory.mockResolvedValue([]);
 
-    const { getByText } = render(
+    const { findByText } = render(
       <ExerciseHistoryScreen route={mockRoute as any} />,
     );
 
-    await waitFor(() => {
-      expect(
-        getByText("No history yet — complete your first workout!"),
-      ).toBeTruthy();
-    });
+    // Aurora EmptyState splits the copy into title + subtitle.
+    expect(await findByText("No history yet")).toBeTruthy();
+    expect(await findByText("Complete your first workout!")).toBeTruthy();
   });
 
   it("renders session list when history available", async () => {

@@ -7,7 +7,6 @@ import {
   ScrollView,
   RefreshControl,
   Modal,
-  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -91,6 +90,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     weeklyMealPlan,
     isGeneratingPlan,
     asyncJob,
+    aiError,
     todaysMeals,
     generateWeeklyMealPlan,
     cancelAsyncGeneration,
@@ -183,25 +183,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   );
   const setSelectedDay = useAppStateStore((state) => state.setSelectedDay);
 
-  // ========== SCREEN DEBUG LOG ==========
-  React.useEffect(() => {
-    const consumed = getTodaysConsumedNutrition();
-    const calorieTarget = getCalorieTarget();
-    const macros = getMacroTargets();
-    console.warn(`\n${'='.repeat(60)}`);
-    console.warn(`🥗 [SCREEN DEBUG] DietScreen MOUNTED`);
-    console.warn(`${'='.repeat(60)}`);
-    console.warn(`👤 Authenticated: ${isAuthenticated} | Guest: ${isGuestMode}`);
-    console.warn(`📋 Has Meal Plan: ${!!weeklyMealPlan} | Generating: ${isGeneratingPlan}`);
-    console.warn(`🍽️  Today's Meals: ${todaysMeals?.length || 0}`);
-    console.warn(`🎯 Calorie Target: ${calorieTarget} | Consumed: ${consumed?.calories || 0}`);
-    console.warn(`📊 Macros Target: P=${macros?.protein || '?'}g C=${macros?.carbs || '?'}g F=${macros?.fat || '?'}g`);
-    console.warn(`💧 Water: ${waterIntakeML}/${waterGoalML}ml`);
-    console.warn(`📊 Calculated Metrics: TDEE=${calculatedMetrics?.calculatedTDEE ?? '?'} | CalTarget=${calculatedMetrics?.dailyCalories ?? '?'}`);
-    console.warn(`${'='.repeat(60)}\n`);
-  }, []);
-
-  // Day name â†’ index mapping for date navigation
+  // Day name → index mapping for date navigation
   const selectedDate = React.useMemo(
     () => new Date(`${selectedDateKey}T12:00:00`),
     [selectedDateKey],
@@ -724,6 +706,33 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               </GlassCard>
             )}
 
+            {/* AI generation error banner — surfaces meal-plan generation
+                failures (from useMealPlanning.aiError) with a Retry button.
+                Previously swallowed silently, leaving a blank plan (CLAUDE.md #5). */}
+            {aiError && !isGeneratingPlan ? (
+              <GlassCard style={styles.errorCard} elevation={1} padding="md">
+                <View style={styles.errorBannerRow}>
+                  <Ionicons
+                    name="alert-circle-outline"
+                    size={rf(22)}
+                    color={ResponsiveTheme.colors.error}
+                    style={styles.errorBannerIcon}
+                  />
+                  <Text style={styles.errorText}>
+                    {typeof aiError === "string"
+                      ? aiError
+                      : "Failed to generate meal plan. Please try again."}
+                  </Text>
+                </View>
+                <Button
+                  title="Retry Generation"
+                  onPress={() => onGenerateWeeklyPlan()}
+                  variant="primary"
+                  size="sm"
+                />
+              </GlassCard>
+            ) : null}
+
             <NutritionSummaryCard nutritionTargets={nutritionTargets} />
 
             <DietQuickActions
@@ -767,17 +776,26 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                       marginBottom: ResponsiveTheme.spacing.xs,
                     }}
                   >
-                    No weekly plan yet
+                    No meal plan yet
                   </Text>
                   <Text
                     style={{
                       color: ResponsiveTheme.colors.textSecondary,
                       opacity: 0.6,
                       fontSize: ResponsiveTheme.fontSize.sm,
+                      marginBottom: ResponsiveTheme.spacing.md,
+                      textAlign: "center",
                     }}
                   >
-                    Tap Generate Week to build your plan
+                    Generate a personalized weekly meal plan to get started
                   </Text>
+                  <Button
+                    title="Generate Weekly Plan"
+                    onPress={() => onGenerateWeeklyPlan()}
+                    variant="primary"
+                    size="md"
+                    disabled={isGeneratingPlan}
+                  />
                 </View>
               )
             ) : (
@@ -892,10 +910,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
         {isProcessingBarcode && !showCamera && (
           <View style={styles.barcodeLoadingOverlay}>
             <View style={styles.barcodeLoadingCard}>
-              <ActivityIndicator
-                size="large"
-                color={ResponsiveTheme.colors.primary}
-              />
+              <AuroraSpinner size="lg" />
               <Text style={styles.barcodeLoadingText}>
                 {cameraMode === "label"
                   ? "Reading nutrition label..."
@@ -1206,6 +1221,16 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.error,
     textAlign: "center",
     marginBottom: ResponsiveTheme.spacing.md,
+    flex: 1,
+  },
+  errorBannerRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    width: "100%" as const,
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+  errorBannerIcon: {
+    marginRight: ResponsiveTheme.spacing.sm,
   },
   bottomSpacing: { height: rh(80) },
   manualEntryButton: {

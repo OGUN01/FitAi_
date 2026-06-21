@@ -167,12 +167,18 @@ export class CrudOperationsService {
           plan_slot_key: planIdentity.planSlotKey || null,
           started_at: session.startedAt,
           completed_at: session.completedAt || null,
-          duration: session.duration ?? 0,
+          // P0-5: total_duration_minutes is CANONICAL (minutes). The legacy
+          // `duration` column is documented as seconds in the migration — we
+          // stop writing session.duration (minutes) into it to avoid a units
+          // mix-up. Reads prefer total_duration_minutes and only fall back to
+          // `duration` for old rows.
           total_duration_minutes: session.duration ?? 0,
           calories_burned: session.caloriesBurned ?? 0,
           exercises_completed: session.exercises || [],
           notes: session.notes || "",
-          // rating: null unless user explicitly rated (1-5); 0 violates check constraint
+          // rating: schema allows 0 (CHECK rating >= 0 AND <= 5), but we store
+          // NULL for unrated sessions so 0 is never confused with a real rating.
+          // (P2-16: comment corrected — 0 does NOT violate the constraint.)
           rating:
             typeof session.rating === "number" && session.rating > 0
               ? session.rating

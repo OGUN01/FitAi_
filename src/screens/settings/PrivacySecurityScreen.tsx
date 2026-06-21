@@ -18,6 +18,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
+import { GlassCard } from "../../components/ui/aurora/GlassCard";
 import { PrivacyToggle } from "../../components/settings/PrivacyToggle";
 import { ActionItem } from "../../components/settings/ActionItem";
 import { SectionHeader } from "../../components/settings/SectionHeader";
@@ -155,6 +156,87 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
           <View style={styles.section}>
             <SectionHeader
+              icon="fitness-outline"
+              iconColor={ResponsiveTheme.colors.error}
+              title="Health Connect Privacy"
+            />
+
+            <Animated.View
+              entering={FadeInDown.delay(375).duration(400)}
+            >
+              <GlassCard
+                elevation={1}
+                padding="lg"
+                blurIntensity="light"
+                borderRadius="lg"
+                style={styles.privacyPolicyCard}
+              >
+                <Text style={styles.privacyPolicyHeading}>
+                  How FitAI uses your Health Connect data
+                </Text>
+
+                <Text style={styles.privacyPolicyBody}>
+                  FitAI integrates with Android Health Connect to power
+                  personalized fitness coaching and track your progress. The
+                  data below is read from — and, for workouts, written back to
+                  — your Health Connect store.
+                </Text>
+
+                <Text style={styles.privacyPolicySubheading}>
+                  Data we read
+                </Text>
+                <Text style={styles.privacyPolicyList}>
+                  Steps, Heart Rate, Resting Heart Rate, Active Calories, Total
+                  Calories, Distance, Weight, Sleep, Exercise Sessions, Heart
+                  Rate Variability (HRV), Blood Oxygen (SpO2), and Body Fat.
+                </Text>
+
+                <Text style={styles.privacyPolicySubheading}>
+                  Data we write back
+                </Text>
+                <Text style={styles.privacyPolicyList}>
+                  Exercise Sessions and Active Calories from your FitAI
+                  workouts, so your other health apps see a complete record.
+                </Text>
+
+                <Text style={styles.privacyPolicySubheading}>
+                  Purpose &amp; storage
+                </Text>
+                <Text style={styles.privacyPolicyBody}>
+                  Your health data is used to personalize workout and nutrition
+                  plans and to display your progress. It is stored securely in
+                  your private FitAI account (Supabase), linked to your user ID
+                  and protected by row-level security. We never sell your data,
+                  and it is never shared with third parties for advertising.
+                </Text>
+
+                <Text style={styles.privacyPolicySubheading}>
+                  Manage or revoke access
+                </Text>
+                <Text style={styles.privacyPolicyBody}>
+                  You can review or revoke FitAI's access to any data type at any
+                  time in Settings → Health Connect. Disconnecting FitAI in this
+                  app also revokes system-level read/write access.
+                </Text>
+              </GlassCard>
+            </Animated.View>
+
+            <ActionItem
+              icon="open-outline"
+              iconColor={ResponsiveTheme.colors.info}
+              title="View Full Privacy Policy"
+              description="Read the complete policy on our website"
+              onPress={() =>
+                Linking.openURL('https://fitai.app/privacy').catch(() =>
+                  crossPlatformAlert('Privacy Policy', 'Could not open the page. Please visit fitai.app/privacy in your browser.')
+                )
+              }
+              animationDelay={425}
+            />
+          </View>
+
+          <View style={styles.section}>
+            <SectionHeader
               icon="folder-outline"
               iconColor={ResponsiveTheme.colors.textSecondary}
               title="Data Management"
@@ -170,19 +252,6 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
             />
 
             <ActionItem
-              icon="document-text-outline"
-              iconColor={ResponsiveTheme.colors.info}
-              title="Privacy Policy"
-              description="Read our complete privacy policy"
-              onPress={() =>
-                Linking.openURL('https://fitai.app/privacy').catch(() =>
-                  crossPlatformAlert('Privacy Policy', 'Could not open the page. Please visit fitai.app/privacy in your browser.')
-                )
-              }
-              animationDelay={450}
-            />
-
-            <ActionItem
               icon="clipboard-outline"
               iconColor={ResponsiveTheme.colors.warning}
               title="Terms of Service"
@@ -192,7 +261,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                   crossPlatformAlert('Terms of Service', 'Could not open the page. Please visit fitai.app/terms in your browser.')
                 )
               }
-              animationDelay={500}
+              animationDelay={450}
             />
           </View>
 
@@ -291,6 +360,36 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: ResponsiveTheme.spacing.lg,
+  },
+  privacyPolicyCard: {
+    marginBottom: ResponsiveTheme.spacing.sm,
+    backgroundColor: ResponsiveTheme.colors.glassSurface,
+  },
+  privacyPolicyHeading: {
+    fontSize: rf(16),
+    fontWeight: "700",
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+  privacyPolicySubheading: {
+    fontSize: rf(13),
+    fontWeight: "700",
+    color: ResponsiveTheme.colors.primary,
+    marginTop: ResponsiveTheme.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.xs,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  privacyPolicyBody: {
+    fontSize: rf(13),
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(19),
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+  privacyPolicyList: {
+    fontSize: rf(13),
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(19),
   },
   saveContainer: {
     marginBottom: ResponsiveTheme.spacing.lg,

@@ -3,7 +3,6 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
   StyleSheet,
   } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -24,6 +23,8 @@ import NavigationButtons from "../../components/cooking/NavigationButtons";
 import { colors } from "../../theme/aurora-tokens";
 import { rf, rp } from "../../utils/responsive";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
+import { AuroraBackground } from "../../components/ui/aurora";
+import { AnimatedPressable } from "../../components/ui/aurora";
 
 interface CookingSessionScreenProps {
   route: {
@@ -39,19 +40,6 @@ export default function CookingSessionScreen({
   navigation,
 }: CookingSessionScreenProps) {
   const { meal } = route.params;
-
-  // ========== SCREEN DEBUG LOG ==========
-  React.useEffect(() => {
-    if (__DEV__) {
-      console.warn(`\n${'='.repeat(60)}`);
-      console.warn(`[SCREEN DEBUG] CookingSessionScreen MOUNTED`);
-      console.warn(`${'='.repeat(60)}`);
-      console.warn(`Meal: ${meal?.name || '(unknown)'} | Type: ${meal?.type || '?'}`);
-      console.warn(`Calories: ${meal?.totalCalories || '?'} | Protein: ${meal?.totalMacros?.protein || '?'}g`);
-      console.warn(`Items: ${meal?.items?.length || 0} | Steps: ${meal?.instructions?.length || meal?.cookingInstructions?.length || 0}`);
-      console.warn(`${'='.repeat(60)}\n`);
-    }
-  }, []);
 
   const [selectedIngredient, setSelectedIngredient] = useState<string | null>(
     null,
@@ -124,38 +112,44 @@ export default function CookingSessionScreen({
   })();
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => {
-            crossPlatformAlert(
-              "Leave Cooking Session?",
-              "Are you sure you want to exit? Your cooking progress will be lost.",
-              [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Leave",
-                  style: "destructive",
-                  onPress: () => {
-                    haptics.light();
-                    navigation.goBack();
+    <AuroraBackground theme="space" animated intensity={0.3}>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <AnimatedPressable
+            onPress={() => {
+              crossPlatformAlert(
+                "Leave Cooking Session?",
+                "Are you sure you want to exit? Your cooking progress will be lost.",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Leave",
+                    style: "destructive",
+                    onPress: () => {
+                      haptics.light();
+                      navigation.goBack();
+                    },
                   },
-                },
-              ],
-            );
-          }}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <Ionicons name="close" size={28} color={colors.text.primary} />
-        </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Text style={styles.mealName}>{meal.name}</Text>
-          <Text style={styles.mealMeta}>
-            Prep: {meal.preparationTime}m • Cook: {meal.cookingTime || 10}m •{" "}
-            {meal.difficulty}
-          </Text>
+                ],
+              );
+            }}
+            scaleValue={0.9}
+            springConfig="snappy"
+            hapticType="light"
+            style={styles.closeButton}
+            accessibilityLabel="Close cooking session"
+            accessibilityRole="button"
+          >
+            <Ionicons name="close" size={28} color={colors.text.primary} />
+          </AnimatedPressable>
+          <View style={styles.headerContent}>
+            <Text style={styles.mealName}>{meal.name}</Text>
+            <Text style={styles.mealMeta}>
+              Prep: {meal.preparationTime}m • Cook: {meal.cookingTime || 10}m •{" "}
+              {meal.difficulty}
+            </Text>
+          </View>
         </View>
-      </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <VideoSection
@@ -214,14 +208,22 @@ export default function CookingSessionScreen({
         }}
         mealProgress={mealProgress}
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </AuroraBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.DEFAULT,
+  },
+  closeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.glass.background,
   },
   header: {
     flexDirection: "row",

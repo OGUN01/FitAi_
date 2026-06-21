@@ -1,7 +1,7 @@
 # FitAI Data Architecture
 
-> **Last updated:** 2026-04-04 (Choose Your Pace overhaul — true-calorie cards, GOAL+EXERCISE option, isBelowBMR flag)
-> **Status:** All issues from Waves 1–10 resolved. Onboarding calculation engine hardened. Choose Your Pace is now unambiguous.
+> **Last updated:** 2026-06-20 (Wave 3 — `health_metrics` Supabase persistence for Health Connect data + manual health-data entry fallback for unsupported watches. Plus Wave 2: Health Connect as sole Android health-data path; Google Fit removed. Plus nutrition/analytics/auth layer hardening — P0–P3 fixes)
+> **Status:** All issues from Waves 1–10 resolved. Onboarding calculation engine hardened. Choose Your Pace is now unambiguous. Nutrition/analytics/auth SSOT fixes (P0-1…P3-23) applied. Wave 2: Android wearable subsystem migrated from Google Fit to Health Connect. Wave 3: Health Connect metrics now persist to `health_metrics` Supabase table; manual entry fallback live for unsupported watches (Noise/boAt/Fire-Boltt/Huawei).
 
 ## Table of Contents
 
@@ -13,6 +13,7 @@
 - [F. Generation Pipelines](#f-generation-pipelines)
 - [G. Resolved Issues Log](#g-resolved-issues-log)
 - [H. Remaining Technical Debt](#h-remaining-technical-debt)
+- [I. Android Wearable / Health Connect Subsystem](#i-android-wearable--health-connect-subsystem)
 
 ---
 
@@ -329,6 +330,7 @@ All fields are **calculated/derived** — no raw user inputs (except rate select
 | `workout_templates` | `id` | `user_id → profiles` | Custom workout templates |
 | `exercise_prs` | `id` | `user_id → profiles` | Personal records |
 | `weekly_workout_plans` | `id` | `user_id → profiles` | AI/custom weekly plans |
+| `health_metrics` | `id` (uuid) | `user_id → auth.users` (ON DELETE CASCADE) | Daily health-metric history from Health Connect (automatic) and manual entry (Wave 3). One authoritative value per user/day/metric via UNIQUE(user_id, date, metric_type). See §I.4. |
 | ⚠️ `fitness_goals` | `id` | `user_id → profiles` | DEPRECATED — fully migrated to `workout_preferences` (Wave 10). No runtime reads/writes. |
 
 ### A.8 Zustand Stores
@@ -355,8 +357,9 @@ profileStore = {
 **Other stores with onboarding-related data:**
 - `userStore` — ⚠️ Legacy. Holds `UserProfile` for auth ops. Not SSOT for onboarding data.
 - `fitnessStore` — Workout sessions, active plans, progress. NOT onboarding data.
-- `nutritionStore` — Meal logs, nutrition tracking. NOT onboarding data.
-- `hydrationStore` — Water tracking. Goal synced from `useCalculatedMetrics.dailyWaterML`.
+- `nutritionStore` — Meal logs, nutrition tracking. NOT onboarding data. Consumed-nutrition selectors (`getConsumedNutrition`/`getTodaysConsumedNutrition`) are the SSOT and live on the store itself; the divergent `nutrition/selectors.ts` was deleted (P0-2, 2026-06-20).
+- `hydrationStore` — Water tracking (runtime state). Goal set exclusively in `useNutritionTracking` (SSOT — P1-10, 2026-06-20; previously also set in `useHomeLogic` causing a race). **Water intake SSOT:** `water_logs` table in Supabase (P0-1). `analytics_metrics.water_intake_ml` is DERIVED from `water_logs` at read time, never independently accumulated.
+- `healthDataStore` (`src/stores/healthDataStore.ts`) — Android Health Connect metrics. NOT onboarding data. Runtime source for steps, heart rate, resting heart rate, active/total calories, distance, weight, sleep hours, recent workouts, heartRateVariability, oxygenSaturation, bodyFat. **Persisted to the `health_metrics` Supabase table (Wave 3)** via fire-and-forget `saveHealthSnapshot` after each `syncFromHealthConnect` store update — persistence failures never block UI sync. Historical read-back is via the `loadHealthMetricsHistory(days=30)` action, which populates `metricsHistory` for charts. The `weight` metric additionally propagates to `profileStore.bodyAnalysis.current_weight_kg` → `body_analysis` table (the existing onboarding table — unchanged). See §I for the full data flow.
 
 ---
 
@@ -740,7 +743,7 @@ useReviewValidation
 
 **Rule:** snake_case is canonical (stores + DB). camelCase exists at boundaries (Workers API, AI, legacy). Mapping happens in `typeTransformers.ts` and `aiRequestTransformers.ts`.
 
-### D.2 Enum Mappings (Fixed in Wave 2A)
+### D.2 Enum Mappings (Fixed in Wave 2A; centralized + readiness-override guard added 2026-06-20)
 
 **Activity Level:**
 | Onboarding Value | Health Calc Value | Mapping Function |
@@ -758,15 +761,27 @@ useReviewValidation
 | `"vegan"` | `"vegan"` | pass-through |
 | `"pescatarian"` | `"pescatarian"` | pass-through |
 | `"non-veg"` | `"omnivore"` | `mapDietTypeForHealthCalc()` |
-| `"balanced"` | `"omnivore"` | `mapDietTypeForHealthCalc()` |
+| `"balanced"` | `"omnivore"` | `mapDietTypeForHealthCalc()` (explicit: "balanced" is the onboarding label for a mixed/omnivorous diet; there is no separate "balanced" DietType in health-calc) |
+
+**Specialized DietTypes (from readiness flags, NOT user-selectable onboarding diet_type):**
+| Health Calc Value | Source | Eligible to override base diet? |
+|-------------------|--------|---------------------------------|
+| `"keto"` | `keto_ready` | Only when base diet is `omnivore` (keto is not vegan/vegetarian-safe) |
+| `"low_carb"` | `low_carb_ready` | Only when base diet is `omnivore` |
+| `"paleo"` | `paleo_ready` | Only when base diet is `omnivore` |
+| `"mediterranean"` | `mediterranean_ready` | `omnivore` OR `pescatarian` (fish + olive oil compatible) |
+
+**Readiness-override SAFETY GUARD (P0-3, 2026-06-20):** A readiness flag must NOT silently override a medically-incompatible explicit user diet choice. Previously `resolveDietType` let `keto_ready` override a vegan diet → keto is not vegan-safe, a dangerous mismatch. Now: the override only applies when the base diet is compatible (`omnivore`, or `pescatarian` for mediterranean). On conflict, the user's explicit choice wins and a `console.warn` surfaces the conflict so it can be reconciled. `high_protein_ready` remains an AI-only flag and never changes the macro DietType.
 
 **Defense-in-depth:** All calculator lookup maps also accept `"extreme"` as a direct key (aliased to same value as `"very_active"`), preventing silent fallback errors.
 
-Functions in `src/utils/typeTransformers.ts`:
+Functions in `src/utils/typeTransformers.ts` (all four now EXIST — previously only `mapActivityLevelForHealthCalc` was real; the other three were phantom and have been created 2026-06-20):
 - `mapActivityLevelForHealthCalc(onboardingLevel)` → health calc value
-- `mapActivityLevelForOnboarding(healthCalcLevel)` → onboarding value
-- `mapDietTypeForHealthCalc(onboardingDietType)` → health calc value
-- `mapDietTypeForOnboarding(healthCalcDietType)` → onboarding value
+- `mapActivityLevelForOnboarding(healthCalcLevel)` → onboarding value (unknown → `"moderate"` + warn)
+- `mapDietTypeForHealthCalc(onboardingDietType)` → health calc value (unknown → `"omnivore"` + warn)
+- `mapDietTypeForOnboarding(healthCalcDietType)` → onboarding value (specialized diets collapse to `"balanced"`; unknown → `"balanced"` + warn)
+
+`resolveDietType` in `src/utils/healthCalculations/nutritional.ts` uses `mapDietTypeForHealthCalc` as the SSOT for the base diet and layers the readiness-override guard on top.
 
 ### D.3 Boundary Mapping Functions
 
@@ -774,15 +789,15 @@ All in `src/utils/typeTransformers.ts`:
 
 | Function | Purpose |
 |----------|---------|
-| `toAppFormat(data)` | Generic snake_case → camelCase conversion |
-| `toDbFormat(data)` | Generic camelCase → snake_case conversion |
-| `normalizeToSnakeCase(data)` | Normalize mixed-case objects to snake_case |
-| `normalizeToCamelCase(data)` | Normalize mixed-case objects to camelCase |
+| `toDbFormat(data)` | Generic camelCase → snake_case conversion (deep, handles nested objects/arrays) |
+| `normalizeToSnakeCase(data)` | Normalize mixed-case objects to snake_case using `FIELD_MAPPINGS` |
 | `mapActivityLevelForHealthCalc()` | Onboarding → health calc activity level |
+| `mapActivityLevelForOnboarding()` | Health calc → onboarding activity level (inverse) |
 | `mapDietTypeForHealthCalc()` | Onboarding → health calc diet type |
-| `FIELD_MAPPINGS` | Static mapping table of snake↔camel pairs |
+| `mapDietTypeForOnboarding()` | Health calc → onboarding diet type (inverse) |
+| `FIELD_MAPPINGS` | Static mapping table of snake↔camel pairs (used by `normalizeToSnakeCase`) |
 
-**Note:** Key-doubling in `toAppFormat()` was removed in Wave 3B. Objects no longer contain both conventions simultaneously.
+**Note (P1-9, 2026-06-20):** The doc previously claimed `toAppFormat()` and `normalizeToCamelCase()` existed. They never did — only `toDbFormat` and `normalizeToSnakeCase` are real. The "removed in Wave 3B" claim about `toAppFormat()` key-doubling referred to a function that never existed in this codebase; the actual Wave 3B change was to `toDbFormat`'s duplicate-key skip logic. The doc has been corrected to reference the real functions only.
 
 ### D.4 Legacy Interfaces
 
@@ -1111,7 +1126,7 @@ All issues discovered during the 2026-04-02 data audit and their resolution:
 | H16 | P3 | Hardcoded `"IN"` (India) country fallback in 5 locations | 2C | Replaced with `null` + `console.warn` in all 5 locations | 5 files |
 | H17 | P4 | 5 dead fields never computed during onboarding | 2B | `bmi_health_risk`, `bmr_formula_used`, `vo2_max_classification` now computed. `detected_ethnicity` left null (no consumers). | `master-engine.ts`, `cardiovascular.ts` |
 | H21 | P4 | Two `OnboardingReviewData` definitions out of sync | 3B | `legacy.ts` now re-exports from canonical `onboarding.ts` | `legacy.ts` |
-| H22 | P4 | Hydration goal set in 2 places (useHomeLogic + useNutritionTracking) | 3B | Removed from `useHomeLogic`, kept in `useNutritionTracking` (SSOT) | `useHomeLogic.ts` |
+| H22 | P4 | Hydration goal set in 2 places (useHomeLogic + useNutritionTracking) | 3B | Removed from `useHomeLogic`, kept in `useNutritionTracking` (SSOT) | `useHomeLogic.ts` — **NOTE (2026-06-20):** the 3B resolution was incomplete; the `setDailyGoalFromMetrics` call was still present in `useHomeLogic` until P1-10 removed it for real. `useNutritionTracking` is now the true sole SSOT. |
 | H23 | P4 | `workout_sessions.workout_plan_id` always null | 3B | Wired to `workoutSourcePlan.databaseId` | `completionTracking.ts` |
 | H18 | P3 | Duplicate DB writes (`duration`/`exercises`/`enjoyment_rating`) | 9 | Consolidated to canonical columns, removed duplicate writes | `completionTracking.ts`, `extraWorkoutService.ts`, `workout-completion.ts` |
 | H19 | P3 | `workout_templates.last_used_at` never written | 9 | Updated RPC + fallback to set `last_used_at = NOW()` | `workoutTemplateService.ts`, migration, RPC |
@@ -1126,6 +1141,35 @@ All issues discovered during the 2026-04-02 data audit and their resolution:
 | — | P4 | 3 remaining workout fields (`enjoys_group_classes`, `prefers_outdoor`, `needs_motivation`) | 10 | Confirmed already wired end-to-end | `aiRequestTransformers.ts`, Workers `workoutGeneration.ts` |
 
 **Total: 39 issues resolved across 11 waves, ~98 file modifications, zero new TypeScript errors introduced.**
+
+### Nutrition / Analytics / Auth Layer Hardening (2026-06-20)
+
+| ID | Severity | Issue | Resolution | Files Changed |
+|----|----------|-------|------------|---------------|
+| P0-1 | P0 | Water intake stored in TWO Supabase tables (`water_logs` + `analytics_metrics.water_intake_ml`), no reconciliation | `water_logs` is now the single source of truth. `analytics_metrics.water_intake_ml` is DERIVED at read time from `water_logs` (sum per day) in `getTodaysMetrics` / `loadMetricsHistory`. The independent accumulate write in `updateTodaysMetrics` was removed; the column is retained for back-compat with older readers but never independently accumulated. | `analyticsData.ts` |
+| P0-2 | P0 | Duplicate divergent `getConsumedNutrition` in `nutrition/selectors.ts` (included planned-but-not-logged meals — explicitly forbidden by store comment) | Deleted `nutrition/selectors.ts`. Exported `clearConsumedNutritionCaches` from `nutritionStore.ts`; `clearUserData.ts` now calls it (replaces `clearNutritionCache`). Only importer was `clearUserData.ts` (verified). | `nutritionStore.ts`, `clearUserData.ts`, `clearUserData.test.ts` (deleted `selectors.ts`) |
+| P0-3 | P0 | `diet_type` enum divergence, no centralized mapper; readiness flags silently overrode medically-incompatible explicit diet choices (vegan + keto_ready → keto) | Centralized mappers in `typeTransformers.ts`: `mapDietTypeForHealthCalc`, `mapDietTypeForOnboarding`, `mapActivityLevelForOnboarding` (previously phantom). `resolveDietType` now uses `mapDietTypeForHealthCalc` as SSOT and applies a SAFETY GUARD: readiness flags only override when the base diet is compatible (omnivore, or pescatarian for mediterranean); on conflict the explicit user choice wins + `console.warn`. | `typeTransformers.ts`, `nutritional.ts` |
+| P0-4 | P0 | `nutritionStore` realtime triggered full `loadData()` on every meal_logs event, wiping in-flight (progress<100) local state | Added `handleMealLogRealtimeChange` — incremental INSERT/UPDATE/DELETE handler that updates only the affected row, preserving in-flight progress. Falls back to `loadData()` only if the incremental path throws. | `nutritionStore.ts` |
+| P1-5 | P1 | `persistData` overwrote `loggedAt` with `now()` on every persist → meals shifted into today's totals after midnight | `loggedAt` is now preserved from `meal.loggedAt`/`meal.createdAt`; only set on first creation. | `nutritionStore.ts` |
+| P1-6 | P1 | `"guest"` user_id reached real DB writes via `saveWeeklyMealPlan` / `completeMeal` (`getUserIdOrGuest()` with no guard) → RLS rejected, retried indefinitely, queue pollution | Added `getSyncableUserId()` helper (returns null for guest/unauthenticated). Both queue sites now skip queueing for guests (local-only). | `nutritionStore.ts` |
+| P1-7 | P1 | Auth session dual-persisted: AsyncStorage `auth_session` (tokens) + Supabase SecureStore adapter | Supabase SecureStore adapter is now the canonical token store. AsyncStorage holds ONLY the `AuthUser` (display data) under `auth_user_cache` for fast cold-start render. `restoreCachedSession` no longer trusts AsyncStorage expiry; `revalidateSession` always revalidates via `supabase.auth.getSession()`. Refresh uses tokenless `refreshSession()` (SDK reads from SecureStore). | `auth.ts` |
+| P1-8 | P1 | `metricsHistory` triple-stored (engine AsyncStorage, store AsyncStorage, Supabase) | Supabase `analytics_metrics` is now canonical. `analyticsEngine.loadMetricsHistory` loads from Supabase for authed users (AsyncStorage only as guest/offline fallback). `saveMetricsHistory` skips the AsyncStorage write for authed users (no dual-write). | `analyticsEngine.ts` |
+| P1-9 | P1 | Doc referenced phantom functions (`mapActivityLevelForOnboarding`, `mapDietTypeForHealthCalc`, `mapDietTypeForOnboarding`, `toAppFormat`, `normalizeToCamelCase`) | Resolved with P0-3 (mappers now exist). Doc D.2/D.3 corrected to reference real functions only; false "removed in Wave 3B" claim about `toAppFormat` struck. | `FITAI_DATA_ARCHITECTURE.md` |
+| P1-10 | P1 | Doc falsely claimed hydration goal setter removed from `useHomeLogic` (H22) — it was still present, racing with `useNutritionTracking` | Removed `setDailyGoalFromMetrics` call from `useHomeLogic`. `useNutritionTracking` is now the true sole SSOT for the hydration goal. | `useHomeLogic.ts` |
+| P2-11 | P2 | Meal completion marked via `"[COMPLETED]"` string-append to notes (spoofable, divergent from row-existence inference) | Added `is_completed BOOLEAN` column to `meal_logs` (migration `20260620000001`). `completeMeal`/`endMealSession` set `isCompleted: true`; `loadData` reads `is_completed` and only restores progress=100 for explicitly-completed logs. `MealLog` type gains optional `isCompleted`. | `nutritionStore.ts`, `localData.ts`, migration `20260620000001_add_meal_logs_is_completed.sql` |
+| P2-12 | P2 | Streaks never persisted to Supabase → lost on reinstall/device change | Added `current_streak`/`longest_streak` columns to `analytics_metrics` (migration `20260620000002`). `analyticsDataService.saveStreaks`/`loadStreaks` added. `analyticsStore.initialize` loads persisted streaks; `generateAnalytics` persists after compute. | `analyticsData.ts`, `analyticsStore.ts`, migration `20260620000002_add_streaks_to_analytics_metrics.sql` |
+| P2-13 | P2 | `currentStreak` overwritten with 0 when `generateAnalytics` threw "Insufficient data" | Catch block no longer sets `currentAnalytics: null` — preserves last known good value. Only `reset()` clears it. | `analyticsStore.ts` |
+| P2-14 | P2 | `getProgressStats` ignored `timeRange` (fetched only 2 entries, claimed N-day coverage) | Now filters entries to the `timeRange` window (date cutoff), sorts ascending, computes change from range bounds (oldest vs newest in window). Falls back to all entries if none fall in window. | `progressData.ts` |
+| P2-15 | P2 | Hardcoded `user_id: "local-user"` in `convertBodyMeasurementToProgressEntry` (sentinel other services skip-sync) | Accepts real `userId` param (threaded from `getUserProgressEntries`). If unavailable, leaves `user_id` empty + `console.warn` — never fabricates the sentinel. | `progressData.ts` |
+| P3-16 | P3 | `handleRemoveWater` bypassed service layer (raw supabase delete with timezone-drifting date filter) | Added `hydrationDataService.removeLastTodayWaterLog` (uses `eq('date', getLocalDateString())`). `handleRemoveWater` routes through it. | `hydrationData.ts`, `useNutritionTracking.ts` |
+| P3-17 | P3 | Dead empty `if (result.success) {}` in `syncHydrationWithSupabase` | Removed dead branch; documented as a thin wrapper over `getTodayWaterIntake`. | `hydrationData.ts` |
+| P3-19 | P3 | 4 empty catch blocks in `uuid.ts` silently fell back to `Math.random` (PK collision risk) | All 4 now `console.error` before falling back. | `uuid.ts` |
+| P3-20 | P3 | Supabase client created with empty anon key (only `console.warn`, every request silently rejected by RLS) | In production, now throws a fatal error at startup. In dev, still warns + creates the client for offline work. | `supabase.ts` |
+| P3-21 | P3 | Derived `chartData` persisted to AsyncStorage (stale if generator logic changes) | Removed `chartData` from `partialize`; always regenerated from `metricsHistory` via `generateChartData()` on load. | `analyticsStore.ts` |
+| P3-22 | P3 | `weightHistory`/`calorieHistory` duplicate `dailyMetricsHistory` (divergent fetch paths) | `setDailyMetricsHistory` now re-derives `weightHistory`/`calorieHistory` from the canonical `DailyMetrics[]` so they can't diverge. `setHistoryData` retained for the progress_entries/meals fallback paths. | `analyticsStore.ts` |
+| P3-23 | P3 | `exerciseVolumeHistory`/`personalRecords` not persisted + no loading flag → empty UI with no loading state | Added `isLoadingExerciseAnalytics` flag; set true at start of `loadExerciseAnalytics`, false in `finally`. Reset on logout. | `analyticsStore.ts` |
+
+**Total: 23 issues resolved (P0–P3), zero new TypeScript errors introduced (`npx tsc --noEmit` passes).**
 
 ---
 
@@ -1170,3 +1214,201 @@ All issues discovered during the 2026-04-02 data audit and their resolution:
 ---
 
 > **Document maintenance:** Update this file when making changes to data flow, adding/removing fields, modifying calculations, or resolving technical debt items above. Reference this document in code reviews for data architecture decisions.
+
+---
+
+## I. Android Wearable / Health Connect Subsystem
+
+> **Wave 2 (2026-06-20) → Wave 3 (2026-06-20).** This section documents the Android health-data ingestion path and its persistence layer. Wave 2 made Health Connect the sole Android health-data path (Google Fit removed). Wave 3 adds Supabase persistence (`health_metrics` table) for daily history plus a manual-entry fallback for watches without Health Connect support.
+
+### I.1 Platform Strategy
+
+| Platform | Health-data path | Status |
+|----------|------------------|--------|
+| Android | Android Health Connect (`react-native-health-connect` ^3.5.3) | ✅ Sole path (Wave 2) |
+| iOS | Apple HealthKit (`expo-health-kit`) | ✅ Active (out of scope for this section) |
+| ~~Android~~ | ~~Google Fit REST API + `react-native-google-fit`~~ | ❌ **REMOVED in Wave 2.** Google Fit REST API is deprecated (shutdown end-2026). `src/services/googleFit.ts` deleted, `react-native-google-fit` dependency removed, all Google Fit store actions removed. |
+
+**Health Connect is the aggregation hub.** FitAI reads from Health Connect, not from individual watch SDKs. A smartwatch works with FitAI on Android **iff** its companion app writes to Health Connect. See `src/docs/WEARABLE_SUPPORT_MATRIX.md` for the per-brand matrix.
+
+### I.2 Data Flow (Android)
+
+```
+Smartwatch / fitness band
+  → Companion app (Samsung Health / Fitbit / Garmin Connect / Mi Fitness /
+                   Zepp / Withings / OHealth / etc.)
+  → Android Health Connect (OS aggregation hub)
+  → healthConnectService.syncHealthData()           [src/services/health/core.ts]
+      → per-metric readers in syncHelpers.ts          [src/services/health/syncHelpers.ts]
+          syncSteps, syncHeartRate, syncActiveCalories,
+          syncTotalCaloriesWithBMRFallback, syncDistance, syncWeight,
+          syncSleep, syncExerciseSessions, syncHRV, syncSpO2, syncBodyFat
+      → syncAllMetrics(ctx) orchestrates all readers
+  → healthDataStore.metrics (Zustand)                [src/stores/healthDataStore.ts]
+  → UI components (via selectors)
+```
+
+The legacy re-export shim `src/services/healthConnect.ts` (2 lines) exists only for backward-compat imports; the real implementation lives in `src/services/health/core.ts`. New code should import from `src/services/health/core.ts` (or the `src/services/health/index.ts` barrel).
+
+### I.3 Metrics Surfaced in `healthDataStore`
+
+| Metric | Store field | HC record type | Notes |
+|--------|-------------|----------------|-------|
+| Steps | `metrics.steps` | `Steps` | Daily aggregate |
+| Heart rate | `metrics.heartRate` | `HeartRate` | Latest sample |
+| Resting heart rate | `metrics.restingHeartRate` | `HeartRate` | Derived |
+| Active calories | `metrics.activeCalories` | `ActiveCaloriesBurned` | Exercise only |
+| Total calories | `metrics.totalCalories` | `TotalCaloriesBurned` | BMR fallback via `BasalMetabolicRate` when total unavailable |
+| Distance | `metrics.distance` | `Distance` | Meters |
+| Weight | `metrics.weight` | `Weight` | ⚠️ ALSO propagated to `profileStore.bodyAnalysis.current_weight_kg` → `body_analysis` table (the ONE persistence path) |
+| Sleep hours | `metrics.sleepHours` | `SleepSession` | Derived from session durations |
+| Recent workouts | `metrics.recentWorkouts` | `ExerciseSession` | Read-back of HC exercise sessions |
+| Heart rate variability | `metrics.heartRateVariability` | `HeartRateVariabilityRmssd` | RMSSD in ms — recovery indicator (Wave 2) |
+| Oxygen saturation | `metrics.oxygenSaturation` | `OxygenSaturation` | SpO2 % (Wave 2) |
+| Body fat | `metrics.bodyFat` | `BodyFat` | % from smart scales (Wave 2) |
+
+### I.4 Persistence Status — `health_metrics` Table (IMPLEMENTED, Wave 3)
+
+**Health metrics are persisted to the `health_metrics` Supabase table.** Migration: `supabase/migrations/20260620000003_create_health_metrics.sql`. The runtime store (`healthDataStore.metrics`) remains the SSOT for live UI; `health_metrics` is the persistence + history layer.
+
+#### Schema
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid (PK) | Default `gen_random_uuid()` |
+| `user_id` | uuid (FK → `auth.users.id`) | `ON DELETE CASCADE` |
+| `date` | DATE | Local date (not timestamptz) — one row per user per day per metric |
+| `metric_type` | TEXT | Enum-like; see values below |
+| `value` | NUMERIC | The metric value (units carried by `metric_type` + `unit`) |
+| `unit` | TEXT | Display unit, e.g. `"steps"`, `"bpm"`, `"kcal"`, `"kg"`, `"hours"`, `"km"`, `"ms"`, `"%"` |
+| `source` | TEXT (default `'healthconnect'`) | `'healthconnect'` (automatic) or `'manual'` (ManualHealthEntryScreen) |
+| `recorded_at` | timestamptz | When the reading was taken |
+| `created_at` | timestamptz | Default `now()` |
+
+**Constraints:**
+- `UNIQUE(user_id, date, metric_type)` — exactly ONE authoritative value per user/day/metric. Writes are upserts: the latest write for a given (user, date, metric_type) wins, regardless of source.
+- RLS enabled; SELECT/INSERT/UPDATE/DELETE all gated on `auth.uid() = user_id`.
+- Index `idx_health_metrics_user_date` on `(user_id, date DESC)` for history queries.
+
+**`metric_type` values** (matches the metrics surfaced in §I.3):
+
+`'steps'`, `'heart_rate'`, `'resting_heart_rate'`, `'active_calories'`, `'total_calories'`, `'distance_km'`, `'weight_kg'`, `'sleep_hours'`, `'heart_rate_variability'`, `'oxygen_saturation'`, `'body_fat'`
+
+#### `source` column — no-ambiguity guarantee (CLAUDE.md #1)
+
+`source` distinguishes Health-Connect-synced data (`'healthconnect'`) from manually-entered data (`'manual'`) for UI attribution ("from your watch" vs "manually entered"). It does NOT create two sources of truth: the UNIQUE constraint makes the latest value per (user, date, metric_type) authoritative regardless of source. So a manual entry on a day that already has HC data **overrides** that day's HC value for that metric (latest write wins on upsert). This is intentional and documented — it lets users correct bad watch readings. There is no merge, no fallback, no divergence.
+
+#### Service — `healthMetricsDataService`
+
+File: `src/services/healthMetricsData.ts`. Follows the `hydrationData.ts` pattern (thin service over Supabase, errors logged via `console.error`, never swallowed).
+
+| Function | Purpose |
+|----------|---------|
+| `saveHealthMetric({ userId, date, metricType, value, unit, source })` | Upsert a single metric. Honors the UNIQUE constraint — latest write wins. |
+| `saveHealthSnapshot({ userId, date, metrics })` | Bulk upsert of a full day's metrics from a Health Connect sync (one row per metric_type). Called fire-and-forget from `healthDataStore.syncFromHealthConnect`. |
+| `getTodayHealthMetrics(userId)` | Today's row(s) for live display. |
+| `getHealthMetricsHistory({ userId, metricType, days })` | N-day history for a single metric — feeds charts. |
+| `getMultiMetricHistory({ userId, metricTypes, days })` | N-day history for multiple metrics in one call. |
+| `deleteHealthMetric({ userId, date, metricType })` | Delete a single day's metric (manual correction UX). |
+
+#### Data flow — automatic (Health Connect) path
+
+```
+Smartwatch → Companion app → Android Health Connect
+  → healthConnectService.syncHealthData()                  [src/services/health/core.ts]
+      → syncAllMetrics(ctx) — per-metric readers            [src/services/health/syncHelpers.ts]
+  → healthDataStore.syncFromHealthConnect(result)           [src/stores/healthDataStore.ts]
+      → set metrics (Zustand) — UI updates immediately
+      → healthMetricsDataService.saveHealthSnapshot({       [src/services/healthMetricsData.ts]
+            userId, date: getLocalDateString(), metrics: { steps, heart_rate, ... }
+          }).catch(console.error)                          // fire-and-forget
+              ↑ persistence failure is logged but does NOT block UI sync
+              ↑ does NOT throw back into the store update path
+```
+
+Key invariant: **UI sync and persistence are decoupled.** The store write completes and subscribers re-render before the Supabase upsert resolves. If the upsert fails, the error is surfaced via `console.error` (CLAUDE.md #5 — no silent failures) but the user still sees their freshly-synced data.
+
+#### Data flow — manual entry path (Wave 3)
+
+```
+WearableConnectionScreen
+  → "No Health Connect watch?" → UnsupportedWatchNotice card
+  → navigates to ManualHealthEntry route                  [src/screens/settings/ManualHealthEntryScreen.tsx]
+      → ManualMetricEntry components (one per metric)      [src/components/health/ManualMetricEntry.tsx]
+      → healthMetricsDataService.saveHealthMetric({        [src/services/healthMetricsData.ts]
+            userId, date: today, metricType, value, unit, source: 'manual'
+          })
+      → upsert into health_metrics (UNIQUE wins → overrides any HC value for that day/metric)
+```
+
+For Huawei specifically, users can ALSO use the paid "Health Sync" bridge app (Huawei Health → Health Connect) as an alternative to manual entry. Manual entry is the no-cost fallback; Health Sync is the automated-but-paid alternative.
+
+#### Store — `loadHealthMetricsHistory` action
+
+`healthDataStore.loadHealthMetricsHistory(days = 30)` — fetches N days of `health_metrics` rows (all metric_types) via `healthMetricsDataService.getMultiMetricHistory` and populates a new `metricsHistory` state field. Charts subscribe to `metricsHistory` for historical trends. Called on chart-screen mount and after manual entries so the new value renders immediately.
+
+#### `weight` dual-write (unchanged)
+
+`weight_kg` is written to BOTH:
+1. `health_metrics` (Wave 3 — daily history, source `'healthconnect'` or `'manual'`)
+2. `profileStore.bodyAnalysis.current_weight_kg` → `body_analysis.current_weight_kg` (existing onboarding table — used by the calculation engine for BMR/TDEE/macros)
+
+This is intentional, not a duplication: `body_analysis` is the onboarding SSOT consumed by the calculation engine; `health_metrics` is the time-series history consumed by charts. They serve different consumers.
+
+#### `clearUserData` wipe list (Wave 3)
+
+`clearUserData.ts` now also wipes `health_metrics` for the current user on clear-all (`delete from health_metrics where user_id = <uid>`). Added alongside the existing `analytics_metrics`, `meal_logs`, `water_logs`, etc. wipes.
+
+#### `analytics_metrics` relationship (unchanged)
+
+`analytics_metrics` remains independently accumulated by the analytics engine (not by the HC sync path). It is a separate aggregation layer for streaks, daily summary stats, etc. `health_metrics` is the raw per-metric time-series. The two do not write to each other.
+
+### I.5 Workout Write-Back
+
+Completed FitAI workouts are written back to Health Connect so they appear in Samsung Health / Google Health / any other HC-consuming app, mirroring the iOS `exportWorkoutToHealthKit` path:
+
+```
+Workout completion flow (completionTracking.ts)
+  → healthConnectService.writeWorkoutSession({ exerciseType, startTime, endTime, title, calories, notes })
+      → insertRecords([ExerciseSession record])
+      → (if calories > 0) insertRecords([ActiveCaloriesBurned record])
+```
+
+Requires `WRITE_EXERCISE` + `WRITE_ACTIVE_CALORIES_BURNED` permissions. Returns `{ success, recordId }`.
+
+### I.6 Background Sync
+
+Foreground sync runs on Home screen mount and via a manual "Sync Now" control. Background sync is also wired:
+
+```
+App startup (App.tsx)
+  → registerBackgroundHealthSync()                       [src/services/backgroundHealthSync.ts]
+      gated on settings.backgroundSyncEnabled
+      → expo-background-fetch task: "fitai-healthconnect-background-sync"
+      → TaskManager.defineTask → runBackgroundSyncOnce() [src/services/health/core.ts]
+          → healthConnectService.shouldSync(1 hour) → syncHealthData(1 day back)
+```
+
+Background sync requires `READ_HEALTH_DATA_IN_BACKGROUND` (declared in manifest) and is only honored by Android 15+ (`FEATURE_READ_HEALTH_DATA_IN_BACKGROUND` feature). On older Android versions the task still registers but the OS may not deliver background reads; foreground sync remains the fallback.
+
+### I.7 Permission Model
+
+`disconnect()` now revokes OS-level permissions via `revokeAllPermissions()` (not just a local flag flip) — mirrors `reauthorize()`. Without this, the HC provider app would still show FitAI as having permissions and a background sync could resume reading data.
+
+Runtime flow on cold start:
+1. `canUseHealthConnect()` — checks native module loaded AND `getSdkStatus() === SDK_AVAILABLE`. On Android <14 the HC provider app is a separate APK that may not be installed; this check prevents opaque downstream failures.
+2. `initializeHealthConnect()` — `getSdkStatus()` → if `SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED`, deep-links user to HC settings; if `SDK_UNAVAILABLE`, prompts install of "Health Connect by Android" from Play Store.
+3. `requestPermissions()` — requests the minimal set (see `permissions` array in `core.ts`).
+4. `hasPermissions()` — re-validated each launch via `getGrantedPermissions()` (users can revoke from system Settings); falls back to AsyncStorage cache if the SDK check throws.
+
+### I.8 Manifest & Build Configuration
+
+Declared in `android/app/src/main/AndroidManifest.xml` (managed via the `./plugins/withFitAiHealthConnect` Expo config plugin, which wraps `react-native-health-connect/app.plugin` and injects the `HealthConnectPermissionDelegate` into `MainActivity`):
+
+- **READ permissions:** `READ_STEPS`, `READ_HEART_RATE`, `READ_SLEEP`, `READ_EXERCISE`, `READ_ACTIVE_CALORIES_BURNED`, `READ_TOTAL_CALORIES_BURNED`, `READ_WEIGHT`, `READ_BODY_FAT`, `READ_HEART_RATE_VARIABILITY`, `READ_OXYGEN_SATURATION`, `READ_DISTANCE`, `READ_BASAL_METABOLIC_RATE`, `READ_HEALTH_DATA_IN_BACKGROUND` (Android 15+), `READ_HEALTH_DATA_HISTORY`.
+- **WRITE permissions:** `WRITE_EXERCISE`, `WRITE_ACTIVE_CALORIES_BURNED`.
+- **`<queries>`** for `com.google.android.apps.healthdata` (HC provider app package).
+- **`ViewPermissionUsageActivity` activity-alias** with `ACTION_VIEW_PERMISSION_USAGE` + `CATEGORY_HEALTH_PERMISSIONS` — mandatory for Play Store Health Connect approval (Play rejects without it).
+- **`minSdkVersion` 26**, `compileSdkVersion` 35, `targetSdkVersion` 34 (set both in `app.config.js` android block and the `expo-build-properties` plugin).
+
+See `src/docs/PLAY_STORE_HEALTH_CONNECT_CHECKLIST.md` for the full Play Store compliance checklist.

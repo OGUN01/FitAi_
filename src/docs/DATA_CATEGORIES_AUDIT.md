@@ -4,6 +4,8 @@
 
 This document maps ALL data categories in the app that need synchronization.
 
+> **Wave 2 update (2026-06-20):** Google Fit has been **removed entirely** (REST API deprecated, shutdown end-2026). Android Health Connect is now the sole Android health-data path. Health metrics in `healthDataStore` (steps, heart rate, calories, sleep, etc.) are currently **store-only / ephemeral** — they reset daily and are NOT persisted to Supabase. The only exception is `weight`, which propagates to `profileStore.bodyAnalysis.current_weight_kg` → `body_analysis` table. A `health_metrics` Supabase table for daily history is **planned for Wave 3 (not yet implemented)**. The runtime `data_source` for health records is `FitAI | HealthKit | HealthConnect | Manual` (GoogleFit removed from the union). See `FITAI_DATA_ARCHITECTURE.md` §I for the full HC data flow.
+
 ---
 
 ## CATEGORY 1: USER STATS
@@ -148,12 +150,12 @@ target: macroTargets.fat ?? nutritionGoals?.macroTargets?.fat ?? null
 1. `healthDataStore.metrics.sleepHours`
 2. `healthDataStore.metrics.sleepQuality`
 3. `personalInfo.current_sleep_duration` (onboarding)
-4. HealthKit service data
-5. GoogleFit service data
+4. HealthKit service data (iOS)
+5. ~~GoogleFit service data~~ — **REMOVED (Wave 2).** Google Fit has been deleted entirely; Health Connect is the sole Android path. Sleep now arrives via `healthConnectService.syncHealthData()` → `syncSleep()` (SleepSession record).
 
 ### SOLUTION:
 **Single Source:** `healthDataStore.metrics.sleepHours/sleepQuality`
-**Action:** HealthKit/GoogleFit services WRITE to healthDataStore, don't return directly
+**Action:** HealthKit (iOS) / Health Connect (Android) services WRITE to healthDataStore, don't return directly
 
 ---
 
@@ -180,7 +182,7 @@ target: macroTargets.fat ?? nutritionGoals?.macroTargets?.fat ?? null
 ### Current Sources:
 1. `healthDataStore.metrics.heartRate`
 2. `healthDataStore.metrics.restingHeartRate`
-3. HealthKit/GoogleFit services
+3. HealthKit (iOS) / Health Connect (Android) services. ~~GoogleFit~~ — **REMOVED (Wave 2).** HR now arrives via `healthConnectService.syncHealthData()` → `syncHeartRate()` (HeartRate record).
 
 ### SOLUTION:
 **Single Source:** `healthDataStore.metrics`
@@ -309,6 +311,7 @@ const progress = getMealProgress(mealId);
 ---
 
 *Updated: All Data Categories Fixed*
+*Last review: 2026-06-20 (Wave 2 — Google Fit removed; Health Connect is sole Android path; health metrics store-only until Wave 3)*
 *Total Data Categories: 15*
 *Categories Fixed: 15*
 *Categories Needing Fix: 0*

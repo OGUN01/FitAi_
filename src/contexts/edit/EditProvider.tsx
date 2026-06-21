@@ -24,7 +24,6 @@ import {
   EditProviderProps,
   EditContextData,
   FitnessGoals,
-  DietPreferences,
   WorkoutPreferences,
 } from "./types";
 
@@ -194,13 +193,36 @@ export const EditProvider: React.FC<EditProviderProps> = ({
           saveResult = await saveFitnessGoals(currentData as FitnessGoals);
           break;
         case "dietPreferences":
-          const simplifiedDietPrefs = {
-            dietType: (currentData as DietPreferences).diet_type,
-            allergies: (currentData as DietPreferences).allergies || [],
-            cuisinePreferences: [],
-            restrictions: (currentData as DietPreferences).restrictions || [],
-          };
-          saveResult = await saveDietPreferences(simplifiedDietPrefs);
+          // BUG-3 fix: previously this built a `simplifiedDietPrefs` with only
+          // dietType/allergies/cuisinePreferences(hardcoded [])/restrictions.
+          // That partial object flowed through saveDietPreferences →
+          // DataBridge → DietPreferencesService.save, which upserts ALL 23
+          // diet_preferences columns (cooking_methods, all 6 diet-readiness
+          // toggles, 4 meal toggles, 14 health habits, etc.). The missing
+          // fields arrived as `undefined` → written as NULL → OVERWRITING
+          // the user's complete onboarding data.
+          //
+          // Fix: pass the full currentData (the complete DietPreferences
+          // object from the edit form) so DietPreferencesService.save writes
+          // every column with its real value. loadSectionData returns the full
+          // snake_case row from DietPreferencesService.load; createDefault-
+          // SectionData also populates every field. No hardcoded
+          // cuisinePreferences: [].
+          //
+          // We also add camelCase aliases (dietType) because the integration
+          // layer's saveDietPreferences (src/utils/integration/onboarding.ts)
+          // runs a SEPARATE 3-column upsert that reads `dietPreferences.dietType`
+          // (camelCase). The edit form stores snake_case `diet_type`, so without
+          // the alias that redundant upsert would write diet_type: undefined and
+          // clobber the value DietPreferencesService.save just wrote. allergies
+          // and restrictions are already snake_case-camelCase identical.
+          saveResult = await saveDietPreferences({
+            ...currentData,
+            dietType: currentData.dietType ?? currentData.diet_type,
+            // Preserve the camelCase shape the legacy integration upsert reads,
+            // but ONLY if the edit form didn't already set them. allergies and
+            // restrictions use the same name in both cases, so they pass through.
+          });
           break;
         case "workoutPreferences":
           saveResult = await saveWorkoutPreferences(

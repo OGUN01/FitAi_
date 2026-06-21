@@ -141,7 +141,9 @@ describe("analytics LineChart", () => {
       });
 
     await waitFor(() => {
-      expect(getSvgTextValues()).toContain("81.0kg");
+      // G5 formatting: integer values render without a spurious .0 decimal
+      // (e.g. 81 → "81kg", not "81.0kg"). Fractional values still use toFixed(1).
+      expect(getSvgTextValues()).toContain("81kg");
     });
 
     expect(() =>
@@ -155,7 +157,7 @@ describe("analytics LineChart", () => {
     ).not.toThrow();
 
     await waitFor(() => {
-      expect(getSvgTextValues()).not.toContain("81.0kg");
+      expect(getSvgTextValues()).not.toContain("81kg");
     });
   });
 });

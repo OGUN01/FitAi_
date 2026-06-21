@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, Animated } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
 import { AuroraSpinner } from '../../components/ui/aurora/AuroraSpinner';
-import { ResponsiveTheme } from '../../utils/constants';
+import { colors } from '../../theme/aurora-tokens';
 import { rh } from '../../utils/responsive';
 
 // Hooks
@@ -59,6 +60,12 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) =>
 
   const combinedError = progressError || analysisError || statsError;
 
+  // Reanimated entrance animation — shared values from useProgressScreen.
+  const entranceStyle = useAnimatedStyle(() => ({
+    opacity: fadeAnim.value,
+    transform: [{ translateY: slideAnim.value }],
+  }));
+
   if (isLoading) {
     return (
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
@@ -73,13 +80,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) =>
     <>
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
         <View style={[styles.container, { paddingTop: insets.top }]}>
-          <Animated.View
-            style={{
-              flex: 1,
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            }}
-          >
+          <Animated.View style={[{ flex: 1 }, entranceStyle]}>
             <ScrollView
               style={styles.scrollView}
               contentContainerStyle={{ paddingBottom: rh(120) }}
@@ -88,8 +89,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) =>
                 <RefreshControl
                   refreshing={refreshing}
                   onRefresh={onRefresh}
-                  tintColor={ResponsiveTheme.colors.primary}
-                  colors={[ResponsiveTheme.colors.primary]}
+                  tintColor={colors.primary.DEFAULT}
+                  colors={[colors.primary.DEFAULT]}
                 />
               }
             >
@@ -164,7 +165,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) =>
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background.DEFAULT,
   },
   scrollView: {
     flex: 1,

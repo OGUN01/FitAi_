@@ -2,7 +2,7 @@ import React from "react";
 import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
-import { ResponsiveTheme } from "../../utils/constants";
+import { colors } from "../../theme/aurora-tokens";
 import { rh, rw } from "../../utils/responsive";
 
 // Hook
@@ -84,7 +84,7 @@ export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor={ResponsiveTheme.colors.primary}
+              tintColor={colors.primary.DEFAULT}
             />
           }
           showsVerticalScrollIndicator={false}
@@ -100,7 +100,7 @@ export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
             icon="scale-outline"
             trend={displayWeightTrend}
             unit={weightUnit}
-            color={ResponsiveTheme.colors.success}
+            color={colors.success.DEFAULT}
           />
 
           <SimpleTrendCard
@@ -108,7 +108,7 @@ export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
             icon="flame-outline"
             trend={calorieTrend}
             unit="kcal"
-            color={ResponsiveTheme.colors.warning}
+            color={colors.warning.DEFAULT}
           />
 
           <GoalProgressCard

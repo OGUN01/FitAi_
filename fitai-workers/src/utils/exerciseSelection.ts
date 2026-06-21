@@ -365,29 +365,54 @@ export function selectExercisesForDay(
   profile: UserProfile,
   totalExercisesTarget: number,
   weekNumber: number = 1,
-  regenerationSeed: number = 0
+  regenerationSeed: number = 0,
+  dayIndex: number = 0,
+  usedExerciseIds: Set<string> = new Set()
 ): WorkoutDayExercises {
 
   // 1. FILTER BY BODY PARTS AND MUSCLE GROUPS
+  // Priority: exercises where the PRIMARY targetMuscle matches the day's muscleGroups
+  // are preferred over exercises that only match via secondaryMuscles (which causes
+  // delt-exercises to crowd out lat-exercises on the Pull day, etc.)
   const targetBodyParts = new Set(workoutDay.focusAreas.map(bp => bp.toLowerCase()));
   const targetMuscles = new Set(workoutDay.muscleGroups.map(mg => mg.toLowerCase()));
 
   const relevantExercises = safeExercises.filter(ex => {
-    // Check if exercise targets any of the required body parts
-    const hasBodyPart = ex.bodyParts.some(bp => targetBodyParts.has(bp.toLowerCase()));
+    // Skip exercises already used in earlier days this week
+    if (usedExerciseIds.has(ex.exerciseId)) return false;
 
-    // Check if exercise targets any of the required muscles
-    const hasMuscle =
-      ex.targetMuscles.some(m => targetMuscles.has(m.toLowerCase())) ||
-      ex.secondaryMuscles.some(m => targetMuscles.has(m.toLowerCase()));
+    // Primary match: bodyPart OR primary targetMuscle
+    const hasPrimaryBodyPart = ex.bodyParts.some(bp => targetBodyParts.has(bp.toLowerCase()));
+    const hasPrimaryMuscle = ex.targetMuscles.some(m => targetMuscles.has(m.toLowerCase()));
 
-    return hasBodyPart || hasMuscle;
+    // Secondary match: only via secondaryMuscles (weaker signal — exercise primarily works another group)
+    const hasSecondaryMuscle = ex.secondaryMuscles.some(m => targetMuscles.has(m.toLowerCase()));
+
+    return hasPrimaryBodyPart || hasPrimaryMuscle || hasSecondaryMuscle;
   });
 
-  console.log(`[Exercise Selection] Day: ${workoutDay.dayName}, Relevant: ${relevantExercises.length}/${safeExercises.length}`);
+  // Sort so primary-muscle-matching exercises come before secondary-only matches.
+  // This ensures lats/quads/pecs get selected before delt exercises that only
+  // happen to have those as secondary muscles.
+  const primaryMatchIds = new Set(
+    relevantExercises
+      .filter(ex => {
+        const hasPrimaryBodyPart = ex.bodyParts.some(bp => targetBodyParts.has(bp.toLowerCase()));
+        const hasPrimaryMuscle = ex.targetMuscles.some(m => targetMuscles.has(m.toLowerCase()));
+        return hasPrimaryBodyPart || hasPrimaryMuscle;
+      })
+      .map(ex => ex.exerciseId)
+  );
 
-  // 2. CLASSIFY ALL RELEVANT EXERCISES
-  const classifiedExercises = relevantExercises.map(ex => classifyExercise(ex));
+  const sortedRelevantExercises = [
+    ...relevantExercises.filter(ex => primaryMatchIds.has(ex.exerciseId)),
+    ...relevantExercises.filter(ex => !primaryMatchIds.has(ex.exerciseId)),
+  ];
+
+  console.log(`[Exercise Selection] Day: ${workoutDay.dayName}, Relevant: ${relevantExercises.length}/${safeExercises.length} (${primaryMatchIds.size} primary, ${relevantExercises.length - primaryMatchIds.size} secondary-only)`);
+
+  // 2. CLASSIFY ALL RELEVANT EXERCISES (using priority-sorted list)
+  const classifiedExercises = sortedRelevantExercises.map(ex => classifyExercise(ex));
 
   // Group by classification
   const compounds = classifiedExercises.filter(ex => ex.classification === 'compound');
@@ -410,10 +435,10 @@ export function selectExercisesForDay(
   const selectedExercises: ClassifiedExercise[] = [];
 
   // Apply weekly rotation offset (0-3 for 4-week mesocycle)
-  // regenerationSeed adds extra offset so "regenerate" produces different exercises
-  // while keeping the same split structure and muscle group targets.
+  // dayIndex ensures different days with the same focus areas (e.g. Lower A vs Legs)
+  // get different exercise selections. regenerationSeed adds extra offset for "regenerate".
   const totalPoolSize = Math.max(1, compounds.length + auxiliaries.length + isolations.length);
-  const seedOffset = regenerationSeed > 0 ? (regenerationSeed % totalPoolSize) : 0;
+  const seedOffset = (regenerationSeed + dayIndex) % totalPoolSize;
   const rotationOffset = ((weekNumber - 1) % 4) + seedOffset;
 
   // Select compounds
@@ -577,23 +602,32 @@ export function generateWeeklyExercisePlan(
 
   // Determine exercises per workout based on time and experience
   const exercisesPerWorkout = calculateExercisesPerWorkout(
-    profile.workoutDuration || 45,
+    profile.workoutDuration,
     profile.experienceLevel,
     split.daysPerWeek
   );
 
   console.log(`[Weekly Plan] Generating week ${weekNumber}, ${exercisesPerWorkout} exercises/workout, seed=${regenerationSeed}`);
 
-  // Generate exercises for each workout day
+  // Generate exercises for each workout day.
+  // usedExerciseIds prevents the same exercise from appearing on multiple days.
+  // dayIndex (the map index) ensures days with identical focus areas (e.g. Lower A vs Legs)
+  // get different rotations and therefore different exercises.
+  const usedExerciseIds = new Set<string>();
   const workouts: WorkoutDayExercises[] = split.workoutDays.map((day, index) => {
-    return selectExercisesForDay(
+    const result = selectExercisesForDay(
       safeExercises,
       day,
       profile,
       exercisesPerWorkout,
       weekNumber,
-      regenerationSeed
+      regenerationSeed,
+      index,
+      usedExerciseIds
     );
+    // Track exercises used so far to prevent cross-day duplicates
+    result.exercises.forEach(ex => usedExerciseIds.add(ex.exerciseId));
+    return result;
   });
 
   const totalExercisesPerWeek = workouts.reduce((sum, w) => sum + w.totalExercises, 0);

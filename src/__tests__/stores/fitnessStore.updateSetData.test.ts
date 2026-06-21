@@ -48,9 +48,12 @@ jest.mock("../../services/authUtils", () => ({
   getCurrentUserId: jest.fn(() => "test-user"),
   getUserIdOrGuest: jest.fn(() => "test-user"),
 }));
-jest.mock("../../stores/profileStore", () => ({
-  useProfileStore: { getState: jest.fn(() => ({ bodyAnalysis: {} })) },
-}));
+jest.mock("../../stores/profileStore", () => {
+  const state = { bodyAnalysis: {} };
+  const fn = jest.fn(() => state);
+  (fn as any).getState = jest.fn(() => state);
+  return { useProfileStore: fn };
+});
 jest.mock("../../services/currentWeight", () => ({
   resolveCurrentWeightFromStores: jest.fn(() => ({ value: 70 })),
 }));

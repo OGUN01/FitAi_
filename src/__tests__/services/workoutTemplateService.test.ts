@@ -170,14 +170,37 @@ describe("WorkoutTemplateService", () => {
   });
 
   describe("incrementUsageCount", () => {
-    it("calls update on workout_templates", async () => {
-      const qb = mockSupabase.from("workout_templates");
-      qb._resolve({ data: { usage_count: 1 }, error: null });
+    it("calls rpc increment_template_usage_count atomically", async () => {
+      // Source uses supabase.rpc (atomic DB-side increment) — not a plain .update().
+      // The resolved value here only needs error: null so the RPC succeeds and the
+      // non-atomic fallback path is skipped.
+      (mockSupabase.rpc as jest.Mock).mockResolvedValueOnce({
+        data: { usage_count: 1 },
+        error: null,
+      });
 
       await workoutTemplateService.incrementUsageCount("tpl-001", TEST_USER_ID);
 
-      expect(mockSupabase.from).toHaveBeenCalledWith("workout_templates");
+      expect(mockSupabase.rpc).toHaveBeenCalledWith(
+        "increment_template_usage_count",
+        { template_id: "tpl-001", owner_user_id: TEST_USER_ID },
+      );
+    });
+
+    it("falls back to read-then-update when rpc errors", async () => {
+      const qb = mockSupabase.from("workout_templates");
+      // RPC fails → fallback selects current count then updates.
+      (mockSupabase.rpc as jest.Mock).mockResolvedValueOnce({
+        data: null,
+        error: { message: "function not found", code: "42883" },
+      });
+      qb._resolve({ data: { usage_count: 2 }, error: null });
+
+      await workoutTemplateService.incrementUsageCount("tpl-001", TEST_USER_ID);
+
       expect(qb.update).toHaveBeenCalled();
+      expect(qb.eq).toHaveBeenCalledWith("id", "tpl-001");
+      expect(qb.eq).toHaveBeenCalledWith("user_id", TEST_USER_ID);
     });
   });
 });

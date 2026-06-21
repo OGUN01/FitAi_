@@ -218,8 +218,73 @@ export async function deleteWaterLog(
 }
 
 /**
- * Sync local hydration data with Supabase
- * Call this on app start to ensure local state matches remote
+ * P3-16: Remove the most recent water log for today (used by the "remove water"
+ * UI button). Filters by `date` = today (getLocalDateString) for timezone
+ * consistency with logWaterIntake, NOT by `logged_at` gte today's ISO date
+ * (which drifted across timezones). Returns the amount_ml of the deleted row so
+ * the caller can decrement local state by exactly what was removed.
+ */
+export async function removeLastTodayWaterLog(): Promise<{
+  success: boolean;
+  deletedAmountMl?: number;
+  error?: string;
+}> {
+  try {
+    const userId = getCurrentUserId();
+    if (!userId) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const today = getLocalDateString();
+
+    // Find the most recent log for today (consistent date filter).
+    const { data: logs, error: fetchError } = await supabase
+      .from("water_logs")
+      .select("id, amount_ml")
+      .eq("user_id", userId)
+      .eq("date", today)
+      .order("logged_at", { ascending: false })
+      .limit(1);
+
+    if (fetchError) {
+      console.error("[HydrationData] Failed to fetch last water log:", fetchError);
+      return { success: false, error: fetchError.message };
+    }
+
+    if (!logs || logs.length === 0) {
+      return { success: true, deletedAmountMl: 0 };
+    }
+
+    const target = logs[0];
+    const { error: deleteError } = await supabase
+      .from("water_logs")
+      .delete()
+      .eq("id", target.id)
+      .eq("user_id", userId);
+
+    if (deleteError) {
+      console.error("[HydrationData] Failed to delete last water log:", deleteError);
+      return { success: false, error: deleteError.message };
+    }
+
+    return {
+      success: true,
+      deletedAmountMl: Number(target.amount_ml) || 0,
+    };
+  } catch (err) {
+    console.error("[HydrationData] Error removing last water log:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Unknown error",
+    };
+  }
+}
+
+/**
+ * Sync local hydration data with Supabase.
+ * P3-17: Previously had a dead `if (result.success) {}` empty block. This is a
+ * thin wrapper over getTodayWaterIntake kept for callers that want a sync-style
+ * API returning only { success, total_ml }. Removed the dead empty branch.
  */
 export async function syncHydrationWithSupabase(): Promise<{
   success: boolean;
@@ -227,10 +292,6 @@ export async function syncHydrationWithSupabase(): Promise<{
   error?: string;
 }> {
   const result = await getTodayWaterIntake();
-
-  if (result.success) {
-  }
-
   return {
     success: result.success,
     total_ml: result.total_ml,
@@ -244,6 +305,7 @@ export const hydrationDataService = {
   getTodayWaterIntake,
   getWaterHistory,
   deleteWaterLog,
+  removeLastTodayWaterLog,
   syncHydrationWithSupabase,
 };
 

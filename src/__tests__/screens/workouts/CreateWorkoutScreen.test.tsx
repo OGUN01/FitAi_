@@ -28,6 +28,8 @@ jest.mock("react-native", () => {
       RealReact.createElement("View", props, children),
     SafeAreaView: ({ children, ...props }: any) =>
       RealReact.createElement("View", props, children),
+    KeyboardAvoidingView: ({ children, ...props }: any) =>
+      RealReact.createElement("View", props, children),
     StyleSheet: {
       create: (s: any) => s,
       flatten: (style: any) =>

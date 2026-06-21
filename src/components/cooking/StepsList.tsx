@@ -3,14 +3,14 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { CookingFlow } from "../../utils/cookingFlowGenerator";
 import { colors } from "../../theme/aurora-tokens";
-import { ResponsiveTheme } from '../../utils/constants';
 import { rf, rp, rbr } from '../../utils/responsive';
+import { GlassCard } from "../ui/aurora";
+import { AnimatedPressable } from "../ui/aurora";
 
 interface StepsListProps {
   cookingFlow: CookingFlow;
@@ -30,7 +30,11 @@ export default function StepsList({
   if (!cookingFlow) return null;
 
   return (
-    <View style={styles.stepsListSection}>
+    <GlassCard
+      padding="none"
+      borderRadius="xl"
+      style={styles.stepsListSection}
+    >
       <Text style={styles.sectionTitle}>Cooking Steps</Text>
       <ScrollView
         ref={scrollViewRef}
@@ -38,7 +42,7 @@ export default function StepsList({
         showsVerticalScrollIndicator={false}
       >
         {cookingFlow.steps.map((step, index) => (
-          <TouchableOpacity
+          <AnimatedPressable
             key={index}
             style={[
               styles.stepItem,
@@ -46,6 +50,11 @@ export default function StepsList({
               completedSteps.has(index) && styles.completedStepItem,
             ]}
             onPress={() => onStepPress(index)}
+            scaleValue={0.98}
+            springConfig="smooth"
+            hapticType="light"
+            accessibilityLabel={`Step ${step.step}: ${step.instruction}`}
+            accessibilityRole="button"
           >
             <View style={styles.stepItemContent}>
               <View style={styles.stepNumber}>
@@ -83,7 +92,7 @@ export default function StepsList({
                 />
               )}
             </View>
-          </TouchableOpacity>
+          </AnimatedPressable>
         ))}
       </ScrollView>
 
@@ -97,17 +106,14 @@ export default function StepsList({
           ))}
         </View>
       )}
-    </View>
+    </GlassCard>
   );
 }
 
 const styles = StyleSheet.create({
   stepsListSection: {
-    backgroundColor: colors.background.secondary,
     marginHorizontal: rp(16),
     marginBottom: rp(16),
-    borderRadius: rbr(12),
-    overflow: "hidden",
   },
   sectionTitle: {
     fontSize: rf(18),
@@ -123,10 +129,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(16),
     paddingVertical: rp(12),
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.glassBorder,
+    borderBottomColor: colors.glass.border,
   },
   currentStepItem: {
-    backgroundColor: ResponsiveTheme.colors.primaryTint,
+    backgroundColor: `${colors.primary.DEFAULT}18`,
   },
   completedStepItem: {
     backgroundColor: "rgba(76, 175, 80, 0.08)",

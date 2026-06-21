@@ -1,6 +1,10 @@
 import { Platform } from "react-native";
 import { NativeModulesProxy } from "expo-modules-core";
 import { healthConnectService, canUseHealthConnect } from "./healthConnect";
+// Task 3 — background sync must update the Zustand store, not just AsyncStorage.
+// Importing the store (not the hook) lets the background task call the action
+// directly without a React context.
+import { useHealthDataStore } from "../stores/healthDataStore";
 
 const TASK_NAME = "fitai-healthconnect-background-sync";
 
@@ -34,18 +38,39 @@ export async function registerBackgroundHealthSync(
       : false;
     if (!isDefined) {
       TaskManager.defineTask(TASK_NAME, async () => {
+        // Task 3 — Background sync must update the Zustand store so the
+        // foreground UI reflects newly-fetched data on next open. Previously
+        // this called healthConnectService.runBackgroundSyncOnce() which writes
+        // ONLY to AsyncStorage — leaving background-fetched data invisible
+        // until a manual refresh. Now we call the STORE action
+        // syncFromHealthConnect(1) which reads from HC, updates the store, AND
+        // persists to Supabase (health_metrics) via saveHealthSnapshot. The
+        // task is already gated to 15-min intervals by expo-background-fetch
+        // (minimumInterval: 900), so double-fire is not a concern here.
+        // syncStatus transitions ("syncing"→"success"/"error") are fine for
+        // background — they'll be reflected when the user opens the app.
         try {
-          const hadChanges = await healthConnectService.runBackgroundSyncOnce();
-          return hadChanges
-            ? BackgroundFetch.BackgroundFetchResult.NewData
-            : BackgroundFetch.BackgroundFetchResult.NoData;
+          const result = await useHealthDataStore
+            .getState()
+            .syncFromHealthConnect(1);
+          if (result?.success) {
+            return BackgroundFetch.BackgroundFetchResult.NewData;
+          }
+          return BackgroundFetch.BackgroundFetchResult.NoData;
         } catch (e) {
+          console.error(
+            "[backgroundHealthSync] background sync task failed:",
+            e,
+          );
           return BackgroundFetch.BackgroundFetchResult.Failed;
         }
       });
     }
 
-    // Register
+    // Register. registerTaskAsync is idempotent on expo-background-fetch —
+    // re-registering with the same task name is a safe no-op, so we don't need
+    // to pre-check task status (those APIs aren't uniformly available across
+    // SDK versions anyway). App.tsx calls this on every startup.
     await BackgroundFetch.registerTaskAsync(TASK_NAME, {
       minimumInterval: Math.max(900, minIntervalSeconds),
       stopOnTerminate: false,

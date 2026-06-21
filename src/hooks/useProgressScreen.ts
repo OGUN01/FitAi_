@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { Animated, Platform, Share } from "react-native";
+import { Platform, Share } from "react-native";
+import { useSharedValue, withTiming } from "react-native-reanimated";
 import { useAuth } from "./useAuth";
 import { useProgressData } from "./useProgressData";
 import { useCalculatedMetrics } from "./useCalculatedMetrics";
@@ -81,9 +82,9 @@ export const useProgressScreen = (navigation: unknown) => {
   const { metrics: calculatedMetrics, hasCalculatedMetrics } =
     useCalculatedMetrics();
 
-  // Animation values
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
+  // Animation values — Reanimated shared values (replace legacy Animated.Value).
+  const fadeAnim = useSharedValue(0);
+  const slideAnim = useSharedValue(50);
 
   // Keep ref to avoid stale closure in completionTracking callback
   const refreshRef = useRef<() => Promise<void>>(async () => {});
@@ -122,18 +123,8 @@ export const useProgressScreen = (navigation: unknown) => {
       }
     });
 
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    fadeAnim.value = withTiming(1, { duration: 400 });
+    slideAnim.value = withTiming(0, { duration: 400 });
 
     return () => {
       unsubscribe();

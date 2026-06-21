@@ -117,7 +117,17 @@ export const useOnboardingLogic = ({
 
   // Initialize starting tab
   useEffect(() => {
-    const tabToShow = editMode && initialTab ? initialTab : startingTab;
+    // BUG-5 fix: clamp the initial tab to the valid range [1, 5].
+    // initialTab/startingTab arrive from external navigation params
+    // (MainNavigation → OnboardingContainer) which are untyped at the call
+    // site. An out-of-range value (e.g. 0, -1, 6) would hit the `default`
+    // case in OnboardingContainer.renderTabContent and render a blank
+    // screen (only a __DEV__ warn). `editMode && initialTab` already
+    // rejects 0 (falsy), but negative or >5 values slipped through.
+    // Clamp to [1, 5] so the user always lands on a real tab.
+    const MAX_TAB = 5;
+    const rawTab = editMode && initialTab ? initialTab : startingTab;
+    const tabToShow = Math.min(Math.max(1, rawTab), MAX_TAB);
     setCurrentTab(tabToShow);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editMode, initialTab, startingTab, setCurrentTab]);
@@ -541,7 +551,19 @@ export const useOnboardingLogic = ({
         weight: ba?.current_weight_kg || 0,
         country: pi?.country || "",
         state: pi?.state || "",
-      },
+        // BUG-1 fix: pass through all persisted personalInfo fields.
+        // These are collected on Tab 1 and persisted to the profiles table;
+        // aiRequestTransformers.ts:257-259 reads occupation_type/wake_time/
+        // sleep_time for the diet worker. Without them, the transformer gets
+        // undefined and the worker loses schedule + occupation context.
+        // region/units flow into UserProfile via convertOnboardingToProfile's
+        // `...data.personalInfo` spread so they persist as the SSOT.
+        wake_time: pi?.wake_time,
+        sleep_time: pi?.sleep_time,
+        occupation_type: pi?.occupation_type,
+        region: pi?.region,
+        units: pi?.units,
+      } as OnboardingReviewData['personalInfo'],
       fitnessGoals: {
         primary_goals: wp?.primary_goals || [],
         time_commitment: `${wp?.time_preference || wp?.session_duration_minutes || 45} minutes`,
@@ -558,6 +580,19 @@ export const useOnboardingLogic = ({
               ? "advanced"
               : "intermediate",
       },
+      // BUG-1 fix: pass through EVERY collected+persisted diet field.
+      // Previously only dietType/allergies/restrictions/calorieTarget were
+      // sent — the other ~20 fields (diet-readiness toggles, meal toggles,
+      // cooking prefs, 14 health habits) were dropped, so convertOnboarding-
+      // ToProfile compensated with `?? false` defaults and aiRequestTrans-
+      // formers.ts:262-300 received synthetic `false` for users who had
+      // actually selected true (e.g. drinks_alcohol, keto_ready).
+      //
+      // BUG-2 fix: restrictions was mapped to dp?.cuisine_preferences (copy-
+      // paste bug). Real dietary restrictions (e.g. gluten-free) were
+      // dropped and cuisine prefs were misclassified as restrictions.
+      // Now: restrictions = dp?.restrictions, cuisine_preferences = dp?.
+      // cuisine_preferences. Both are passed through.
       dietPreferences: {
         dietType: (dp?.diet_type || "balanced") as
           | "vegetarian"
@@ -565,12 +600,48 @@ export const useOnboardingLogic = ({
           | "non-veg"
           | "pescatarian",
         allergies: dp?.allergies || [],
-        restrictions: dp?.cuisine_preferences || [],
+        restrictions: dp?.restrictions || [],
+        cuisine_preferences: dp?.cuisine_preferences || [],
+        cooking_methods: dp?.cooking_methods || [],
+        snacks_count: dp?.snacks_count,
+        // Diet-readiness toggles (6)
+        keto_ready: dp?.keto_ready,
+        intermittent_fasting_ready: dp?.intermittent_fasting_ready,
+        paleo_ready: dp?.paleo_ready,
+        mediterranean_ready: dp?.mediterranean_ready,
+        low_carb_ready: dp?.low_carb_ready,
+        high_protein_ready: dp?.high_protein_ready,
+        // Meal toggles (4)
+        breakfast_enabled: dp?.breakfast_enabled,
+        lunch_enabled: dp?.lunch_enabled,
+        dinner_enabled: dp?.dinner_enabled,
+        snacks_enabled: dp?.snacks_enabled,
+        // Cooking preferences
+        cooking_skill_level: dp?.cooking_skill_level,
+        max_prep_time_minutes: dp?.max_prep_time_minutes,
+        budget_level: dp?.budget_level,
+        // Health habits (14)
+        drinks_enough_water: dp?.drinks_enough_water,
+        limits_sugary_drinks: dp?.limits_sugary_drinks,
+        eats_regular_meals: dp?.eats_regular_meals,
+        avoids_late_night_eating: dp?.avoids_late_night_eating,
+        controls_portion_sizes: dp?.controls_portion_sizes,
+        reads_nutrition_labels: dp?.reads_nutrition_labels,
+        eats_processed_foods: dp?.eats_processed_foods,
+        eats_5_servings_fruits_veggies: dp?.eats_5_servings_fruits_veggies,
+        limits_refined_sugar: dp?.limits_refined_sugar,
+        includes_healthy_fats: dp?.includes_healthy_fats,
+        drinks_alcohol: dp?.drinks_alcohol,
+        smokes_tobacco: dp?.smokes_tobacco,
+        drinks_coffee: dp?.drinks_coffee,
+        takes_supplements: dp?.takes_supplements,
         calorieTarget: (() => {
           if (!ar?.daily_calories) console.warn('[useOnboardingLogic] daily_calories unavailable — using 0 as calorieTarget');
           return ar?.daily_calories || 0;
         })(),
-      },
+        // snake_case alias so downstream code reading diet_type works too
+        diet_type: dp?.diet_type,
+      } as OnboardingReviewData['dietPreferences'],
       workoutPreferences: {
         location: wp?.location || "gym",
         equipment: wp?.equipment || wp?.available_equipment || [],

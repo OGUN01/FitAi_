@@ -16,7 +16,6 @@ import {
   Text,
   StyleSheet,
   RefreshControl,
-  ActivityIndicator,
   Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -27,7 +26,9 @@ import {
 } from "react-native-safe-area-context";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
-import { ResponsiveTheme } from "../../utils/constants";
+import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
+import { EmptyState } from "../../components/ui/aurora/EmptyState";
+import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
@@ -74,8 +75,22 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
 
-  // Subscription gate — analytics is a premium feature
-  const analyticsEnabled = useSubscriptionStore((s) => s.features.analytics);
+  // Subscription gate — analytics is a premium feature.
+  // Two conditions must hold: the plan's feature flag grants analytics AND
+  // the subscription is currently active (isPremium). This prevents a lapsed
+  // premium user (currentPeriodEnd in the past, but stale in-memory
+  // features.analytics === true before fetchSubscriptionStatus refreshes)
+  // from seeing premium analytics. Mirrors the defense-in-depth check in
+  // subscriptionStore.canUseFeature / isPremium.
+  const featuresAnalytics = useSubscriptionStore((s) => s.features.analytics);
+  const isPremium = useSubscriptionStore((s) => s.isPremium);
+  const subscriptionInitialized = useSubscriptionStore((s) => s.isInitialized);
+  // Before initialization completes, features defaults to FREE_FEATURES, so
+  // analyticsEnabled would be false and flash the locked screen for premium
+  // users. Treat the pre-init state as "access undetermined" -> show locked
+  // screen only after init; the locked screen's upgrade CTA still works.
+  const analyticsEnabled = featuresAnalytics && isPremium();
+  const showLockedInitializing = !subscriptionInitialized;
   const { triggerPaywall } = usePaywall();
 
   // State
@@ -132,7 +147,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     }
 
     initializeAchievements(user.id).catch((error) => {
-      console.warn(
+      console.error(
         "[AnalyticsScreen] Failed to initialize achievements:",
         error,
       );
@@ -701,12 +716,15 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
         <SafeAreaView style={styles.container} edges={["top"]}>
           <View style={styles.lockedContainer}>
             <View style={styles.lockedIconContainer}>
-              <Ionicons name="analytics-outline" size={rf(40)} color="#FF8A5C" />
+              <Ionicons name="analytics-outline" size={rf(40)} color={colors.primary.light} />
             </View>
             <Text style={styles.lockedTitle}>Premium Feature</Text>
             <Text style={styles.lockedDescription}>
-              Detailed analytics and trend charts are available on Basic and Pro plans.
+              {showLockedInitializing
+                ? "Loading your subscription..."
+                : "Detailed analytics and trend charts are available on Basic and Pro plans."}
             </Text>
+            {!showLockedInitializing && (
             <AnimatedPressable
               onPress={() => triggerPaywall("Unlock detailed analytics with a premium plan")}
               style={styles.lockedUpgradeButton}
@@ -720,6 +738,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
                 <Text style={styles.lockedUpgradeText}>Upgrade to Unlock</Text>
               </LinearGradient>
             </AnimatedPressable>
+            )}
           </View>
         </SafeAreaView>
       </AuroraBackground>
@@ -741,8 +760,8 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={handleRefresh}
-                tintColor={ResponsiveTheme.colors.primary}
-                colors={[ResponsiveTheme.colors.primary]}
+                tintColor={colors.primary.DEFAULT}
+                colors={[colors.primary.DEFAULT]}
               />
             }
           >
@@ -756,19 +775,21 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
             {/* Loading State */}
             {showLoading && (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator
-                  size="large"
-                  color={ResponsiveTheme.colors.primary}
-                />
+                <AuroraSpinner size="lg" />
                 <Text style={styles.loadingText}>Loading analytics...</Text>
               </View>
             )}
 
             {/* Error State */}
             {dataError && !showLoading && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{dataError}</Text>
-              </View>
+              <EmptyState
+                icon="alert-circle-outline"
+                title="Couldn't load analytics"
+                subtitle={dataError}
+                ctaText="Retry"
+                onCta={handleRefresh}
+                style={styles.errorState}
+              />
             )}
 
             {/* Content - only show when not in initial loading */}
@@ -843,7 +864,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background.DEFAULT,
   },
   animatedContainer: {
     flex: 1,
@@ -861,35 +882,26 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.xxl,
-    gap: ResponsiveTheme.spacing.md,
+    paddingVertical: spacing.xxl,
+    gap: spacing.md,
   },
   loadingText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: typography.fontSize.caption,
+    color: colors.text.secondary,
   },
-  errorContainer: {
-    padding: ResponsiveTheme.spacing.lg,
-    marginHorizontal: ResponsiveTheme.spacing.md,
-    backgroundColor: `${ResponsiveTheme.colors.error}15`,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    alignItems: "center",
-  },
-  errorText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.error,
-    textAlign: "center",
+  errorState: {
+    paddingVertical: spacing.xxl,
   },
   calorieBreakdown: {
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 16,
+    backgroundColor: colors.glass.backgroundDark,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginHorizontal: spacing.md,
   },
   breakdownTitle: {
-    fontSize: 14,
+    fontSize: typography.fontSize.caption,
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text.primary,
     marginBottom: 10,
   },
   breakdownRow: {
@@ -900,15 +912,15 @@ const styles = StyleSheet.create({
   },
   breakdownLabel: {
     fontSize: 13,
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.text.secondary,
   },
   breakdownValue: {
     fontSize: 13,
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text.primary,
   },
   breakdownExtra: {
-    color: ResponsiveTheme.colors.successAlt,
+    color: colors.success.DEFAULT,
   },
   lockedContainer: {
     flex: 1,
@@ -927,13 +939,13 @@ const styles = StyleSheet.create({
   lockedTitle: {
     fontSize: rf(22),
     fontWeight: "800",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text.primary,
     marginBottom: rh(10),
     textAlign: "center",
   },
   lockedDescription: {
     fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.text.secondary,
     textAlign: "center",
     lineHeight: rf(20),
     marginBottom: rh(28),
@@ -950,7 +962,7 @@ const styles = StyleSheet.create({
     borderRadius: rw(16),
   },
   lockedUpgradeText: {
-    color: "#FFF",
+    color: colors.text.primary,
     fontWeight: "700",
     fontSize: rf(16),
   },

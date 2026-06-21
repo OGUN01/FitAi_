@@ -10,6 +10,7 @@ import { logger } from "../utils/logger";
 import { createDebouncedStorage } from "../utils/safeAsyncStorage";
 import { supabase } from "../services/supabase";
 import { getCurrentUserId } from "../services/authUtils";
+import { analyticsDataService } from "../services/analyticsData";
 import {
   analyticsEngine,
   ComprehensiveAnalytics,
@@ -89,6 +90,10 @@ interface AnalyticsStore {
     reps: number;
     achievedAt: string;
   }>;
+  // P3-23: Loading flag for exercise analytics so consumers can show a loading
+  // state instead of an empty list with no indication that data is still
+  // fetching. loadExerciseAnalytics runs on initialize() and after login/reset.
+  isLoadingExerciseAnalytics: boolean;
 
   // Actions
   initialize: () => Promise<void>;
@@ -164,6 +169,8 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
       // GAP-06 initial state
       exerciseVolumeHistory: [],
       personalRecords: [],
+      // P3-23: true while exercise analytics are being fetched from Supabase.
+      isLoadingExerciseAnalytics: false,
 
       chartData: {
         workoutFrequency: [],
@@ -189,6 +196,29 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
 
           // Get summary data
           const summary = await analyticsEngine.getAnalyticsSummary();
+
+          // P2-12: Load persisted streaks from Supabase so a fresh launch shows
+          // the user's real streak immediately (before any recompute). The
+          // analyticsSummary from the engine is 0 until metrics are loaded,
+          // so prefer the persisted value when the engine has no data yet.
+          const userId = getCurrentUserId();
+          if (userId && !userId.startsWith("guest")) {
+            try {
+              const persisted =
+                await analyticsDataService.loadStreaks(userId);
+              if (
+                metricsHistory.length === 0 ||
+                summary.currentStreak === 0
+              ) {
+                summary.currentStreak = persisted.currentStreak;
+              }
+            } catch (streakErr) {
+              console.warn(
+                "[analyticsStore] loadStreaks failed, will recompute:",
+                streakErr,
+              );
+            }
+          }
 
           // Generate initial analytics if we have data
           if (metricsHistory.length > 0) {
@@ -272,12 +302,35 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
             isLoading: false,
           });
 
+          // P0-strk-1 SSOT: analyticsStore NO LONGER persists streaks to
+          // Supabase. achievementStore.updateCurrentStreak is now the SOLE
+          // writer of analytics_metrics.current_streak / longest_streak (it
+          // computes the streak reactively from fitnessStore.completedSessions
+          // and is invoked on workout completion / extra-workout completion).
+          //
+          // Previously analyticsStore.saveStreaks and achievementStore BOTH
+          // wrote the same Supabase column → last-writer-wins with conflicting
+          // values, and analyticsStore's value could be wrong (non-consecutive
+          // days counted). The streak computed here by analyticsEngine is kept
+          // READABLE for the analytics UI (analyticsSummary.currentStreak and
+          // currentAnalytics.workout.streakCurrent) but is NOT persisted — the
+          // persisted canonical value is whatever achievementStore wrote. On
+          // initialize() we read the persisted streak back via loadStreaks and
+          // use it to seed analyticsSummary, so the UI never loses the value.
+          //
+          // Do NOT re-add a saveStreaks call here — that re-introduces the
+          // dual-writer conflict. If persistence is needed, route through
+          // achievementStore.updateCurrentStreak.
+
           logger.info("Analytics generated", {
             period: targetPeriod,
             score: analytics.overallScore,
           });
         } catch (error) {
-          // Handle "Insufficient data" gracefully - this is expected for new users
+          // P2-13: Handle "Insufficient data" gracefully WITHOUT clobbering the
+          // existing analyticsSummary / streak with zeros. A recompute failure
+          // (e.g. new user with no data) must not wipe a previously-persisted
+          // streak. Keep the last known good summary.
           const errorMessage =
             error instanceof Error ? error.message : String(error);
           if (errorMessage.includes("Insufficient data")) {
@@ -289,7 +342,9 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
           }
           set({
             isLoading: false,
-            currentAnalytics: null,
+            // P2-13: Do NOT set currentAnalytics to null here — preserve the
+            // last known good value so a transient recompute failure doesn't
+            // wipe the UI. Only clear on explicit reset().
           });
         }
       },
@@ -543,6 +598,9 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
 
       // Reset store to initial state (for logout)
       reset: () => {
+        // P0 double-count fix: clear the idempotency guard so a re-login
+        // (potentially replaying today's workout events) starts fresh.
+        analyticsHelpers._clearCountedWorkouts();
         set({
           isLoading: false,
           isInitialized: false,
@@ -563,6 +621,8 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
           // GAP-06: clear exercise analytics on logout
           exerciseVolumeHistory: [],
           personalRecords: [],
+          // P3-23: reset the loading flag on logout.
+          isLoadingExerciseAnalytics: false,
           chartData: {
             workoutFrequency: [],
             weightProgress: [],
@@ -586,7 +646,29 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
 
       // Fix 21: Cache DailyMetrics fetched from analytics_metrics Supabase table
       setDailyMetricsHistory: (data, periodDays) => {
-        set({ dailyMetricsHistory: data, dailyMetricsHistoryPeriod: periodDays });
+        // P3-22: Re-derive weightHistory / calorieHistory from dailyMetricsHistory
+        // so the two flattened projections can't diverge from the canonical
+        // DailyMetrics[] (which carries weightKg / caloriesConsumed / caloriesBurned).
+        // setHistoryData (the other writer) is kept for the progress_entries /
+        // meals fallback paths that dailyMetricsHistory doesn't cover, but when
+        // dailyMetricsHistory is the source we project from it directly.
+        const derivedWeight = data
+          .filter((m) => m.weightKg !== null && m.weightKg !== undefined)
+          .map((m) => ({ date: m.metricDate, weight: m.weightKg as number }))
+          .sort((a, b) => a.date.localeCompare(b.date));
+        const derivedCalorie = data
+          .map((m) => ({
+            date: m.metricDate,
+            consumed: m.caloriesConsumed ?? 0,
+            burned: m.caloriesBurned ?? 0,
+          }))
+          .sort((a, b) => a.date.localeCompare(b.date));
+        set({
+          dailyMetricsHistory: data,
+          dailyMetricsHistoryPeriod: periodDays,
+          weightHistory: derivedWeight,
+          calorieHistory: derivedCalorie,
+        });
       },
 
       // GAP-06: Load exercise_sets + exercise_prs from Supabase
@@ -596,6 +678,10 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
           console.warn('[AnalyticsStore] loadExerciseAnalytics: no userId, skipping');
           return;
         }
+
+        // P3-23: set the loading flag so consumers can show a loading state
+        // instead of an empty list with no indication that data is fetching.
+        set({ isLoadingExerciseAnalytics: true });
 
         const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
@@ -677,6 +763,9 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
           }
         } catch (err) {
           console.error('[analyticsStore] Exception loading exercise_prs:', err);
+        } finally {
+          // P3-23: clear the loading flag once both queries finish (success or fail).
+          set({ isLoadingExerciseAnalytics: false });
         }
       },
     })),
@@ -687,7 +776,10 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
         // Persist critical analytics state
         metricsHistory: state.metricsHistory,
         analyticsSummary: state.analyticsSummary,
-        chartData: state.chartData,
+        // P3-21: chartData is NOT persisted — it is fully derived from
+        // metricsHistory via generateChartData(). Persisting a stale copy
+        // would diverge if the generator logic ever changes. Always regenerate
+        // on load (initialize() calls generateChartData()).
         selectedPeriod: state.selectedPeriod,
         isInitialized: state.isInitialized,
         // Cache history to survive tab switches
@@ -703,6 +795,20 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
 
 // Analytics helpers for easy integration
 export const analyticsHelpers = {
+  // P0 double-count fix: idempotency guard. Tracks workout identities already
+  // counted in this session so a re-fired realtime event (or a duplicate call
+  // from a screen) cannot re-accumulate calories into metricsHistory. The key
+  // is date + duration + caloriesBurned + type — the strongest identity
+  // available given the caller does not pass a sessionId. The Set lives only
+  // for the process lifetime (cleared on logout via _clearCountedWorkouts
+  // below), which is the window in which a realtime re-fire could double-count.
+  _countedWorkoutKeys: new Set<string>(),
+
+  // Reset the idempotency guard (called on logout / store reset).
+  _clearCountedWorkouts: () => {
+    analyticsHelpers._countedWorkoutKeys.clear();
+  },
+
   // Track workout completion
   trackWorkoutCompleted: async (workoutData: {
     date: string;
@@ -711,6 +817,21 @@ export const analyticsHelpers = {
     type: string;
     heartRate?: number;
   }) => {
+    // P0 double-count fix: idempotency guard. If this exact workout identity
+    // was already counted (same date + duration + calories + type), skip the
+    // in-memory accumulation. The Supabase analytics_metrics write
+    // (analyticsDataService.updateTodaysMetrics) is the canonical SSOT; this
+    // in-memory path is a derived cache only.
+    const idempotencyKey = `${workoutData.date}|${workoutData.duration}|${workoutData.caloriesBurned}|${workoutData.type}`;
+    if (analyticsHelpers._countedWorkoutKeys.has(idempotencyKey)) {
+      console.warn(
+        "[analyticsStore] trackWorkoutCompleted: duplicate workout event ignored (idempotency guard)",
+        idempotencyKey,
+      );
+      return;
+    }
+    analyticsHelpers._countedWorkoutKeys.add(idempotencyKey);
+
     const store = useAnalyticsStore.getState();
 
     // Get existing metrics for the day or create new

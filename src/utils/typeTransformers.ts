@@ -277,6 +277,12 @@ export function normalizeToSnakeCase<T extends Record<string, any>>(
 // Onboarding types (DB/user-facing) and health-calc types (internal) use
 // different enum values for the same concepts.  These mappers convert at the
 // boundary so neither side has to know about the other's vocabulary.
+//
+// Canonical enums:
+//   - Onboarding activity_level: sedentary | light | moderate | active | extreme
+//   - Health-calc ActivityLevel : sedentary | light | moderate | active | very_active | extreme
+//   - Onboarding diet_type     : vegetarian | vegan | non-veg | pescatarian | balanced
+//   - Health-calc DietType     : omnivore | vegetarian | vegan | pescatarian | keto | low_carb | paleo | mediterranean
 
 /**
  * Maps onboarding activity_level → health-calc ActivityLevel.
@@ -294,6 +300,101 @@ export function mapActivityLevelForHealthCalc(
   return onboardingLevel; // sedentary, light, moderate, active pass through
 }
 
+/**
+ * Maps health-calc ActivityLevel → onboarding activity_level.
+ *
+ * Inverse of mapActivityLevelForHealthCalc: health-calc "very_active" → onboarding "extreme".
+ * Unknown values fall back to "moderate" (a safe middle value) and are logged so the
+ * divergence is visible rather than silent.
+ */
+export function mapActivityLevelForOnboarding(
+  healthCalcLevel: string,
+): string {
+  switch (healthCalcLevel) {
+    case "sedentary":
+    case "light":
+    case "moderate":
+    case "active":
+      return healthCalcLevel;
+    case "very_active":
+    case "extreme":
+      // Both map back to "extreme" (onboarding's label for the top tier).
+      return "extreme";
+    default:
+      console.warn(
+        `[mapActivityLevelForOnboarding] Unknown health-calc activity level "${healthCalcLevel}" — falling back to "moderate".`,
+      );
+      return "moderate";
+  }
+}
+
+/**
+ * Maps onboarding diet_type → health-calc DietType (base diet only).
+ *
+ *   vegetarian  → vegetarian (pass-through)
+ *   vegan       → vegan (pass-through)
+ *   pescatarian → pescatarian (pass-through)
+ *   non-veg     → omnivore
+ *   balanced    → omnivore  (explicit: "balanced" is the onboarding label for a
+ *                            mixed/omnivorous diet; there is no separate "balanced"
+ *                            DietType in health-calc)
+ *
+ * Unknown values fall back to "omnivore" and are logged. This mapper does NOT
+ * apply readiness-flag overrides (keto_ready etc.) — those are handled separately
+ * by nutritional.resolveDietType so the override decision is visible and explicit.
+ */
+export function mapDietTypeForHealthCalc(
+  onboardingDietType: string,
+): string {
+  switch (onboardingDietType) {
+    case "vegetarian":
+    case "vegan":
+    case "pescatarian":
+      return onboardingDietType;
+    case "non-veg":
+    case "balanced":
+      return "omnivore";
+    default:
+      console.warn(
+        `[mapDietTypeForHealthCalc] Unknown onboarding diet_type "${onboardingDietType}" — falling back to "omnivore".`,
+      );
+      return "omnivore";
+  }
+}
+
+/**
+ * Maps health-calc DietType → onboarding diet_type.
+ *
+ * Inverse of mapDietTypeForHealthCalc for the base diet values. The specialized
+ * DietType values (keto, low_carb, paleo, mediterranean) have NO onboarding
+ * equivalent — they only arise from readiness flags — so they collapse back to
+ * the closest compatible base diet. Unknown values fall back to "balanced".
+ */
+export function mapDietTypeForOnboarding(
+  healthCalcDietType: string,
+): string {
+  switch (healthCalcDietType) {
+    case "vegetarian":
+    case "vegan":
+    case "pescatarian":
+      return healthCalcDietType;
+    case "omnivore":
+      return "balanced";
+    // Specialized diets derived from readiness flags collapse to the closest
+    // compatible base diet (they are not user-selectable onboarding diet_types):
+    case "keto":
+    case "low_carb":
+    case "paleo":
+    case "mediterranean":
+      return "balanced";
+    default:
+      console.warn(
+        `[mapDietTypeForOnboarding] Unknown health-calc DietType "${healthCalcDietType}" — falling back to "balanced".`,
+      );
+      return "balanced";
+  }
+}
+
 // ============================================================================
 // EXPORTS
 // ============================================================================
@@ -302,4 +403,7 @@ export default {
   toDbFormat,
   normalizeToSnakeCase,
   mapActivityLevelForHealthCalc,
+  mapActivityLevelForOnboarding,
+  mapDietTypeForHealthCalc,
+  mapDietTypeForOnboarding,
 };

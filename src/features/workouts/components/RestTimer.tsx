@@ -1,3 +1,25 @@
+/**
+ * FitAI — Rest Timer (Aurora)
+ *
+ * Countdown rest timer shown between sets / between exercises. Now rendered on
+ * a GlassCard surface with token colors, a reanimated progress bar, an SVG
+ * ProgressRing arc, and preset duration chips.
+ *
+ * Timer logic (restTimerService contract) is UNCHANGED:
+ *  - `targetEndTime` (epoch ms) drives the countdown via a 500ms interval.
+ *  - +10s extends the effective end time; Pause/Resume snapshots remaining.
+ *  - On expiry, Vibration.vibrate([0,400,100,400]) fires (preserved for the
+ *    existing test contract) and onExpire() is called once.
+ *
+ * Visual modernization:
+ *  - Flat #1C1C2E card → GlassCard (blur + border + elevation).
+ *  - Drifted #E05C2A accent → colors.primary.DEFAULT (single source of truth).
+ *  - Hardcoded #2A2A44 / #9999BB / #CCCCDD → aurora tokens.
+ *  - View-clipping progress bar → reanimated withTiming width.
+ *  - Added ProgressRing arc around the countdown for a richer visual.
+ *  - Added preset chips (60/90/120/180s) as AnimatedPressable pills — wired
+ *    through the optional onSetPreset callback (parent restarts the timer).
+ */
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
@@ -5,8 +27,16 @@ import {
   TouchableOpacity,
   StyleSheet,
   Vibration,
-  DimensionValue,
 } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from "react-native-reanimated";
+import { GlassCard, AnimatedPressable, ProgressRing } from "../../../components/ui/aurora";
+import { colors, spacing, borderRadius, typography } from "../../../theme/aurora-tokens";
+import { rp, rf } from "../../../utils/responsive";
+import { animations } from "../../../theme/animations";
 
 interface RestTimerProps {
   targetEndTime: number | null;
@@ -24,7 +54,11 @@ interface RestTimerProps {
   totalSets?: number;
   /** Total rest duration in seconds — used to draw the progress bar. */
   totalDuration?: number;
+  /** Optional handler for preset-duration chips (60/90/120/180s). */
+  onSetPreset?: (seconds: number) => void;
 }
+
+const PRESETS = [60, 90, 120, 180];
 
 function fmt(secs: number): string {
   const m = Math.floor(secs / 60);
@@ -41,24 +75,22 @@ export function RestTimer({
   currentSet,
   totalSets,
   totalDuration = 60,
+  onSetPreset,
 }: RestTimerProps) {
   // ── State ──────────────────────────────────────────────────────────────────
-  // Remaining seconds — driven by interval when unpaused
   const [remaining, setRemaining] = useState(0);
-  // Extra seconds added by +10s button (accumulated offset)
   const [addedSeconds, setAddedSeconds] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  // Seconds remaining at the moment the user hit Pause
   const remainingAtPauseRef = useRef(0);
-  // Tracks whether onExpire has already fired for this timer instance
   const expiredRef = useRef(false);
-  // Effective end time = targetEndTime + addedSeconds * 1000 (when not paused)
   const effectiveEndRef = useRef<number>(0);
-  // Stable ref so the interval never needs to restart when onExpire changes
   const onExpireRef = useRef(onExpire);
   useEffect(() => {
     onExpireRef.current = onExpire;
   }, [onExpire]);
+
+  // Reanimated shared value for the progress bar width (0..1).
+  const progressSV = useSharedValue(0);
 
   // ── Initialise when a new targetEndTime arrives ───────────────────────────
   useEffect(() => {
@@ -96,6 +128,22 @@ export function RestTimer({
     return () => clearInterval(id);
   }, [targetEndTime, isPaused]);
 
+  // ── Animate the progress bar with reanimated withTiming ───────────────────
+  const effectiveTotalDuration = totalDuration + addedSeconds;
+  const progressFraction =
+    effectiveTotalDuration > 0
+      ? Math.max(0, Math.min(1, 1 - remaining / effectiveTotalDuration))
+      : 0;
+  useEffect(() => {
+    progressSV.value = withTiming(progressFraction, {
+      duration: animations.duration.quick,
+    });
+  }, [progressFraction, progressSV]);
+
+  const progressStyle = useAnimatedStyle(() => ({
+    width: `${Math.round(progressSV.value * 100)}%`,
+  }));
+
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handlePauseResume = useCallback(() => {
     setIsPaused((prev) => {
@@ -126,12 +174,6 @@ export function RestTimer({
   // ── Derived display values ─────────────────────────────────────────────────
   if (targetEndTime == null) return null;
 
-  const effectiveTotalDuration = totalDuration + addedSeconds;
-  const progressFraction =
-    effectiveTotalDuration > 0
-      ? Math.max(0, Math.min(1, 1 - remaining / effectiveTotalDuration))
-      : 0;
-
   const headingLabel = isInterExercise
     ? "REST BEFORE NEXT EXERCISE"
     : "REST BETWEEN SETS";
@@ -143,77 +185,115 @@ export function RestTimer({
     contextLine = `Set ${currentSet} of ${totalSets} complete`;
   }
 
+  // ProgressRing expects 0-100; use the remaining fraction inverted so the
+  // ring depletes as rest elapses.
+  const ringProgress = Math.round((1 - progressFraction) * 100);
+
   return (
     <View style={styles.overlay}>
-      <View style={styles.card}>
-        {/* Heading */}
-        <Text style={styles.heading}>{headingLabel}</Text>
+      <GlassCard
+        elevation={6}
+        padding="lg"
+        borderRadius="xxl"
+        contentStyle={styles.cardContent}
+        style={styles.card}
+      >
+        <View testID="rest-timer-container" style={styles.containerInner}>
+          {/* Heading */}
+          <Text style={styles.heading}>{headingLabel}</Text>
 
-        {/* Countdown */}
-        <Text style={styles.countdown}>{fmt(remaining)}</Text>
+          {/* Countdown + ProgressRing arc */}
+          <View style={styles.countdownWrap}>
+            <ProgressRing
+              progress={ringProgress}
+              size={rf(168)}
+              strokeWidth={rf(6)}
+              color={colors.primary.DEFAULT}
+              backgroundColor={colors.glass.backgroundDark}
+              animated
+              showText={false}
+            >
+              <Text style={styles.countdown} testID="rest-timer-countdown">
+                {fmt(remaining)}
+              </Text>
+            </ProgressRing>
+          </View>
 
-        {/* Progress bar */}
-        <View style={styles.progressTrack}>
-          <View
-            style={[
-              styles.progressFill,
-              { width: `${Math.round(progressFraction * 100)}%` as DimensionValue },
-            ]}
-          />
+          {/* Progress bar (reanimated width) */}
+          <View style={styles.progressTrack}>
+            <Animated.View style={[styles.progressFill, progressStyle]} />
+          </View>
+
+          {/* Context line */}
+          {contextLine ? (
+            <Text style={styles.contextLine}>{contextLine}</Text>
+          ) : null}
+
+          {/* Preset chips — only when the parent wires onSetPreset */}
+          {onSetPreset ? (
+            <View style={styles.presetRow}>
+              {PRESETS.map((secs) => (
+                <AnimatedPressable
+                  key={secs}
+                  onPress={() => onSetPreset!(secs)}
+                  scaleValue={0.94}
+                  springConfig="snappy"
+                  hapticType="selection"
+                  style={styles.presetChip}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Set rest to ${secs} seconds`}
+                >
+                  <Text style={styles.presetChipText}>{secs}s</Text>
+                </AnimatedPressable>
+              ))}
+            </View>
+          ) : null}
+
+          {/* Controls row: +10s | Pause/Resume | Skip */}
+          <View style={styles.controls}>
+            {/* +10s */}
+            <TouchableOpacity
+              style={styles.secondaryBtn}
+              onPress={handleAddTen}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityRole="button"
+              accessibilityLabel="Add 10 seconds to rest"
+            >
+              <Text style={styles.secondaryBtnText}>+10s</Text>
+            </TouchableOpacity>
+
+            {/* Pause / Resume */}
+            <TouchableOpacity
+              style={styles.pauseBtn}
+              onPress={handlePauseResume}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityRole="button"
+              accessibilityLabel={isPaused ? "Resume rest timer" : "Pause rest timer"}
+            >
+              <Text style={styles.pauseBtnText}>
+                {isPaused ? "Resume" : "Pause"}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Skip */}
+            <TouchableOpacity
+              style={styles.skipBtn}
+              onPress={onSkip}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityRole="button"
+              accessibilityLabel="Skip rest timer"
+              testID="rest-timer-skip"
+            >
+              <Text style={styles.skipBtnText}>Skip</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-
-        {/* Context line */}
-        {contextLine ? (
-          <Text style={styles.contextLine}>{contextLine}</Text>
-        ) : null}
-
-        {/* Controls row: +10s | Pause/Resume | Skip */}
-        <View style={styles.controls}>
-          {/* +10s */}
-          <TouchableOpacity
-            style={styles.secondaryBtn}
-            onPress={handleAddTen}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            accessibilityRole="button"
-            accessibilityLabel="Add 10 seconds to rest"
-          >
-            <Text style={styles.secondaryBtnText}>+10s</Text>
-          </TouchableOpacity>
-
-          {/* Pause / Resume */}
-          <TouchableOpacity
-            style={styles.pauseBtn}
-            onPress={handlePauseResume}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            accessibilityRole="button"
-            accessibilityLabel={isPaused ? "Resume rest timer" : "Pause rest timer"}
-          >
-            <Text style={styles.pauseBtnText}>{isPaused ? "▶  Resume" : "⏸  Pause"}</Text>
-          </TouchableOpacity>
-
-          {/* Skip */}
-          <TouchableOpacity
-            style={styles.skipBtn}
-            onPress={onSkip}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            accessibilityRole="button"
-            accessibilityLabel="Skip rest timer"
-          >
-            <Text style={styles.skipBtnText}>Skip</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      </GlassCard>
     </View>
   );
 }
 
 // ── Styles ───────────────────────────────────────────────────────────────────
-
-const CARD_BG = "#1C1C2E";
-const ACCENT = "#E05C2A";
-const TEXT_PRIMARY = "#FFFFFF";
-const TEXT_MUTED = "#9999BB";
-const CONTROL_BG = "#2A2A42";
 
 const styles = StyleSheet.create({
   overlay: {
@@ -222,124 +302,143 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.88)",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 10,
   },
   card: {
-    backgroundColor: CARD_BG,
-    borderRadius: 24,
-    paddingVertical: 32,
-    paddingHorizontal: 28,
-    alignItems: "center",
     width: "88%",
     maxWidth: 360,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45,
-    shadowRadius: 18,
-    elevation: 14,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+  },
+  cardContent: {
+    alignItems: "center",
+  },
+  containerInner: {
+    alignItems: "center",
+    width: "100%",
   },
 
   // ── Text ────
   heading: {
-    color: TEXT_MUTED,
-    fontSize: 11,
-    fontWeight: "700",
+    color: colors.text.tertiary,
+    fontSize: rf(11),
+    fontWeight: String(typography.fontWeight.bold) as any,
     letterSpacing: 1.2,
     textTransform: "uppercase",
-    marginBottom: 12,
+    marginBottom: rp(spacing.sm),
+  },
+  countdownWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: rp(spacing.md),
   },
   countdown: {
-    color: TEXT_PRIMARY,
-    fontSize: 60,
-    fontWeight: "700",
+    color: colors.text.primary,
+    fontSize: rf(48),
+    fontWeight: String(typography.fontWeight.bold) as any,
     letterSpacing: -2,
-    marginBottom: 16,
     fontVariant: ["tabular-nums"],
   },
   contextLine: {
-    color: "#CCCCDD",
-    fontSize: 13,
-    fontWeight: "500",
+    color: colors.text.secondary,
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.medium) as any,
     textAlign: "center",
-    marginTop: 10,
-    marginBottom: 4,
+    marginTop: rp(spacing.sm),
+    marginBottom: rp(spacing.xxs),
   },
 
   // ── Progress bar ────
   progressTrack: {
     width: "100%",
     height: 3,
-    backgroundColor: "#2A2A44",
-    borderRadius: 2,
+    backgroundColor: colors.glass.backgroundDark,
+    borderRadius: borderRadius.sm,
     overflow: "hidden",
   },
   progressFill: {
     height: 3,
-    backgroundColor: ACCENT,
-    borderRadius: 2,
+    backgroundColor: colors.primary.DEFAULT,
+    borderRadius: borderRadius.sm,
+  },
+
+  // ── Preset chips ────
+  presetRow: {
+    flexDirection: "row",
+    gap: rp(spacing.xs),
+    marginTop: rp(spacing.md),
+  },
+  presetChip: {
+    backgroundColor: colors.glass.background,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
+    borderRadius: borderRadius.full,
+    paddingVertical: rp(spacing.xs),
+    paddingHorizontal: rp(spacing.md),
+  },
+  presetChipText: {
+    color: colors.text.primary,
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
 
   // ── Controls ────
   controls: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    marginTop: 24,
+    gap: rp(spacing.sm),
+    marginTop: rp(spacing.lg),
   },
 
   // +10s
   secondaryBtn: {
-    backgroundColor: CONTROL_BG,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    minWidth: 60,
+    backgroundColor: colors.glass.background,
+    borderRadius: borderRadius.md,
+    paddingVertical: rp(12),
+    paddingHorizontal: rp(spacing.md),
+    minWidth: rp(60),
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: colors.glass.border,
   },
   secondaryBtnText: {
-    color: TEXT_PRIMARY,
-    fontSize: 14,
-    fontWeight: "600",
+    color: colors.text.primary,
+    fontSize: rf(typography.fontSize.body),
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
 
   // Pause / Resume
   pauseBtn: {
     flex: 1,
-    backgroundColor: CONTROL_BG,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    backgroundColor: colors.glass.background,
+    borderRadius: borderRadius.md,
+    paddingVertical: rp(12),
+    paddingHorizontal: rp(spacing.sm),
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: colors.glass.border,
   },
   pauseBtnText: {
-    color: TEXT_PRIMARY,
-    fontSize: 14,
-    fontWeight: "600",
+    color: colors.text.primary,
+    fontSize: rf(typography.fontSize.body),
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
 
   // Skip
   skipBtn: {
-    backgroundColor: CONTROL_BG,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    minWidth: 60,
+    backgroundColor: colors.glass.background,
+    borderRadius: borderRadius.md,
+    paddingVertical: rp(12),
+    paddingHorizontal: rp(spacing.md),
+    minWidth: rp(60),
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: colors.glass.border,
   },
   skipBtnText: {
-    color: "#FF6B6B",
-    fontSize: 14,
-    fontWeight: "600",
+    color: colors.error.light,
+    fontSize: rf(typography.fontSize.body),
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
 });

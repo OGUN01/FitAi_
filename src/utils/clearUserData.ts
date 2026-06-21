@@ -9,7 +9,7 @@
  */
 
 import { useFitnessStore } from "../stores/fitnessStore";
-import { useNutritionStore } from "../stores/nutritionStore";
+import { useNutritionStore, clearConsumedNutritionCaches } from "../stores/nutritionStore";
 import { useUserStore } from "../stores/userStore";
 import { useHydrationStore } from "../stores/hydrationStore";
 import { useAnalyticsStore } from "../stores/analyticsStore";
@@ -19,11 +19,12 @@ import { useAppStateStore } from "../stores/appStateStore";
 import { useSubscriptionStore } from "../stores/subscriptionStore";
 import { useProfileStore } from "../stores/profileStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { clearNutritionCache } from "../stores/nutrition/selectors";
 import { invalidateMetricsCache } from "../hooks/useCalculatedMetrics";
 import { userMetricsService } from "../services/userMetricsService";
 import { offlineService } from "../services/offline";
 import { syncEngine } from "../services/SyncEngine";
+import { supabase } from "../services/supabase";
+import { getCurrentUserId } from "../services/authUtils";
 
 /**
  * Clears all user data from all stores.
@@ -41,6 +42,31 @@ export const clearAllUserData = async (): Promise<void> => {
       errors.push(storeName);
     }
   };
+
+  // Wave 3: Wipe the outgoing user's persisted health_metrics rows from
+  // Supabase. MUST run before any store reset — getCurrentUserId() reads from
+  // authStore, which is reset last, so the userId is still resolvable here.
+  // RLS also enforces auth.uid() = user_id on the delete, so this is safe even
+  // if the auth session has already expired. Failures are logged, not fatal.
+  try {
+    const userId = getCurrentUserId();
+    if (userId) {
+      const { error: healthMetricsDeleteError } = await supabase
+        .from("health_metrics")
+        .delete()
+        .eq("user_id", userId);
+      if (healthMetricsDeleteError) {
+        console.error(
+          "[clearUserData] Failed to delete health_metrics:",
+          healthMetricsDeleteError,
+        );
+        errors.push("health_metrics");
+      }
+    }
+  } catch (e) {
+    console.error("[clearUserData] Error deleting health_metrics:", e);
+    errors.push("health_metrics");
+  }
 
   // Clear each store's state individually
   // Using getState() to access the store methods outside of React components
@@ -63,8 +89,11 @@ export const clearAllUserData = async (): Promise<void> => {
     console.warn('[clearUserData] No reset method found on store:', 'nutritionStore');
   }
 
-  // Clear module-level nutrition selector caches (prevents stale data across user sessions)
-  clearNutritionCache();
+  // Clear module-level nutrition store caches (prevents stale data across user sessions)
+  // P0-2: Replaces the deleted nutrition/selectors.ts#clearNutritionCache, which only
+  // cleared the divergent selector caches. This clears the store's OWN caches that
+  // getConsumedNutrition / getTodaysConsumedNutrition use.
+  clearConsumedNutritionCaches();
 
   // Clear singleton service caches (user-specific data keyed without userId)
   try {

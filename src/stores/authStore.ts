@@ -269,12 +269,29 @@ export const useAuthStore = create<AuthState>()(
       },
 
       setUser: (user: AuthUser | null) => {
+        const prevUser = get().user;
+        // Detect null→verified-user transition so cached session restore on
+        // app open (which bypasses login()) also triggers cross-device sync
+        // via authEvents.SIGNED_IN. login()/register()/signInWithGoogle()
+        // emit explicitly already; this covers the rehydrate path.
+        const transitionedToSignedIn =
+          user !== null &&
+          user.isEmailVerified &&
+          (prevUser?.id !== user.id);
+
         set({
           user,
           isAuthenticated: user !== null && user.isEmailVerified,
           // Clear guest mode when a real user signs in
           ...(user !== null && user.isEmailVerified ? { isGuestMode: false, guestId: null } : {}),
         });
+
+        if (transitionedToSignedIn) {
+          authEvents.emit("SIGNED_IN", {
+            userId: user!.id,
+            email: user!.email,
+          });
+        }
       },
 
       initialize: async () => {
@@ -332,6 +349,15 @@ export const useAuthStore = create<AuthState>()(
                 .then((revalidated) => {
                   if (revalidated.success && revalidated.user) {
                     get().setUser(revalidated.user);
+                    return;
+                  }
+
+                  // Network/transport failure (not an auth failure): keep the
+                  // cached user + token so the user isn't force-logged-out on
+                  // a transient blip. revalidateSession will be retried on the
+                  // next foreground/init, and the session self-heals when
+                  // connectivity returns. Only a real auth failure clears it.
+                  if (revalidated.isNetworkError) {
                     return;
                   }
 

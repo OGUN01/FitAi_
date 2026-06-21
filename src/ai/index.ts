@@ -96,14 +96,42 @@ const MAX_POLL_ATTEMPTS = 30;
 class UnifiedAIService {
   private lastMetadata: AIServiceMetadata | null = null;
 
+  // Cached last-known backend status. Set by isRealAIAvailable()/testConnection()
+  // and consulted by getAIStatus() so callers aren't told "real AI available"
+  // when the Worker is actually down. Null = no probe has run yet; in that case
+  // we default to optimistic ("real") to preserve pre-existing startup UX
+  // rather than flashing a false "unavailable" state on first paint.
+  private cachedBackendStatus: {
+    connected: boolean;
+    authenticated: boolean;
+    lastCheckedAt: number;
+  } | null = null;
+
+  // Cached status is considered stale after 5 minutes — callers that need a
+  // fresh answer should call isRealAIAvailable()/testConnection() directly.
+  private static readonly STATUS_STALE_MS = 5 * 60 * 1000;
+
   /**
-   * Check if backend is reachable and user is authenticated
+   * Check if backend is reachable and user is authenticated.
+   * Side-effect: updates cachedBackendStatus so getAIStatus() can reflect reality.
    */
   async isRealAIAvailable(): Promise<boolean> {
     try {
       const status = await fitaiWorkersClient.testConnection();
+      this.cachedBackendStatus = {
+        connected: status.connected,
+        authenticated: status.authenticated,
+        lastCheckedAt: Date.now(),
+      };
       return status.connected && status.authenticated;
-    } catch {
+    } catch (error) {
+      // Probe failed (network error, etc.) — backend is effectively unreachable.
+      this.cachedBackendStatus = {
+        connected: false,
+        authenticated: false,
+        lastCheckedAt: Date.now(),
+      };
+      console.error('[AIService] isRealAIAvailable probe failed:', error);
       return false;
     }
   }
@@ -751,12 +779,19 @@ class UnifiedAIService {
   }
 
   /**
-   * Test backend connection
+   * Test backend connection.
+   * Side-effect: updates cachedBackendStatus so getAIStatus() reflects reality.
    */
   async testConnection(): Promise<AIResponse<string>> {
 
     try {
       const status = await fitaiWorkersClient.testConnection();
+
+      this.cachedBackendStatus = {
+        connected: status.connected,
+        authenticated: status.authenticated,
+        lastCheckedAt: Date.now(),
+      };
 
       if (!status.connected) {
         return {
@@ -779,6 +814,11 @@ class UnifiedAIService {
         data: `Connected to FitAI Workers ${status.backendVersion}`,
       };
     } catch (error) {
+      this.cachedBackendStatus = {
+        connected: false,
+        authenticated: false,
+        lastCheckedAt: Date.now(),
+      };
       return {
         success: false,
         error:
@@ -789,7 +829,20 @@ class UnifiedAIService {
   }
 
   /**
-   * Get AI service status
+   * Get AI service status.
+   *
+   * TRADEOFF: This method is synchronous because its only caller
+   * (AIStatusIndicator) reads it during render. Making it async would force a
+   * loading state + re-render pattern there. Instead, we consult the
+   * cachedBackendStatus populated by isRealAIAvailable()/testConnection().
+   *
+   * - If a recent probe (≤ STATUS_STALE_MS) ran, return its result.
+   * - If the probe is stale or never ran, we default to optimistic ("real" /
+   *   available) so first paint doesn't flash a misleading "unavailable"
+   *   state. Callers needing a guaranteed-fresh answer must call
+   *   isRealAIAvailable() (async) directly.
+   * - If the last probe FAILED, return mode="demo" / isAvailable=false so the
+   *   UI tells the user the truth instead of lying like the old hardcoded impl.
    */
   getAIStatus(): {
     isAvailable: boolean;
@@ -797,12 +850,45 @@ class UnifiedAIService {
     message: string;
     modelVersion?: string;
   } {
+    const now = Date.now();
+    const cached = this.cachedBackendStatus;
+    const isFresh =
+      cached !== null &&
+      now - cached.lastCheckedAt < UnifiedAIService.STATUS_STALE_MS;
+
+    // No fresh probe → optimistic default (see tradeoff above).
+    if (!isFresh) {
+      return {
+        isAvailable: true,
+        mode: "real",
+        modelVersion: "google/gemini-2.0-flash-exp",
+        message:
+          "✅ Connected to FitAI Workers backend (https://fitai-workers.sharmaharsh9887.workers.dev)",
+      };
+    }
+
+    // Fresh probe exists — reflect its actual result.
+    const backendOk = cached!.connected && cached!.authenticated;
+    if (backendOk) {
+      return {
+        isAvailable: true,
+        mode: "real",
+        modelVersion: "google/gemini-2.0-flash-exp",
+        message:
+          "✅ Connected to FitAI Workers backend (https://fitai-workers.sharmaharsh9887.workers.dev)",
+      };
+    }
+
+    // Last probe failed — be honest with the caller.
+    const reason = !cached!.connected
+      ? "Backend not reachable"
+      : "User not authenticated";
     return {
-      isAvailable: true,
-      mode: "real",
-      modelVersion: "google/gemini-2.0-flash-exp",
-      message:
-        "✅ Connected to FitAI Workers backend (https://fitai-workers.sharmaharsh9887.workers.dev)",
+      isAvailable: false,
+      mode: "demo",
+      message: `⚠️ ${reason}. AI features may be unavailable. Last checked: ${new Date(
+        cached!.lastCheckedAt,
+      ).toLocaleTimeString()}`,
     };
   }
 

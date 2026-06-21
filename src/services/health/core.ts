@@ -1,4 +1,4 @@
-import { Platform, NativeModules } from "react-native";
+import { Platform, NativeModules, Linking } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   HealthConnectData,
@@ -431,6 +431,24 @@ class HealthConnectService {
 
   async disconnect(): Promise<boolean> {
     try {
+      // Revoke OS-level read/write access so disconnect is not just a local flag flip.
+      // Mirrors reauthorize() — without this, the HC provider app still shows FitAI
+      // as having permissions, and a background sync could resume reading data.
+      const hcModule = await getHealthConnectModule();
+      if (hcModule) {
+        try {
+          const { revokeAllPermissions } = hcModule;
+          if (revokeAllPermissions) {
+            await revokeAllPermissions();
+          }
+        } catch (revokeError) {
+          console.error(
+            "❌ Failed to revoke Health Connect permissions during disconnect:",
+            revokeError,
+          );
+        }
+      }
+
       await this.clearCache();
       this.permissionsGranted = false;
       this.isInitialized = false;
@@ -501,6 +519,92 @@ class HealthConnectService {
       return sdkStatus === SDK_AVAILABLE || sdkStatus === "SDK_AVAILABLE";
     } catch (error) {
       console.error("❌ Error checking Health Connect availability:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Returns the raw Health Connect SDK availability status as a string.
+   *
+   * Used by callers (e.g. useWearableConnection) to distinguish between
+   * "SDK_UNAVAILABLE" (provider APK not installed — offer Play Store install)
+   * and other states, without re-running getSdkStatus themselves.
+   *
+   * Possible values: "SDK_AVAILABLE", "SDK_UNAVAILABLE",
+   * "SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED", or "unknown" on error /
+   * non-Android platforms.
+   */
+  async getHealthConnectAvailability(): Promise<string> {
+    try {
+      if (Platform.OS !== "android") return "unknown";
+
+      const hcModule = await getHealthConnectModule();
+      if (!hcModule) return "SDK_UNAVAILABLE";
+
+      const { getSdkStatus, SdkAvailabilityStatus: ModuleSdkStatus } = hcModule;
+      const SDK_UNAVAILABLE =
+        ModuleSdkStatus?.SDK_UNAVAILABLE ||
+        SdkAvailabilityStatus.SDK_UNAVAILABLE;
+      const SDK_UPDATE_REQUIRED =
+        ModuleSdkStatus?.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED ||
+        SdkAvailabilityStatus.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED;
+      const SDK_AVAILABLE =
+        ModuleSdkStatus?.SDK_AVAILABLE || SdkAvailabilityStatus.SDK_AVAILABLE;
+
+      const sdkStatus = await getSdkStatus();
+
+      if (sdkStatus === SDK_UNAVAILABLE) return "SDK_UNAVAILABLE";
+      if (sdkStatus === SDK_UPDATE_REQUIRED)
+        return "SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED";
+      if (sdkStatus === SDK_AVAILABLE || sdkStatus === "SDK_AVAILABLE")
+        return "SDK_AVAILABLE";
+
+      return "unknown";
+    } catch (error) {
+      console.error(
+        "❌ Error checking Health Connect availability status:",
+        error,
+      );
+      return "unknown";
+    }
+  }
+
+  /**
+   * Deep-links the user to the Play Store listing for the Health Connect
+   * provider app (com.google.android.apps.healthdata).
+   *
+   * Used when getHealthConnectAvailability() returns "SDK_UNAVAILABLE", which
+   * on Android <14 (or any device without the provider APK pre-installed)
+   * means Health Connect cannot serve data until the provider is installed.
+   *
+   * Tries the market:// scheme first (opens the native Play Store app), and
+   * falls back to the https:// play.google.com URL if the device has no
+   * Play Store app capable of handling the market scheme.
+   */
+  async promptInstallHealthConnect(): Promise<boolean> {
+    const marketUrl =
+      "market://details?id=com.google.android.apps.healthdata";
+    const httpsUrl =
+      "https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata";
+
+    try {
+      const canOpenMarket = await Linking.canOpenURL(marketUrl);
+      if (canOpenMarket) {
+        await Linking.openURL(marketUrl);
+        return true;
+      }
+    } catch (error) {
+      console.error(
+        "❌ Failed to open market:// for Health Connect install, falling back to https:",
+        error,
+      );
+    }
+
+    try {
+      await Linking.openURL(httpsUrl);
+      return true;
+    } catch (error) {
+      console.error("❌ Failed to open Play Store URL for Health Connect install:", error);
       return false;
     }
   }
@@ -635,7 +739,25 @@ export const isHealthConnectModuleAvailable = (): boolean => {
 export const canUseHealthConnect = async (): Promise<boolean> => {
   if (Platform.OS !== "android") return false;
   const module = await getHealthConnectModule();
-  return module !== null;
+  if (!module) return false;
+
+  // Native module loaded — but on Android <14 the HC provider app is a separate
+  // APK that may not be installed. getSdkStatus() reflects that. Without this
+  // check, canUseHealthConnect() returns true on devices that can never actually
+  // serve data, causing downstream init/permission calls to fail opaquely.
+  try {
+    const { getSdkStatus, SdkAvailabilityStatus: ModuleSdkStatus } = module;
+    const SDK_AVAILABLE =
+      ModuleSdkStatus?.SDK_AVAILABLE || SdkAvailabilityStatus.SDK_AVAILABLE;
+    const sdkStatus = await getSdkStatus();
+    return sdkStatus === SDK_AVAILABLE || sdkStatus === "SDK_AVAILABLE";
+  } catch (error) {
+    console.error(
+      "❌ Error checking Health Connect SDK status in canUseHealthConnect:",
+      error,
+    );
+    return false;
+  }
 };
 
 export { HealthConnectService };

@@ -596,15 +596,14 @@ export function estimateCalories(
   totalExercises: number,
   durationMinutes: number,
   experienceLevel: 'beginner' | 'intermediate' | 'advanced',
-  userWeight: number, // kg
+  userWeight: number | null | undefined, // kg — nullable when onboarding incomplete
   fitnessGoal: string,
   tdee?: number // kcal/day from advanced_review — used for precision when available
 ): number {
 
-  // If we have the user's real TDEE, use it to derive session calorie burn:
-  // TDEE already accounts for activity multiplier, so workout calories ≈
-  // (TDEE - BMR) / active_minutes_per_day * session_duration
-  // Simpler and more accurate heuristic: workout burns ≈ 4.5–6.5% of TDEE per 45-min session
+  // If we have the user's real TDEE, use it to derive session calorie burn.
+  // This path does NOT need userWeight — TDEE already accounts for body composition.
+  // Heuristic: workout burns ≈ 4.5–6.5% of TDEE per 45-min session
   if (tdee && tdee > 0) {
     const goalMultiplier = (fitnessGoal === 'weight_loss' || fitnessGoal === 'endurance') ? 1.15
       : fitnessGoal === 'strength' ? 0.88
@@ -614,7 +613,12 @@ export function estimateCalories(
     return Math.round(tdee * baseFraction * durationRatio * goalMultiplier);
   }
 
-  // Fallback: flat-rate estimate when TDEE is unavailable
+  // Weight-based fallback: only reached when TDEE is unavailable.
+  // If weight is also missing, log a warning — the caller should always pass TDEE.
+  if (!userWeight) {
+    console.warn('[estimateCalories] Neither TDEE nor weight available — calorie estimate will be inaccurate');
+  }
+
   const baseCaloriesPerMinute = {
     beginner: 5,
     intermediate: 6,
@@ -624,7 +628,7 @@ export function estimateCalories(
   let caloriesPerMinute = baseCaloriesPerMinute[experienceLevel];
 
   // Adjust for body weight (heavier = more calories)
-  const weightMultiplier = userWeight / 70; // Normalize to 70kg
+  const weightMultiplier = userWeight ? userWeight / 70 : 1.0; // Normalize to 70kg; 1.0 if weight unknown
   caloriesPerMinute *= weightMultiplier;
 
   // Adjust for goal (higher intensity = more calories)

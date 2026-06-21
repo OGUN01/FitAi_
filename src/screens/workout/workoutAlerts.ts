@@ -65,6 +65,25 @@ export const showWorkoutCompleteErrorAlert = (
   );
 };
 
+/**
+ * P1 race fix: shown when the workout_sessions row WAS persisted to Supabase
+ * but a later step (achievements, deload check, analytics update, rating dialog)
+ * threw. The workout is saved — re-tapping Finish would risk a duplicate insert,
+ * so we keep the button disabled and tell the user the truth: the workout is
+ * safe, only the post-completion stats refresh had an issue.
+ */
+export const showWorkoutPartialSuccessAlert = (
+  workout: any,
+  stats: any,
+  onDone: () => void,
+) => {
+  crossPlatformAlert(
+    "Workout Saved",
+    `Your workout "${safeString(workout.title, "Workout")}" (${safeString(Math.max(1, Math.round(stats.totalDuration / 60)))} min) was saved successfully, but there was an issue updating your stats and achievements. Your workout data is safe — you can continue.`,
+    [{ text: "OK", onPress: onDone }],
+  );
+};
+
 export const showExitWorkoutAlert = (
   hasProgress: boolean,
   exercisesCompleted: number,

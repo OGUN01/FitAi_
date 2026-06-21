@@ -100,22 +100,41 @@ jest.mock("../../stores", () => ({
       getState: () => mockAchievementStoreState,
     },
   ),
-  useHealthDataStore: jest.fn((selector?: (state: any) => unknown) => {
-    const state = {
-      metrics: null,
-      isHealthKitAuthorized: false,
-      isHealthConnectAuthorized: false,
-      initializeHealthKit: jest.fn(),
-      syncHealthData: jest.fn(),
-      initializeHealthConnect: jest.fn(),
-      syncFromHealthConnect: jest.fn(),
-      settings: {
-        healthKitEnabled: false,
-        healthConnectEnabled: false,
-      },
-    };
-    return selector ? selector(state) : state;
-  }),
+  useHealthDataStore: Object.assign(
+    jest.fn((selector?: (state: any) => unknown) => {
+      const state = {
+        metrics: null,
+        isHealthKitAuthorized: false,
+        isHealthConnectAuthorized: false,
+        initializeHealthKit: jest.fn(),
+        syncHealthData: jest.fn(),
+        initializeHealthConnect: jest.fn(),
+        syncFromHealthConnect: jest.fn(),
+        loadHealthMetricsHistory: jest.fn().mockResolvedValue(undefined),
+        settings: {
+          healthKitEnabled: false,
+          healthConnectEnabled: false,
+        },
+      };
+      return selector ? selector(state) : state;
+    }),
+    {
+      getState: () => ({
+        metrics: null,
+        isHealthKitAuthorized: false,
+        isHealthConnectAuthorized: false,
+        initializeHealthKit: jest.fn(),
+        syncHealthData: jest.fn(),
+        initializeHealthConnect: jest.fn(),
+        syncFromHealthConnect: jest.fn(),
+        loadHealthMetricsHistory: jest.fn().mockResolvedValue(undefined),
+        settings: {
+          healthKitEnabled: false,
+          healthConnectEnabled: false,
+        },
+      }),
+    },
+  ),
   useAnalyticsStore: Object.assign(
     jest.fn((selector?: (state: any) => unknown) => {
       const state = {
@@ -147,15 +166,17 @@ jest.mock("../../stores", () => ({
   }),
 }));
 
-jest.mock("../../stores/profileStore", () => ({
-  useProfileStore: (selector?: (state: any) => unknown) => {
-    const state = {
-      bodyAnalysis: null,
-      personalInfo: null,
-    };
-    return selector ? selector(state) : state;
-  },
-}));
+jest.mock("../../stores/profileStore", () => {
+  const state = {
+    bodyAnalysis: null,
+    personalInfo: null,
+  };
+  const fn = jest.fn((selector?: (state: any) => unknown) =>
+    selector ? selector(state) : state,
+  );
+  (fn as any).getState = jest.fn(() => state);
+  return { useProfileStore: fn };
+});
 
 jest.mock("../../hooks/progress-screen/data", () => ({
   buildTodaysData: () => null,

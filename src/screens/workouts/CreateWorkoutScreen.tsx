@@ -4,13 +4,13 @@ import {
   Text,
   TextInput,
   FlatList,
-  Pressable,
   StyleSheet,
   SafeAreaView,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { GestureDetector } from "react-native-gesture-handler";
 import Animated, { useAnimatedStyle, interpolate } from "react-native-reanimated";
 import { useDragToReorder } from "../../gestures/handlers";
@@ -29,6 +29,15 @@ import { useFitnessStore } from "../../stores/fitnessStore";
 import { useProfileStore } from "../../stores/profileStore";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { getCurrentUserId } from "../../services/authUtils";
+import {
+  AuroraBackground,
+  GlassCard,
+  GlassHeader,
+  AnimatedPressable,
+  AuroraSpinner,
+} from "../../components/ui/aurora";
+import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
+import { rp, rf, rw } from "../../utils/responsive";
 
 interface Props {
   navigation: any;
@@ -316,349 +325,388 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
           {item.muscleGroups.slice(0, 3).join(", ")}
         </Text>
       </View>
-      <Pressable
+      <AnimatedPressable
         style={styles.addButton}
         onPress={() => addExercise(item)}
         testID={`add-exercise-${item.id}`}
+        accessibilityLabel={`Add ${item.name}`}
       >
         <Text style={styles.addButtonText}>+</Text>
-      </Pressable>
+      </AnimatedPressable>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
-      <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} testID="back-button">
-          <Text style={styles.headerButton}>Back</Text>
-        </Pressable>
-        <Text style={styles.headerTitle}>{isEditing ? "Edit Workout" : "Create Workout"}</Text>
-        <Pressable
-          onPress={handleSaveTemplate}
-          disabled={saving}
-          testID="save-button"
+    <AuroraBackground theme="space">
+      <SafeAreaView style={styles.flex}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
         >
-          <Text style={[styles.headerButton, styles.saveButton]}>
-            {saving ? "Saving..." : isEditing ? "Update" : "Save"}
-          </Text>
-        </Pressable>
-      </View>
-
-      <TextInput
-        style={styles.nameInput}
-        placeholder="Workout Name"
-        placeholderTextColor="#888"
-        value={workoutName}
-        onChangeText={setWorkoutName}
-        testID="workout-name-input"
-      />
-
-      {addedExercises.length > 0 && (
-        <View style={styles.addedSection}>
-          <Text style={styles.sectionTitle}>
-            Added ({addedExercises.length})
-          </Text>
-          {addedExercises.length > 1 && (
-            <Text style={styles.dragHint}>Hold to drag & reorder</Text>
-          )}
-          <ScrollView style={styles.addedList} nestedScrollEnabled>
-            {addedExercises.map((ex, index) => (
-              <DraggableRow
-                key={`${ex.exerciseId}-${index}`}
-                index={index}
-                totalCount={addedExercises.length}
-                onReorder={handleDragReorder}
+          <GlassHeader
+            title={isEditing ? "Edit Workout" : "Create Workout"}
+            onBack={() => navigation.goBack()}
+            rightAction={
+              <AnimatedPressable
+                onPress={handleSaveTemplate}
+                disabled={saving}
+                testID="save-button"
+                accessibilityRole="button"
+                accessibilityLabel={isEditing ? "Update template" : "Save template"}
+                style={styles.headerSaveBtn}
               >
-                <View style={styles.addedRow}>
-                <View style={styles.addedInfo}>
-                  <Text style={styles.addedName}>{ex.name}</Text>
-                  <View style={styles.inputRow}>
-                    <Text style={styles.inputLabel}>Sets:</Text>
-                    <TextInput
-                      style={styles.smallInput}
-                      keyboardType="numeric"
-                      value={String(ex.sets)}
-                      onChangeText={(v) =>
-                        updateExerciseField(index, "sets", parseInt(v) || 1)
-                      }
-                      testID={`sets-input-${index}`}
-                    />
-                    <Text style={styles.inputLabel}>Reps:</Text>
-                    <TextInput
-                      style={styles.smallInput}
-                      keyboardType="numeric"
-                      value={String(ex.repRange[0])}
-                      onChangeText={(v) => {
-                        const min = parseInt(v) || 1;
-                        updateExerciseField(index, "repRange", [min, Math.max(min, ex.repRange[1])]);
-                      }}
-                      testID={`reps-min-input-${index}`}
-                    />
-                    <Text style={styles.inputLabel}>-</Text>
-                    <TextInput
-                      style={styles.smallInput}
-                      keyboardType="numeric"
-                      value={String(ex.repRange[1])}
-                      onChangeText={(v) => {
-                        const max = parseInt(v) || 1;
-                        updateExerciseField(index, "repRange", [Math.min(ex.repRange[0], max), max]);
-                      }}
-                      testID={`reps-max-input-${index}`}
-                    />
-                    <Text style={styles.inputLabel}>Rest:</Text>
-                    <TextInput
-                      style={styles.smallInput}
-                      keyboardType="numeric"
-                      value={String(ex.restSeconds)}
-                      onChangeText={(v) =>
-                        updateExerciseField(
-                          index,
-                          "restSeconds",
-                          parseInt(v) || 30,
-                        )
-                      }
-                      testID={`rest-input-${index}`}
-                    />
-                    <Text style={styles.inputLabel}>kg:</Text>
-                    <TextInput
-                      style={styles.smallInput}
-                      keyboardType="decimal-pad"
-                      value={ex.targetWeightKg != null ? String(ex.targetWeightKg) : ""}
-                      onChangeText={(v) =>
-                        updateExerciseField(
-                          index,
-                          "targetWeightKg",
-                          v === '' ? undefined : Math.max(0, parseFloat(v) || 0),
-                        )
-                      }
-                      placeholder="0"
-                      placeholderTextColor="#555"
-                      testID={`weight-input-${index}`}
-                    />
-                  </View>
-                </View>
-                <View style={styles.addedActions}>
-                  <Pressable
-                    onPress={() => moveExercise(index, "up")}
-                    testID={`move-up-${index}`}
+                {saving ? (
+                  <AuroraSpinner size="sm" customSize={rf(16)} theme="white" />
+                ) : (
+                  <Text style={styles.headerSaveText}>
+                    {isEditing ? "Update" : "Save"}
+                  </Text>
+                )}
+              </AnimatedPressable>
+            }
+          />
+
+          <TextInput
+            style={styles.nameInput}
+            placeholder="Workout Name"
+            placeholderTextColor={colors.text.tertiary}
+            value={workoutName}
+            onChangeText={setWorkoutName}
+            testID="workout-name-input"
+          />
+
+          {addedExercises.length > 0 && (
+            <View style={styles.addedSection}>
+              <Text style={styles.sectionTitle}>
+                Added ({addedExercises.length})
+              </Text>
+              {addedExercises.length > 1 && (
+                <Text style={styles.dragHint}>Hold to drag & reorder</Text>
+              )}
+              <ScrollView style={styles.addedList} nestedScrollEnabled>
+                {addedExercises.map((ex, index) => (
+                  <DraggableRow
+                    key={`${ex.exerciseId}-${index}`}
+                    index={index}
+                    totalCount={addedExercises.length}
+                    onReorder={handleDragReorder}
                   >
-                    <Text style={styles.arrowText}>▲</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => moveExercise(index, "down")}
-                    testID={`move-down-${index}`}
-                  >
-                    <Text style={styles.arrowText}>▼</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => removeExercise(index)}
-                    testID={`remove-exercise-${index}`}
-                  >
-                    <Text style={styles.removeText}>✕</Text>
-                  </Pressable>
-                </View>
-              </View>
-              </DraggableRow>
+                    <GlassCard padding="sm" elevation={2} contentStyle={styles.addedRowContent}>
+                      <View style={styles.addedRow}>
+                        <View style={styles.addedInfo}>
+                          <Text style={styles.addedName}>{ex.name}</Text>
+                          <View style={styles.inputRow}>
+                            <Text style={styles.inputLabel}>Sets:</Text>
+                            <TextInput
+                              style={styles.smallInput}
+                              keyboardType="numeric"
+                              value={String(ex.sets)}
+                              onChangeText={(v) =>
+                                updateExerciseField(index, "sets", parseInt(v) || 1)
+                              }
+                              testID={`sets-input-${index}`}
+                            />
+                            <Text style={styles.inputLabel}>Reps:</Text>
+                            <TextInput
+                              style={styles.smallInput}
+                              keyboardType="numeric"
+                              value={String(ex.repRange[0])}
+                              onChangeText={(v) => {
+                                const min = parseInt(v) || 1;
+                                updateExerciseField(index, "repRange", [min, Math.max(min, ex.repRange[1])]);
+                              }}
+                              testID={`reps-min-input-${index}`}
+                            />
+                            <Text style={styles.inputLabel}>-</Text>
+                            <TextInput
+                              style={styles.smallInput}
+                              keyboardType="numeric"
+                              value={String(ex.repRange[1])}
+                              onChangeText={(v) => {
+                                const max = parseInt(v) || 1;
+                                updateExerciseField(index, "repRange", [Math.min(ex.repRange[0], max), max]);
+                              }}
+                              testID={`reps-max-input-${index}`}
+                            />
+                            <Text style={styles.inputLabel}>Rest:</Text>
+                            <TextInput
+                              style={styles.smallInput}
+                              keyboardType="numeric"
+                              value={String(ex.restSeconds)}
+                              onChangeText={(v) =>
+                                updateExerciseField(
+                                  index,
+                                  "restSeconds",
+                                  parseInt(v) || 30,
+                                )
+                              }
+                              testID={`rest-input-${index}`}
+                            />
+                            <Text style={styles.inputLabel}>kg:</Text>
+                            <TextInput
+                              style={styles.smallInput}
+                              keyboardType="decimal-pad"
+                              value={ex.targetWeightKg != null ? String(ex.targetWeightKg) : ""}
+                              onChangeText={(v) =>
+                                updateExerciseField(
+                                  index,
+                                  "targetWeightKg",
+                                  v === '' ? undefined : Math.max(0, parseFloat(v) || 0),
+                                )
+                              }
+                              placeholder="0"
+                              placeholderTextColor={colors.text.disabled}
+                              testID={`weight-input-${index}`}
+                            />
+                          </View>
+                        </View>
+                        <View style={styles.addedActions}>
+                          <AnimatedPressable
+                            onPress={() => moveExercise(index, "up")}
+                            testID={`move-up-${index}`}
+                            accessibilityLabel="Move exercise up"
+                            style={styles.iconBtn}
+                          >
+                            <Ionicons name="chevron-up" size={rf(16)} color={colors.primary.DEFAULT} />
+                          </AnimatedPressable>
+                          <AnimatedPressable
+                            onPress={() => moveExercise(index, "down")}
+                            testID={`move-down-${index}`}
+                            accessibilityLabel="Move exercise down"
+                            style={styles.iconBtn}
+                          >
+                            <Ionicons name="chevron-down" size={rf(16)} color={colors.primary.DEFAULT} />
+                          </AnimatedPressable>
+                          <AnimatedPressable
+                            onPress={() => removeExercise(index)}
+                            testID={`remove-exercise-${index}`}
+                            accessibilityLabel="Remove exercise"
+                            style={styles.iconBtn}
+                          >
+                            <Ionicons name="close" size={rf(16)} color={colors.error.DEFAULT} />
+                          </AnimatedPressable>
+                        </View>
+                      </View>
+                    </GlassCard>
+                  </DraggableRow>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          <View style={styles.categoryTabs}>
+            {CATEGORY_TABS.map((tab) => (
+              <AnimatedPressable
+                key={tab.key}
+                style={[
+                  styles.tab,
+                  selectedCategory === tab.key && styles.tabActive,
+                ]}
+                onPress={() => setSelectedCategory(tab.key)}
+                testID={`category-tab-${tab.key}`}
+                accessibilityRole="button"
+                accessibilityLabel={`Filter by ${tab.label}`}
+              >
+                <Text
+                  style={[
+                    styles.tabText,
+                    selectedCategory === tab.key && styles.tabTextActive,
+                  ]}
+                >
+                  {tab.label}
+                </Text>
+              </AnimatedPressable>
             ))}
-          </ScrollView>
-        </View>
-      )}
+          </View>
 
-      <View style={styles.categoryTabs}>
-        {CATEGORY_TABS.map((tab) => (
-          <Pressable
-            key={tab.key}
-            style={[
-              styles.tab,
-              selectedCategory === tab.key && styles.tabActive,
-            ]}
-            onPress={() => setSelectedCategory(tab.key)}
-            testID={`category-tab-${tab.key}`}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                selectedCategory === tab.key && styles.tabTextActive,
-              ]}
+          <FlatList
+            data={availableExercises}
+            keyExtractor={(item) => item.id}
+            renderItem={renderExercisePickerItem}
+            style={styles.exerciseList}
+            testID="exercise-picker-list"
+          />
+
+          <View style={styles.bottomButtons}>
+            <AnimatedPressable
+              style={styles.startButton}
+              onPress={handleStartNow}
+              testID="start-now-button"
+              accessibilityRole="button"
+              accessibilityLabel="Start workout now"
             >
-              {tab.label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
-      <FlatList
-        data={availableExercises}
-        keyExtractor={(item) => item.id}
-        renderItem={renderExercisePickerItem}
-        style={styles.exerciseList}
-        testID="exercise-picker-list"
-      />
-
-      <View style={styles.bottomButtons}>
-        <Pressable
-          style={styles.startButton}
-          onPress={handleStartNow}
-          testID="start-now-button"
-        >
-          <Text style={styles.startButtonText}>Start Now</Text>
-        </Pressable>
-        <Pressable
-          style={styles.saveTemplateButton}
-          onPress={handleSaveTemplate}
-          disabled={saving}
-          testID="save-template-button"
-        >
-          <Text style={styles.saveTemplateText}>Save Template</Text>
-        </Pressable>
-      </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+              <Text style={styles.startButtonText}>Start Now</Text>
+            </AnimatedPressable>
+            <AnimatedPressable
+              style={styles.saveTemplateButton}
+              onPress={handleSaveTemplate}
+              disabled={saving}
+              testID="save-template-button"
+              accessibilityRole="button"
+              accessibilityLabel="Save template"
+            >
+              <Text style={styles.saveTemplateText}>Save Template</Text>
+            </AnimatedPressable>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </AuroraBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#1A1A2E" },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#2A2A4E",
+  flex: { flex: 1 },
+  headerSaveBtn: {
+    paddingHorizontal: rp(spacing.sm),
+    paddingVertical: rp(spacing.xs),
   },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: "#FFFFFF" },
-  headerButton: { fontSize: 16, color: "#4CAF50" },
-  saveButton: { fontWeight: "600" },
+  headerSaveText: {
+    fontSize: rf(15),
+    color: colors.primary.DEFAULT,
+    fontWeight: String(typography.fontWeight.semibold) as any,
+  },
   nameInput: {
-    backgroundColor: "#2A2A4E",
-    color: "#FFFFFF",
-    fontSize: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginHorizontal: 16,
-    marginTop: 12,
-    borderRadius: 10,
+    backgroundColor: colors.glass.background,
+    color: colors.text.primary,
+    fontSize: rf(typography.fontSize.body),
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.md),
+    marginHorizontal: rp(spacing.md),
+    marginTop: rp(spacing.sm),
+    borderRadius: borderRadius.lg,
   },
-  addedSection: { maxHeight: 200, marginTop: 12, paddingHorizontal: 16 },
+  addedSection: { maxHeight: 220, marginTop: rp(spacing.sm), paddingHorizontal: rp(spacing.md) },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#AAA",
-    marginBottom: 8,
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.semibold) as any,
+    color: colors.text.secondary,
+    marginBottom: rp(spacing.sm),
   },
   dragHint: {
-    fontSize: 11,
-    color: "#666",
-    marginBottom: 6,
+    fontSize: rf(11),
+    color: colors.text.tertiary,
+    marginBottom: rp(spacing.xs),
     fontStyle: "italic",
   },
   addedList: { maxHeight: 200 },
+  addedRowContent: { marginBottom: rp(spacing.xs) },
   addedRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#2A2A4E",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 6,
   },
   addedInfo: { flex: 1 },
   addedName: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#FFFFFF",
-    marginBottom: 4,
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.semibold) as any,
+    color: colors.text.primary,
+    marginBottom: rp(spacing.xs),
   },
-  inputRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  inputLabel: { fontSize: 12, color: "#AAA" },
+  inputRow: { flexDirection: "row", alignItems: "center", gap: rp(spacing.xs) },
+  inputLabel: { fontSize: rf(typography.fontSize.micro), color: colors.text.secondary },
   smallInput: {
-    backgroundColor: "#1A1A2E",
-    color: "#FFFFFF",
-    width: 44,
-    height: 28,
-    borderRadius: 6,
+    backgroundColor: colors.background.DEFAULT,
+    color: colors.text.primary,
+    width: rw(44),
+    height: rf(28),
+    borderRadius: borderRadius.md,
     textAlign: "center",
-    fontSize: 13,
+    fontSize: rf(13),
   },
   addedActions: {
     flexDirection: "column",
     alignItems: "center",
-    gap: 2,
-    marginLeft: 8,
+    gap: rp(spacing.xxs),
+    marginLeft: rp(spacing.sm),
   },
-  arrowText: { fontSize: 14, color: "#4CAF50", paddingVertical: 2 },
-  removeText: { fontSize: 16, color: "#FF5252", paddingVertical: 2 },
+  iconBtn: {
+    paddingVertical: rp(spacing.xxs),
+    alignItems: "center",
+    justifyContent: "center",
+    width: 28,
+    height: 24,
+  },
   categoryTabs: {
     flexDirection: "row",
-    paddingHorizontal: 12,
-    marginTop: 12,
-    marginBottom: 8,
+    paddingHorizontal: rp(spacing.md),
+    marginTop: rp(spacing.sm),
+    marginBottom: rp(spacing.sm),
     flexWrap: "wrap",
-    gap: 6,
+    gap: rp(spacing.xs),
   },
   tab: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: "#2A2A4E",
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.xs),
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.glass.background,
   },
-  tabActive: { backgroundColor: "#4CAF50" },
-  tabText: { fontSize: 13, color: "#AAA" },
-  tabTextActive: { color: "#FFFFFF", fontWeight: "600" },
-  exerciseList: { flex: 1, paddingHorizontal: 16 },
+  tabActive: { backgroundColor: colors.primary.DEFAULT },
+  tabText: { fontSize: rf(typography.fontSize.caption), color: colors.text.secondary },
+  tabTextActive: { color: colors.text.primary, fontWeight: String(typography.fontWeight.semibold) as any },
+  exerciseList: { flex: 1, paddingHorizontal: rp(spacing.md) },
   pickerRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 10,
+    paddingVertical: rp(spacing.sm),
     borderBottomWidth: 1,
-    borderBottomColor: "#2A2A4E",
+    borderBottomColor: colors.glass.border,
   },
   pickerInfo: { flex: 1 },
-  pickerName: { fontSize: 15, color: "#FFFFFF", fontWeight: "500" },
-  pickerMuscles: { fontSize: 12, color: "#888", marginTop: 2 },
+  pickerName: {
+    fontSize: rf(15),
+    color: colors.text.primary,
+    fontWeight: String(typography.fontWeight.medium) as any,
+  },
+  pickerMuscles: {
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.text.tertiary,
+    marginTop: rp(spacing.xxs),
+  },
   addButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#4CAF50",
+    width: rw(36),
+    height: rw(36),
+    borderRadius: 999,
+    backgroundColor: colors.primary.DEFAULT,
     justifyContent: "center",
     alignItems: "center",
   },
   addButtonText: {
-    fontSize: 20,
-    color: "#FFFFFF",
-    fontWeight: "700",
-    lineHeight: 22,
+    fontSize: rf(20),
+    color: colors.text.primary,
+    fontWeight: String(typography.fontWeight.bold) as any,
+    lineHeight: rf(22),
   },
   bottomButtons: {
     flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.md),
+    gap: rp(spacing.md),
     borderTopWidth: 1,
-    borderTopColor: "#2A2A4E",
+    borderTopColor: colors.glass.border,
   },
   startButton: {
     flex: 1,
-    backgroundColor: "#4CAF50",
-    paddingVertical: 14,
-    borderRadius: 12,
+    backgroundColor: colors.primary.DEFAULT,
+    paddingVertical: rp(spacing.lg),
+    borderRadius: borderRadius.lg,
     alignItems: "center",
   },
-  startButtonText: { fontSize: 16, fontWeight: "700", color: "#FFFFFF" },
+  startButtonText: {
+    fontSize: rf(typography.fontSize.body),
+    fontWeight: String(typography.fontWeight.bold) as any,
+    color: colors.text.primary,
+  },
   saveTemplateButton: {
     flex: 1,
-    backgroundColor: "#2A2A4E",
-    paddingVertical: 14,
-    borderRadius: 12,
+    backgroundColor: colors.glass.background,
+    paddingVertical: rp(spacing.lg),
+    borderRadius: borderRadius.lg,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#4CAF50",
+    borderColor: colors.primary.DEFAULT,
   },
-  saveTemplateText: { fontSize: 16, fontWeight: "700", color: "#4CAF50" },
+  saveTemplateText: {
+    fontSize: rf(typography.fontSize.body),
+    fontWeight: String(typography.fontWeight.bold) as any,
+    color: colors.primary.DEFAULT,
+  },
 });

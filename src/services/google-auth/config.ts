@@ -62,9 +62,12 @@ export async function configureGoogleSignIn(): Promise<boolean> {
       }
 
 
+      const androidClientId = getEnvVar("EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID") || undefined;
+
       await GoogleSignin.configure({
         webClientId,
-        iosClientId,
+        iosClientId: iosClientId || undefined,
+        androidClientId,
         offlineAccess: true,
         hostedDomain: "",
         forceCodeForRefreshToken: true,

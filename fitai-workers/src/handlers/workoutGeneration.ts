@@ -29,7 +29,7 @@ import { ValidationError, APIError } from '../utils/errors';
 import { ErrorCode } from '../utils/errorCodes';
 import { withDeduplication } from '../utils/deduplication';
 import { loadUserMetrics, loadBodyMeasurements } from '../services/userMetricsService';
-import { generateRuleBasedWorkout } from './workoutGenerationRuleBased';
+import { generateRuleBasedWorkout, generateGentleMovementFallback } from './workoutGenerationRuleBased';
 import { getAIConfig } from '../utils/appConfig';
 
 // ============================================================================
@@ -640,13 +640,57 @@ async function generateFreshWorkout(
       };
     } catch (error) {
       console.error('[Workout Generation] ❌ Rule-based generation FAILED:', error);
-      // Rule-based is the only generation path — do not fall back to LLM.
-      throw new APIError(
-        'Workout generation failed. Please try again.',
-        500,
-        ErrorCode.AI_GENERATION_FAILED,
-        { error: error instanceof Error ? error.message : String(error) }
-      );
+
+      // LAST-RESORT FALLBACK: rule-based is the only generation path, so a hard
+      // failure would leave the user with NO plan at all. Attempt the gentle
+      // movement fallback (a hardcoded, safe 2-day walking/mobility plan) before
+      // rethrowing. This guarantees the user ALWAYS gets SOME workout, even if
+      // the rule-based engine explodes. Safety warnings are unknown here (the
+      // safety filter runs inside generateRuleBasedWorkout, which threw before
+      // returning), so we pass empty warnings and requiresMedicalClearance=false
+      // — the fallback plan is inherently gentle and safe for any user.
+      try {
+        console.warn('[Workout Generation] Attempting gentle movement fallback plan');
+        const fallbackResult = generateGentleMovementFallback(
+          enrichedRequest,
+          [], // warnings — unknown at this layer; fallback plan is inherently safe
+          false, // requiresMedicalClearance — conservative false; plan is gentle movement only
+        );
+        const fallbackEndTime = Date.now();
+        console.warn('[Workout Generation] ✅ Gentle movement fallback SUCCESS', {
+          workouts: fallbackResult.workouts.length,
+        });
+        return {
+          workout: {
+            ...fallbackResult,
+            warnings: [
+              '⚠️ A personalized workout could not be generated. This is a basic fallback plan — please try regenerating later for a tailored routine.',
+              ...(error instanceof Error ? [`Technical detail: ${error.message}`] : []),
+            ],
+          },
+          metadata: {
+            model: 'rule-based-fallback-v1',
+            aiGenerationTime: fallbackEndTime - startTime,
+            tokensUsed: 0,
+            costUsd: 0,
+          },
+        };
+      } catch (fallbackError) {
+        // Fallback ALSO failed — log both errors and rethrow the original APIError.
+        console.error(
+          '[Workout Generation] ❌ Gentle movement fallback ALSO FAILED:',
+          fallbackError,
+        );
+        throw new APIError(
+          'Workout generation failed. Please try again.',
+          500,
+          ErrorCode.AI_GENERATION_FAILED,
+          {
+            originalError: error instanceof Error ? error.message : String(error),
+            fallbackError: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
+          },
+        );
+      }
     }
   } else {
     // LLM generation is DISABLED for workout plans — rule-based only.

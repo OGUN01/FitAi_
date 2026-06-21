@@ -9,7 +9,21 @@ import { crudOperations } from "../services/crudOperations";
 import { offlineService } from "../services/offline";
 import { supabase } from "../services/supabase";
 import { generateUUID, isValidUUID } from "../utils/uuid";
-import { getCurrentUserId, getUserIdOrGuest } from "../services/authUtils";
+import { getCurrentUserId } from "../services/authUtils";
+
+/**
+ * P1-6: Returns the real authenticated user id, or null when the user is a
+ * guest / not authenticated. Callers use this to SKIP offline-queue sync for
+ * guests (matching the pattern in analyticsData, achievementData,
+ * crudOperations, extraWorkoutService). Guest IDs ("guest-...") must never
+ * reach Supabase writes — RLS rejects them and they pollute the retry queue.
+ */
+function getSyncableUserId(): string | null {
+  const userId = getCurrentUserId();
+  if (!userId) return null;
+  if (userId.startsWith("guest")) return null;
+  return userId;
+}
 import { RealtimeChannel } from "@supabase/supabase-js";
 import {
   getLocalDateString,
@@ -48,10 +62,12 @@ interface MealLogRow {
   country_context?: string | null;
   requires_review?: boolean | null;
   source_metadata?: Record<string, unknown> | null;
+  // P2-11: explicit completion flag — replaces the "[COMPLETED]" notes string.
+  is_completed?: boolean | null;
 }
 
 const MEAL_LOG_SELECT =
-  "id, meal_plan_id, meal_type, meal_name, from_plan, plan_meal_id, portion_multiplier, total_calories, total_protein, total_carbohydrates, total_fat, food_items, logged_at, logging_mode, truth_level, confidence, country_context, requires_review, source_metadata";
+  "id, meal_plan_id, meal_type, meal_name, from_plan, plan_meal_id, portion_multiplier, total_calories, total_protein, total_carbohydrates, total_fat, food_items, logged_at, logging_mode, truth_level, confidence, country_context, requires_review, source_metadata, is_completed";
 
 // Type guard for MealType - ensures type safety without 'as any'
 type MealType = "breakfast" | "lunch" | "dinner" | "snack";
@@ -132,6 +148,13 @@ function clearConsumedNutritionCaches() {
   lastTodaysDailyMealsRef2 = null;
   lastTodaysDate2 = "";
 }
+
+/**
+ * P0-2: Exported so clearUserData can clear the store's OWN module-level caches
+ * on logout (replaces the deleted nutrition/selectors.ts#clearNutritionCache
+ * which only cleared the divergent selector caches, not these).
+ */
+export { clearConsumedNutritionCaches };
 
 function isLoggedMeal(meal: Meal | null | undefined): meal is Meal {
   return Boolean(meal && typeof meal.loggedAt === "string");
@@ -241,6 +264,17 @@ export interface NutritionState {
   // Realtime subscriptions
   setupRealtimeSubscription: (userId: string) => void;
   cleanupRealtimeSubscription: () => void;
+  /**
+   * P0-4: Incremental handler for a single meal_logs realtime event.
+   * Updates only the affected row in dailyMeals / mealProgress instead of
+   * triggering a full loadData() that would wipe in-flight (progress<100)
+   * local state. Exported on the store interface for testability.
+   */
+  handleMealLogRealtimeChange: (payload: {
+    eventType: "INSERT" | "UPDATE" | "DELETE";
+    old?: { id?: string } | null;
+    new?: Record<string, unknown> | null;
+  }) => void;
 
   // Reset store (for logout)
   reset: () => void;
@@ -293,11 +327,20 @@ export const useNutritionStore = create<NutritionState>()(
 
         // ALSO save the complete weekly meal plan to the new weekly_meal_plans table
         try {
+          // P1-6: Skip Supabase sync for guest users — local-only save above is
+          // sufficient. Queueing a guest action would have RLS reject it on
+          // every retry, polluting the offline queue indefinitely.
+          const syncableUserId = getSyncableUserId();
+          if (!syncableUserId) {
+            // Guest or unauthenticated: local save already succeeded. No DB write.
+            return;
+          }
+
           // Clear any failed UUID attempts in the queue first
           await offlineService.clearFailedActionsForTable("weekly_meal_plans");
 
-          // Get authenticated user ID via StoreCoordinator (removes cross-store dependency)
-          const userId = getCurrentUserId();
+          // Get authenticated user ID (already validated non-guest above)
+          const userId = syncableUserId;
           const planId = generateUUID();
 
           // Ensure user is authenticated before database operation
@@ -379,7 +422,9 @@ export const useNutritionStore = create<NutritionState>()(
             type: activePlanRowId ? "UPDATE" : "CREATE",
             table: "weekly_meal_plans",
             data: weeklyMealPlanData,
-            userId: getUserIdOrGuest(),
+            // P1-6: Use the validated syncable userId, not getUserIdOrGuest()
+            // which would fabricate "guest" and be rejected by RLS on every retry.
+            userId,
             maxRetries: 3,
           });
         } catch (weeklyMealPlanError) {
@@ -425,11 +470,12 @@ export const useNutritionStore = create<NutritionState>()(
                   return planWithDbId;
                 }
               } else if (!error) {
-                // No rows in DB — only overwrite if there is no local plan already
-                const existingPlan = get().weeklyMealPlan;
-                if (existingPlan) {
-                  return existingPlan;
-                }
+                // No rows in DB for this user — clear any stale local plan.
+                // Previously this returned the existing local plan to avoid clobbering
+                // an in-flight plan during a transient DB miss, but that leaked the
+                // previous owner's plan across user switches (loadData() detects user
+                // changes separately and handles preservation). The DB is the SSOT for
+                // the active plan; an empty result means this user has no plan.
                 set({ weeklyMealPlan: null });
                 return null;
               }
@@ -502,10 +548,12 @@ export const useNutritionStore = create<NutritionState>()(
           // DATABASE-FIRST PATTERN: Update database FIRST
           if (logId) {
             const existingLog = await crudOperations.readMealLog(logId);
-            const updatedNotes = (existingLog?.notes || "") + " [COMPLETED]";
-
+            // P2-11: Set the explicit is_completed flag instead of appending
+            // "[COMPLETED]" to notes (which could be spoofed by user input and
+            // was never actually read by loadData). Preserve the existing notes.
             await crudOperations.updateMealLog(logId, {
-              notes: updatedNotes,
+              notes: existingLog?.notes || "",
+              isCompleted: true,
               syncMetadata: {
                 lastModifiedAt: completedAt,
                 syncVersion: (existingLog?.syncMetadata?.syncVersion || 0) + 1,
@@ -534,17 +582,24 @@ export const useNutritionStore = create<NutritionState>()(
         } catch (error) {
           console.error(`âŒ Failed to complete meal ${mealId}:`, error);
 
-          // FALLBACK: Queue for offline sync if database update fails
-          await offlineService.queueAction({
-            type: "UPDATE",
-            table: "meal_logs",
-            data: {
-              id: logId,
-              notes: "[COMPLETED]",
-            },
-            userId: getUserIdOrGuest(),
-            maxRetries: 3,
-          });
+          // FALLBACK: Queue for offline sync if database update fails.
+          // P1-6: Skip queueing for guest users — RLS would reject the write
+          // on every retry and pollute the offline queue indefinitely. The
+          // local optimistic UI update below still applies for guests.
+          const syncableUserId = getSyncableUserId();
+          if (syncableUserId) {
+            await offlineService.queueAction({
+              type: "UPDATE",
+              table: "meal_logs",
+              data: {
+                id: logId,
+                // P2-11: set the explicit is_completed column, not a notes string.
+                is_completed: true,
+              },
+              userId: syncableUserId,
+              maxRetries: 3,
+            });
+          }
 
           // Still update local cache for optimistic UI
           set((state) => ({
@@ -699,11 +754,12 @@ export const useNutritionStore = create<NutritionState>()(
             throw new Error("No active meal session");
           }
 
-          // Update log as completed
+          // P2-11: Mark the log completed via the explicit is_completed flag.
+          // completeMeal() below also sets it, but we set it here first so the
+          // row is marked complete even if completeMeal's progress update is
+          // skipped for an in-flight session.
           await crudOperations.updateMealLog(logId, {
-            notes:
-              ((await crudOperations.readMealLog(logId))?.notes || "") +
-              " [COMPLETED]",
+            isCompleted: true,
           });
 
           // Complete the meal
@@ -797,6 +853,16 @@ export const useNutritionStore = create<NutritionState>()(
             if (persistedInThisCall.has(mealId)) continue;
             persistedInThisCall.add(mealId);
             const mealItems = meal.items || [];
+            // P1-5: Preserve the original loggedAt/createdAt on re-persist.
+            // Overwriting with now() would shift a meal logged yesterday into
+            // today's totals if persist runs after midnight. Only set loggedAt
+            // on first creation (when the meal has no loggedAt yet).
+            const originalLoggedAt =
+              typeof meal.loggedAt === "string"
+                ? meal.loggedAt
+                : typeof meal.createdAt === "string"
+                  ? meal.createdAt
+                  : new Date().toISOString();
             const mealLog: import("../types/localData").MealLog = {
               id: `daily_meal_${mealId}`,
               mealType: toMealType(meal.type),
@@ -811,7 +877,7 @@ export const useNutritionStore = create<NutritionState>()(
                 fiber: meal.totalMacros?.fiber ?? 0,
                 sugar: meal.totalMacros?.sugar ?? 0,
               },
-              loggedAt: new Date().toISOString(),
+              loggedAt: originalLoggedAt,
               photos: [],
               syncStatus: SyncStatus.PENDING,
               syncMetadata: {
@@ -917,7 +983,11 @@ export const useNutritionStore = create<NutritionState>()(
               const todaysConsumedLogs = (todaysConsumedLogsResult?.data || []) as unknown as MealLogRow[];
 
               if (plannedLogs.length > 0) {
-                // Rebuild mealProgress â€” skip IDs already tracked (from this session)
+                // Rebuild mealProgress — skip IDs already tracked (from this session).
+                // P2-11: Only treat a planned log as completed (progress=100) when
+                // its is_completed flag is true. A planned log row with
+                // is_completed=false represents an in-flight session that should
+                // NOT be force-marked complete just because the row exists.
                 const existingProgress = get().mealProgress;
                 const remoteProgressKeys = new Set<string>();
                 const remoteLogIds = new Set<string>();
@@ -932,7 +1002,12 @@ export const useNutritionStore = create<NutritionState>()(
                     remoteLogIds.add(log.id);
                   }
 
-                  if (progressKey && !restoredProgress[progressKey]) {
+                  // Only restore progress=100 for explicitly-completed logs.
+                  if (
+                    progressKey &&
+                    !restoredProgress[progressKey] &&
+                    log.is_completed === true
+                  ) {
                     restoredProgress[progressKey] = {
                       mealId: progressKey,
                       progress: 100,
@@ -979,9 +1054,13 @@ export const useNutritionStore = create<NutritionState>()(
                   authoritativeRemoteLogIds.add(log.id);
                 }
 
+                // P2-11: Only restore progress=100 for explicitly-completed logs.
+                // A planned log row with is_completed=false is an in-flight
+                // session, not a completed meal.
                 if (
                   progressKey &&
-                  !authoritativeRestoredProgress[progressKey]
+                  !authoritativeRestoredProgress[progressKey] &&
+                  log.is_completed === true
                 ) {
                   authoritativeRestoredProgress[progressKey] = {
                     mealId: progressKey,
@@ -1102,7 +1181,18 @@ export const useNutritionStore = create<NutritionState>()(
               filter: `user_id=eq.${userId}`,
             },
             (payload) => {
-              get().loadData();
+              // P0-4: Apply the change incrementally instead of full loadData().
+              // This preserves in-flight local progress (progress<100) and avoids
+              // clobbering optimistic UI state with a full remote re-fetch.
+              const eventType = (payload.eventType || "UPDATE").toUpperCase() as
+                | "INSERT"
+                | "UPDATE"
+                | "DELETE";
+              get().handleMealLogRealtimeChange({
+                eventType,
+                old: (payload.old as { id?: string } | null) ?? null,
+                new: (payload.new as Record<string, unknown> | null) ?? null,
+              });
             },
           )
           .subscribe();
@@ -1112,6 +1202,128 @@ export const useNutritionStore = create<NutritionState>()(
         if (mealLogsChannel) {
           mealLogsChannel.unsubscribe();
           mealLogsChannel = null;
+        }
+      },
+
+      handleMealLogRealtimeChange: ({
+        eventType,
+        old,
+        new: newRow,
+      }) => {
+        try {
+          const state = get();
+
+          if (eventType === "DELETE") {
+            const deletedId = old?.id;
+            if (!deletedId) return;
+            // Remove from dailyMeals
+            const filteredMeals = state.dailyMeals.filter(
+              (m) => m.id !== deletedId,
+            );
+            // Remove from mealProgress ONLY if that entry is complete (a delete
+            // of a completed log is authoritative). In-flight progress (<100)
+            // for a different mealId is preserved.
+            const newProgress = { ...state.mealProgress };
+            const progressEntry = newProgress[deletedId];
+            if (progressEntry && (progressEntry.progress ?? 0) >= 100) {
+              delete newProgress[deletedId];
+            } else if (progressEntry && progressEntry.logId === deletedId) {
+              // The log backing an in-flight session was deleted remotely.
+              // Drop the stale progress entry so the UI doesn't show a ghost.
+              delete newProgress[deletedId];
+            }
+            clearConsumedNutritionCaches();
+            set({ dailyMeals: filteredMeals, mealProgress: newProgress });
+            return;
+          }
+
+          // INSERT or UPDATE: newRow holds the meal_logs row.
+          if (!newRow || !newRow.id) return;
+          const log = newRow as unknown as MealLogRow;
+          const logId = String(log.id);
+
+          const foodItems = normalizeMealLogFoodItems(log.food_items);
+          const hydratedMeal: import("../types/ai").Meal = {
+            id: logId,
+            type: toMealType(log.meal_type || undefined),
+            name: log.meal_name || "Meal",
+            totalCalories: log.total_calories || 0,
+            totalMacros: {
+              protein: log.total_protein || 0,
+              carbohydrates: log.total_carbohydrates || 0,
+              fat: log.total_fat || 0,
+              fiber: deriveMealLogFiber(foodItems),
+              sugar: deriveMealLogSugar(foodItems),
+            },
+            items: foodItems as unknown as MealItem[],
+            loggedAt: log.logged_at || undefined,
+            tags: [] as string[],
+            isPersonalized: false,
+            aiGenerated: false,
+            createdAt: log.logged_at || new Date().toISOString(),
+            updatedAt: log.logged_at || new Date().toISOString(),
+            sourceMetadata: log.logging_mode
+              ? {
+                  mode: log.logging_mode || undefined,
+                  truthLevel: log.truth_level || "curated",
+                  confidence: log.confidence || null,
+                  countryContext: log.country_context || null,
+                  requiresReview: log.requires_review || false,
+                  source: (log.source_metadata?.source as string) || null,
+                  productIdentity:
+                    (log.source_metadata?.productIdentity as string) || null,
+                  conflict: log.source_metadata?.conflict || null,
+                }
+              : undefined,
+          };
+
+          // Replace existing entry with same id, otherwise prepend.
+          const existingIdx = state.dailyMeals.findIndex(
+            (m) => m.id === logId,
+          );
+          const nextDailyMeals =
+            existingIdx >= 0
+              ? state.dailyMeals.map((m, i) => (i === existingIdx ? hydratedMeal : m))
+              : [hydratedMeal, ...state.dailyMeals];
+
+          // For from_plan logs, reflect completion in mealProgress — but ONLY
+          // if there is no in-flight (<100) entry for the same plan_meal_id,
+          // which would indicate an active session we must not clobber.
+          const planMealId = log.plan_meal_id || undefined;
+          if (planMealId) {
+            const existing = state.mealProgress[planMealId];
+            const isInFlight =
+              existing && (existing.progress ?? 0) < 100;
+            if (!isInFlight) {
+              set({
+                dailyMeals: nextDailyMeals,
+                mealProgress: {
+                  ...state.mealProgress,
+                  [planMealId]: {
+                    mealId: planMealId,
+                    progress: 100,
+                    completedAt: log.logged_at || undefined,
+                    logId,
+                  },
+                },
+              });
+              clearConsumedNutritionCaches();
+              return;
+            }
+          }
+
+          clearConsumedNutritionCaches();
+          set({ dailyMeals: nextDailyMeals });
+        } catch (error) {
+          // Fall back to a full reload only if the incremental path fails —
+          // better to recover than to leave the UI stale.
+          console.error(
+            "[nutritionStore] Incremental realtime handler failed, falling back to loadData():",
+            error,
+          );
+          get().loadData().catch((e) =>
+            console.error("[nutritionStore] loadData fallback also failed:", e),
+          );
         }
       },
 

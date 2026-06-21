@@ -124,6 +124,7 @@ export type Database = {
           ideal_body_fat_max: number | null
           ideal_body_fat_min: number | null
           lean_body_mass: number | null
+          max_heart_rate: number | null
           medical_adjustments: string[] | null
           metabolic_age: number | null
           overall_health_score: number | null
@@ -193,6 +194,7 @@ export type Database = {
           ideal_body_fat_max?: number | null
           ideal_body_fat_min?: number | null
           lean_body_mass?: number | null
+          max_heart_rate?: number | null
           medical_adjustments?: string[] | null
           metabolic_age?: number | null
           overall_health_score?: number | null
@@ -262,6 +264,7 @@ export type Database = {
           ideal_body_fat_max?: number | null
           ideal_body_fat_min?: number | null
           lean_body_mass?: number | null
+          max_heart_rate?: number | null
           medical_adjustments?: string[] | null
           metabolic_age?: number | null
           overall_health_score?: number | null
@@ -297,7 +300,9 @@ export type Database = {
           calories_burned: number | null
           calories_consumed: number | null
           created_at: string | null
+          current_streak: number | null
           id: string
+          longest_streak: number | null
           meals_logged: number
           metric_date: string
           sleep_hours: number | null
@@ -312,7 +317,9 @@ export type Database = {
           calories_burned?: number | null
           calories_consumed?: number | null
           created_at?: string | null
+          current_streak?: number | null
           id: string
+          longest_streak?: number | null
           meals_logged?: number
           metric_date: string
           sleep_hours?: number | null
@@ -327,7 +334,9 @@ export type Database = {
           calories_burned?: number | null
           calories_consumed?: number | null
           created_at?: string | null
+          current_streak?: number | null
           id?: string
+          longest_streak?: number | null
           meals_logged?: number
           metric_date?: string
           sleep_hours?: number | null
@@ -835,6 +844,41 @@ export type Database = {
         }
         Relationships: []
       }
+      device_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          last_seen_at: string
+          platform: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          platform?: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          platform?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       diet_media: {
         Row: {
           created_at: string | null
@@ -887,6 +931,7 @@ export type Database = {
           breakfast_enabled: boolean | null
           budget_level: string | null
           controls_portion_sizes: boolean | null
+          cooking_methods: string[] | null
           cooking_skill_level: string | null
           created_at: string
           cuisine_preferences: string[] | null
@@ -925,6 +970,7 @@ export type Database = {
           breakfast_enabled?: boolean | null
           budget_level?: string | null
           controls_portion_sizes?: boolean | null
+          cooking_methods?: string[] | null
           cooking_skill_level?: string | null
           created_at?: string
           cuisine_preferences?: string[] | null
@@ -963,6 +1009,7 @@ export type Database = {
           breakfast_enabled?: boolean | null
           budget_level?: string | null
           controls_portion_sizes?: boolean | null
+          cooking_methods?: string[] | null
           cooking_skill_level?: string | null
           created_at?: string
           cuisine_preferences?: string[] | null
@@ -1444,6 +1491,42 @@ export type Database = {
           },
         ]
       }
+      health_metrics: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          metric_type: string
+          recorded_at: string
+          source: string
+          unit: string | null
+          user_id: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          metric_type: string
+          recorded_at?: string
+          source?: string
+          unit?: string | null
+          user_id: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          metric_type?: string
+          recorded_at?: string
+          source?: string
+          unit?: string | null
+          user_id?: string
+          value?: number
+        }
+        Relationships: []
+      }
       ifct_foods: {
         Row: {
           beta_carotene_mcg_100g: number | null
@@ -1699,6 +1782,7 @@ export type Database = {
           food_items: Json
           from_plan: boolean | null
           id: string
+          is_completed: boolean
           logged_at: string | null
           logging_mode: string | null
           meal_name: string
@@ -1723,6 +1807,7 @@ export type Database = {
           food_items: Json
           from_plan?: boolean | null
           id?: string
+          is_completed?: boolean
           logged_at?: string | null
           logging_mode?: string | null
           meal_name: string
@@ -1747,6 +1832,7 @@ export type Database = {
           food_items?: Json
           from_plan?: boolean | null
           id?: string
+          is_completed?: boolean
           logged_at?: string | null
           logging_mode?: string | null
           meal_name?: string
@@ -2939,6 +3025,7 @@ export type Database = {
       workout_preferences: {
         Row: {
           activity_level: string | null
+          boost_extra_cardio_minutes: number | null
           can_do_pushups: number | null
           can_run_minutes: number | null
           created_at: string
@@ -2951,6 +3038,7 @@ export type Database = {
           intensity: string
           location: string
           needs_motivation: boolean | null
+          original_weekly_rate: number | null
           preferred_workout_times: string[] | null
           prefers_outdoor_activities: boolean | null
           prefers_variety: boolean | null
@@ -2966,6 +3054,7 @@ export type Database = {
         }
         Insert: {
           activity_level?: string | null
+          boost_extra_cardio_minutes?: number | null
           can_do_pushups?: number | null
           can_run_minutes?: number | null
           created_at?: string
@@ -2978,6 +3067,7 @@ export type Database = {
           intensity: string
           location: string
           needs_motivation?: boolean | null
+          original_weekly_rate?: number | null
           preferred_workout_times?: string[] | null
           prefers_outdoor_activities?: boolean | null
           prefers_variety?: boolean | null
@@ -2993,6 +3083,7 @@ export type Database = {
         }
         Update: {
           activity_level?: string | null
+          boost_extra_cardio_minutes?: number | null
           can_do_pushups?: number | null
           can_run_minutes?: number | null
           created_at?: string
@@ -3005,6 +3096,7 @@ export type Database = {
           intensity?: string
           location?: string
           needs_motivation?: boolean | null
+          original_weekly_rate?: number | null
           preferred_workout_times?: string[] | null
           prefers_outdoor_activities?: boolean | null
           prefers_variety?: boolean | null

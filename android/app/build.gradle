@@ -4,6 +4,19 @@ apply plugin: "com.facebook.react"
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
+// Release signing secrets — loaded from android/keystore.properties (gitignored).
+// Falls back to empty strings if the file is absent so the build still parses;
+// a release build without populated secrets will fail at the signing step with
+// a clear error rather than leaking credentials into version control.
+def keystorePropsFile = rootProject.file("keystore.properties")
+def keystoreProps = new Properties()
+if (keystorePropsFile.exists()) {
+    keystoreProps.load(new FileInputStream(keystorePropsFile))
+}
+def releaseStorePassword = keystoreProps.getProperty("keystore.storePassword", "")
+def releaseKeyAlias = keystoreProps.getProperty("keystore.keyAlias", "")
+def releaseKeyPassword = keystoreProps.getProperty("keystore.keyPassword", "")
+
 /**
  * This is the configuration block to customize your React Native Android app.
  * By default you don't need to apply any configuration, just uncomment the lines you need.
@@ -92,7 +105,7 @@ android {
         applicationId 'com.fitai.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 13
+        versionCode 14
         versionName "1.0.1"
     }
     signingConfigs {
@@ -102,6 +115,12 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            storeFile file('../../credentials/android/keystore.jks')
+            storePassword releaseStorePassword
+            keyAlias releaseKeyAlias
+            keyPassword releaseKeyPassword
+        }
     }
     buildTypes {
         debug {
@@ -110,7 +129,7 @@ android {
         release {
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             shrinkResources (findProperty('android.enableShrinkResourcesInReleaseBuilds')?.toBoolean() ?: false)
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"

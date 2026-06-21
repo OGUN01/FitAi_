@@ -346,7 +346,7 @@ export class FreeNutritionAPIs {
         fat: nutrients["fat_100g"] || 0,
         fiber: nutrients["fiber_100g"] || 0,
         sugar: nutrients["sugars_100g"] || 0,
-        sodium: (nutrients["salt_100g"] || 0) * 400, // salt (g/100g) → sodium (mg): * 0.4 * 1000
+        sodium: (nutrients["salt_100g"] || 0) * 0.4, // salt (g/100g) → sodium (g/100g): NaCl is 39.3% Na by mass
         source: "OpenFoodFacts",
         confidence: this.calculateMatchConfidence(
           foodName,
@@ -572,7 +572,7 @@ export class FreeNutritionAPIs {
                   fat: nutrients["fat_100g"] || 0,
                   fiber: nutrients["fiber_100g"] || 0,
                   sugar: nutrients["sugars_100g"] || 0,
-                  sodium: (nutrients["salt_100g"] || 0) * 400, // salt (g/100g) → sodium (mg): * 0.4 * 1000
+                  sodium: (nutrients["salt_100g"] || 0) * 0.4, // salt (g/100g) → sodium (g/100g): NaCl is 39.3% Na by mass
                   source: "OpenFoodFacts",
                   confidence: 90,
                 }
@@ -667,7 +667,7 @@ export class FreeNutritionAPIs {
                   fat: n["fat_100g"] || 0,
                   fiber: n["fiber_100g"] || 0,
                   sugar: n["sugars_100g"] || 0,
-                  sodium: (n["salt_100g"] || 0) * 400, // salt (g/100g) → sodium (mg): * 0.4 * 1000
+                  sodium: (n["salt_100g"] || 0) * 0.4, // salt (g/100g) → sodium (g/100g): NaCl is 39.3% Na by mass
                   source: "OpenFoodFacts-India",
                   confidence: 90,
                 }

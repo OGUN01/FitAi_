@@ -143,8 +143,18 @@ import { OnboardingTabBar } from "@/components/onboarding/OnboardingTabBar";
 
 describe("advanced picker touch targets", () => {
   it("keeps picker triggers and option rows at a 44pt floor", () => {
+    // DatePicker derives its option list from [minimumDate, maximumDate]
+    // (defaulting to a 1-month-back..2-months-forward window around today).
+    // Pin the range around the chosen value so the matching option is rendered
+    // and measurable, regardless of the real "today" when the test runs.
+    const dateValue = new Date("2026-03-23T00:00:00.000Z");
     const date = render(
-      <DatePicker value={new Date("2026-03-23T00:00:00.000Z")} onDateChange={jest.fn()} />,
+      <DatePicker
+        value={dateValue}
+        onDateChange={jest.fn()}
+        minimumDate={new Date("2026-03-01T00:00:00.000Z")}
+        maximumDate={new Date("2026-03-31T00:00:00.000Z")}
+      />,
     );
     fireEvent.press(date.getByLabelText("Select date"));
 

@@ -1,7 +1,8 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "./supabase";
+import { authEvents } from "./authEvents";
+import { pushTokenService } from "./pushTokenService";
 
 // Configure notification behavior - moved to initialization function
 let isHandlerSet = false;
@@ -78,6 +79,7 @@ export interface NotificationPreferences {
 class NotificationService {
   private static instance: NotificationService;
   private initialized = false;
+  private authEventsWired = false;
 
   static getInstance(): NotificationService {
     if (!NotificationService.instance) {
@@ -133,11 +135,43 @@ class NotificationService {
       }
 
       this.initialized = true;
+
+      // Wire remote-push lifecycle to auth events exactly once. SIGNED_IN
+      // (re-)registers the device token so cross-device login fans push to the
+      // new device; SIGNED_OUT removes this device's token so the backend stops
+      // sending to a logged-out install. Both are fire-and-forget; failures are
+      // logged inside pushTokenService and never block the app.
+      this.wireAuthEvents();
+      // Register the push token now that permissions are granted. Safe to call
+      // before a user is signed in — pushTokenService.upsertToken no-ops when
+      // there's no authenticated user, and SIGNED_IN re-triggers registration.
+      void pushTokenService.registerForPushNotificationsAsync();
+
       return true;
     } catch (error) {
       console.error("Failed to initialize notification service:", error);
       return false;
     }
+  }
+
+  /**
+   * Subscribe to authEvents for push-token lifecycle. Idempotent — guarded by
+   * authEventsWired so repeated initialize() calls don't stack subscriptions.
+   */
+  private wireAuthEvents(): void {
+    if (this.authEventsWired) return;
+    this.authEventsWired = true;
+
+    authEvents.subscribe("SIGNED_IN", () => {
+      // Re-register on sign-in (covers login, register, google sign-in, and the
+      // cached-session-restore path that bypasses login()).
+      void pushTokenService.registerForPushNotificationsAsync();
+    });
+
+    authEvents.subscribe("SIGNED_OUT", () => {
+      // Remove this device's token on logout so the server stops sending push.
+      void pushTokenService.unregisterPushToken();
+    });
   }
 
   // Schedule single notification
@@ -495,34 +529,22 @@ class NotificationService {
     }
   }
 
-  // TODO: notification_preferences is written to AsyncStorage here AND persisted by
-  // notificationStore.ts via Zustand persist (key "notification-store"). This creates
-  // two copies of notification preferences. A future refactor should consolidate to
-  // use only the Zustand store as the single source of truth.
+  // PERSISTENCE MODEL (P1-3 dedup):
+  //   - Zustand `persist` (key "notification-store") is the SOLE local source
+  //     of truth — it rehydrates instantly on launch and is what the UI reads.
+  //   - Supabase `profiles.notification_preferences` is the SOLE cloud source.
+  //   - This service reads/writes ONLY Supabase. The store calls savePreferences()
+  //     after every toggle (debounced upstream by the store's persist storage)
+  //     and loadPreferences() once on init, writing the result into the store.
+  //   - The legacy AsyncStorage "notification_preferences" key is intentionally
+  //     NOT read or written here — it was the duplicate that caused stale
+  //     overwrites on launch. It is still cleared by clearUserData on logout
+  //     for backward compatibility with older installs.
 
-  // Save preferences to storage
+  // Save preferences to Supabase (cloud SSOT). The Zustand store handles local
+  // persistence; this method must NOT touch AsyncStorage (that was the dup).
   async savePreferences(preferences: NotificationPreferences): Promise<void> {
     try {
-      // Save to AsyncStorage
-      await AsyncStorage.setItem(
-        "notification_preferences",
-        JSON.stringify(preferences),
-      );
-
-      // Also attempt to save to Supabase if available
-      await this.savePreferencesToSupabase(preferences);
-
-    } catch (error) {
-      console.error("Failed to save notification preferences:", error);
-    }
-  }
-
-  // Save preferences to Supabase
-  private async savePreferencesToSupabase(
-    preferences: NotificationPreferences,
-  ): Promise<void> {
-    try {
-      // Get current authenticated user
       const {
         data: { user },
         error: authError,
@@ -544,45 +566,23 @@ class NotificationService {
         .eq("id", user.id);
 
       if (error) {
-        // If the column doesn't exist, log gracefully
+        // If the column doesn't exist, log gracefully (older DB without the
+        // column). Do not throw — the Zustand store is still the local SSOT.
         if (error.code === "42703") {
           return;
         }
         throw error;
       }
-
     } catch (error) {
-      console.error("[notificationService] savePreferencesToSupabase failed:", error);
+      console.error("[notificationService] savePreferences failed:", error);
     }
   }
 
-  // Load preferences from storage
+  // Load preferences from Supabase (cloud SSOT). Returns null when there's no
+  // authenticated user or no saved row — the caller (notificationStore) then
+  // keeps the defaults it already rehydrated from Zustand persist.
   async loadPreferences(): Promise<NotificationPreferences | null> {
     try {
-      // First try to load from Supabase (if available and user is logged in)
-      const supabasePreferences = await this.loadPreferencesFromSupabase();
-      if (supabasePreferences) {
-        // Save to AsyncStorage for offline access
-        await AsyncStorage.setItem(
-          "notification_preferences",
-          JSON.stringify(supabasePreferences),
-        );
-        return supabasePreferences;
-      }
-
-      // Fall back to AsyncStorage
-      const saved = await AsyncStorage.getItem("notification_preferences");
-      return saved ? JSON.parse(saved) : null;
-    } catch (error) {
-      console.error("Failed to load notification preferences:", error);
-      return null;
-    }
-  }
-
-  // Load preferences from Supabase
-  private async loadPreferencesFromSupabase(): Promise<NotificationPreferences | null> {
-    try {
-      // Get current authenticated user
       const {
         data: { user },
         error: authError,
@@ -593,7 +593,6 @@ class NotificationService {
         return null;
       }
 
-      // Query notification preferences from profiles table
       const { data, error } = await supabase
         .from("profiles")
         .select("notification_preferences")
@@ -601,7 +600,8 @@ class NotificationService {
         .single();
 
       if (error) {
-        // If the column doesn't exist, fall back to local storage
+        // Missing column or no row → fall back to local Zustand state (caller
+        // keeps defaults). Don't surface as an error to the user.
         if (error.code === "42703" || error.code === "PGRST116") {
           return null;
         }
@@ -614,7 +614,7 @@ class NotificationService {
 
       return null;
     } catch (error) {
-      console.error("[notificationService] getPreferencesFromSupabase failed:", error);
+      console.error("[notificationService] loadPreferences failed:", error);
       return null;
     }
   }

@@ -15,6 +15,7 @@
  */
 
 import { supabase } from "./supabase";
+import { isNetworkError } from "../utils/networkErrorDetection";
 
 // ============================================================================
 // TYPES
@@ -117,6 +118,26 @@ export interface WorkersResponse<T> {
   data?: T;
   error?: string;
   metadata?: WorkersResponseMetadata;
+  /**
+   * Set to `true` when the request failed due to a transient network/transport
+   * fault (fetch threw before a response, AbortError/timeout, or the 401
+   * token-refresh path threw a network-classified error) rather than a real
+   * auth or server failure.
+   *
+   * Additive — callers that only check `success` keep working unchanged.
+   * Callers that want to surface a "You appear to be offline — tap to retry"
+   * affordance instead of a hard error can read this flag.
+   *
+   * Mirrors the `isNetworkError` field added to the AuthService result
+   * shape (`src/services/auth.ts`), so the two services classify transport
+   * faults consistently.
+   */
+  isOffline?: boolean;
+  /**
+   * Human-readable reason for the offline result (e.g. "Network unavailable",
+   * "Token refresh unreachable"). Only meaningful when `isOffline === true`.
+   */
+  offlineReason?: string;
 }
 
 export interface DietGenerationRequest {
@@ -484,8 +505,45 @@ export class FitAIWorkersClient {
               // retryOnAuthFailure=false prevents an infinite 401 loop.
               return this.makeRequest<T>(endpoint, refreshedOptions, retryCount, false);
             }
-          } catch {
-            // Refresh threw — fall through to throw AuthenticationError below.
+          } catch (refreshErr) {
+            // Refresh threw — classify before falling through so a transient
+            // network blip is distinguishable from a genuinely invalid session.
+            // Reuses the shared classifier (handles Supabase AuthRetryableError,
+            // AuthSessionMissingError, TypeError, AbortError, message patterns)
+            // so auth.ts and the workers client stay in sync.
+            const networkFailure = isNetworkError(refreshErr);
+            if (networkFailure) {
+              console.error(
+                "[WorkersClient] Token refresh failed due to NETWORK error (retryable):",
+                refreshErr,
+              );
+              // Transient transport fault during the 401-refresh path. The
+              // original request was authenticated fine (the backend returned
+              // 401 only because the access token was stale), and the refresh
+              // failed solely because we couldn't reach Supabase. Returning a
+              // typed offline result here (rather than throwing
+              // AuthenticationError) lets callers surface "You appear to be
+              // offline — tap to retry" instead of a misleading auth error.
+              // The session itself is still valid; a future request on a
+              // restored connection will refresh normally.
+              return {
+                success: false,
+                isOffline: true,
+                offlineReason: "Network unavailable",
+                error:
+                  refreshErr instanceof Error
+                    ? refreshErr.message
+                    : "Network error during token refresh",
+              };
+            } else {
+              console.error(
+                "[WorkersClient] Token refresh failed (likely auth/session issue):",
+                refreshErr,
+              );
+            }
+            // Genuine auth failure (invalid/expired refresh token,
+            // AuthSessionMissingError). Fall through and throw so the outer
+            // NetworkError retry loop does not mask a real session death.
           }
           throw new AuthenticationError("Session expired. Please sign in again.");
         }
@@ -538,7 +596,25 @@ export class FitAIWorkersClient {
           await this.sleep(delay);
           return this.makeRequest(endpoint, options, retryCount + 1);
         }
-        throw new NetworkError("Network request failed", error);
+        // Retry budget exhausted — don't surface a raw thrown NetworkError
+        // (callers like the diet/workout AI wrappers would translate it to a
+        // generic "Network error" string, losing the structured signal and
+        // surfacing a cryptic failure to the user). Return a typed offline
+        // result so callers can check `result.isOffline` and render a
+        // "You appear to be offline — tap to retry" affordance. The original
+        // error message is preserved in `error` for diagnostics.
+        // P3: log the swallowed transport error so offline failures aren't
+        // invisible in dev (CLAUDE.md #5 — no silent failures).
+        console.error(
+          "[WorkersClient] returning offline result after retry exhaustion:",
+          error,
+        );
+        return {
+          success: false,
+          isOffline: true,
+          offlineReason: "Network unavailable",
+          error: error instanceof Error ? error.message : "Network request failed",
+        };
       }
 
       // Re-throw API errors
@@ -549,7 +625,24 @@ export class FitAIWorkersClient {
         throw error;
       }
 
-      // Unknown error
+      // Unknown error — classify before deciding. If the shared classifier
+      // recognizes this as a network/transport fault, return the typed offline
+      // result (consistent with the TypeError/AbortError branch above) so the
+      // user sees "offline" rather than a cryptic throw. Otherwise throw a
+      // NetworkError to preserve the prior behavior for genuinely unknown
+      // failures.
+      if (isNetworkError(error)) {
+        console.error(
+          "[WorkersClient] returning offline result (classified network fault):",
+          error,
+        );
+        return {
+          success: false,
+          isOffline: true,
+          offlineReason: "Network unavailable",
+          error: error instanceof Error ? error.message : "Network request failed",
+        };
+      }
       throw new NetworkError(
         `Request failed: ${error instanceof Error ? error.message : String(error)}`,
         error,

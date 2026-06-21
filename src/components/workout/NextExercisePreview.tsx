@@ -1,6 +1,18 @@
+/**
+ * FitAI — Next Exercise Preview (Aurora)
+ *
+ * Banner shown during inter-exercise rest, naming the next exercise. Previously
+ * a flat primary-tinted block with a left border accent.
+ *
+ * Aurora modernization: GlassCard with gradientBorder for a premium glass edge,
+ * tokenized colors, Ionicons "arrow-forward" accent.
+ */
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { ResponsiveTheme } from "../../utils/constants";
+import { Ionicons } from "@expo/vector-icons";
+import { GlassCard } from "../ui/aurora";
+import { colors, spacing, typography } from "../../theme/aurora-tokens";
+import { rf, rp } from "../../utils/responsive";
 
 interface NextExercisePreviewProps {
   exerciseName: string;
@@ -9,31 +21,50 @@ interface NextExercisePreviewProps {
 export const NextExercisePreview: React.FC<NextExercisePreviewProps> = ({
   exerciseName,
 }) => (
-  <View style={styles.nextExercisePreview}>
-    <Text style={styles.nextExerciseTitle}>Next Up:</Text>
-    <Text style={styles.nextExerciseName}>{exerciseName}</Text>
-  </View>
+  <GlassCard
+    elevation={2}
+    gradientBorder
+    padding="md"
+    borderRadius="lg"
+    style={styles.container}
+    contentStyle={styles.content}
+  >
+    <View style={styles.titleRow}>
+      <Ionicons
+        name="arrow-forward-circle"
+        size={rf(16)}
+        color={colors.primary.DEFAULT}
+      />
+      <Text style={styles.nextExerciseTitle}>Next Up</Text>
+    </View>
+    <Text style={styles.nextExerciseName} numberOfLines={1}>
+      {exerciseName}
+    </Text>
+  </GlassCard>
 );
 
 const styles = StyleSheet.create({
-  nextExercisePreview: {
-    backgroundColor: ResponsiveTheme.colors.primary + "20",
-    marginHorizontal: ResponsiveTheme.spacing.lg,
-    marginTop: ResponsiveTheme.spacing.md,
-    padding: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    borderLeftWidth: 4,
-    borderLeftColor: ResponsiveTheme.colors.primary,
+  container: {
+    marginHorizontal: rp(spacing.lg),
+    marginTop: rp(spacing.md),
+  },
+  content: {
+    width: "100%",
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(spacing.xs),
+    marginBottom: rp(spacing.xxs),
   },
   nextExerciseTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.primary.DEFAULT,
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
   nextExerciseName: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: rf(typography.fontSize.body),
+    color: colors.text.primary,
+    fontWeight: String(typography.fontWeight.medium) as any,
   },
 });

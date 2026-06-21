@@ -282,7 +282,7 @@ function isGlutenFreeException(foodName: string): boolean {
  * Check for diet type violations
  * Returns array of validation errors if violations found
  */
-function checkDietTypeViolations(meals: Meal[], dietType: string, restrictions?: string[]): DietValidationError[] {
+function checkDietTypeViolations(meals: Meal[], dietType: string, restrictions?: string[], country?: string): DietValidationError[] {
 	const errors: DietValidationError[] = [];
 
 	const meatKeywords = ['chicken', 'beef', 'pork', 'mutton', 'lamb', 'goat', 'turkey', 'duck', 'bacon', 'sausage', 'ham'];
@@ -366,11 +366,18 @@ function checkDietTypeViolations(meals: Meal[], dietType: string, restrictions?:
 					});
 				}
 				// BUG-74: Respect explicit egg_free / dairy_free restrictions for vegetarians
-				if (restrictions?.includes('egg_free') && eggKeywords.some((k) => foodLower.includes(k))) {
+				// Also enforce for Indian users: Indian vegetarian = lacto-vegetarian (no eggs)
+				const isIndianVegetarian = country?.toLowerCase() === 'india';
+				if (
+					(restrictions?.includes('egg_free') || isIndianVegetarian) &&
+					eggKeywords.some((k) => foodLower.includes(k))
+				) {
 					errors.push({
 						severity: 'CRITICAL',
 						code: 'DIET_TYPE_VIOLATION',
-						message: `Vegetarian (egg-free) diet cannot contain eggs: "${food.name}"`,
+						message: isIndianVegetarian
+							? `Indian vegetarian diet cannot contain eggs: "${food.name}" — use paneer, dal, or yogurt instead`
+							: `Vegetarian (egg-free) diet cannot contain eggs: "${food.name}"`,
 						meal: meal.name,
 						food: food.name,
 						dietType,
@@ -522,6 +529,7 @@ function validateDietPlan(
 	metrics: UserHealthMetrics,
 	prefs: DietPreferences | null,
 	daysCount: number = 1,
+	country?: string,
 ): DietValidationResult {
 	const errors: DietValidationError[] = [];
 	const warnings: DietValidationWarning[] = [];
@@ -564,7 +572,7 @@ function validateDietPlan(
 	if (!prefs?.diet_type) {
 		console.error('[DietValidation] diet_type missing — skipping diet violation check');
 	} else {
-		const dietViolations = checkDietTypeViolations(aiResponse.meals, prefs.diet_type, prefs.restrictions);
+		const dietViolations = checkDietTypeViolations(aiResponse.meals, prefs.diet_type, prefs.restrictions, country);
 		if (dietViolations.length > 0) {
 			errors.push(...dietViolations);
 			console.error('[DietValidation] DIET TYPE VIOLATIONS:', dietViolations.length);
@@ -1152,6 +1160,7 @@ export async function generateFreshDiet(request: DietGenerationRequest, env: Env
 		metrics,
 		mergedDietPreferences,
 		planDays,
+		profile?.country,
 	);
 
 	// If validation FAILED - throw error (NO FALLBACK)

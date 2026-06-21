@@ -84,10 +84,27 @@ const supabaseAnonKey = getEnvVar(
   "",
 );
 
+// P3-20: Surface a fatal error when the anon key is missing in production.
+// Previously this only console.warn'd and then created a client anyway, which
+// silently failed every request (RLS rejects with an empty key) while local
+// state looked fine. In dev we still warn + create the client so the bundler
+// can boot for offline work; in production we throw so a misconfigured deploy
+// is caught at startup instead of producing a client that rejects everything.
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn(
-    "⚠️ Missing Supabase environment variables",
-  );
+  const missing = [
+    !supabaseUrl && "EXPO_PUBLIC_SUPABASE_URL",
+    !supabaseAnonKey && "EXPO_PUBLIC_SUPABASE_ANON_KEY",
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const message = `Missing Supabase environment variables: ${missing}. ` +
+    `The client cannot authenticate and every request will be rejected by RLS.`;
+  if (__DEV__) {
+    console.warn(`⚠️ ${message}`);
+  } else {
+    // Production: fail fast so a misconfigured deploy is caught immediately.
+    throw new Error(message);
+  }
 }
 
 // Create Supabase client with SecureStore for session persistence

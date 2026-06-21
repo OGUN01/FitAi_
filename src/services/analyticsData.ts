@@ -4,6 +4,36 @@
 import { supabase } from "./supabase";
 import { getLocalDateString } from "../utils/weekUtils";
 
+/**
+ * SSOT for water: water_logs is the canonical per-drink append-only table.
+ * analytics_metrics.water_intake_ml is DERIVED from water_logs at read time,
+ * never accumulated independently — see P0-1 fix in FITAI_DATA_ARCHITECTURE.md.
+ *
+ * @param userId  authenticated user id (callers already skip guests)
+ * @param dateStr YYYY-MM-DD local date string
+ * @returns total ml for that day (0 if none / on error)
+ */
+async function getWaterIntakeMlFromLogs(
+  userId: string,
+  dateStr: string,
+): Promise<number> {
+  try {
+    const { data, error } = await supabase
+      .from("water_logs")
+      .select("amount_ml")
+      .eq("user_id", userId)
+      .eq("date", dateStr);
+    if (error) {
+      console.error("[analyticsData] getWaterIntakeMlFromLogs error:", error);
+      return 0;
+    }
+    return (data || []).reduce((sum, log) => sum + (log.amount_ml || 0), 0);
+  } catch (err) {
+    console.error("[analyticsData] getWaterIntakeMlFromLogs threw:", err);
+    return 0;
+  }
+}
+
 export interface DailyMetrics {
   id?: string;
   userId: string;
@@ -16,6 +46,9 @@ export interface DailyMetrics {
   waterIntakeMl: number;
   steps: number | null;
   sleepHours: number | null;
+  // P2-12: persisted workout streaks (nullable until first compute).
+  currentStreak?: number | null;
+  longestStreak?: number | null;
 }
 
 export interface MetricsSyncResult {
@@ -75,6 +108,37 @@ class AnalyticsDataService {
   }
 
   /**
+   * P0-1: Sum water_logs.amount_ml per date for a user/range. Used to derive
+   * analytics_metrics.water_intake_ml at read time so water_logs remains the
+   * single source of truth.
+   */
+  private async loadWaterIntakeByDate(
+    userId: string,
+    startDateStr: string,
+  ): Promise<Map<string, number>> {
+    const map = new Map<string, number>();
+    try {
+      const { data, error } = await supabase
+        .from("water_logs")
+        .select("date, amount_ml")
+        .eq("user_id", userId)
+        .gte("date", startDateStr);
+      if (error) {
+        console.error("[analyticsData] loadWaterIntakeByDate error:", error);
+        return map;
+      }
+      for (const log of data || []) {
+        const date = log.date as string;
+        const amount = Number(log.amount_ml) || 0;
+        map.set(date, (map.get(date) ?? 0) + amount);
+      }
+    } catch (err) {
+      console.error("[analyticsData] loadWaterIntakeByDate threw:", err);
+    }
+    return map;
+  }
+
+  /**
    * Load metrics history from Supabase
    */
   async loadMetricsHistory(
@@ -103,6 +167,13 @@ class AnalyticsDataService {
       }
 
       if (data && data.length > 0) {
+        // P0-1: water_intake_ml is DERIVED from water_logs (SSOT), not from the
+        // analytics_metrics column. Fetch all water rows for the same range and
+        // sum per-date, then attach to each metrics row. The column itself is
+        // retained for back-compat with older readers but never independently
+        // accumulated — see updateTodaysMetrics below.
+        const waterByDate = await this.loadWaterIntakeByDate(userId, startDateStr);
+
         return data.map((row) => ({
           id: row.id,
           userId: row.user_id,
@@ -112,7 +183,7 @@ class AnalyticsDataService {
           caloriesBurned: row.calories_burned,
           workoutsCompleted: row.workouts_completed,
           mealsLogged: row.meals_logged,
-          waterIntakeMl: row.water_intake_ml,
+          waterIntakeMl: waterByDate.get(row.metric_date) ?? 0,
           steps: row.steps,
           sleepHours: row.sleep_hours,
         }));
@@ -390,6 +461,11 @@ class AnalyticsDataService {
         return null;
       }
 
+      // P0-1: water_intake_ml is DERIVED from water_logs (SSOT), not read from
+      // the analytics_metrics column. The column is kept only for back-compat
+      // with older readers and is no longer independently accumulated.
+      const waterIntakeMl = await getWaterIntakeMlFromLogs(userId, today);
+
       return {
         id: data.id,
         userId: data.user_id,
@@ -399,13 +475,70 @@ class AnalyticsDataService {
         caloriesBurned: data.calories_burned,
         workoutsCompleted: data.workouts_completed,
         mealsLogged: data.meals_logged,
-        waterIntakeMl: data.water_intake_ml,
+        waterIntakeMl,
         steps: data.steps,
         sleepHours: data.sleep_hours,
       };
     } catch (error) {
       console.error("❌ Error getting today's metrics:", error);
       return null;
+    }
+  }
+
+  /**
+   * P2-12: Load the most recently persisted workout streaks for a user.
+   *
+   * Scans analytics_metrics (newest first) for the latest non-null
+   * current_streak / longest_streak. Returns {0, 0} on guest/error/no-data so
+   * callers can fall back to a fresh recompute.
+   *
+   * NOTE: Streak PERSISTENCE is owned solely by `achievementStore.updateCurrentStreak`
+   * (the dual-writer fix at analyticsStore.ts:305-323 made `analyticsData.saveStreaks`
+   * dead and it was removed). `loadStreaks` remains as the read path. Do NOT re-add a
+   * `saveStreaks` writer here — it would re-introduce the dual-writer bug.
+   */
+  async loadStreaks(
+    userId: string,
+  ): Promise<{ currentStreak: number; longestStreak: number }> {
+    if (!userId || userId.startsWith("guest") || userId === "local-user") {
+      return { currentStreak: 0, longestStreak: 0 };
+    }
+    try {
+      const { data, error } = await supabase
+        .from("analytics_metrics")
+        .select("current_streak, longest_streak")
+        .eq("user_id", userId)
+        .not("current_streak", "is", null)
+        .order("metric_date", { ascending: false })
+        .limit(1);
+      if (error) {
+        console.error("[analyticsData] loadStreaks error:", error);
+        return { currentStreak: 0, longestStreak: 0 };
+      }
+      if (!data || data.length === 0) {
+        return { currentStreak: 0, longestStreak: 0 };
+      }
+      const row = data[0];
+      // longest_streak may be on a different (older) row than current_streak,
+      // so do a second query to be sure we get the true max.
+      const { data: maxRow, error: maxError } = await supabase
+        .from("analytics_metrics")
+        .select("longest_streak")
+        .eq("user_id", userId)
+        .not("longest_streak", "is", null)
+        .order("longest_streak", { ascending: false })
+        .limit(1);
+      const longest =
+        !maxError && maxRow && maxRow.length > 0
+          ? Number(maxRow[0].longest_streak) || 0
+          : Number(row.longest_streak) || 0;
+      return {
+        currentStreak: Number(row.current_streak) || 0,
+        longestStreak: longest,
+      };
+    } catch (error) {
+      console.error("[analyticsData] loadStreaks threw:", error);
+      return { currentStreak: 0, longestStreak: 0 };
     }
   }
 
@@ -426,12 +559,13 @@ class AnalyticsDataService {
 
       // For ACCUMULATING fields (calories, meals, workouts), we must read first
       // then add. A bare upsert would overwrite and lose prior data from the same day.
+      // NOTE: waterIntakeMl is intentionally EXCLUDED — water_logs is the SSOT and
+      // analytics_metrics.water_intake_ml is derived at read time (P0-1).
       const incrementalFields = [
         "caloriesConsumed",
         "caloriesBurned",
         "workoutsCompleted",
         "mealsLogged",
-        "waterIntakeMl",
       ] as const;
       const hasIncrementalUpdate = incrementalFields.some(
         (f) => updates[f as keyof DailyMetrics] !== undefined,
@@ -478,10 +612,9 @@ class AnalyticsDataService {
           row.meals_logged =
             (existing?.meals_logged ?? 0) + updates.mealsLogged;
         }
-        if (updates.waterIntakeMl !== undefined) {
-          row.water_intake_ml =
-            (existing?.water_intake_ml ?? 0) + updates.waterIntakeMl;
-        }
+        // P0-1: waterIntakeMl is intentionally NOT accumulated into
+        // analytics_metrics here. water_logs is the SSOT and the column is
+        // derived at read time (getTodaysMetrics / loadMetricsHistory).
 
         // Non-accumulating fields (overwrite is correct)
         if (updates.weightKg !== undefined) row.weight_kg = updates.weightKg;

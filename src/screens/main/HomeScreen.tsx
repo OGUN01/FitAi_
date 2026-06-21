@@ -22,12 +22,13 @@
  */
 
 import React, { useCallback } from 'react';
-import { View, StyleSheet, Animated, RefreshControl, Platform } from 'react-native';
+import { View, StyleSheet, RefreshControl, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
 import { AuroraSpinner } from '../../components/ui/aurora/AuroraSpinner';
-import { ResponsiveTheme } from '../../utils/constants';
-import { rh } from '../../utils/responsive';
+import { colors, spacing } from '../../theme/aurora-tokens';
+import { rh, rp } from '../../utils/responsive';
 import { GuestSignUpScreen } from './GuestSignUpScreen';
 import {
   HomeHeader,
@@ -107,22 +108,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     syncHealthData,
     syncFromHealthConnect,
   } = useHomeLogic();
-
-  // ========== SCREEN DEBUG LOG ==========
-  React.useEffect(() => {
-    console.warn(`\n${'='.repeat(60)}`);
-    console.warn(`🏠 [SCREEN DEBUG] HomeScreen MOUNTED`);
-    console.warn(`${'='.repeat(60)}`);
-    console.warn(`👤 User: ${userName || '(unknown)'} | Guest: ${isGuestMode}`);
-    console.warn(`🔥 Streak: ${realStreak} | Calories Burned: ${realCaloriesBurned} | Consumed: ${caloriesConsumed}`);
-    console.warn(`🎯 Calories Goal: ${actualCaloriesGoal} | Workout Mins: ${workoutMinutes}`);
-    console.warn(`💧 Water: ${waterIntakeML}/${waterGoal}ml`);
-    console.warn(`⚖️  Weight: ${JSON.stringify(weightData)}`);
-    console.warn(`📊 Calculated Metrics: TDEE=${calculatedMetrics?.calculatedTDEE ?? '?'} | BMR=${calculatedMetrics?.calculatedBMR ?? '?'} | WaterGoal=${calculatedMetrics?.dailyWaterML ?? '?'}`);
-    console.warn(`🏋️ Today's Workout: ${todaysWorkoutInfo?.workout?.title || 'None'}`);
-    console.warn(`📋 Workout Prefs: Location=${workoutPreferences?.location} | Intensity=${workoutPreferences?.intensity}`);
-    console.warn(`${'='.repeat(60)}\n`);
-  }, []); // Only on mount
 
   // Achievement data
   const achievements = useAchievementStore((s) => s.achievements);
@@ -235,11 +220,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     );
   }
 
+  // Reanimated entrance fade — shared value driven from useHomeLogic.
+  const fadeStyle = useAnimatedStyle(() => ({ opacity: fadeAnim.value }));
+
   return (
     <>
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
         <SafeAreaView style={styles.container} edges={['top']}>
-          <Animated.View style={[styles.animatedContainer, { opacity: fadeAnim }]}>
+          <Animated.View style={[styles.animatedContainer, fadeStyle]}>
             <Animated.ScrollView
               style={styles.scrollView}
               showsVerticalScrollIndicator={false}
@@ -248,8 +236,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 <RefreshControl
                   refreshing={refreshing}
                   onRefresh={handleRefresh}
-                  tintColor={ResponsiveTheme.colors.primary}
-                  colors={[ResponsiveTheme.colors.primary]}
+                  tintColor={colors.primary.DEFAULT}
+                  colors={[colors.primary.DEFAULT]}
                 />
               }
             >
@@ -332,7 +320,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 />
                 {/* Wearable Sync Status */}
                 {wearableConnected && (
-                  <View style={{ marginTop: ResponsiveTheme.spacing.sm }}>
+                  <View style={{ marginTop: rp(spacing.sm) }}>
                     <SyncStatusIndicator />
                   </View>
                 )}
@@ -447,7 +435,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background.DEFAULT,
   },
   animatedContainer: {
     flex: 1,
@@ -459,11 +447,11 @@ const styles = StyleSheet.create({
     paddingBottom: rh(120),
   },
   section: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.md,
+    paddingHorizontal: rp(spacing.md),
+    marginBottom: rp(spacing.md),
   },
   quickActionsSection: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: rp(spacing.md),
   },
 });
 

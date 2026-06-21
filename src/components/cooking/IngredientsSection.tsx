@@ -1,11 +1,12 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { DayMeal } from "../../types/ai";
 import MacroDashboard from "../nutrition/MacroDashboard";
 import { colors } from "../../theme/aurora-tokens";
-import { ResponsiveTheme } from '../../utils/constants';
 import { rf, rp, rbr } from '../../utils/responsive';
+import { GlassCard } from "../ui/aurora";
+import { AnimatedPressable } from "../ui/aurora";
 
 interface IngredientsSectionProps {
   meal: DayMeal;
@@ -17,7 +18,7 @@ export default function IngredientsSection({
   onIngredientPress,
 }: IngredientsSectionProps) {
   return (
-    <View style={styles.ingredientsSection}>
+    <GlassCard padding="lg" borderRadius="xl" style={styles.ingredientsSection}>
       <Text style={styles.sectionTitle}>Ingredients & Nutrition</Text>
 
       <MacroDashboard
@@ -33,11 +34,15 @@ export default function IngredientsSection({
         </Text>
         <View style={styles.ingredientsGrid}>
           {meal.items?.map((item, index) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={index}
               style={styles.ingredientChip}
               onPress={() => onIngredientPress(item.name || "")}
-              activeOpacity={0.7}
+              scaleValue={0.95}
+              springConfig="snappy"
+              hapticType="light"
+              accessibilityLabel={`View ${item.name} details`}
+              accessibilityRole="button"
             >
               <Text style={styles.ingredientText}>🥘 {item.name}</Text>
               <Text style={styles.ingredientCalories}>
@@ -48,20 +53,17 @@ export default function IngredientsSection({
                 size={16}
                 color={colors.text.muted}
               />
-            </TouchableOpacity>
+            </AnimatedPressable>
           )) || []}
         </View>
       </View>
-    </View>
+    </GlassCard>
   );
 }
 
 const styles = StyleSheet.create({
   ingredientsSection: {
-    backgroundColor: colors.background.secondary,
     marginBottom: rp(16),
-    paddingHorizontal: rp(16),
-    paddingVertical: rp(20),
   },
   sectionTitle: {
     fontSize: rf(18),
@@ -94,7 +96,7 @@ const styles = StyleSheet.create({
     paddingVertical: rp(8),
     borderRadius: rbr(20),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.glassBorder,
+    borderColor: colors.glass.border,
   },
   ingredientText: {
     fontSize: rf(14),

@@ -1,3 +1,25 @@
+/**
+ * FitAI — Exercise History Screen (Aurora)
+ *
+ * Per-exercise history: volume bar chart, estimated-1RM trend, session list,
+ * and a Personal Records card. Previously a flat dark surface with hardcoded
+ * hex (#0D0D1A / #1A1A2E / #4CAF50), raw SVG, 🏆 emoji, ActivityIndicator, and
+ * a "← Back" text button.
+ *
+ * Aurora modernization:
+ *  - Wrapped in AuroraBackground theme="space".
+ *  - Hardcoded colors → aurora tokens.
+ *  - ActivityIndicator → AuroraSpinner.
+ *  - Added Personal Records card at top (renders ExercisePR.value + prType +
+ *    achievedAt — the `prs` state was already fetched but never rendered).
+ *  - 🏆 emoji → gold glass pill PR badge.
+ *  - "← Back" text → GlassHeader (back chevron + title).
+ *  - Ad-hoc empty state → shared EmptyState.
+ *  - Volume bar chart + 1RM trend recolored with tokens.
+ *
+ * Data flow unchanged: exerciseHistoryService.getHistory + getPersonalRecords
+ * remain the source of truth; totalVolume from volumeCalculator is reused.
+ */
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -5,10 +27,17 @@ import {
   FlatList,
   StyleSheet,
   SafeAreaView,
-  ActivityIndicator,
-  Pressable,
 } from "react-native";
 import Svg, { Rect, Polyline, Line, Text as SvgText } from "react-native-svg";
+import {
+  AuroraBackground,
+  GlassCard,
+  GlassHeader,
+  AuroraSpinner,
+  EmptyState,
+} from "../../components/ui/aurora";
+import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
+import { rp, rf } from "../../utils/responsive";
 import {
   exerciseHistoryService,
   ExerciseHistoryEntry,
@@ -83,7 +112,7 @@ function VolumeChart({ entries }: { entries: ExerciseHistoryEntry[] }) {
               y={y}
               width={barWidth}
               height={barH}
-              fill="#4CAF50"
+              fill={colors.success.DEFAULT}
               rx={3}
             />
           );
@@ -93,7 +122,7 @@ function VolumeChart({ entries }: { entries: ExerciseHistoryEntry[] }) {
           y1={CHART_HEIGHT - 20}
           x2={CHART_WIDTH}
           y2={CHART_HEIGHT - 20}
-          stroke="#444"
+          stroke={colors.glass.border}
           strokeWidth={1}
         />
       </Svg>
@@ -128,7 +157,7 @@ function OneRMTrend({ entries }: { entries: ExerciseHistoryEntry[] }) {
         <Polyline
           points={points}
           fill="none"
-          stroke="#FF9800"
+          stroke={colors.warning.DEFAULT}
           strokeWidth={2}
         />
         <Line
@@ -136,22 +165,53 @@ function OneRMTrend({ entries }: { entries: ExerciseHistoryEntry[] }) {
           y1={CHART_HEIGHT - 20}
           x2={CHART_WIDTH}
           y2={CHART_HEIGHT - 20}
-          stroke="#444"
+          stroke={colors.glass.border}
           strokeWidth={1}
         />
-        <SvgText x={0} y={CHART_HEIGHT - 4} fill="#888" fontSize={10}>
+        <SvgText x={0} y={CHART_HEIGHT - 4} fill={colors.text.tertiary} fontSize={10}>
           {Math.round(minVal)}
         </SvgText>
         <SvgText
           x={CHART_WIDTH - 30}
           y={CHART_HEIGHT - 4}
-          fill="#888"
+          fill={colors.text.tertiary}
           fontSize={10}
         >
           {Math.round(maxVal)}
         </SvgText>
       </Svg>
     </View>
+  );
+}
+
+// ── Personal Records card ────────────────────────────────────────────────────
+// Renders the already-fetched `prs` state (ExercisePR.value + prType +
+// achievedAt) that was previously loaded but never shown to the user.
+function PersonalRecordsCard({ prs }: { prs: ExercisePR[] }) {
+  if (prs.length === 0) return null;
+  return (
+    <GlassCard elevation={2} padding="md" borderRadius="lg" style={styles.prCard}>
+      <View style={styles.prHeader}>
+        <Text style={styles.prCardTitle}>Personal Records</Text>
+      </View>
+      <View style={styles.prList}>
+        {prs.map((pr, i) => (
+          <View key={`pr-${i}-${pr.prType}`} style={styles.prRow}>
+            <View style={styles.prBadge}>
+              <Text style={styles.prBadgeEmoji}>🏆</Text>
+              <Text style={styles.prBadgeLabel}>
+                {pr.prType === "weight" ? "Weight PR" : "Est. 1RM PR"}
+              </Text>
+            </View>
+            <Text style={styles.prValue}>
+              {Math.round(pr.value)}
+              {pr.prType === "weight" ? " kg" : " kg (1RM)"}
+            </Text>
+            <Text style={styles.prDate}>{formatDate(pr.achievedAt)}</Text>
+          </View>
+        ))}
+      </View>
+    </GlassCard>
   );
 }
 
@@ -199,10 +259,19 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
   const renderSession = ({ item }: { item: ExerciseHistoryEntry }) => {
     const hasPR = prSessionIds.has(item.sessionId);
     return (
-      <View style={styles.sessionRow}>
+      <GlassCard
+        elevation={1}
+        padding="md"
+        borderRadius="lg"
+        style={styles.sessionCard}
+      >
         <View style={styles.sessionHeader}>
           <Text style={styles.sessionDate}>{formatDate(item.completedAt)}</Text>
-          {hasPR && <Text style={styles.prBadge}>🏆</Text>}
+          {hasPR && (
+            <View style={styles.prPill}>
+              <Text style={styles.prPillText}>🏆 PR</Text>
+            </View>
+          )}
         </View>
         <Text style={styles.sessionSets}>{formatSets(item.sets)}</Text>
         {item.estimated1RM != null && (
@@ -210,147 +279,179 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
             Est. 1RM: {Math.round(item.estimated1RM)}kg
           </Text>
         )}
-      </View>
+      </GlassCard>
     );
   };
 
-  const emptyComponent = (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>
-        No history yet — complete your first workout!
-      </Text>
-    </View>
-  );
-
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <ActivityIndicator size="large" color="#4CAF50" />
-      </SafeAreaView>
+      <AuroraBackground theme="space">
+        <SafeAreaView style={styles.container}>
+          <View style={styles.loadingWrap}>
+            <AuroraSpinner size="lg" theme="primary" />
+          </View>
+        </SafeAreaView>
+      </AuroraBackground>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        {navigation && (
-          <Pressable
-            onPress={navigation.goBack}
-            style={styles.backButton}
-            testID="back-button"
-          >
-            <Text style={styles.backText}>← Back</Text>
-          </Pressable>
-        )}
-        <View style={styles.headerTitles}>
-          <Text style={styles.title}>{exerciseName}</Text>
-          <Text style={styles.subtitle}>History</Text>
-        </View>
-      </View>
+    <AuroraBackground theme="space">
+      <SafeAreaView style={styles.container}>
+        <GlassHeader
+          title={exerciseName}
+          titleIcon="barbell"
+          onBack={navigation?.goBack}
+        />
 
-      {history.length > 0 && (
-        <>
-          <VolumeChart entries={history} />
-          <OneRMTrend entries={history} />
-        </>
-      )}
-
-      <FlatList
-        testID="history-list"
-        data={history}
-        keyExtractor={(item) => item.sessionId}
-        renderItem={renderSession}
-        ListEmptyComponent={emptyComponent}
-        contentContainerStyle={styles.listContent}
-      />
-    </SafeAreaView>
+        <FlatList
+          testID="history-list"
+          data={history}
+          keyExtractor={(item) => item.sessionId}
+          renderItem={renderSession}
+          ListHeaderComponent={
+            <View>
+              <PersonalRecordsCard prs={prs} />
+              {history.length > 0 && (
+                <>
+                  <VolumeChart entries={history} />
+                  <OneRMTrend entries={history} />
+                </>
+              )}
+            </View>
+          }
+          ListEmptyComponent={
+            <EmptyState
+              icon="barbell-outline"
+              title="No history yet"
+              subtitle="Complete your first workout!"
+              iconColor={colors.primary.DEFAULT}
+            />
+          }
+          contentContainerStyle={styles.listContent}
+        />
+      </SafeAreaView>
+    </AuroraBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0D0D1A",
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingHorizontal: rp(spacing.md),
+    paddingTop: rp(spacing.md),
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    marginBottom: 2,
+  loadingWrap: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   subtitle: {
-    fontSize: 14,
-    color: "#888",
-    marginBottom: 16,
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.text.tertiary,
+    marginBottom: rp(spacing.md),
   },
   chartContainer: {
-    marginBottom: 16,
+    marginBottom: rp(spacing.md),
     alignItems: "center",
   },
   chartTitle: {
-    fontSize: 12,
-    color: "#888",
-    marginBottom: 8,
+    fontSize: rf(typography.fontSize.micro),
+    color: colors.text.tertiary,
+    marginBottom: rp(spacing.sm),
     alignSelf: "flex-start",
   },
   listContent: {
-    paddingBottom: 32,
+    paddingBottom: rp(spacing.xxl),
   },
-  sessionRow: {
-    backgroundColor: "#1A1A2E",
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 8,
+  // PR card
+  prCard: {
+    marginBottom: rp(spacing.md),
+  },
+  prHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: rp(spacing.sm),
+  },
+  prCardTitle: {
+    fontSize: rf(typography.fontSize.body),
+    fontWeight: String(typography.fontWeight.bold) as any,
+    color: colors.text.primary,
+  },
+  prList: {
+    gap: rp(spacing.xs),
+  },
+  prRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: rp(spacing.sm),
+  },
+  // Gold glass pill PR badge
+  prBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(spacing.xxs),
+    backgroundColor: `${colors.warning.DEFAULT}22`,
+    borderWidth: 1,
+    borderColor: `${colors.warning.DEFAULT}66`,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: rp(spacing.sm),
+    paddingVertical: rp(spacing.xxs),
+    flex: 1,
+  },
+  prBadgeEmoji: {
+    fontSize: rf(typography.fontSize.caption),
+  },
+  prBadgeLabel: {
+    fontSize: rf(typography.fontSize.micro),
+    color: colors.warning.DEFAULT,
+    fontWeight: String(typography.fontWeight.semibold) as any,
+  },
+  prValue: {
+    fontSize: rf(typography.fontSize.body),
+    fontWeight: String(typography.fontWeight.bold) as any,
+    color: colors.text.primary,
+  },
+  prDate: {
+    fontSize: rf(typography.fontSize.micro),
+    color: colors.text.tertiary,
+  },
+  // Session rows
+  sessionCard: {
+    marginBottom: rp(spacing.sm),
   },
   sessionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 4,
+    marginBottom: rp(spacing.xxs),
   },
   sessionDate: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#FFF",
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.semibold) as any,
+    color: colors.text.primary,
   },
-  prBadge: {
-    fontSize: 14,
-    marginLeft: 8,
+  prPill: {
+    backgroundColor: `${colors.warning.DEFAULT}22`,
+    borderWidth: 1,
+    borderColor: `${colors.warning.DEFAULT}66`,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: rp(spacing.sm),
+    paddingVertical: rp(spacing.xxs),
+    marginLeft: rp(spacing.sm),
+  },
+  prPillText: {
+    fontSize: rf(typography.fontSize.micro),
+    color: colors.warning.DEFAULT,
+    fontWeight: String(typography.fontWeight.bold) as any,
   },
   sessionSets: {
-    fontSize: 13,
-    color: "#CCC",
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.text.secondary,
   },
   sessionE1RM: {
-    fontSize: 12,
-    color: "#FF9800",
-    marginTop: 2,
-  },
-  emptyContainer: {
-    alignItems: "center",
-    paddingVertical: 40,
-  },
-  emptyText: {
-    fontSize: 15,
-    color: "#888",
-    textAlign: "center",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  backButton: {
-    paddingRight: 12,
-    paddingVertical: 4,
-  },
-  backText: {
-    fontSize: 16,
-    color: "#4CAF50",
-    fontWeight: "600",
-  },
-  headerTitles: {
-    flex: 1,
+    fontSize: rf(typography.fontSize.micro),
+    color: colors.warning.DEFAULT,
+    marginTop: rp(spacing.xxs),
   },
 });

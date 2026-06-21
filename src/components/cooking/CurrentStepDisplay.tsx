@@ -1,12 +1,13 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { DayMeal } from "../../types/ai";
 import { CookingFlow } from "../../utils/cookingFlowGenerator";
 import { mealMotivationService } from "../../features/nutrition/MealMotivation";
 import { colors } from "../../theme/aurora-tokens";
-import { ResponsiveTheme } from '../../utils/constants';
-import { rf, rp, rbr } from '../../utils/responsive';
+import { rf, rp, rbr } from "../../utils/responsive";
+import { GlassCard } from "../ui/aurora";
+import { AnimatedPressable } from "../ui/aurora";
 
 interface CurrentStepDisplayProps {
   cookingFlow: CookingFlow;
@@ -39,7 +40,12 @@ export default function CurrentStepDisplay({
   );
 
   return (
-    <View style={styles.currentStepSection}>
+    <GlassCard
+      padding="lg"
+      borderRadius="xl"
+      showBorder
+      style={styles.currentStepSection}
+    >
       <View style={styles.progressHeader}>
         <Text style={styles.encouragementText}>{encouragement}</Text>
         <View style={styles.progressBarContainer}>
@@ -56,9 +62,14 @@ export default function CurrentStepDisplay({
           <Text style={styles.stepTitle}>{currentStep.instruction}</Text>
         </View>
         {currentStep.timeRequired && (
-          <TouchableOpacity
+          <AnimatedPressable
             style={styles.timerButton}
             onPress={() => onStartTimer(currentStep.timeRequired!)}
+            scaleValue={0.95}
+            springConfig="snappy"
+            hapticType="light"
+            accessibilityLabel={`Start ${currentStep.timeRequired} minute timer`}
+            accessibilityRole="button"
           >
             <Ionicons
               name="timer-outline"
@@ -68,7 +79,7 @@ export default function CurrentStepDisplay({
             <Text style={styles.timerButtonText}>
               {currentStep.timeRequired}m
             </Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         )}
       </View>
 
@@ -81,24 +92,28 @@ export default function CurrentStepDisplay({
       {cookingTimer !== null && (
         <View style={styles.activeTimer}>
           <Text style={styles.timerDisplay}>{formatTimer(cookingTimer)}</Text>
-          <TouchableOpacity onPress={onStopTimer}>
-            <Ionicons name="stop-circle" size={32} color={ResponsiveTheme.colors.errorAlt} />
-          </TouchableOpacity>
+          <AnimatedPressable
+            onPress={onStopTimer}
+            scaleValue={0.9}
+            springConfig="snappy"
+            hapticType="light"
+            accessibilityLabel="Stop timer"
+            accessibilityRole="button"
+          >
+            <Ionicons name="stop-circle" size={32} color={colors.error.DEFAULT} />
+          </AnimatedPressable>
         </View>
       )}
-    </View>
+    </GlassCard>
   );
 }
 
 const styles = StyleSheet.create({
   currentStepSection: {
-    backgroundColor: "rgba(26, 31, 46, 0.8)",
     marginHorizontal: rp(16),
     marginBottom: rp(16),
-    padding: rp(20),
-    borderRadius: rbr(12),
-    borderWidth: 2,
     borderColor: colors.primary.DEFAULT,
+    borderWidth: 2,
   },
   progressHeader: {
     marginBottom: rp(16),

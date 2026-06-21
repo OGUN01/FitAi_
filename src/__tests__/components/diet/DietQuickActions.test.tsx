@@ -9,6 +9,10 @@ jest.mock("react-native", () => {
     Text: "Text",
     StyleSheet: {
       create: (styles: unknown) => styles,
+      flatten: (styles: unknown) => {
+        if (!Array.isArray(styles)) return styles || {};
+        return Object.assign({}, ...styles.filter(Boolean));
+      },
     },
     ScrollView: ({ children }: { children: React.ReactNode }) => children,
     Pressable: React.forwardRef((props: any, ref) =>
@@ -62,17 +66,22 @@ describe("DietQuickActions", () => {
         onScanFood={jest.fn()}
         onScanBarcode={jest.fn()}
         onScanLabel={jest.fn()}
+        onLogMeal={jest.fn()}
         onLogWater={jest.fn()}
         onViewRecipes={jest.fn()}
       />,
     );
 
+    // Each quick action maps to a distinct, non-overlapping entry point:
+    // scan-based capture (Scan Food, Barcode, Scan Label), manual entry
+    // (Log Meal), hydration (Log Water), and discovery (Recipes). "Log Meal"
+    // is intentionally present as the manual-logging path for users who cannot
+    // or prefer not to scan.
     expect(screen.getByLabelText("Scan Food")).toBeTruthy();
     expect(screen.getByLabelText("Barcode")).toBeTruthy();
     expect(screen.getByLabelText("Scan Label")).toBeTruthy();
+    expect(screen.getByLabelText("Log Meal")).toBeTruthy();
     expect(screen.getByLabelText("Log Water")).toBeTruthy();
     expect(screen.getByLabelText("Recipes")).toBeTruthy();
-
-    expect(screen.queryByLabelText("Log Meal")).toBeNull();
   });
 });

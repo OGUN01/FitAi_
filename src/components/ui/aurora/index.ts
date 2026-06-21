@@ -10,6 +10,16 @@ export { GlassCard } from './GlassCard';
 export { AnimatedPressable } from './AnimatedPressable';
 export { AnimatedSection } from './AnimatedSection';
 
+// Shared primitives (Wave 3 — modernization foundation)
+export { BottomSheet } from './BottomSheet';
+export type { BottomSheetProps } from './BottomSheet';
+export { EmptyState } from './EmptyState';
+export type { EmptyStateProps } from './EmptyState';
+export { GlassButton } from './GlassButton';
+export type { GlassButtonProps, GlassButtonVariant } from './GlassButton';
+export { GlassHeader } from './GlassHeader';
+export type { GlassHeaderProps } from './GlassHeader';
+
 // Advanced Components (Phase A - Foundation)
 export { HeroSection } from './HeroSection';
 export { MetricCard } from './MetricCard';

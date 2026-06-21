@@ -401,6 +401,9 @@ export interface MealLog {
   provenance?: MealLogProvenance;
   syncStatus: SyncStatus;
   syncMetadata: SyncMetadata;
+  // P2-11: explicit completion flag mirroring meal_logs.is_completed.
+  // Replaces the "[COMPLETED]" notes-string convention.
+  isCompleted?: boolean;
 }
 
 export interface WaterLog {

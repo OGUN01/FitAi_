@@ -6,6 +6,10 @@ jest.mock("react-native", () => ({
   Text: "Text",
   StyleSheet: {
     create: (styles: unknown) => styles,
+    flatten: (styles: unknown) => {
+      if (!Array.isArray(styles)) return styles || {};
+      return Object.assign({}, ...styles.filter(Boolean));
+    },
   },
   Platform: {
     OS: "ios",

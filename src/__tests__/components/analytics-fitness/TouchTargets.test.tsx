@@ -172,9 +172,12 @@ jest.mock("@/screens/main/analytics/components/LineChart", () => {
   };
 });
 
-jest.mock("@/stores/profileStore", () => ({
-  useProfileStore: () => ({ workoutPreferences: null }),
-}));
+jest.mock("@/stores/profileStore", () => {
+  const state = { workoutPreferences: null };
+  const fn = jest.fn(() => state);
+  (fn as any).getState = jest.fn(() => state);
+  return { useProfileStore: fn };
+});
 
 jest.mock("@/utils/haptics", () => ({
   haptics: {

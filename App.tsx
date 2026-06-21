@@ -2,7 +2,7 @@ import "./global.css";
 import { enableScreens } from "react-native-screens";
 enableScreens();
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, View, ActivityIndicator, Text, Platform } from "react-native";
 
@@ -43,6 +43,10 @@ import { config } from "./src/theme/gluestack-ui.config";
 import { OnboardingContainer } from "./src/screens/onboarding/OnboardingContainer";
 import { WelcomeScreen } from "./src/screens/onboarding/WelcomeScreen";
 import { MainNavigation } from "./src/components/navigation/MainNavigation";
+import { PasswordResetScreen } from "./src/screens/auth/PasswordResetScreen";
+import { useAuthDeepLinks } from "./src/hooks/useAuthDeepLinks";
+import { crossPlatformAlert } from "./src/utils/crossPlatformAlert";
+import type { DeepLinkResult } from "./src/utils/deepLinkHandler";
 import { OnboardingReviewData } from "./src/types/onboarding";
 import { ThemeProvider } from "./src/theme/ThemeProvider";
 import { colors, spacing, typography } from "./src/theme/aurora-tokens";
@@ -54,11 +58,17 @@ import { useUserStore } from "./src/stores/userStore";
 import { useAuthStore } from "./src/stores/authStore";
 import { useProfileStore } from "./src/stores/profileStore";
 import { useSubscriptionStore } from "./src/stores/subscriptionStore";
+import { useHealthDataStore } from "./src/stores/healthDataStore";
+import {
+  registerBackgroundHealthSync,
+  unregisterBackgroundHealthSync,
+} from "./src/services/backgroundHealthSync";
 import { convertOnboardingToProfile } from "./src/utils/profileConversion";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { googleAuthService } from "./src/services/googleAuth";
 import { supabase } from "./src/services/supabase";
+import { aiService } from "./src/ai";
 import {
   PersonalInfoService,
   DietPreferencesService,
@@ -67,6 +77,7 @@ import {
   AdvancedReviewService,
 } from "./src/services/onboardingService";
 import { dataBridge } from "./src/services/DataBridge";
+import { initRemoteDataSync } from "./src/services/remoteDataSync";
 import { useAppConfig } from "./src/hooks/useAppConfig";
 import { runAfterInteractions } from "./src/utils/performance";
 import * as Notifications from "expo-notifications";
@@ -138,6 +149,72 @@ export default function App() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [subscriptionTimeout, setSubscriptionTimeout] = useState(false);
   const [initialNotificationTab, setInitialNotificationTab] = useState<string | undefined>(undefined);
+  // Params forwarded to the initial tab when a notification tap deep-links in
+  // (e.g. { openWaterModal: true } so DietScreen opens the water logger).
+  const [initialNotificationTabParams, setInitialNotificationTabParams] = useState<Record<string, unknown> | undefined>(undefined);
+
+  // Deep-link password-reset overlay. When a Supabase `type=recovery` link is
+  // opened, `useAuthDeepLinks` fires and we set this token to surface the
+  // PasswordResetScreen above whatever root screen is currently mounted. The
+  // screen itself re-derives its state from `supabase.auth.getSession()`.
+  const [passwordResetToken, setPasswordResetToken] = useState<string | null>(null);
+
+  const handleAuthDeepLink = useCallback(
+    (result: DeepLinkResult) => {
+      switch (result.type) {
+        case "recovery": {
+          // Surface the recovery token if present (diagnostic only — PKCE flow
+          // establishes the session via the SDK, so the screen re-derives state
+          // from supabase.auth.getSession()).
+          setPasswordResetToken(result.code ?? result.tokens.accessToken ?? "recovery");
+          break;
+        }
+        case "signup":
+        case "email_change":
+        case "invite":
+        case "magiclink": {
+          // Email verified / magic link clicked. The Supabase SDK establishes
+          // the session via onAuthStateChange (authStore listens). For a PKCE
+          // `code`, exchange it explicitly so the session is ready before we
+          // tell the user it succeeded. Keep this minimal — no navigation
+          // restructuring.
+          const finalize = async () => {
+            if (result.code) {
+              try {
+                const { error } = await supabase.auth.exchangeCodeForSession(
+                  result.code,
+                );
+                if (error) {
+                  console.error("[App] exchangeCodeForSession failed:", error);
+                }
+              } catch (error) {
+                console.error("[App] exchangeCodeForSession threw:", error);
+              }
+            }
+            try {
+              await supabase.auth.refreshSession();
+            } catch (error) {
+              console.error("[App] refreshSession after verification failed:", error);
+            }
+            crossPlatformAlert(
+              "Email Verified",
+              "Your email has been verified successfully. You can now sign in.",
+            );
+          };
+          void finalize();
+          break;
+        }
+        default:
+          // Other auth types (sms, phone_change, etc.) — not handled here.
+          // surfacing as a no-op keeps the listener stable without forcing
+          // every flow through this hook.
+          break;
+      }
+    },
+    [],
+  );
+
+  useAuthDeepLinks(handleAuthDeepLink);
 
   const { user, isLoading, isInitialized, isGuestMode, guestId } = useAuth();
   const { config: appConfig, loading: appConfigLoading } = useAppConfig();
@@ -222,6 +299,68 @@ export default function App() {
     }, 5000);
     return () => clearTimeout(timer);
   }, [user, isGuestMode]);
+
+  // Health Connect background sync registration.
+  // `backgroundSyncEnabled` is the user-facing settings toggle in healthDataStore.
+  // Before this effect, the toggle flipped a boolean with no effect — registration
+  // was never called from anywhere (only unregister was, on logout via auth/login.ts).
+  // registerBackgroundHealthSync() is idempotent (guards against non-android,
+  // missing native module, and double-registration), so calling on every toggle
+  // change is safe. HC must also be authorized/available — the register function
+  // short-circuits if the native module or SDK is unavailable, so we only need
+  // to gate on the user setting here.
+  const backgroundSyncEnabled = useHealthDataStore(
+    (state) => state.settings.backgroundSyncEnabled,
+  );
+  const isHealthConnectAuthorized = useHealthDataStore(
+    (state) => state.isHealthConnectAuthorized,
+  );
+  const isHealthConnectAvailable = useHealthDataStore(
+    (state) => state.isHealthConnectAvailable,
+  );
+  useEffect(() => {
+    // Don't register a background task in Expo Go — native modules aren't bundled.
+    if (isExpoGo) return;
+
+    let cancelled = false;
+
+    const apply = async () => {
+      if (!backgroundSyncEnabled) {
+        // Toggle flipped off — make sure we don't leave a task registered.
+        await unregisterBackgroundHealthSync().catch((e) => {
+          console.error("[App] unregister background sync failed:", e);
+        });
+        return;
+      }
+
+      // Only register when HC is available + authorized. If the user hasn't
+      // connected yet, registration is pointless (the sync would no-op on
+      // permission errors every run). When they later authorize, this effect
+      // re-runs (isHealthConnectAuthorized is a dep) and registration kicks in.
+      if (!isHealthConnectAvailable || !isHealthConnectAuthorized) {
+        return;
+      }
+
+      const ok = await registerBackgroundHealthSync();
+      if (cancelled) return;
+      if (!ok) {
+        // Not fatal — module unavailable, Expo Go, or device不支持. Logged inside.
+      }
+    };
+
+    apply().catch((e) => {
+      console.error("[App] background sync registration failed:", e);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    backgroundSyncEnabled,
+    isHealthConnectAvailable,
+    isHealthConnectAuthorized,
+    isExpoGo,
+  ]);
 
   // Only use notification store if not in Expo Go
   const notificationStore = useNotificationStore
@@ -780,6 +919,11 @@ export default function App() {
 
         if (!mounted) return;
 
+        // Subscribe to SIGNED_IN so cross-device login triggers remote fetch
+        // for profile, hydration, workouts, meals, achievements. Safe to call
+        // repeatedly — coordinator guards against double-init.
+        initRemoteDataSync();
+
 
 
         void runAfterInteractions(async () => {
@@ -788,10 +932,17 @@ export default function App() {
           // BUG-001 cleanup: clear stale workout_sessions queue items with old camelCase columns
           try {
             await offlineService.clearFailedActionsForTable("workout_sessions");
-          } catch {
+          } catch (e) {
+            console.error("[App] Failed to clear failed workout_sessions actions:", e);
           }
 
           if (!mounted) return;
+
+          // Seed the AI backend status cache so getAIStatus() reflects real
+          // reachability instead of an optimistic default. Fire-and-forget —
+          // a failure just leaves the cache at "unavailable", which is the
+          // honest state. Logged inside isRealAIAvailable().
+          void aiService.isRealAIAvailable();
 
           // Initialize Google Sign-In after the first interaction frame.
           try {
@@ -831,7 +982,10 @@ export default function App() {
               if (lastResponse) {
                 const data = lastResponse.notification.request.content.data;
                 if (data?.type === 'water') {
+                  // Forward openWaterModal so DietScreen opens the water logger
+                  // instead of just landing on the diet list.
                   setInitialNotificationTab('diet');
+                  setInitialNotificationTabParams({ openWaterModal: true });
                 } else if (data?.type === 'workout') {
                   setInitialNotificationTab('fitness');
                 } else if (data?.type === 'meal') {
@@ -861,7 +1015,9 @@ export default function App() {
       notificationResponseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
         const data = response.notification.request.content.data;
         if (data?.type === 'water') {
+          // Forward openWaterModal so DietScreen opens the water logger.
           setInitialNotificationTab('diet');
+          setInitialNotificationTabParams({ openWaterModal: true });
         } else if (data?.type === 'workout') {
           setInitialNotificationTab('fitness');
         } else if (data?.type === 'meal') {
@@ -1073,8 +1229,40 @@ export default function App() {
                 translucent
               />
 
-              {isOnboardingComplete ? (
-                <MainNavigation initialTab={initialNotificationTab} />
+              {passwordResetToken !== null ? (
+                <PasswordResetScreen
+                  token={passwordResetToken === "recovery" ? undefined : passwordResetToken}
+                  onBackToLogin={() => {
+                    // Clear the reset overlay and return the user to the
+                    // welcome/sign-in flow. Signing out ensures no stale
+                    // recovery session lingers (the recovery link establishes
+                    // a session; if the user abandons the flow we should not
+                    // leave them half-authenticated).
+                    setPasswordResetToken(null);
+                    void supabase.auth.signOut().catch((error) => {
+                      console.error("[App] signOut after password reset dismissed failed:", error);
+                    });
+                    setShowWelcome(true);
+                    setIsOnboardingComplete(false);
+                  }}
+                  onRequestNewReset={() => {
+                    // Drop the recovery session and surface the sign-in screen
+                    // (which contains the password-reset request entry). The
+                    // WelcomeScreen sign-in mode is where users enter email to
+                    // request a reset.
+                    setPasswordResetToken(null);
+                    void supabase.auth.signOut().catch((error) => {
+                      console.error("[App] signOut before new reset request failed:", error);
+                    });
+                    setShowWelcome(true);
+                    setIsOnboardingComplete(false);
+                  }}
+                />
+              ) : isOnboardingComplete ? (
+                <MainNavigation
+                  initialTab={initialNotificationTab}
+                  initialTabParams={initialNotificationTabParams}
+                />
               ) : shouldResumeAuthenticatedOnboarding ? (
                 <OnboardingContainer
                   onComplete={handleOnboardingComplete}

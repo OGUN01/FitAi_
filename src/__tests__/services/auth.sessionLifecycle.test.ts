@@ -74,20 +74,23 @@ beforeEach(async () => {
 });
 
 describe('auth session lifecycle', () => {
+	// The AsyncStorage cache now holds ONLY the display AuthUser under the
+	// `auth_user_cache` key (tokens live in Supabase's SecureStore adapter).
+	// restoreSession() reads the cache for fast display, then revalidateSession()
+	// re-reads it (since the cache path doesn't set this.currentSession), so we
+	// mock getItem with a stable mockResolvedValue (not Once) for the cases that
+	// exercise revalidateSession.
+	const cachedUserPayload = (email: string) =>
+		JSON.stringify({
+			id: 'user-123',
+			email,
+			isEmailVerified: false,
+			lastLoginAt: '2026-03-01T00:00:00.000Z',
+			createdAt: '2026-03-01T00:00:00.000Z',
+		});
+
 	it('returns a valid cached session immediately without waiting on Supabase', async () => {
-		mockedAsyncStorage.getItem.mockResolvedValueOnce(
-			JSON.stringify({
-				user: {
-					id: 'user-123',
-					email: 'cached@example.com',
-					isEmailVerified: false,
-					lastLoginAt: '2026-03-01T00:00:00.000Z',
-				},
-				accessToken: 'cached-token',
-				refreshToken: 'cached-refresh',
-				expiresAt: Math.floor(Date.now() / 1000) + 3600,
-			}),
-		);
+		mockedAsyncStorage.getItem.mockResolvedValue(cachedUserPayload('cached@example.com'));
 
 		const result = await authService.restoreSession();
 
@@ -102,22 +105,12 @@ describe('auth session lifecycle', () => {
 	});
 
 	it('revalidates a cached session against Supabase and persists newer server data', async () => {
-		mockedAsyncStorage.getItem.mockResolvedValueOnce(
-			JSON.stringify({
-				user: {
-					id: 'user-123',
-					email: 'cached@example.com',
-					isEmailVerified: false,
-					lastLoginAt: '2026-03-01T00:00:00.000Z',
-				},
-				accessToken: 'cached-token',
-				refreshToken: 'cached-refresh',
-				expiresAt: Math.floor(Date.now() / 1000) + 3600,
-			}),
-		);
+		mockedAsyncStorage.getItem.mockResolvedValue(cachedUserPayload('cached@example.com'));
 
 		await authService.restoreSession();
 		jest.clearAllMocks();
+		// revalidateSession re-reads the cache; keep it returning the cached user.
+		mockedAsyncStorage.getItem.mockResolvedValue(cachedUserPayload('cached@example.com'));
 
 		mockedSupabase.auth.getSession.mockResolvedValueOnce({
 			data: {
@@ -140,27 +133,21 @@ describe('auth session lifecycle', () => {
 		expect(result.success).toBe(true);
 		expect(result.source).toBe('server');
 		expect(result.user?.email).toBe('server@example.com');
-		expect(mockedAsyncStorage.setItem).toHaveBeenCalledWith(
-			'auth_session',
-			expect.stringContaining('server-token'),
+		// Only the display AuthUser is persisted to AsyncStorage — tokens are
+		// owned by Supabase's SecureStore adapter, NOT duplicated here.
+		const setItemCall = mockedAsyncStorage.setItem.mock.calls.find(
+			([key]) => key === 'auth_user_cache',
 		);
+		expect(setItemCall?.[0]).toBe('auth_user_cache');
+		expect(setItemCall?.[1]).toEqual(expect.stringContaining('server@example.com'));
+		// Tokens must NOT be persisted to the AsyncStorage cache.
+		expect(setItemCall?.[1]).toEqual(expect.not.stringContaining('server-token'));
+		expect(setItemCall?.[1]).toEqual(expect.not.stringContaining('server-refresh'));
 		expect(authService.getCurrentUser()?.email).toBe('server@example.com');
 	});
 
 	it('clears a stale cached session when Supabase can no longer validate it', async () => {
-		mockedAsyncStorage.getItem.mockResolvedValueOnce(
-			JSON.stringify({
-				user: {
-					id: 'user-123',
-					email: 'cached@example.com',
-					isEmailVerified: true,
-					lastLoginAt: '2026-03-01T00:00:00.000Z',
-				},
-				accessToken: 'cached-token',
-				refreshToken: 'cached-refresh',
-				expiresAt: Math.floor(Date.now() / 1000) + 3600,
-			}),
-		);
+		mockedAsyncStorage.getItem.mockResolvedValue(cachedUserPayload('cached@example.com'));
 
 		mockedSupabase.auth.getSession.mockResolvedValueOnce({
 			data: { session: null },
@@ -174,30 +161,48 @@ describe('auth session lifecycle', () => {
 
 		await authService.restoreSession();
 		jest.clearAllMocks();
+		mockedAsyncStorage.getItem.mockResolvedValue(cachedUserPayload('cached@example.com'));
 
 		const result = await authService.revalidateSession();
 
 		expect(result.success).toBe(false);
 		expect(result.error).toBe('Stored session is no longer valid');
-		expect(mockedAsyncStorage.removeItem).toHaveBeenCalledWith('auth_session');
+		// 'revoked' is a genuine auth failure (not a network blip), so the
+		// session is cleared — removeItem called with the current cache key.
+		expect(mockedAsyncStorage.removeItem).toHaveBeenCalledWith('auth_user_cache');
 		expect(dataBridge.setUserId).toHaveBeenCalledWith(null);
 		expect(authService.getCurrentSession()).toBeNull();
 	});
 
-	it('clears local auth state on logout even when the remote sign-out fails', async () => {
-		mockedAsyncStorage.getItem.mockResolvedValueOnce(
-			JSON.stringify({
-				user: {
-					id: 'user-123',
-					email: 'logout@example.com',
-					isEmailVerified: true,
-					lastLoginAt: '2026-03-19T00:00:00.000Z',
-				},
-				accessToken: 'session-token',
-				refreshToken: 'session-refresh',
-				expiresAt: Math.floor(Date.now() / 1000) + 3600,
-			}),
+	it('keeps the cached session on a transient network error instead of force-logging-out', async () => {
+		mockedAsyncStorage.getItem.mockResolvedValue(cachedUserPayload('cached@example.com'));
+
+		mockedSupabase.auth.getSession.mockResolvedValueOnce({
+			data: { session: null },
+			error: null,
+		});
+
+		// A transport fault (TypeError "Failed to fetch") is retryable — the
+		// refresh token is still valid, the user should NOT be signed out.
+		mockedSupabase.auth.refreshSession.mockRejectedValueOnce(
+			new TypeError('Failed to fetch'),
 		);
+
+		await authService.restoreSession();
+		jest.clearAllMocks();
+		mockedAsyncStorage.getItem.mockResolvedValue(cachedUserPayload('cached@example.com'));
+
+		const result = await authService.revalidateSession();
+
+		expect(result.success).toBe(false);
+		expect(result.isNetworkError).toBe(true);
+		// CRITICAL: a network blip must NOT clear the local session.
+		expect(mockedAsyncStorage.removeItem).not.toHaveBeenCalled();
+		expect(dataBridge.setUserId).not.toHaveBeenCalledWith(null);
+	});
+
+	it('clears local auth state on logout even when the remote sign-out fails', async () => {
+		mockedAsyncStorage.getItem.mockResolvedValue(cachedUserPayload('logout@example.com'));
 
 		mockedSupabase.auth.getSession.mockResolvedValueOnce({
 			data: {
@@ -217,6 +222,7 @@ describe('auth session lifecycle', () => {
 
 		await authService.restoreSession();
 		jest.clearAllMocks();
+		mockedAsyncStorage.getItem.mockResolvedValue(cachedUserPayload('logout@example.com'));
 
 		mockedSupabase.auth.signOut.mockResolvedValueOnce({ error: new Error('network down') });
 
@@ -224,7 +230,7 @@ describe('auth session lifecycle', () => {
 
 		expect(result.success).toBe(true);
 		expect(mockedSupabase.auth.signOut).toHaveBeenCalled();
-		expect(mockedAsyncStorage.removeItem).toHaveBeenCalledWith('auth_session');
+		expect(mockedAsyncStorage.removeItem).toHaveBeenCalledWith('auth_user_cache');
 		expect(dataBridge.setUserId).toHaveBeenCalledWith(null);
 		expect(authService.getCurrentSession()).toBeNull();
 	});

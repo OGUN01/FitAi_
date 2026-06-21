@@ -9,10 +9,10 @@ import {
   Text,
   StyleSheet,
   Platform,
-  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
+import { AuroraSpinner } from "../../../components/ui/aurora/AuroraSpinner";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { rf, rw } from "../../../utils/responsive";
 import { useHealthDataStore } from "../../../stores/healthDataStore";
@@ -30,6 +30,7 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
     isHealthConnectAuthorized,
     syncStatus,
     lastSyncTime,
+    syncError,
     syncHealthData,
     syncFromHealthConnect,
     metrics,
@@ -38,6 +39,7 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
   const isConnected = isHealthKitAuthorized || isHealthConnectAuthorized;
   const isIOS = Platform.OS === "ios";
   const isSyncing = syncStatus === "syncing";
+  const isError = syncStatus === "error";
 
   // Get primary data source from metrics
   const primarySource = metrics?.sources?.steps || metrics?.sources?.heartRate;
@@ -67,19 +69,34 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
     return `${Math.floor(diffMinutes / 1440)}d ago`;
   };
 
-  // Handle sync tap
+  // Handle sync tap. In the error state the chip itself must trigger a
+  // re-sync (not just delegate to onPress) so the "Tap to retry" affordance
+  // actually retries. When onPress is provided and we're not in an error
+  // state, defer to the parent's handler (existing behavior).
   const handleSync = async () => {
     haptics.light();
-    if (onPress) {
+    if (onPress && !isError) {
       onPress();
       return;
     }
 
-    // Perform sync
-    if (isIOS && isHealthKitAuthorized) {
-      await syncHealthData(true);
-    } else if (!isIOS && isHealthConnectAuthorized) {
-      await syncFromHealthConnect(7);
+    // Perform sync (force=true so a retry actually re-fetches)
+    try {
+      if (isIOS && isHealthKitAuthorized) {
+        await syncHealthData(true);
+      } else if (!isIOS && isHealthConnectAuthorized) {
+        await syncFromHealthConnect(7);
+      } else if (onPress) {
+        // No platform authorization but parent supplied a handler — let it
+        // decide (e.g. navigate to connection screen).
+        onPress();
+      }
+    } catch (err) {
+      // Store sets syncError on failure; log here so it's never swallowed.
+      console.error(
+        "[SyncStatusIndicator] retry sync failed:",
+        err instanceof Error ? err.message : String(err),
+      );
     }
   };
 
@@ -104,6 +121,10 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
     return "time-outline";
   };
 
+  // Truncate long error strings so the chip stays compact.
+  const truncateError = (msg: string, max = 48) =>
+    msg.length > max ? `${msg.slice(0, max).trimEnd()}…` : msg;
+
   return (
     <AnimatedPressable
       onPress={handleSync}
@@ -114,7 +135,7 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
       <View style={styles.container}>
         <View style={styles.iconContainer}>
           {isSyncing ? (
-            <ActivityIndicator size="small" color={getStatusColor()} />
+            <AuroraSpinner customSize={rf(16)} theme="primary" />
           ) : (
             <Ionicons
               name={getStatusIcon()}
@@ -131,18 +152,34 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
                 ? "HealthKit"
                 : "Health Connect"}
           </Text>
-          <Text style={[styles.status, { color: getStatusColor() }]}>
-            {isSyncing ? "Syncing..." : formatLastSync(lastSyncTime)}
-            {primarySource && !isSyncing && ` • Tier ${primarySource.tier}`}
-          </Text>
+          {isError ? (
+            <>
+              <Text
+                style={[styles.status, { color: getStatusColor() }]}
+                numberOfLines={1}
+              >
+                {syncError ? truncateError(syncError) : "Sync failed"}
+              </Text>
+              <Text style={[styles.retryHint, { color: getStatusColor() }]}>
+                Tap to retry
+              </Text>
+            </>
+          ) : (
+            <Text style={[styles.status, { color: getStatusColor() }]}>
+              {isSyncing ? "Syncing..." : formatLastSync(lastSyncTime)}
+              {primarySource && !isSyncing && ` • Tier ${primarySource.tier}`}
+            </Text>
+          )}
         </View>
         <Ionicons
-          name="refresh"
+          name={isError ? "refresh-circle" : "refresh"}
           size={rf(16)}
           color={
-            isSyncing
-              ? ResponsiveTheme.colors.textSecondary
-              : ResponsiveTheme.colors.primary
+            isError
+              ? getStatusColor()
+              : isSyncing
+                ? ResponsiveTheme.colors.textSecondary
+                : ResponsiveTheme.colors.primary
           }
         />
       </View>
@@ -177,6 +214,12 @@ const styles = StyleSheet.create({
   status: {
     fontSize: rf(10),
     fontWeight: "500",
+  },
+  retryHint: {
+    fontSize: rf(9),
+    fontWeight: "700",
+    marginTop: 1,
+    textTransform: "uppercase",
   },
 });
 

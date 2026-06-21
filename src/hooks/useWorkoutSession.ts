@@ -8,6 +8,7 @@ import {
 } from "../services/calorieCalculator";
 import { useProfileStore } from "../stores/profileStore";
 import { resolveCurrentWeightFromStores } from "../services/currentWeight";
+import { useFitnessStore } from "../stores/fitnessStore";
 
 export type ExercisePhase = "preview" | "performing" | "logging" | "resting";
 
@@ -31,6 +32,36 @@ const safeNumber = (value: any, fallback: number = 0): number => {
   return isNaN(num) ? fallback : num;
 };
 
+/**
+ * Build an ExerciseProgress view derived from the store's
+ * currentWorkoutSession.exercises[].sets[] (the SSOT for set data).
+ *
+ * The store is the single source of truth for set weight/reps/rpe/completed.
+ * The hook's exerciseProgress is now a READ-ONLY projection of that state —
+ * it no longer holds a parallel mutated copy.
+ */
+function deriveProgressFromStore(
+  workout: DayWorkout,
+  initialExerciseIndex: number,
+  storeExercises: { sets: Array<{ completed: boolean }> }[] | undefined,
+): ExerciseProgress[] {
+  return workout.exercises.map((exercise, index) => {
+    const storeEx = storeExercises?.[index];
+    const plannedSets = Math.max(1, safeNumber(exercise?.sets, 3));
+    const storeSets = storeEx?.sets;
+    const completedSets =
+      storeSets && storeSets.length === plannedSets
+        ? storeSets.map((s) => Boolean(s.completed))
+        : new Array(plannedSets).fill(index < initialExerciseIndex);
+    return {
+      exerciseIndex: index,
+      completedSets,
+      isCompleted:
+        completedSets.length > 0 && completedSets.every(Boolean),
+    };
+  });
+}
+
 export const useWorkoutSession = (
   workout: DayWorkout,
   sessionId?: string,
@@ -38,14 +69,28 @@ export const useWorkoutSession = (
 ) => {
   const [currentExerciseIndex, setCurrentExerciseIndex] =
     useState(initialExerciseIndex);
-  const [exerciseProgress, setExerciseProgress] = useState<ExerciseProgress[]>(
-    workout.exercises.map((exercise, index) => ({
-      exerciseIndex: index,
-      completedSets: new Array(
-        Math.max(1, safeNumber(exercise?.sets, 3)),
-      ).fill(index < initialExerciseIndex),
-      isCompleted: index < initialExerciseIndex,
-    })),
+
+  // Subscribe to the store's currentWorkoutSession.exercises so set-completion
+  // state stays in sync with the SSOT (set data is written there by SetLogModal
+  // via updateSetData). We only read exercises[] here — never mutate.
+  const storeExercises = useFitnessStore(
+    (s) => s.currentWorkoutSession?.exercises,
+  );
+
+  // exerciseProgress is now a DERIVED view of the store sets. There is no
+  // parallel mutated copy. When the user logs a set, SetLogModal.handleSave
+  // writes weight/reps/rpe/completed into the store via updateSetData, and
+  // this derivation recomputes automatically.
+  const exerciseProgress = useMemo<ExerciseProgress[]>(
+    () =>
+      deriveProgressFromStore(
+        workout,
+        initialExerciseIndex,
+        storeExercises as
+          | { sets: Array<{ completed: boolean }> }[]
+          | undefined,
+      ),
+    [workout, initialExerciseIndex, storeExercises],
   );
 
   // Phase state machine: preview → performing → logging → resting → performing…
@@ -53,8 +98,6 @@ export const useWorkoutSession = (
   // Which set (0-indexed) the user is currently on
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
 
-  const [isRestTime, setIsRestTime] = useState(false);
-  const [restTimeRemaining, setRestTimeRemaining] = useState(0);
   const [workoutStartTime] = useState(new Date());
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showInstructionModal, setShowInstructionModal] = useState(false);
@@ -86,8 +129,26 @@ export const useWorkoutSession = (
     return totalExercises > 0 ? completed / totalExercises : 0;
   }, [exerciseProgress, totalExercises]);
 
-  // Exercise-based stats — only recalculate when sets are completed, NOT every timer tick.
-  // This prevents calories from jumping during rest periods.
+  // Subscribe reactively to user weight so calorie stats recompute when weight
+  // changes mid-workout (P2-12 fix).
+  const bodyAnalysisWeight = useProfileStore(
+    (s) => s.bodyAnalysis?.current_weight_kg,
+  );
+  const resolvedWeight = useMemo(
+    () =>
+      resolveCurrentWeightFromStores({
+        bodyAnalysisWeight,
+      }).value,
+    [bodyAnalysisWeight],
+  );
+
+  // Exercise-based stats — only recalculate when sets are completed, NOT every
+  // timer tick. This prevents calories from jumping during rest periods.
+  //
+  // P0-4 fix: calorie calculation now reads ACTUAL logged reps/weight from the
+  // store's currentWorkoutSession.exercises[].sets[] (the SSOT), not the plan.
+  // When a set has been logged (completed=true, reps>0) we use those actuals;
+  // otherwise the exercise contributes nothing until the user logs it.
   const exerciseStats = useMemo(() => {
     const exercisesCompleted = exerciseProgress.filter(
       (ep) => ep?.isCompleted,
@@ -99,15 +160,34 @@ export const useWorkoutSession = (
 
     const completedInputs: ExerciseCalorieInput[] = [];
     exerciseProgress.forEach((ep, idx) => {
-      const completedSets = ep?.completedSets?.filter(Boolean).length || 0;
-      if (completedSets > 0) {
+      const completedSetCount =
+        ep?.completedSets?.filter(Boolean).length || 0;
+      if (completedSetCount > 0) {
         const exercise = workout.exercises[idx];
-        if (exercise) {
+        const storeEx = (storeExercises as
+          | { exerciseId?: string; sets?: Array<{ reps?: number; weight?: number; completed?: boolean }> }[]
+          | undefined)?.[idx];
+        if (exercise && storeEx) {
+          // Read actual logged reps from the store's SSOT sets. Falls back to
+          // plan reps only if a set is marked completed but has no logged reps
+          // (e.g. time-based auto-logged with reps:0 — duration drives the calc
+          // via exercise.duration which is passed through below).
+          const actualSets = (storeEx.sets || [])
+            .filter((s) => s?.completed)
+            .slice(0, completedSetCount);
+          const avgReps =
+            actualSets.length > 0
+              ? actualSets.reduce((sum, s) => sum + (s.reps ?? 0), 0) /
+                actualSets.length
+              : 0;
           completedInputs.push({
             exerciseId: exercise.exerciseId,
-            name: (exercise as unknown as Record<string, unknown>).name as string || (exercise as unknown as Record<string, unknown>).exerciseName as string,
-            sets: completedSets,
-            reps: exercise.reps,
+            name:
+              (exercise as unknown as Record<string, unknown>).name as string ||
+              (exercise as unknown as Record<string, unknown>).exerciseName as string,
+            sets: completedSetCount,
+            reps: avgReps > 0 ? avgReps : exercise.reps,
+            duration: exercise.duration,
             restTime: exercise.restTime,
           });
         }
@@ -115,17 +195,14 @@ export const useWorkoutSession = (
     });
 
     let caloriesBurned = 0;
-    if (completedInputs.length > 0) {
-      const userWeight = resolveCurrentWeightFromStores({
-        bodyAnalysisWeight:
-          useProfileStore.getState().bodyAnalysis?.current_weight_kg,
-      }).value;
-      if (userWeight && userWeight > 0) {
-        caloriesBurned = calculateWorkoutCalories(
-          completedInputs,
-          userWeight,
-        ).totalCalories;
-      }
+    if (completedInputs.length > 0 && resolvedWeight && resolvedWeight > 0) {
+      // calculateWorkoutCalories honors per-exercise sets + reps; we pass the
+      // ACTUAL completed set count and the average of actually-logged reps so
+      // the MET calc reflects what the user did, not the plan.
+      caloriesBurned = calculateWorkoutCalories(
+        completedInputs,
+        resolvedWeight,
+      ).totalCalories;
     }
 
     return {
@@ -133,7 +210,8 @@ export const useWorkoutSession = (
       setsCompleted: Math.max(0, setsCompleted),
       caloriesBurned: Math.max(0, caloriesBurned),
     };
-  }, [exerciseProgress, workout.exercises]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exerciseProgress, workout.exercises, storeExercises, resolvedWeight]);
 
   // Time-based stats — recalculate every second for the live duration display.
   const workoutStats = useMemo((): WorkoutStats => {
@@ -146,6 +224,12 @@ export const useWorkoutSession = (
     };
   }, [currentTime, workoutStartTime, exerciseStats]);
 
+  // P2-13 fix: keep the ref in sync synchronously at render time (not via an
+  // effect that runs after render). This guarantees handleSetComplete emits the
+  // current stats, not the previous render's.
+  const workoutStatsRef = useRef(workoutStats);
+  workoutStatsRef.current = workoutStats;
+
   const nextExercise = useMemo(() => {
     if (currentExerciseIndex < totalExercises - 1) {
       return workout.exercises[currentExerciseIndex + 1];
@@ -153,12 +237,10 @@ export const useWorkoutSession = (
     return null;
   }, [currentExerciseIndex, totalExercises, workout.exercises]);
 
-  const workoutStatsRef = useRef(workoutStats);
-  useEffect(() => {
-    workoutStatsRef.current = workoutStats;
-  }, [workoutStats]);
-
-  // Internal: marks a set as completed in exerciseProgress and persists progress
+  // Internal: persists workout progress metadata (percent + calories) after a
+  // set is logged. Set DATA itself (weight/reps/rpe) is written to the store
+  // SSOT by SetLogModal.handleSave → updateSetData, NOT here. This function
+  // only emits the progress event + writes workoutProgress metadata.
   const handleSetComplete = useCallback(
     async (
       setIndex: number,
@@ -170,31 +252,19 @@ export const useWorkoutSession = (
           Vibration.vibrate(50);
         }
 
-        const newProgress = [...exerciseProgress];
-        if (!newProgress[currentExerciseIndex]) return;
+        // exerciseProgress is now derived from the store SSOT, so we read the
+        // current (post-updateSetData) state directly — no local mutation.
+        const ep = exerciseProgress[currentExerciseIndex];
+        if (!ep) return;
 
-        const updated = {
-          ...newProgress[currentExerciseIndex],
-          completedSets: [...newProgress[currentExerciseIndex].completedSets],
-        };
-        updated.completedSets[setIndex] = true;
-
-        const allSetsCompleted = updated.completedSets.every(Boolean);
-        updated.isCompleted = allSetsCompleted;
-
-        if (allSetsCompleted && !updated.endTime) {
-          updated.endTime = new Date();
-        }
-
-        newProgress[currentExerciseIndex] = updated;
-        setExerciseProgress(newProgress);
+        const allSetsCompleted = ep.completedSets.every(Boolean);
 
         if (allSetsCompleted && onAllSetsCompleted) {
           await onAllSetsCompleted();
         }
 
-        const completedExercises = newProgress.filter(
-          (ep) => ep?.isCompleted,
+        const completedExercises = exerciseProgress.filter(
+          (p) => p?.isCompleted,
         ).length;
         const progressPercentage =
           totalExercises > 0
@@ -262,8 +332,6 @@ export const useWorkoutSession = (
     if (Platform.OS !== "web") {
       Vibration.vibrate([0, 150, 50, 150]);
     }
-    // Return directly to preview; the screen's handleTimeBasedSetComplete
-    // will call advanceAfterLog with auto-filled data.
     setExercisePhase("preview");
   }, []);
 
@@ -283,26 +351,19 @@ export const useWorkoutSession = (
   const advanceAfterLog = useCallback(
     (allSetsCompleted: boolean) => {
       if (allSetsCompleted) {
-        // All sets done — show next exercise preview, let the screen handle
-        // the transition to the next exercise (or workout complete)
         if (currentExerciseIndex < totalExercises - 1) {
           setShowNextExercisePreview(true);
-          // Banner stays visible until goToNextExercise() clears it
           if (nextExercisePreviewTimeoutRef.current) {
             clearTimeout(nextExercisePreviewTimeoutRef.current);
             nextExercisePreviewTimeoutRef.current = null;
           }
         }
-        // Phase stays at logging momentarily; screen transitions via goToNextExercise
         setExercisePhase("preview");
       } else {
-        // More sets to go — start rest timer
-        const restSecs = safeNumber(currentExercise.restTime, 60);
-        setRestTimeRemaining(restSecs);
         setExercisePhase("resting");
       }
     },
-    [currentExercise.restTime, currentExerciseIndex, totalExercises],
+    [currentExerciseIndex, totalExercises],
   );
 
   // Phase transition: resting → performing (rest timer expired or skipped)
@@ -314,8 +375,6 @@ export const useWorkoutSession = (
   const goToNextExercise = useCallback(() => {
     if (currentExerciseIndex < totalExercises - 1) {
       setCurrentExerciseIndex((prev) => prev + 1);
-      setIsRestTime(false);
-      setRestTimeRemaining(0);
       setShowNextExercisePreview(false);
       setExercisePhase("preview");
       setCurrentSetIndex(0);
@@ -325,8 +384,6 @@ export const useWorkoutSession = (
   const goToPreviousExercise = useCallback(() => {
     if (currentExerciseIndex > 0) {
       setCurrentExerciseIndex((prev) => prev - 1);
-      setIsRestTime(false);
-      setRestTimeRemaining(0);
       setExercisePhase("preview");
       setCurrentSetIndex(0);
     }
@@ -337,8 +394,6 @@ export const useWorkoutSession = (
     exerciseProgress,
     exercisePhase,
     currentSetIndex,
-    isRestTime,
-    restTimeRemaining,
     workoutStartTime,
     currentTime,
     showInstructionModal,
@@ -350,7 +405,6 @@ export const useWorkoutSession = (
     workoutStats,
     nextExercise,
     setCurrentTime,
-    setIsRestTime,
     setShowInstructionModal,
     handleSetComplete,
     startExercise,
@@ -365,3 +419,10 @@ export const useWorkoutSession = (
     nextExercisePreviewTimeoutRef,
   };
 };
+
+/**
+ * Helper reserved for future per-exercise progress lookups. Currently the
+ * calorie calc reads completed-set counts + avg reps directly from the store
+ * SSOT, so no progress-map indexing is needed.
+ */
+// (intentionally empty — kept as a seam for future per-exercise breakdown)

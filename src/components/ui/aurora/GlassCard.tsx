@@ -5,12 +5,15 @@
 
 import React from "react";
 import { StyleSheet, View, ViewStyle } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { GlassView } from "./GlassView";
+import { AnimatedPressable } from "./AnimatedPressable";
 import {
   spacing,
   shadows,
   borderRadius as br,
 } from "../../../theme/aurora-tokens";
+import { gradientBorder as gradientBorderPreset } from "../../../theme/gradients";
 import { rw, rp } from "../../../utils/responsive";
 
 type ElevationLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
@@ -144,31 +147,59 @@ export const GlassCard: React.FC<GlassCardProps> = ({
     ...shadowStyle,
   };
 
-  const content = (
+  const renderContent = (
     <GlassView
       blurAmount={blurIntensity}
       borderRadius={borderRadiusValue}
       showBorder={!gradientBorder && showBorder}
       style={[styles.glassContainer, containerStyle, style]}
     >
+      {gradientBorder && (
+        <LinearGradient
+          colors={gradientBorderPreset.glass.colors as [string, string, ...string[]]}
+          start={gradientBorderPreset.glass.start}
+          end={gradientBorderPreset.glass.end}
+          style={styles.gradientBorderLayer}
+          pointerEvents="none"
+        />
+      )}
       <View style={[styles.content, { padding: paddingValue }, contentStyle]}>
         {children}
       </View>
     </GlassView>
   );
 
-  // Advanced features (gradient border, AnimatedPressable) pending implementation
-
+  // pressable: wrap the glass surface in an AnimatedPressable so taps get the
+  // standardized spring-scale + haptic micro-interaction. (Previously a stub —
+  // pressable props were ignored.)
   if (pressable && onPress) {
-    return content;
+    return (
+      <AnimatedPressable
+        onPress={onPress}
+        scaleValue={0.98}
+        springConfig="smooth"
+        hapticType="light"
+        style={{ borderRadius: borderRadiusValue, overflow: "hidden" }}
+      >
+        {renderContent}
+      </AnimatedPressable>
+    );
   }
 
-  return content;
+  return renderContent;
 };
 
 const styles = StyleSheet.create({
   glassContainer: {
     overflow: "hidden",
+  },
+  gradientBorderLayer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 0, // inherits parent clipping
   },
   content: {
     width: "100%",

@@ -4,7 +4,7 @@ import Constants from "expo-constants";
 import { useHydrationStore, useNutritionStore } from "../stores";
 import { useCalculatedMetrics } from "./useCalculatedMetrics";
 import { useNutritionData } from "./useNutritionData";
-import { supabase } from "../services/supabase";
+import { hydrationDataService } from "../services/hydrationData";
 
 const isExpoGo =
   Constants.appOwnership === "expo" ||
@@ -24,6 +24,11 @@ if (!isExpoGo) {
 export const useNutritionTracking = (navigation: any) => {
   const [showWaterIntakeModal, setShowWaterIntakeModal] = useState(false);
   const addWaterTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // P1-hyd-1: ref guard so the goal-mirror effect doesn't ping-pong between
+  // hydrationStore (SSOT) and notificationStore. Tracks the last liters value
+  // we pushed to notificationStore so we only reschedule reminders when the
+  // goal actually changes.
+  const lastPushedGoalLitersRef = useRef<number | null>(null);
 
   const {
     waterIntakeML,
@@ -49,16 +54,55 @@ export const useNutritionTracking = (navigation: any) => {
   const nutritionData = useNutritionData();
 
   useEffect(() => {
-    if (calculatedMetrics?.dailyWaterML) {
+    // P1 effect-loop guard (CLAUDE.md #10): only call setHydrationGoal when
+    // the calculated value actually differs from the current goal. Without
+    // this, a flag flip from checkAndResetIfNewDay (or any re-render where
+    // setHydrationGoal identity changes) could re-fire this effect and write
+    // the same value back into the store, which (because setDailyGoal marks
+    // isGoalUserSet=true) would clobber a user's explicit override and could
+    // ping-pong with other readers of dailyGoalML.
+    const newGoalML = calculatedMetrics?.dailyWaterML;
+    if (newGoalML && newGoalML !== waterGoalML) {
       // SSOT: this is the authoritative setter for hydration goal from calculatedMetrics
-      setHydrationGoal(calculatedMetrics.dailyWaterML);
+      setHydrationGoal(newGoalML);
     }
     checkAndResetIfNewDay();
   }, [
     calculatedMetrics?.dailyWaterML,
+    waterGoalML,
     setHydrationGoal,
     checkAndResetIfNewDay,
   ]);
+
+  // P1-hyd-1 SSOT mirror: hydrationStore.dailyGoalML is the single source of
+  // truth for the water goal. When it changes, push the equivalent liters
+  // value into notificationStore so water REMINDERS (which read
+  // preferences.water.dailyGoalLiters at schedule time) use the same goal as
+  // the water PROGRESS RING (which reads hydrationStore.dailyGoalML).
+  // Ref-guarded so we only reschedule when the rounded liters value actually
+  // changes — avoids a notification-reschedule loop on every metrics recompute.
+  useEffect(() => {
+    if (!waterGoalML || waterGoalML <= 0) return;
+    if (!waterReminders?.updateConfig) return;
+
+    const goalLiters = Math.round((waterGoalML / 1000) * 10) / 10;
+    if (lastPushedGoalLitersRef.current === goalLiters) return;
+    lastPushedGoalLitersRef.current = goalLiters;
+
+    // Only push if notificationStore's value differs, to skip a redundant
+    // reschedule when they're already in sync (e.g. the user just edited via
+    // the modal, which already mirrored into hydrationStore).
+    if (waterReminders.config?.dailyGoalLiters === goalLiters) return;
+
+    waterReminders
+      .updateConfig({ dailyGoalLiters: goalLiters })
+      .catch((err: unknown) => {
+        console.error(
+          "[useNutritionTracking] Failed to mirror hydration goal to notificationStore:",
+          err,
+        );
+      });
+  }, [waterGoalML, waterReminders]);
 
   useEffect(() => {
     return () => {
@@ -126,28 +170,35 @@ export const useNutritionTracking = (navigation: any) => {
   };
 
   const handleRemoveWater = async () => {
-    if (waterIntakeML > 0) {
-      const decrementAmountML = 250;
-      const newAmount = Math.max(0, waterIntakeML - decrementAmountML);
-      useHydrationStore.getState().setWaterIntake(newAmount);
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const today = new Date().toISOString().split('T')[0];
-          const { data: logs } = await supabase
-            .from('water_logs')
-            .select('id')
-            .eq('user_id', session.user.id)
-            .gte('logged_at', today)
-            .order('logged_at', { ascending: false })
-            .limit(1);
-          if (logs && logs.length > 0) {
-            await supabase.from('water_logs').delete().eq('id', logs[0].id);
-          }
-        }
-      } catch (error) {
-        console.error('[handleRemoveWater] Failed to remove water log:', error);
+    if (waterIntakeML <= 0) return;
+
+    // P1-hyd-4 FIX: Previously this subtracted a FIXED 250ml locally, THEN
+    // called removeLastTodayWaterLog() and IGNORED the deletedAmountMl it
+    // returned. If the last log was 500ml, local dropped by only 250 → local
+    // and remote diverged by 250ml until the next full sync.
+    //
+    // Now we delete first to learn the REAL amount removed, then decrement
+    // local by exactly that value. If nothing was deleted (deletedAmountMl
+    // is 0 / undefined), local is untouched so the two stay consistent.
+    try {
+      const result = await hydrationDataService.removeLastTodayWaterLog();
+      const deletedAmountMl = result?.deletedAmountMl ?? 0;
+
+      if (deletedAmountMl > 0) {
+        const currentML = useHydrationStore.getState().waterIntakeML;
+        const newAmount = Math.max(0, currentML - deletedAmountMl);
+        useHydrationStore.getState().setWaterIntake(newAmount);
+      } else if (!result?.success) {
+        // Nothing deleted AND the call failed — surface the error so it
+        // isn't a silent failure (CLAUDE.md #5). Local stays at its current
+        // value so we don't diverge from a remote we couldn't read.
+        console.error(
+          '[handleRemoveWater] removeLastTodayWaterLog failed:',
+          result?.error ?? 'unknown error',
+        );
       }
+    } catch (error) {
+      console.error('[handleRemoveWater] Failed to remove water log:', error);
     }
   };
 

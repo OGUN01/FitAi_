@@ -61,11 +61,20 @@ class OfflineService {
     this.network.setOnlineCallback(() => this.syncOfflineActions());
 
     // Clear offline queue on sign-out to prevent RLS errors looping on the next sync.
-    supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_OUT") {
-        this.clearOfflineData();
-      }
-    });
+    // Guard: in test environments that mock `supabase` without an `auth` object
+    // (or where the SecureStore adapter isn't initialized), `onAuthStateChange`
+    // is undefined and calling it crashes module init — which kills the entire
+    // Jest process. Log and skip instead of crashing; the sign-out cleanup is
+    // best-effort here (the real app always has a fully-initialized supabase).
+    try {
+      supabase.auth?.onAuthStateChange?.((event: string) => {
+        if (event === "SIGNED_OUT") {
+          this.clearOfflineData();
+        }
+      });
+    } catch (error) {
+      console.error("[OfflineService] Failed to subscribe to auth state changes:", error);
+    }
   }
 
   isDeviceOnline(): boolean {

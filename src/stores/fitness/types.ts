@@ -133,6 +133,11 @@ export interface FitnessState {
   // Realtime subscriptions
   setupRealtimeSubscription: (userId: string) => void;
   cleanupRealtimeSubscription: () => void;
+  // Incremental realtime refresh — fetches ONE session row and merges it into
+  // completedSessions + workoutProgress without a full loadData() reload (and
+  // without the planned-reps calorie re-derivation that previously clobbered
+  // server-stored actuals). Used by the workout_sessions realtime handler.
+  refreshSingleSession: (sessionId: string, userId: string) => Promise<void>;
 
   // Reset store (for logout)
   reset: () => void;

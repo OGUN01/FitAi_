@@ -4,12 +4,26 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { googleAuthService, GoogleSignInResult } from './googleAuth';
 import { migrationManager } from './migrationManager';
 import { dataBridge } from './DataBridge';
+import { isNetworkError } from '../utils/networkErrorDetection';
 
 export interface AuthResponse {
   success: boolean;
   user?: AuthUser;
   error?: string;
   source?: "cache" | "server";
+  /**
+   * Set to `true` when session revalidation failed due to a transient
+   * network/transport error (not a genuine auth rejection).
+   *
+   * Callers MUST treat this differently from a normal `success: false`:
+   *   - Do NOT sign the user out / clear user-facing state.
+   *   - Keep the user in a degraded/offline state; the cached session may
+   *     still be valid and will be revalidated on the next connectivity.
+   *
+   * Field is OPTIONAL and additive so existing callers that only check
+   * `.success` and `.user` are unaffected.
+   */
+  isNetworkError?: boolean;
 }
 
 export interface AuthSession {
@@ -18,6 +32,23 @@ export interface AuthSession {
   refreshToken: string;
   expiresAt: number;
 }
+
+/**
+ * P1-7: AsyncStorage key for the cached AuthUser (display data only — NOT tokens).
+ *
+ * CANONICAL SESSION STORE: Supabase's SecureStore adapter (configured in
+ * supabase.ts with persistSession: true) is the single source of truth for the
+ * access token, refresh token, and token expiry. supabase.auth.getSession()
+ * reads from SecureStore and refreshes as needed.
+ *
+ * This AsyncStorage cache holds ONLY the denormalized AuthUser (id/email) so the
+ * UI can render the user's name immediately on cold start without awaiting a
+ * network round-trip. It MUST NOT be treated as authoritative for session
+ * validity — token validity is always revalidated via supabase.auth.getSession().
+ * Storing tokens here in addition to SecureStore caused dual-persistence drift
+ * (user appeared logged in from AsyncStorage but Supabase had no valid token → 401s).
+ */
+const AUTH_USER_CACHE_KEY = "auth_user_cache";
 
 class AuthService {
   private static instance: AuthService;
@@ -50,57 +81,79 @@ class AuthService {
   private async persistSession(session: AuthSession): Promise<void> {
     this.currentSession = session;
     dataBridge.setUserId(session.user.id);
-    await AsyncStorage.setItem("auth_session", JSON.stringify(session));
+    // P1-7: Persist ONLY the AuthUser (display data) to AsyncStorage. Tokens
+    // are persisted by Supabase's SecureStore adapter (the canonical session
+    // store). Storing tokens here too caused dual-persistence drift.
+    try {
+      await AsyncStorage.setItem(
+        AUTH_USER_CACHE_KEY,
+        JSON.stringify(session.user),
+      );
+    } catch (error) {
+      console.error("Failed to cache auth user for fast display:", error);
+    }
   }
 
-  private async getStoredSession(): Promise<AuthSession | null> {
-    const sessionData = await AsyncStorage.getItem("auth_session");
-    return sessionData ? JSON.parse(sessionData) : null;
+  private async getCachedUser(): Promise<AuthUser | null> {
+    try {
+      const userData = await AsyncStorage.getItem(AUTH_USER_CACHE_KEY);
+      return userData ? (JSON.parse(userData) as AuthUser) : null;
+    } catch (error) {
+      console.error("Failed to read cached auth user:", error);
+      return null;
+    }
   }
 
   private async restoreCachedSession(): Promise<AuthResponse | null> {
-    const storedSession = await this.getStoredSession();
-    if (!storedSession) {
+    // P1-7: The AsyncStorage cache holds ONLY the AuthUser for fast display.
+    // Token validity is NOT trusted from here — restoreSession() always
+    // follows up with revalidateSession() (via supabase.auth.getSession()) to
+    // confirm the canonical SecureStore-backed session is actually valid.
+    const cachedUser = await this.getCachedUser();
+    if (!cachedUser) {
       return null;
     }
 
-    const currentTime = Date.now() / 1000;
-    const expiresAt = this.normalizeExpiresAt(storedSession.expiresAt);
+    dataBridge.setUserId(cachedUser.id);
 
-    if (expiresAt <= currentTime) {
-      await this.clearLocalSession();
-      return {
-        success: false,
-        error: "Session expired",
-      };
-    }
-
-    this.currentSession = storedSession;
-    dataBridge.setUserId(storedSession.user.id);
+    // Set currentSession so getCurrentUser() reflects the cached user
+    // immediately — without this, the UI gets the user from the return value
+    // but getCurrentUser() returns undefined until revalidateSession() runs,
+    // causing screens that read getCurrentUser() (rather than the restore
+    // result) to flicker empty. Tokens are unknown here (cache holds only the
+    // display AuthUser), so accessToken/refreshToken/expiresAt are left empty —
+    // revalidateSession() fills them in from the SecureStore-backed session.
+    this.currentSession = {
+      user: cachedUser,
+      accessToken: "",
+      refreshToken: "",
+      expiresAt: 0,
+    };
 
     return {
       success: true,
-      user: storedSession.user,
+      user: cachedUser,
       source: "cache",
     };
   }
 
   async revalidateSession(): Promise<AuthResponse> {
-    const storedSession = this.currentSession ?? (await this.getStoredSession());
+    // P1-7: Token validity comes ONLY from Supabase's SecureStore-backed
+    // session (supabase.auth.getSession()). The AsyncStorage cache holds only
+    // the display AuthUser, not tokens, so it cannot be used to judge validity.
+    const cachedUser = this.currentSession?.user ?? (await this.getCachedUser());
 
     try {
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (
-        session &&
-        session.user &&
-        (!storedSession || session.user.id === storedSession.user.id)
-      ) {
+      if (session && session.user) {
+        // If we had a cached user for a different id, the SecureStore session
+        // is authoritative — adopt it.
         const authUser = this.buildAuthUser(
           session.user,
-          storedSession?.user.lastLoginAt,
+          cachedUser?.lastLoginAt,
         );
 
         await this.persistSession({
@@ -117,36 +170,78 @@ class AuthService {
         };
       }
 
-      if (storedSession) {
+      // No active Supabase session. If we had a cached user, try a tokenless
+      // refresh — Supabase SDK reads the refresh token from its own SecureStore
+      // (we no longer store it in AsyncStorage, so we don't pass it here).
+      if (cachedUser) {
+        let refreshError: unknown = null;
+        let refreshThrew = false;
+        let refreshData: { session: any } = { session: null };
+
         try {
-          const { data: refreshData, error: refreshError } =
-            await supabase.auth.refreshSession({
-              refresh_token: storedSession.refreshToken,
-            });
-
-          if (refreshData.session && !refreshError) {
-            const authUser = this.buildAuthUser(
-              refreshData.session.user,
-              storedSession.user.lastLoginAt,
-            );
-
-            await this.persistSession({
-              user: authUser,
-              accessToken: refreshData.session.access_token,
-              refreshToken: refreshData.session.refresh_token,
-              expiresAt: refreshData.session.expires_at || 0,
-            });
-
-            return {
-              success: true,
-              user: authUser,
-              source: "server",
-            };
-          }
-        } catch {
-          // Continue to hard failure below.
+          const result = await supabase.auth.refreshSession();
+          refreshData = result.data;
+          refreshError = result.error;
+        } catch (thrownError) {
+          // refreshSession threw — almost always a transport fault (TypeError
+          // "Failed to fetch", AbortError on timeout, or Supabase
+          // AuthRetryableError). Classify before deciding whether to nuke
+          // the local session. Previously this was silently swallowed and
+          // the code fell through to clearLocalSession(), force-logging the
+          // user out on every transient network blip.
+          refreshThrew = true;
+          refreshError = thrownError;
         }
 
+        // Refresh succeeded with a fresh session — adopt it.
+        if (refreshData.session && !refreshError) {
+          const authUser = this.buildAuthUser(
+            refreshData.session.user,
+            cachedUser.lastLoginAt,
+          );
+
+          await this.persistSession({
+            user: authUser,
+            accessToken: refreshData.session.access_token,
+            refreshToken: refreshData.session.refresh_token,
+            expiresAt: refreshData.session.expires_at || 0,
+          });
+
+          return {
+            success: true,
+            user: authUser,
+            source: "server",
+          };
+        }
+
+        // Refresh failed. Distinguish network (transient — keep session)
+        // from auth (session genuinely invalid — clear it).
+        const networkFailure = isNetworkError(refreshError);
+        const errorLabel = networkFailure ? "NETWORK" : "AUTH";
+        console.error(
+          `[AuthService] refreshSession failed [${errorLabel}]${
+            refreshThrew ? " (thrown)" : " (returned error)"
+          }:`,
+          refreshError,
+        );
+
+        if (networkFailure) {
+          // Transient transport fault. Keep the cached user/session so the
+          // UI stays in a degraded/offline state rather than force-logout.
+          // The next revalidateSession() call (on reconnect / app resume)
+          // will retry against the same valid refresh token.
+          return {
+            success: false,
+            error:
+              refreshError instanceof Error
+                ? refreshError.message
+                : "Network error during session refresh",
+            isNetworkError: true,
+          };
+        }
+
+        // Genuine auth failure (invalid/expired refresh token, 401,
+        // AuthSessionMissingError). Safe to clear and sign out.
         await this.clearLocalSession();
         return {
           success: false,
@@ -154,7 +249,7 @@ class AuthService {
         };
       }
 
-      // No storedSession and no active Supabase session.
+      // No cached user and no active Supabase session.
       // Do NOT call clearLocalSession here — there's nothing stale to remove
       // and calling it would wipe guest user data (onboarding_data, etc.).
       return {
@@ -162,8 +257,12 @@ class AuthService {
         error: "No valid session found",
       };
     } catch (error) {
-      // Only clear if there was a stored session that is now invalid
-      if (this.currentSession) {
+      // getSession() / persistSession() threw. Apply the same network-vs-auth
+      // classification as the refresh path: a transient transport fault must
+      // NOT clear the local session (would force-logout on a network blip).
+      console.error("[AuthService] revalidateSession outer catch:", error);
+      const networkFailure = isNetworkError(error);
+      if (!networkFailure && this.currentSession) {
         await this.clearLocalSession();
       }
       return {
@@ -172,6 +271,7 @@ class AuthService {
           error instanceof Error
             ? error.message
             : "Session restoration failed",
+        isNetworkError: networkFailure,
       };
     }
   }
@@ -191,18 +291,13 @@ class AuthService {
     dataBridge.setUserId(null);
 
     try {
-      await AsyncStorage.removeItem('auth_session');
+      // P1-7: Remove only the AuthUser display cache. The canonical token
+      // session is cleared via supabase.auth.signOut() in logout().
+      await AsyncStorage.removeItem(AUTH_USER_CACHE_KEY);
     } catch (error) {
-      console.error('âŒ Failed to remove cached auth session:', error);
+      console.error('âŒ Failed to remove cached auth user:', error);
     }
 
-    // Reset all Zustand stores to prevent data leaking across user sessions.
-    try {
-      const { clearAllUserData } = await import('../utils/clearUserData');
-      await clearAllUserData();
-    } catch (error) {
-      console.error('❌ Failed to clear store data on session clear:', error);
-    }
   }
 
   /**
@@ -268,9 +363,10 @@ class AuthService {
             expiresAt: data.session.expires_at || 0,
           };
 
-          this.currentSession = session;
-          await AsyncStorage.setItem('auth_session', JSON.stringify(session));
-          dataBridge.setUserId(authUser.id);
+          // P1-7: persistSession handles the cache write (AuthUser only).
+          // Supabase SDK persists the token session to SecureStore via
+          // persistSession: true in supabase.ts.
+          await this.persistSession(session);
         } else {
           // Don't save session for unverified users - they need to verify email first
         }
@@ -358,16 +454,15 @@ class AuthService {
           lastLoginAt: new Date().toISOString(),
         };
 
-        // Store session
-        this.currentSession = {
+        // P1-7: persistSession sets the in-memory currentSession AND writes
+        // only the AuthUser to AsyncStorage. Supabase SDK persists the token
+        // session to SecureStore (persistSession: true in supabase.ts).
+        await this.persistSession({
           user: authUser,
           accessToken: data.session.access_token,
           refreshToken: data.session.refresh_token,
           expiresAt: data.session.expires_at || 0,
-        };
-
-        // Store session in AsyncStorage for persistence
-        await AsyncStorage.setItem('auth_session', JSON.stringify(this.currentSession));
+        });
 
         // Set user ID in data bridge for potential migration
         dataBridge.setUserId(authUser.id);
@@ -421,12 +516,19 @@ class AuthService {
   }
 
   /**
-   * Send password reset email
+   * Send password reset email.
+   *
+   * `redirectTo` points at the app's deep-link scheme so the recovery link
+   * opens the app directly (not a browser). Supabase appends
+   * `?type=recovery&code=...` (PKCE) or `#access_token=...` (implicit) to
+   * this URL. `useAuthDeepLinks` + `deepLinkHandler` parse those params and
+   * route the user to `PasswordResetScreen`. The path segment (`/auth/reset`)
+   * is informational — the parser keys off the `type` query param.
    */
   async resetPassword(email: string): Promise<AuthResponse> {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: undefined, // We'll handle password reset in-app
+        redirectTo: "fitai://auth/reset",
       });
 
       if (error) {
@@ -448,7 +550,13 @@ class AuthService {
   }
 
   /**
-   * Resend email verification
+   * Resend email verification.
+   *
+   * `emailRedirectTo` points at the app's deep-link scheme so the email
+   * verification link opens the app directly. Supabase appends
+   * `?type=signup&code=...` (PKCE) to this URL. `useAuthDeepLinks` +
+   * `deepLinkHandler` parse the `type=signup` result and surface a success
+   * state (the session is established via the SDK's onAuthStateChange).
    */
   async resendEmailVerification(email: string): Promise<AuthResponse> {
     try {
@@ -456,7 +564,7 @@ class AuthService {
         type: 'signup',
         email,
         options: {
-          emailRedirectTo: undefined, // Don't use redirect for React Native
+          emailRedirectTo: 'fitai://auth/verify',
         },
       });
 

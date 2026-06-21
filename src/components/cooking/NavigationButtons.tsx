@@ -1,10 +1,10 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { CookingFlow } from "../../utils/cookingFlowGenerator";
 import { colors } from "../../theme/aurora-tokens";
-import { ResponsiveTheme } from '../../utils/constants';
 import { rf, rp, rbr } from '../../utils/responsive';
+import { AnimatedPressable } from "../ui/aurora";
 
 interface NavigationButtonsProps {
   cookingFlow: CookingFlow | null;
@@ -32,18 +32,23 @@ export default function NavigationButtons({
 
   return (
     <View style={styles.navigationSection}>
-      <TouchableOpacity
+      <AnimatedPressable
         style={[
           styles.navButton,
           currentStepIndex === 0 && styles.disabledButton,
         ]}
         onPress={onPrevious}
         disabled={currentStepIndex === 0}
+        scaleValue={0.96}
+        springConfig="smooth"
+        hapticType="light"
+        accessibilityLabel="Previous step"
+        accessibilityRole="button"
       >
         <Ionicons
           name="chevron-back"
           size={24}
-          color={currentStepIndex === 0 ? colors.text.disabled : ResponsiveTheme.colors.white}
+          color={currentStepIndex === 0 ? colors.text.disabled : colors.text.primary}
         />
         <Text
           style={[
@@ -53,14 +58,19 @@ export default function NavigationButtons({
         >
           Previous
         </Text>
-      </TouchableOpacity>
+      </AnimatedPressable>
 
-      <TouchableOpacity
+      <AnimatedPressable
         style={[
           styles.completeStepButton,
           isCurrentStepCompleted && styles.completedStepButton,
         ]}
         onPress={onToggleComplete}
+        scaleValue={0.96}
+        springConfig="smooth"
+        hapticType="light"
+        accessibilityLabel={isCurrentStepCompleted ? "Step completed" : "Mark step complete"}
+        accessibilityRole="button"
       >
         <Ionicons
           name={
@@ -69,16 +79,21 @@ export default function NavigationButtons({
               : "checkmark-circle-outline"
           }
           size={24}
-          color={ResponsiveTheme.colors.white}
+          color={colors.text.primary}
         />
         <Text style={styles.completeButtonText}>
           {isCurrentStepCompleted ? "Step Done ✓" : "Mark Complete"}
         </Text>
-      </TouchableOpacity>
+      </AnimatedPressable>
 
-      <TouchableOpacity
+      <AnimatedPressable
         style={[styles.navButton, isLastStep && styles.finishButton]}
         onPress={isLastStep ? onFinish : onNext}
+        scaleValue={0.96}
+        springConfig="smooth"
+        hapticType="light"
+        accessibilityLabel={isLastStep ? "Finish cooking" : "Next step"}
+        accessibilityRole="button"
       >
         <Text style={styles.navButtonText}>
           {isLastStep ? "🎉 Finish Cooking" : "Next Step"}
@@ -86,9 +101,9 @@ export default function NavigationButtons({
         <Ionicons
           name={isLastStep ? "checkmark" : "chevron-forward"}
           size={24}
-          color={ResponsiveTheme.colors.white}
+          color={colors.text.primary}
         />
-      </TouchableOpacity>
+      </AnimatedPressable>
     </View>
   );
 }
@@ -100,7 +115,7 @@ const styles = StyleSheet.create({
     paddingVertical: rp(12),
     backgroundColor: colors.background.secondary,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.glassBorder,
+    borderTopColor: colors.glass.border,
   },
   navButton: {
     flex: 1,
@@ -134,7 +149,7 @@ const styles = StyleSheet.create({
   navButtonText: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.text.primary,
     marginHorizontal: rp(4),
   },
   disabledButtonText: {
@@ -143,7 +158,7 @@ const styles = StyleSheet.create({
   completeButtonText: {
     fontSize: rf(16),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.white,
+    color: colors.text.primary,
     marginLeft: rp(8),
   },
 });

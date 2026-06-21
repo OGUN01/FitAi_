@@ -87,7 +87,10 @@ describe("aiRequestTransformers", () => {
     );
 
     expect(request.daysCount).toBe(7);
-    expect(request.mealsPerDay).toBe(5);
+    // breakfast + lunch + dinner + snacks (snacks_count defaults to 1) = 4.
+    // getRequestedMealsPerDay() counts each enabled slot and adds snacks_count
+    // (default 1) when snacks_enabled is truthy.
+    expect(request.mealsPerDay).toBe(4);
     expect(request.calorieTarget).toBe(2100);
     expect(request.dietaryRestrictions).toEqual(["low_carb"]);
     expect(request.excludeIngredients).toEqual(["okra", "tofu"]);

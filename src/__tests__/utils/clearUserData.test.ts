@@ -20,6 +20,9 @@ jest.mock("../../stores/nutritionStore", () => ({
   useNutritionStore: {
     getState: () => ({ reset: mockReset }),
   },
+  // P0-2: clearConsumedNutritionCaches now lives on the store module itself,
+  // replacing the deleted nutrition/selectors.ts#clearNutritionCache.
+  clearConsumedNutritionCaches: mockClearNutritionCache,
 }));
 
 jest.mock("../../stores/userStore", () => ({
@@ -71,17 +74,12 @@ jest.mock("../../stores/subscriptionStore", () => ({
   },
 }));
 
-jest.mock("../../stores/profileStore", () => ({
-  __esModule: true,
-  useProfileStore: {
-    getState: () => ({ reset: mockReset }),
-  },
-}));
-
-jest.mock("../../stores/nutrition/selectors", () => ({
-  __esModule: true,
-  clearNutritionCache: mockClearNutritionCache,
-}));
+jest.mock("../../stores/profileStore", () => {
+  const state = { reset: mockReset };
+  const fn = jest.fn(() => state);
+  (fn as any).getState = jest.fn(() => state);
+  return { __esModule: true, useProfileStore: fn };
+});
 
 jest.mock("../../hooks/useCalculatedMetrics", () => ({
   __esModule: true,

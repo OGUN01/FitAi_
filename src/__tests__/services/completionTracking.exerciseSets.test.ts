@@ -14,9 +14,12 @@ jest.mock("../../stores/fitnessStore", () => ({
 jest.mock("../../stores/nutritionStore", () => ({
   useNutritionStore: { getState: jest.fn(() => ({})) },
 }));
-jest.mock("../../stores/profileStore", () => ({
-  useProfileStore: { getState: jest.fn(() => ({})) },
-}));
+jest.mock("../../stores/profileStore", () => {
+  const state = {};
+  const fn = jest.fn(() => state);
+  (fn as any).getState = jest.fn(() => state);
+  return { useProfileStore: fn };
+});
 jest.mock("../../stores/achievementStore", () => ({
   useAchievementStore: { getState: jest.fn(() => ({})) },
 }));
@@ -97,7 +100,13 @@ describe("_writeExerciseSets", () => {
     });
   });
 
-  it("creates flat rows when exercises have numeric sets/reps", async () => {
+  it("does NOT fabricate rows when exercises only carry plan-level numeric sets/reps", async () => {
+    // P3-18 fix: the flat-exercise fallback that fabricated `sets` rows from
+    // plan-level `{ sets: 3, reps: "8-12" }` was intentionally removed — it
+    // stored set data the user never actually logged (violating the
+    // "no hardcoded fallbacks for user data" principle). Callers must pass an
+    // actual per-set `sets[]` array (the store SSOT). With only plan-level
+    // data, no rows are written.
     const exercises = [
       {
         exerciseId: "squat",
@@ -114,21 +123,9 @@ describe("_writeExerciseSets", () => {
 
     await service._writeExerciseSets("user-1", "session-1", exercises);
 
-    const rows = mockSupabase._tables["exercise_sets"].insert.mock.calls[0][0];
-    expect(rows).toHaveLength(3);
-
-    for (let i = 0; i < 3; i++) {
-      expect(rows[i]).toMatchObject({
-        user_id: "user-1",
-        session_id: "session-1",
-        exercise_id: "squat",
-        set_number: i + 1,
-        reps: 12,
-        weight_kg: null,
-        set_type: "normal",
-        is_completed: true,
-      });
-    }
+    expect(
+      mockSupabase._tables["exercise_sets"].insert,
+    ).not.toHaveBeenCalled();
   });
 
   it("falls back to exercise.id when exerciseId is missing", async () => {

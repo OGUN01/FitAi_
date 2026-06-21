@@ -6,6 +6,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { EventEmitter } from "../utils/EventEmitter";
 import { crudOperations } from "./crudOperations";
 import { logger } from "../utils/logger";
+import { analyticsDataService, DailyMetrics } from "./analyticsData";
+import { getCurrentUserId } from "./authUtils";
 
 export interface FitnessMetrics {
   date: string;
@@ -991,35 +993,92 @@ class AnalyticsEngine extends EventEmitter {
     currentStreak: number;
     longestStreak: number;
   } {
-    let currentStreak = 0;
-    let longestStreak = 0;
-    let tempStreak = 0;
+    // P0-strk-1 FIX: Previously this walked the sorted array backward and only
+    // broke a streak when workoutCount === 0, NEVER checking whether two entries
+    // with workouts were on consecutive calendar days. So workouts on Mon + Wed
+    // + Fri (with Tue/Thu entries having workoutCount === 0) were counted as a
+    // 3-day streak, and even worse, metrics rows that happened to be adjacent in
+    // the array but days/weeks apart were glued together.
+    //
+    // The canonical streak writer is achievementStore.updateCurrentStreak
+    // (walks a date-set backward from today counting consecutive days). This
+    // method is the READ-time computation that feeds analyticsSummary and the
+    // WorkoutAnalytics.streakCurrent/Longest fields, so it must use the SAME
+    // consecutive-calendar-day definition to avoid reporting a different number
+    // than the persisted one.
+    if (!metrics || metrics.length === 0) {
+      return { currentStreak: 0, longestStreak: 0 };
+    }
 
-    // Sort by date (oldest first) for streak calculation
-    const sortedMetrics = [...metrics].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-    );
-
-    for (let i = sortedMetrics.length - 1; i >= 0; i--) {
-      const metric = sortedMetrics[i];
-
-      if (metric.workoutCount > 0) {
-        tempStreak++;
-        if (i === sortedMetrics.length - 1) {
-          currentStreak = tempStreak; // This is the current streak
-        }
-      } else {
-        longestStreak = Math.max(longestStreak, tempStreak);
-        tempStreak = 0;
-        if (i === sortedMetrics.length - 1) {
-          currentStreak = 0; // No current streak
-        }
+    // Build a set of unique LOCAL date strings (YYYY-MM-DD) for days that had at
+    // least one workout. Using getLocalDateString (not toISOString) avoids the
+    // timezone mismatch where the UTC date differs from the user's local date.
+    // The metrics[].date field is already a local date string per the
+    // analyticsDataService contract, but we normalize defensively.
+    const workoutDates = new Set<string>();
+    for (const m of metrics) {
+      if (m.workoutCount > 0 && m.date) {
+        workoutDates.add(m.date);
       }
     }
 
-    longestStreak = Math.max(longestStreak, tempStreak);
+    if (workoutDates.size === 0) {
+      return { currentStreak: 0, longestStreak: 0 };
+    }
+
+    // Walk backward from today counting consecutive calendar days.
+    let currentStreak = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const cursor = new Date(today);
+    while (workoutDates.has(this.dateToLocalString(cursor))) {
+      currentStreak++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+
+    // Longest streak: walk every date in the set in chronological order, grouping
+    // consecutive calendar days. A gap of >1 day between adjacent workout dates
+    // breaks the run.
+    const sortedDates = Array.from(workoutDates).sort(); // YYYY-MM-DD sorts lexically === chronologically
+    let longestStreak = 0;
+    let run = 0;
+    let prevDate: Date | null = null;
+    for (const dateStr of sortedDates) {
+      const d = this.localStringToDate(dateStr);
+      if (prevDate === null) {
+        run = 1;
+      } else {
+        const diffDays = Math.round(
+          (d.getTime() - prevDate.getTime()) / (24 * 60 * 60 * 1000),
+        );
+        if (diffDays === 1) {
+          run++;
+        } else if (diffDays > 1) {
+          // Gap in the calendar — streak broken. (diffDays === 0 can't happen
+          // because workoutDates is a Set, so no duplicate same-day entries.)
+          run = 1;
+        }
+        // diffDays < 0 is impossible after sort; ignore defensively.
+      }
+      longestStreak = Math.max(longestStreak, run);
+      prevDate = d;
+    }
 
     return { currentStreak, longestStreak };
+  }
+
+  /** Convert a Date to a YYYY-MM-DD local date string (no UTC drift). */
+  private dateToLocalString(d: Date): string {
+    const y = d.getFullYear();
+    const m = (d.getMonth() + 1).toString().padStart(2, "0");
+    const day = d.getDate().toString().padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  /** Parse a YYYY-MM-DD string into a local-midnight Date (no UTC drift). */
+  private localStringToDate(s: string): Date {
+    const [y, m, d] = s.split("-").map(Number);
+    return new Date(y, (m || 1) - 1, d || 1);
   }
 
   private calculateVariance(numbers: number[]): number {
@@ -1048,13 +1107,40 @@ class AnalyticsEngine extends EventEmitter {
     return slope;
   }
 
+  /**
+   * P1-8: Load metrics history from Supabase (canonical source).
+   *
+   * Previously this read from AsyncStorage (`fitai_metrics_history`), which
+   * diverged from analyticsStore's own AsyncStorage copy AND from Supabase
+   * `analytics_metrics`. On a failed engine save, the engine copy went stale
+   * and the next launch would read stale data, overwriting newer store data.
+   *
+   * Now Supabase `analytics_metrics` is the single source of truth. AsyncStorage
+   * is used only as a fallback cache for guest users (who have no Supabase
+   * rows) so the engine still has something to compute against offline.
+   */
   private async loadMetricsHistory(): Promise<void> {
     try {
+      const userId = getCurrentUserId();
+      if (userId && !userId.startsWith("guest")) {
+        // Canonical path: Supabase analytics_metrics (last 365 days).
+        const dailyMetrics = await analyticsDataService.loadMetricsHistory(
+          userId,
+          365,
+        );
+        this.metricsHistory = dailyMetrics.map((m) => this.dailyMetricsToFitness(m));
+        console.log(
+          `✅ Loaded ${this.metricsHistory.length} historical metrics from Supabase`,
+        );
+        return;
+      }
+
+      // Guest / unauthenticated fallback: AsyncStorage cache only (no Supabase rows).
       const stored = await AsyncStorage.getItem(this.METRICS_HISTORY_KEY);
       if (stored) {
         this.metricsHistory = JSON.parse(stored);
         console.log(
-          `✅ Loaded ${this.metricsHistory.length} historical metrics`,
+          `✅ Loaded ${this.metricsHistory.length} historical metrics from AsyncStorage (guest)`,
         );
       }
     } catch (error) {
@@ -1062,8 +1148,43 @@ class AnalyticsEngine extends EventEmitter {
     }
   }
 
+  /**
+   * Map a Supabase analytics_metrics row (DailyMetrics) to the engine's
+   * FitnessMetrics shape so the engine's analytics methods can consume it.
+   */
+  private dailyMetricsToFitness(m: DailyMetrics): FitnessMetrics {
+    return {
+      date: m.metricDate,
+      workoutCount: m.workoutsCompleted || 0,
+      totalWorkoutTime: 0, // not stored in analytics_metrics; engine tolerates 0
+      caloriesBurned: m.caloriesBurned ?? 0,
+      steps: m.steps ?? 0,
+      distance: 0,
+      activeMinutes: 0,
+      sleepHours: m.sleepHours ?? 0,
+      waterIntake: (m.waterIntakeMl ?? 0) / 1000, // FitnessMetrics uses liters
+      weight: m.weightKg ?? undefined,
+    };
+  }
+
+  /**
+   * P1-8: Persist metrics history.
+   *
+   * Supabase `analytics_metrics` is the canonical store and is written by the
+   * callers (analyticsStore.addDailyMetrics → analyticsDataService) — NOT by
+   * the engine. The engine's AsyncStorage copy is kept ONLY as a guest/offline
+   * cache so a guest user's in-memory analytics survive a hot reload. For
+   * authenticated users we skip the AsyncStorage write entirely to avoid the
+   * dual-persistence drift that previously caused stale data on next launch.
+   */
   private async saveMetricsHistory(): Promise<void> {
     try {
+      const userId = getCurrentUserId();
+      if (userId && !userId.startsWith("guest")) {
+        // Authenticated: Supabase is canonical; do NOT dual-write to AsyncStorage.
+        return;
+      }
+      // Guest / unauthenticated: cache locally only.
       await AsyncStorage.setItem(
         this.METRICS_HISTORY_KEY,
         JSON.stringify(this.metricsHistory),

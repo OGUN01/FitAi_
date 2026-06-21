@@ -487,15 +487,29 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         canUseFeature: (
           featureKey: "ai_generation" | "barcode_scan",
         ): boolean => {
-          const { usage, features, isInitialized } = get();
+          const { usage, features, isInitialized, currentPeriodEnd } = get();
 
           if (!isInitialized) {
             return false;
           }
 
+          // P1 — Lapsed subscription re-lock: if currentPeriodEnd is set and in
+          // the past, the subscription has lapsed. The unlimited-feature
+          // short-circuits below MUST NOT fire in that state — otherwise a
+          // user who keeps the app open past currentPeriodEnd retains unlimited
+          // access until fetchSubscriptionStatus() re-runs and refreshes `features`.
+          // This mirrors the defense-in-depth check in isPremium(). Free-tier
+          // quota logic (the non-unlimited branches) is intentionally still
+          // evaluated so a lapsed premium user degrades to free-tier behavior
+          // rather than being hard-locked, matching what the next server fetch
+          // will confirm. Trial/active users are unaffected: their
+          // currentPeriodEnd is either null or in the future.
+          const subscriptionLapsed =
+            !!currentPeriodEnd && new Date(currentPeriodEnd) < new Date();
+
           if (featureKey === "ai_generation") {
             if (!get().usageIsFresh && !features.unlimited_ai) return false;
-            if (features.unlimited_ai) return true;
+            if (features.unlimited_ai && !subscriptionLapsed) return true;
             const dailyRemaining = usage.ai_generation.daily.remaining;
             const monthlyRemaining = usage.ai_generation.monthly.remaining;
             const dailyOk = dailyRemaining === null || dailyRemaining > 0;
@@ -505,7 +519,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
           if (featureKey === "barcode_scan") {
             if (!get().usageIsFresh && !features.unlimited_scans) return false;
-            if (features.unlimited_scans) return true;
+            if (features.unlimited_scans && !subscriptionLapsed) return true;
             const dailyRemaining = usage.barcode_scan.daily.remaining;
             return dailyRemaining === null || dailyRemaining > 0;
           }

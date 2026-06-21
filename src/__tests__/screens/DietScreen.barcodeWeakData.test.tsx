@@ -257,6 +257,15 @@ jest.mock("../../stores", () => ({
     const state = {
       mealProgress: {},
       dailyMeals: [],
+      // DietScreen calls useNutritionStore((s) => s.getConsumedNutritionForDate)(dateKey)
+      // — the selector returns this function, which is then invoked. Must be callable.
+      getConsumedNutritionForDate: jest.fn(() => ({
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        meals: [],
+      })),
     };
     return selector ? selector(state) : state;
   }),

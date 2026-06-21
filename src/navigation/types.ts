@@ -8,6 +8,24 @@ export type RootStackParamList = {
   Main: undefined;
   WorkoutSession: { workout: DayWorkout; sessionId?: string; resumeExerciseIndex?: number; isExtra?: boolean };
   CookingSession: { meal: DayMeal };
+  /**
+   * Auth deep-link target for Supabase password-reset (`type=recovery`) links.
+   * `token` is optional: in the PKCE flow the session is established by the
+   * time the screen mounts (Supabase exchanges the `code` automatically), so
+   * the screen re-derives its state from `supabase.auth.getSession()` rather
+   * than the token. The token is surfaced for diagnostic/fallback use only.
+   */
+  PasswordReset: { token?: string };
+};
+
+/**
+ * Auth deep-link target screens. These are rendered as conditional overlays
+ * from App.tsx (the app does not use React Navigation for the auth stack —
+ * auth screens are conditionally rendered above the Welcome/Onboarding/Main
+ * flow). This param list is consumed by `useAuthDeepLinks` + App.tsx state.
+ */
+export type AuthStackParamList = {
+  PasswordReset: { token?: string };
 };
 
 export type OnboardingStackParamList = {
@@ -56,6 +74,7 @@ export type ProfileStackParamList = {
   Progress: undefined;
   BodyAnalysisHistory: undefined;
   HealthKitSettings: undefined;
+  ManualHealthEntry: undefined;
 };
 
 // Main tab names for type-safe navigation

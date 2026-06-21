@@ -1,61 +1,83 @@
 import React from "react";
 
-jest.mock("react-native", () => ({
-  View: ({ children, testID, style, ...props }: any) => {
-    const RealReact = require("react");
-    return RealReact.createElement(
-      "View",
-      { testID, style, ...props },
-      children,
-    );
-  },
-  Text: ({ children, style, ...props }: any) => {
-    const RealReact = require("react");
-    return RealReact.createElement("Text", { style, ...props }, children);
-  },
-  TouchableOpacity: ({ children, testID, onPress, style, ...props }: any) => {
-    const RealReact = require("react");
-    return RealReact.createElement(
+jest.mock("react-native", () => {
+  const RealReact = require("react");
+  const View = ({ children, testID, style, ...props }: any) =>
+    RealReact.createElement("View", { testID, style, ...props }, children);
+  const Text = ({ children, style, ...props }: any) =>
+    RealReact.createElement("Text", { style, ...props }, children);
+  const TouchableOpacity = ({
+    children,
+    testID,
+    onPress,
+    style,
+    ...props
+  }: any) =>
+    RealReact.createElement(
       "TouchableOpacity",
       { testID, onPress, style, ...props },
       children,
     );
-  },
-  StyleSheet: {
-    create: (s: any) => s,
-    flatten: (s: any) =>
-      Array.isArray(s) ? Object.assign({}, ...s.filter(Boolean)) : s || {},
-  },
-  Vibration: {
-    vibrate: jest.fn(),
-  },
-}));
+  const Pressable = ({ children, testID, onPress, style, ...props }: any) =>
+    RealReact.createElement(
+      "Pressable",
+      { testID, onPress, style, ...props },
+      children,
+    );
+  return {
+    View,
+    Text,
+    TouchableOpacity,
+    Pressable,
+    // Minimal Animated stub — the global reanimated mock handles the real
+    // animation primitives; this covers any leftover RN Animated.Value usage.
+    Animated: {
+      View: ({ children, style, ...props }: any) =>
+        RealReact.createElement("View", { style, ...props }, children),
+      Value: class {
+        constructor(v: any) {
+          this.value = v;
+        }
+      },
+    },
+    Dimensions: {
+      get: () => ({ width: 393, height: 852, scale: 1, fontScale: 1 }),
+    },
+    StyleSheet: {
+      create: (s: any) => s,
+      flatten: (s: any) =>
+        Array.isArray(s)
+          ? Object.assign({}, ...s.filter(Boolean))
+          : s || {},
+    },
+    Platform: { OS: "ios", select: (o: any) => o?.ios },
+    Vibration: {
+      vibrate: jest.fn(),
+    },
+  };
+});
 
-jest.mock("../../../services/restTimerService", () => ({
-  getRemainingTime: jest.fn(),
-  isExpired: jest.fn(),
-}));
+// Note: RestTimer computes remaining seconds inline (it manages its own
+// effectiveEndRef for pause/resume semantics), so it does not call
+// getRemainingTime / isExpired from restTimerService. These tests drive
+// the component through its real internal interval + Date.now() reads.
 
 import { render, fireEvent, act } from "@testing-library/react-native";
 import { Vibration } from "react-native";
 import { RestTimer } from "../../../features/workouts/components/RestTimer";
-import {
-  getRemainingTime,
-  isExpired,
-} from "../../../services/restTimerService";
-
-const mockGetRemainingTime = getRemainingTime as jest.Mock;
-const mockIsExpired = isExpired as jest.Mock;
 
 describe("RestTimer", () => {
+  let nowSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
-    mockGetRemainingTime.mockReturnValue(60);
-    mockIsExpired.mockReturnValue(false);
+    // Pin Date.now so the component's inline time math is deterministic.
+    nowSpy = jest.spyOn(Date, "now").mockReturnValue(1_000_000);
   });
 
   afterEach(() => {
+    nowSpy.mockRestore();
     jest.useRealTimers();
   });
 
@@ -72,7 +94,6 @@ describe("RestTimer", () => {
 
   it("shows countdown when targetEndTime is provided", () => {
     const target = Date.now() + 60000;
-    mockGetRemainingTime.mockReturnValue(60);
 
     const { getByTestId } = render(
       <RestTimer
@@ -87,11 +108,8 @@ describe("RestTimer", () => {
   });
 
   it("updates countdown every second", () => {
+    // target 60s ahead of pinned now
     const target = Date.now() + 60000;
-    mockGetRemainingTime
-      .mockReturnValueOnce(60)
-      .mockReturnValueOnce(59)
-      .mockReturnValueOnce(58);
 
     const { getByTestId } = render(
       <RestTimer
@@ -101,19 +119,23 @@ describe("RestTimer", () => {
       />,
     );
 
+    const countdown = getByTestId("rest-timer-countdown");
+    // Initial render computes remaining from (target - now) = 60s
+    expect(countdown.props.children).toBe("1:00");
+
+    // Advance real time by 1s; the 500ms interval fires twice and recomputes
+    nowSpy.mockReturnValue(Date.now() + 1000);
     act(() => {
       jest.advanceTimersByTime(1000);
     });
 
-    expect(mockGetRemainingTime).toHaveBeenCalledWith(target);
+    expect(countdown.props.children).toBe("0:59");
   });
 
   it("calls onExpire and vibrates when timer expires", () => {
+    // target 1s ahead of pinned now
     const target = Date.now() + 1000;
     const onExpire = jest.fn();
-
-    mockGetRemainingTime.mockReturnValue(1);
-    mockIsExpired.mockReturnValue(false);
 
     render(
       <RestTimer
@@ -123,21 +145,19 @@ describe("RestTimer", () => {
       />,
     );
 
-    mockGetRemainingTime.mockReturnValue(0);
-    mockIsExpired.mockReturnValue(true);
-
+    // Advance real time past the target so the interval sees secs === 0
+    nowSpy.mockReturnValue(Date.now() + 1000);
     act(() => {
       jest.advanceTimersByTime(1000);
     });
 
     expect(onExpire).toHaveBeenCalledTimes(1);
-    expect(Vibration.vibrate).toHaveBeenCalledWith([0, 500]);
+    expect(Vibration.vibrate).toHaveBeenCalledWith([0, 400, 100, 400]);
   });
 
   it("calls onSkip when Skip button is pressed", () => {
     const target = Date.now() + 60000;
     const onSkip = jest.fn();
-    mockGetRemainingTime.mockReturnValue(60);
 
     const { getByTestId } = render(
       <RestTimer targetEndTime={target} onExpire={jest.fn()} onSkip={onSkip} />,
@@ -149,7 +169,6 @@ describe("RestTimer", () => {
 
   it("cleans up interval on unmount", () => {
     const target = Date.now() + 60000;
-    mockGetRemainingTime.mockReturnValue(60);
     const clearIntervalSpy = jest.spyOn(global, "clearInterval");
 
     const { unmount } = render(
@@ -166,8 +185,8 @@ describe("RestTimer", () => {
   });
 
   it("formats time as mm:ss", () => {
+    // target 125s ahead of pinned now → remaining = 125s → "2:05"
     const target = Date.now() + 125000;
-    mockGetRemainingTime.mockReturnValue(125);
 
     const { getByTestId } = render(
       <RestTimer

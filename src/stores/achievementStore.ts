@@ -163,6 +163,13 @@ const buildAchievementActivityData = ({
     activeDays,
     steps: healthMetrics?.steps || 0,
     sleepHours: healthMetrics?.sleepHours || 0,
+    // Highest single-session calorie burn — feeds the "Energy Burner" achievement.
+    singleWorkoutCalories: completedSessions.reduce(
+      (max, s) => Math.max(max, s.caloriesBurned || 0),
+      0,
+    ),
+    // A recorded current_weight_kg implies the user has logged their weight.
+    weightLogged: bodyAnalysis?.current_weight_kg ? 1 : 0,
     weightGoalAchieved: isWeightGoalAchieved(
       resolveCurrentWeightFromStores({
         bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
@@ -435,8 +442,14 @@ export const useAchievementStore = create<AchievementStore>()(
         userId: string,
         activityData: Record<string, any>,
       ) => {
-        // Guest users must not write achievements to Supabase
-        if (!userId || userId === 'guest') return;
+        // Guests (guest-<uuid>, 'guest', 'local-user') get LOCAL achievement
+        // progress only — the engine evaluates in-memory and the store
+        // persists to AsyncStorage. Supabase writes are skipped downstream
+        // by achievementDataService (which guards on guest prefixes), and
+        // on signup loadFromSupabase merges any cloud rows. This makes
+        // checkProgress consistent with reconcileWithCurrentData (which
+        // also runs for guests).
+        if (!userId) return;
 
         try {
           const newlyUnlocked = await achievementEngine.checkAchievements(
@@ -475,16 +488,23 @@ export const useAchievementStore = create<AchievementStore>()(
       // Mark celebration as shown
       markCelebrationShown: (achievementId: string) => {
         const state = get();
+        const userId = initializedAchievementUserId;
         const achievement = state.userAchievements.get(achievementId);
 
         if (achievement) {
-          achievement.celebrationShown = true;
+          const updated: UserAchievement = { ...achievement, celebrationShown: true };
 
           set({
             userAchievements: new Map(
-              state.userAchievements.set(achievementId, achievement),
+              state.userAchievements.set(achievementId, updated),
             ),
           });
+
+          // Keep engine in sync so the celebration flag survives a
+          // checkAchievements pass that doesn't re-evaluate this row.
+          if (userId) {
+            achievementEngine.setUserAchievement(userId, updated);
+          }
         }
       },
 
@@ -728,6 +748,10 @@ export const useAchievementStore = create<AchievementStore>()(
                 cloudAchievement.progress > (localAchievement.progress || 0)
               ) {
                 mergedAchievements.set(key, cloudAchievement);
+                // SSOT: push into the engine's in-memory map too, so the next
+                // checkAchievements pass treats this as already-completed
+                // (idempotency) instead of re-emitting + re-rewarding it.
+                achievementEngine.setUserAchievement(userId, cloudAchievement);
               }
             });
 
@@ -909,6 +933,13 @@ export const useAchievementStore = create<AchievementStore>()(
             weightGoalAchieved,
             steps: healthState.metrics?.steps || 0,
             sleepHours: healthState.metrics?.sleepHours || 0,
+            // Highest single-session calorie burn — feeds "Energy Burner".
+            singleWorkoutCalories: completedSessions.reduce(
+              (max, s) => Math.max(max, s.caloriesBurned || 0),
+              0,
+            ),
+            // A recorded current_weight_kg implies the user has logged weight.
+            weightLogged: bodyAnalysis?.current_weight_kg ? 1 : 0,
           });
 
           const updatedProgress =

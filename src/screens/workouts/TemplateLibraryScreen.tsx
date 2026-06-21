@@ -3,11 +3,11 @@ import {
   View,
   Text,
   FlatList,
-  Pressable,
   StyleSheet,
   SafeAreaView,
-  ActivityIndicator,
+  ScrollView,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import {
   workoutTemplateService,
   WorkoutTemplate,
@@ -16,6 +16,16 @@ import { useFitnessStore } from "../../stores/fitnessStore";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { getCurrentUserId } from "../../services/authUtils";
 import { buildDayWorkoutFromTemplate } from "../../utils/workoutBuilders";
+import {
+  AuroraBackground,
+  GlassCard,
+  GlassHeader,
+  AuroraSpinner,
+  EmptyState,
+  AnimatedPressable,
+} from "../../components/ui/aurora";
+import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
+import { rp, rf, rw } from "../../utils/responsive";
 
 interface Props {
   navigation: any;
@@ -110,237 +120,272 @@ export default function TemplateLibraryScreen({ navigation }: Props) {
   };
 
   const renderTemplate = ({ item }: { item: WorkoutTemplate }) => (
-    <View style={styles.card} testID={`template-card-${item.id}`}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.cardName}>{item.name}</Text>
-        <Pressable
-          onPress={() => setMenuOpenId(menuOpenId === item.id ? null : item.id)}
-          testID={`menu-button-${item.id}`}
-        >
-          <Text style={styles.menuDots}>...</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.badgeRow}>
-        {item.targetMuscleGroups.slice(0, 4).map((mg) => (
-          <View key={mg} style={styles.badge}>
-            <Text style={styles.badgeText}>{mg}</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* GAP-14: Exercise list with View History tap per exercise */}
-      <View style={styles.exerciseListContainer}>
-        {item.exercises.slice(0, 4).map((ex, idx) => (
-          <Pressable
-            key={`${ex.exerciseId}-${idx}`}
-            style={styles.exerciseRow}
-            onPress={() =>
-              navigation.navigate('ExerciseHistory', {
-                exerciseId: ex.exerciseId,
-                exerciseName: ex.name,
-              } as never)
-            }
-            testID={`exercise-history-${item.id}-${idx}`}
+    <GlassCard padding="md" elevation={3} contentStyle={styles.cardContent} style={styles.card}>
+      <View testID={`template-card-${item.id}`}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardName}>{item.name}</Text>
+          <AnimatedPressable
+            onPress={() => setMenuOpenId(menuOpenId === item.id ? null : item.id)}
+            testID={`menu-button-${item.id}`}
+            accessibilityRole="button"
+            accessibilityLabel="Open template menu"
+            style={styles.menuBtn}
           >
-            <Text style={styles.exerciseRowName} numberOfLines={1}>
-              {ex.name}
-            </Text>
-            <Text style={styles.exerciseRowMeta}>
-              {ex.sets}×{ex.repRange[0] === ex.repRange[1] ? ex.repRange[0] : `${ex.repRange[0]}-${ex.repRange[1]}`} 📊
-            </Text>
-          </Pressable>
-        ))}
-        {item.exercises.length > 4 && (
-          <Text style={styles.moreExercises}>+{item.exercises.length - 4} more</Text>
-        )}
-      </View>
-
-      {menuOpenId === item.id && (
-        <View style={styles.menu} testID={`menu-${item.id}`}>
-          <Pressable
-            style={styles.menuItem}
-            onPress={() => {
-              setMenuOpenId(null);
-              navigation.navigate("CreateWorkout", { templateId: item.id });
-            }}
-            testID={`edit-button-${item.id}`}
-          >
-            <Text style={styles.menuItemText}>Edit</Text>
-          </Pressable>
-          <Pressable
-            style={styles.menuItem}
-            onPress={() => handleDuplicate(item)}
-            testID={`duplicate-button-${item.id}`}
-          >
-            <Text style={styles.menuItemText}>Duplicate</Text>
-          </Pressable>
-          <Pressable
-            style={styles.menuItem}
-            onPress={() => handleDelete(item)}
-            testID={`delete-button-${item.id}`}
-          >
-            <Text style={[styles.menuItemText, styles.deleteText]}>Delete</Text>
-          </Pressable>
+            <Ionicons name="ellipsis-horizontal" size={rf(20)} color={colors.text.secondary} />
+          </AnimatedPressable>
         </View>
-      )}
 
-      <Pressable
-        style={styles.startButton}
-        onPress={() => handleStart(item)}
-        testID={`start-button-${item.id}`}
-      >
-        <Text style={styles.startButtonText}>Start</Text>
-      </Pressable>
-    </View>
+        <View style={styles.badgeRow}>
+          {item.targetMuscleGroups.slice(0, 4).map((mg) => (
+            <View key={mg} style={styles.badge}>
+              <Text style={styles.badgeText}>{mg}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* GAP-14: Exercise list with View History tap per exercise */}
+        <View style={styles.exerciseListContainer}>
+          {item.exercises.slice(0, 4).map((ex, idx) => (
+            <AnimatedPressable
+              key={`${ex.exerciseId}-${idx}`}
+              style={styles.exerciseRow}
+              onPress={() =>
+                navigation.navigate('ExerciseHistory', {
+                  exerciseId: ex.exerciseId,
+                  exerciseName: ex.name,
+                } as never)
+              }
+              testID={`exercise-history-${item.id}-${idx}`}
+              accessibilityRole="button"
+              accessibilityLabel={`View ${ex.name} history`}
+            >
+              <Text style={styles.exerciseRowName} numberOfLines={1}>
+                {ex.name}
+              </Text>
+              <Text style={styles.exerciseRowMeta}>
+                {ex.sets}×{ex.repRange[0] === ex.repRange[1] ? ex.repRange[0] : `${ex.repRange[0]}-${ex.repRange[1]}`}{" "}
+                <Ionicons name="stats-chart" size={rf(12)} color={colors.primary.DEFAULT} />
+              </Text>
+            </AnimatedPressable>
+          ))}
+          {item.exercises.length > 4 && (
+            <Text style={styles.moreExercises}>+{item.exercises.length - 4} more</Text>
+          )}
+        </View>
+
+        {menuOpenId === item.id && (
+          <View style={styles.menu} testID={`menu-${item.id}`}>
+            <AnimatedPressable
+              style={styles.menuItem}
+              onPress={() => {
+                setMenuOpenId(null);
+                navigation.navigate("CreateWorkout", { templateId: item.id });
+              }}
+              testID={`edit-button-${item.id}`}
+              accessibilityRole="button"
+              accessibilityLabel="Edit template"
+            >
+              <Ionicons name="create-outline" size={rf(16)} color={colors.text.primary} />
+              <Text style={styles.menuItemText}>Edit</Text>
+            </AnimatedPressable>
+            <AnimatedPressable
+              style={styles.menuItem}
+              onPress={() => handleDuplicate(item)}
+              testID={`duplicate-button-${item.id}`}
+              accessibilityRole="button"
+              accessibilityLabel="Duplicate template"
+            >
+              <Ionicons name="copy-outline" size={rf(16)} color={colors.text.primary} />
+              <Text style={styles.menuItemText}>Duplicate</Text>
+            </AnimatedPressable>
+            <AnimatedPressable
+              style={styles.menuItem}
+              onPress={() => handleDelete(item)}
+              testID={`delete-button-${item.id}`}
+              accessibilityRole="button"
+              accessibilityLabel="Delete template"
+            >
+              <Ionicons name="trash-outline" size={rf(16)} color={colors.error.DEFAULT} />
+              <Text style={[styles.menuItemText, styles.deleteText]}>Delete</Text>
+            </AnimatedPressable>
+          </View>
+        )}
+
+        <AnimatedPressable
+          style={styles.startButton}
+          onPress={() => handleStart(item)}
+          testID={`start-button-${item.id}`}
+          accessibilityRole="button"
+          accessibilityLabel={`Start ${item.name}`}
+        >
+          <Text style={styles.startButtonText}>Start</Text>
+        </AnimatedPressable>
+      </View>
+    </GlassCard>
   );
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <ActivityIndicator size="large" color="#4CAF50" style={styles.loader} />
-      </SafeAreaView>
+      <AuroraBackground theme="space">
+        <SafeAreaView style={styles.flex}>
+          <View style={styles.loader}>
+            <AuroraSpinner size="lg" />
+          </View>
+        </SafeAreaView>
+      </AuroraBackground>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-          testID="back-button"
-        >
-          <Text style={styles.backText}>← Back</Text>
-        </Pressable>
-        <Text style={styles.headerTitle}>My Workouts</Text>
-        <View style={styles.headerActions}>
-          <Pressable
-            onPress={() => navigation.navigate("ScheduleBuilder")}
-            style={styles.scheduleBtn}
-            testID="schedule-builder-button"
-          >
-            <Text style={styles.scheduleBtnText}>Build Schedule</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => navigation.navigate("CreateWorkout")}
-            testID="add-template-button"
-          >
-            <Text style={styles.addButton}>+</Text>
-          </Pressable>
-        </View>
-      </View>
-
-      {templates.length === 0 ? (
-        <View style={styles.emptyState} testID="empty-state">
-          <Text style={styles.emptyText}>
-            No workouts saved yet {"\u2014"} tap + to create your first
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={templates}
-          keyExtractor={(item) => item.id}
-          renderItem={renderTemplate}
-          contentContainerStyle={styles.list}
-          testID="template-list"
+    <AuroraBackground theme="space">
+      <SafeAreaView style={styles.flex}>
+        <GlassHeader
+          title="My Workouts"
+          onBack={() => navigation.goBack()}
+          rightAction={
+            <View style={styles.headerActions}>
+              <AnimatedPressable
+                onPress={() => navigation.navigate("ScheduleBuilder")}
+                style={styles.scheduleBtn}
+                testID="schedule-builder-button"
+                accessibilityRole="button"
+                accessibilityLabel="Build schedule"
+              >
+                <Text style={styles.scheduleBtnText}>Schedule</Text>
+              </AnimatedPressable>
+              <AnimatedPressable
+                onPress={() => navigation.navigate("CreateWorkout")}
+                testID="add-template-button"
+                accessibilityRole="button"
+                accessibilityLabel="Add template"
+                style={styles.addButton}
+              >
+                <Ionicons name="add" size={rf(26)} color={colors.primary.DEFAULT} />
+              </AnimatedPressable>
+            </View>
+          }
         />
-      )}
-    </SafeAreaView>
+
+        {templates.length === 0 ? (
+          <View style={styles.emptyWrap} testID="empty-state">
+            <EmptyState
+              icon="barbell-outline"
+              title="No workouts saved yet"
+              subtitle="Tap + to create your first workout template."
+              ctaText="Create Workout"
+              onCta={() => navigation.navigate("CreateWorkout")}
+            />
+          </View>
+        ) : (
+          <FlatList
+            data={templates}
+            keyExtractor={(item) => item.id}
+            renderItem={renderTemplate}
+            contentContainerStyle={styles.list}
+            testID="template-list"
+          />
+        )}
+      </SafeAreaView>
+    </AuroraBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#1A1A2E" },
-  loader: { flex: 1, justifyContent: "center" },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#2A2A4E",
-  },
-  headerTitle: { fontSize: 20, fontWeight: "700", color: "#FFFFFF" },
-  headerActions: { flexDirection: "row", alignItems: "center", gap: 10 },
+  flex: { flex: 1 },
+  loader: { flex: 1, justifyContent: "center", alignItems: "center" },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: rp(spacing.sm) },
   scheduleBtn: {
-    backgroundColor: "#2A2A4E",
+    backgroundColor: colors.glass.background,
     borderWidth: 1,
-    borderColor: "#4CAF50",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
+    borderColor: colors.primary.DEFAULT,
+    paddingHorizontal: rp(spacing.sm),
+    paddingVertical: rp(spacing.xs),
+    borderRadius: borderRadius.md,
   },
-  scheduleBtnText: { fontSize: 13, color: "#4CAF50", fontWeight: "600" },
-  addButton: { fontSize: 28, color: "#4CAF50", fontWeight: "600" },
-  list: { padding: 16 },
-  card: {
-    backgroundColor: "#2A2A4E",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+  scheduleBtnText: {
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.primary.DEFAULT,
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
+  addButton: {
+    width: rw(36),
+    height: rw(36),
+    borderRadius: 999,
+    backgroundColor: colors.glass.background,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  list: { padding: rp(spacing.md) },
+  card: { marginBottom: rp(spacing.md) },
+  cardContent: {},
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  cardName: { fontSize: 17, fontWeight: "700", color: "#FFFFFF", flex: 1 },
-  menuDots: { fontSize: 20, color: "#AAA", paddingLeft: 12 },
-  badgeRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
-  badge: {
-    backgroundColor: "#1A1A2E",
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+  cardName: {
+    fontSize: rf(17),
+    fontWeight: String(typography.fontWeight.bold) as any,
+    color: colors.text.primary,
+    flex: 1,
   },
-  badgeText: { fontSize: 12, color: "#4CAF50" },
-  exerciseCount: { fontSize: 13, color: "#AAA", marginTop: 8 },
+  menuBtn: { paddingLeft: rp(spacing.sm) },
+  badgeRow: { flexDirection: "row", flexWrap: "wrap", gap: rp(spacing.xs), marginTop: rp(spacing.sm) },
+  badge: {
+    backgroundColor: colors.background.DEFAULT,
+    borderRadius: borderRadius.xl,
+    paddingHorizontal: rp(spacing.sm),
+    paddingVertical: rp(spacing.xxs),
+  },
+  badgeText: { fontSize: rf(typography.fontSize.micro), color: colors.primary.DEFAULT },
   menu: {
-    marginTop: 10,
-    backgroundColor: "#1A1A2E",
-    borderRadius: 8,
+    marginTop: rp(spacing.sm),
+    backgroundColor: colors.background.DEFAULT,
+    borderRadius: borderRadius.md,
     overflow: "hidden",
   },
-  menuItem: { paddingVertical: 10, paddingHorizontal: 14 },
-  menuItemText: { fontSize: 14, color: "#FFFFFF" },
-  deleteText: { color: "#FF5252" },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(spacing.sm),
+    paddingVertical: rp(spacing.sm),
+    paddingHorizontal: rp(spacing.md),
+  },
+  menuItemText: { fontSize: rf(typography.fontSize.body), color: colors.text.primary },
+  deleteText: { color: colors.error.DEFAULT },
   startButton: {
-    marginTop: 12,
-    backgroundColor: "#4CAF50",
-    paddingVertical: 10,
-    borderRadius: 10,
+    marginTop: rp(spacing.md),
+    backgroundColor: colors.primary.DEFAULT,
+    paddingVertical: rp(spacing.sm),
+    borderRadius: borderRadius.lg,
     alignItems: "center",
   },
-  startButtonText: { fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
-  emptyState: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 32,
+  startButtonText: {
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.bold) as any,
+    color: colors.text.primary,
   },
-  emptyText: { fontSize: 16, color: "#888", textAlign: "center" },
-  backButton: {
-    paddingRight: 12,
-    paddingVertical: 4,
-  },
-  backText: {
-    fontSize: 16,
-    color: "#4CAF50",
-    fontWeight: "600",
-  },
+  emptyWrap: { flex: 1 },
   // GAP-14: Exercise list styles
-  exerciseListContainer: { marginTop: 10 },
+  exerciseListContainer: { marginTop: rp(spacing.sm) },
   exerciseRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 5,
+    paddingVertical: rp(spacing.xxs),
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.06)",
+    borderBottomColor: colors.glass.backgroundDark,
   },
-  exerciseRowName: { fontSize: 13, color: "#DDD", flex: 1 },
-  exerciseRowMeta: { fontSize: 12, color: "#4CAF50", marginLeft: 8 },
-  moreExercises: { fontSize: 12, color: "#666", marginTop: 5, textAlign: "right" },
+  exerciseRowName: { fontSize: rf(typography.fontSize.caption), color: colors.text.primary, flex: 1 },
+  exerciseRowMeta: {
+    fontSize: rf(typography.fontSize.micro),
+    color: colors.primary.DEFAULT,
+    marginLeft: rp(spacing.xs),
+  },
+  moreExercises: {
+    fontSize: rf(typography.fontSize.micro),
+    color: colors.text.tertiary,
+    marginTop: rp(spacing.xxs),
+    textAlign: "right",
+  },
 });

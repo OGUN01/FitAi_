@@ -12,9 +12,12 @@ jest.mock("react-native", () => {
     SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
     Modal: ({ children }: { children: React.ReactNode }) => children,
     ScrollView: ({ children }: { children: React.ReactNode }) => children,
+    KeyboardAvoidingView: ({ children }: { children: React.ReactNode }) =>
+      children,
     Dimensions: {
       get: () => ({ width: 393, height: 852 }),
     },
+    Platform: { OS: "ios", select: (o: any) => o?.ios },
     TouchableOpacity: React.forwardRef((props: any, ref) =>
       React.createElement("TouchableOpacity", { ...props, ref }, props.children),
     ),
@@ -240,7 +243,7 @@ describe("remaining raw touch targets", () => {
     );
 
     expect(
-      StyleSheet.flatten(exercise.getByLabelText("Close Push Up").props.style),
+      StyleSheet.flatten(exercise.getByLabelText("Close").props.style),
     ).toMatchObject({ width: 44, height: 44 });
     expect(
       StyleSheet.flatten(

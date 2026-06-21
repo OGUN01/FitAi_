@@ -16,7 +16,7 @@ import {
 } from "../../contexts/EditContext";
 import { EditOverlay } from "../../components/profile/EditOverlay";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
-import { ResponsiveTheme } from "../../utils/constants";
+import { colors } from "../../theme/aurora-tokens";
 import { rp, rh } from "../../utils/responsive";
 import { useProfileLogic } from "../../hooks/useProfileLogic";
 import { useAuthStore } from "../../stores/authStore";
@@ -74,7 +74,6 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
     dataItems,
     userName,
     memberSince,
-    profile,
     // Settings modals
     showUnitsModal,
     setShowUnitsModal,
@@ -84,25 +83,6 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
     handleUnitsSelect,
     handleClearCache,
   } = useProfileLogic();
-
-  // ========== SCREEN DEBUG LOG ==========
-  React.useEffect(() => {
-    console.warn(`\n${'='.repeat(60)}`);
-    console.warn(`👤 [SCREEN DEBUG] ProfileScreen MOUNTED`);
-    console.warn(`${'='.repeat(60)}`);
-    console.warn(`👤 Name: ${userName} | Authenticated: ${isAuthenticated} | Guest: ${isGuestMode}`);
-    console.warn(`📅 Member Since: ${memberSince}`);
-    console.warn(`📊 Stats: Workouts=${userStats?.totalWorkouts ?? 0} | Calories=${userStats?.totalCaloriesBurned ?? 0} | Streak=${userStats?.currentStreak ?? 0}`);
-    console.warn(`📋 Profile loaded: ${!!profile}`);
-    if (profile) {
-      console.warn(`  PersonalInfo: Age=${(profile.personalInfo as unknown as Record<string, unknown>)?.age} | Gender=${(profile.personalInfo as unknown as Record<string, unknown>)?.gender}`);
-      console.warn(`  Goals: [${(profile.fitnessGoals as unknown as Record<string, unknown[]>)?.primary_goals?.join(', ') || 'none'}]`);
-      console.warn(`  Body: Height=${(profile.bodyMetrics as unknown as Record<string, unknown>)?.height_cm}cm | Weight=${(profile.bodyMetrics as unknown as Record<string, unknown>)?.current_weight_kg}kg`);
-      console.warn(`  Diet: ${(profile.dietPreferences as unknown as Record<string, unknown>)?.diet_type || '(none)'}`);
-      console.warn(`  Workout: Location=${(profile.workoutPreferences as unknown as Record<string, unknown>)?.location} | Intensity=${(profile.workoutPreferences as unknown as Record<string, unknown>)?.intensity}`);
-    }
-    console.warn(`${'='.repeat(60)}\n`);
-  }, []);
 
   React.useEffect(() => {
     const requestedSettingsScreen = route?.params?.settingsScreen;
@@ -157,6 +137,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
       <SettingsScreenRenderer
         currentScreen={currentSettingsScreen}
         onBack={() => setCurrentSettingsScreen(null)}
+        onNavigateSettings={(screen) => setCurrentSettingsScreen(screen)}
       />
     );
   }
@@ -287,7 +268,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
           title="Units"
           subtitle="Choose your measurement system"
           icon="speedometer-outline"
-          iconColor={ResponsiveTheme.colors.info}
+          iconColor={colors.info.DEFAULT}
           selectedValue={unitsPreference}
           onSelect={handleUnitsSelect}
           onClose={() => setShowUnitsModal(false)}

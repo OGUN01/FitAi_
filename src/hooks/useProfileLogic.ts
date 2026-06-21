@@ -174,6 +174,18 @@ export const useProfileLogic = () => {
         await AsyncStorage.setItem(STORAGE_KEY_UNITS, units);
         updatePersonalInfo({ units });
 
+        // Sync units into the shared userStore.profile so any code reading
+        // units from userStore.profile stays in sync with the profileStore.
+        // This mirrors the shape stored across personalInfo + preferences.
+        const currentUserProfile = useUserStore.getState().profile;
+        if (currentUserProfile) {
+          useUserStore.getState().setProfile({
+            ...currentUserProfile,
+            personalInfo: { ...currentUserProfile.personalInfo, units },
+            preferences: { ...currentUserProfile.preferences, units },
+          });
+        }
+
         if (currentUserId) {
           if (user?.id !== currentUserId) return; // user changed mid-operation
           const result = await userProfileService.updateProfile(currentUserId, {

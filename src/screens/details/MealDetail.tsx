@@ -1,19 +1,21 @@
 import React from "react";
 import {
   View,
-  Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
-  ActivityIndicator,
 } from "react-native";
 import { Button } from "../../components/ui";
-import { ResponsiveTheme } from "../../utils/constants";
-import { rf } from '../../utils/responsive';
+import {
+  AuroraBackground,
+  AuroraSpinner,
+  GlassHeader,
+  EmptyState,
+} from "../../components/ui/aurora";
+import { colors, spacing } from "../../theme/aurora-tokens";
+import { rp } from "../../utils/responsive";
 import { NutritionChart } from "../../components/charts";
 import useCalculatedMetrics from "../../hooks/useCalculatedMetrics";
 import { useMealDetailLogic } from "../../hooks/useMealDetailLogic";
-import { MealDetailHeader } from "../../components/details/MealDetailHeader";
 import { MealInfoCard } from "../../components/details/MealInfoCard";
 import { FoodItemsList } from "../../components/details/FoodItemsList";
 import { MealInsights } from "../../components/details/MealInsights";
@@ -44,40 +46,49 @@ export const MealDetail: React.FC<MealDetailProps> = ({
 
   if (isGeneratingPlan) {
     return (
-      <SafeAreaView style={styles.container}>
+      <AuroraBackground theme="space">
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={ResponsiveTheme.colors.primary} />
-          <Text style={styles.loadingText}>Loading meal...</Text>
+          <AuroraSpinner size="lg" />
         </View>
-      </SafeAreaView>
+      </AuroraBackground>
     );
   }
 
   if (!meal) {
     return (
-      <SafeAreaView style={styles.container}>
-        <MealDetailHeader onBack={onBack} />
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>🍽️</Text>
-          <Text style={styles.emptyTitle}>Meal Not Found</Text>
-          <Text style={styles.emptySubtitle}>
-            This meal may have been removed or is not available.
-          </Text>
-          <Button
-            title="Go Back"
-            onPress={onBack ?? (() => {})}
-            disabled={!onBack}
-            variant="primary"
-            style={{ marginTop: ResponsiveTheme.spacing.lg }}
+      <AuroraBackground theme="space">
+        <GlassHeader title="Meal Details" onBack={onBack} />
+        <View style={styles.emptyWrap}>
+          <EmptyState
+            icon="restaurant-outline"
+            title="Meal Not Found"
+            subtitle="This meal may have been removed or is not available."
+            ctaText={onBack ? "Go Back" : undefined}
+            onCta={onBack}
           />
         </View>
-      </SafeAreaView>
+      </AuroraBackground>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <MealDetailHeader onBack={onBack} onEdit={onEdit} />
+    <AuroraBackground theme="space">
+      <GlassHeader
+        title="Meal Details"
+        onBack={onBack}
+        rightAction={
+          onEdit ? (
+            <Button
+              title="Edit"
+              onPress={onEdit}
+              variant="ghost"
+              size="sm"
+            />
+          ) : (
+            <View style={styles.side} />
+          )
+        }
+      />
 
       <ScrollView
         style={styles.scrollView}
@@ -103,59 +114,28 @@ export const MealDetail: React.FC<MealDetailProps> = ({
       </ScrollView>
 
       <MealActions onEdit={onEdit} onDelete={onDelete} />
-    </SafeAreaView>
+    </AuroraBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
-  },
-
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-
-  loadingText: {
-    marginTop: ResponsiveTheme.spacing.md,
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
-  },
-
-  emptyContainer: {
+  emptyWrap: {
     flex: 1,
     justifyContent: "center",
-    alignItems: "center",
-    padding: ResponsiveTheme.spacing.xl,
   },
-
-  emptyIcon: {
-    fontSize: rf(64),
-    marginBottom: ResponsiveTheme.spacing.md,
+  side: {
+    width: 0,
   },
-
-  emptyTitle: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
-  },
-
-  emptySubtitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
-    textAlign: "center",
-  },
-
   scrollView: {
     flex: 1,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingHorizontal: rp(spacing.md),
   },
-
   chartContainer: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: rp(spacing.md),
   },
 });

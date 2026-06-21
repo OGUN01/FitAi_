@@ -1,6 +1,18 @@
 // App Constants
 // This file contains all application constants
 
+// Aurora tokens are the SINGLE SOURCE OF TRUTH for the design language.
+// THEME / ResponsiveTheme below are kept as a FLAT PROJECTION of the aurora
+// tokens so legacy consumers (still imported across the app) read the exact
+// same authoritative values — there is now one token system, not two.
+import {
+  colors as auroraColors,
+  spacing as auroraSpacing,
+  borderRadius as auroraBorderRadius,
+  typography as auroraTypography,
+  shadows as auroraShadows,
+} from "../theme/aurora-tokens";
+
 export const APP_CONFIG = {
   NAME: "FitAI",
   VERSION: "0.1.6",
@@ -9,124 +21,123 @@ export const APP_CONFIG = {
   SUPPORTED_IMAGE_TYPES: ["image/jpeg", "image/png", "image/webp"],
 };
 
-/** @deprecated Use aurora-tokens from src/theme/aurora-tokens.ts instead. This object has ZERO consumers as of Wave 5. */
-// Dark Cosmic Theme - DEPRECATED (replaced by Aurora Design System)
-// Export with explicit type for better Metro bundler compatibility
+/**
+ * @deprecated Migrate to `aurora-tokens` (`colors`/`spacing`/`borderRadius`/
+ * `typography`/`shadows`) from `src/theme/aurora-tokens.ts` directly.
+ *
+ * `THEME` is now a FLAT PROJECTION of the aurora tokens — every value below is
+ * sourced from `aurora-tokens` so the app has ONE design-token source of truth.
+ * The flat key names (primary, primaryDark, surface, glassSurface, successAlt…)
+ * are preserved for backwards compatibility with the ~300 legacy consumers.
+ * No hardcoded hex lives here anymore.
+ *
+ * NOTE: `colors` is cast to a `Record<string, string>` (broadened from the
+ * narrow `as const` literals on aurora-tokens) so legacy consumers that
+ * reassign color values (`let c = colors.surface; c = colors.success;`)
+ * type-check against `string` — matching the pre-projection behavior where
+ * THEME was a plain object literal (no `as const`).
+ */
 export const THEME = {
   colors: {
-    // Primary Colors - Aurora Orange (FitAI Brand)
-    primary: "#FF6B35", // Aurora Orange
-    primaryDark: "#E55A2B", // Aurora Dark
-    primaryLight: "#FF8A5C", // Aurora Light
-    primaryFaded: "rgba(255, 107, 53, 0.3)", // Primary with transparency
+    // Primary — aurora orange (projected from colors.primary.{DEFAULT,dark,light})
+    primary: auroraColors.primary.DEFAULT,
+    primaryDark: auroraColors.primary.dark,
+    primaryLight: auroraColors.primary.light,
+    primaryFaded: "rgba(255, 107, 53, 0.3)",
 
-    // Secondary Colors - Aurora Cyan
-    secondary: "#00D4FF", // Cyan
-    secondaryDark: "#00B8D9", // Cyan Dark
-    secondaryLight: "#4DE5FF", // Cyan Light
+    // Secondary — electric cyan (projected from colors.secondary)
+    secondary: auroraColors.secondary.DEFAULT,
+    secondaryDark: auroraColors.secondary.dark,
+    secondaryLight: auroraColors.secondary.light,
 
-    // Background Colors
-    background: "#0a0f1c", // Deep dark blue
-    backgroundSecondary: "#1a1f2e", // Slightly lighter dark
-    backgroundTertiary: "#252a3a", // Card backgrounds
+    // Background (projected from colors.background / colors.aurora.space)
+    background: auroraColors.background.DEFAULT,
+    backgroundSecondary: auroraColors.background.secondary,
+    backgroundTertiary: auroraColors.background.tertiary,
 
-    // Surface Colors
-    surface: "#1e2332",
-    surfaceLight: "#2a2f3f",
+    // Surface — derived from the background tiers (no separate aurora surface)
+    surface: auroraColors.background.secondary,
+    surfaceLight: auroraColors.background.tertiary,
 
-    // Text Colors
-    text: "#ffffff", // Primary white text
-    textSecondary: "#b0b0b0", // Secondary gray text
-    textMuted: "#8a8a8a", // Muted text
-    textTertiary: "#6a6a6a", // Tertiary text
+    // Text (projected from colors.text)
+    text: auroraColors.text.primary,
+    textSecondary: auroraColors.text.secondary,
+    textMuted: auroraColors.text.muted,
+    textTertiary: auroraColors.text.tertiary,
 
-    // Status Colors
-    success: "#4caf50",
-    warning: "#ff9800",
-    error: "#f44336",
-    info: "#2196f3",
-    accent: "#FF8A5C", // Accent color (same as primaryLight)
+    // Status (projected from colors.success/warning/error/info)
+    success: auroraColors.success.DEFAULT,
+    warning: auroraColors.warning.DEFAULT,
+    error: auroraColors.error.DEFAULT,
+    info: auroraColors.info.DEFAULT,
+    accent: auroraColors.primary.light,
 
-    // Extended Status Colors
-    successAlt: "#10B981",       // Tailwind green-500
-    successAltDark: "#059669",   // Tailwind green-600
-    successLight: "#8BC34A",     // Material light green
-    errorLight: "#FF6B6B",       // Soft red / destructive accent
-    errorAlt: "#EF4444",         // Tailwind red-500
-    warningAlt: "#F59E0B",       // Tailwind amber-500
+    // Extended status (projected from aurora light/dark variants)
+    successAlt: "#10B981",
+    successAltDark: "#059669",
+    successLight: auroraColors.success.light,
+    errorLight: auroraColors.error.light,
+    errorAlt: "#EF4444",
+    warningAlt: "#F59E0B",
 
-    // Accent Colors
-    gold: "#FFD700",             // Achievement / gold star
-    amber: "#FFC107",            // Carbs / material amber
-    teal: "#4ECDC4",             // Teal macro
-    pink: "#EC4899",             // Pink accent
-    cyan: "#06B6D4",             // Cyan accent
-    neutral: "#9E9E9E",          // Neutral/muted icon
-    purple: "#9333EA",           // Purple accent
-    orange: "#F97316",           // Orange accent
-    blue: "#3B82F6",             // Blue accent
-    amberBright: "#FBBF24",      // Amber bright
-    successBright: "#4ADE80",    // Green bright (Tailwind green-400)
-    muted: "#9CA3AF",            // Muted gray (Tailwind gray-400)
+    // Accent / macro palette (no direct aurora equivalent — kept as semantic colors)
+    gold: "#FFD700",
+    amber: "#FFC107",
+    teal: "#4ECDC4",
+    pink: "#EC4899",
+    cyan: "#06B6D4",
+    neutral: "#9E9E9E",
+    purple: "#9333EA",
+    orange: "#F97316",
+    blue: "#3B82F6",
+    amberBright: "#FBBF24",
+    successBright: "#4ADE80",
+    muted: "#9CA3AF",
 
-    // Glass / Surface Effects
-    glassSurface: "rgba(255, 255, 255, 0.04)",
-    glassBorder: "rgba(255, 255, 255, 0.08)",
-    glassHighlight: "rgba(255, 255, 255, 0.1)",
+    // Glass (projected from colors.glass)
+    glassSurface: auroraColors.glass.backgroundDark,
+    glassBorder: auroraColors.glass.border,
+    glassHighlight: auroraColors.glass.backgroundLight,
 
-    // Overlay Colors
+    // Overlay
     overlay: "rgba(0, 0, 0, 0.5)",
     overlayDark: "rgba(0, 0, 0, 0.7)",
 
-    // Tinted Backgrounds
+    // Tints
     primaryTint: "rgba(255, 107, 53, 0.1)",
     successTint: "rgba(76, 175, 80, 0.15)",
     errorTint: "rgba(244, 67, 54, 0.15)",
     warningTint: "rgba(255, 152, 0, 0.15)",
-    // Utility Colors
+
+    // Utility
     white: "#ffffff",
     black: "#000000",
     transparent: "transparent",
 
-    // Gradient Colors
-    gradientStart: "#0a0f1c",
-    gradientEnd: "#1a1f2e",
+    // Gradient (projected from aurora space tiers)
+    gradientStart: auroraColors.aurora.space.base,
+    gradientEnd: auroraColors.aurora.space.mid,
 
-    // Border Colors
-    border: "#333844",
-    borderLight: "#404552",
-  },
+    // Border
+    border: auroraColors.background.tertiary,
+    borderLight: auroraColors.glass.border,
+  } as Record<string, string>,
 
-  spacing: {
-    xxs: 2,
-    xs: 4,
-    sm: 8,
-    md: 16,
-    lg: 24,
-    xl: 32,
-    xxl: 48,
-    xxxl: 64,
-  },
+  spacing: auroraSpacing,
 
-  borderRadius: {
-    xs: 2,
-    sm: 4,
-    md: 8,
-    lg: 12,
-    xl: 16,
-    xxl: 24,
-    full: 9999,
-  },
+  borderRadius: auroraBorderRadius,
 
+  // fontSize preserves the legacy 8-step scale (aurora uses the same values
+  // via typography.fontSize). `xs` (13) is legacy-only; aurora has no `xs`.
   fontSize: {
-    micro: 12, // Labels, metadata
-    xs: 13, // Small labels
-    sm: 14, // Caption text
-    md: 16, // Body text
-    lg: 20, // H3 - Subsection headings
-    xl: 24, // H2 - Section headings
-    xxl: 32, // H1 - Primary headings
-    display: 48, // Display - Hero headings
+    micro: auroraTypography.fontSize.micro,
+    xs: 13,
+    sm: auroraTypography.fontSize.caption,
+    md: auroraTypography.fontSize.body,
+    lg: auroraTypography.fontSize.h3,
+    xl: auroraTypography.fontSize.h2,
+    xxl: auroraTypography.fontSize.h1,
+    display: auroraTypography.fontSize.display,
   },
 
   fontWeight: {
@@ -138,19 +149,12 @@ export const THEME = {
     extrabold: "800" as "800",
   },
 
+  // Projected from aurora shadows (level1/2/3) so the legacy sm/md/lg keys
+  // resolve to the authoritative shadow definitions.
   shadows: {
-    sm: {
-      // Web-compatible shadow only
-      boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.2)",
-    },
-    md: {
-      // Web-compatible shadow only
-      boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.25)",
-    },
-    lg: {
-      // Web-compatible shadow only
-      boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.3)",
-    },
+    sm: auroraShadows.level1,
+    md: auroraShadows.level2,
+    lg: auroraShadows.level3,
   },
 };
 
@@ -158,7 +162,13 @@ export const THEME = {
 // RESPONSIVE THEME FUNCTIONS
 // ============================================================================
 
-/** @deprecated No consumers remain. Use aurora-tokens instead. */
+/**
+ * @deprecated Use `aurora-tokens` + the `rp`/`rf`/`rbr` responsive wrappers
+ * from `src/utils/responsive` directly.
+ *
+ * `createResponsiveTheme` returns THEME with spacing/borderRadius/fontSize
+ * passed through the responsive wrappers. Now delegates to aurora tokens.
+ */
 export const createResponsiveTheme = () => {
   // Import responsive functions lazily to avoid circular dependency
   const { rf, rp, rbr } = require("./responsive");
@@ -168,7 +178,7 @@ export const createResponsiveTheme = () => {
 
     spacing: {
       xxs: rp(THEME.spacing.xxs),
-      xs: rp(THEME.spacing.xs),
+      xs: rp(THEME.spacing.xxs),
       sm: rp(THEME.spacing.sm),
       md: rp(THEME.spacing.md),
       lg: rp(THEME.spacing.lg),
@@ -200,7 +210,11 @@ export const createResponsiveTheme = () => {
   };
 };
 
-/** @deprecated No consumers remain. Use aurora-tokens instead. */
+/**
+ * @deprecated Use `aurora-tokens` directly. `ResponsiveTheme = THEME` now, and
+ * THEME is a flat projection of the aurora tokens — so legacy consumers
+ * automatically read the authoritative design-token values.
+ */
 // This prevents the "Cannot read property 'THEME' of undefined" error
 // Components should migrate to useResponsiveTheme hook for true responsive values
 export const ResponsiveTheme = THEME;

@@ -533,8 +533,11 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
 
       try {
         // Single source of truth for resume: the persisted workoutProgress entry.
-        // currentWorkoutSession is cleared on exit, so we never rely on stale
-        // in-memory state where exercises[].completed was never updated.
+        // currentWorkoutSession is now PERSISTED (P3-20) so it survives cold
+        // restarts carrying the actual logged set values; it's cleared only on
+        // completion or new-day reset. We prefer workoutProgress (the percent +
+        // exerciseIndex) as the resume gate, and read currentWorkoutSession for
+        // the set-level data only when it matches this workout.
         const savedProgress = useFitnessStore
           .getState()
           .getWorkoutProgress(workout.id);

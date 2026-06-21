@@ -1,19 +1,35 @@
+/**
+ * FitAI — Exercise Instruction Modal (Aurora)
+ *
+ * Bottom sheet showing step-by-step instructions + exercise details (muscles,
+ * equipment, body parts, tips) for the current exercise.
+ *
+ * Aurora modernization:
+ *  - Flat RN `Modal animationType="slide"` → shared `BottomSheet` (slide-up +
+ *    drag-to-dismiss + glass surface + close button handled by the sheet).
+ *  - Text "X" close → BottomSheet's built-in close (Ionicons chevron handled
+ *    internally; the sheet title shows the exercise name).
+ *  - De-duplicated the 4-tip block — now renders the shared `ExerciseTipsCard`
+ *    (also used by ExerciseDetails), so the tips live in one place.
+ *  - Hardcoded colors → aurora tokens.
+ */
 import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  Modal,
   ScrollView,
-  TouchableOpacity,
-  // Image imported from expo-image below
-  SafeAreaView,
 } from "react-native";
 import { Image } from "expo-image";
-import { Button } from "../ui";
-import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rp, rbr, rh, rs } from "../../utils/responsive";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  BottomSheet,
+  AnimatedPressable,
+} from "../ui/aurora";
+import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
+import { rf, rp, rh } from "../../utils/responsive";
 import { exerciseFilterService } from "../../services/exerciseFilterService";
+import { ExerciseTipsCard } from "./instruction/ExerciseTipsCard";
 
 interface ExerciseInstructionModalProps {
   isVisible: boolean;
@@ -21,9 +37,6 @@ interface ExerciseInstructionModalProps {
   exerciseId: string;
   exerciseName?: string;
 }
-
-// REMOVED: Module-level Dimensions.get() causes crash
-// const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 export const ExerciseInstructionModal: React.FC<
   ExerciseInstructionModalProps
@@ -35,30 +48,6 @@ export const ExerciseInstructionModal: React.FC<
   // Direct lookup by exercise ID
   const exercise = exerciseFilterService.getExerciseById(exerciseId);
   const displayName = exerciseName || exercise?.name || "Exercise";
-
-  if (!isVisible) return null;
-
-  const renderHeader = () => (
-    <View style={styles.header}>
-      <View style={styles.headerContent}>
-        <Text style={styles.modalTitle} numberOfLines={2}>
-          {displayName}
-        </Text>
-        <View style={styles.qualityBadge}>
-          <Text style={styles.qualityBadgeText}>Verified</Text>
-        </View>
-      </View>
-      <TouchableOpacity
-        style={styles.closeButton}
-        onPress={onClose}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        accessibilityRole="button"
-        accessibilityLabel={`Close ${displayName}`}
-      >
-        <Text style={styles.closeButtonText}>X</Text>
-      </TouchableOpacity>
-    </View>
-  );
 
   const renderGifSection = () => {
     if (!exercise?.gifUrl) return null;
@@ -76,9 +65,12 @@ export const ExerciseInstructionModal: React.FC<
 
   const renderTabs = () => (
     <View style={styles.tabContainer}>
-      <TouchableOpacity
-        style={[styles.tab, activeTab === "instructions" && styles.activeTab]}
+      <AnimatedPressable
         onPress={() => setActiveTab("instructions")}
+        scaleValue={0.96}
+        springConfig="snappy"
+        hapticType="selection"
+        style={[styles.tab, activeTab === "instructions" && styles.activeTab]}
         accessibilityRole="button"
         accessibilityLabel="Show instructions tab"
       >
@@ -90,10 +82,13 @@ export const ExerciseInstructionModal: React.FC<
         >
           Instructions
         </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.tab, activeTab === "details" && styles.activeTab]}
+      </AnimatedPressable>
+      <AnimatedPressable
         onPress={() => setActiveTab("details")}
+        scaleValue={0.96}
+        springConfig="snappy"
+        hapticType="selection"
+        style={[styles.tab, activeTab === "details" && styles.activeTab]}
         accessibilityRole="button"
         accessibilityLabel="Show details tab"
       >
@@ -105,7 +100,7 @@ export const ExerciseInstructionModal: React.FC<
         >
           Details
         </Text>
-      </TouchableOpacity>
+      </AnimatedPressable>
     </View>
   );
 
@@ -113,7 +108,7 @@ export const ExerciseInstructionModal: React.FC<
     if (!exercise?.instructions?.length) {
       return (
         <View style={styles.noDataContainer}>
-          <Text style={styles.noDataEmoji}>i</Text>
+          <Ionicons name="information-circle-outline" size={rf(48)} color={colors.text.tertiary} />
           <Text style={styles.noDataText}>
             No detailed instructions available
           </Text>
@@ -148,7 +143,7 @@ export const ExerciseInstructionModal: React.FC<
     if (!exercise) {
       return (
         <View style={styles.noDataContainer}>
-          <Text style={styles.noDataEmoji}>?</Text>
+          <Ionicons name="help-circle-outline" size={rf(48)} color={colors.text.tertiary} />
           <Text style={styles.noDataText}>No exercise details available</Text>
         </View>
       );
@@ -224,334 +219,215 @@ export const ExerciseInstructionModal: React.FC<
           </View>
         )}
 
-        {/* Exercise Tips */}
-        <View style={styles.detailSection}>
-          <Text style={styles.detailSectionTitle}>Tips</Text>
-          <View style={styles.tipContainer}>
-            <Text style={styles.tipText}>
-              - Focus on proper form over speed or weight
-            </Text>
-            <Text style={styles.tipText}>
-              - Control the movement throughout the full range of motion
-            </Text>
-            <Text style={styles.tipText}>
-              - Breathe properly - exhale on exertion, inhale on release
-            </Text>
-            <Text style={styles.tipText}>
-              - Stop if you feel pain or discomfort
-            </Text>
-          </View>
-        </View>
+        {/* Tips — shared ExerciseTipsCard (de-duplicated) */}
+        <ExerciseTipsCard />
       </View>
     );
   };
 
   return (
-    <Modal
+    <BottomSheet
       visible={isVisible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
+      onClose={onClose}
+      title={displayName}
+      showCloseButton
+      dismissOnDrag
+      closeOnOverlayPress
     >
-      <SafeAreaView style={styles.modalContainer}>
-        {renderHeader()}
-
-        <ScrollView
-          style={styles.content}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-        >
-          {renderGifSection()}
-          {renderTabs()}
-
-          <View style={styles.tabContent}>
-            {activeTab === "instructions"
-              ? renderInstructions()
-              : renderDetails()}
-          </View>
-        </ScrollView>
-
-        <View style={styles.footer}>
-          <Button
-            title="Got It!"
-            onPress={onClose}
-            variant="primary"
-            style={styles.footerButton}
-          />
+      <View style={styles.verifiedRow}>
+        <View style={styles.qualityBadge}>
+          <Ionicons name="checkmark-circle" size={rf(12)} color={colors.success.DEFAULT} />
+          <Text style={styles.qualityBadgeText}>Verified</Text>
         </View>
-      </SafeAreaView>
-    </Modal>
+      </View>
+
+      {renderGifSection()}
+      {renderTabs()}
+
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        <View style={styles.tabContent}>
+          {activeTab === "instructions"
+            ? renderInstructions()
+            : renderDetails()}
+        </View>
+      </ScrollView>
+    </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  modalContainer: {
-    flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+  verifiedRow: {
+    flexDirection: "row",
+    marginBottom: rp(spacing.sm),
   },
-
-  header: {
+  qualityBadge: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.surface,
+    gap: rp(spacing.xxs),
+    backgroundColor: `${colors.success.DEFAULT}20`,
+    paddingHorizontal: rp(spacing.sm),
+    paddingVertical: rp(spacing.xxs),
+    borderRadius: borderRadius.sm,
   },
-
-  headerContent: {
-    flex: 1,
-    marginRight: ResponsiveTheme.spacing.md,
-  },
-
-  modalTitle: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
-  },
-
-  qualityBadge: {
-    backgroundColor: ResponsiveTheme.colors.success + "20",
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
-    alignSelf: "flex-start",
-  },
-
   qualityBadgeText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.success,
-    fontWeight: "600",
+    fontSize: rf(typography.fontSize.micro),
+    color: colors.success.DEFAULT,
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
-
-  closeButton: {
-    width: Math.max(rs(40), 44),
-    height: Math.max(rs(40), 44),
-    borderRadius: Math.max(rbr(20), 22),
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  closeButtonText: {
-    fontSize: rf(18),
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: "bold",
-  },
-
   content: {
     flex: 1,
   },
-
   gifSection: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    paddingVertical: ResponsiveTheme.spacing.lg,
+    backgroundColor: colors.glass.backgroundDark,
+    paddingVertical: rp(spacing.lg),
     alignItems: "center",
+    borderRadius: borderRadius.lg,
+    marginBottom: rp(spacing.md),
   },
-
   modalGif: {
-    width: "80%", // Use percentage instead of screenWidth
+    width: "80%",
     height: rh(200),
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
   },
-
   tabContainer: {
     flexDirection: "row",
-    backgroundColor: ResponsiveTheme.colors.surface,
-    marginHorizontal: ResponsiveTheme.spacing.lg,
-    marginTop: ResponsiveTheme.spacing.lg,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: ResponsiveTheme.spacing.xs,
+    backgroundColor: colors.glass.backgroundDark,
+    borderRadius: borderRadius.lg,
+    padding: rp(spacing.xxs),
+    marginBottom: rp(spacing.md),
   },
-
   tab: {
     flex: 1,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    minHeight: 44,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: rp(spacing.sm),
+    minHeight: rp(44),
+    borderRadius: borderRadius.md,
     alignItems: "center",
     justifyContent: "center",
   },
-
   activeTab: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary.DEFAULT,
   },
-
   tabText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.semibold) as any,
+    color: colors.text.secondary,
   },
-
   activeTabText: {
-    color: ResponsiveTheme.colors.surface,
+    color: colors.text.primary,
   },
-
   tabContent: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingBottom: rp(spacing.xl),
   },
-
   instructionsContainer: {
-    paddingBottom: ResponsiveTheme.spacing.xl,
+    paddingBottom: rp(spacing.xl),
   },
-
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    fontSize: rf(typography.fontSize.h3),
+    fontWeight: String(typography.fontWeight.bold) as any,
+    color: colors.text.primary,
+    marginBottom: rp(spacing.lg),
   },
-
   instructionItem: {
     flexDirection: "row",
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: rp(spacing.md),
     alignItems: "flex-start",
   },
-
   stepNumber: {
-    width: rs(28),
-    height: rs(28),
-    borderRadius: rbr(14),
-    backgroundColor: ResponsiveTheme.colors.primary,
+    width: rp(28),
+    height: rp(28),
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary.DEFAULT,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: rp(spacing.md),
     marginTop: rp(2),
   },
-
   stepNumberText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: "bold",
-    color: ResponsiveTheme.colors.surface,
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.bold) as any,
+    color: colors.text.primary,
   },
-
   instructionText: {
     flex: 1,
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.text,
+    fontSize: rf(typography.fontSize.body),
+    color: colors.text.primary,
     lineHeight: rf(22),
   },
-
   detailsContainer: {
-    paddingBottom: ResponsiveTheme.spacing.xl,
+    paddingBottom: rp(spacing.xl),
   },
-
   detailSection: {
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: rp(spacing.xl),
   },
-
   detailSectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: rf(typography.fontSize.body),
+    fontWeight: String(typography.fontWeight.bold) as any,
+    color: colors.text.primary,
+    marginBottom: rp(spacing.md),
   },
-
   chipContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: ResponsiveTheme.spacing.sm,
+    gap: rp(spacing.sm),
   },
-
   chip: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.sm),
+    borderRadius: borderRadius.lg,
   },
-
   primaryChip: {
-    backgroundColor: ResponsiveTheme.colors.primary + "20",
+    backgroundColor: `${colors.primary.DEFAULT}20`,
   },
-
   primaryChipText: {
-    color: ResponsiveTheme.colors.primary,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: "600",
+    color: colors.primary.DEFAULT,
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.semibold) as any,
     textTransform: "capitalize",
   },
-
   secondaryChip: {
-    backgroundColor: ResponsiveTheme.colors.warning + "20",
+    backgroundColor: `${colors.warning.DEFAULT}20`,
   },
-
   secondaryChipText: {
-    color: ResponsiveTheme.colors.warning,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: "600",
+    color: colors.warning.DEFAULT,
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.semibold) as any,
     textTransform: "capitalize",
   },
-
   equipmentChip: {
-    backgroundColor: ResponsiveTheme.colors.info + "20",
+    backgroundColor: `${colors.info.DEFAULT}20`,
   },
-
   equipmentChipText: {
-    color: ResponsiveTheme.colors.info,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: "600",
+    color: colors.info.DEFAULT,
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.semibold) as any,
     textTransform: "capitalize",
   },
-
   bodyPartChip: {
-    backgroundColor: ResponsiveTheme.colors.success + "20",
+    backgroundColor: `${colors.success.DEFAULT}20`,
   },
-
   bodyPartChipText: {
-    color: ResponsiveTheme.colors.success,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: "600",
+    color: colors.success.DEFAULT,
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.semibold) as any,
     textTransform: "capitalize",
   },
-
-  tipContainer: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    padding: ResponsiveTheme.spacing.lg,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-  },
-
-  tipText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.text,
-    lineHeight: rf(20),
-    marginBottom: ResponsiveTheme.spacing.sm,
-  },
-
   noDataContainer: {
     alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.xl,
+    paddingVertical: rp(spacing.xl),
   },
-
-  noDataEmoji: {
-    fontSize: rf(48),
-    marginBottom: ResponsiveTheme.spacing.md,
-  },
-
   noDataText: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: rf(typography.fontSize.body),
+    fontWeight: String(typography.fontWeight.semibold) as any,
+    color: colors.text.secondary,
+    marginBottom: rp(spacing.sm),
   },
-
   noDataSubtext: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.text.secondary,
     textAlign: "center",
-  },
-
-  footer: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.surface,
-  },
-
-  footerButton: {
-    width: "100%",
   },
 });

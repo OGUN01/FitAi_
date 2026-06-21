@@ -410,11 +410,11 @@ const EQUIPMENT_MAP: Record<string, string> = {
   "resistance-band": "resistance band",
   "cable-machine": "cable",
   "stationary-bike": "stationary bike",
-  "pull-up-bar": "body weight", // Pull-up bar is bodyweight exercise
-  "yoga-mat": "body weight", // Yoga mat implies bodyweight
-  bench: "body weight", // Bench is implied with barbell
-  treadmill: "body weight", // Cardio equipment, not needed for strength
-  "rowing-machine": "body weight", // Cardio equipment
+  "pull-up-bar": "body weight",    // Pull-up exercises in DB use body weight
+  "yoga-mat": "body weight",        // Yoga mat implies bodyweight movement
+  bench: "body weight",              // Bench is implied with barbell
+  treadmill: "leverage machine",    // DB: "walking on incline treadmill" uses leverage machine
+  "rowing-machine": "leverage machine", // Closest match in DB for rowing cardio
 
   // Already correct format
   "body weight": "body weight",

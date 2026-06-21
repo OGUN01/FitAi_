@@ -19,6 +19,9 @@ jest.mock("react-native", () => ({
     })),
     exitApp: jest.fn(),
   },
+  Dimensions: {
+    get: () => ({ width: 393, height: 852 }),
+  },
   Platform: {
     OS: "ios",
   },
@@ -88,16 +91,24 @@ jest.mock("../../utils/responsive", () => ({
   rh: (value: number) => value,
   rw: (value: number) => value,
   rs: (value: number) => value,
+  rbr: (value: number) => value,
 }));
 
 jest.mock("../../utils/constants", () => ({
   ResponsiveTheme: {
     colors: {
       background: "#000",
+      backgroundTertiary: "#252a3a",
       text: "#fff",
       textSecondary: "#ccc",
+      primary: "#0af",
+      error: "#f00",
       border: "#333",
     },
+    spacing: { xxs: 2, xs: 4, sm: 8, md: 16, lg: 20, xl: 24, xxl: 32 },
+    borderRadius: { xs: 2, sm: 4, md: 8, lg: 16, xl: 16, xxl: 24, full: 9999 },
+    fontSize: { xs: 10, sm: 12, md: 14, lg: 16, xl: 20, xxl: 24 },
+    fontWeight: { regular: "400", medium: "500", semibold: "600", bold: "700" },
   },
 }));
 

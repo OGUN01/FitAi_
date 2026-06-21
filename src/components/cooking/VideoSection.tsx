@@ -2,17 +2,17 @@ import React from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Linking,
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { CookingVideo } from "../../services/youtubeVideoService";
 import { colors } from "../../theme/aurora-tokens";
-import { ResponsiveTheme } from '../../utils/constants';
 import { rf, rp, rbr } from '../../utils/responsive';
+import { GlassCard } from "../ui/aurora";
+import { AnimatedPressable } from "../ui/aurora";
+import { AuroraSpinner } from "../ui/aurora";
 
 interface VideoSectionProps {
   cookingVideo: CookingVideo | null;
@@ -29,27 +29,31 @@ export default function VideoSection({
 }: VideoSectionProps) {
   if (isLoadingVideo) {
     return (
-      <View style={styles.videoSection}>
+      <GlassCard padding="none" borderRadius="xl" style={styles.videoSection}>
         <View style={styles.videoPlaceholder}>
-          <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
+          <AuroraSpinner size="lg" theme="primary" />
           <Text style={styles.loadingText}>Loading cooking video...</Text>
         </View>
-      </View>
+      </GlassCard>
     );
   }
 
   if (cookingVideo) {
     return (
-      <View style={styles.videoSection}>
+      <GlassCard padding="lg" borderRadius="xl" style={styles.videoSection}>
         <View style={styles.videoContainer}>
-          <TouchableOpacity
+          <AnimatedPressable
             style={styles.videoPreview}
             onPress={() =>
               Linking.openURL(
                 `https://www.youtube.com/watch?v=${cookingVideo.id}`,
               )
             }
-            activeOpacity={0.8}
+            scaleValue={0.98}
+            springConfig="smooth"
+            hapticType="light"
+            accessibilityLabel="Open cooking video on YouTube"
+            accessibilityRole="button"
           >
             {cookingVideo.thumbnails && cookingVideo.thumbnails.length > 0 ? (
               <Image
@@ -67,7 +71,7 @@ export default function VideoSection({
               </View>
             )}
             <View style={styles.playButton}>
-              <Ionicons name="play" size={32} color={ResponsiveTheme.colors.white} />
+              <Ionicons name="play" size={32} color={colors.text.primary} />
             </View>
             <View style={styles.videoDuration}>
               <Text style={styles.videoDurationText}>
@@ -75,16 +79,21 @@ export default function VideoSection({
                 {(cookingVideo.lengthSeconds % 60).toString().padStart(2, "0")}
               </Text>
             </View>
-          </TouchableOpacity>
+          </AnimatedPressable>
           <Text style={styles.videoTitle}>{cookingVideo.title}</Text>
           <Text style={styles.videoAuthor}>by {cookingVideo.author}</Text>
-          <TouchableOpacity
+          <AnimatedPressable
             style={styles.watchVideoButton}
             onPress={() =>
               Linking.openURL(
                 `https://www.youtube.com/watch?v=${cookingVideo.id}`,
               )
             }
+            scaleValue={0.96}
+            springConfig="smooth"
+            hapticType="light"
+            accessibilityLabel="Watch cooking tutorial on YouTube"
+            accessibilityRole="button"
           >
             <Ionicons
               name="play-circle"
@@ -92,38 +101,45 @@ export default function VideoSection({
               color={colors.primary.DEFAULT}
             />
             <Text style={styles.watchVideoText}>Watch Cooking Tutorial</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
-      </View>
+      </GlassCard>
     );
   }
 
   return (
-    <View style={styles.videoSection}>
+    <GlassCard padding="none" borderRadius="xl" style={styles.videoSection}>
       <View style={styles.videoError}>
         <Ionicons name="videocam-off" size={48} color={colors.text.secondary} />
         <Text style={styles.errorText}>{videoError}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
+        <AnimatedPressable
+          style={styles.retryButton}
+          onPress={onRetry}
+          scaleValue={0.96}
+          springConfig="snappy"
+          hapticType="light"
+          accessibilityLabel="Retry loading video"
+          accessibilityRole="button"
+        >
           <Text style={styles.retryButtonText}>Try Again</Text>
-        </TouchableOpacity>
+        </AnimatedPressable>
       </View>
-    </View>
+    </GlassCard>
   );
 }
 
 const styles = StyleSheet.create({
   videoSection: {
-    backgroundColor: colors.background.secondary,
     marginBottom: rp(16),
   },
   videoContainer: {
-    padding: rp(16),
+    width: "100%",
   },
   videoPreview: {
     height: 200,
     borderRadius: rbr(12),
     overflow: "hidden",
-    backgroundColor: ResponsiveTheme.colors.black,
+    backgroundColor: colors.background.DEFAULT,
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
@@ -145,7 +161,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: rbr(32),
-    backgroundColor: ResponsiveTheme.colors.overlayDark,
+    backgroundColor: "rgba(0, 0, 0, 0.55)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -159,7 +175,7 @@ const styles = StyleSheet.create({
     borderRadius: rbr(4),
   },
   videoDurationText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.text.primary,
     fontSize: rf(12),
     fontWeight: "600",
   },
@@ -211,7 +227,7 @@ const styles = StyleSheet.create({
     borderRadius: rbr(8),
   },
   retryButtonText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.text.primary,
     fontSize: rf(16),
     fontWeight: "600",
   },

@@ -162,7 +162,10 @@ export const borderRadius = {
   full: 9999,
 } as const;
 
-const isWeb = Platform.OS === 'web';
+// Defensive Platform access: some test suites mock `react-native` minimally
+// without exporting `Platform`. Guard so the token module (imported at load by
+// `utils/constants.ts`) never crashes — default to native behavior off-web.
+const isWeb = typeof Platform !== 'undefined' && Platform?.OS === 'web';
 
 // Helper to create platform-appropriate shadow styles
 // On web, only boxShadow is used (deprecated shadow* props cause warnings)

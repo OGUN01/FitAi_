@@ -2,8 +2,10 @@
 
 ## Complete Single Source of Truth Architecture
 
-> **Last Updated**: 2026-01-10
+> **Last Updated**: 2026-06-20 (Wave 2 — Google Fit removed; Health Connect is the sole Android health-data path)
 > **Migrations Applied**: `create_daily_health_logs`, `create_user_streaks`
+
+> **⚠️ Wave 2 health-data status:** Android health metrics (steps, heart rate, calories, sleep, HRV, SpO2, body fat, etc.) from Health Connect are currently **store-only / ephemeral** in `healthDataStore` and are NOT written to `daily_health_logs` or any other Supabase table. The runtime `data_source` union is `FitAI | HealthKit | HealthConnect | Manual` (GoogleFit removed from the union in Wave 2 — Google Fit was deleted entirely; REST API deprecated, shutdown end-2026). The single health-to-Supabase path today is `weight` → `profileStore.bodyAnalysis.current_weight_kg` → `body_analysis.current_weight_kg`. A dedicated `health_metrics` Supabase table for daily history is **planned for Wave 3 (not yet implemented)** — until it ships, treat the `daily_health_logs` rows below as the hydration/streak/analytics schema, not the live HC ingestion target.
 
 ---
 
@@ -62,7 +64,10 @@ CREATE TABLE daily_health_logs (
   calories_goal INTEGER,                 -- SINGLE SOURCE
   
   -- Metadata
-  data_source TEXT DEFAULT 'manual',     -- apple_health, google_fit, etc.
+  data_source TEXT DEFAULT 'manual',     -- FitAI | HealthKit (iOS) | HealthConnect (Android) | Manual
+                                          -- NOTE: GoogleFit was REMOVED from this union in Wave 2
+                                          -- (Google Fit deleted; REST API deprecated, shutdown end-2026).
+                                          -- Health Connect metrics are NOT yet written here — see Wave 2 note above.
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ,
   

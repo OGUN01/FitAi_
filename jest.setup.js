@@ -14,6 +14,21 @@ jest.mock("react-native-css-interop", () => ({
   remapProps: jest.fn(),
 }));
 
+// babel-preset-expo with jsxImportSource: 'nativewind' rewrites all JSX to
+// `nativewind/jsx-runtime` -> `react-native-css-interop/jsx-runtime`. Because
+// react-native-css-interop has no `exports` map, Jest treats the subpath as a
+// distinct module from the root — the root mock above does NOT cover it. The
+// real subpath loads the css-interop runtime which calls Appearance.getColorScheme()
+// at import time and throws `Cannot read properties of undefined (reading 'getColorScheme')`.
+// Mock both jsx runtime subpaths as pass-throughs to React's real jsx runtime so
+// components render normally while skipping the css-interop runtime entirely.
+jest.mock("react-native-css-interop/jsx-runtime", () => {
+  return require("react/jsx-runtime");
+});
+jest.mock("react-native-css-interop/jsx-dev-runtime", () => {
+  return require("react/jsx-dev-runtime");
+});
+
 // Mock react-native-svg to prevent Touchable.Mixin errors in test environment
 jest.mock("react-native-svg", () => {
   const React = require("react");
@@ -107,11 +122,13 @@ jest.mock("react-native-reanimated", () => {
     useSharedValue: (value) => ({ value }),
     useAnimatedStyle: (updater) => updater(),
     useAnimatedProps: (updater) => updater(),
+    useAnimatedGestureHandler: (handler) => handler,
     withSpring: (value) => value,
     withTiming: (value) => value,
     withDelay: (_delay, value) => value,
     withRepeat: (value) => value,
     withSequence: (...values) => values[values.length - 1],
+    cancelAnimation: (value) => { value.value = 0; },
     interpolate,
     interpolateColor: (_value, _inputRange, outputRange) => outputRange?.[0],
     runOnJS: (fn) => fn,
@@ -147,21 +164,174 @@ jest.mock("@react-native-community/netinfo", () => ({
 }));
 
 // Mock react-native-gesture-handler
-jest.mock("react-native-gesture-handler", () => ({
-  State: {},
-  PanGestureHandler: "PanGestureHandler",
-  TapGestureHandler: "TapGestureHandler",
-  TouchableOpacity: "TouchableOpacity",
-  TouchableHighlight: "TouchableHighlight",
-  TouchableWithoutFeedback: "TouchableWithoutFeedback",
-  NativeViewGestureHandler: "NativeViewGestureHandler",
-  Directions: {},
-}));
+jest.mock("react-native-gesture-handler", () => {
+  const React = require("react");
+  // GestureDetector is a HOC that wraps a gesture-aware component; in tests
+  // just render children directly. Without this export, components importing
+  // { GestureDetector } resolve to undefined → "Element type is invalid".
+  const GestureDetector = ({ children }: { children: React.ReactNode }) =>
+    React.createElement(React.Fragment, null, children);
+  return {
+    State: {},
+    PanGestureHandler: "PanGestureHandler",
+    TapGestureHandler: "TapGestureHandler",
+    TouchableOpacity: "TouchableOpacity",
+    TouchableHighlight: "TouchableHighlight",
+    TouchableWithoutFeedback: "TouchableWithoutFeedback",
+    NativeViewGestureHandler: "NativeViewGestureHandler",
+    Directions: {},
+    GestureHandlerRootView: ({ children }) =>
+      React.createElement("GestureHandlerRootView", null, children),
+    GestureDetector,
+    // Gesture builders are chainable (e.g. Gesture.LongPress().minDuration(500)
+    // .onEnd(...)). Each builder returns an object whose methods return `this`
+    // so any chain resolves; the terminal value is a plain object the
+    // GestureDetector mock ignores.
+    Gesture: new Proxy(
+      {},
+      {
+        get: () => () =>
+          new Proxy(
+            function () {
+              return {};
+            },
+            {
+              get: (_t, prop) =>
+                prop === "then" || prop === "catch"
+                  ? undefined // not a thenable
+                  : () =>
+                      new Proxy(function () {}, { get: () => () => ({}) }),
+            },
+          ),
+      },
+    ),
+  };
+});
 
 // Mock AsyncStorage
 jest.mock("@react-native-async-storage/async-storage", () =>
   require("@react-native-async-storage/async-storage/jest/async-storage-mock"),
 );
+
+// Mock expo-font — the real ExpoFontLoader calls requireNativeModule('ExpoFontLoader')
+// at import time, which throws in the node test env. @expo/vector-icons imports
+// expo-font, so any suite rendering icon components without a local vector-icons
+// mock would crash here. Provide a no-op font loader so fonts are treated as
+// always loaded.
+jest.mock("expo-font", () => ({
+  isLoaded: () => true,
+  isLoading: () => false,
+  getLoadedFonts: () => [],
+  loadAsync: jest.fn(() => Promise.resolve()),
+  unloadAllAsync: jest.fn(() => Promise.resolve()),
+  unloadAsync: jest.fn(() => Promise.resolve()),
+  FontDisplay: { AUTO: "auto", BLOCK: "block", SWAP: "swap", FALLBACK: "fallback", OPTIONAL: "optional" },
+}));
+
+// Mock @expo/vector-icons globally — the real icon sets call into the
+// RNVectorIconsManager native module at import time, which is unavailable in the
+// node test env. Most test files mock this locally as { Ionicons: () => null };
+// this global mock covers the suites that don't (e.g. AnalyticsScreen,
+// CreateWorkoutScreen, MainNavigation). Local jest.mock calls take precedence.
+jest.mock("@expo/vector-icons", () => {
+  const React = require("react");
+  const NoopIcon = (props) =>
+    React.createElement("Icon", props, props.children);
+  return new Proxy(
+    { Ionicons: NoopIcon },
+    { get: () => NoopIcon },
+  );
+});
+
+// Mock expo-constants — the real module reads NativeModules.EXDevLauncher at
+// import time, which is undefined in the node test env. src/config/api.ts reads
+// Constants.expoConfig?.extra, so provide a minimal shape. Local mocks override.
+jest.mock("expo-constants", () => ({
+  __esModule: true,
+  default: {
+    expoConfig: { extra: {} },
+    manifest: {},
+    releaseChannel: "default",
+    name: "FitAI",
+    version: "0.0.1",
+    sessionId: "test-session",
+    installationId: "test-installation",
+    isDevice: false,
+  },
+  ExpoConfig: {},
+  ExecutionEnvironment: { Store: "store", Standalone: "standalone" },
+}));
+
+// Mock expo-secure-store — the real module calls requireNativeModule('ExpoSecureStore')
+// at import time, which throws in the node test env. src/services/supabase.ts uses
+// getItemAsync/setItemAsync/deleteItemAsync for session persistence. An in-memory
+// map mirrors the real async API without touching native storage.
+jest.mock("expo-secure-store", () => {
+  const store = new Map();
+  return {
+    AFTER_FIRST_UNLOCK: 1,
+    AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY: 2,
+    ALWAYS: 3,
+    ALWAYS_THIS_DEVICE_ONLY: 4,
+    WHEN_UNLOCKED: 5,
+    WHEN_UNLOCKED_THIS_DEVICE_ONLY: 6,
+    WHEN_PASSCODE_SET_THIS_DEVICE_ONLY: 7,
+    getItemAsync: jest.fn(async (key) => store.get(key) ?? null),
+    setItemAsync: jest.fn(async (key, value) => {
+      store.set(key, String(value));
+    }),
+    deleteItemAsync: jest.fn(async (key) => {
+      store.delete(key);
+    }),
+    isAvailableAsync: jest.fn(async () => true),
+  };
+});
+
+// Mock expo-linear-gradient globally so any component importing LinearGradient
+// renders without loading expo-modules-core's NativeViewManagerAdapter (which
+// requires NativeUnimoduleProxy, unavailable in the node test env). Individual
+// test files that need a richer mock can override via their own jest.mock.
+jest.mock("expo-linear-gradient", () => {
+  const React = require("react");
+  const LinearGradient = ({ children }) =>
+    React.createElement("LinearGradient", null, children);
+  return { LinearGradient };
+});
+
+// Mock expo-blur globally — the real BlurView calls requireNativeModule
+// ('BlurViewModule') at import time, which throws in the node test env.
+// GlassView (used by GlassCard / BottomSheet) imports { BlurView } from
+// 'expo-blur'. Render a plain View so glass surfaces still mount in tests.
+jest.mock("expo-blur", () => {
+  const React = require("react");
+  const BlurView = ({ children, ...props }) =>
+    React.createElement("BlurView", props, children);
+  return { BlurView };
+});
+
+// Mock react-native-safe-area-context — useSafeAreaInsets is called by
+// BottomSheet (and other aurora primitives). Return zero insets so layout
+// math is deterministic in tests.
+jest.mock("react-native-safe-area-context", () => {
+  const React = require("react");
+  const insets = { top: 0, bottom: 0, left: 0, right: 0 };
+  const SafeAreaProvider = ({ children }) =>
+    React.createElement("SafeAreaProvider", null, children);
+  const SafeAreaConsumer = ({ children }) => children(insets);
+  return {
+    SafeAreaProvider,
+    SafeAreaConsumer,
+    SafeAreaView: ({ children, ...props }) =>
+      React.createElement("SafeAreaView", props, children),
+    useSafeAreaInsets: () => insets,
+    useSafeAreaFrame: () => ({
+      x: 0,
+      y: 0,
+      width: 393,
+      height: 852,
+    }),
+  };
+});
 
 // Mock Expo modules
 jest.mock("expo-camera", () => {
@@ -215,14 +385,15 @@ jest.mock("./src/stores", () => ({
 }));
 
 // Mock profileStore
-jest.mock("@/stores/profileStore", () => ({
-  getProfileStoreState: jest.fn(() => ({
-    personalInfo: { country: "India" },
-  })),
-  useProfileStore: jest.fn(() => ({
-    personalInfo: { country: "India" },
-  })),
-}));
+jest.mock("@/stores/profileStore", () => {
+  const state = { personalInfo: { country: "India" } };
+  const fn = jest.fn(() => state);
+  fn.getState = jest.fn(() => state);
+  return {
+    getProfileStoreState: jest.fn(() => state),
+    useProfileStore: fn,
+  };
+});
 
 // Mock environment variables
 process.env.EXPO_PUBLIC_SUPABASE_URL = "https://test.supabase.co";

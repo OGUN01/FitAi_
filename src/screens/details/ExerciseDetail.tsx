@@ -1,19 +1,21 @@
 import React, { useState } from "react";
 import {
   View,
-  Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
-  ActivityIndicator,
 } from "react-native";
 import { Button } from "../../components/ui";
-import { ResponsiveTheme } from "../../utils/constants";
-import { rf } from '../../utils/responsive';
+import {
+  AuroraBackground,
+  AuroraSpinner,
+  GlassHeader,
+  EmptyState,
+} from "../../components/ui/aurora";
+import { colors, spacing } from "../../theme/aurora-tokens";
+import { rp, rf } from "../../utils/responsive";
 import { useExerciseData } from "./hooks/useExerciseData";
 import { useExerciseVisual } from "./hooks/useExerciseVisual";
 import { useStepAnimation } from "./hooks/useStepAnimation";
-import { ExerciseHeader } from "./components/ExerciseHeader";
 import { ExerciseInfoCard } from "./components/ExerciseInfoCard";
 import { ExerciseAnimation } from "./components/ExerciseAnimation";
 import { InstructionsList } from "./components/InstructionsList";
@@ -62,47 +64,39 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <AuroraBackground theme="space">
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={ResponsiveTheme.colors.primary} />
-          <Text style={styles.loadingText}>Loading exercise...</Text>
+          <AuroraSpinner size="lg" />
         </View>
-      </SafeAreaView>
+      </AuroraBackground>
     );
   }
 
   if (!exercise) {
     return (
-      <SafeAreaView style={styles.container}>
-        <ExerciseHeader
-          onBack={onBack}
-          isFavorited={false}
-          onToggleFavorite={() => {}}
-        />
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>🏋️</Text>
-          <Text style={styles.emptyTitle}>Exercise Not Found</Text>
-          <Text style={styles.emptySubtitle}>
-            This exercise may have been removed or is not available.
-          </Text>
-          <Button
-            title="Go Back"
-            onPress={onBack ?? (() => {})}
-            disabled={!onBack}
-            variant="primary"
-            style={{ marginTop: ResponsiveTheme.spacing.lg }}
+      <AuroraBackground theme="space">
+        <GlassHeader title="Exercise Guide" onBack={onBack} />
+        <View style={styles.emptyWrap}>
+          <EmptyState
+            icon="barbell-outline"
+            title="Exercise Not Found"
+            subtitle="This exercise may have been removed or is not available."
+            ctaText={onBack ? "Go Back" : undefined}
+            onCta={onBack}
           />
         </View>
-      </SafeAreaView>
+      </AuroraBackground>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ExerciseHeader
+    <AuroraBackground theme="space">
+      <GlassHeader
+        title="Exercise Guide"
         onBack={onBack}
-        isFavorited={isFavorited}
-        onToggleFavorite={() => setIsFavorited(!isFavorited)}
+        rightAction={
+          <View style={styles.side} />
+        }
       />
 
       <ScrollView
@@ -153,54 +147,30 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
           fullWidth
         />
       </View>
-    </SafeAreaView>
+    </AuroraBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  loadingText: {
-    marginTop: ResponsiveTheme.spacing.md,
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
-  },
-  emptyContainer: {
+  emptyWrap: {
     flex: 1,
     justifyContent: "center",
-    alignItems: "center",
-    padding: ResponsiveTheme.spacing.xl,
   },
-  emptyIcon: {
-    fontSize: rf(64),
-    marginBottom: ResponsiveTheme.spacing.md,
-  },
-  emptyTitle: {
-    fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
-  },
-  emptySubtitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
-    textAlign: "center",
+  side: {
+    width: rf(44),
   },
   scrollView: {
     flex: 1,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingHorizontal: rp(spacing.md),
   },
   bottomContainer: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: rp(spacing.md),
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.background,
+    borderTopColor: colors.glass.border,
   },
 });

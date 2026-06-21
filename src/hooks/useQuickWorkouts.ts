@@ -28,6 +28,16 @@ export interface QuickWorkoutsHook {
   resumeQuickWorkout: (template: ExtraWorkoutTemplate) => void;
   // eslint-disable-next-line no-unused-vars
   getTemplateStatus: (template: ExtraWorkoutTemplate) => TemplateStatus;
+  /**
+   * P2-cal-ssot: returns the ACTUAL calories burned for a completed extra
+   * workout (from completedSessions — the SSOT for actual burn), or null when
+   * the template has not been completed today. Callers should prefer this over
+   * `template.estimatedCalories` (the pre-generation display-only estimate)
+   * when the status is "completed" — matches the displayCalories pattern used
+   * by TodayWorkoutCard. CLAUDE.md #9: estimatedCalories is pre-generation only.
+   */
+  // eslint-disable-next-line no-unused-vars
+  getCompletedCalories: (template: ExtraWorkoutTemplate) => number | null;
 }
 
 export const useQuickWorkouts = (
@@ -121,6 +131,35 @@ export const useQuickWorkouts = (
     [completedSessions, activeExtraSession],
   );
 
+  // P2-cal-ssot: actual burned calories for a completed extra workout today.
+  // Reads the SAME completedSessions match as getTemplateStatus (duration key)
+  // so the two stay consistent — status==="completed" ⟺ getCompletedCalories
+  // returns a number. Returns the caloriesBurned of the most recent matching
+  // session (null if none), so the card can show actual burn instead of the
+  // pre-generation estimate.
+  const getCompletedCalories = useCallback(
+    (template: ExtraWorkoutTemplate): number | null => {
+      const matching = completedSessions
+        .filter(
+          (s) =>
+            s.type === "extra" &&
+            s.workoutSnapshot.duration === template.duration &&
+            getLocalDateString(s.completedAt) === getLocalDateString(),
+        )
+        .sort(
+          (a, b) =>
+            new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
+        );
+      const latest = matching[0];
+      if (!latest) return null;
+      // caloriesBurned is null until the MET calc runs at completion; a
+      // completed session should have a number. null → fall back to estimate
+      // upstream (return null so the caller keeps estimatedCalories).
+      return latest.caloriesBurned ?? null;
+    },
+    [completedSessions],
+  );
+
   const startQuickWorkout = useCallback(
     async (template: ExtraWorkoutTemplate): Promise<void> => {
       if (!legacyPersonalInfo || !fitnessGoals?.primary_goals?.length) {
@@ -198,6 +237,7 @@ export const useQuickWorkouts = (
     startQuickWorkout,
     resumeQuickWorkout,
     getTemplateStatus,
+    getCompletedCalories,
   };
 };
 

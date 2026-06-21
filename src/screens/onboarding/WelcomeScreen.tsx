@@ -29,17 +29,17 @@ type ViewMode = "welcome" | "signin";
 
 const FEATURE_HIGHLIGHTS = [
   {
-    emoji: "🤖",
+    icon: "sparkles" as keyof typeof Ionicons.glyphMap,
     label: "AI-Powered Workouts",
     description: "Personalized plans that adapt to you",
   },
   {
-    emoji: "🥗",
+    icon: "nutrition" as keyof typeof Ionicons.glyphMap,
     label: "Smart Meal Planning",
     description: "Nutrition guidance built for your goals",
   },
   {
-    emoji: "📊",
+    icon: "stats-chart" as keyof typeof Ionicons.glyphMap,
     label: "Track Your Progress",
     description: "Visualize gains and stay motivated",
   },
@@ -272,7 +272,13 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           <View style={styles.featuresSection}>
             {FEATURE_HIGHLIGHTS.map((feature, index) => (
               <View key={index} style={styles.featureCard}>
-                <Text style={styles.featureEmoji}>{feature.emoji}</Text>
+                <View style={styles.featureIconWrap}>
+                  <Ionicons
+                    name={feature.icon}
+                    size={rf(22)}
+                    color={ResponsiveTheme.colors.primary}
+                  />
+                </View>
                 <View style={styles.featureTextBlock}>
                   <Text style={styles.featureLabel}>{feature.label}</Text>
                   <Text style={styles.featureDescription}>
@@ -400,6 +406,17 @@ const styles = StyleSheet.create({
     fontSize: rf(26),
     width: rw(36),
     textAlign: "center",
+  },
+
+  featureIconWrap: {
+    width: rw(44),
+    height: rw(44),
+    borderRadius: rw(22),
+    backgroundColor: `${ResponsiveTheme.colors.primary}18`,
+    borderWidth: 1.5,
+    borderColor: `${ResponsiveTheme.colors.primary}40`,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   featureTextBlock: {

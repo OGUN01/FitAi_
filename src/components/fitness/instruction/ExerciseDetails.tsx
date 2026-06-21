@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { rf } from "../../../utils/responsive";
+import { ExerciseTipsCard } from "./ExerciseTipsCard";
 
 interface ExerciseDetailsProps {
   exercise?: {
@@ -91,23 +92,8 @@ export const ExerciseDetails: React.FC<ExerciseDetailsProps> = ({
         </View>
       )}
 
-      <View style={styles.detailSection}>
-        <Text style={styles.detailSectionTitle}>Tips</Text>
-        <View style={styles.tipContainer}>
-          <Text style={styles.tipText}>
-            - Focus on proper form over speed or weight
-          </Text>
-          <Text style={styles.tipText}>
-            - Control the movement throughout the full range of motion
-          </Text>
-          <Text style={styles.tipText}>
-            - Breathe properly - exhale on exertion, inhale on release
-          </Text>
-          <Text style={styles.tipText}>
-            - Stop if you feel pain or discomfort
-          </Text>
-        </View>
-      </View>
+      {/* Exercise Tips — shared component (de-duplicated from ExerciseInstructionModal) */}
+      <ExerciseTipsCard />
     </View>
   );
 };

@@ -5,21 +5,29 @@ import {
   StyleSheet,
   SafeAreaView,
   ScrollView,
-  Animated,
-  TouchableOpacity,
   Pressable,
   BackHandler,
   Platform,
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+} from "react-native-reanimated";
+import { AuroraBackground, GlassCard, AnimatedPressable, GlassButton } from "../../components/ui/aurora";
+import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
+import { rp, rf } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
-import { getLocalDateString } from "../../utils/weekUtils";
 import { DayWorkout } from "../../types/ai";
 import { ExerciseGifPlayer } from "../../components/fitness/ExerciseGifPlayer";
 import { ExerciseInstructionModal } from "../../components/fitness/ExerciseInstructionModal";
 import { ExerciseSessionModal } from "../../components/fitness/ExerciseSessionModal";
 import completionTrackingService from "../../services/completionTracking";
 import { completeExtraWorkout } from "../../services/extraWorkoutService";
-import { analyticsHelpers } from "../../stores/analyticsStore";
+// NOTE: analyticsHelpers.trackWorkoutCompleted was REMOVED from this screen
+// (P0 double-count fix). Workout calories are written ONCE — by
+// completionTrackingService.completeWorkout → analyticsDataService.updateTodaysMetrics
+// (Supabase analytics_metrics table, the canonical SSOT per architecture doc
+// P1-8 / P0-1). The previous in-memory analyticsHelpers call duplicated that
+// write and could double/triple-count on re-fired realtime events.
 import { useFitnessStore } from "../../stores/fitnessStore";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { exerciseFilterService } from "../../services/exerciseFilterService";
@@ -47,11 +55,26 @@ import { NextExercisePreview } from "../../components/workout/NextExercisePrevie
 import { useProfileStore } from "../../stores/profileStore";
 import {
   showWorkoutCompleteErrorAlert,
+  showWorkoutPartialSuccessAlert,
   showExitWorkoutAlert,
 } from "./workoutAlerts";
 import { WorkoutCompleteDialog } from "../../components/ui/CustomDialog";
 import { getCalibrationStatus, CalibrationStatus } from "../../services/calibrationService";
 import { generateWarmupSets, classifyExercise, WarmupSet } from "../../services/warmupService";
+import { totalVolume } from "../../utils/volumeCalculator";
+
+// P1 type-hole fix: the navigation object handed to this screen is the custom
+// plain-JS navigation defined in MainNavigation.tsx (NOT React Navigation's
+// typed stack prop), so there is no generated RootStackParamList to import.
+// To remove the `as never` cast on the ExerciseHistory navigate call we
+// declare the real params shape here and tighten navigate's signature to
+// accept a typed union of the screens this screen actually navigates to.
+// Other screens navigate to are simple tab switches (no params) — those still
+// pass through the `screen: string` overload.
+interface ExerciseHistoryParams {
+  exerciseId: string;
+  exerciseName: string;
+}
 
 interface WorkoutSessionScreenProps {
   route: {
@@ -63,7 +86,15 @@ interface WorkoutSessionScreenProps {
     };
   };
   navigation: {
-    navigate: (screen: string, params?: Record<string, unknown>) => void;
+    // Accept either a bare screen name (tab switches like "Progress") or a
+    // screen + params object. Keeping `screen: string` (rather than a literal
+    // union) preserves the runtime contract with MainNavigation's switch.
+    navigate: (
+      screen: string,
+      params?:
+        | Record<string, unknown>
+        | ExerciseHistoryParams,
+    ) => void;
     goBack: () => void;
   };
 }
@@ -114,6 +145,14 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   const isCompletingRef = useRef(false);
   // Stores the Supabase-generated row ID returned by completeExtraWorkout (Bug 3)
   const supabaseSessionIdRef = useRef<string | null>(null);
+  // P1 race fix: tracks whether the workout row was already persisted to
+  // Supabase (workout_sessions insert/update) before a later step threw. If a
+  // post-persist step (achievements, deload check, analytics) fails, we must
+  // NOT re-enable the Finish button — a re-tap would re-insert the session
+  // (completionTracking/extraWorkoutService only dedup by sessionId match,
+  // which the insert-then-update fallback bypasses). Instead we surface a
+  // partial-success alert telling the user the workout was saved.
+  const workoutPersistedRef = useRef(false);
 
   const [restTimerEndTime, setRestTimerEndTime] = useState<number | null>(null);
   // Total duration of the current rest period — for RestTimer progress bar
@@ -127,7 +166,15 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   const [calibrationMap, setCalibrationMap] = useState<Record<string, CalibrationStatus>>({});
   // Warm-up sets for current exercise
   const [warmupSets, setWarmupSets] = useState<WarmupSet[]>([]);
-  const [warmupDoneMap, setWarmupDoneMap] = useState<Record<number, boolean>>({});
+  // P2-15 fix: warmup-done is now tracked PER EXERCISE (keyed by exerciseId)
+  // so navigating back/forward preserves each exercise's completed warmup
+  // sets. Previously the whole map was wiped on every exercise change.
+  const [warmupDoneByExercise, setWarmupDoneByExercise] = useState<
+    Record<string, Record<number, boolean>>
+  >({});
+  const currentExerciseIdForWarmup = session.currentExercise?.exerciseId ?? '';
+  // Per-current-exercise view used by the render (keeps the render simple).
+  const warmupDoneMap = warmupDoneByExercise[currentExerciseIdForWarmup] ?? {};
 
   const userId = getCurrentUserId() || undefined;
   const personalInfo = useProfileStore((s) => s.personalInfo);
@@ -135,10 +182,31 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   const userUnits: "kg" | "lbs" =
     personalInfo?.units === "imperial" ? "lbs" : "kg";
   const bodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
-  if (!bodyAnalysis?.current_weight_kg) console.warn('[WorkoutSession] User weight unavailable — calorie calculation will return 0');
+  // Gate the weight-unavailable warning behind a one-shot ref so it fires at
+  // most once per session instead of on every render (was a console.warn in a
+  // render body, which fired repeatedly and is disallowed by CLAUDE.md in
+  // production paths).
+  const weightWarnedRef = useRef(false);
+  if (!bodyAnalysis?.current_weight_kg && !weightWarnedRef.current) {
+    weightWarnedRef.current = true;
+    console.warn('[WorkoutSession] User weight unavailable — calorie calculation will return 0');
+  }
   const userWeightKg = bodyAnalysis?.current_weight_kg || 0;
   const experienceLevel: 'beginner' | 'intermediate' | 'advanced' =
     workoutPreferences?.intensity ?? 'beginner';
+
+  // ── Live session volume + mesocycle week (for the header) ─────────────────
+  // SSOT: currentWorkoutSession.exercises[].sets[] (CompletedSet uses `weight`
+  // in kg + `reps`). Derived here, not duplicated in the store.
+  const mesocycleWeek = useFitnessStore((s) => s.getMesocycleWeek());
+  const sessionExercisesForVolume =
+    useFitnessStore.getState().currentWorkoutSession?.exercises ?? [];
+  const sessionVolume = sessionExercisesForVolume.reduce((sum, ex) => {
+    const sets = (ex.sets ?? [])
+      .filter((s) => s?.weight != null && s?.reps != null)
+      .map((s) => ({ weightKg: s.weight!, reps: s.reps! }));
+    return sum + totalVolume(sets);
+  }, 0);
 
   const getExerciseName = useCallback((exerciseId: string): string => {
     if (!exerciseId) return "Exercise";
@@ -156,9 +224,13 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     return () => clearInterval(interval);
   }, [session.setCurrentTime]);
 
-  // Load calibration status for each exercise once on mount
+  // Load calibration status for each exercise when the plan changes.
+  // P2-14 fix: deps now include workout.exercises so a plan reload re-fetches
+  // calibration for the new exercise set, and a cancelled flag prevents
+  // setState after unmount (or after a stale plan replaces this one).
   useEffect(() => {
     if (!userId || !workout?.exercises) return;
+    let cancelled = false;
     for (const exercise of workout.exercises) {
       if (!exercise.exerciseId) continue;
       getCalibrationStatus(
@@ -167,16 +239,20 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         userWeightKg,
         experienceLevel,
       ).then((status) => {
+        if (cancelled) return;
         setCalibrationMap((prev) => ({
           ...prev,
           [exercise.exerciseId!]: status,
         }));
       }).catch(() => { /* non-blocking — defaults to no calibration */ });
     }
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [userId, workout?.exercises]);
 
-  // Load warm-up sets whenever exercise changes
+  // Load warm-up sets whenever exercise changes.
+  // P2-15: do NOT reset the warmup-done map here — it is now keyed by exerciseId
+  // and persists across navigation. Each exercise retains its own done-state.
   useEffect(() => {
     if (!userId || !session.currentExercise?.exerciseId) {
       setWarmupSets([]);
@@ -192,7 +268,6 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       .getBestEstimated1RM(exId, userId)
       .then((e1rm) => {
         setWarmupSets(generateWarmupSets(e1rm, kind));
-        setWarmupDoneMap({});
       })
       .catch(() => setWarmupSets([]));
   }, [session.currentExerciseIndex, userId]);
@@ -364,6 +439,14 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         );
       }
 
+      // P1 race fix: record that the workout_sessions row was persisted so
+      // that if a LATER step (achievements, deload check, rating dialog) throws,
+      // the catch block can surface a partial-success message instead of
+      // re-enabling Finish (which would risk a duplicate insert on re-tap).
+      if (success) {
+        workoutPersistedRef.current = true;
+      }
+
       if (success) {
         await achievements.trackWorkoutCompletion(
           workout.category || "General",
@@ -375,12 +458,12 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           workout.title,
         );
 
-        analyticsHelpers.trackWorkoutCompleted({
-          date: getLocalDateString(),
-          duration: durationMinutes,
-          caloriesBurned: finalStats.caloriesBurned,
-          type: workout.category || "general",
-        });
+        // P0 double-count fix: analytics for workout calories are written by
+        // completionTrackingService.completeWorkout (the Supabase SSOT path via
+        // analyticsDataService.updateTodaysMetrics). Do NOT also call
+        // analyticsHelpers.trackWorkoutCompleted here — that re-accumulated
+        // calories into the in-memory metricsHistory and double-counted.
+        // For extra workouts, completeExtraWorkout runs the same Supabase write.
 
         if (userId) {
           for (const ex of workout.exercises) {
@@ -470,10 +553,26 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       }
     } catch (error) {
       console.error("🚨 Error completing workout:", error);
-      isCompletingRef.current = false;
-      showWorkoutCompleteErrorAlert(workout, session.workoutStats, () =>
-        navigation.goBack(),
-      );
+      // P1 race fix: do NOT reset isCompletingRef here. If the workout was
+      // already persisted (workoutPersistedRef === true), re-enabling Finish
+      // would let the user re-tap and re-insert into workout_sessions — the
+      // completion services only dedup by sessionId match, and the
+      // insert-then-update fallback bypasses that. Keep the button disabled
+      // and surface the actual state via crossPlatformAlert:
+      //   - persisted + later step failed → "Workout saved, but stats may not have updated"
+      //   - not persisted → "Workout could not be saved", allow a retry by
+      //     resetting the guard only in this not-yet-persisted case.
+      if (workoutPersistedRef.current) {
+        showWorkoutPartialSuccessAlert(workout, session.workoutStats, () =>
+          navigation.goBack(),
+        );
+      } else {
+        // Nothing was persisted yet — safe to let the user retry.
+        isCompletingRef.current = false;
+        showWorkoutCompleteErrorAlert(workout, session.workoutStats, () =>
+          navigation.goBack(),
+        );
+      }
     }
   }, [workout, sessionId, isExtra, session, achievements, navigation]);
 
@@ -523,16 +622,6 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 
         const loggedExercisesOnExit =
           useFitnessStore.getState().currentWorkoutSession?.exercises ?? [];
-        await completionTrackingService.updateWorkoutProgress(
-          workout.id || "unknown",
-          progressToSave,
-          {
-            sessionId: sessionId || "unknown",
-            partialCompletion: true,
-            exitedAt: new Date().toISOString(),
-            stats: { ...session.workoutStats, exercises: loggedExercisesOnExit },
-          },
-        );
 
         const firstIncompleteIdx = session.exerciseProgress.findIndex(
           (ep) => !ep.isCompleted,
@@ -542,12 +631,26 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             ? firstIncompleteIdx
             : session.currentExerciseIndex;
 
-        useFitnessStore
-          .getState()
-          .updateWorkoutProgress(workout.id || "unknown", progressToSave, {
+        // P0-1 + P3-19: persist logged sets to exercise_sets + record partial
+        // exit state (exitedAt, partial flags) on the workout_sessions row.
+        // currentWorkoutSession is intentionally LEFT INTACT in the store so
+        // that on resume the hook's derived exerciseProgress restores the
+        // actual logged weight/reps/rpe from the SSOT
+        // (currentWorkoutSession.exercises[].sets[]).
+        await completionTrackingService.savePartialExit(
+          workout.id || "unknown",
+          {
+            sessionId: sessionId || "unknown",
+            userId,
+            progress: progressToSave,
             exerciseIndex: resumeAt,
-            caloriesBurned: session.workoutStats.caloriesBurned,
-          });
+            exitedAt: new Date().toISOString(),
+            stats: {
+              ...session.workoutStats,
+              exercises: loggedExercisesOnExit,
+            },
+          },
+        );
 
         if (isExtra === true || String(isExtra) === "true") {
           const storeState = useFitnessStore.getState() as { updateActiveExtraProgress?: (index: number) => void };
@@ -555,8 +658,10 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             storeState.updateActiveExtraProgress(session.currentExerciseIndex);
           }
         }
-
-        useFitnessStore.setState({ currentWorkoutSession: null });
+        // NOTE: currentWorkoutSession is NOT nulled here. It is cleared only
+        // when the workout fully completes (via completionTrackingService) or
+        // when the user explicitly discards. Keeping it enables accurate resume
+        // of actual logged set values.
       } catch (error) {
         console.error("❌ Failed to save progress:", error);
       }
@@ -617,7 +722,15 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       ? session.currentSetIndex
       : session.currentSetIndex;
 
+  // Reanimated animated style for the exercise container (migrated from legacy
+  // Animated.Value — fadeAnim/scaleAnim are now SharedValue<number>).
+  const exerciseContainerStyle = useAnimatedStyle(() => ({
+    opacity: animations.fadeAnim.value,
+    transform: [{ scale: animations.scaleAnim.value }],
+  }));
+
   return (
+    <AuroraBackground theme="space">
     <SafeAreaView style={styles.container}>
       <WorkoutHeader
         workoutTitle={workout.title}
@@ -633,6 +746,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         calories={session.workoutStats.caloriesBurned}
         onExit={exitWorkout}
         paddingTop={Math.max(insets.top, 12)}
+        sessionVolume={sessionVolume}
+        mesocycleWeek={mesocycleWeek}
       />
 
       <WorkoutProgressBar
@@ -658,31 +773,26 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         bounces={false}
       >
         <Animated.View
-          style={[
-            styles.exerciseContainer,
-            {
-              opacity: animations.fadeAnim,
-              transform: [{ scale: animations.scaleAnim }],
-            },
-          ]}
+          style={[styles.exerciseContainer, exerciseContainerStyle]}
         >
           {/* Exercise GIF — hidden (opacity 0) during performing so it doesn't ghost behind the modal */}
           {/* GAP-05: Exercise name is tappable — navigates to ExerciseHistoryScreen */}
-          <Pressable
+          <AnimatedPressable
             onPress={() =>
               navigation.navigate('ExerciseHistory', {
                 exerciseId: session.currentExercise.exerciseId ?? '',
                 exerciseName: exerciseName,
-              } as never)
+              })
             }
             style={styles.exerciseNameRow}
             testID="exercise-name-history-tap"
+            hapticType="light"
           >
             <Text style={styles.exerciseNameTap} numberOfLines={1}>
               {exerciseName}
             </Text>
-            <Text style={styles.exerciseHistoryHint}>📊 History</Text>
-          </Pressable>
+            <Text style={styles.exerciseHistoryHint}>History</Text>
+          </AnimatedPressable>
 
           <ExerciseGifPlayer
             key={session.currentExerciseIndex}
@@ -701,7 +811,13 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 
           {/* Warm-up sets UI — shown in preview phase when history exists */}
           {session.exercisePhase === "preview" && warmupSets.length > 0 && !restTimerEndTime && (
-            <View style={styles.warmupContainer}>
+            <GlassCard
+              elevation={1}
+              padding="md"
+              borderRadius="lg"
+              style={styles.warmupContainer}
+              contentStyle={styles.warmupContent}
+            >
               <Text style={styles.warmupHeader}>WARM-UP (auto-generated)</Text>
               {warmupSets.map((ws, idx) => (
                 <View key={idx} style={styles.warmupRow}>
@@ -714,24 +830,33 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
                     </Text>
                     <Text style={styles.warmupPercent}>{ws.percentLabel}</Text>
                   </View>
-                  <TouchableOpacity
+                  <AnimatedPressable
                     style={[
                       styles.warmupDoneBtn,
                       warmupDoneMap[idx] && styles.warmupDoneBtnActive,
                     ]}
                     onPress={() =>
-                      setWarmupDoneMap((prev) => ({ ...prev, [idx]: !prev[idx] }))
+                      setWarmupDoneByExercise((prev) => ({
+                        ...prev,
+                        [currentExerciseIdForWarmup]: {
+                          ...(prev[currentExerciseIdForWarmup] ?? {}),
+                          [idx]: !(prev[currentExerciseIdForWarmup]?.[idx] ?? false),
+                        },
+                      }))
                     }
+                    scaleValue={0.94}
+                    springConfig="snappy"
+                    hapticType="selection"
                   >
                     <Text style={styles.warmupDoneText}>
                       {warmupDoneMap[idx] ? '✓' : 'Done'}
                     </Text>
-                  </TouchableOpacity>
+                  </AnimatedPressable>
                 </View>
               ))}
               <View style={styles.warmupDivider} />
               <Text style={styles.warmupWorkingLabel}>WORKING SETS</Text>
-            </View>
+            </GlassCard>
           )}
 
           {/* Set progress indicator in preview phase — hidden during rest */}
@@ -751,44 +876,52 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 
           {/* "Start Exercise" button in preview phase */}
           {session.exercisePhase === "preview" && (
-            <TouchableOpacity
-              style={[
-                styles.startButton,
-                session.currentProgress.isCompleted && styles.completedButton,
-              ]}
-              disabled={
-                session.currentProgress.isCompleted &&
-                session.currentExerciseIndex >= session.totalExercises - 1 &&
-                isCompletingRef.current
+            <GlassButton
+              label={
+                session.currentProgress.isCompleted
+                  ? session.currentExerciseIndex < session.totalExercises - 1
+                    ? "Next Exercise"
+                    : "Finish Workout"
+                  : completedSetsCount > 0
+                  ? `Continue — Set ${completedSetsCount + 1} of ${totalSets}`
+                  : "Start Exercise"
               }
               onPress={
                 session.currentProgress.isCompleted
                   ? goToNextExercise
                   : session.startExercise
               }
-            >
-              <Text style={styles.startButtonText}>
-                {session.currentProgress.isCompleted
+              disabled={
+                session.currentProgress.isCompleted &&
+                session.currentExerciseIndex >= session.totalExercises - 1 &&
+                isCompletingRef.current
+              }
+              variant={
+                session.currentProgress.isCompleted ? "success" : "primary"
+              }
+              fullWidth
+              icon={
+                session.currentProgress.isCompleted
                   ? session.currentExerciseIndex < session.totalExercises - 1
-                    ? "Next Exercise →"
-                    : "Finish Workout"
-                  : completedSetsCount > 0
-                  ? `Continue — Set ${completedSetsCount + 1} of ${totalSets}`
-                  : "Start Exercise"}
-              </Text>
-            </TouchableOpacity>
+                    ? "arrow-forward"
+                    : "checkmark-circle"
+                  : "play"
+              }
+              style={styles.startButton}
+            />
           )}
 
           {/* Previous / Next Exercise nav (preview only) — Next link removed when isCompleted since main button already handles it */}
           {session.exercisePhase === "preview" && (
             <View style={styles.previewNav}>
               {session.currentExerciseIndex > 0 && (
-                <TouchableOpacity
+                <AnimatedPressable
                   style={styles.prevExButton}
                   onPress={goToPreviousExercise}
+                  hapticType="light"
                 >
                   <Text style={styles.prevExText}>← Previous</Text>
-                </TouchableOpacity>
+                </AnimatedPressable>
               )}
             </View>
           )}
@@ -862,6 +995,11 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         currentSet={!isInterExerciseRest ? completedSetsCount : undefined}
         totalSets={!isInterExerciseRest ? totalSets : undefined}
         totalDuration={restTotalDuration}
+        onSetPreset={(secs) => {
+          // Restart the rest timer with the chosen preset duration.
+          setRestTotalDuration(secs);
+          setRestTimerEndTime(startTimer(secs));
+        }}
       />
 
       {/* Instructions modal (accessible from preview via GIF player) */}
@@ -908,13 +1046,14 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         />
       )}
     </SafeAreaView>
+    </AuroraBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: colors.background.DEFAULT,
   },
   content: {
     flex: 1,
@@ -931,38 +1070,24 @@ const styles = StyleSheet.create({
   },
   setProgressRow: {
     flexDirection: "row",
-    gap: 8,
+    gap: rp(spacing.sm),
     marginBottom: ResponsiveTheme.spacing.md,
     justifyContent: "center",
   },
   setDot: {
     width: 10,
     height: 10,
-    borderRadius: 5,
-    backgroundColor: "#333",
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.glass.backgroundDark,
     borderWidth: 1,
-    borderColor: "#555",
+    borderColor: colors.glass.border,
   },
   setDotCompleted: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary.DEFAULT,
+    borderColor: colors.primary.DEFAULT,
   },
   startButton: {
-    backgroundColor: ResponsiveTheme.colors.primary,
-    paddingVertical: 16,
-    paddingHorizontal: 48,
-    borderRadius: 30,
     marginBottom: ResponsiveTheme.spacing.md,
-    alignSelf: "stretch",
-    alignItems: "center",
-  },
-  completedButton: {
-    backgroundColor: "#226F54", // distinct green — signals "done, advance" not "start/continue"
-  },
-  startButtonText: {
-    color: "#FFF",
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
   },
   previewNav: {
     flexDirection: "row",
@@ -976,17 +1101,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   prevExText: {
-    color: "#888",
+    color: colors.text.tertiary,
     fontSize: ResponsiveTheme.fontSize.sm,
-  },
-  nextExButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-  },
-  nextExText: {
-    color: ResponsiveTheme.colors.primary,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
   // GAP-05: styles for tappable exercise name → ExerciseHistory
   exerciseNameRow: {
@@ -1001,28 +1117,26 @@ const styles = StyleSheet.create({
   exerciseNameTap: {
     fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.primary,
+    color: colors.primary.DEFAULT,
     flex: 1,
   },
   exerciseHistoryHint: {
     fontSize: ResponsiveTheme.fontSize.xs,
-    color: '#888',
+    color: colors.text.tertiary,
     marginLeft: 8,
   },
-  // Warm-up sets panel
+  // Warm-up sets panel — now a GlassCard; these styles style the inner content.
   warmupContainer: {
     alignSelf: 'stretch',
-    backgroundColor: 'rgba(255, 152, 0, 0.07)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 152, 0, 0.2)',
-    padding: ResponsiveTheme.spacing.md,
     marginBottom: ResponsiveTheme.spacing.md,
+  },
+  warmupContent: {
+    width: '100%',
   },
   warmupHeader: {
     fontSize: 10,
-    fontWeight: '700',
-    color: '#FF9800',
+    fontWeight: String(typography.fontWeight.bold) as any,
+    color: colors.warning.DEFAULT,
     letterSpacing: 1,
     marginBottom: 8,
   },
@@ -1037,40 +1151,40 @@ const styles = StyleSheet.create({
   },
   warmupWeight: {
     fontSize: ResponsiveTheme.fontSize.sm,
-    color: '#FFF',
+    color: colors.text.primary,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
   warmupPercent: {
     fontSize: 10,
-    color: '#888',
+    color: colors.text.tertiary,
     marginTop: 1,
   },
   warmupDoneBtn: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 8,
+    backgroundColor: colors.glass.background,
+    borderRadius: borderRadius.md,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: colors.glass.border,
   },
   warmupDoneBtnActive: {
-    backgroundColor: 'rgba(255, 152, 0, 0.25)',
-    borderColor: '#FF9800',
+    backgroundColor: `${colors.warning.DEFAULT}40`,
+    borderColor: colors.warning.DEFAULT,
   },
   warmupDoneText: {
     fontSize: ResponsiveTheme.fontSize.xs,
-    color: '#CCC',
+    color: colors.text.secondary,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
   warmupDivider: {
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: colors.glass.backgroundDark,
     marginVertical: 10,
   },
   warmupWorkingLabel: {
     fontSize: 10,
-    fontWeight: '700',
-    color: ResponsiveTheme.colors.primary,
+    fontWeight: String(typography.fontWeight.bold) as any,
+    color: colors.primary.DEFAULT,
     letterSpacing: 1,
     marginBottom: 4,
   },

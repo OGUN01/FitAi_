@@ -196,6 +196,8 @@ describe("nutritionStore SSOT hydration", () => {
       carbs: 65,
       fat: 20,
       fiber: 4,
+      sugar: 0,
+      sodium: 0,
     });
   });
 
@@ -248,6 +250,7 @@ describe("nutritionStore SSOT hydration", () => {
           id: "planned-log-1",
           plan_meal_id: "planned-meal-1",
           logged_at: `${TEST_DATE}T08:00:00.000Z`,
+          is_completed: true,
         },
       ],
       error: null,
@@ -257,6 +260,7 @@ describe("nutritionStore SSOT hydration", () => {
       data: [
         {
           id: "planned-log-1",
+          plan_meal_id: "planned-meal-1",
           meal_type: "lunch",
           meal_name: "Plan Lunch",
           total_calories: 400,
@@ -271,6 +275,7 @@ describe("nutritionStore SSOT hydration", () => {
           country_context: "IN",
           requires_review: false,
           source_metadata: {},
+          is_completed: true,
         },
         {
           id: "manual-log-1",
@@ -307,6 +312,8 @@ describe("nutritionStore SSOT hydration", () => {
       carbs: 72,
       fat: 13,
       fiber: 7.5,
+      sugar: 0,
+      sodium: 0,
     });
     expect(state.mealProgress["planned-meal-1"]).toMatchObject({
       progress: 100,

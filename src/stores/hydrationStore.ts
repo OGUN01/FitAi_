@@ -3,6 +3,22 @@ import { persist } from "zustand/middleware";
 import { createDebouncedStorage } from "../utils/safeAsyncStorage";
 import { hydrationDataService } from "../services/hydrationData";
 import { getLocalDateString } from "../utils/weekUtils";
+import { offlineService } from "../services/offline";
+import { getCurrentUserId } from "../services/authUtils";
+
+/**
+ * Returns the real authenticated user id, or null when the user is a guest /
+ * not authenticated. Used to SKIP offline-queue sync for guests (matching the
+ * pattern in nutritionStore.getSyncableUserId). Guest IDs ("guest-...") must
+ * never reach Supabase writes — RLS rejects them and they pollute the retry
+ * queue indefinitely.
+ */
+function getSyncableUserId(): string | null {
+  const userId = getCurrentUserId();
+  if (!userId) return null;
+  if (userId.startsWith("guest")) return null;
+  return userId;
+}
 
 /**
  * HYDRATION STORE - SINGLE SOURCE OF TRUTH
@@ -56,6 +72,57 @@ const getTodayDateString = (): string => {
 // Module-level ref to cancel any pending Supabase retry timeout
 let syncRetryTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
+// P1-hyd-3: re-entrancy guard so the post-reset re-sync cannot trigger an
+// infinite loop. checkAndResetIfNewDay sets lastResetDate = today before
+// syncing, so the sync's resulting set() cannot re-fire a reset — but we keep
+// this flag so a sync triggered DURING another sync's await window is a no-op
+// rather than a duplicate network call.
+let isResyncingAfterReset = false;
+
+// P1-hyd-3 race fix: if the user taps "add water" while a post-reset (or any)
+// syncWithSupabase is in flight, the sync's `set({ waterIntakeML: remote })`
+// would overwrite the optimistic local add. We accumulate any in-flight local
+// adds here and re-apply them on top of the remote total when the sync
+// resolves, so neither the add nor the remote value is lost.
+let pendingAddML = 0;
+
+/**
+ * Queue a failed water intake insert for offline retry (P0-offline-water).
+ *
+ * `hydrationDataService.logWaterIntake` resolves with `{ success:false }` on
+ * network/auth failure — previously those adds were silently dropped from
+ * `water_logs` and then clobbered by the next `syncWithSupabase` readback,
+ * losing offline hydration data. This mirrors the offline queueing already
+ * used by nutritionStore (meal_logs) and fitnessStore (workout_sessions).
+ *
+ * Skipped for guests (RLS would reject "guest" ids on every retry and
+ * pollute the offline queue — the local optimistic add still applies).
+ */
+function queueWaterLogForOffline(amountML: number): void {
+  const userId = getSyncableUserId();
+  if (!userId) return; // Guest or unauthenticated: local add already applied.
+
+  offlineService
+    .queueAction({
+      type: "CREATE",
+      table: "water_logs",
+      data: {
+        user_id: userId,
+        date: getLocalDateString(),
+        amount_ml: amountML,
+        logged_at: new Date().toISOString(),
+      },
+      userId,
+      maxRetries: 3,
+    })
+    .catch((qErr) =>
+      console.error(
+        "[HydrationStore] Failed to queue offline water log:",
+        qErr,
+      ),
+    );
+}
+
 export const useHydrationStore = create<HydrationState>()(
   persist(
     (set, get) => ({
@@ -73,17 +140,63 @@ export const useHydrationStore = create<HydrationState>()(
         // Re-read after reset so today's intake is always based on today's store state.
         const state = get();
 
-        const newIntake = state.waterIntakeML + amountML;
-        // Cap at 150% of goal to prevent accidental over-logging
-        const DEFAULT_DAILY_GOAL_ML = 2500;
-        const maxIntake = (state.dailyGoalML ?? DEFAULT_DAILY_GOAL_ML) * 1.5;
+        // P1-hyd-2 FIX: Previously this SILENTLY clamped at 150% of the daily
+        // goal (`Math.min(newIntake, maxIntake)`). A 4L-drinker would hit an
+        // invisible ceiling, subsequent adds were swallowed locally, while the
+        // Supabase water_logs row STILL inserted the full amount — so cloud and
+        // local diverged, and the next syncWithSupabase then overwrote local
+        // with the uncapped remote total, making the displayed intake jump.
+        //
+        // Now we log the REAL amount both locally and to Supabase so the two
+        // can never diverge. A very high sanity cap (10L = medically
+        // implausible for a single add) guards against a buggy caller passing
+        // an absurd value, but it only WARNS — it does not silently drop.
+        const SANITY_CAP_ML = 10000; // 10L single-add guard
+        let addAmountML = amountML;
+        if (amountML > SANITY_CAP_ML) {
+          console.warn(
+            `[HydrationStore] addWater received implausibly large amount (${amountML}ml). Capping at ${SANITY_CAP_ML}ml.`,
+          );
+          addAmountML = SANITY_CAP_ML;
+        }
+        if (addAmountML <= 0) return;
 
-        set({ waterIntakeML: Math.min(newIntake, maxIntake) });
+        const newIntake = state.waterIntakeML + addAmountML;
+        set({ waterIntakeML: newIntake });
 
-        // Sync to Supabase in background (fire and forget)
-        hydrationDataService.logWaterIntake(amountML).catch((err) => {
-          console.error("[HydrationStore] Failed to sync water intake to Supabase:", err);
-        });
+        // Record the add so a concurrent syncWithSupabase can preserve it (see
+        // pendingAddML comment above). Cleared once the sync reconciles.
+        pendingAddML += addAmountML;
+
+        // Sync to Supabase in background (fire and forget). The SAME amount
+        // added locally is inserted into water_logs so remote total stays in
+        // sync with the displayed local value.
+        //
+        // P0-offline-water FIX: logWaterIntake RESOLVES with { success:false }
+        // on network/auth failure (it never rejects), so a bare `.catch` never
+        // fired — offline adds silently failed to reach water_logs and were
+        // then overwritten by the next syncWithSupabase remote readback. Now
+        // we inspect the result and queue the insert for offline retry, the
+        // same pattern nutritionStore/fitnessStore use for their Supabase
+        // writes. Guests are skipped (RLS would reject guest ids on every
+        // retry and pollute the queue — the local optimistic add still holds).
+        hydrationDataService
+          .logWaterIntake(addAmountML)
+          .then((result) => {
+            if (result.success) return;
+            console.error(
+              "[HydrationStore] logWaterIntake returned non-success, queuing for offline retry:",
+              result.error,
+            );
+            queueWaterLogForOffline(addAmountML);
+          })
+          .catch((err) => {
+            console.error(
+              "[HydrationStore] Failed to sync water intake to Supabase, queuing for offline retry:",
+              err,
+            );
+            queueWaterLogForOffline(addAmountML);
+          });
       },
 
       // Set exact water intake (for manual adjustment)
@@ -132,6 +245,28 @@ export const useHydrationStore = create<HydrationState>()(
             waterIntakeML: 0,
             lastResetDate: today,
           });
+
+          // P1-hyd-3 FIX: After zeroing local, re-sync from Supabase so a user
+          // who already logged water today on ANOTHER device sees the real
+          // total instead of 0ml until the next explicit sync. lastResetDate
+          // is already set to today, so the sync's set() cannot re-fire a
+          // reset (and the isResyncingAfterReset guard prevents a duplicate
+          // network call if two mounts race). Failures are logged but never
+          // block the reset — local is already at 0 which is the safe default.
+          if (!isResyncingAfterReset) {
+            isResyncingAfterReset = true;
+            get()
+              .syncWithSupabase()
+              .catch((err) => {
+                console.error(
+                  "[HydrationStore] Post-reset re-sync failed:",
+                  err instanceof Error ? err.message : err,
+                );
+              })
+              .finally(() => {
+                isResyncingAfterReset = false;
+              });
+          }
         }
       },
 
@@ -171,9 +306,13 @@ export const useHydrationStore = create<HydrationState>()(
         try {
           const result = await hydrationDataService.syncHydrationWithSupabase();
           if (result.success) {
-            // Supabase is authoritative: always sync local to remote value
-            // This prevents stale persisted values from showing incorrect data
-            set({ waterIntakeML: result.total_ml });
+            // Supabase is authoritative, BUT re-apply any adds that happened
+            // while this sync's await was in flight (see pendingAddML). Without
+            // this, a user who tapped "add water" during the post-reset re-sync
+            // would have their optimistic add overwritten by the remote total.
+            const reconciled = result.total_ml + pendingAddML;
+            pendingAddML = 0;
+            set({ waterIntakeML: reconciled });
           }
         } catch (error) {
           console.error(
@@ -187,7 +326,9 @@ export const useHydrationStore = create<HydrationState>()(
               const retryResult =
                 await hydrationDataService.syncHydrationWithSupabase();
               if (retryResult.success) {
-                set({ waterIntakeML: retryResult.total_ml });
+                const reconciled = retryResult.total_ml + pendingAddML;
+                pendingAddML = 0;
+                set({ waterIntakeML: reconciled });
               }
             } catch (retryError) {
               console.error(

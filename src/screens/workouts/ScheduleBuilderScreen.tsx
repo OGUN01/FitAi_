@@ -3,14 +3,12 @@ import {
   View,
   Text,
   FlatList,
-  Pressable,
   StyleSheet,
   SafeAreaView,
-  Modal,
-  ActivityIndicator,
   ScrollView,
   TextInput,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { workoutTemplateService, WorkoutTemplate, TemplateExercise } from "../../services/workoutTemplateService";
 import { useFitnessStore } from "../../stores/fitnessStore";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -20,6 +18,17 @@ import { buildDayWorkoutFromTemplate, buildDayWorkoutFromExercises } from "../..
 import { CURATED_EXERCISES, CuratedExercise } from "../../data/curatedExercises";
 import { SegmentedControl, SegmentOption } from "../../components/ui/SegmentedControl";
 import type { DayWorkout, WeeklyWorkoutPlan } from "../../types/ai";
+import {
+  AuroraBackground,
+  GlassCard,
+  GlassHeader,
+  BottomSheet,
+  AuroraSpinner,
+  EmptyState,
+  AnimatedPressable,
+} from "../../components/ui/aurora";
+import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
+import { rp, rf, rw } from "../../utils/responsive";
 
 interface Props {
   navigation: {
@@ -243,746 +252,748 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
   const exerciseAssignedCount = DAYS.filter((d) => (exerciseAssignments[d.key] || []).length > 0).length;
   const assignedCount = mode === "templates" ? templateAssignedCount : exerciseAssignedCount;
 
+  const closeTemplatePicker = useCallback(() => setPickerDay(null), []);
+  const closeExercisePicker = useCallback(() => {
+    setExercisePickerDay(null);
+    setExerciseSearch("");
+    setExerciseCategory("all");
+  }, []);
+
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <ActivityIndicator size="large" color="#4CAF50" style={styles.loader} />
-      </SafeAreaView>
+      <AuroraBackground theme="space">
+        <SafeAreaView style={styles.flex}>
+          <View style={styles.loader}>
+            <AuroraSpinner size="lg" />
+          </View>
+        </SafeAreaView>
+      </AuroraBackground>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>← Back</Text>
-        </Pressable>
-        <Text style={styles.headerTitle}>Build My Schedule</Text>
-        <Pressable
-          onPress={handleSave}
-          disabled={saving || assignedCount === 0}
-          style={[styles.saveBtn, (saving || assignedCount === 0) && styles.saveBtnDisabled]}
-        >
-          <Text style={styles.saveText}>{saving ? "Saving..." : "Save"}</Text>
-        </Pressable>
-      </View>
-
-      {/* Mode Toggle */}
-      <View style={styles.modeToggleContainer}>
-        <SegmentedControl
-          options={MODE_OPTIONS}
-          selectedId={mode}
-          onSelect={(id) => setMode(id as BuilderMode)}
+    <AuroraBackground theme="space">
+      <SafeAreaView style={styles.flex}>
+        {/* Header */}
+        <GlassHeader
+          title="Build My Schedule"
+          onBack={() => navigation.goBack()}
+          rightAction={
+            <AnimatedPressable
+              onPress={handleSave}
+              disabled={saving || assignedCount === 0}
+              style={[styles.saveBtn, (saving || assignedCount === 0) && styles.saveBtnDisabled]}
+              accessibilityRole="button"
+              accessibilityLabel="Save schedule"
+            >
+              <Text style={styles.saveText}>{saving ? "Saving..." : "Save"}</Text>
+            </AnimatedPressable>
+          }
         />
-      </View>
 
-      <Text style={styles.subtitle}>
-        {mode === "templates"
-          ? "Assign your saved workouts to days of the week"
-          : "Pick exercises for each day of the week"}
-      </Text>
+        {/* Mode Toggle */}
+        <View style={styles.modeToggleContainer}>
+          <SegmentedControl
+            options={MODE_OPTIONS}
+            selectedId={mode}
+            onSelect={(id) => setMode(id as BuilderMode)}
+          />
+        </View>
 
-      {/* ═══════════ TEMPLATE MODE ═══════════ */}
-      {mode === "templates" && (
-        <>
-          {templates.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>No saved workouts yet</Text>
-              <Text style={styles.emptySubtitle}>
-                Create workout templates first, then come back to build your schedule.
-              </Text>
-              <Pressable
-                style={styles.createWorkoutBtn}
-                onPress={() => navigation.navigate("CreateWorkout")}
-              >
-                <Text style={styles.createWorkoutBtnText}>Create Workout →</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <ScrollView contentContainerStyle={styles.dayList}>
-              {DAYS.map((day) => {
-                const assigned = assignments[day.key];
-                return (
-                  <View key={day.key} style={styles.dayRow}>
-                    <View style={styles.dayLabelBox}>
-                      <Text style={styles.dayShort}>{day.short}</Text>
-                      <Text style={styles.dayFull}>{day.label}</Text>
-                    </View>
+        <Text style={styles.subtitle}>
+          {mode === "templates"
+            ? "Assign your saved workouts to days of the week"
+            : "Pick exercises for each day of the week"}
+        </Text>
 
-                    {assigned ? (
-                      <View style={styles.assignedBox}>
-                        <View style={styles.assignedInfo}>
-                          <Text style={styles.assignedName} numberOfLines={1}>
-                            {assigned.name}
-                          </Text>
-                          <Text style={styles.assignedMeta}>
-                            {assigned.exercises.length} exercises
-                            {assigned.estimatedDurationMinutes
-                              ? ` · ${assigned.estimatedDurationMinutes} min`
-                              : ""}
-                          </Text>
-                        </View>
-                        <Pressable
-                          onPress={() => setPickerDay(day.key)}
-                          style={styles.changeBtn}
-                        >
-                          <Text style={styles.changeBtnText}>Change</Text>
-                        </Pressable>
-                        <Pressable
-                          onPress={() => clearDay(day.key)}
-                          style={styles.clearBtn}
-                        >
-                          <Text style={styles.clearBtnText}>✕</Text>
-                        </Pressable>
-                      </View>
-                    ) : (
-                      <Pressable
-                        style={styles.restBox}
-                        onPress={() => setPickerDay(day.key)}
-                      >
-                        <Text style={styles.restText}>Rest Day</Text>
-                        <Text style={styles.addText}>+ Add Workout</Text>
-                      </Pressable>
-                    )}
-                  </View>
-                );
-              })}
-
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryText}>
-                  {assignedCount} workout{assignedCount !== 1 ? "s" : ""} · {7 - assignedCount} rest day{7 - assignedCount !== 1 ? "s" : ""}
-                </Text>
+        {/* ═══════════ TEMPLATE MODE ═══════════ */}
+        {mode === "templates" && (
+          <>
+            {templates.length === 0 ? (
+              <View style={styles.emptyWrap}>
+                <EmptyState
+                  icon="calendar-outline"
+                  title="No saved workouts yet"
+                  subtitle="Create workout templates first, then come back to build your schedule."
+                  ctaText="Create Workout"
+                  onCta={() => navigation.navigate("CreateWorkout")}
+                />
               </View>
-            </ScrollView>
-          )}
-        </>
-      )}
-
-      {/* ═══════════ EXERCISE MODE ═══════════ */}
-      {mode === "exercises" && (
-        <ScrollView contentContainerStyle={styles.dayList}>
-          {DAYS.map((day) => {
-            const dayExercises = exerciseAssignments[day.key] || [];
-            const isExpanded = expandedDay === day.key;
-            return (
-              <View key={day.key} style={styles.exerciseDayBlock}>
-                {/* Day header — tap to expand */}
-                <Pressable
-                  style={[styles.exerciseDayHeader, isExpanded && styles.exerciseDayHeaderExpanded]}
-                  onPress={() => toggleExpandDay(day.key)}
-                >
-                  <View style={styles.exerciseDayHeaderLeft}>
-                    <Text style={styles.dayShort}>{day.short}</Text>
-                    <Text style={styles.exerciseDayLabel}>{day.label}</Text>
-                  </View>
-                  <View style={styles.exerciseDayHeaderRight}>
-                    {dayExercises.length > 0 ? (
-                      <Text style={styles.exerciseDayCount}>
-                        {dayExercises.length} exercise{dayExercises.length !== 1 ? "s" : ""}
-                      </Text>
-                    ) : (
-                      <Text style={styles.exerciseDayRest}>Rest</Text>
-                    )}
-                    <Text style={styles.expandArrow}>{isExpanded ? "▲" : "▼"}</Text>
-                  </View>
-                </Pressable>
-
-                {/* Expanded detail */}
-                {isExpanded && (
-                  <View style={styles.exerciseDayDetail}>
-                    {dayExercises.length === 0 && (
-                      <Text style={styles.exerciseDayEmptyHint}>
-                        No exercises yet. Tap "+ Add Exercise" below.
-                      </Text>
-                    )}
-
-                    {dayExercises.map((ex, idx) => (
-                      <View key={`${ex.exerciseId}_${idx}`} style={styles.exerciseItemRow}>
-                        <View style={styles.exerciseItemInfo}>
-                          <Text style={styles.exerciseItemName} numberOfLines={1}>{ex.name}</Text>
-                          <View style={styles.exerciseItemControls}>
-                            {/* Sets */}
-                            <View style={styles.controlGroup}>
-                              <Text style={styles.controlLabel}>Sets</Text>
-                              <View style={styles.stepperRow}>
-                                <Pressable
-                                  style={styles.stepperBtn}
-                                  onPress={() => ex.sets > 1 && updateExerciseInDay(day.key, idx, { sets: ex.sets - 1 })}
-                                >
-                                  <Text style={styles.stepperBtnText}>−</Text>
-                                </Pressable>
-                                <Text style={styles.stepperValue}>{ex.sets}</Text>
-                                <Pressable
-                                  style={styles.stepperBtn}
-                                  onPress={() => updateExerciseInDay(day.key, idx, { sets: ex.sets + 1 })}
-                                >
-                                  <Text style={styles.stepperBtnText}>+</Text>
-                                </Pressable>
-                              </View>
-                            </View>
-
-                            {/* Reps */}
-                            <View style={styles.controlGroup}>
-                              <Text style={styles.controlLabel}>Reps</Text>
-                              <View style={styles.stepperRow}>
-                                <Pressable
-                                  style={styles.stepperBtn}
-                                  onPress={() => {
-                                    if (ex.repRange[0] <= 1) return;
-                                    updateExerciseInDay(day.key, idx, {
-                                      repRange: [ex.repRange[0] - 1, ex.repRange[1] - 1],
-                                    });
-                                  }}
-                                >
-                                  <Text style={styles.stepperBtnText}>−</Text>
-                                </Pressable>
-                                <Text style={styles.stepperValue}>
-                                  {ex.repRange[0] === ex.repRange[1]
-                                    ? `${ex.repRange[0]}`
-                                    : `${ex.repRange[0]}-${ex.repRange[1]}`}
-                                </Text>
-                                <Pressable
-                                  style={styles.stepperBtn}
-                                  onPress={() => {
-                                    updateExerciseInDay(day.key, idx, {
-                                      repRange: [ex.repRange[0] + 1, ex.repRange[1] + 1],
-                                    });
-                                  }}
-                                >
-                                  <Text style={styles.stepperBtnText}>+</Text>
-                                </Pressable>
-                              </View>
-                            </View>
-
-                            {/* Rest */}
-                            <View style={styles.controlGroup}>
-                              <Text style={styles.controlLabel}>Rest</Text>
-                              <Text style={styles.controlValue}>{ex.restSeconds}s</Text>
-                            </View>
-                          </View>
-                        </View>
-                        <Pressable
-                          style={styles.removeExBtn}
-                          onPress={() => removeExerciseFromDay(day.key, idx)}
-                        >
-                          <Text style={styles.removeExBtnText}>✕</Text>
-                        </Pressable>
+            ) : (
+              <ScrollView contentContainerStyle={styles.dayList}>
+                {DAYS.map((day) => {
+                  const assigned = assignments[day.key];
+                  return (
+                    <View key={day.key} style={styles.dayRow}>
+                      <View style={styles.dayLabelBox}>
+                        <Text style={styles.dayShort}>{day.short}</Text>
+                        <Text style={styles.dayFull}>{day.label}</Text>
                       </View>
-                    ))}
 
-                    {/* Actions */}
-                    <View style={styles.exerciseDayActions}>
-                      <Pressable
-                        style={styles.addExerciseBtn}
-                        onPress={() => {
-                          setExercisePickerDay(day.key);
-                          setExerciseCategory("all");
-                          setExerciseSearch("");
-                        }}
-                      >
-                        <Text style={styles.addExerciseBtnText}>+ Add Exercise</Text>
-                      </Pressable>
-                      {dayExercises.length > 0 && (
-                        <Pressable
-                          style={styles.clearDayBtn}
-                          onPress={() => clearDayExercises(day.key)}
+                      {assigned ? (
+                        <View style={styles.assignedBox}>
+                          <View style={styles.assignedInfo}>
+                            <Text style={styles.assignedName} numberOfLines={1}>
+                              {assigned.name}
+                            </Text>
+                            <Text style={styles.assignedMeta}>
+                              {assigned.exercises.length} exercises
+                              {assigned.estimatedDurationMinutes
+                                ? ` · ${assigned.estimatedDurationMinutes} min`
+                                : ""}
+                            </Text>
+                          </View>
+                          <AnimatedPressable
+                            onPress={() => setPickerDay(day.key)}
+                            style={styles.changeBtn}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Change workout for ${day.label}`}
+                          >
+                            <Text style={styles.changeBtnText}>Change</Text>
+                          </AnimatedPressable>
+                          <AnimatedPressable
+                            onPress={() => clearDay(day.key)}
+                            style={styles.clearBtn}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Clear ${day.label}`}
+                          >
+                            <Ionicons name="close" size={rf(16)} color={colors.error.DEFAULT} />
+                          </AnimatedPressable>
+                        </View>
+                      ) : (
+                        <AnimatedPressable
+                          style={styles.restBox}
+                          onPress={() => setPickerDay(day.key)}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Add workout to ${day.label}`}
                         >
-                          <Text style={styles.clearDayBtnText}>Clear All</Text>
-                        </Pressable>
+                          <Text style={styles.restText}>Rest Day</Text>
+                          <Text style={styles.addText}>+ Add Workout</Text>
+                        </AnimatedPressable>
                       )}
                     </View>
-                  </View>
-                )}
-              </View>
-            );
-          })}
+                  );
+                })}
 
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryText}>
-              {assignedCount} workout{assignedCount !== 1 ? "s" : ""} · {7 - assignedCount} rest day{7 - assignedCount !== 1 ? "s" : ""}
-            </Text>
-          </View>
-        </ScrollView>
-      )}
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryText}>
+                    {assignedCount} workout{assignedCount !== 1 ? "s" : ""} · {7 - assignedCount} rest day{7 - assignedCount !== 1 ? "s" : ""}
+                  </Text>
+                </View>
+              </ScrollView>
+            )}
+          </>
+        )}
 
-      {/* ═══════════ TEMPLATE PICKER MODAL ═══════════ */}
-      <Modal
-        visible={pickerDay !== null}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setPickerDay(null)}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalSheet}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                Pick workout for{" "}
-                {pickerDay
-                  ? DAYS.find((d) => d.key === pickerDay)?.label
-                  : ""}
+        {/* ═══════════ EXERCISE MODE ═══════════ */}
+        {mode === "exercises" && (
+          <ScrollView contentContainerStyle={styles.dayList}>
+            {DAYS.map((day) => {
+              const dayExercises = exerciseAssignments[day.key] || [];
+              const isExpanded = expandedDay === day.key;
+              return (
+                <View key={day.key} style={styles.exerciseDayBlock}>
+                  {/* Day header — tap to expand */}
+                  <AnimatedPressable
+                    style={[styles.exerciseDayHeader, isExpanded && styles.exerciseDayHeaderExpanded]}
+                    onPress={() => toggleExpandDay(day.key)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${day.label} — ${dayExercises.length} exercises`}
+                  >
+                    <View style={styles.exerciseDayHeaderLeft}>
+                      <Text style={styles.dayShort}>{day.short}</Text>
+                      <Text style={styles.exerciseDayLabel}>{day.label}</Text>
+                    </View>
+                    <View style={styles.exerciseDayHeaderRight}>
+                      {dayExercises.length > 0 ? (
+                        <Text style={styles.exerciseDayCount}>
+                          {dayExercises.length} exercise{dayExercises.length !== 1 ? "s" : ""}
+                        </Text>
+                      ) : (
+                        <Text style={styles.exerciseDayRest}>Rest</Text>
+                      )}
+                      <Ionicons
+                        name={isExpanded ? "chevron-up" : "chevron-down"}
+                        size={rf(12)}
+                        color={colors.text.secondary}
+                      />
+                    </View>
+                  </AnimatedPressable>
+
+                  {/* Expanded detail */}
+                  {isExpanded && (
+                    <View style={styles.exerciseDayDetail}>
+                      {dayExercises.length === 0 && (
+                        <Text style={styles.exerciseDayEmptyHint}>
+                          No exercises yet. Tap "+ Add Exercise" below.
+                        </Text>
+                      )}
+
+                      {dayExercises.map((ex, idx) => (
+                        <View key={`${ex.exerciseId}_${idx}`} style={styles.exerciseItemRow}>
+                          <View style={styles.exerciseItemInfo}>
+                            <Text style={styles.exerciseItemName} numberOfLines={1}>{ex.name}</Text>
+                            <View style={styles.exerciseItemControls}>
+                              {/* Sets */}
+                              <View style={styles.controlGroup}>
+                                <Text style={styles.controlLabel}>Sets</Text>
+                                <View style={styles.stepperRow}>
+                                  <AnimatedPressable
+                                    style={styles.stepperBtn}
+                                    onPress={() => ex.sets > 1 && updateExerciseInDay(day.key, idx, { sets: ex.sets - 1 })}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Decrease sets"
+                                  >
+                                    <Text style={styles.stepperBtnText}>−</Text>
+                                  </AnimatedPressable>
+                                  <Text style={styles.stepperValue}>{ex.sets}</Text>
+                                  <AnimatedPressable
+                                    style={styles.stepperBtn}
+                                    onPress={() => updateExerciseInDay(day.key, idx, { sets: ex.sets + 1 })}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Increase sets"
+                                  >
+                                    <Text style={styles.stepperBtnText}>+</Text>
+                                  </AnimatedPressable>
+                                </View>
+                              </View>
+
+                              {/* Reps */}
+                              <View style={styles.controlGroup}>
+                                <Text style={styles.controlLabel}>Reps</Text>
+                                <View style={styles.stepperRow}>
+                                  <AnimatedPressable
+                                    style={styles.stepperBtn}
+                                    onPress={() => {
+                                      if (ex.repRange[0] <= 1) return;
+                                      updateExerciseInDay(day.key, idx, {
+                                        repRange: [ex.repRange[0] - 1, ex.repRange[1] - 1],
+                                      });
+                                    }}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Decrease reps"
+                                  >
+                                    <Text style={styles.stepperBtnText}>−</Text>
+                                  </AnimatedPressable>
+                                  <Text style={styles.stepperValue}>
+                                    {ex.repRange[0] === ex.repRange[1]
+                                      ? `${ex.repRange[0]}`
+                                      : `${ex.repRange[0]}-${ex.repRange[1]}`}
+                                  </Text>
+                                  <AnimatedPressable
+                                    style={styles.stepperBtn}
+                                    onPress={() => {
+                                      updateExerciseInDay(day.key, idx, {
+                                        repRange: [ex.repRange[0] + 1, ex.repRange[1] + 1],
+                                      });
+                                    }}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Increase reps"
+                                  >
+                                    <Text style={styles.stepperBtnText}>+</Text>
+                                  </AnimatedPressable>
+                                </View>
+                              </View>
+
+                              {/* Rest */}
+                              <View style={styles.controlGroup}>
+                                <Text style={styles.controlLabel}>Rest</Text>
+                                <Text style={styles.controlValue}>{ex.restSeconds}s</Text>
+                              </View>
+                            </View>
+                          </View>
+                          <AnimatedPressable
+                            style={styles.removeExBtn}
+                            onPress={() => removeExerciseFromDay(day.key, idx)}
+                            accessibilityRole="button"
+                            accessibilityLabel="Remove exercise"
+                          >
+                            <Ionicons name="close" size={rf(14)} color={colors.error.DEFAULT} />
+                          </AnimatedPressable>
+                        </View>
+                      ))}
+
+                      {/* Actions */}
+                      <View style={styles.exerciseDayActions}>
+                        <AnimatedPressable
+                          style={styles.addExerciseBtn}
+                          onPress={() => {
+                            setExercisePickerDay(day.key);
+                            setExerciseCategory("all");
+                            setExerciseSearch("");
+                          }}
+                          accessibilityRole="button"
+                          accessibilityLabel="Add exercise"
+                        >
+                          <Text style={styles.addExerciseBtnText}>+ Add Exercise</Text>
+                        </AnimatedPressable>
+                        {dayExercises.length > 0 && (
+                          <AnimatedPressable
+                            style={styles.clearDayBtn}
+                            onPress={() => clearDayExercises(day.key)}
+                            accessibilityRole="button"
+                            accessibilityLabel="Clear all exercises"
+                          >
+                            <Text style={styles.clearDayBtnText}>Clear All</Text>
+                          </AnimatedPressable>
+                        )}
+                      </View>
+                    </View>
+                  )}
+                </View>
+              );
+            })}
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryText}>
+                {assignedCount} workout{assignedCount !== 1 ? "s" : ""} · {7 - assignedCount} rest day{7 - assignedCount !== 1 ? "s" : ""}
               </Text>
-              <Pressable onPress={() => setPickerDay(null)}>
-                <Text style={styles.modalClose}>✕</Text>
-              </Pressable>
             </View>
+          </ScrollView>
+        )}
 
-            <FlatList
-              data={templates}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <Pressable
+        {/* ═══════════ TEMPLATE PICKER MODAL ═══════════ */}
+        <BottomSheet
+          visible={pickerDay !== null}
+          onClose={closeTemplatePicker}
+          title={pickerDay ? `Pick workout for ${DAYS.find((d) => d.key === pickerDay)?.label ?? ""}` : "Pick workout"}
+        >
+          <FlatList
+            data={templates}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <AnimatedPressable
+                style={[
+                  styles.pickerItem,
+                  pickerDay && assignments[pickerDay]?.id === item.id &&
+                    styles.pickerItemSelected,
+                ]}
+                onPress={() => pickerDay && assignTemplate(pickerDay, item)}
+                accessibilityRole="button"
+                accessibilityLabel={`Assign ${item.name}`}
+              >
+                <View style={styles.pickerItemInfo}>
+                  <Text style={styles.pickerItemName}>{item.name}</Text>
+                  <Text style={styles.pickerItemMeta}>
+                    {item.exercises.length} exercises
+                    {item.estimatedDurationMinutes
+                      ? ` · ${item.estimatedDurationMinutes} min`
+                      : ""}
+                  </Text>
+                  {item.targetMuscleGroups.length > 0 && (
+                    <Text style={styles.pickerItemMuscles} numberOfLines={1}>
+                      {item.targetMuscleGroups.slice(0, 4).join(", ")}
+                    </Text>
+                  )}
+                </View>
+                {pickerDay && assignments[pickerDay]?.id === item.id && (
+                  <Ionicons name="checkmark" size={rf(18)} color={colors.primary.DEFAULT} />
+                )}
+              </AnimatedPressable>
+            )}
+            contentContainerStyle={styles.pickerList}
+          />
+        </BottomSheet>
+
+        {/* ═══════════ EXERCISE PICKER MODAL ═══════════ */}
+        <BottomSheet
+          visible={exercisePickerDay !== null}
+          onClose={closeExercisePicker}
+          title={exercisePickerDay ? `Add exercise to ${DAYS.find((d) => d.key === exercisePickerDay)?.label ?? ""}` : "Add exercise"}
+          maxHeightFraction={0.85}
+        >
+          {/* Search */}
+          <View style={styles.exerciseSearchRow}>
+            <TextInput
+              style={styles.exerciseSearchInput}
+              placeholder="Search exercises..."
+              placeholderTextColor={colors.text.tertiary}
+              value={exerciseSearch}
+              onChangeText={setExerciseSearch}
+              autoCapitalize="none"
+            />
+          </View>
+
+          {/* Category tabs */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryTabsRow}
+          >
+            {EXERCISE_CATEGORIES.map((cat) => (
+              <AnimatedPressable
+                key={cat.key}
+                style={[
+                  styles.categoryTab,
+                  exerciseCategory === cat.key && styles.categoryTabActive,
+                ]}
+                onPress={() => setExerciseCategory(cat.key)}
+                accessibilityRole="button"
+                accessibilityLabel={`Filter by ${cat.label}`}
+              >
+                <Text
                   style={[
-                    styles.pickerItem,
-                    pickerDay && assignments[pickerDay]?.id === item.id &&
-                      styles.pickerItemSelected,
+                    styles.categoryTabText,
+                    exerciseCategory === cat.key && styles.categoryTabTextActive,
                   ]}
-                  onPress={() => pickerDay && assignTemplate(pickerDay, item)}
+                >
+                  {cat.label}
+                </Text>
+              </AnimatedPressable>
+            ))}
+          </ScrollView>
+
+          {/* Exercise list */}
+          <FlatList
+            data={filteredExercises}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => {
+              const alreadyAdded = exercisePickerDay
+                ? (exerciseAssignments[exercisePickerDay] || []).some(
+                    (ex) => ex.exerciseId === item.id
+                  )
+                : false;
+              return (
+                <AnimatedPressable
+                  style={[styles.pickerItem, alreadyAdded && styles.pickerItemSelected, alreadyAdded && { opacity: 0.6 }]}
+                  onPress={() => exercisePickerDay && !alreadyAdded && addExerciseToDay(exercisePickerDay, item)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Add ${item.name}`}
                 >
                   <View style={styles.pickerItemInfo}>
                     <Text style={styles.pickerItemName}>{item.name}</Text>
                     <Text style={styles.pickerItemMeta}>
-                      {item.exercises.length} exercises
-                      {item.estimatedDurationMinutes
-                        ? ` · ${item.estimatedDurationMinutes} min`
-                        : ""}
+                      {item.muscleGroups.slice(0, 3).join(", ")}
+                      {item.isBodyweight ? " · Bodyweight" : ""}
                     </Text>
-                    {item.targetMuscleGroups.length > 0 && (
-                      <Text style={styles.pickerItemMuscles} numberOfLines={1}>
-                        {item.targetMuscleGroups.slice(0, 4).join(", ")}
-                      </Text>
-                    )}
+                    <Text style={styles.pickerItemMuscles}>
+                      {item.difficulty} · {item.category}
+                    </Text>
                   </View>
-                  {pickerDay && assignments[pickerDay]?.id === item.id && (
-                    <Text style={styles.checkmark}>✓</Text>
-                  )}
-                </Pressable>
-              )}
-              contentContainerStyle={styles.pickerList}
-            />
-          </View>
-        </View>
-      </Modal>
-
-      {/* ═══════════ EXERCISE PICKER MODAL ═══════════ */}
-      <Modal
-        visible={exercisePickerDay !== null}
-        transparent
-        animationType="slide"
-        onRequestClose={() => {
-          setExercisePickerDay(null);
-          setExerciseSearch("");
-          setExerciseCategory("all");
-        }}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={[styles.modalSheet, { maxHeight: "80%" }]}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                Add exercise to{" "}
-                {exercisePickerDay
-                  ? DAYS.find((d) => d.key === exercisePickerDay)?.label
-                  : ""}
-              </Text>
-              <Pressable onPress={() => {
-                setExercisePickerDay(null);
-                setExerciseSearch("");
-                setExerciseCategory("all");
-              }}>
-                <Text style={styles.modalClose}>✕</Text>
-              </Pressable>
-            </View>
-
-            {/* Search */}
-            <View style={styles.exerciseSearchRow}>
-              <TextInput
-                style={styles.exerciseSearchInput}
-                placeholder="Search exercises..."
-                placeholderTextColor="#666"
-                value={exerciseSearch}
-                onChangeText={setExerciseSearch}
-                autoCapitalize="none"
-              />
-            </View>
-
-            {/* Category tabs */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.categoryTabsRow}
-            >
-              {EXERCISE_CATEGORIES.map((cat) => (
-                <Pressable
-                  key={cat.key}
-                  style={[
-                    styles.categoryTab,
-                    exerciseCategory === cat.key && styles.categoryTabActive,
-                  ]}
-                  onPress={() => setExerciseCategory(cat.key)}
-                >
-                  <Text
-                    style={[
-                      styles.categoryTabText,
-                      exerciseCategory === cat.key && styles.categoryTabTextActive,
-                    ]}
-                  >
-                    {cat.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-
-            {/* Exercise list */}
-            <FlatList
-              data={filteredExercises}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => {
-                const alreadyAdded = exercisePickerDay
-                  ? (exerciseAssignments[exercisePickerDay] || []).some(
-                      (ex) => ex.exerciseId === item.id
-                    )
-                  : false;
-                return (
-                  <Pressable
-                    style={[styles.pickerItem, alreadyAdded && styles.pickerItemSelected, alreadyAdded && { opacity: 0.6 }]}
-                    onPress={() => exercisePickerDay && !alreadyAdded && addExerciseToDay(exercisePickerDay, item)}
-                  >
-                    <View style={styles.pickerItemInfo}>
-                      <Text style={styles.pickerItemName}>{item.name}</Text>
-                      <Text style={styles.pickerItemMeta}>
-                        {item.muscleGroups.slice(0, 3).join(", ")}
-                        {item.isBodyweight ? " · Bodyweight" : ""}
-                      </Text>
-                      <Text style={styles.pickerItemMuscles}>
-                        {item.difficulty} · {item.category}
-                      </Text>
-                    </View>
-                    {alreadyAdded && <Text style={styles.checkmark}>✓</Text>}
-                  </Pressable>
-                );
-              }}
-              contentContainerStyle={styles.pickerList}
-              ListEmptyComponent={
-                <View style={styles.pickerEmpty}>
-                  <Text style={styles.pickerEmptyText}>No exercises found</Text>
-                </View>
-              }
-            />
-          </View>
-        </View>
-      </Modal>
-    </SafeAreaView>
+                  {alreadyAdded && <Ionicons name="checkmark" size={rf(18)} color={colors.primary.DEFAULT} />}
+                </AnimatedPressable>
+              );
+            }}
+            contentContainerStyle={styles.pickerList}
+            ListEmptyComponent={
+              <View style={styles.pickerEmpty}>
+                <Text style={styles.pickerEmptyText}>No exercises found</Text>
+              </View>
+            }
+          />
+        </BottomSheet>
+      </SafeAreaView>
+    </AuroraBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#1A1A2E" },
-  loader: { flex: 1, justifyContent: "center" },
+  flex: { flex: 1 },
+  loader: { flex: 1, justifyContent: "center", alignItems: "center" },
 
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#2A2A4E",
-  },
-  headerTitle: { fontSize: 20, fontWeight: "700", color: "#FFFFFF" },
-  backBtn: { paddingRight: 12, paddingVertical: 4 },
-  backText: { fontSize: 16, color: "#4CAF50", fontWeight: "600" },
   saveBtn: {
-    backgroundColor: "#4CAF50",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    backgroundColor: colors.primary.DEFAULT,
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.sm),
+    borderRadius: borderRadius.md,
   },
-  saveBtnDisabled: { backgroundColor: "#2A4A2E", opacity: 0.5 },
-  saveText: { fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
+  saveBtnDisabled: { backgroundColor: colors.background.tertiary, opacity: 0.5 },
+  saveText: {
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.bold) as any,
+    color: colors.text.primary,
+  },
 
   modeToggleContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 4,
+    paddingHorizontal: rp(spacing.md),
+    paddingTop: rp(spacing.md),
+    paddingBottom: rp(spacing.xs),
   },
 
   subtitle: {
-    fontSize: 14,
-    color: "#888",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.text.secondary,
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.md),
   },
 
-  emptyState: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 32,
-  },
-  emptyTitle: { fontSize: 18, fontWeight: "700", color: "#FFFFFF", marginBottom: 12 },
-  emptySubtitle: { fontSize: 14, color: "#888", textAlign: "center", lineHeight: 22 },
-  createWorkoutBtn: {
-    marginTop: 16,
-    backgroundColor: "#4CAF50",
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  createWorkoutBtnText: { fontSize: 15, fontWeight: "600", color: "#FFFFFF" },
+  emptyWrap: { flex: 1, justifyContent: "center" },
 
-  dayList: { paddingHorizontal: 16, paddingBottom: 32 },
+  dayList: { paddingHorizontal: rp(spacing.md), paddingBottom: rp(spacing.xxl) },
 
   // ── Template mode day rows ──
   dayRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
-    gap: 10,
+    marginBottom: rp(spacing.sm),
+    gap: rp(spacing.sm),
   },
   dayLabelBox: {
-    width: 48,
+    width: rw(48),
     alignItems: "center",
   },
-  dayShort: { fontSize: 12, fontWeight: "700", color: "#4CAF50" },
-  dayFull: { fontSize: 11, color: "#666", marginTop: 2 },
+  dayShort: {
+    fontSize: rf(typography.fontSize.micro),
+    fontWeight: String(typography.fontWeight.bold) as any,
+    color: colors.primary.DEFAULT,
+  },
+  dayFull: { fontSize: rf(11), color: colors.text.tertiary, marginTop: rp(spacing.xxs) },
 
   assignedBox: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#2A2A4E",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 8,
+    backgroundColor: colors.glass.background,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.sm),
+    gap: rp(spacing.sm),
   },
   assignedInfo: { flex: 1 },
-  assignedName: { fontSize: 14, fontWeight: "600", color: "#FFFFFF" },
-  assignedMeta: { fontSize: 12, color: "#888", marginTop: 2 },
-  changeBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#4CAF50",
+  assignedName: {
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.semibold) as any,
+    color: colors.text.primary,
   },
-  changeBtnText: { fontSize: 12, color: "#4CAF50" },
-  clearBtn: { padding: 4 },
-  clearBtnText: { fontSize: 16, color: "#FF5252" },
+  assignedMeta: { fontSize: rf(typography.fontSize.micro), color: colors.text.secondary, marginTop: rp(spacing.xxs) },
+  changeBtn: {
+    paddingHorizontal: rp(spacing.sm),
+    paddingVertical: rp(spacing.xxs),
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: colors.primary.DEFAULT,
+  },
+  changeBtnText: { fontSize: rf(typography.fontSize.micro), color: colors.primary.DEFAULT },
+  clearBtn: { padding: rp(spacing.xs) },
 
   restBox: {
     flex: 1,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#1E1E3A",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.md),
     borderWidth: 1,
-    borderColor: "#2A2A4E",
+    borderColor: colors.glass.border,
     borderStyle: "dashed",
   },
-  restText: { fontSize: 14, color: "#555" },
-  addText: { fontSize: 13, color: "#4CAF50", fontWeight: "600" },
+  restText: { fontSize: rf(typography.fontSize.caption), color: colors.text.tertiary },
+  addText: {
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.primary.DEFAULT,
+    fontWeight: String(typography.fontWeight.semibold) as any,
+  },
 
   summaryRow: {
-    marginTop: 16,
+    marginTop: rp(spacing.md),
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: rp(spacing.md),
     borderTopWidth: 1,
-    borderTopColor: "#2A2A4E",
+    borderTopColor: colors.glass.border,
   },
-  summaryText: { fontSize: 14, color: "#888" },
+  summaryText: { fontSize: rf(typography.fontSize.caption), color: colors.text.secondary },
 
   // ── Exercise mode ──
   exerciseDayBlock: {
-    marginBottom: 6,
-    borderRadius: 10,
+    marginBottom: rp(spacing.xs),
+    borderRadius: borderRadius.lg,
     overflow: "hidden",
   },
   exerciseDayHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#1E1E3A",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    backgroundColor: colors.background.secondary,
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.md),
     borderWidth: 1,
-    borderColor: "#2A2A4E",
-    borderRadius: 10,
+    borderColor: colors.glass.border,
+    borderRadius: borderRadius.lg,
   },
   exerciseDayHeaderExpanded: {
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
     borderBottomWidth: 0,
-    backgroundColor: "#252548",
+    backgroundColor: colors.background.tertiary,
   },
   exerciseDayHeaderLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: rp(spacing.sm),
   },
-  exerciseDayLabel: { fontSize: 14, fontWeight: "600", color: "#FFFFFF" },
+  exerciseDayLabel: {
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.semibold) as any,
+    color: colors.text.primary,
+  },
   exerciseDayHeaderRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: rp(spacing.sm),
   },
-  exerciseDayCount: { fontSize: 12, color: "#4CAF50", fontWeight: "600" },
-  exerciseDayRest: { fontSize: 12, color: "#555" },
-  expandArrow: { fontSize: 10, color: "#888" },
+  exerciseDayCount: {
+    fontSize: rf(typography.fontSize.micro),
+    color: colors.primary.DEFAULT,
+    fontWeight: String(typography.fontWeight.semibold) as any,
+  },
+  exerciseDayRest: { fontSize: rf(typography.fontSize.micro), color: colors.text.tertiary },
 
   exerciseDayDetail: {
-    backgroundColor: "#1E1E3A",
+    backgroundColor: colors.background.secondary,
     borderWidth: 1,
     borderTopWidth: 0,
-    borderColor: "#2A2A4E",
-    borderBottomLeftRadius: 10,
-    borderBottomRightRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderColor: colors.glass.border,
+    borderBottomLeftRadius: borderRadius.lg,
+    borderBottomRightRadius: borderRadius.lg,
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.sm),
   },
   exerciseDayEmptyHint: {
-    fontSize: 13,
-    color: "#555",
+    fontSize: rf(13),
+    color: colors.text.tertiary,
     textAlign: "center",
-    paddingVertical: 8,
+    paddingVertical: rp(spacing.sm),
   },
 
   exerciseItemRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    backgroundColor: "#2A2A4E",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    marginBottom: 6,
+    backgroundColor: colors.glass.background,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: rp(spacing.sm),
+    paddingVertical: rp(spacing.sm),
+    marginBottom: rp(spacing.xs),
   },
   exerciseItemInfo: { flex: 1 },
-  exerciseItemName: { fontSize: 14, fontWeight: "600", color: "#FFFFFF", marginBottom: 6 },
+  exerciseItemName: {
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.semibold) as any,
+    color: colors.text.primary,
+    marginBottom: rp(spacing.xs),
+  },
   exerciseItemControls: {
     flexDirection: "row",
-    gap: 12,
+    gap: rp(spacing.md),
     alignItems: "center",
   },
   controlGroup: { alignItems: "center" },
-  controlLabel: { fontSize: 10, color: "#888", marginBottom: 3 },
-  controlValue: { fontSize: 13, color: "#FFFFFF", fontWeight: "600" },
+  controlLabel: { fontSize: rf(10), color: colors.text.secondary, marginBottom: rp(spacing.xxs) },
+  controlValue: {
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.text.primary,
+    fontWeight: String(typography.fontWeight.semibold) as any,
+  },
   stepperRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: rp(spacing.xs),
   },
   stepperBtn: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#3A3A5E",
+    width: rw(24),
+    height: rw(24),
+    borderRadius: 999,
+    backgroundColor: colors.background.tertiary,
     justifyContent: "center",
     alignItems: "center",
   },
-  stepperBtnText: { fontSize: 16, color: "#FFFFFF", fontWeight: "600", lineHeight: 18 },
-  stepperValue: { fontSize: 13, color: "#FFFFFF", fontWeight: "600", minWidth: 28, textAlign: "center" },
+  stepperBtnText: {
+    fontSize: rf(typography.fontSize.body),
+    color: colors.text.primary,
+    fontWeight: String(typography.fontWeight.semibold) as any,
+    lineHeight: rf(18),
+  },
+  stepperValue: {
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.text.primary,
+    fontWeight: String(typography.fontWeight.semibold) as any,
+    minWidth: rw(28),
+    textAlign: "center",
+  },
 
   removeExBtn: {
-    padding: 6,
-    marginLeft: 4,
+    padding: rp(spacing.xs),
+    marginLeft: rp(spacing.xxs),
   },
-  removeExBtnText: { fontSize: 14, color: "#FF5252" },
 
   exerciseDayActions: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 4,
+    marginTop: rp(spacing.xxs),
   },
   addExerciseBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: rp(spacing.sm),
+    paddingHorizontal: rp(spacing.md),
   },
-  addExerciseBtnText: { fontSize: 13, fontWeight: "600", color: "#4CAF50" },
+  addExerciseBtnText: {
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.semibold) as any,
+    color: colors.primary.DEFAULT,
+  },
   clearDayBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: rp(spacing.sm),
+    paddingHorizontal: rp(spacing.md),
   },
-  clearDayBtnText: { fontSize: 12, color: "#FF5252" },
+  clearDayBtnText: { fontSize: rf(typography.fontSize.micro), color: colors.error.DEFAULT },
 
-  // ── Modals (shared) ──
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    justifyContent: "flex-end",
-  },
-  modalSheet: {
-    backgroundColor: "#1A1A2E",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: "70%",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#2A2A4E",
-  },
-  modalTitle: { fontSize: 17, fontWeight: "700", color: "#FFFFFF" },
-  modalClose: { fontSize: 18, color: "#888", padding: 4 },
-
-  pickerList: { paddingBottom: 32 },
+  // ── Picker sheets ──
+  pickerList: { paddingBottom: rp(spacing.xxl) },
   pickerItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.md),
     borderBottomWidth: 1,
-    borderBottomColor: "#2A2A4E",
+    borderBottomColor: colors.glass.border,
   },
-  pickerItemSelected: { backgroundColor: "#1E3A1E" },
+  pickerItemSelected: { backgroundColor: `${colors.primary.DEFAULT}1A` },
   pickerItemInfo: { flex: 1 },
-  pickerItemName: { fontSize: 15, fontWeight: "600", color: "#FFFFFF" },
-  pickerItemMeta: { fontSize: 12, color: "#888", marginTop: 3 },
-  pickerItemMuscles: { fontSize: 12, color: "#4CAF50", marginTop: 3 },
-  checkmark: { fontSize: 18, color: "#4CAF50", marginLeft: 8 },
+  pickerItemName: {
+    fontSize: rf(typography.fontSize.body),
+    fontWeight: String(typography.fontWeight.semibold) as any,
+    color: colors.text.primary,
+  },
+  pickerItemMeta: { fontSize: rf(typography.fontSize.micro), color: colors.text.secondary, marginTop: rp(spacing.xxs) },
+  pickerItemMuscles: { fontSize: rf(typography.fontSize.micro), color: colors.primary.DEFAULT, marginTop: rp(spacing.xxs) },
 
-  pickerEmpty: { padding: 32, alignItems: "center" },
-  pickerEmptyText: { fontSize: 14, color: "#555" },
+  pickerEmpty: { padding: rp(spacing.xxl), alignItems: "center" },
+  pickerEmptyText: { fontSize: rf(typography.fontSize.caption), color: colors.text.tertiary },
 
   // ── Exercise picker extras ──
   exerciseSearchRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.sm),
   },
   exerciseSearchInput: {
-    backgroundColor: "#2A2A4E",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: "#FFFFFF",
+    backgroundColor: colors.glass.background,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.sm),
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.text.primary,
   },
   categoryTabsRow: {
-    paddingHorizontal: 12,
-    paddingBottom: 10,
-    gap: 6,
+    paddingHorizontal: rp(spacing.md),
+    paddingBottom: rp(spacing.sm),
+    gap: rp(spacing.xs),
   },
   categoryTab: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: "#2A2A4E",
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.xs),
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.glass.background,
   },
   categoryTabActive: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: colors.primary.DEFAULT,
   },
   categoryTabText: {
-    fontSize: 12,
-    color: "#888",
-    fontWeight: "600",
+    fontSize: rf(typography.fontSize.micro),
+    color: colors.text.secondary,
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
   categoryTabTextActive: {
-    color: "#FFFFFF",
+    color: colors.text.primary,
   },
 });

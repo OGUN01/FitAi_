@@ -18,6 +18,27 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
   multiGet: jest.fn(() => Promise.resolve([])),
 }));
 
+// Local profileStore mock — DataBridge reads/writes via useProfileStore.getState()
+// (updatePersonalInfo, reset, personalInfo). The global jest.setup.js mock is
+// stateless and lacks reset(), so this test provides a stateful local mock that
+// mirrors the real store's mutable behavior. getState() returns the live state
+// so assertions on profileState.personalInfo reflect prior saves.
+jest.mock("../../stores/profileStore", () => {
+  const state = {
+    personalInfo: null as any,
+    updatePersonalInfo: jest.fn((data: any) => {
+      state.personalInfo = { ...(state.personalInfo || {}), ...data };
+    }),
+    setSyncStatus: jest.fn(),
+    reset: jest.fn(() => {
+      state.personalInfo = null;
+    }),
+  };
+  const fn: any = jest.fn(() => state);
+  fn.getState = jest.fn(() => state);
+  return { useProfileStore: fn };
+});
+
 jest.mock("../../services/supabase", () => ({
   supabase: {
     from: jest.fn(() => ({

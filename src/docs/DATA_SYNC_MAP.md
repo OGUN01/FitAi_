@@ -130,9 +130,85 @@ profile.dietPreferences    // User's diet preferences
 |-------|---------|-----------|
 | `fitnessStore` | Workout data | `weeklyWorkoutPlan`, `workoutProgress` |
 | `nutritionStore` | Meal data | `weeklyMealPlan`, `mealProgress`, `dailyMeals` |
-| `healthDataStore` | Health metrics | `metrics` (steps, sleep, heart rate) |
+| `healthDataStore` | Health metrics (Android Health Connect + manual entry) | `metrics` (steps, heartRate, restingHeartRate, activeCalories, totalCalories, distance, weight, sleepHours, recentWorkouts, heartRateVariability, oxygenSaturation, bodyFat) + `metricsHistory` (N-day persisted history for charts). Persisted to `health_metrics` Supabase table (Wave 3) via fire-and-forget `saveHealthSnapshot` after each sync; manual entries via `saveHealthMetric(source:'manual')`. `weight` also dual-writes to `body_analysis` for the calculation engine. |
 | `profileStore` | Profile data | `bodyMetrics`, `workoutPreferences` |
 | `subscriptionStore` | Subscription | `isPremium`, `subscriptionStatus` |
+
+---
+
+## Android Health Connect Sync Path (Wave 2 → Wave 3)
+
+**Sole Android health-data path.** Google Fit has been removed entirely (REST API deprecated, shutdown end-2026). iOS uses HealthKit (separate path, not documented here).
+
+**Wave 3 addition:** Health Connect metrics now persist to the `health_metrics` Supabase table (automatic path), and users with unsupported watches can manually enter health data (manual path). Both paths write to the same table; see `MANUAL_HEALTH_ENTRY.md` for the manual path details.
+
+### Data Flow
+
+```
+Smartwatch → Companion app → Android Health Connect (OS hub)
+  → healthConnectService.syncHealthData()     [src/services/health/core.ts]
+      → per-metric readers (syncHelpers.ts): syncSteps, syncHeartRate,
+        syncActiveCalories, syncTotalCaloriesWithBMRFallback, syncDistance,
+        syncWeight, syncSleep, syncExerciseSessions, syncHRV, syncSpO2, syncBodyFat
+  → healthDataStore.metrics (Zustand)         [src/stores/healthDataStore.ts]
+  → UI selectors
+```
+
+FitAI reads from Health Connect only — never from individual watch SDKs. A watch works with FitAI iff its companion app writes to Health Connect (see `WEARABLE_SUPPORT_MATRIX.md`).
+
+### Sync Triggers
+
+1. **Foreground sync on Home screen mount** — `syncHealthData()` called when Home loads (gated on permissions + availability).
+2. **Manual "Sync Now"** — user-initiated refresh from the wearable/health settings UI.
+3. **Background fetch** — `registerBackgroundHealthSync()` runs on app startup (gated on `settings.backgroundSyncEnabled`); uses `expo-background-fetch` task `fitai-healthconnect-background-sync` → `runBackgroundSyncOnce()` → `syncHealthData(1 day back)` if `shouldSync(1 hour)` is true. Requires `READ_HEALTH_DATA_IN_BACKGROUND` (Android 15+).
+
+### Workout Write-Back Path
+
+Completed FitAI workouts are written back to Health Connect (mirrors iOS `exportWorkoutToHealthKit`):
+
+```
+Workout completion flow (completionTracking.ts)
+  → healthConnectService.writeWorkoutSession({ exerciseType, startTime, endTime, title, calories, notes })
+      → insertRecords([ExerciseSession]) + insertRecords([ActiveCaloriesBurned]) if calories > 0
+```
+
+Requires `WRITE_EXERCISE` + `WRITE_ACTIVE_CALORIES_BURNED` permissions.
+
+### Persistence — `health_metrics` Table (Wave 3)
+
+Health metrics are persisted to the `health_metrics` Supabase table (migration `20260620000003_create_health_metrics.sql`). The runtime store (`healthDataStore.metrics`) remains the SSOT for live UI; `health_metrics` is the persistence + history layer. UNIQUE(user_id, date, metric_type) — one authoritative value per user/day/metric, upserted (latest write wins). `source` column distinguishes `'healthconnect'` (automatic) from `'manual'` (manual entry) for UI attribution; it does NOT create two sources of truth.
+
+#### Automatic path (Health Connect → `health_metrics`)
+
+```
+healthConnectService.syncHealthData()
+  → healthDataStore.syncFromHealthConnect(result)
+      → set metrics (Zustand) — UI updates immediately
+      → healthMetricsDataService.saveHealthSnapshot({ userId, date, metrics })
+          .catch(console.error)          // FIRE-AND-FORGET
+```
+
+**Key invariant:** UI sync and persistence are decoupled. The store write completes and subscribers re-render BEFORE the Supabase upsert resolves. If the upsert fails, the error is logged via `console.error` (CLAUDE.md #5 — no silent failures) but the user still sees their freshly-synced data. Persistence failures NEVER block UI sync. The `.catch(console.error)` is the only error handler — there is no retry queue for health metrics (unlike the SyncEngine queue used for onboarding data); a missed write simply means that day's value won't appear in history charts until the next successful sync.
+
+#### Manual entry path (ManualHealthEntryScreen → `health_metrics`)
+
+For watches that do not write to Health Connect (Noise, boAt, Fire-Boltt, Huawei), users can manually enter health data:
+
+```
+WearableConnectionScreen → UnsupportedWatchNotice → ManualHealthEntryScreen
+  → healthMetricsDataService.saveHealthMetric({ userId, date, metricType, value, unit, source: 'manual' })
+  → upsert into health_metrics (UNIQUE wins → overrides HC value for that day/metric if present)
+```
+
+Both paths write to the SAME table with the SAME UNIQUE constraint. A manual entry on a day that already has HC data overrides that day's HC value for that metric (latest write wins on upsert). See `MANUAL_HEALTH_ENTRY.md` for the full manual-entry UX and metric list.
+
+#### History read-back
+
+`healthDataStore.loadHealthMetricsHistory(days=30)` → `healthMetricsDataService.getMultiMetricHistory` → populates `metricsHistory` state field for charts. Called on chart-screen mount and after manual entries.
+
+#### `weight` dual-write (unchanged)
+
+`weight_kg` writes to BOTH `health_metrics` (daily history) AND `profileStore.bodyAnalysis.current_weight_kg` → `body_analysis` (onboarding SSOT for the calculation engine). Different consumers, intentional, not a duplication.
 
 ---
 
@@ -245,6 +321,6 @@ When adding new data:
 
 ---
 
-*Last Updated: January 2026*
+*Last Updated: June 2026 (Wave 3 — `health_metrics` Supabase persistence for Health Connect + manual entry fallback; Wave 2: Health Connect sync path + workout write-back; Google Fit removed)*
 *Maintained by: FitAI Development Team*
 

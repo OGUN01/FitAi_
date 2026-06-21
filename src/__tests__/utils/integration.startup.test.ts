@@ -22,9 +22,7 @@ describe("initializeBackend startup path", () => {
       useAuth: jest.fn(),
     }));
 
-    jest.doMock("../../hooks/useUser", () => ({
-      useUser: jest.fn(),
-    }));
+    // useUser was renamed to useAuth — dead doMock removed (file no longer exists).
 
     jest.doMock("../../stores/profileStore", () => ({
       useProfileStore: jest.fn(),

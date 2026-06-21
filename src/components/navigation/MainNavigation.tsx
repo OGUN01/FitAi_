@@ -44,10 +44,18 @@ const isMainTabKey = (value: string): value is MainTabKey =>
 
 interface MainNavigationProps {
   initialTab?: string;
+  /**
+   * Optional route params to seed the initial tab with — e.g. when a
+   * notification tap should deep-link into the Diet water modal:
+   * `{ openWaterModal: true }`. Only applied to the initial tab; subsequent
+   * tab switches use the normal navigate(params) flow.
+   */
+  initialTabParams?: Record<string, unknown>;
 }
 
 export const MainNavigation: React.FC<MainNavigationProps> = ({
   initialTab = "home",
+  initialTabParams,
 }) => {
   const { config: appConfig } = useAppConfig();
   const initialResolvedTab = isMainTabKey(initialTab)
@@ -62,8 +70,11 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     profile: initialResolvedTab === "profile",
     analytics: initialResolvedTab === "analytics",
   });
+  // Seed the initial tab's params so notification-tap deep links (e.g.
+  // openWaterModal) reach the target screen on first render. Other tabs start
+  // with no params and receive them via navigation.navigate().
   const [tabParams, setTabParams] = useState<Partial<Record<MainTabKey, any>>>(
-    {},
+    initialTabParams ? { [initialResolvedTab]: initialTabParams } : {},
   );
   const [workoutSession, setWorkoutSession] = useState<{
     isActive: boolean;
@@ -189,6 +200,18 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       }
     });
   };
+  // React to notification-tap deep links forwarded via props. The useState
+  // initializer above seeds tabParams on cold start; this effect covers warm
+  // start (app already mounted when the notification was tapped). When
+  // initialTabParams is set, transition to the target tab with those params.
+  useEffect(() => {
+    if (!initialTabParams || !initialTab) return;
+    if (!isMainTabKey(initialTab)) return;
+    transitionToTab(initialTab, initialTabParams, true);
+    // We intentionally depend on initialTabParams identity (App.tsx creates a
+    // fresh object per tap) so repeated taps re-fire the transition.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTab, initialTabParams]);
   // Navigation object to pass to screens
   const navigation = {
     navigate: (screen: string, params?: any) => {

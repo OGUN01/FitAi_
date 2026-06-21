@@ -1,58 +1,53 @@
-import { useState, useEffect } from "react";
-import { Animated } from "react-native";
+/**
+ * FitAI — Workout Animations (Reanimated)
+ *
+ * Migrated from legacy RN `Animated.Value` to Reanimated shared values so the
+ * exercise transition fade/scale runs on the UI thread (60-120fps) and shares
+ * the same animation primitive as the rest of the Aurora design language.
+ *
+ * Contract preserved: `fadeAnim` / `scaleAnim` are now Reanimated SharedValue<number>
+ * (0..1), consumed by WorkoutProgressBar + the exercise container's animated
+ * style. `animateTransition(cb)` keeps the same fade-out → callback → fade-in
+ * sequence (the requestAnimationFrame defer is retained so React re-renders
+ * settle before the fade-in starts, preventing the opacity-stuck-at-0 bug).
+ */
+import { useEffect } from "react";
+import {
+  useSharedValue,
+  withTiming,
+  runOnJS,
+} from "react-native-reanimated";
+import { animations } from "../theme/animations";
 
 export const useWorkoutAnimations = () => {
-  const [fadeAnim] = useState(new Animated.Value(1));
-  const [scaleAnim] = useState(new Animated.Value(1));
+  const fadeAnim = useSharedValue(1);
+  const scaleAnim = useSharedValue(1);
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
+    fadeAnim.value = withTiming(1, { duration: animations.duration.normal });
+    scaleAnim.value = withTiming(1, { duration: animations.duration.quick });
+  }, [fadeAnim, scaleAnim]);
 
   const animateTransition = (callback: () => void) => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 0.8,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
+    // Fade-out + scale-down on the UI thread. When the fade-out completes, run
+    // the JS callback (state transition), then fade back in on the next frame
+    // so React's re-render settles first (prevents opacity stuck at 0).
+    const onFadeOutComplete = () => {
       callback();
-      // Defer fade-in to next frame so the React re-render from callback()
-      // completes first — prevents the native-driver animation from being
-      // interrupted by the incoming render, which caused exercise 2+ to stay
-      // invisible (opacity stuck at 0).
       requestAnimationFrame(() => {
-        Animated.parallel([
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(scaleAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]).start();
+        fadeAnim.value = withTiming(1, { duration: animations.duration.normal });
+        scaleAnim.value = withTiming(1, { duration: animations.duration.normal });
       });
-    });
+    };
+
+    fadeAnim.value = withTiming(0, { duration: animations.duration.quick });
+    scaleAnim.value = withTiming(
+      0.8,
+      { duration: animations.duration.quick },
+      () => {
+        runOnJS(onFadeOutComplete)();
+      },
+    );
   };
 
   return {

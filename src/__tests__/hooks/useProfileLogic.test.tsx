@@ -20,15 +20,9 @@ jest.mock("../../hooks/useAuth", () => ({
   }),
 }));
 
-jest.mock("../../hooks/useUser", () => ({
-  useUser: () => ({
-    profile: {
-      personalInfo: { name: "Alex", age: 28 },
-      fitnessGoals: { primary_goals: ["strength"] },
-    },
-    clearProfile: jest.fn(),
-  }),
-}));
+// useUser was renamed to useAuth; profile/clearProfile now come from useUserStore
+// (mocked below). The old useUser mock referenced a deleted file and crashed the
+// suite import — removed.
 
 jest.mock("../../stores/profileStore", () => {
   const fn = jest.fn(() => mockProfileStoreState);
@@ -59,21 +53,33 @@ jest.mock("../../stores/subscriptionStore", () => ({
   }),
 }));
 
-jest.mock("../../stores/userStore", () => ({
-  useUserStore: {
-    getState: jest.fn(() => ({
-      profile: {
-        personalInfo: { name: "Alex", age: 28, units: "metric" },
-        preferences: {
-          units: "metric",
-          notifications: true,
-          darkMode: false,
-        },
-      },
-      setProfile: mockSetProfile,
-    })),
+// useProfileLogic calls useUserStore as a Zustand hook in selector form:
+//   useUserStore((s) => s.profile)  and  useUserStore((s) => s.clearProfile)
+// The mock must therefore be a callable accepting a selector and returning
+// selector(mockState), mirroring the real store. `.getState()` is provided so
+// any non-selector access (getState()-based reads) also resolves.
+const mockUserStoreState = {
+  profile: {
+    personalInfo: { name: "Alex", age: 28, units: "metric" },
+    preferences: {
+      units: "metric",
+      notifications: true,
+      darkMode: false,
+    },
   },
-}));
+  setProfile: mockSetProfile,
+  clearProfile: jest.fn(),
+};
+jest.mock("../../stores/userStore", () => {
+  const fn = jest.fn((selector?: (s: typeof mockUserStoreState) => unknown) =>
+    selector ? selector(mockUserStoreState) : mockUserStoreState,
+  );
+  (fn as any).getState = jest.fn(() => mockUserStoreState);
+  (fn as any).setState = jest.fn();
+  return {
+    useUserStore: fn,
+  };
+});
 
 jest.mock("../../stores/healthDataStore", () => ({
   useHealthDataStore: {

@@ -42,7 +42,7 @@ export default {
       },
       edgeToEdgeEnabled: true,
       package: "com.fitai.app",
-      versionCode: 13,
+      versionCode: 14,
       permissions: [
         "INTERNET",
         "ACCESS_NETWORK_STATE",
@@ -52,12 +52,11 @@ export default {
         "USE_FINGERPRINT",
         "POST_NOTIFICATIONS",
         "RECEIVE_BOOT_COMPLETED",
-        // Google Fit permissions
+        // Pedometer / activity recognition (generic Android; Google Fit was REMOVED in Wave 2)
         "android.permission.ACTIVITY_RECOGNITION",
-        "com.google.android.gms.permission.ACTIVITY_RECOGNITION",
-        // Health Connect permissions
+        // Health Connect READ permissions (sole Android health-data path — Google Fit removed)
         "android.permission.health.READ_STEPS",
-        "android.permission.health.READ_HEART_RATE", 
+        "android.permission.health.READ_HEART_RATE",
         "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
         "android.permission.health.READ_TOTAL_CALORIES_BURNED",
         "android.permission.health.READ_BASAL_METABOLIC_RATE",
@@ -68,12 +67,15 @@ export default {
         "android.permission.health.READ_HEART_RATE_VARIABILITY",
         "android.permission.health.READ_OXYGEN_SATURATION",
         "android.permission.health.READ_BODY_FAT",
-        // Health Connect WRITE permissions for workout sync
+        // Health Connect WRITE permissions for workout write-back to the device
         "android.permission.health.WRITE_EXERCISE",
-        "android.permission.health.WRITE_ACTIVE_CALORIES_BURNED"
+        "android.permission.health.WRITE_ACTIVE_CALORIES_BURNED",
+        // Background + historical reads (Android 15+ background sync + >30-day history)
+        "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND",
+        "android.permission.health.READ_HEALTH_DATA_HISTORY"
       ],
       allowBackup: false,
-      googleServicesFile: "./google-services.json",
+      googleServicesFile: "./android/app/google-services.json",
       jsEngine: "hermes",
       usesCleartextTraffic: true,
       networkSecurityConfig: {
@@ -94,7 +96,7 @@ export default {
       // Health Connect requirements
       minSdkVersion: 26,
       compileSdkVersion: 35,
-      targetSdkVersion: 34
+      targetSdkVersion: 35
     },
     web: {
       favicon: "./assets/favicon.png",
@@ -109,6 +111,7 @@ export default {
     },
     plugins: [
       "expo-font",
+      "react-native-health-connect",
       "./plugins/withFitAiHealthConnect",
       [
         "expo-notifications",
@@ -131,7 +134,7 @@ export default {
           android: {
             minSdkVersion: 26,      // Health Connect requirement
             compileSdkVersion: 35,  // Required for latest androidx dependencies
-            targetSdkVersion: 34,   // Optimal compatibility
+            targetSdkVersion: 35,   // Play requires API 35 + READ_HEALTH_DATA_IN_BACKGROUND
           },
         },
       ],

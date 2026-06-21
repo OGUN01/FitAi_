@@ -141,9 +141,12 @@ class ProgressDataService {
         await crudOperations.readBodyMeasurements(limit);
 
       if (localMeasurements.length > 0) {
-        // Convert Track B's BodyMeasurement format to our ProgressEntry format
+        // Convert Track B's BodyMeasurement format to our ProgressEntry format.
+        // P2-15: thread the real userId through so we never fabricate the
+        // "local-user" sentinel (which other services treat as a skip-sync
+        // signal and RLS would reject on any write-back).
         const allEntries = localMeasurements.map((measurement) =>
-          this.convertBodyMeasurementToProgressEntry(measurement),
+          this.convertBodyMeasurementToProgressEntry(measurement, userId),
         );
 
         // Track B uses unshift (newest first) and has no per-day deduplication,
@@ -338,13 +341,24 @@ class ProgressDataService {
 
   /**
    * Calculate progress statistics
+   *
+   * P2-14: Respects the requested `timeRange` (days). Fetches all entries in
+   * the window, then computes the change from the range BOUNDS (oldest entry
+   * in window → newest entry in window) rather than always comparing the two
+   * most recent entries (which could be months apart and mislabelled as the
+   * requested range). `stats.timeRange` now truthfully reflects the window.
    */
   async getProgressStats(
     userId: string,
     timeRange: number = 30,
   ): Promise<ProgressDataResponse<ProgressStats>> {
     try {
-      const entriesResponse = await this.getUserProgressEntries(userId, 2);
+      // Fetch enough entries to cover the window. getUserProgressEntries returns
+      // newest-first. We pass a generous limit so we can filter by date below.
+      const entriesResponse = await this.getUserProgressEntries(
+        userId,
+        timeRange + 10, // headroom so date filtering still has data points
+      );
 
       if (
         !entriesResponse.success ||
@@ -357,10 +371,32 @@ class ProgressDataService {
         };
       }
 
-      const entries = entriesResponse.data;
-      const latest = entries[0];
-      // If only one entry exists, compare against itself (change = 0)
-      const previous = entries.length >= 2 ? entries[1] : entries[0];
+      // P2-14: Filter entries to the requested timeRange window.
+      // entries are newest-first; compute the cutoff date (now - timeRange).
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - timeRange);
+      const cutoffStr = getLocalDateString(cutoffDate);
+
+      const allEntries = entriesResponse.data;
+      const inRangeEntries = allEntries.filter(
+        (e) => e.entry_date >= cutoffStr,
+      );
+
+      // If nothing falls in the window, fall back to whatever we have so the
+      // UI isn't blank for users whose only entry is just outside the window.
+      const entries =
+        inRangeEntries.length > 0 ? inRangeEntries : allEntries;
+
+      // Sort ascending (oldest first) so we can take range bounds.
+      const sorted = [...entries].sort((a, b) =>
+        a.entry_date.localeCompare(b.entry_date),
+      );
+      const oldest = sorted[0];
+      const newest = sorted[sorted.length - 1];
+
+      // If only one entry exists, compare against itself (change = 0).
+      const latest = newest;
+      const previous = oldest;
 
       // Calculate weight change — round to 2 dp to avoid IEEE 754 artifacts
       // e.g. 89.9 - 89.7 = 0.20000000000000284 without rounding
@@ -568,13 +604,26 @@ class ProgressDataService {
 
   /**
    * Convert Track B's BodyMeasurement to our ProgressEntry format
+   *
+   * P2-15: Accepts the real userId. If it's unavailable (guest /
+   * unauthenticated), user_id is left as an empty string and a warning is
+   * logged — we never fabricate the "local-user" sentinel (which other
+   * services treat as a skip-sync signal and which RLS would reject on any
+   * write-back).
    */
   private convertBodyMeasurementToProgressEntry(
     measurement: BodyMeasurement,
+    userId?: string,
   ): ProgressEntry {
+    if (!userId) {
+      console.warn(
+        "[progressData] convertBodyMeasurementToProgressEntry called with no userId — " +
+          "entry user_id will be empty; any write-back would be rejected by RLS.",
+      );
+    }
     return {
       id: measurement.id,
-      user_id: "local-user",
+      user_id: userId || "",
       entry_date: measurement.date,
       weight_kg: measurement.weight ?? 0,
       body_fat_percentage: measurement.bodyFat,
