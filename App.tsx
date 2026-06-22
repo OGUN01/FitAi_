@@ -1271,6 +1271,13 @@ export default function App() {
               ) : showWelcome ? (
                 <WelcomeScreen
                   onGetStarted={() => setShowWelcome(false)}
+                  onContinueAsGuest={() => {
+                    // Enter guest mode (generates/retains a guestId, sets
+                    // isGuestMode:true, isAuthenticated:false) and leave the
+                    // welcome screen so the app shell mounts in guest state.
+                    setGuestModeInStore(true);
+                    setShowWelcome(false);
+                  }}
                   onSignInSuccess={() => {
 
                     setShowWelcome(false);

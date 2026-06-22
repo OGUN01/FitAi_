@@ -21,6 +21,7 @@ import {
   getAuroraGradient,
 } from "../../../theme/gradients";
 import { toLinearGradientProps } from "../../../theme/gradients";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
@@ -77,8 +78,16 @@ export const AuroraBackground: React.FC<AuroraBackgroundProps> = ({
   // Animated opacity for gentle pulsing effect
   const opacity = useSharedValue(1);
 
+  // A11Y-1: Respect the OS "Reduce Motion" accessibility setting. When enabled
+  // (motion-sensitive users, or automation/uiautomator which can't reach idle
+  // under an infinite animation), skip the pulse entirely. This both fixes a
+  // real accessibility defect AND unblocks Maestro/uiautomator screen capture.
+  // See src/docs/VERIFIED-FINDINGS.md "A11Y-1".
+  const reduceMotion = useReducedMotion();
+  const shouldAnimate = animated && !reduceMotion;
+
   useEffect(() => {
-    if (animated) {
+    if (shouldAnimate) {
       // Gentle pulsing animation
       opacity.value = withRepeat(
         withSequence(
@@ -98,7 +107,7 @@ export const AuroraBackground: React.FC<AuroraBackgroundProps> = ({
       opacity.value = 1;
     }
     return () => { cancelAnimation(opacity); };
-  }, [animated, animationSpeed, intensity]);
+  }, [shouldAnimate, animationSpeed, intensity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

@@ -33,6 +33,8 @@ interface InputProps {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   onRightIconPress?: () => void;
+  /** TestID for automation + accessibility addressing (Maestro/uiautomator). */
+  testID?: string;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -52,6 +54,7 @@ export const Input: React.FC<InputProps> = ({
   leftIcon,
   rightIcon,
   onRightIconPress,
+  testID,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const focusAnimation = useSharedValue(0);
@@ -92,6 +95,9 @@ export const Input: React.FC<InputProps> = ({
             multiline && styles.inputMultiline,
             inputStyle,
           ]}
+          testID={testID}
+          accessibilityLabel={label || placeholder}
+          accessibilityRole="none"
           placeholder={placeholder}
           placeholderTextColor={colors.textMuted}
           value={value}

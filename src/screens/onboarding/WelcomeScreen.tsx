@@ -22,6 +22,13 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 interface WelcomeScreenProps {
   onGetStarted: () => void;
+  /**
+   * Called when the user taps "Continue as Guest". If omitted, the guest link
+   * falls back to `onGetStarted` (backward-compatible). Previously this link was
+   * hard-wired to `onGetStarted`, so "Continue as Guest" actually launched the
+   * full sign-up flow — see src/docs/VERIFIED-FINDINGS.md (UX-1).
+   */
+  onContinueAsGuest?: () => void;
   onSignInSuccess: () => void;
 }
 
@@ -47,8 +54,12 @@ const FEATURE_HIGHLIGHTS = [
 
 export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   onGetStarted,
+  onContinueAsGuest,
   onSignInSuccess,
 }) => {
+  // Guest entry: use the dedicated handler if provided; otherwise fall back to
+  // onGetStarted so the link still does *something* (backward compatibility).
+  const handleContinueAsGuest = onContinueAsGuest ?? onGetStarted;
   const [mode, setMode] = useState<ViewMode>("welcome");
   const [formData, setFormData] = useState<LoginCredentials>({
     email: "",
@@ -307,7 +318,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
             </AnimatedPressable>
           </View>
           <View style={styles.signInPromptRow}>
-            <AnimatedPressable onPress={onGetStarted} scaleValue={0.97}>
+            <AnimatedPressable onPress={handleContinueAsGuest} scaleValue={0.97}>
               <Text style={styles.footerLink}>Continue as Guest</Text>
             </AnimatedPressable>
           </View>

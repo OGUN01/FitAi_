@@ -201,6 +201,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     [healthMetrics, setShowWeightModal, onNavigateToTab, syncHealthData, syncFromHealthConnect]
   );
 
+  // Reanimated entrance fade — shared value driven from useHomeLogic.
+  // NOTE: This hook MUST run before ALL early returns below (showGuestSignUp,
+  // isLoading). React requires hooks unconditionally + same order every render.
+  // Calling useAnimatedStyle after an early return caused "Rendered more hooks
+  // than during the previous render" when showGuestSignUp or isLoading flipped
+  // → hook count mismatch → HomeScreen crash for every logged-in user.
+  // See src/docs/VERIFIED-FINDINGS.md "P0-4".
+  const fadeStyle = useAnimatedStyle(() => ({ opacity: fadeAnim.value }));
+
   if (showGuestSignUp) {
     return (
       <GuestSignUpScreen
@@ -223,9 +232,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
       </AuroraBackground>
     );
   }
-
-  // Reanimated entrance fade — shared value driven from useHomeLogic.
-  const fadeStyle = useAnimatedStyle(() => ({ opacity: fadeAnim.value }));
 
   return (
     <>

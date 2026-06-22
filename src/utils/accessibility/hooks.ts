@@ -1,23 +1,38 @@
 import { AccessibilityInfo } from "react-native";
 import { useEffect, useState } from "react";
 
+/**
+ * Returns true when the OS "Reduce Motion" / "Remove Animations" accessibility
+ * setting is enabled. Degrades gracefully to `false` (motion on) when
+ * `AccessibilityInfo` is unavailable (partial RN mocks in tests, SSR) — never
+ * throws. This is important because AuroraBackground (and other consumers) call
+ * this on every render; a throw here would crash the host screen.
+ */
 export const useReducedMotion = (): boolean => {
   const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
+    // Guard: AccessibilityInfo can be undefined in partial RN test mocks or SSR.
+    if (!AccessibilityInfo?.isReduceMotionEnabled) return;
+
+    let cancelled = false;
     AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
-      setReducedMotion(enabled);
+      if (!cancelled) setReducedMotion(Boolean(enabled));
+    }).catch(() => {
+      // Probe failed — assume motion on (default). Non-fatal.
     });
 
-    const subscription = AccessibilityInfo.addEventListener(
-      "reduceMotionChanged",
-      (enabled) => {
-        setReducedMotion(enabled);
-      },
-    );
+    let subscription: { remove: () => void } | null = null;
+    if (typeof AccessibilityInfo.addEventListener === "function") {
+      subscription = AccessibilityInfo.addEventListener(
+        "reduceMotionChanged",
+        (enabled: boolean) => setReducedMotion(Boolean(enabled)),
+      );
+    }
 
     return () => {
-      subscription.remove();
+      cancelled = true;
+      subscription?.remove?.();
     };
   }, []);
 

@@ -45,6 +45,7 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
               <Input
                 label="First Name"
                 placeholder="John"
+                testID="onboarding-first-name"
                 value={formData.first_name}
                 onChangeText={(value) => updateField("first_name", value)}
                 error={
@@ -58,6 +59,7 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
               <Input
                 label="Last Name"
                 placeholder="Doe"
+                testID="onboarding-last-name"
                 value={formData.last_name}
                 onChangeText={(value) => updateField("last_name", value)}
                 error={
@@ -91,6 +93,7 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
               <Input
                 label="Age"
                 placeholder="25"
+                testID="onboarding-age"
                 value={formData.age > 0 ? formData.age.toString() : ""}
                 onChangeText={handleAgeChange}
                 keyboardType="numeric"
