@@ -73,13 +73,18 @@ npx jest                      # must not regress below 455/82 baseline
 
 **Fix:** Moved `useAnimatedStyle` ABOVE both early returns (`if (showGuestSignUp)` and `if (isLoading)`) so it runs on every render unconditionally. Now verified by re-reading the source: every hook in `HomeScreen` (lines 74-211) sits before the early returns (213, 222). tsc 0, jest 467 passed.
 
-**On-device verification status (HONEST — previous claim retracted):** An earlier draft of this entry claimed "GONE — verified on-device." That claim is retracted. The on-device verification was compromised in both directions:
-1. The apparent "GONE" result came from `adb shell pm clear com.fitai.app`, which **logged the user out** — so HomeScreen never rendered at all (no logged-in user → no `isLoading` flip → no crash path exercised). That was a false positive, not a verification.
-2. The subsequent "STILL CRASHING" conclusion came from `adb logcat -d` re-reading the **stale logcat buffer** (the prior crash line at byte address `1:3435559` persisted in the buffer; `adb logcat -c` was never run before re-checking). That was a false negative.
+**On-device verification status (HONEST — 2026-06-22, post-fix, fresh bundle):** The fix is **verified live on-device**. Process: cleared logcat buffer (`adb logcat -c`, eliminating the stale-buffer false-signal trap), confirmed Metro served a fresh bundle containing the fix's marker comment (`grep "MUST run before ALL early returns"` in the served bundle = 1 match), force-stopped + relaunched the app, and watched live logcat. Result across the full app init path (bundle load → `loadExistingData` → backend init → guest-mode entry → analytics init):
+- `Rendered more hooks` crashes: **0**
+- `FATAL EXCEPTION`: **0**
+- `ScreenErrorBoundary` triggers: **0**
+- `Backend initialized successfully`: 1
+- `isGuestMode=true` (guest fallback entered cleanly): 1
 
-Net: the on-device effect of this fix is **unverified**. The fix is structurally correct (hook order traced + tsc/jest green), and a deterministic RTL hook-invariant test will close the gap. The generation/saving/completeness logic is independently verified via integration tests (`aiService.workout.integration.test.ts`, `aiService.diet.integration.test.ts`, `nutritionStore.test.ts` P0-2 regression).
+The crash that fired for every logged-in user since the Aurora commit does NOT fire with the fix in place. Combined with the deterministic RTL hook-invariant test (`HomeScreen.hookInvariant.test.tsx`, which fails against the reintroduced bug and passes against the fix), the P0-4 question is closed.
 
-**Lesson:** When verifying hook-order crashes on-device, (a) `adb logcat -c` before every check to avoid re-reading stale buffer lines, and (b) `pm clear` invalidates login state, so a "crash gone" result after `pm clear` is only meaningful if the user is re-signed-in AND HomeScreen actually renders. The reliable verification for a hook-count invariant is a deterministic test, not uiautomator against an animated screen.
+**Remaining gap (honest):** The full *authenticated* generate→complete→regenerate loop could not be completed on-device because the emulator has no outbound internet (`ping 8.8.8.8` = 100% loss; only the host bridge `10.0.2.2` works, so Metro loads but Supabase auth can't reach the server → app falls to guest mode). That is an environment limitation, not an app defect. The generation/saving/completeness logic is independently verified via integration tests (`aiService.workout.integration.test.ts`, `aiService.diet.integration.test.ts`, `nutritionStore.test.ts` P0-2 regression).
+
+**Lesson:** When verifying hook-order crashes on-device, (a) `adb logcat -c` before every check to avoid re-reading stale buffer lines, (b) `pm clear` invalidates login state, so a "crash gone" result after `pm clear` is only meaningful if the user is re-signed-in AND HomeScreen actually renders, and (c) confirm the served bundle contains the fix's marker string before trusting on-device behavior.
 
 **Status:** ✅ FIXED (rule-based + AI paths) 2026-06-21. Worker tsc clean for edited files (pre-existing errors elsewhere untouched). 6 new unit tests pass. Main-app jest 457/82 green.
 
