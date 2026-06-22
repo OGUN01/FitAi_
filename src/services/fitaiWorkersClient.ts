@@ -334,6 +334,33 @@ export interface WorkoutGenerationRequest {
   temperature?: number;
   skipCache?: boolean;
   boostExtraCardioMinutes?: number;
+  /**
+   * P1-4 — Closed-loop progressive overload. The user's last-completed sets per
+   * exercise (from exercise_sets via exerciseHistoryService), so generation
+   * can build the next plan on ACTUAL lifted weights rather than guessing.
+   * Optional: absent for first-time users / guest mode. See
+   * src/docs/VERIFIED-FINDINGS.md "P1-4".
+   */
+  priorPerformance?: PriorPerformanceEntry[];
+}
+
+/**
+ * One exercise's last-session performance, fed into generation so the AI/rule
+ * engine can prescribe a progression (e.g. "Last: 60kg×8,8,8 → target 62.5kg
+ * or 60kg×10"). Mirrors the shape progressionService already consumes.
+ */
+export interface PriorPerformanceEntry {
+  exerciseId: string;
+  exerciseName?: string;
+  lastSession?: {
+    completedAt: string; // ISO timestamp
+    sets: Array<{
+      setNumber: number;
+      weightKg: number | null;
+      reps: number | null;
+      rpe?: 1 | 2 | 3 | null;
+    }>;
+  };
 }
 
 export class WorkersAPIError extends Error {

@@ -153,6 +153,54 @@ const GOAL_ADJUSTMENTS: Record<string, GoalAdjustments> = {
 };
 
 // ============================================================================
+// MESOCYCLE PROGRESSIVE OVERLOAD (week-over-week scaling)
+// ============================================================================
+// Implements the Double Progression / mesocycle documented in
+// FITAI_DATA_ARCHITECTURE.md §F.3. Previously `weekNumber` only changed the
+// cache key + a text note (generateProgressionNotes); the actual sets/reps/
+// rest were IDENTICAL across all 4 weeks. This makes the progression real:
+//   Week 1 — baseline (acclimation)
+//   Week 2 — +1 set on compounds, +1 rep to the rep-range ceiling (volume)
+//   Week 3 — peak intensity: rep-range floor lifted +1, rest +10s (heavier)
+//   Week 4 — deload: -30% volume (sets), -20% intensity proxy (reps), +rest
+// All multipliers are applied AFTER goal adjustments, BEFORE medical mods, so
+// medical safety always wins. Cardio exercises are excluded from intensity
+// changes (reps are time-based for cardio) but participate in deload volume.
+interface MesocycleProgression {
+  setsMultiplier: number;
+  repsFloorDelta: number;   // +N to the low end of the rep range
+  repsCeilingDelta: number;  // +N to the high end of the rep range
+  restDeltaSeconds: number;  // +/- seconds added to rest
+}
+
+const MESOCYCLE_WEEK_MULTIPLIERS: Record<number, MesocycleProgression> = {
+  1: { setsMultiplier: 1.0, repsFloorDelta: 0, repsCeilingDelta: 0, restDeltaSeconds: 0 },
+  2: { setsMultiplier: 1.0, repsFloorDelta: 0, repsCeilingDelta: 1, restDeltaSeconds: 0 },
+  3: { setsMultiplier: 1.0, repsFloorDelta: 1, repsCeilingDelta: 1, restDeltaSeconds: 10 },
+  4: { setsMultiplier: 0.7, repsFloorDelta: -1, repsCeilingDelta: -2, restDeltaSeconds: 30 },
+};
+
+/**
+ * Apply mesocycle-week progression to an already-goal-adjusted rep range
+ * string like "8-12". Returns the original string if it isn't a range.
+ * Floor is clamped to >= 1; ceiling is clamped to >= floor.
+ */
+function applyMesocycleToReps(
+  reps: string,
+  progression: MesocycleProgression,
+): string {
+  if (typeof reps !== 'string' || !reps.includes('-')) return reps;
+  const parts = reps.split('-');
+  if (parts.length !== 2) return reps;
+  const min = parseInt(parts[0].trim(), 10);
+  const max = parseInt(parts[1].trim(), 10);
+  if (Number.isNaN(min) || Number.isNaN(max)) return reps;
+  const newMin = Math.max(1, Math.round(min + progression.repsFloorDelta));
+  const newMax = Math.max(newMin, Math.round(max + progression.repsCeilingDelta));
+  return `${newMin}-${newMax}`;
+}
+
+// ============================================================================
 // MEDICAL CONDITION MODIFICATIONS
 // ============================================================================
 
@@ -228,12 +276,17 @@ function applyMedicalModifications(
 // ============================================================================
 
 /**
- * Assign sets, reps, rest, tempo, and notes to exercises
+ * Assign sets, reps, rest, tempo, and notes to exercises.
+ *
+ * @param weekNumber 1-4 mesocycle week. Drives real progressive overload:
+ *   sets/reps/rest scale week-over-week (see MESOCYCLE_WEEK_MULTIPLIERS).
+ *   Defaults to 1 (baseline) for backward compatibility.
  */
 export function assignWorkoutParameters(
   workoutDay: WorkoutDayExercises,
   profile: UserProfile,
-  safetyProfile?: UserSafetyProfile
+  safetyProfile?: UserSafetyProfile,
+  weekNumber: number = 1,
 ): WorkoutExercise[] {
 
   const experienceLevel = profile.experienceLevel;
@@ -245,29 +298,44 @@ export function assignWorkoutParameters(
   // Get goal adjustments
   const goalAdjust = GOAL_ADJUSTMENTS[fitnessGoal] || GOAL_ADJUSTMENTS.general_fitness;
 
+  // Resolve mesocycle progression (clamp to 1-4; any unknown week = baseline)
+  const clampedWeek = Math.max(1, Math.min(4, Math.floor(weekNumber || 1)));
+  const progression = MESOCYCLE_WEEK_MULTIPLIERS[clampedWeek];
+
   const structuredExercises: WorkoutExercise[] = [];
 
   for (const exercise of workoutDay.exercises) {
     // Get base parameters for exercise classification
-    let params = exercise.classification === 'cardio'
+    const params = exercise.classification === 'cardio'
       ? baseParams.auxiliary // Cardio uses auxiliary params
       : baseParams[exercise.classification] || baseParams.auxiliary;
 
     // Apply goal adjustments
-    const adjustedSets = Math.max(1, Math.round(params.sets * goalAdjust.setsMultiplier));
-    const adjustedRest = Math.round(params.rest * goalAdjust.restMultiplier);
+    const goalAdjustedSets = Math.max(1, Math.round(params.sets * goalAdjust.setsMultiplier));
+    const goalAdjustedRest = Math.round(params.rest * goalAdjust.restMultiplier);
 
     // Adjust reps based on goal
-    let adjustedReps: string;
+    let goalAdjustedReps: string;
     if (typeof params.reps === 'string' && params.reps.includes('-')) {
       // Parse range like "8-12"
       const [min, max] = params.reps.split('-').map((n: string) => parseInt(n.trim()));
       const newMin = Math.max(1, Math.round(min * goalAdjust.repsMultiplier));
       const newMax = Math.max(newMin, Math.round(max * goalAdjust.repsMultiplier));
-      adjustedReps = `${newMin}-${newMax}`;
+      goalAdjustedReps = `${newMin}-${newMax}`;
     } else {
-      adjustedReps = params.reps;
+      goalAdjustedReps = params.reps;
     }
+
+    // Apply mesocycle progressive overload (week-over-week scaling).
+    // Cardio keeps its (time-based) reps; only volume scales on deload week.
+    const isCardio = exercise.classification === 'cardio';
+    const adjustedSets = isCardio
+      ? Math.max(1, Math.round(goalAdjustedSets * progression.setsMultiplier))
+      : Math.max(1, Math.round(goalAdjustedSets * progression.setsMultiplier));
+    const adjustedReps = isCardio
+      ? goalAdjustedReps
+      : applyMesocycleToReps(goalAdjustedReps, progression);
+    const adjustedRest = Math.max(15, goalAdjustedRest + progression.restDeltaSeconds);
 
     // Apply medical modifications
     const { sets, reps, rest } = applyMedicalModifications(

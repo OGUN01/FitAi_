@@ -61,7 +61,9 @@ import {
   NetworkError,
   isDietPlanResponse,
   isAsyncJobResponse,
+  type PriorPerformanceEntry,
 } from "../services/fitaiWorkersClient";
+import { supabase } from "../services/supabase";
 import {
   transformForDietRequest,
   transformForWorkoutRequest,
@@ -70,6 +72,8 @@ import {
 } from "../services/aiRequestTransformers";
 import { resolveCurrentWeightFromStores } from "../services/currentWeight";
 import { getLocalDateString } from "../utils/weekUtils";
+import { getCurrentUserId } from "../services/authUtils";
+import { exerciseHistoryService } from "../services/exerciseHistoryService";
 
 // ============================================================================
 // TYPES
@@ -137,6 +141,78 @@ class UnifiedAIService {
   }
 
   /**
+   * P1-4 — Closed-loop progressive overload. Fetches the user's last completed
+   * session per exercise they've trained (from exercise_sets via
+   * exerciseHistoryService) so the next generated plan builds on ACTUAL lifted
+   * weights. Returns [] for guests / first-time users (no error). See
+   * src/docs/VERIFIED-FINDINGS.md "P1-4".
+   *
+   * Strategy: pull the user's N most-recent distinct exercises (by exercise_id)
+   * and their last session for each. This avoids needing to know the upcoming
+   * exercise list (selection happens in the worker) — the AI matches by id/name.
+   */
+  private async fetchPriorPerformance(
+    focusMuscles?: string[],
+    excludeExerciseIds?: string[],
+  ): Promise<PriorPerformanceEntry[]> {
+    try {
+      const userId = getCurrentUserId();
+      if (!userId) return []; // guest or unauthenticated — no history
+
+      // Fetch the user's most recent exercise_sets grouped by exercise_id.
+      const { data, error } = await supabase
+        .from('exercise_sets')
+        .select('exercise_id, session_id, set_number, weight_kg, reps, rpe, set_type, completed_at')
+        .eq('user_id', userId)
+        .eq('is_completed', true)
+        .eq('is_calibration', false)
+        .order('completed_at', { ascending: false })
+        .limit(200);
+
+      if (error) {
+        console.error('[AIService] fetchPriorPerformance query error:', error);
+        return [];
+      }
+      if (!data || data.length === 0) return [];
+
+      // Group by exercise_id, keep only the latest session per exercise (top 8).
+      const byExercise = new Map<string, any[]>();
+      for (const row of data) {
+        if (byExercise.size >= 8 && !byExercise.has(row.exercise_id)) continue;
+        const arr = byExercise.get(row.exercise_id) || [];
+        if (arr.length === 0 || arr[0].session_id === row.session_id) {
+          arr.push(row);
+        }
+        if (!byExercise.has(row.exercise_id)) byExercise.set(row.exercise_id, arr);
+      }
+
+      const entries: PriorPerformanceEntry[] = [];
+      for (const [exerciseId, rows] of byExercise) {
+        if (excludeExerciseIds?.includes(exerciseId)) continue;
+        const sets = rows
+          .sort((a, b) => a.set_number - b.set_number)
+          .map((r) => ({
+            setNumber: r.set_number,
+            weightKg: r.weight_kg ?? null,
+            reps: r.reps ?? null,
+            rpe: (r.rpe as 1 | 2 | 3 | null) ?? null,
+          }));
+        entries.push({
+          exerciseId,
+          lastSession: {
+            completedAt: rows[0].completed_at,
+            sets,
+          },
+        });
+      }
+      return entries.slice(0, 8);
+    } catch (err) {
+      console.error('[AIService] fetchPriorPerformance failed (non-fatal — generation proceeds without history):', err);
+      return [];
+    }
+  }
+
+  /**
    * Get last generation metadata (caching info, cost, etc.)
    */
   getLastMetadata(): AIServiceMetadata | null {
@@ -173,6 +249,14 @@ class UnifiedAIService {
             bodyAnalysisWeight: preferences?.bodyMetrics?.current_weight_kg,
           }).value,
         },
+      );
+
+      // P1-4 — Closed-loop progressive overload: attach the user's last completed
+      // sets per exercise so the AI/rule engine prescribes progressions on actual
+      // lifted weights. Non-fatal: [] for guests/first-time users.
+      request.priorPerformance = await this.fetchPriorPerformance(
+        preferences?.focusMuscles,
+        request.excludeExercises,
       );
 
       const response = await fitaiWorkersClient.generateWorkoutPlan(request);
@@ -338,6 +422,16 @@ class UnifiedAIService {
       const weeklyPlan = transformDietResponseToWeeklyPlan(response, 1);
       const transformedMeals = weeklyPlan?.meals || [];
 
+      // P2-fix: Sum fiber from the actual meal/food data instead of hardcoding
+      // 0. Falls back to dailyTotals.fiber if the AI provided it, else sums per-
+      // food fiber from the raw response meals. Per CLAUDE.md principle 8.
+      const rawMeals = (response.data?.meals || []) as any[];
+      const summedFiber = rawMeals.reduce((sum: number, meal: any) => {
+        const foods: any[] = meal?.foods || [];
+        const mealFiber = foods.reduce((fs: number, f: any) => fs + (f?.nutrition?.fiber ?? f?.fiber ?? 0), 0);
+        return sum + (mealFiber || 0);
+      }, 0);
+
       const dailyPlan: DailyMealPlan = {
         date: getLocalDateString(),
         meals: transformedMeals as unknown as Meal[],
@@ -346,9 +440,9 @@ class UnifiedAIService {
           protein: response.data.dailyTotals?.protein || 0,
           carbohydrates: response.data.dailyTotals?.carbs || 0,
           fat: response.data.dailyTotals?.fat || 0,
-          fiber: 0,
+          fiber: (response.data as any)?.dailyTotals?.fiber ?? summedFiber,
         },
-        waterIntake: 0, // Default to 0, will be tracked separately
+        waterIntake: 0, // Tracked separately by the hydration store
       };
 
       return {
@@ -449,6 +543,12 @@ class UnifiedAIService {
           regenerationSeed: options?.regenerationSeed,
           advancedReview: options?.advancedReview, // H13: Pass to transformer
         },
+      );
+
+      // P1-4 — Closed-loop progressive overload: attach last-completed history.
+      request.priorPerformance = await this.fetchPriorPerformance(
+        undefined,
+        request.excludeExercises,
       );
 
       const response = await fitaiWorkersClient.generateWorkoutPlan(request);
@@ -902,20 +1002,27 @@ class UnifiedAIService {
       return {
         success: false,
         error: "Authentication required. Please sign in to use AI features.",
+        retryable: false, // re-auth, not retry
       };
     }
 
     if (error instanceof WorkersAPIError) {
+      // 5xx / 429 are transient → retryable; 4xx (bad request) is not.
+      const retryable = error.statusCode >= 500 || error.statusCode === 429;
       return {
         success: false,
         error: error.message,
+        retryable,
       };
     }
 
     if (error instanceof NetworkError) {
+      // Network errors are the most retryable case — callers (e.g.
+      // useFitnessLogic) check response.retryable for retry UX.
       return {
         success: false,
         error: "Network error. Please check your connection and try again.",
+        retryable: true,
       };
     }
 
@@ -923,6 +1030,7 @@ class UnifiedAIService {
       success: false,
       error:
         error instanceof Error ? error.message : "An unexpected error occurred",
+      retryable: true, // unknown errors are often transient; let the caller decide
     };
   }
 }

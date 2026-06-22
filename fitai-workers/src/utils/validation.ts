@@ -265,6 +265,24 @@ export const WorkoutGenerationRequestSchema = z.object({
 	//   Boost pace selected  → boostExtraCardioMinutes = 30, workoutDuration = base (e.g. 60 min)
 	//   All other pace opts  → boostExtraCardioMinutes = 0,  workoutDuration = base time_preference
 	boostExtraCardioMinutes: z.number().int().min(0).max(60).default(0),
+
+	// P1-4 — Closed-loop progressive overload. The user's last-completed sets per
+	// exercise (from exercise_sets). Optional; absent for first-time / guest users.
+	// The AI prompt + rule engine use this to prescribe progressions that build on
+	// ACTUAL lifted weights instead of guessing. See src/docs/VERIFIED-FINDINGS.md.
+	priorPerformance: z.array(z.object({
+		exerciseId: z.string(),
+		exerciseName: z.string().optional(),
+		lastSession: z.object({
+			completedAt: z.string(),
+			sets: z.array(z.object({
+				setNumber: z.number(),
+				weightKg: z.number().nullable().optional(),
+				reps: z.number().nullable().optional(),
+				rpe: z.union([z.literal(1), z.literal(2), z.literal(3)]).nullable().optional(),
+			})),
+		}).optional(),
+	})).optional(),
 });
 
 export type WorkoutGenerationRequest = z.infer<typeof WorkoutGenerationRequestSchema>;

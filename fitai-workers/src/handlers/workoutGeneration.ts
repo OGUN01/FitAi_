@@ -257,6 +257,35 @@ Consider these recommendations when structuring the plan, especially if they dif
 `;
   }
 
+  // P1-4 — Closed-loop progressive overload: inject the user's last-completed
+  // sets per exercise so the AI can prescribe progressions on ACTUAL lifted
+  // weights. See src/docs/VERIFIED-FINDINGS.md "P1-4".
+  let priorPerformanceSection = '';
+  const priorPerf = request.priorPerformance;
+  if (priorPerf && priorPerf.length > 0) {
+    const lines = priorPerf.map((entry) => {
+      if (!entry.lastSession || entry.lastSession.sets.length === 0) {
+        return `- ${entry.exerciseName || entry.exerciseId}: no prior history (first session — prescribe conservative starting weights)`;
+      }
+      const setsStr = entry.lastSession.sets
+        .map((s) => `${s.weightKg != null ? `${s.weightKg}kg` : 'BW'}×${s.reps ?? '?'}${s.rpe ? ` (RPE ${s.rpe})` : ''}`)
+        .join(', ');
+      const topSet = entry.lastSession.sets
+        .filter((s) => s.reps != null && s.weightKg != null)
+        .sort((a, b) => (b.weightKg! * (b.reps ?? 1)) - (a.weightKg! * (a.reps ?? 1)))[0];
+      const progressionHint = topSet
+        ? ` → target ${(topSet.weightKg! * 1.025).toFixed(1)}kg or ${topSet.weightKg}kg×${(topSet.reps ?? 8) + 1}`
+        : '';
+      return `- ${entry.exerciseName || entry.exerciseId}: last ${setsStr}${progressionHint}`;
+    });
+    priorPerformanceSection = `
+**Prior Performance (last completed session per exercise — use to prescribe progressive overload):**
+${lines.join('\n')}
+
+Apply Double Progression: if the user hit the TOP of the rep range on ALL sets last session, increase weight ~2.5-5%. If they missed reps or RPE was 3 (Hard), hold weight. Two consecutive tough sessions → reduce weight 10%. This is week ${request.weekNumber ?? 1} of a 4-week mesocycle.
+`;
+  }
+
   return `You are FitAI, an expert personal trainer and workout programmer.
 
 **User Profile:**
@@ -272,6 +301,7 @@ ${fitnessAssessmentSection}
 ${locationSection}
 ${preferenceSection}
 ${recommendationsSection}
+${priorPerformanceSection}
 **Weekly Plan Requirements:**
 - Workouts Per Week: ${workoutsPerWeek} days
 - Training Days: ${trainingDays.join(', ')}
@@ -332,7 +362,7 @@ Return a JSON object with this structure:
         "description": "Focus on pushing movements...",
         "totalDuration": ${safeDuration},
         "difficulty": "${profile.experienceLevel}",
-        "estimatedCalories": ${Math.round(sessionMET * (profile.weight || 70) * (safeDuration / 60))},
+        "estimatedCalories": ${Math.round(sessionMET * (profile.weight || 0) * (safeDuration / 60))},
         "warmup": [{"exerciseId": "...", "sets": 2, "reps": "10-12", "restSeconds": 30}],
         "exercises": [{"exerciseId": "...", "sets": 3, "reps": "8-12", "restSeconds": 60}, ...],
         "cooldown": [{"exerciseId": "...", "sets": 2, "reps": "30 seconds", "restSeconds": 30}],
@@ -358,8 +388,16 @@ Return a JSON object with this structure:
     }` : ''}
   ],
   "restDays": ${JSON.stringify(restDays)},
-  "totalEstimatedCalories": ${Math.round(workoutsPerWeek * sessionMET * (profile.weight || 70) * (safeDuration / 60))}
+  "totalEstimatedCalories": ${Math.round(workoutsPerWeek * sessionMET * (profile.weight || 0) * (safeDuration / 60))}
 }
+
+**Mesocycle Progressive Overload — Week ${request.weekNumber ?? 1} of 4**
+This is week ${request.weekNumber ?? 1} of a 4-week mesocycle. Scale volume/intensity accordingly:
+- Week 1 (acclimation): conservative weights, focus on form, baseline sets/reps.
+- Week 2 (volume): +1 rep to the top of each rep range; same weight as week 1 if form was clean.
+- Week 3 (peak intensity): lift HEAVIER — drop ~1 rep from the floor of the range, rest longer between sets, target RPE 7-8 on compounds.
+- Week 4 (deload): reduce volume ~30% (fewer sets) and weight ~20%; longer rest; this is a recovery week, NOT a PR week.
+Apply this scaling to the rep ranges, set counts, and rest seconds in every workout below. (The rule-based path applies the same scaling automatically; the AI path must honor it in the generated numbers.)
 
 Generate ${workoutsPerWeek} unique, balanced workouts with proper variety and progression.`;
 }

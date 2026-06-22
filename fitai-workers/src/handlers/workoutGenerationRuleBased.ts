@@ -225,8 +225,9 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 	// ============================================================================
 
 	const structuredWorkouts: StructuredWorkout[] = weeklyPlan.workouts.map((workoutDay) => {
-		// Assign parameters to exercises
-		const exercises = assignWorkoutParameters(workoutDay, enrichedProfile, safetyProfile);
+		// Assign parameters to exercises — pass weekNumber so mesocycle progressive
+		// overload (week-over-week sets/reps/rest scaling) is actually applied.
+		const exercises = assignWorkoutParameters(workoutDay, enrichedProfile, safetyProfile, weekNumber);
 
 		// Generate warmup
 		const warmup = generateWarmup(workoutDay.workoutType, 5);

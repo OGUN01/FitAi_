@@ -569,10 +569,26 @@ function validateDietPlan(
 	}
 
 	// 2. DIET TYPE VIOLATION CHECK (CRITICAL)
-	if (!prefs?.diet_type) {
-		console.error('[DietValidation] diet_type missing — skipping diet violation check');
+	// P2-fix: Previously, a missing `diet_type` caused this check to be SKIPPED
+	// entirely — so a vegan user (with `vegan` in restrictions but no diet_type)
+	// could silently receive a meat dish. Now derive diet_type from restrictions
+	// when it's missing, so compliance validation always runs. See
+	// src/docs/VERIFIED-FINDINGS.md.
+	let effectiveDietType = prefs?.diet_type;
+	if (!effectiveDietType && prefs?.restrictions && prefs.restrictions.length > 0) {
+		const dietLikeRestrictions = ['vegetarian', 'vegan', 'pescatarian'];
+		const found = prefs.restrictions.find((r) =>
+			dietLikeRestrictions.includes(r.toLowerCase()),
+		);
+		if (found) {
+			effectiveDietType = found.toLowerCase();
+			console.warn(`[DietValidation] diet_type missing — derived "${effectiveDietType}" from restrictions for compliance check`);
+		}
+	}
+	if (!effectiveDietType) {
+		console.error('[DietValidation] diet_type missing AND no derivable diet restriction — cannot run diet-compliance check. Allergen check still ran above.');
 	} else {
-		const dietViolations = checkDietTypeViolations(aiResponse.meals, prefs.diet_type, prefs.restrictions, country);
+		const dietViolations = checkDietTypeViolations(aiResponse.meals, effectiveDietType, prefs?.restrictions, country);
 		if (dietViolations.length > 0) {
 			errors.push(...dietViolations);
 			console.error('[DietValidation] DIET TYPE VIOLATIONS:', dietViolations.length);

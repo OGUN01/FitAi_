@@ -99,7 +99,6 @@ export interface DietJobMessage {
 		createdAt: string;
 		priority: number;
 	};
-<<<<<<< Updated upstream
 }
 
 /**
@@ -135,8 +134,6 @@ export interface Env {
 
 	// Feature flags
 	RULE_BASED_ROLLOUT_PERCENTAGE?: string; // '0'–'100'
-=======
->>>>>>> Stashed changes
 
 	// Razorpay Subscription Secrets & Plan IDs
 	RAZORPAY_KEY_ID: string;

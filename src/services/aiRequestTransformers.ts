@@ -331,15 +331,20 @@ export function transformForDietRequest(
 
     // REQUIRED: Fields that backend schema expects for cache key generation
     // BUG-92: When calorieTarget not explicitly passed, use advancedReview.daily_calories
-    // so AI plans at the user's actual deficit target, not the DB maintenance value
-    calorieTarget: calorieTarget ?? advancedReview?.daily_calories ?? (() => {
-      const goal = primaryGoal ?? '';
-      let fallback: number;
-      if (goal.includes('loss') || goal.includes('cut')) fallback = 1800;
-      else if (goal.includes('gain') || goal.includes('bulk')) fallback = 2800;
-      else fallback = 2200; // maintenance
-      console.error('[aiRequestTransformers] calorieTarget missing — using goal-based fallback:', fallback);
-      return fallback;
+    // so AI plans at the user's actual deficit target, not the DB maintenance value.
+    // P1-1: If NO calorie target is available anywhere, pass `undefined` (not a
+    // fabricated 1800/2200/2800) so the worker/AI can surface a "missing calorie
+    // target" state to the user instead of silently planning around a made-up
+    // deficit. Per CLAUDE.md principle 8 — never use hardcoded fallbacks for
+    // user data. See src/docs/VERIFIED-FINDINGS.md.
+    calorieTarget: (() => {
+      const target = calorieTarget ?? advancedReview?.daily_calories;
+      if (!target) {
+        console.error(
+          '[aiRequestTransformers] calorieTarget missing (no explicit target and no advancedReview.daily_calories) — passing undefined so the worker can surface a missing-target state instead of fabricating a deficit.',
+        );
+      }
+      return target;
     })(),
     mealsPerDay,
     daysCount,
@@ -537,9 +542,13 @@ export function transformForWorkoutRequest(
     preferredDays: preferredDays,
     workoutTypes: workoutPreferences?.workout_types || [],
     prefersVariety: workoutPreferences?.prefers_variety || false,
-    activityLevel: workoutPreferences?.activity_level
-      ? mapActivityLevelForHealthCalc(workoutPreferences.activity_level)
-      : undefined,
+    // Pass activity_level through UNMAPPED. The workout worker's Zod enum
+    // (validation.ts) accepts 'extreme' and the split scorer (workoutSplits.ts)
+    // keys on 'extreme' — mapping to 'very_active' here would be rejected by
+    // Zod AND mis-scored as moderate recovery. The health-calc TDEE layer used
+    // inside the worker treats 'extreme' as an alias for 'very_active', so the
+    // raw onboarding value is correct at this boundary. (Diet path still maps.)
+    activityLevel: workoutPreferences?.activity_level ?? undefined,
     preferredWorkoutTime: preferredWorkoutTime, // ✅ NEW
   };
   const resolvedCurrentWeight = resolveCurrentWeight({
