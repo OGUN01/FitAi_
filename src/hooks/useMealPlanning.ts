@@ -185,8 +185,19 @@ export const useMealPlanning = (navigation: any) => {
       await saveWeeklyMealPlan(weeklyPlan);
       console.warn('[DIET] ✅ saveWeeklyMealPlan: DB save succeeded');
     } catch (saveErr) {
-      console.error('[DIET] ❌ saveWeeklyMealPlan THREW:', saveErr);
-      throw saveErr;
+      // saveWeeklyMealPlan now THROWS on empty-plan and DB-save failure
+      // (previously it swallowed these, causing a false "Meal Plan Generated!"
+      // alert + silent data loss). Surface the real failure to the user.
+      // See src/docs/FLOW-AUDIT.md sec.3 + src/docs/VERIFIED-FINDINGS.md.
+      console.error('[DIET] saveWeeklyMealPlan THREW:', saveErr);
+      const reason =
+        saveErr instanceof Error
+          ? saveErr.message
+          : "We couldn't save your meal plan. Please try again.";
+      crossPlatformAlert("Couldn't save meal plan", reason, [
+        { text: "OK", onPress: () => {} },
+      ]);
+      return;
     }
     setWeeklyMealPlan(weeklyPlan);
     console.warn('[DIET] ✅ setWeeklyMealPlan: store updated');

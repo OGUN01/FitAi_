@@ -444,10 +444,22 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
         try {
           await saveWeeklyWorkoutPlan(response.data);
         } catch (saveError) {
+          // saveWeeklyWorkoutPlan now THROWS on empty-plan + DB-save failure
+          // (previously it swallowed these, causing a false "Plan Generated!"
+          // alert + silent data loss). Surface the real failure to the user.
+          // See src/docs/VERIFIED-FINDINGS.md.
           console.error(
-            "Failed to persist weekly workout plan to DB — plan is available this session only:",
+            "Failed to persist weekly workout plan to DB:",
             saveError,
           );
+          const reason =
+            saveError instanceof Error
+              ? saveError.message
+              : "We couldn't save your workout plan. Please try again.";
+          crossPlatformAlert("Couldn't save workout plan", reason, [
+            { text: "OK", onPress: () => {} },
+          ]);
+          return;
         }
         incrementUsage("ai_generation");
 

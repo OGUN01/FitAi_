@@ -101,8 +101,12 @@ class CompletionTrackingService {
     const userWeight =
       trackedWeight && trackedWeight > 0 ? trackedWeight : resolvedWeight.value;
 
-    // NO FALLBACK - if weight not available, return 0 and log warning
+    // NO FALLBACK - if weight not available, return 0 and log warning.
+    // P1-fix: warn here (mirroring calculateWorkoutCalories) so a developer
+    // tracing a zero-calorie workout sees the cause at the completion layer,
+    // not just silently getting 0. See src/docs/FLOW-AUDIT.md §1.
     if (!userWeight || userWeight <= 0) {
+      console.warn("[completionTracking] calculateActualCalories: user weight unavailable — returning 0 calories (MET calc requires weight). Workout will be persisted with caloriesBurned=0.");
       return 0;
     }
 
@@ -1128,7 +1132,25 @@ class CompletionTrackingService {
     const { error } = await supabase.from("exercise_sets").insert(rows);
 
     if (error) {
-      console.error("⚠️ Failed to write exercise_sets:", error);
+      // P1-fix: Previously this only logged + returned, losing set-level data
+      // (weight/reps/rpe) on a network blip — the very data progressive overload
+      // depends on. Now queue each row via offlineService for retry, mirroring
+      // the workout_sessions BUG-4 pattern (line ~269). See
+      // src/docs/FLOW-AUDIT.md §1 + src/docs/VERIFIED-FINDINGS.md.
+      console.error("⚠️ Failed to write exercise_sets — queueing for offline retry:", error);
+      for (const row of rows) {
+        try {
+          await offlineService.queueAction({
+            type: "CREATE",
+            table: "exercise_sets",
+            data: row,
+            userId,
+            maxRetries: 5, // higher retry — set data is high-value for progression
+          });
+        } catch (queueError) {
+          console.error("⚠️ Failed to queue exercise_set for offline retry:", queueError);
+        }
+      }
       return;
     }
 

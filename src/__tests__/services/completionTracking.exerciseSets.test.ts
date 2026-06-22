@@ -171,7 +171,7 @@ describe("_writeExerciseSets", () => {
     ).resolves.toBeUndefined();
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      "⚠️ Failed to write exercise_sets:",
+      "⚠️ Failed to write exercise_sets — queueing for offline retry:",
       expect.objectContaining({ message: "FK violation" }),
     );
 

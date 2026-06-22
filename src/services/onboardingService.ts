@@ -47,7 +47,16 @@ export class PersonalInfoService {
         first_name: firstName,
         last_name: lastName,
         name: fullName, // Computed full name with fallback
-        age: data.age ?? null, // NULL allowed — 0 would violate check_age_range (>= 13)
+        // check_age_range requires age IS NULL OR (age >= 13 AND age <= 120).
+        // Guard against invalid values (0, negative, out-of-range, NaN) before
+        // upserting — previously a bad local age hit the DB constraint and
+        // stalled the app's sync loop. Normalize invalid → null (allowed).
+        age: (() => {
+          const rawAge = data.age;
+          if (rawAge == null || typeof rawAge !== "number" || !Number.isFinite(rawAge)) return null;
+          if (rawAge < 13 || rawAge > 120) return null;
+          return rawAge;
+        })(),
         gender: data.gender || "prefer_not_to_say", // NOT NULL - safe default
         country: data.country || null,
         state: data.state,

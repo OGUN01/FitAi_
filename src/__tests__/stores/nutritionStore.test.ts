@@ -383,4 +383,24 @@ describe("nutritionStore SSOT hydration", () => {
     expect(state.dailyMeals).toEqual([]);
     expect(state.mealProgress).toEqual({});
   });
+
+  // Regression for P0-2: saveWeeklyMealPlan must THROW on empty plan (not
+  // silently return). Previously it returned silently, so callers showed a false
+  // "Meal Plan Generated!" alert. See src/docs/VERIFIED-FINDINGS.md "P0-2".
+  it("throws when saving an empty meal plan (P0-2: no silent return)", async () => {
+    mockGetCurrentUserId.mockReturnValue("user-1");
+
+    const emptyPlan = {
+      id: "plan-empty",
+      weekNumber: 1,
+      meals: [], // empty → must throw
+    } as any;
+
+    await expect(
+      useNutritionStore.getState().saveWeeklyMealPlan(emptyPlan),
+    ).rejects.toThrow(/empty meal plan/i);
+
+    // planError state is set so a future UI subscriber can surface it
+    expect(useNutritionStore.getState().planError).toBeTruthy();
+  });
 });

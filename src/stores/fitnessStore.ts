@@ -98,17 +98,25 @@ export const useFitnessStore = create<FitnessState>()(
       },
 
       saveWeeklyWorkoutPlan: async (plan) => {
+        // Validate plan data FIRST — THROW so callers (useFitnessLogic) can
+        // surface a user-facing error instead of a false "Plan Generated!"
+        // alert. Before the try/catch so the throw isn't swallowed by the
+        // local-storage-fallback catch. Mirrors nutritionStore. See VERIFIED-FINDINGS.md.
+        if (!plan.workouts || plan.workouts.length === 0) {
+          const emptyError = new Error(
+            "Generation produced an empty workout plan — nothing to save.",
+          );
+          console.error("[fitnessStore] saveWeeklyWorkoutPlan:", emptyError.message);
+          set({ planError: emptyError.message });
+          throw emptyError;
+        }
+
         try {
           const planTitle =
             plan.planTitle || `Week ${plan.weekNumber} Workout Plan`;
 
           // Save to local storage via Zustand persist first
           set({ weeklyWorkoutPlan: plan });
-
-          // Validate plan data
-          if (!plan.workouts || plan.workouts.length === 0) {
-            return;
-          }
         } catch (error) {
           console.error("❌ Failed to save workout plan:", error);
           // ARCH-003 FIX: Set error state instead of silently swallowing
@@ -219,7 +227,11 @@ export const useFitnessStore = create<FitnessState>()(
               ? weeklyPlanError.message
               : "Failed to save workout plan to database";
           set({ planError: errorMessage });
-          // Don't throw - local save succeeded, just log the sync failure
+          // THROW so the caller (useFitnessLogic) can surface a user-facing
+          // error instead of a false "Plan Generated!" alert. Local Zustand
+          // state was set above, but DB persistence failed — on reload the
+          // plan vanishes. Mirrors the diet-save fix. See VERIFIED-FINDINGS.md.
+          throw weeklyPlanError;
         }
       },
 

@@ -300,18 +300,27 @@ export const useNutritionStore = create<NutritionState>()(
       },
 
       saveWeeklyMealPlan: async (plan) => {
+        // Validate plan data FIRST — THROW so callers (useMealPlanning) can
+        // surface a user-facing error instead of showing a false "Meal Plan
+        // Generated!" alert. This check is BEFORE the try/catch below so the
+        // throw isn't swallowed by the local-storage-fallback catch (which
+        // would re-swallow it because weeklyMealPlan was already set).
+        // See src/docs/FLOW-AUDIT.md §3 bug #1 + VERIFIED-FINDINGS.md "P0-2".
+        if (!plan.meals || plan.meals.length === 0) {
+          const emptyError = new Error(
+            "Generation produced an empty meal plan — nothing to save.",
+          );
+          console.error("[nutritionStore] saveWeeklyMealPlan:", emptyError.message);
+          set({ planError: emptyError.message });
+          throw emptyError;
+        }
+
         try {
           const planTitle =
             plan.planTitle || `Week ${plan.weekNumber} Meal Plan`;
 
           // Save to local storage via Zustand persist first
           set({ weeklyMealPlan: plan });
-
-          // Validate plan data
-          if (!plan.meals || plan.meals.length === 0) {
-            console.warn("âš ï¸ No meals in plan to save to database");
-            return;
-          }
         } catch (error) {
           console.error("âŒ Failed to save meal plan:", error);
           // ARCH-003 FIX: Set error state instead of silently swallowing
@@ -438,7 +447,13 @@ export const useNutritionStore = create<NutritionState>()(
               ? weeklyMealPlanError.message
               : "Failed to save meal plan to database";
           set({ planError: errorMessage });
-          // Don't throw - local save succeeded, just log the sync failure
+          // THROW so the caller (useMealPlanning.handleMealPlanResult) can
+          // surface a user-facing error instead of a false "Meal Plan
+          // Generated!" alert. Local Zustand state was set above, but the
+          // DB persistence failed — on reload the plan vanishes. Surfacing
+          // the failure lets the user retry instead of silently losing data.
+          // See src/docs/FLOW-AUDIT.md §3 bug #2.
+          throw weeklyMealPlanError;
         }
       },
 
