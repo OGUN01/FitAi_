@@ -188,15 +188,13 @@ The worker wrote `user_id: userId || null` (`fitai-workers/src/utils/cache.ts`).
 
 **Rule for the codebase:** Never read `EXPO_PUBLIC_*` via optional chaining (`process.env?.X`) or dynamic bracket (`process.env[var]`). Always use `process.env.EXPO_PUBLIC_X` directly. Other files already comply (audited — the Supabase reads were the only crash sites; Google client IDs use dynamic `getEnvVar` but have `|| ""` fallbacks so they degrade gracefully rather than crash).
 
-**Status:** Confirmed (reported by AI-gen audit, file:line cited).
-
-`src/services/aiRequestTransformers.ts:335-343` — when both `calorieTarget` and `advancedReview.daily_calories` are missing, the transformer fabricates a calorie target by goal (1800 cut / 2200 maintain / 2800 bulk). Violates CLAUDE.md principle 8 ("No Hardcoded Fallbacks for User Data"). It logs via `console.error` but still uses the fabricated value, so the user silently receives a plan built on a made-up deficit. **Fix:** return `null` and surface an explicit user-facing "missing calorie target" error (or force onboarding completion) rather than inventing a number.
+**Status:** ✅ FIXED (P1-1). The original AI-gen audit reported `src/services/aiRequestTransformers.ts:335-343` fabricated a calorie target by goal (1800 cut / 2200 maintain / 2800 bulk) when both `calorieTarget` and `advancedReview.daily_calories` were missing — violating CLAUDE.md principle 8. **Verified fixed:** the transformer now passes `undefined` when no target is available (with a `console.error` documenting why), so the worker/AI surfaces a missing-target state instead of planning around a made-up deficit. Grep for `1800|2200|2800` returns only the comment describing the prior bug — zero fabrication sites remain.
 
 ---
 
 ## P1-2 — Worker silently falls back to 70kg weight when metrics missing
 
-`fitai-workers/src/handlers/workoutGeneration.ts:335,361` — missing `weight/height/age` only `console.warn`s, then proceeds with `weight || 70` in the calorie formula. CLAUDE.md H14/H15 explicitly forbids this. The adjacent `aiRequestTransformers.ts:937-940` already does the right thing (`0` + warn). **Fix:** return `0` + warn, consistent with the transformer side; do not generate a plan on a 70kg fiction.
+**Status:** ✅ FIXED. The original report flagged `fitai-workers/src/handlers/workoutGeneration.ts:335,361` falling back to `weight || 70` when metrics were missing (violating CLAUDE.md principle 8). **Verified fixed:** grep for `|| 70` / `?? 70` across all workers returns zero matches — the worker now returns `0` + warns, consistent with the transformer side. No plan is generated on a 70kg fiction.
 
 ---
 
