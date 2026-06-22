@@ -207,7 +207,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   // Calling useAnimatedStyle after an early return caused "Rendered more hooks
   // than during the previous render" when showGuestSignUp or isLoading flipped
   // → hook count mismatch → HomeScreen crash for every logged-in user.
-  // See src/docs/VERIFIED-FINDINGS.md "P0-4".
+  // See src/docs/VERIFIED-FINDINGS.md "P0-4". Regression-guarded by
+  // src/__tests__/screens/HomeScreen.hookInvariant.test.tsx.
   const fadeStyle = useAnimatedStyle(() => ({ opacity: fadeAnim.value }));
 
   if (showGuestSignUp) {
