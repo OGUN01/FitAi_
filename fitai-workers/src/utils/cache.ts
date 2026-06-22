@@ -231,11 +231,24 @@ export async function saveToDatabase(
       tokens_used: metadata.tokensUsed,
       cost_usd: metadata.costUsd,
       hit_count: 0,
-      user_id: userId || null, // User-specific cache (NULL for legacy shared cache)
+      // Security-1: never write a NULL user_id. Cache reads always filter by
+      // user_id (getFromDatabase, line ~155), so a guest (no userId) can never
+      // read a cache entry — writing one was pure pollution that also leaked
+      // via the old `OR user_id IS NULL` RLS branch. Guests skip DB caching
+      // entirely (KV-only). See migration 20250622000001_tighten_cache_rls.sql.
+      user_id: userId ?? null,
       expires_at: expiresAt.toISOString(), // Auto-expiration
       created_at: new Date().toISOString(),
       last_accessed: new Date().toISOString(),
     };
+
+    // Security-1: skip DB cache write for guests (no userId). A NULL-user_id
+    // row can never be read by anyone via RLS (strict policy post-migration)
+    // and guests have no userId to filter reads by — so persisting is waste.
+    // KV caching still applies for the request's short-term benefit.
+    if (!userId) {
+      return;
+    }
 
     const { error } = await supabase.from(tableName).upsert(cacheEntry, {
       onConflict: 'cache_key',
