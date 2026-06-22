@@ -115,22 +115,23 @@ Net: the on-device effect of this fix is **unverified**. The fix is structurally
 
 ## Security-1 — Cache SELECT policy allows cross-user reads of NULL-user_id entries
 
-**Status:** Verified (not yet fixed — needs product decision on shared caching).
+**Status:** ✅ FIXED + deployed to production 2026-06-22 (migration `20260622000001` applied via `supabase db push --linked`; live policies verified strict).
 
-**Finding:** `workout_cache` + `meal_cache` SELECT policy (migration `20250129000003`) is:
+**Finding:** `workout_cache` + `meal_cache` SELECT policy (migration `20250129000003`) was:
 ```sql
 USING (auth.uid() = user_id OR user_id IS NULL)
 ```
-The worker writes `user_id: userId || null` (`fitai-workers/src/utils/cache.ts:234`). Any entry written without a userId (guest users, legacy rows, or any future shared-cache path) becomes readable by **every** authenticated user. `cache_key` is a deterministic hash of request params (not a secret), so an attacker can enumerate keys for common param combinations and read other users' generated plans — which contain personal health data (weight, goals, medical conditions, diet).
+The worker wrote `user_id: userId || null` (`fitai-workers/src/utils/cache.ts`). Any entry written without a userId (guest users, legacy rows) was readable by **every** authenticated user via the anon key. `cache_key` is a deterministic hash of request params (not a secret), so an attacker could enumerate keys for common param combinations and read other users' generated plans — which contain personal health data (weight, goals, medical conditions, diet). **Verified on the live production DB before fixing** (the policy qual literally read `(... = user_id) OR (user_id IS NULL)`).
 
-**Note:** This is NOT the "no RLS at all" the catalog originally claimed — RLS exists, `user_id` exists, authenticated-user-scoped entries are properly isolated. The weakness is specifically the NULL-branch OR-clause.
+**Root cause confirmed:** No app path relied on the shared/NULL branch. The worker reads via the service role key (bypasses RLS) AND adds `.eq('user_id', userId)` on every read (`cache.ts`), so it never reads NULL rows. The `OR user_id IS NULL` clause was only reachable client-side — exactly the attack surface.
 
-**Options (product decision needed):**
-1. Drop the `OR user_id IS NULL` branch → strictest, but breaks any legitimate shared-cache read.
-2. Keep shared reads but only for entries explicitly flagged `is_shared = true` (new column) → deliberate sharing, not accidental.
-3. Migrate NULL rows to per-user scope + stop writing NULL user_id → eliminates the attack surface over time.
+**Fix (2 parts):**
+1. Migration `20260622000001_tighten_cache_rls.sql` — DROP + recreate both SELECT policies as strict `(auth.uid() = user_id)` (append-only; original `20250129000003` untouched per principle 7). Existing NULL rows are now invisible to clients and age out via the 7/30-day expiry + `cleanup_expired_cache`.
+2. `fitai-workers/src/utils/cache.ts` — stop writing NULL `user_id` for guests. Guests can never read cache (read path filters by userId), so a NULL row was pure pollution that also fed the leak. Guests now get KV-only caching.
 
-**Recommendation:** Option 2 (explicit `is_shared` flag) — preserves the cost-optimization of shared caching while closing the accidental-exposure hole.
+**Verification:** Live policies re-queried post-deploy → both now `(auth.uid() = user_id)`. Security advisor: no cache advisories.
+
+**Note:** `cache_key` remains global (NOT folded with userId) — this is the intentional cost-optimization sharing model (two users with identical needs share a generated plan). The `user_id` column tracks last-writer, not ownership. That model is unaffected by this fix; the leak was specifically the NULL-read branch, now closed.
 
 ---
 
