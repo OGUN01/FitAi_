@@ -76,13 +76,20 @@ const getEnvVar = (key: string, fallback: string) => {
   }
 };
 
+// NOTE: Do NOT use optional chaining (`process.env?.X`) OR dynamic bracket
+// access (`process.env[key]`) on EXPO_PUBLIC_* reads. babel-preset-expo's
+// inline-env-vars plugin only statically substitutes `process.env.X` /
+// `process.env['X']` (literal) forms — `?.` and dynamic keys defeat the static
+// analysis, leaving the reference unsubstituted in the bundled JS, so it
+// evaluates to `undefined` at runtime and throws "EXPO_PUBLIC_* is required" in
+// the release APK (the #1 blocker for on-device QA — see
+// src/docs/VERIFIED-FINDINGS.md "Build-1"). Use direct static member access.
 const supabaseUrl =
-  (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_SUPABASE_URL) ||
+  (typeof process !== "undefined" && process.env.EXPO_PUBLIC_SUPABASE_URL) ||
   (() => { throw new Error("EXPO_PUBLIC_SUPABASE_URL is required"); })();
-const supabaseAnonKey = getEnvVar(
-  "EXPO_PUBLIC_SUPABASE_ANON_KEY",
-  "",
-);
+const supabaseAnonKey =
+  (typeof process !== "undefined" && process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY) ||
+  "";
 
 // P3-20: Surface a fatal error when the anon key is missing in production.
 // Previously this only console.warn'd and then created a client anyway, which

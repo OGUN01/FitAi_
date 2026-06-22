@@ -71,6 +71,22 @@ info "Dev APK : $BUILD_DEV   |   Preview APK: $BUILD_PREVIEW   |   Install: $DO_
 [[ -d "$ANDROID_DIR" ]] || fail "Android directory not found. Run 'npx expo prebuild --platform android' first."
 [[ -f "$ANDROID_DIR/gradlew" ]] || fail "gradlew not found in $ANDROID_DIR"
 
+# Source .env.local so EXPO_PUBLIC_* vars (Supabase URL/keys, Google client IDs)
+# are present in the process environment when gradle invokes the Expo/Metro
+# bundler. Without this, the bundled JS has process.env.EXPO_PUBLIC_SUPABASE_URL
+# = undefined → src/services/supabase.ts throws "EXPO_PUBLIC_SUPABASE_URL is
+# required" at app startup → the release APK crashes immediately (AppRegistry
+# never registers). `set -a` exports every var defined while it's on.
+if [[ -f "$PROJECT_DIR/.env.local" ]]; then
+  info "Sourcing .env.local (EXPO_PUBLIC_* vars for the bundler)"
+  set -a
+  # shellcheck disable=SC1091
+  . "$PROJECT_DIR/.env.local"
+  set +a
+else
+  warn ".env.local not found — release APK will crash on launch (missing EXPO_PUBLIC_SUPABASE_URL)"
+fi
+
 export ANDROID_HOME="C:/Users/Harsh/AppData/Local/Android/Sdk"
 cd "$ANDROID_DIR"
 
