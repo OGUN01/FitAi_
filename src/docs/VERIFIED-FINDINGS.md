@@ -86,6 +86,19 @@ The crash that fired for every logged-in user since the Aurora commit does NOT f
 
 **Lesson:** When verifying hook-order crashes on-device, (a) `adb logcat -c` before every check to avoid re-reading stale buffer lines, (b) `pm clear` invalidates login state, so a "crash gone" result after `pm clear` is only meaningful if the user is re-signed-in AND HomeScreen actually renders, and (c) confirm the served bundle contains the fix's marker string before trusting on-device behavior.
 
+---
+
+**⚠️ CORRECTION (2026-06-22, E2E verification session):** The "verified live on-device" claim above was a **double false positive** for the authenticated path:
+
+1. **It ran in guest mode** (the record itself shows `isGuestMode=true`), because the prior session's emulator had no outbound network and couldn't reach Supabase auth. Guest mode does NOT trigger the P0-4 crash (different render path), so "0 crashes" proved nothing about the authenticated user.
+2. **The device was running a stale pre-fix embedded release bundle.** The installed APK is a release build (`applicationInfo flags=0x0` → no FLAG_DEBUGGABLE, not a dev-client); its embedded `index.android.bundle` (mtime 11:59 AM) predates the fix commit `2934f55` (18:35 PM) by ~6.5h, and the fix marker `MUST run before ALL early returns` is ABSENT from that embedded bundle (`grep -c = 0`). So the device ran the PRE-FIX HomeScreen throughout — the original P0-4 crash.
+
+When this session signed in as `testuser@fitai.dev` (emulator internet now works — DNS+TCP to Supabase verified), the crash fired DETERMINISTICALLY on every authenticated cold start (logcat ×7): `Error: Rendered more hooks than during the previous render.` at HomeScreen, caught by ScreenErrorBoundary. This was NOT a code regression — the fix in source (`HomeScreen.tsx:212`) is correct. An exhaustive re-analysis confirmed real Reanimated `useAnimatedStyle`/`useAnimatedProps` call a fixed number of unconditional hooks (6 each), and every HomeScreen descendant with an early return (`DailyProgressRings`, `HealthIntelligenceHub`, `SyncStatusIndicator`, `BodyProgressCard`, `MotivationBanner`) calls all its own hooks BEFORE the early return — so no second conditional-hook site exists. The crash stops once the fix is in the RUNNING bundle.
+
+**Fix = rebuild + reinstall the APK** (`bash build-both-apks.sh`; the dev APK loads JS from Metro → serves the fixed bundle, the preview APK embeds the freshly-built fixed bundle). Then re-verify on-device: `adb logcat -c` → sign in → assert 0 "Rendered more hooks" matches. See `src/docs/E2E-VERIFICATION-PLAN.md` "Execution results" for the full evidence chain.
+
+**Reinforced lesson:** the "served bundle" check in the original record grepped `localhost:8081/index.bundle` (the HOST Metro bundle) — which DID contain the marker — but the DEVICE was running the embedded APK bundle, which did NOT. Always verify the marker is in the bundle the DEVICE actually executes (the embedded `index.android.bundle` for release builds), not the host Metro bundle. The `exp+fitai://expo-development-client/...` deep link is a no-op against a release build (no dev-client installed).
+
 **Status:** ✅ FIXED (rule-based + AI paths) 2026-06-21. Worker tsc clean for edited files (pre-existing errors elsewhere untouched). 6 new unit tests pass. Main-app jest 457/82 green.
 
 **Symptom:** `weekNumber` (mesocycle week 1-4) only affected the cache key + a text note (`generateProgressionNotes`). The actual sets/reps/rest produced by `assignWorkoutParameters` were IDENTICAL across all 4 weeks — the "progressive overload" product claim was aspirational text, not a real mechanism. Worse, no prior workout history was sent to generation, so each plan was blind to what the user previously lifted.
