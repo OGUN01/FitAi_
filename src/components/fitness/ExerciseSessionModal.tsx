@@ -40,6 +40,7 @@ import {
 import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rh, rw, rs } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 import { animations } from "../../theme/animations";
 import { ExerciseGifPlayer } from "./ExerciseGifPlayer";
 import { parseTimedExercise, formatDuration } from "../../utils/exerciseDuration";
@@ -216,6 +217,14 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
   const { isTimeBased, totalSeconds, isPerSide, side1Label, side2Label } = timedInfo;
 
   // ── Breathing animation (Reanimated shared values) ────────────────────────
+  // Reduce-motion: skip the infinite breathing pulse entirely. The two
+  // withRepeat(..., -1) loops below keep the UI thread perpetually "busy",
+  // which blocks uiautomator waitForIdle() (and Detox's idleness monitor) →
+  // empty view-tree dumps → Maestro can't see any element while this modal
+  // is open. Same root cause + fix as AuroraBackground (see VERIFIED-FINDINGS
+  // "A11Y-1"). When reduce-motion is on, hold static values so the surface is
+  // calm AND the test harness can reach idle.
+  const reduceMotion = useReducedMotion();
   const breathingScale = useSharedValue(1);
   const pulseOpacity = useSharedValue(0);
 
@@ -310,8 +319,16 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
 
   // ── Breathing animation (Reanimated) ───────────────────────────────────────
   // Loops: scale 1 → 1.2 → 1 (2s each half) + opacity 0 → 1 → 0 (1.5s each half).
+  // Gated behind reduceMotion: infinite withRepeat loops keep the UI thread
+  // busy and block test-harness idle (uiautomator/Detox). Static when on.
   useEffect(() => {
     if (!isVisible) return;
+    if (reduceMotion) {
+      // Hold a calm static state; no infinite loops → thread can idle.
+      breathingScale.value = 1;
+      pulseOpacity.value = 1;
+      return;
+    }
     breathingScale.value = withRepeat(
       withSequence(
         withTiming(1.2, { duration: 2000 }),
@@ -332,7 +349,7 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
       cancelAnimation(breathingScale);
       cancelAnimation(pulseOpacity);
     };
-  }, [isVisible, breathingScale, pulseOpacity]);
+  }, [isVisible, reduceMotion, breathingScale, pulseOpacity]);
 
   const breathingOuterStyle = useAnimatedStyle(() => ({
     transform: [{ scale: breathingScale.value }],

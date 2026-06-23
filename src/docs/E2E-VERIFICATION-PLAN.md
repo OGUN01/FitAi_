@@ -316,6 +316,43 @@ calorie computation + DB insert. The on-device flow is the "final
 confirmation" per the plan; its generate/entry phases confirm, its completion
 loop is delegated to the Node gate.
 
+### Follow-up investigation (2026-06-23, post-research)
+
+Research (Detox docs, Reanimated docs, Maestro/mobilewright GitHub) established
+that Maestro's empty dumps and Detox's "app is busy" hang share ONE root
+cause: continuous Reanimated animations keep the UI thread/run-loop from
+reaching idle, so the accessibility tree isn't exposed. Recommendation was to
+extend the `useReducedMotion` gating already used in AuroraBackground to the
+session screens rather than add Detox (which hangs on the same animations).
+
+Applied: gated `ExerciseSessionModal`'s two `withRepeat(..., -1)` breathing
+loops (scale + pulse opacity) behind `useReducedMotion` — a legitimate a11y
+improvement matching the Aurora pattern (tsc 0, suite 471/0, no regression).
+
+Result: did NOT unblock flow 03. The post-"Complete Set" dump is STILL empty
+shells (valid hierarchy, but zero `text`/`resource-id` nodes). So the breathing
+animation was not the (sole) blocker. Additional suspects that need rebuild-
+heavy bisecting:
+- `WorkoutSessionScreen.tsx:726` `exerciseContainerStyle = useAnimatedStyle`
+  (animates `opacity` + `scale` on the wrapping `<Animated.View>` at :774) —
+  an active animated style on the container may keep the subtree transient and
+  unexposed to accessibility.
+- `SetLogModal` mounts inside that animated container; even though SetLogModal
+  itself has no Reanimated, its nodes may be hidden by the parent's animated
+  state.
+- AuroraBackground (`theme="space"`) is the WorkoutSessionScreen's root — its
+  pulse is already reduce-motion-gated, but confirm it actually goes static
+  when the setting is on for this build.
+
+Next step to close the on-device loop: bisect by (a) temporarily forcing
+`exerciseContainerStyle` to a static style in a test build, and (b) confirming
+`useReducedMotion()` returns true on this emulator (animation scales are 0, but
+the `AccessibilityInfo.isReduceMotionEnabled()` → scales mapping is RN/Android-
+version-dependent and was not confirmed). If neither reveals it, the empty tree
+is an accessibility-exposure issue (not animation-idle) and the fix is setting
+`accessibilityElementsHidden={false}` / ensuring the modal content is
+`importantForAccessibility="yes"`.
+
 ### Step 5 — Deterministic Node loop test: VERIFIED ✅ (primary gate achieved)
 
 `src/__tests__/integration/generate-complete-regenerate.loop.test.ts` PASSES.
