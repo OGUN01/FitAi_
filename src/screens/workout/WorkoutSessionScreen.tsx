@@ -793,20 +793,26 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             <Text style={styles.exerciseHistoryHint}>History</Text>
           </AnimatedPressable>
 
-          <ExerciseGifPlayer
-            key={session.currentExerciseIndex}
-            exerciseId={safeString(session.currentExercise.exerciseId, "")}
-            exerciseName={safeString(session.currentExercise.name, "")}
-            height={280}
-            width={320}
-            showTitle={false}
-            showInstructions={true}
-            onInstructionsPress={() => session.setShowInstructionModal(true)}
-            style={[
-              styles.exerciseGifPlayer,
-              session.exercisePhase === "performing" && { opacity: 0 },
-            ]}
-          />
+          {/* P2-13: During the performing phase the ExerciseSessionModal overlay
+              covers this area. Rendering the GIF player at opacity:0 still
+              lays out its info chips (with inverted bounds) and pollutes the
+              a11y tree with hidden, unmeasurable nodes. Conditionally render
+              null during performing instead — cleaner than hiding, and the
+              instructions entry point is available again in the next
+              preview/resting phase. */}
+          {session.exercisePhase !== "performing" && (
+            <ExerciseGifPlayer
+              key={session.currentExerciseIndex}
+              exerciseId={safeString(session.currentExercise.exerciseId, "")}
+              exerciseName={safeString(session.currentExercise.name, "")}
+              height={280}
+              width={320}
+              showTitle={false}
+              showInstructions={true}
+              onInstructionsPress={() => session.setShowInstructionModal(true)}
+              style={styles.exerciseGifPlayer}
+            />
+          )}
 
           {/* Warm-up sets UI — shown in preview phase when history exists */}
           {session.exercisePhase === "preview" && warmupSets.length > 0 && !restTimerEndTime && (

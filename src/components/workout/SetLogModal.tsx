@@ -190,9 +190,15 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
     const [, maxReps] = parseRepRange(reps);
     setRepsInput(maxReps > 0 ? String(maxReps) : "");
     setSetType("normal");
-    // In calibration mode, seed weight input with the conservative start weight
+    // In calibration mode, seed weight input with the conservative start weight.
+    // P2-14: normalize calibrationStartKg to 1 decimal BEFORE display so fp
+    // drift (e.g. 2.5000000001 from repeated kg<->lbs round-trips) never leaks
+    // into the input string. kgToDisplay already applies toFixed(1), but the
+    // source value itself is rounded first so the lbs path
+    // (roundedKg * 2.2046).toFixed(1) is also stable across re-opens.
     if (calibrationMode && calibrationStartKg > 0 && setIndex === 0) {
-      setWeight(kgToDisplay(calibrationStartKg, userUnits));
+      const roundedStartKg = Math.round(calibrationStartKg * 10) / 10;
+      setWeight(kgToDisplay(roundedStartKg, userUnits));
     }
   }, [isVisible, reps, calibrationMode, calibrationStartKg, setIndex]);
 
