@@ -759,6 +759,32 @@ export default function App() {
           if (isValid) {
             setIsOnboardingComplete(true);
             verifyAndSyncProfileInBackground(user.id);
+            // B2-P0-3 fix: hydrate profileStore from Supabase SSOT for existing users.
+            // The local Zustand persist (profile-storage-v2) may be empty (fresh install,
+            // app data cleared, cold-boot after cache wipe) even though the user HAS a
+            // profile + body_analysis in Supabase. verifyAndSyncProfileInBackground only
+            // syncs local→DB (it never loads DB→local), so profileStore.bodyAnalysis
+            // stays null and the useFitnessLogic pre-flight guard fires a false positive.
+            // dataBridge.loadAllData is the canonical DB→profileStore hydration path
+            // (same call used at onboarding completion, line ~1149): it fetches all
+            // profile sections including body_analysis via BodyAnalysisService.load and
+            // hydrates profileStore.bodyAnalysis via hydrateFromLegacy. Run fire-and-
+            // forget in the background (mirrors verifyAndSyncProfileInBackground) so app
+            // startup is not blocked; the guard reads the SSOT and the store updates
+            // reactively once hydration resolves. If no body_analysis row exists, the
+            // store stays null and the guard handles it gracefully (no fabrication,
+            // CLAUDE.md Principle 8).
+            void runAfterInteractions(async () => {
+              if (!mounted) return;
+              try {
+                await dataBridge.loadAllData(user.id);
+              } catch (error) {
+                console.error(
+                  "❌ App: Failed to hydrate profileStore from Supabase for existing user:",
+                  error,
+                );
+              }
+            });
           } else {
             // Local profile is incomplete — try to load fresh from DB before showing onboarding
             try {

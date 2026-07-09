@@ -281,10 +281,17 @@ export function isAsyncJobResponse(
 
 export interface WorkoutGenerationRequest {
   profile: {
-    age: number;
+    // P0-1: Align with the worker Zod schema (fitai-workers/src/utils/validation.ts
+    // UserProfileSchema). `weight`/`height` are `.nullable().optional()` there, and
+    // `age` is `.min(13)` (required) but may be absent at the transformer layer
+    // before a pre-flight guard runs. Making these optional here stops callers
+    // from fabricating `0` to satisfy a stale required-`number` type (the original
+    // P0-1 root cause). The worker still rejects a truly missing `age`; the
+    // useFitnessLogic pre-flight guard prevents that call (see wave-a-03 audit).
+    age: number | undefined;
     gender: string;
-    weight: number;
-    height: number;
+    weight: number | null | undefined;
+    height: number | null | undefined;
     fitnessGoal: string;
     experienceLevel: string;
     availableEquipment: string[];

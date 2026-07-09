@@ -411,6 +411,37 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
       return;
     }
 
+    // P0-1 pre-flight guard: the worker Zod schema (fitai-workers/src/utils/
+    // validation.ts) REQUIRES `age` (`.min(13)`, no `.optional()`) and the
+    // rule engine needs a real weight for MET-based calorie calc. Wave B-02
+    // stopped fabricating `0` for these fields (see wave-b-02 fix doc), so a
+    // truly missing `age` now reaches the worker as `undefined` and is
+    // rejected with a raw "profile.age: Required" error. Guard here instead —
+    // surface a friendly prompt and abort before calling the service. This
+    // follows the existing "Profile Incomplete" alert pattern above and in
+    // useAIMealGeneration/useMealPlanning. Reads the SSOT: age from
+    // legacyPersonalInfo (built from profileStore.personalInfo — the exact
+    // value transformForWorkoutRequest receives) and weight from
+    // resolveCurrentWeightFromStores (manual_log > body_analysis > none), the
+    // same resolver used by the backfill effect below + the transformer. No
+    // fabricated defaults (CLAUDE.md Principle 8). See
+    // src/docs/wave-a-03-workout-plan-audit.md P0-1 recommendation #2.
+    const resolvedWeightForGuard = resolveCurrentWeightFromStores({
+      bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
+    }).value;
+    if (
+      !legacyPersonalInfo.age ||
+      legacyPersonalInfo.age < 13 ||
+      resolvedWeightForGuard == null
+    ) {
+      crossPlatformAlert(
+        "Body Analysis Required",
+        "Please complete your body analysis (age, weight, and height) in onboarding to generate a personalized workout plan.",
+        [{ text: "OK" }],
+      );
+      return;
+    }
+
     // Check subscription gate before hitting the server
     if (!canUseFeature("ai_generation")) {
       triggerPaywall(

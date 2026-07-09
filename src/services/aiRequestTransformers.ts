@@ -566,16 +566,22 @@ export function transformForWorkoutRequest(
 
   // H13: Wire ignored onboarding fields into workout generation request
   const advancedReview = options?.advancedReview;
-  if (personalInfo.age === undefined || personalInfo.age === null) {
-    console.warn('[aiRequestTransformers] personalInfo.age is undefined — using 0 for workout request (AI will receive signal that age is missing)');
-  }
 
+  // P0-1: Do NOT fabricate `0` for missing body-analysis fields. The worker Zod
+  // schema (validation.ts) makes `weight`/`height` `.nullable().optional()` and
+  // `age` required (`.min(13)`). Sending `0` bypasses `.optional()` and fails
+  // `.min(...)`, surfacing a raw "profile.weight: Too small" error to the user.
+  // Sending `undefined` instead lets optional fields pass cleanly; for `age`
+  // (required) the caller MUST gate with a pre-flight check in useFitnessLogic
+  // (see src/docs/wave-a-03-workout-plan-audit.md P0-1) — but we still refuse to
+  // fabricate a placeholder here (CLAUDE.md Principle 8: no hardcoded fallbacks
+  // for user data). No console.warn in this production path.
   return {
     profile: {
-      age: personalInfo.age ?? 0,
+      age: personalInfo.age ?? undefined,
       gender: mappedGender,
-      weight: resolvedCurrentWeight.value ?? personalInfo.weight ?? 0,
-      height: bodyMetrics?.height_cm ?? personalInfo.height ?? 0,
+      weight: resolvedCurrentWeight.value ?? personalInfo.weight ?? undefined,
+      height: bodyMetrics?.height_cm ?? personalInfo.height ?? undefined,
       fitnessGoal: primaryGoal,
       experienceLevel: experienceLevel,
       availableEquipment: equipment,
