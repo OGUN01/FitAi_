@@ -49,6 +49,9 @@ import {
   UserProfileResponse,
   FitnessGoalsResponse,
 } from "../services/userProfile";
+// P2-6: profileStore is the SSOT for onboarding data. Imported lazily inside
+// checkProfileComplete to avoid a circular import (profileStore does not
+// import userStore, but keeping the dynamic access local is safer).
 
 interface UserState {
   // State
@@ -534,29 +537,57 @@ export const useUserStore = create<UserState>()(
           return false;
         }
 
-        const { personalInfo } = profile;
+        // P2-6: profileStore is the SSOT for onboarding data (personalInfo,
+        // workoutPreferences). When profileStore is hydrated, prefer it over
+        // the passed-in userStore.profile copy, which is a legacy duplicate
+        // kept for backward compatibility. This makes profileStore the
+        // authoritative source for the completeness check without breaking
+        // existing callers that still read userStore.profile.
+        let profileStorePI: { first_name?: string; last_name?: string; name?: string; age?: number; gender?: string } | null = null;
+        let profileStoreWP: { primary_goals?: string[]; primaryGoals?: string[]; workout_types?: string[]; workoutTypes?: string[]; location?: string; intensity?: string } | null = null;
+        try {
+          // Lazy require to avoid a static circular import.
+          const { useProfileStore } = require("../stores/profileStore") as {
+            useProfileStore: {
+              getState: () => {
+                personalInfo: typeof profileStorePI;
+                workoutPreferences: typeof profileStoreWP;
+              };
+            };
+          };
+          const ps = useProfileStore.getState();
+          profileStorePI = ps.personalInfo;
+          profileStoreWP = ps.workoutPreferences;
+        } catch {
+          // profileStore not yet available (e.g. during early boot / tests) —
+          // fall through to the passed-in profile (legacy behavior).
+        }
+
+        // Prefer SSOT (profileStore) when hydrated; fall back to userStore copy.
+        const ssotPI = profileStorePI ?? profile.personalInfo;
+        const ssotWP = profileStoreWP ?? profile.workoutPreferences;
 
         // Guard: Check if required nested objects exist
-        if (!personalInfo) {
+        if (!ssotPI) {
           return false;
         }
 
         const hasPersonalInfo = !!(
-          (personalInfo.name ||
-            (personalInfo.first_name && personalInfo.last_name)) &&
-          personalInfo.age &&
-          personalInfo.gender
+          (ssotPI.name ||
+            (ssotPI.first_name && ssotPI.last_name)) &&
+          ssotPI.age &&
+          ssotPI.gender
           // occupation_type intentionally excluded — deprecated field (activity_level
           // is now the SSOT in workout_preferences). DB value is null for all users.
         );
 
         // SSOT: Read from workoutPreferences (workout_preferences table)
         // instead of fitnessGoals (legacy fitness_goals table)
-        const workoutPrefs = profile.workoutPreferences;
+        const workoutPrefs = ssotWP;
         const hasWorkoutPrefs = !!(workoutPrefs &&
-          ((workoutPrefs.primary_goals?.length > 0) ||
+          (((workoutPrefs.primary_goals?.length ?? 0) > 0) ||
            ((workoutPrefs.primaryGoals?.length ?? 0) > 0) ||
-           (workoutPrefs.workout_types?.length > 0) ||
+           ((workoutPrefs.workout_types?.length ?? 0) > 0) ||
            ((workoutPrefs.workoutTypes?.length ?? 0) > 0) ||
            (workoutPrefs.location && workoutPrefs.intensity)));
 

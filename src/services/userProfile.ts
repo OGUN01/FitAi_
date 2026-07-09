@@ -646,12 +646,17 @@ class UserProfileService {
       wake_time: get('wake_time', 'wakeTime', ''),
       sleep_time: get('sleep_time', 'sleepTime', ''),
       occupation_type:
-        (get('occupation_type', 'occupationType', 'desk_job') as
+        // P1-13: No hardcoded "desk_job" fallback — the column is nullable and
+        // deprecated (activity_level in workout_preferences is the SSOT).
+        // undefined is the correct value when the user never selected an
+        // occupation (matches the optional PersonalInfo.occupation_type type).
+        (get('occupation_type', 'occupationType', undefined) ?? undefined) as
           | "desk_job"
           | "light_active"
           | "moderate_active"
           | "heavy_labor"
-          | "very_active"),
+          | "very_active"
+          | undefined,
       profile_picture: get('profile_picture', 'profilePicture', undefined),
       dark_mode: get('dark_mode', 'darkMode', false),
       units: (profile.units as "metric" | "imperial") || "metric",

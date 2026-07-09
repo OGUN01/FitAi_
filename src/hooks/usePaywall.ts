@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import { useSubscriptionStore } from "../stores/subscriptionStore";
 import razorpayService, {
@@ -34,6 +34,9 @@ interface SubscriptionPlanRow {
   analytics: boolean;
   coaching: boolean;
   active: boolean;
+  // P2-11: Server-owned feature-list copy (JSONB array of strings). NULL when
+  // no curated copy exists — UI falls back to the app-side TIER_FEATURES map.
+  features_list?: string[] | null;
 }
 
 interface LoadedPlans {
@@ -141,6 +144,12 @@ export const usePaywall = () => {
   const [planLoadError, setPlanLoadError] = useState<string | null>(null);
   const inFlightRef = useRef(false);
   const isMountedRef = useRef(true);
+  // P1-19: Track whether plans were successfully loaded from the server. The
+  // fallback sets plans.length to 3, which previously caused the mount effect's
+  // `plans.length > 0` guard to block all retries — locking the user into
+  // stale fallback plans forever. This flag gates the guard on *server*
+  // success, not on array length, so a failed fetch can be retried.
+  const loadedSuccessfullyRef = useRef(false);
   useEffect(() => () => { isMountedRef.current = false; }, []);
 
   const {
@@ -156,9 +165,14 @@ export const usePaywall = () => {
   /**
    * Fetch subscription plans from Supabase on mount.
    * Maps each paid row into one or two PlanConfig entries (monthly + yearly).
+   *
+   * P1-19: Previously gated on `plans.length > 0`, which permanently blocked
+   * refetches after the fallback (3 plans) was applied — even if the failure
+   * was transient. Now gated on `loadedSuccessfullyRef` (set only when the
+   * server returned real plans), so a failed fetch can be retried on re-mount.
    */
   useEffect(() => {
-    if (plans.length > 0) return; // already loaded, don't refetch
+    if (loadedSuccessfullyRef.current) return; // server plans already loaded
     let cancelled = false;
 
     const fetchPlans = async () => {
@@ -171,6 +185,11 @@ export const usePaywall = () => {
         setPlanRows(loaded.rows);
         setPlansSource(loaded.source);
         setPlanLoadError(loaded.errorMessage);
+        // Only mark as successfully loaded when the server is the source —
+        // fallback data must remain retryable.
+        if (loaded.source === "server") {
+          loadedSuccessfullyRef.current = true;
+        }
       } catch (err) {
         console.warn("[usePaywall] Failed to fetch plans, using fallback:", err);
         if (!cancelled) {
@@ -191,7 +210,9 @@ export const usePaywall = () => {
     return () => {
       cancelled = true;
     };
-  }, [plans.length]);
+    // Deps: plansSource so a "fallback" state triggers a retry on re-mount /
+    // dep change. Empty-array `[]` would run once; we want the retry path.
+  }, [plansSource]);
 
   const dismiss = () => {
     dismissPaywall();
@@ -373,6 +394,20 @@ export const usePaywall = () => {
     }
   };
 
+  // P2-11: Expose server-owned feature copy per tier so PaywallModal can read
+  // from the DB instead of the hardcoded TIER_FEATURES map. Maps tier ->
+  // features_list (string[]). Empty when plans came from the fallback (UI
+  // should keep its app-side fallback in that case).
+  const planFeaturesByTier: Record<string, string[]> = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const row of planRows) {
+      if (row.features_list && row.features_list.length > 0) {
+        map[row.tier] = row.features_list;
+      }
+    }
+    return map;
+  }, [planRows]);
+
   return {
     isLoading,
     showPaywall,
@@ -385,5 +420,8 @@ export const usePaywall = () => {
     subscribe,
     dismiss,
     triggerPaywall,
+    // P2-11: server-owned feature copy (read from subscription_plans.features_list).
+    // PaywallModal should prefer this over the hardcoded TIER_FEATURES map.
+    planFeaturesByTier,
   };
 };

@@ -11,6 +11,51 @@ import razorpayService from "../services/RazorpayService";
 import { getLocalDateString } from "../utils/weekUtils";
 import { API_CONFIG } from "../config/api";
 
+// P1-18: App-focus revalidation. AppState is imported lazily inside the setup
+// function (guarded by platform) so this store remains import-safe in the node
+// test environment where react-native is mocked.
+let appFocusListenerAttached = false;
+const APP_FOCUS_REVALIDATION_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+let lastAppFocusRevalidation = 0;
+
+function setupAppFocusRevalidation(): void {
+  if (appFocusListenerAttached) return;
+  if (typeof window !== "undefined" || typeof document !== "undefined") {
+    // Web/node — no AppState. Skip (SIGNED_IN fetch still covers web login).
+    appFocusListenerAttached = true;
+    return;
+  }
+  try {
+    // Lazy require so react-native is only loaded in the RN runtime.
+    const { AppState } = require("react-native") as {
+      AppState: {
+        addEventListener: (
+          type: string,
+          handler: (state: string) => void,
+        ) => { remove: () => void };
+      };
+    };
+    AppState.addEventListener("change", (nextAppState: string) => {
+      // Only revalidate when returning to the foreground ("active").
+      if (nextAppState !== "active") return;
+      const now = Date.now();
+      if (now - lastAppFocusRevalidation < APP_FOCUS_REVALIDATION_INTERVAL_MS) {
+        return; // throttled — don't hammer the server on rapid foreground toggles
+      }
+      lastAppFocusRevalidation = now;
+      // preserveExistingOnError:true so a flaky network on resume doesn't
+      // downgrade a paying user (consistent with P2-12 boot default).
+      void useSubscriptionStore
+        .getState()
+        .fetchSubscriptionStatus({ preserveExistingOnError: true });
+    });
+    appFocusListenerAttached = true;
+  } catch {
+    // react-native unavailable (node test env) — silently skip.
+    appFocusListenerAttached = true;
+  }
+}
+
 // ============================================================================
 // Types - aligned with backend GET /api/subscription/status response
 // ============================================================================
@@ -455,7 +500,16 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           }
 
           subscriptionInitializationPromise = (async () => {
-            await get().fetchSubscriptionStatus();
+            // P1-18: Attach the app-focus revalidation listener once so
+            // entitlement is periodically rechecked when the user returns to
+            // the app (catches cancellations made on another device).
+            setupAppFocusRevalidation();
+            // P2-12/P0-9: Boot/login path must preserve existing (persisted)
+            // subscription state on transient network errors so a paying user
+            // is never flipped to free-tier UI by a momentary blip.
+            await get().fetchSubscriptionStatus({
+              preserveExistingOnError: true,
+            });
             set({ isInitialized: true });
           })().finally(() => {
             subscriptionInitializationPromise = null;
