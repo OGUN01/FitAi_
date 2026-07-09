@@ -619,6 +619,31 @@ export class AdvancedReviewService {
         workoutPreferences,
       );
 
+      // P0-11: populate the calculated/validation fields save() expects but
+      // calculateAndSave previously omitted (total_calorie_deficit,
+      // data_completeness_percentage, reliability_score, personalization_level,
+      // validation_status/errors/warnings, refeed_schedule, medical_adjustments,
+      // detected_climate). Mirrors useReviewValidation so the service save path
+      // and the live UI calc path agree (single source of truth).
+      const { CALORIE_PER_KG } = await import("./validation/constants");
+      const { detectClimate } = await import("../utils/healthCalculations");
+      const vEngineDailyDeficit = (m.weeklyRate * CALORIE_PER_KG) / 7;
+      const totalCalorieDeficit = Math.round(vEngineDailyDeficit * m.timeline * 7);
+      let detectedClimate: string | undefined;
+      try {
+        detectedClimate = detectClimate(
+          personalInfo.country || "",
+          personalInfo.state,
+        ).climate;
+      } catch (climateError) {
+        // detectClimate can throw on malformed country input — surface as null,
+        // never a silent failure (CLAUDE.md #5/#8).
+        console.warn(
+          "[AdvancedReviewService] detectClimate failed; saving detected_climate=null:",
+          climateError,
+        );
+      }
+
       const advancedReviewData: AdvancedReviewData = {
         // Core metabolic — from ValidationEngine (SSOT)
         calculated_bmi: extended.calculated_bmi,
@@ -637,6 +662,9 @@ export class AdvancedReviewService {
         healthy_weight_max: extended.healthy_weight_max,
         weekly_weight_loss_rate: m.weeklyRate,
         estimated_timeline_weeks: extended.estimated_timeline_weeks,
+        // P0-11: total_calorie_deficit from ValidationEngine's capped rate
+        // (matches useReviewValidation BUG-03 derivation).
+        total_calorie_deficit: totalCalorieDeficit,
         ideal_body_fat_min: extended.ideal_body_fat_min,
         ideal_body_fat_max: extended.ideal_body_fat_max,
         lean_body_mass: extended.lean_body_mass,
@@ -664,6 +692,37 @@ export class AdvancedReviewService {
         recommended_sleep_hours: extended.recommended_sleep_hours,
         current_sleep_duration: extended.current_sleep_duration,
         sleep_efficiency_score: extended.sleep_efficiency_score,
+
+        // P0-11: completion/quality metrics — from master-engine
+        data_completeness_percentage: extended.data_completeness_percentage,
+        reliability_score: extended.reliability_score,
+        personalization_level: extended.personalization_level,
+
+        // P0-11: validation results — from ValidationEngine (SSOT).
+        // NOTE: ValidationResult[] is cast to the declared row shape the same way
+        // useReviewValidation does (it assigns these via `as AdvancedReviewData`).
+        // The DB stores the validation objects as JSONB; the declared
+        // {field,message,code}[] type is aspirational — keep parity with the hook
+        // so the service save path and live UI calc path agree.
+        validation_status: validationResult.hasErrors
+          ? "blocked"
+          : validationResult.hasWarnings
+            ? "warnings"
+            : "passed",
+        validation_errors:
+          validationResult.errors.length > 0
+            ? (validationResult.errors as unknown as AdvancedReviewData["validation_errors"])
+            : undefined,
+        validation_warnings:
+          validationResult.warnings.length > 0
+            ? (validationResult.warnings as unknown as AdvancedReviewData["validation_warnings"])
+            : undefined,
+        refeed_schedule: validationResult.adjustments?.refeedSchedule,
+        medical_adjustments: validationResult.adjustments?.medicalNotes,
+
+        // P0-11: climate/ethnicity — detected at save time
+        detected_climate: detectedClimate,
+        detected_ethnicity: extended.detected_ethnicity,
 
         // Derived classification fields (H17) — from master-engine
         bmi_category: extended.bmi_category,
@@ -752,6 +811,15 @@ export class AdvancedReviewService {
         bmi_health_risk: data.bmi_health_risk ?? null,
         bmr_formula_used: data.bmr_formula_used ?? null,
         health_grade: data.health_grade ?? null,
+        // P2-7: persist the 8 climate/ethnicity/debug columns so load() round-trips them.
+        max_heart_rate: data.max_heart_rate ?? null,
+        climate_used: data.climate_used ?? null,
+        climate_tdee_modifier: data.climate_tdee_modifier ?? null,
+        climate_water_modifier: data.climate_water_modifier ?? null,
+        ethnicity_used: data.ethnicity_used ?? null,
+        calculations_version: data.calculations_version ?? null,
+        bmr_formula_accuracy: data.bmr_formula_accuracy ?? null,
+        bmr_formula_confidence: data.bmr_formula_confidence ?? null,
         updated_at: new Date().toISOString(),
       };
 
@@ -853,6 +921,16 @@ export class AdvancedReviewService {
         bmr_formula_used: data.bmr_formula_used ?? undefined,
         was_rate_capped: data.was_rate_capped ?? false,
         health_grade: data.health_grade ?? undefined,
+        // P2-7: round-trip the 8 climate/ethnicity/debug columns previously
+        // dropped on load because AdvancedReviewRow didn't declare them.
+        // (max_heart_rate is already returned above in the fitness-metrics block.)
+        climate_used: data.climate_used ?? undefined,
+        climate_tdee_modifier: data.climate_tdee_modifier ?? undefined,
+        climate_water_modifier: data.climate_water_modifier ?? undefined,
+        ethnicity_used: data.ethnicity_used ?? undefined,
+        calculations_version: data.calculations_version ?? undefined,
+        bmr_formula_accuracy: data.bmr_formula_accuracy ?? undefined,
+        bmr_formula_confidence: data.bmr_formula_confidence ?? undefined,
       };
 
       return reviewData;

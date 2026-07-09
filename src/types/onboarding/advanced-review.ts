@@ -79,16 +79,35 @@ export interface AdvancedReviewData {
   /** @computed Not yet implemented — always null. Could be derived from country. */
   detected_ethnicity?: string;
   bmr_formula_used?: string;
-  /** @deprecated Use overall_health_score instead — health_score is not a DB column */
-  health_score?: number;
   health_grade?: string;
-  vo2_max_estimate?: number;
   vo2_max_classification?: string;
-  heart_rate_zones?: Record<string, { min: number; max: number }>;
 
-  // Fallback indicator — true when population-average defaults were used
-  // because the user did not provide height/weight during onboarding
+  // ── UI-only fields (NOT DB columns on advanced_review) ──────────────────
+  // These are derived/computed for display only and must never be written to
+  // the table. They are kept on AdvancedReviewData (the runtime/UI shape) so
+  // existing UI readers type-check, but are intentionally ABSENT from
+  // AdvancedReviewRow (the DB row type) — see P2-8.
+  /** @ui-only Composed health score for display (mirrors overall_health_score). */
+  health_score?: number;
+  /** @ui-only VO2 max estimate label value (DB column is estimated_vo2_max). */
+  vo2_max_estimate?: number;
+  /** @ui-only Heart-rate zones object for chart rendering (DB stores the 6 target_hr_* columns). */
+  heart_rate_zones?: Record<string, { min: number; max: number }>;
+  /** @ui-only True when population-average defaults were used because the user
+   *  did not provide height/weight during onboarding. */
   usedFallbackDefaults?: boolean;
+
+  // ── Climate / ethnicity debug columns added by migration 20260331000000 ─
+  // These round-trip to/from the DB (see AdvancedReviewRow) but are not yet
+  // populated by calculateAndSave — they default to null on save.
+  climate_used?: string;
+  climate_tdee_modifier?: number;
+  climate_water_modifier?: number;
+  ethnicity_used?: string;
+  calculations_version?: string;
+  bmr_formula_accuracy?: number;
+  bmr_formula_confidence?: number;
+  // NOTE: max_heart_rate is already declared above in the Fitness metrics block.
 
   // BUG-35: Rate cap indicator — true when the requested deficit was reduced for safety
   was_rate_capped?: boolean;
@@ -148,8 +167,17 @@ export interface AdvancedReviewRow {
   bmi_category?: string | null;
   bmi_health_risk?: string | null;
   bmr_formula_used?: string | null;
-  /** @deprecated Use overall_health_score instead — health_score is not a DB column */
-  health_score?: number | null;
+  // P2-7: 8 columns added by migrations 20260331000000 + 20260406000000 that
+  // were silently dropped on load because the hand-written Row type was never
+  // regenerated. Now declared so select("*") round-trips them.
+  climate_used?: string | null;
+  climate_tdee_modifier?: number | null;
+  climate_water_modifier?: number | null;
+  ethnicity_used?: string | null;
+  calculations_version?: string | null;
+  bmr_formula_accuracy?: number | null;
+  bmr_formula_confidence?: number | null;
+  max_heart_rate?: number | null;
   health_grade?: string | null;
   created_at?: string | null;
   updated_at?: string | null;

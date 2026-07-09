@@ -34,9 +34,10 @@ import { syncEngine } from "./SyncEngine";
 import { offlineService } from "./offline/OfflineService";
 import { resolveCurrentWeightForUser } from "./currentWeight";
 import { weightTrackingService } from "./WeightTrackingService";
-// Type transformation utilities for snake_case/camelCase conversion
-// Use these at API boundaries when dealing with legacy components
-import { toDbFormat, normalizeToSnakeCase } from "../utils/typeTransformers";
+// Type transformation utilities for snake_case/camelCase conversion.
+// NOTE: toDbFormat/normalizeToSnakeCase were previously imported here but had no
+// usages in this file (pre-existing unused import). Removed during P1-16 guard
+// cleanup. Re-add from "../utils/typeTransformers" if a future change needs them.
 import {
   PersonalInfoService,
   DietPreferencesService,
@@ -419,13 +420,23 @@ class DataBridge {
       // Bug 1 fix: call hydrateFromLegacy unconditionally so isHydrated is always set to true,
       // even for brand-new users where every section returns null (empty batchUpdate).
       // Downstream hooks gate on isHydrated; skipping the call causes an infinite wait loop.
-      // Offline-queue guard: skip hydration if local edits are queued but not yet synced,
-      // to avoid overwriting newer in-flight data with stale server values.
-      // TODO: This guard is overbroad — skips ALL hydration if ANY offline action is pending,
-      // even for unrelated tables (meal_logs, workout_sessions). Should filter by profile-related
-      // tables only (personal_info, diet_preferences, body_analysis, workout_preferences, advanced_review).
-      if (offlineService.hasPendingActions()) {
-        console.error('[DataBridge] Skipping hydration: offline queue has pending actions — this may cause empty profile screens if only non-profile tables are queued');
+      // Offline-queue guard (P1-16): skip hydration ONLY when a profile-related table has a
+      // pending local write, to avoid overwriting newer in-flight data with stale server values.
+      // Previously this used hasPendingActions() which is global — any queued meal_log /
+      // workout_session action skipped ALL profile hydration and caused empty profile screens.
+      // Now filtered to the five profile tables this method actually hydrates.
+      const PROFILE_TABLES = [
+        "profiles",
+        "diet_preferences",
+        "body_analysis",
+        "workout_preferences",
+        "advanced_review",
+      ];
+      const hasPendingProfileAction = PROFILE_TABLES.some(
+        (table) => offlineService.getOfflineDataByTable(table).length > 0,
+      );
+      if (hasPendingProfileAction) {
+        console.warn('[DataBridge] Skipping profile hydration: a profile-related table has pending offline actions — will hydrate after sync');
         profileStore.setSyncStatus("synced");
       } else {
         profileStore.hydrateFromLegacy(batchUpdate);
