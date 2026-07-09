@@ -11,6 +11,7 @@ if (Platform.OS === "ios") {
   try {
     HealthKitModule = require("expo-health-kit");
   } catch (error) {
+    console.error("[healthKit] expo-health-kit module load failed:", error);
   }
 }
 

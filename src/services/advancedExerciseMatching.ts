@@ -581,6 +581,7 @@ class AdvancedExerciseMatchingService {
         this.semanticCache = new Map(Object.entries(data));
       }
     } catch (error) {
+      console.error("[advancedExerciseMatching] loadSemanticCache failed:", error);
     }
   }
 
@@ -592,6 +593,7 @@ class AdvancedExerciseMatchingService {
         JSON.stringify(data),
       );
     } catch (error) {
+      console.error("[advancedExerciseMatching] saveSemanticCache failed:", error);
     }
   }
 

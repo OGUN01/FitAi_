@@ -232,6 +232,7 @@ export async function syncTotalCaloriesWithBMRFallback(
         }
       }
     } catch (bmrError) {
+      console.error("[syncHelpers] syncBMR aggregate failed:", bmrError);
     }
   }
 }

@@ -50,12 +50,14 @@ export const AsyncInitializer: React.FC<AsyncInitializerProps> = ({
               try {
                 await googleAuthService.configure();
               } catch (authError) {
+                console.error("[AsyncInitializer] googleAuthService.configure failed (non-fatal):", authError);
               }
 
               // Run data migrations (skip if it fails)
               try {
                 await migrationService.runMigrations();
               } catch (migrationError) {
+                console.error("[AsyncInitializer] migrationService.runMigrations failed (non-fatal):", migrationError);
               }
             } catch (error) {
               throw error;

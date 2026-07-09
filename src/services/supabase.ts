@@ -21,7 +21,8 @@ const ExpoSecureStoreAdapter = {
         return chunks.join("");
       }
       return await SecureStore.getItemAsync(key);
-    } catch {
+    } catch (error) {
+      console.warn("[SecureStoreAdapter] getItem falling back to AsyncStorage for key:", key, error);
       return AsyncStorage.getItem(key);
     }
   },
@@ -40,7 +41,8 @@ const ExpoSecureStoreAdapter = {
       } else {
         await SecureStore.setItemAsync(key, value);
       }
-    } catch {
+    } catch (error) {
+      console.warn("[SecureStoreAdapter] setItem falling back to AsyncStorage for key:", key, error);
       return AsyncStorage.setItem(key, value);
     }
   },
@@ -57,7 +59,8 @@ const ExpoSecureStoreAdapter = {
       } else {
         await SecureStore.deleteItemAsync(key);
       }
-    } catch {
+    } catch (error) {
+      console.warn("[SecureStoreAdapter] removeItem falling back to AsyncStorage for key:", key, error);
       return AsyncStorage.removeItem(key);
     }
   },

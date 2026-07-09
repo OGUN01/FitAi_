@@ -73,6 +73,7 @@ export class MetricsCalculator {
           restingHR,
         );
       } catch (error) {
+        console.error("[metricsCalculator] HR zone calc failed:", error);
       }
     }
 
@@ -81,6 +82,7 @@ export class MetricsCalculator {
       try {
         vo2max = VO2MaxCalculatorService.estimate(user, restingHR);
       } catch (error) {
+        console.error("[metricsCalculator] VO2max calc failed:", error);
       }
     }
 
@@ -96,6 +98,7 @@ export class MetricsCalculator {
         vo2max: vo2max?.vo2max,
       });
     } catch (error) {
+      console.error("[metricsCalculator] health score calc failed:", error);
     }
 
     let muscleGainLimits = null;
@@ -104,6 +107,7 @@ export class MetricsCalculator {
       try {
         muscleGainLimits = MuscleGainCalculatorService.calculateLimits(user);
       } catch (error) {
+        console.error("[metricsCalculator] muscle gain limits calc failed:", error);
       }
     }
 

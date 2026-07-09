@@ -100,6 +100,7 @@ export const useWorkoutAchievements = () => {
           timestamp: new Date().toISOString(),
         });
       } catch (error) {
+        console.error("[useWorkoutAchievements] trackSetCompletion failed:", error);
       }
     },
     [user?.id, checkProgress],
@@ -130,6 +131,7 @@ export const useWorkoutAchievements = () => {
           `Exercise ${exerciseIndex + 1} of ${totalExercises} Complete! 💪`,
         );
       } catch (error) {
+        console.error("[useWorkoutAchievements] trackExerciseCompletion failed:", error);
       }
     },
     [user?.id, checkProgress, showAchievementMiniToast],
@@ -165,6 +167,7 @@ export const useWorkoutAchievements = () => {
           showAchievementMiniToast("Almost Done! 💪 Final Push!");
         }
       } catch (error) {
+        console.error("[useWorkoutAchievements] trackMilestone failed:", error);
       }
     },
     [user?.id, checkProgress, showAchievementMiniToast],
@@ -205,6 +208,7 @@ export const useWorkoutAchievements = () => {
           isConsistent: true,
         });
       } catch (error) {
+        console.error("[useWorkoutAchievements] trackWorkoutCompletion failed:", error);
       }
     },
     [user?.id, checkProgress],
