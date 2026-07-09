@@ -27,6 +27,12 @@ let achievementListenerAttached = false;
 let achievementInitializationPromise: Promise<void> | null = null;
 let initializedAchievementUserId: string | null = null;
 
+// P1-20: remembers the most recent guest userId that initialized the store so
+// its earned achievement progress can be migrated to a real Supabase userId on
+// the guest→user sign-in transition. Set by initialize() when the incoming
+// userId is a guest/local ID; consumed by loadFromSupabase on a real userId.
+let lastGuestUserId: string | null = null;
+
 const normalizeWorkoutType = (value?: string | null): string => {
   const normalized = String(value || "").toLowerCase();
 
@@ -250,6 +256,15 @@ interface AchievementStore {
   loadFromSupabase: (userId: string) => Promise<void>;
   reconcileWithCurrentData: (userId: string) => Promise<void>;
 
+  // P1-20: migrate guest-keyed achievement progress to a real userId on the
+  // guest→user sign-in transition. Guests earn achievements under a guest ID
+  // (e.g. `guest-<uuid>`); without migration these are invisible after login
+  // because loadFromSupabase queries by the real userId. This re-keys both the
+  // engine's in-memory map and the store Map so the guest's earned progress
+  // survives the transition and is subsequently pushed to Supabase by
+  // loadFromSupabase's offline-recovery path.
+  migrateGuestAchievements: (guestUserId: string, realUserId: string) => void;
+
   // SSOT Fix 19: streak updater — called after every session completion
   // and on hydration so currentStreak is always the real live value.
   updateCurrentStreak: () => void;
@@ -345,6 +360,15 @@ export const useAchievementStore = create<AchievementStore>()(
 
         set({ isLoading: true });
         initializedAchievementUserId = userId;
+
+        // P1-20: remember guest userIds so their earned progress can be
+        // migrated to a real Supabase userId on sign-in. Real userIds clear
+        // the tracker (there's nothing to migrate from a real → real swap).
+        const isGuestId =
+          userId.startsWith("guest") || userId === "local-user";
+        if (isGuestId) {
+          lastGuestUserId = userId;
+        }
 
         achievementInitializationPromise = (async () => {
           try {
@@ -724,20 +748,68 @@ export const useAchievementStore = create<AchievementStore>()(
         }
       },
 
-      // Load achievements from Supabase (for returning users)
+      // Load achievements from Supabase (for returning users).
+      //
+      // P2-10: loadUserAchievements now returns `{ok, achievements}`. On a load
+      // FAILURE (`ok:false`) we skip the merge AND skip the offline-recovery
+      // push: a transient network error must not clobber locally-completed
+      // achievements, and pushing during a network failure would also fail.
+      // We surface the error via console.error (CLAUDE.md #5 — no silent
+      // failures) and keep the local state intact so the user sees their
+      // local progress. The next successful sync will merge + push.
+      //
+      // P1-20: guest→user transition. Before merging cloud data we migrate any
+      // guest-keyed achievement progress to the real userId via
+      // migrateGuestAchievements (called by remoteDataSync on SIGNED_IN before
+      // this method). That method re-keys the engine map and the store Map so
+      // the guest's earned progress survives the login transition.
       loadFromSupabase: async (userId: string) => {
         try {
           console.log("☁️ Loading achievements from Supabase...");
 
-          const cloudAchievements =
+          // P1-20: guest→user transition. If the store was previously
+          // initialized for a guest (guest-earned achievements live under the
+          // guest key in the engine + store), migrate that progress to the
+          // real userId BEFORE merging cloud data so the guest's earned
+          // achievements survive the login. The migrated rows are then pushed
+          // to Supabase by the offline-recovery path below.
+          if (
+            lastGuestUserId &&
+            lastGuestUserId !== userId &&
+            (lastGuestUserId.startsWith("guest") ||
+              lastGuestUserId === "local-user")
+          ) {
+            get().migrateGuestAchievements(lastGuestUserId, userId);
+            // Clear so we only migrate once per guest session.
+            lastGuestUserId = null;
+          }
+
+          const loadResult =
             await achievementDataService.loadUserAchievements(userId);
 
+          if (!loadResult.ok) {
+            // Load failed (network/Supabase error). Do NOT clobber local state
+            // and do NOT attempt the offline push (it would fail too). Keep
+            // local progress intact; next successful sync merges + pushes.
+            console.error(
+              "[achievementStore] loadFromSupabase: cloud load failed for user",
+              userId,
+              "— keeping local achievement state; will retry on next sync.",
+            );
+            return;
+          }
+
+          const cloudAchievements = loadResult.achievements;
+          const state = get();
+
+          // Merge cloud achievements with local (cloud takes precedence for
+          // completed/higher-progress). Always run — even when cloud is empty —
+          // so the offline-recovery push below can push locally-completed rows
+          // that have no cloud counterpart (guest-earned achievements that
+          // were migrated to this userId by migrateGuestAchievements).
+          const mergedAchievements = new Map(state.userAchievements);
+
           if (cloudAchievements.size > 0) {
-            const state = get();
-
-            // Merge cloud achievements with local (cloud takes precedence for completed)
-            const mergedAchievements = new Map(state.userAchievements);
-
             cloudAchievements.forEach((cloudAchievement, key) => {
               const localAchievement = mergedAchievements.get(key);
 
@@ -780,7 +852,9 @@ export const useAchievementStore = create<AchievementStore>()(
             );
           }
 
-          // Offline recovery: push any locally-completed achievements missing from cloud
+          // Offline recovery + guest migration push: push any locally-completed
+          // achievements missing from cloud (this includes guest-earned
+          // achievements re-keyed to userId by migrateGuestAchievements).
           const localState = get();
           const missingInCloud: string[] = [];
           localState.userAchievements.forEach((ua, key) => {
@@ -956,6 +1030,78 @@ export const useAchievementStore = create<AchievementStore>()(
         }
       },
 
+      // P1-20: migrate guest-keyed achievement progress to a real userId.
+      // Re-keys the engine's in-memory map (guest::id → realUser::id) and the
+      // store Map so guest-earned achievements survive the guest→user login
+      // transition. Cloud-pushed achievements for guests were skipped by
+      // achievementDataService (guest guard), so nothing existed in Supabase
+      // under the guest ID — this migration is local-only, and the subsequent
+      // loadFromSupabase call pushes the migrated rows to the real user's
+      // cloud record via its offline-recovery path.
+      migrateGuestAchievements: (guestUserId: string, realUserId: string) => {
+        if (!guestUserId || !realUserId || guestUserId === realUserId) {
+          return;
+        }
+
+        // Only migrate if the source looks like a guest/local ID — never touch
+        // progress keyed under a real Supabase userId (avoids accidental
+        // cross-user clobbering if called with two real IDs).
+        const isGuestId =
+          guestUserId.startsWith("guest") ||
+          guestUserId === "local-user";
+        if (!isGuestId) {
+          return;
+        }
+
+        const guestProgress =
+          achievementEngine.getUserAchievementProgress(guestUserId);
+
+        if (guestProgress.size === 0) {
+          return;
+        }
+
+        let migratedCount = 0;
+        guestProgress.forEach((ua) => {
+          // Skip any the real user already completed (cloud wins on conflict;
+          // loadFromSupabase will merge cloud rows next).
+          const existingForReal =
+            achievementEngine.getUserAchievementProgress(realUserId);
+          const existing = existingForReal.get(ua.achievementId);
+          if (
+            existing?.isCompleted ||
+            (existing && existing.progress >= ua.progress)
+          ) {
+            return;
+          }
+
+          const migrated: UserAchievement = {
+            ...ua,
+            userId: realUserId,
+          };
+          achievementEngine.setUserAchievement(realUserId, migrated);
+          migratedCount++;
+        });
+
+        if (migratedCount === 0) {
+          return;
+        }
+
+        // Refresh the store Map from the engine so UI reflects migrated progress.
+        const updatedProgress =
+          achievementEngine.getUserAchievementProgress(realUserId);
+        const stats = achievementEngine.getUserAchievementStats(realUserId);
+
+        set({
+          userAchievements: updatedProgress,
+          totalFitCoinsEarned: stats.totalFitCoinsEarned,
+          completionRate: stats.completionRate,
+        });
+
+        console.warn(
+          `[achievementStore] Migrated ${migratedCount} guest achievement(s) from ${guestUserId} → ${realUserId}`,
+        );
+      },
+
       // Reset store to initial state (for logout)
       reset: () => {
         // Bug 5 fix: cleanup achievement engine listeners on reset
@@ -968,6 +1114,7 @@ export const useAchievementStore = create<AchievementStore>()(
         achievementListenerAttached = false;
         achievementInitializationPromise = null;
         initializedAchievementUserId = null;
+        lastGuestUserId = null;
 
         set({
           isLoading: false,

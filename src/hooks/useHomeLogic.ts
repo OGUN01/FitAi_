@@ -191,6 +191,15 @@ export const useHomeLogic = () => {
   }, []);
 
   useEffect(() => {
+    // P1-17: achievementsInitialized is intentionally NOT in the dep array.
+    // initialize() sets isInitialized=true, which would re-trigger this effect
+    // (effect reads isInitialized, its own call mutates it) — a latent
+    // infinite loop, currently safe only because of the early-return guard
+    // below. Dropping it from deps keeps the guard as the sole loop-preventer
+    // and removes the re-render cycle. The guard (if achievementsInitialized
+    // return) still prevents double-init: once initialize() resolves and flips
+    // isInitialized, a subsequent render re-runs this effect, hits the guard,
+    // and returns immediately — no second initialize() call.
     if (!user?.id || achievementsInitialized) {
       return;
     }
@@ -198,7 +207,8 @@ export const useHomeLogic = () => {
     initializeAchievements(user.id).catch((err) => {
       console.warn("[HomeScreen] Failed to initialize achievements:", err);
     });
-  }, [user?.id, achievementsInitialized, initializeAchievements]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, initializeAchievements]);
 
   useEffect(() => {
     let cancelled = false;

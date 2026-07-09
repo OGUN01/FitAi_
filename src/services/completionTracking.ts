@@ -2,6 +2,7 @@ import { useFitnessStore } from "../stores/fitnessStore";
 import { useNutritionStore } from "../stores/nutritionStore";
 import { useProfileStore } from "../stores/profileStore";
 import { useAchievementStore } from "../stores/achievementStore";
+import { trackAchievementActivity } from "../stores/achievementStore";
 import { useHealthDataStore } from "../stores/healthDataStore";
 import { DayWorkout, DayMeal, WorkoutSet } from "../ai";
 import crudOperations from "./crudOperations";
@@ -634,6 +635,37 @@ class CompletionTrackingService {
                     "⚠️ Failed to trigger nutrition refresh:",
                     refreshError,
                   );
+                }
+
+                // P0-10: fire the meal-logged achievement tracker AFTER the
+                // successful Supabase insert so a failed DB write never triggers
+                // an achievement unlock (achievements must reflect real persisted
+                // activity). trackAchievementActivity.mealLogged was previously
+                // dead code (0 callers); this is its only call site. Fire-and-
+                // forget — achievement evaluation failures are logged inside
+                // checkProgress and must not block or revert the meal completion.
+                // Guests (userId undefined here, or guest-prefixed) get LOCAL
+                // achievement progress only; checkProgress short-circuits on
+                // falsy userId, and achievementDataService skips cloud writes
+                // for guest IDs.
+                if (currentUserId) {
+                  try {
+                    trackAchievementActivity.mealLogged(currentUserId, {
+                      calories: meal.totalCalories || 0,
+                      protein: meal.totalMacros?.protein ?? 0,
+                      carbs: meal.totalMacros?.carbohydrates ?? 0,
+                      fat: meal.totalMacros?.fat ?? 0,
+                      totalLogs:
+                        Object.values(
+                          useNutritionStore.getState().mealProgress || {},
+                        ).filter((p: any) => p?.progress === 100).length,
+                    });
+                  } catch (achievementError) {
+                    console.error(
+                      "⚠️ Failed to track meal achievement:",
+                      achievementError,
+                    );
+                  }
                 }
               }
             } catch (supabaseError) {

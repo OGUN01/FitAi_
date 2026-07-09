@@ -66,12 +66,23 @@ async function syncAllRemoteData(userId: string): Promise<void> {
         import("../stores/achievementStore"),
       ]);
 
+    // P0-9/P1-18: Revalidate entitlement on cross-device sign-in so a user
+    // whose subscription was cancelled on another device does not retain
+    // stale premium state. preserveExistingOnError:true keeps paying users
+    // premium on transient network blips (combined with P2-12 boot default).
+    const [{ useSubscriptionStore }] = await Promise.all([
+      import("../stores/subscriptionStore"),
+    ]);
+
     const results = await Promise.allSettled([
       dataBridge.loadAllData(userId, { forceRefresh: true }),
       useHydrationStore.getState().syncWithSupabase(),
       useFitnessStore.getState().loadData(),
       useNutritionStore.getState().loadData(),
       useAchievementStore.getState().loadFromSupabase(userId),
+      useSubscriptionStore
+        .getState()
+        .fetchSubscriptionStatus({ preserveExistingOnError: true }),
     ]);
 
     const failures: number[] = [];
@@ -80,10 +91,26 @@ async function syncAllRemoteData(userId: string): Promise<void> {
     });
     if (failures.length > 0) {
       console.error(
-        `[RemoteDataSync] ${failures.length}/5 remote sync(s) failed for user ${userId}`,
+        `[RemoteDataSync] ${failures.length}/6 remote sync(s) failed for user ${userId}`,
         failures.map((i) => (results[i] as PromiseRejectedResult).reason),
       );
     }
+
+    // P1-20: after loadFromSupabase (which migrates any guest-earned
+    // achievements to the real userId via its offline-recovery push), also
+    // push the full merged set to Supabase so guest-earned achievements
+    // persist to the user's cloud record on the guest→user sign-in
+    // transition. Fire-and-forget — failure here is logged inside
+    // syncWithSupabase and retried on the next sync.
+    useAchievementStore
+      .getState()
+      .syncWithSupabase(userId)
+      .catch((err) => {
+        console.error(
+          "[RemoteDataSync] achievement syncWithSupabase (push) failed:",
+          err,
+        );
+      });
   })();
 
   try {

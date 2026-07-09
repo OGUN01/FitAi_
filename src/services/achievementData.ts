@@ -10,6 +10,18 @@ export interface AchievementSyncResult {
   errors: string[];
 }
 
+/**
+ * Result of loading user achievements from Supabase.
+ * P2-10: distinguishes a load FAILURE (`ok:false`) from a successful load that
+ * returned zero rows (`ok:true`, empty Map). Previously both returned an empty
+ * Map, so the store's `size > 0` merge gate treated a network error identically
+ * to "user has no achievements yet" — a silent failure (CLAUDE.md #5).
+ */
+export interface AchievementLoadResult {
+  ok: boolean;
+  achievements: Map<string, UserAchievement>;
+}
+
 class AchievementDataService {
   private static instance: AchievementDataService;
 
@@ -96,15 +108,25 @@ class AchievementDataService {
   }
 
   /**
-   * Load user achievements from Supabase
+   * Load user achievements from Supabase.
+   *
+   * P2-10: returns `{ok, achievements}` so callers can distinguish a load
+   * FAILURE (`ok:false`) from a successful load that returned zero rows
+   * (`ok:true`, empty Map). Previously both returned an empty Map, so the
+   * store's `size > 0` merge gate treated a network error identically to
+   * "user has no achievements yet" — a silent failure (CLAUDE.md #5).
+   *
+   * Guest users (`guest*` / `local-user`) are short-circuited with
+   * `ok:true` + empty Map: they legitimately have no cloud rows, and we do
+   * not want to surface an error for them.
    */
   async loadUserAchievements(
     userId: string,
-  ): Promise<Map<string, UserAchievement>> {
+  ): Promise<AchievementLoadResult> {
     const achievementsMap = new Map<string, UserAchievement>();
 
     if (!userId || userId.startsWith("guest") || userId === "local-user") {
-      return achievementsMap;
+      return { ok: true, achievements: achievementsMap };
     }
 
     try {
@@ -115,7 +137,7 @@ class AchievementDataService {
 
       if (error) {
         console.error("❌ Error loading achievements from Supabase:", error);
-        return achievementsMap;
+        return { ok: false, achievements: achievementsMap };
       }
 
       if (data && data.length > 0) {
@@ -134,11 +156,11 @@ class AchievementDataService {
           achievementsMap.set(row.achievement_id, userAchievement);
         }
       }
+      return { ok: true, achievements: achievementsMap };
     } catch (error) {
       console.error("❌ Error loading achievements from Supabase:", error);
+      return { ok: false, achievements: achievementsMap };
     }
-
-    return achievementsMap;
   }
 
   /**
