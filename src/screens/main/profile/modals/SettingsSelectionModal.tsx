@@ -207,6 +207,7 @@ const styles = StyleSheet.create({
   dialogContainer: {
     width: "88%",
     maxWidth: 380,
+    maxHeight: "80%",
   },
   headerRow: {
     flexDirection: "row",

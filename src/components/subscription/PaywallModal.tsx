@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { usePaywall } from "../../hooks/usePaywall";
 import { flatColors as colors } from "../../theme/aurora-tokens";
-import { rf, rp, rbr } from "../../utils/responsive";
+import { rf, rp, rh, rbr } from "../../utils/responsive";
 import { useAuthStore } from "../../stores/authStore";
 
 interface PaywallModalProps {
@@ -371,8 +371,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundSecondary,
     borderTopLeftRadius: rbr(24),
     borderTopRightRadius: rbr(24),
-    maxHeight: "92%",
-    minHeight: 420,
+    maxHeight: rh(2208),
+    minHeight: rh(420),
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,

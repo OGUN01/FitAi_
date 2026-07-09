@@ -461,6 +461,7 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
               springConfig="snappy"
               hapticType="light"
               style={[styles.controlButton, styles.cancelButton]}
+              containerStyle={styles.controlButtonOuter}
               accessibilityRole="button"
               accessibilityLabel="Go back"
             >
@@ -475,6 +476,7 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
               springConfig="snappy"
               hapticType="success"
               style={[styles.controlButton, styles.completeButton]}
+              containerStyle={styles.controlButtonOuter}
               accessibilityRole="button"
               accessibilityLabel="Complete set"
             >
@@ -563,27 +565,27 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   animationContainer: {
-    width: rw(250),
-    height: rh(250),
+    width: rs(200),
+    height: rs(200),
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: rp(spacing.lg),
+    marginBottom: rp(spacing.md),
     position: "relative",
   },
   breathingCircleOuter: {
     position: "absolute",
-    width: rw(250),
-    height: rh(250),
-    borderRadius: rbr(125),
+    width: rs(200),
+    height: rs(200),
+    borderRadius: rbr(100),
     backgroundColor: `${colors.primary.DEFAULT}20`,
     borderWidth: 2,
     borderColor: `${colors.primary.DEFAULT}40`,
   },
   breathingCircleMiddle: {
     position: "absolute",
-    width: rw(220),
-    height: rh(220),
-    borderRadius: rbr(110),
+    width: rs(180),
+    height: rs(180),
+    borderRadius: rbr(90),
     backgroundColor: `${colors.primary.DEFAULT}10`,
     borderWidth: 1,
     borderColor: `${colors.primary.DEFAULT}30`,
@@ -593,6 +595,9 @@ const styles = StyleSheet.create({
     zIndex: 10,
     borderRadius: rbr(90),
     overflow: "hidden",
+    width: rs(180),
+    height: rs(180),
+    flexShrink: 0,
   },
   exerciseName: {
     fontSize: rf(typography.fontSize.h3),
@@ -614,14 +619,21 @@ const styles = StyleSheet.create({
     width: "100%",
     marginBottom: rp(spacing.lg),
     gap: rp(spacing.md),
+    flexShrink: 0,
   },
   controlButton: {
     flex: 1,
     height: rh(50),
+    flexShrink: 0,
     borderRadius: borderRadius.lg,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
+  },
+  controlButtonOuter: {
+    flex: 1,
+    flexShrink: 0,
+    height: rh(50),
   },
   controlContent: {
     flexDirection: "row",

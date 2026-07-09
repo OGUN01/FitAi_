@@ -29,6 +29,7 @@ import {
   View,
   Text,
   TextInput,
+  ScrollView,
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -419,6 +420,27 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
       dismissOnDrag={false}
       closeOnOverlayPress={false}
     >
+      {/*
+        ScrollView: the modal body is tall (exercise name, calibration banner,
+        set-type, weight+reps steppers, RPE three-tap, volume footer, Back).
+        The weight/reps TextInputs use autoFocus, so the Android soft keyboard
+        opens. The stock RN Modal portal does not resize for the keyboard
+        (adjustResize applies to the root activity, not the Modal dialog), and
+        BottomSheet's KeyboardAvoidingView is a no-op on Android
+        (behavior={undefined}). Without a ScrollView, the keyboard occludes the
+        RPE buttons (Easy/Just Right/Hard) and the Back/Cancel button at the
+        bottom — taps never reach them. Wrapping the body lets the user scroll
+        the lower controls into view above the keyboard. keyboardShouldPersistTaps
+        "handled" matches the established pattern across the app
+        (LogMealModal, MealEditModal, onboarding tabs, etc.).
+      */}
+      <ScrollView
+        style={styles.modalScroll}
+        contentContainerStyle={styles.modalScrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
       {/* ── Exercise name + PR preview ── */}
       <View style={styles.headerRow}>
         <Text style={styles.exerciseName} numberOfLines={1}>
@@ -673,6 +695,7 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
         style={styles.backButton}
         accessibilityLabel="Cancel set log"
       />
+      </ScrollView>
     </BottomSheet>
   );
 };
@@ -682,6 +705,15 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
 // ============================================================================
 
 const styles = StyleSheet.create({
+  // ScrollView wraps the modal body so the lower controls (RPE buttons +
+  // Back/Cancel) scroll above the Android soft keyboard. The modal's content
+  // is laid out top-to-bottom inside this scroll container.
+  modalScroll: {
+    flex: 1,
+  },
+  modalScrollContent: {
+    paddingBottom: rp(spacing.xl),
+  },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",

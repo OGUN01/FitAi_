@@ -187,63 +187,74 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
           <Animated.View style={[styles.backdrop, backdropAnimatedStyle]} />
         </Pressable>
 
-        <PanGestureHandler
-          enabled={dismissOnDrag}
-          onGestureEvent={gestureHandler}
+        {/* Sheet wrapper carries the slide-up/slide-down transform. The drag
+            gesture (PanGestureHandler) wraps ONLY the grabber/header handle so
+            the sheet content below stays a sibling of the gesture handler —
+            otherwise react-native-gesture-handler does not bridge a11y to the
+            content descendants on Android (SetLogModal RPE buttons/inputs were
+            invisible to uiautomator). */}
+        <Animated.View
+          style={[
+            styles.sheetWrapper,
+            {
+              maxHeight: getScreenHeight() * maxHeightFraction,
+              paddingBottom: insets.bottom || rp(spacing.md),
+            },
+            sheetAnimatedStyle,
+          ]}
         >
-          <Animated.View
-            style={[
-              styles.sheetWrapper,
-              {
-                maxHeight: getScreenHeight() * maxHeightFraction,
-                paddingBottom: insets.bottom || rp(spacing.md),
-              },
-              sheetAnimatedStyle,
-            ]}
+          <GlassCard
+            blurIntensity="heavy"
+            elevation={6}
+            padding="none"
+            borderRadius="xxl"
+            contentStyle={styles.sheetContent}
           >
-            <GlassCard
-              blurIntensity="heavy"
-              elevation={6}
-              padding="none"
-              borderRadius="xxl"
-              contentStyle={styles.sheetContent}
+            {/* Drag handle region — wrapped in PanGestureHandler so the
+                grabber + header drive drag-to-dismiss. The content below is a
+                sibling, not a descendant, so it bridges to the a11y tree. */}
+            <PanGestureHandler
+              enabled={dismissOnDrag}
+              onGestureEvent={gestureHandler}
             >
-              {/* Grabber */}
-              <Animated.View style={[styles.grabberRow, grabberAnimatedStyle]}>
-                <View style={styles.grabber} />
+              <Animated.View>
+                {/* Grabber */}
+                <Animated.View style={[styles.grabberRow, grabberAnimatedStyle]}>
+                  <View style={styles.grabber} />
+                </Animated.View>
+
+                {/* Header */}
+                {(title || showCloseButton) && (
+                  <View style={styles.header}>
+                    {title ? (
+                      <Animated.Text style={styles.title}>{title}</Animated.Text>
+                    ) : (
+                      <View />
+                    )}
+                    {showCloseButton ? (
+                      <Pressable
+                        onPress={handleClose}
+                        hitSlop={12}
+                        accessibilityRole="button"
+                        accessibilityLabel="Close"
+                        style={styles.closeButton}
+                      >
+                        <Animated.Text style={styles.closeIcon}>✕</Animated.Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                )}
               </Animated.View>
+            </PanGestureHandler>
 
-              {/* Header */}
-              {(title || showCloseButton) && (
-                <View style={styles.header}>
-                  {title ? (
-                    <Animated.Text style={styles.title}>{title}</Animated.Text>
-                  ) : (
-                    <View />
-                  )}
-                  {showCloseButton ? (
-                    <Pressable
-                      onPress={handleClose}
-                      hitSlop={12}
-                      accessibilityRole="button"
-                      accessibilityLabel="Close"
-                      style={styles.closeButton}
-                    >
-                      <Animated.Text style={styles.closeIcon}>✕</Animated.Text>
-                    </Pressable>
-                  ) : null}
-                </View>
-              )}
-
-              <KeyboardAvoidingView
-                behavior={Platform.OS === "ios" ? "padding" : undefined}
-                style={[styles.content, contentStyle]}
-              >
-                {children}
-              </KeyboardAvoidingView>
-            </GlassCard>
-          </Animated.View>
-        </PanGestureHandler>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : undefined}
+              style={[styles.content, contentStyle]}
+            >
+              {children}
+            </KeyboardAvoidingView>
+          </GlassCard>
+        </Animated.View>
       </GestureHandlerRootView>
     </RNModal>
   );

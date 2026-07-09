@@ -238,8 +238,17 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = React.memo(({
     opacity: opacity.value,
   }));
 
+  // pointerEvents="box-none" on the wrapper: the wrapper itself can never be the
+  // touch target, but its subviews (the inner Pressable) can. This is critical
+  // when AnimatedPressable is nested inside BottomSheet's GestureHandlerRootView +
+  // KeyboardAvoidingView — without it, the Animated.View wrapper intercepts/
+  // blocks touch propagation to the inner Pressable on Android, producing dead
+  // controls (e.g. SetLogModal RPE + Cancel buttons). box-none is safe for all
+  // callers because the inner Pressable is the only child + the actual target;
+  // it cannot change behavior for already-working taps (box-none is strictly
+  // permissive for children). See wave-b2-01-fix-dead-rpe-buttons.md.
   return (
-    <Animated.View style={[containerStyle, animatedStyle]}>
+    <Animated.View style={[containerStyle, animatedStyle]} pointerEvents="box-none">
       <Pressable
         {...pressableProps}
         onPressIn={isInteractive ? handlePressIn : undefined}

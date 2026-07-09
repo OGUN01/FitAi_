@@ -361,7 +361,6 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
 const styles = StyleSheet.create({
   container: {
     padding: 0,
-    overflow: "hidden",
     alignSelf: "center",
   },
 

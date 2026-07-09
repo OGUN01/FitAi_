@@ -27,6 +27,11 @@ const getAuthStore = () => {
  */
 export const getCurrentUserId = (): string | null => {
   const authStore = getAuthStore();
+  if (!authStore) {
+    // Auth store module not yet initialized (import-cycle / early module load).
+    // Return null so callers fall back to guest/no-user paths instead of crashing.
+    return null;
+  }
   const authState = authStore.getState();
   return authState.user?.id ?? null;
 };

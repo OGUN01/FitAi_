@@ -153,7 +153,7 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
             {/* Save Button */}
             {onSave && (
               <Animated.View
-                entering={SlideInUp.delay(300).duration(400)}
+                entering={FadeIn.delay(300).duration(400)}
                 style={styles.footer}
               >
                 <AnimatedPressable
@@ -269,6 +269,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.06)",
+    minHeight: rh(76),
   },
   saveButtonContainer: {
     borderRadius: borderRadius.lg,
