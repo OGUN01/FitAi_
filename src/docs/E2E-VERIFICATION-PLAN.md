@@ -432,3 +432,78 @@ known Windows/Metro + emulator incompatibility, not a code issue. So the
 dev-client path is ALSO unreliable here. The robust path is the **preview
 (release) APK** whose embedded bundle is freshly built from current source
 (contains the fix) and requires no Metro download. Building that now.
+
+## Session 4 update (2026-06-23) — on-device SetLogModal dump: 5 hypotheses disproven
+
+The on-device set-logging step (flow 03) remains blocked by the empty uiautomator
+dump when SetLogModal opens. This session pursued 5 root-cause hypotheses via
+instrumented release-APK rebuilds; ALL were disproven with direct evidence:
+
+1. **expo-blur BlurView sinks a11y** — IMPOSSIBLE. `GlassView.tsx:98` defaults
+   `optimizeForAndroid=true`, so on Android it renders a plain `<View>` fallback
+   (line 106-108); the real BlurView never instantiates. (Claimed by two agents;
+   wrong twice.)
+2. **RN `<Modal>` separate window** — FALSE. `dumpsys` shows both com.fitai.app
+   windows share one `ActivityRecord` token; `uiautomator dump --windows` added
+   only status-bar chrome, 0 RPE.
+3. **a11y labels/roles** — no-op; post-fix dump byte-identical to stall.
+4. **reduce-motion freezes entrance spring → sheet off-screen** — DISPROVEN.
+   Instrumentation: `translateY.value=0` (on-screen), `backdropOpacity=0.6`,
+   children mounted (`title='Set 1 of 4'`). AND reduce-motion ON vs OFF produce
+   identical empty dumps. Not reduce-motion-specific.
+5. **11ms auto-close / phantom press / clock-tick reset** — DISPROVEN.
+   Close-path logging showed ZERO close triggers for 34s after opening. The
+   earlier "oscillation" was a misread of two stable modals interleaving on the
+   1s `setCurrentTime` re-render.
+
+**What instrumentation proved (solid):** the sheet is correctly on-screen,
+open, stable (no auto-close), content mounted, wrapped (on Android) in plain
+Views — yet the RPE buttons / Reps / Weight EditTexts never bridge to the
+uiautomator a11y tree. The working session screen (`04-session.xml`) bridges
+GlassCard-descendant content fine ("Start Exercise", "View Instructions"), so
+GlassCard itself is not the blocker.
+
+**Strongest untested hypothesis:** the structural difference is that
+`BottomSheet` wraps content in `GestureHandlerRootView` → `PanGestureHandler` →
+`Animated.View` → `GlassCard` → `KeyboardAvoidingView`, whereas the working
+session screen uses `GlassCard` directly (no gesture handler).
+`react-native-gesture-handler`'s `PanGestureHandler`/`GestureHandlerRootView`
+may not bridge a11y to descendants on Android. Next diagnostic: temporarily
+remove/relocate the PanGestureHandler wrapper and re-dump.
+
+**Current state:** all speculative changes reverted; working tree clean at
+9ca76b5. Gates green (tsc 0; jest 471/480, 87 suites). Diagnostic artifacts in
+`.maestro-artifacts/` (text/XML only — verdict .md files conflict with each
+other; trust the logcat evidence, not the per-agent verdicts).
+
+**Honesty note:** ~6 release-APK rebuild cycles were spent on inferred root
+causes before instrumentation nailed the symptom. The primary verification
+gate (Node integration test, `src/__tests__/integration/generate-complete-regenerate.loop.test.ts`)
+remains GREEN and deterministically covers the loop's logic — the on-device path
+is the explicitly-secondary/flaky route per this plan's own framing (line 12).
+
+## Session 4 update (2026-06-23) — ROOT CAUSE CONFIRMED (6th hypothesis)
+
+**RESOLVED.** After 5 disproven hypotheses, instrumentation + a gesture-handler-strip
+diagnostic build confirmed the root cause: `react-native-gesture-handler`'s
+`GestureHandlerRootView` + `PanGestureHandler` wrapper in `BottomSheet.tsx`
+(lines ~181/193) does NOT bridge a11y to descendants on Android.
+
+**Decisive evidence (diagnostic build with wrappers stripped):** SetLogModal's full
+subtree appeared in the uiautomator dump — RPE hits (3 RPE + Reps + kg + weight),
+2 EditTexts (`Weight (KG)="40.0"`, `Reps="8"`), text ("How hard was that?", "Set
+Type", "Starting at 40kg..."), non-full-screen sheet bounds `[0,652][1080,2337]`.
+Vs prior: 9 nodes, 0 RPE, all full-screen. The working session screen bridges
+because it uses `GlassCard` directly with NO gesture handler.
+
+**Why it took 6 hypotheses:** the symptom (empty dump) looked like an a11y-prop or
+animation problem; the actual cause was a gesture-handler layer outside the a11y
+tree. Instrumentation (CLAUDE.md "log at handoffs before fixing") was the right
+tool but arrived late; ~6 release-APK rebuild cycles were spent on inferred causes
+first.
+
+**Real fix (not yet implemented):** preserve drag-to-dismiss while bridging a11y —
+recommended approach: move `PanGestureHandler` to wrap ONLY the grabber/header
+region (not the content), so content sits in a sibling plain View and bridges.
+Source reverted to clean 9ca76b5; gates green (tsc 0, jest 471/480). Diagnostic
+artifacts + full verdict in `.maestro-artifacts/gesture-handler-verdict.md`.
