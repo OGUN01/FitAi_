@@ -99,7 +99,15 @@ export const useMealPlanning = (navigation: any) => {
   const incrementUsage = useSubscriptionStore((state) => state.incrementUsage);
   const triggerPaywall = useSubscriptionStore((state) => state.triggerPaywall);
 
-  const { dietPreferences, loadDailyNutrition } = useNutritionData();
+  // NOTE: useNutritionData still returns `dietPreferences` (an independent Supabase
+  // fetch of the diet_preferences table), but that is a VESTIGIAL second source of
+  // truth — it can lag profileStore on cold start and drift after an edit, which lets
+  // stale allergens leak into a freshly generated plan (Wave A-04 finding P1-5).
+  // profileStore.dietPreferences is the authoritative SSOT (architecture doc §E.3),
+  // hydrated synchronously from AsyncStorage. We therefore do NOT destructure
+  // `dietPreferences` here; we read only `loadDailyNutrition` (used to refresh the
+  // consumed-nutrition rings after a meal completion — a different concern).
+  const { loadDailyNutrition } = useNutritionData();
 
   const forceRefresh = useCallback(async () => {
     await loadNutritionStoreData();
@@ -345,7 +353,10 @@ export const useMealPlanning = (navigation: any) => {
       !mergedFitnessGoals?.primaryGoals?.length
     )
       missingItems.push("Fitness Goals");
-    if (!mergedDietPreferences && !dietPreferences)
+    // Single source of truth: profileStore.dietPreferences (architecture doc §E.3).
+    // The legacy transform `mergedDietPreferences` is derived from this same value,
+    // so checking the SSOT alone is sufficient and avoids the stale-fallback drift.
+    if (!profileDietPreferences)
       missingItems.push("Diet Preferences");
 
     if (missingItems.length > 0) {
@@ -382,16 +393,29 @@ export const useMealPlanning = (navigation: any) => {
 
       if (!userCalorieTarget) throw new Error("Calorie target not calculated");
 
+      // Single source of truth for diet preferences: profileStore.dietPreferences
+      // (architecture doc §E.3). The legacy transform `mergedDietPreferences` is
+      // derived from this same value (buildLegacyDietPreferences) and is kept only
+      // because the AI client's DietPreferences shape historically expects it.
+      // We NEVER read diet prefs from useNutritionData (a separate Supabase fetch
+      // that can lag the store — see Wave A-04 P1-5). If the SSOT is null here we
+      // already surfaced "Profile Incomplete" above; surface a warning rather than
+      // fabricate prefs (Principle 8).
+      const dietPreferencesForAI =
+        profileDietPreferences ?? mergedDietPreferences;
+      if (!dietPreferencesForAI) {
+        console.warn(
+          "[DIET] generateWeeklyMealPlan: profileStore.dietPreferences is null — generating without diet prefs (profileStore SSOT not hydrated).",
+        );
+      }
+
       const response = await aiService.generateWeeklyMealPlanAsync(
         legacyPersonalInfo!,
         mergedFitnessGoals!,
         1,
         {
           bodyMetrics: bodyAnalysis || undefined,
-          dietPreferences: (profileDietPreferences ||
-            mergedDietPreferences ||
-            dietPreferences ||
-            undefined) as DietPreferences | undefined,
+          dietPreferences: dietPreferencesForAI as DietPreferences | undefined,
           calorieTarget: userCalorieTarget,
           advancedReview: profileAdvancedReview || undefined,
           skipCache: true, // Always bypass cache — user explicitly requested fresh generation
@@ -442,7 +466,11 @@ export const useMealPlanning = (navigation: any) => {
         );
       } else {
         setAiError(errMsg);
-        crossPlatformAlert("Error", "Failed to start meal plan generation.");
+        const friendlyMsg =
+          errMsg === "Calorie target not calculated"
+            ? "Please complete your profile so we can calculate your nutrition targets before generating a plan."
+            : "Failed to start meal plan generation.";
+        crossPlatformAlert("Error", friendlyMsg);
       }
       setGeneratingPlan(false);
     }

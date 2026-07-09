@@ -1,0 +1,33 @@
+-- Wave C-02 / A-04 P2-10: Drop dead get_daily_nutrition_totals function
+--
+-- Background (Wave A-04 audit, src/docs/wave-a-04-diet-plan-audit.md P2-10):
+-- get_daily_nutrition_totals(p_user_id UUID, p_date DATE) was created in
+-- 20250129000002_add_session_log_tables.sql. It SUMs the columns
+-- `calories`, `protein_g`, `carbs_g`, `fat_g`, `fiber_g` — but the live
+-- meal_logs schema (supabase-types.generated.ts) uses `total_calories`,
+-- `total_protein`, `total_carbohydrates`, `total_fat` (and no fiber column
+-- at all; fiber is derived from food_items). The meal_logs table was
+-- migrated to the new column names but this helper was never updated, so
+-- any call would raise a "column does not exist" error.
+--
+-- Caller audit (2026-06-24): ZERO callers in TS/TSX/SQL. Grep across the
+-- repo for `get_daily_nutrition_totals` matches only:
+--   * its own definition (20250129000002_add_session_log_tables.sql:189)
+--   * its own COMMENT (same file, line 244)
+--   * the audit doc describing it
+-- The client-side SSOT for daily consumed totals is
+-- `nutritionStore.getTodaysConsumedNutrition()` (derived from the store's
+-- dailyMeals + sumMealNutrition). A server-side aggregate, if ever needed,
+-- should be a new RPC written against the live schema — not this stale
+-- skeleton. DROP is correct; REPLACE is not, because there is no caller
+-- to preserve a contract for and the function body references columns that
+-- no longer exist.
+--
+-- Principle 7 (append-only migrations): this is a NEW migration; the
+-- original 20250129000002 migration is untouched. The DROP is guarded with
+-- IF EXISTS so the migration is safe to re-run.
+--
+-- Signature is `(UUID, DATE)` — must match exactly for DROP to target the
+-- right overload (there is only one; no other signature was ever created).
+
+DROP FUNCTION IF EXISTS public.get_daily_nutrition_totals(UUID, DATE);
