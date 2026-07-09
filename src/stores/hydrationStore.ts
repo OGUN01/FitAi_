@@ -5,6 +5,7 @@ import { hydrationDataService } from "../services/hydrationData";
 import { getLocalDateString } from "../utils/weekUtils";
 import { offlineService } from "../services/offline";
 import { getCurrentUserId } from "../services/authUtils";
+import { trackAchievementActivity } from "./achievementStore";
 
 /**
  * Returns the real authenticated user id, or null when the user is a guest /
@@ -163,6 +164,40 @@ export const useHydrationStore = create<HydrationState>()(
 
         const newIntake = state.waterIntakeML + addAmountML;
         set({ waterIntakeML: newIntake });
+
+        // P0-10 (Wave D): fire the water-goal-hit achievement tracker at the
+        // exact threshold-crossing moment — only when the goal was NOT yet met
+        // before this add and IS met after (dailyGoalML > 0). This prevents
+        // re-firing on every subsequent add past the goal (overshoot), while
+        // still firing once when the user first reaches their daily water goal.
+        // Mirrors the trackAchievementActivity.mealLogged pattern in
+        // completionTracking.ts:651 — fire-and-forget + try/catch so an
+        // achievement-eval failure can never block or revert the water add.
+        // Guests are skipped via getSyncableUserId (guest IDs would never
+        // reach cloud achievement writes and checkProgress short-circuits on
+        // falsy userId anyway).
+        if (
+          state.dailyGoalML &&
+          state.dailyGoalML > 0 &&
+          state.waterIntakeML < state.dailyGoalML &&
+          newIntake >= state.dailyGoalML
+        ) {
+          const achievementUserId = getSyncableUserId();
+          if (achievementUserId) {
+            try {
+              trackAchievementActivity.waterGoalHit(achievementUserId, {
+                amount: newIntake,
+                goal: state.dailyGoalML,
+                goalsHit: 1,
+              });
+            } catch (achievementError) {
+              console.error(
+                "⚠️ Failed to track water-goal achievement:",
+                achievementError,
+              );
+            }
+          }
+        }
 
         // Record the add so a concurrent syncWithSupabase can preserve it (see
         // pendingAddML comment above). Cleared once the sync reconciles.
