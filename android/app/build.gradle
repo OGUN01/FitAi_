@@ -124,6 +124,13 @@ android {
     }
     buildTypes {
         debug {
+            // Suffix the debug (dev-client) applicationId so it coexists with the
+            // standalone release app (com.fitai.app) on the same device. The dev
+            // build registers as com.fitai.app.dev — two app icons, hot-reload on
+            // one, offline standalone on the other. NOTE: Google Sign-In redirect
+            // and Firebase google-services.json are keyed to com.fitai.app, so
+            // those services may not init on the dev build — acceptable trade-off.
+            applicationIdSuffix ".dev"
             signingConfig signingConfigs.debug
         }
         release {
