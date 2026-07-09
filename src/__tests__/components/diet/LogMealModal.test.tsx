@@ -3,6 +3,7 @@ import { fireEvent, render, waitFor } from "@testing-library/react-native";
 
 const mockSetWeeklyMealPlan = jest.fn();
 const mockSaveWeeklyMealPlan = jest.fn(() => Promise.resolve());
+const mockAddDailyMeal = jest.fn();
 const mockCompleteMeal = jest.fn(() => Promise.resolve());
 
 jest.mock("react-native", () => {
@@ -92,6 +93,11 @@ jest.mock("@/stores/nutritionStore", () => ({
     weeklyMealPlan: null,
     setWeeklyMealPlan: mockSetWeeklyMealPlan,
     saveWeeklyMealPlan: mockSaveWeeklyMealPlan,
+    // Wave C-01 P0-1 fix: manual meal logs now route through addDailyMeal
+    // (consumption SSOT) instead of saveWeeklyMealPlan (which corrupted the
+    // AI planning array). The component destructures addDailyMeal, so the mock
+    // must provide it or the save flow throws a TypeError.
+    addDailyMeal: mockAddDailyMeal,
   })),
 }));
 
@@ -167,12 +173,20 @@ describe("LogMealModal", () => {
     fireEvent.press(screen.getAllByText("Log Meal").at(-1)!);
 
     await waitFor(() => {
-      expect(mockSaveWeeklyMealPlan).toHaveBeenCalledTimes(1);
+      // Wave C-01 P0-1 fix: manual meal logs must NOT persist into the AI
+      // planning array (weeklyMealPlan). saveWeeklyMealPlan is intentionally
+      // no longer called on the manual-log path — the consumption SSOT is
+      // meal_logs (via completionTrackingService.completeMeal) + dailyMeals
+      // (via addDailyMeal).
+      expect(mockSaveWeeklyMealPlan).not.toHaveBeenCalled();
+      // addDailyMeal makes the meal visible to getTodaysConsumedNutrition
+      // immediately (Principle 6: store is the runtime source).
+      expect(mockAddDailyMeal).toHaveBeenCalledTimes(1);
       expect(mockCompleteMeal).toHaveBeenCalledTimes(1);
     });
 
-    const savedPlan = mockSaveWeeklyMealPlan.mock.calls[0][0];
-    const savedMeal = savedPlan.meals[0];
+    // Inspect the meal passed to addDailyMeal (the consumption SSOT path).
+    const savedMeal = mockAddDailyMeal.mock.calls[0][0];
 
     expect(savedMeal.items).toHaveLength(1);
     expect(savedMeal.items[0]).toMatchObject({
@@ -193,6 +207,12 @@ describe("LogMealModal", () => {
         fiber: 7.5,
       }),
     );
+    // Wave C-01 P0-2 fix: loggedAt must be set so getConsumedMealsFromState
+    // (which filters by typeof meal.loggedAt === "string") includes the meal.
+    expect(typeof savedMeal.loggedAt).toBe("string");
+    // setWeeklyMealPlan is called for in-memory staging only (so completeMeal
+    // can find the meal by id) — NOT persisted to Supabase.
+    expect(mockSetWeeklyMealPlan).toHaveBeenCalledTimes(1);
     expect(onScanResultConsumed).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
