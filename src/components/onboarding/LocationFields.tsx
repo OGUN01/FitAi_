@@ -160,7 +160,7 @@ export const LocationFields: React.FC<LocationFieldsProps> = ({
         {showCustomCountry && (
           <View style={styles.locationField}>
             <Input
-              label="State/Province"
+              label="State/Province *"
               placeholder="Enter your state or province"
               value={formData.state}
               onChangeText={(value) => updateField("state", value)}

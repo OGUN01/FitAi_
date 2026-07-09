@@ -54,6 +54,10 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
     dismiss,
     plansSource,
     planLoadError,
+    // P2-11: server-owned feature copy per tier (from subscription_plans.features_list).
+    // Prefer this over the hardcoded TIER_FEATURES map; fall back to TIER_FEATURES
+    // when the column is NULL or plans came from the fallback.
+    planFeaturesByTier,
   } = usePaywall();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
@@ -244,7 +248,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                   <Text style={styles.pricePeriod}>/mo</Text>
                 </View>
                 <View style={styles.featureList}>
-                  {(TIER_FEATURES.free ?? []).map((feat, i) => (
+                  {(planFeaturesByTier.free ?? TIER_FEATURES.free ?? []).map((feat, i) => (
                     <View key={i} style={styles.featureRow}>
                       <Text style={styles.featureCheck}>✓</Text>
                       <Text style={styles.featureText}>{feat}</Text>
@@ -256,7 +260,8 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                 if (!plan) return null;
                 const isSelected = effectiveSelectedId === plan.id;
                 const isCurrent = isCurrentTier(plan.tier);
-                const features = TIER_FEATURES[plan.tier] ?? [];
+                const features =
+                  planFeaturesByTier[plan.tier] ?? TIER_FEATURES[plan.tier] ?? [];
 
                 return (
                   <Pressable
