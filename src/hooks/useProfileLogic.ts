@@ -172,19 +172,13 @@ export const useProfileLogic = () => {
       setUnitsPreference(units);
       try {
         await AsyncStorage.setItem(STORAGE_KEY_UNITS, units);
-        updatePersonalInfo({ units });
 
-        // Sync units into the shared userStore.profile so any code reading
-        // units from userStore.profile stays in sync with the profileStore.
-        // This mirrors the shape stored across personalInfo + preferences.
-        const currentUserProfile = useUserStore.getState().profile;
-        if (currentUserProfile) {
-          useUserStore.getState().setProfile({
-            ...currentUserProfile,
-            personalInfo: { ...currentUserProfile.personalInfo, units },
-            preferences: { ...currentUserProfile.preferences, units },
-          });
-        }
+        // P1-14: profileStore is the SSOT for personalInfo. updatePersonalInfo
+        // writes the SSOT; userProfileService.updateProfile writes Supabase via
+        // the partial-update API. The previous hand-rolled userStore.setProfile
+        // spread duplicated units into a second store (userStore.profile) and is
+        // removed — userStore.profile is auth-only per its header comment.
+        updatePersonalInfo({ units });
 
         if (currentUserId) {
           if (user?.id !== currentUserId) return; // user changed mid-operation
@@ -198,7 +192,6 @@ export const useProfileLogic = () => {
             );
           }
         }
-
       } catch (error) {
         console.error("[useProfileLogic] Error saving units:", error);
       }

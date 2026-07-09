@@ -500,11 +500,11 @@ class SyncEngine {
   async syncAll(userId: string): Promise<SyncResult> {
     return syncMutex.withLock(
       "SyncEngine.syncAll",
-      async () => await this.syncAllInternal(userId),
+      async () => await this.syncAllInternal(),
     );
   }
 
-  private async syncAllInternal(userId: string): Promise<SyncResult> {
+  private async syncAllInternal(): Promise<SyncResult> {
     if (!this.isOnline) {
       console.warn("[SyncEngine] Cannot sync: offline");
       return {
@@ -582,8 +582,7 @@ class SyncEngine {
       region: data.region,
       wake_time: data.wake_time || data.wakeTime || "07:00",
       sleep_time: data.sleep_time || data.sleepTime || "23:00",
-      occupation_type:
-        data.occupation_type || data.occupationType || "desk_job",
+      occupation_type: (data.occupation_type ?? data.occupationType) ?? undefined,
       // Settings and preferences
       media_preference: data.media_preference || data.mediaPreference || null,
       data_usage_mode: data.data_usage_mode || data.dataUsageMode || null,

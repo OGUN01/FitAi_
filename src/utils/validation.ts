@@ -1,7 +1,7 @@
 // Data Validation Service for Track B Infrastructure
 // Comprehensive validation schemas and sanitization functions
 
-import { OnboardingData, MealLog } from "../types/localData";
+import { OnboardingData } from "../types/localData";
 
 import { PersonalInfo, FitnessGoals } from "../types/user";
 
@@ -27,12 +27,6 @@ interface ValidationWarning {
   field: string;
   message: string;
   code: string;
-}
-
-interface BodyMeasurement {
-  weight?: number;
-  height?: number;
-  bodyFat?: number;
 }
 
 // ============================================================================
@@ -705,7 +699,7 @@ export class ValidationService {
       region: info.region,
       wake_time: info.wake_time || "07:00",
       sleep_time: info.sleep_time || "23:00",
-      occupation_type: info.occupation_type || "desk_job",
+      occupation_type: info.occupation_type ?? undefined,
       height:
         info.height !== undefined
           ? this.sanitizeNumber(
@@ -754,10 +748,6 @@ export class ValidationService {
     return "other";
   }
 
-  private sanitizeActivityLevel(level: string): string {
-    const validLevels = ["sedentary", "light", "moderate", "active", "extreme"];
-    return validLevels.includes(level) ? level : "moderate";
-  }
 }
 
 // Export singleton instance

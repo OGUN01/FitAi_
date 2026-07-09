@@ -1,4 +1,5 @@
 import { act, renderHook } from "@testing-library/react-native";
+import { userProfileService } from "../../services/userProfile";
 
 const mockProfileStoreState = {
   bodyAnalysis: { height_cm: 180, current_weight_kg: 78 },
@@ -7,7 +8,6 @@ const mockProfileStoreState = {
   updatePersonalInfo: jest.fn(),
 };
 const mockSetProfile = jest.fn();
-const mockUpdateProfile = jest.fn().mockResolvedValue({ success: true });
 const mockCrossPlatformAlert = jest.fn();
 
 jest.mock("../../hooks/useAuth", () => ({
@@ -100,7 +100,7 @@ jest.mock("../../services/crudOperations", () => ({
 
 jest.mock("../../services/userProfile", () => ({
   userProfileService: {
-    updateProfile: mockUpdateProfile,
+    updateProfile: jest.fn().mockResolvedValue({ success: true }),
   },
 }));
 
@@ -115,7 +115,7 @@ describe("useProfileLogic", () => {
   beforeEach(() => {
     mockProfileStoreState.updatePersonalInfo.mockClear();
     mockSetProfile.mockClear();
-    mockUpdateProfile.mockClear();
+    (userProfileService.updateProfile as jest.Mock).mockClear();
     mockCrossPlatformAlert.mockClear();
   });
 
@@ -162,21 +162,22 @@ describe("useProfileLogic", () => {
     );
   });
 
-  it("syncs units changes into the shared profile state", async () => {
+  it("writes units to profileStore SSOT + Supabase without dual-store spread", async () => {
     const { result } = renderHook(() => useProfileLogic());
 
     await act(async () => {
       await result.current.handleUnitsSelect("imperial");
     });
 
+    // P1-14: profileStore (SSOT) updated via updatePersonalInfo, Supabase
+    // updated via userProfileService.updateProfile. The userStore.setProfile
+    // spread (dual-store duplication) is removed — it must NOT be called.
     expect(mockProfileStoreState.updatePersonalInfo).toHaveBeenCalledWith({
       units: "imperial",
     });
-    expect(mockSetProfile).toHaveBeenCalledWith(
-      expect.objectContaining({
-        personalInfo: expect.objectContaining({ units: "imperial" }),
-        preferences: expect.objectContaining({ units: "imperial" }),
-      }),
-    );
+    expect(userProfileService.updateProfile).toHaveBeenCalledWith("user-1", {
+      units: "imperial",
+    });
+    expect(mockSetProfile).not.toHaveBeenCalled();
   });
 });

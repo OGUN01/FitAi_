@@ -1,9 +1,3 @@
-import {
-  PersonalInfo,
-  FitnessGoals,
-  DietPreferences,
-  WorkoutPreferences,
-} from "./types";
 import { useProfileStore } from "../../stores/profileStore";
 
 interface LoadDataParams {
@@ -77,7 +71,7 @@ export function createDefaultSectionData(
         region: profileStorePI?.region,
         wake_time: profileStorePI?.wake_time || "",
         sleep_time: profileStorePI?.sleep_time || "",
-        occupation_type: profileStorePI?.occupation_type || "desk_job",
+        occupation_type: profileStorePI?.occupation_type,
         profile_picture: profileStorePI?.profile_picture,
         dark_mode: profileStorePI?.dark_mode,
         units: profileStorePI?.units,
