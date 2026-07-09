@@ -37,6 +37,13 @@ export const useMealPlanning = (navigation: any) => {
   const [aiError, setAiError] = useState<string | null>(null);
   const asyncJobPollingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastRemoteHydratedUserIdRef = useRef<string | null>(null);
+  // P2-5 fix: stable guard for the guest-branch one-shot fetch. Previously the
+  // guest branch re-evaluated whenever `weeklyMealPlan`, `dailyMeals`, or
+  // `mealProgress` changed (deps array included derived lengths), and since the
+  // fetch itself mutates that store state the effect could re-fire in a loop.
+  // A useRef flag (per CLAUDE.md useEffect rule #10) breaks the cycle: fetch at
+  // most once per guest session, then never again regardless of store churn.
+  const hasFetchedGuestDataRef = useRef(false);
 
   const [showMealPreparationModal, setShowMealPreparationModal] =
     useState(false);
@@ -140,6 +147,9 @@ export const useMealPlanning = (navigation: any) => {
       }
 
       lastRemoteHydratedUserIdRef.current = authenticatedUserId;
+      // Reset the guest guard when transitioning to an authenticated user so a
+      // later guest session (sign-out) can fetch once again.
+      hasFetchedGuestDataRef.current = false;
       if (isMounted) {
         loadNutritionStoreData().catch((error) => {
           console.error("[ERROR] Error loading remote meal plan:", error);
@@ -149,11 +159,22 @@ export const useMealPlanning = (navigation: any) => {
     }
 
     lastRemoteHydratedUserIdRef.current = null;
+    // P2-5 fix: guest branch — fetch at most once per guest session via the ref
+    // guard. The previous derived-length deps (Object.keys(mealProgress).length,
+    // dailyMeals.length, weeklyMealPlan?.id) caused re-evaluation on every store
+    // mutation the fetch itself triggers, risking a re-fetch loop. Now the gate
+    // is the ref flag, not the store state it just wrote. The warm-data check is
+    // preserved so a guest with existing local data is not redundantly refetched.
+    if (hasFetchedGuestDataRef.current) {
+      return () => { isMounted = false; };
+    }
     const hasHydratedDietData =
       Boolean(weeklyMealPlan) ||
       Object.keys(mealProgress).length > 0 ||
       dailyMeals.length > 0;
-
+    // Mark the one-shot as attempted regardless of whether we fetch, so the
+    // effect never re-fires on store churn from this branch.
+    hasFetchedGuestDataRef.current = true;
     if (!hasHydratedDietData && isMounted) {
       loadNutritionStoreData().catch((error) => {
         console.error("[ERROR] Error loading meal plan:", error);
@@ -162,11 +183,8 @@ export const useMealPlanning = (navigation: any) => {
 
     return () => { isMounted = false; };
   }, [
-    dailyMeals.length,
     loadNutritionStoreData,
-    Object.keys(mealProgress).length,
     user?.id,
-    weeklyMealPlan?.id,
   ]);
 
   useEffect(() => {

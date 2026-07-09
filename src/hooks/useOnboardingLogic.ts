@@ -594,16 +594,23 @@ export const useOnboardingLogic = ({
       // Now: restrictions = dp?.restrictions, cuisine_preferences = dp?.
       // cuisine_preferences. Both are passed through.
       dietPreferences: {
-        dietType: (dp?.diet_type || "balanced") as
-          | "vegetarian"
-          | "vegan"
-          | "non-veg"
-          | "pescatarian",
+        // P1-12 fix: removed the type-lying cast that dropped "balanced" from
+        // the union. "balanced" is a valid onboarding diet_type (DB CHECK
+        // constraint + DietPreferencesData union) and is handled downstream by
+        // mapDietTypeForHealthCalc (balanced → omnivore). The cast asserted a
+        // 4-value union and silently excluded "balanced", so a user who
+        // selected "balanced" had their selection mis-typed as never-valid.
+        dietType: dp?.diet_type ?? "balanced",
         allergies: dp?.allergies || [],
         restrictions: dp?.restrictions || [],
         cuisine_preferences: dp?.cuisine_preferences || [],
         cooking_methods: dp?.cooking_methods || [],
-        snacks_count: dp?.snacks_count,
+        // P1-15 fix: snacks_count default divergence (DB DEFAULT 1, type optional,
+        // onboarding passed undefined). Set to 1 at the form level — this matches
+        // the documented DB default (migration 20260413064102) and the UI which
+        // has a single Snacks toggle (no count picker). Not a hardcoded fallback
+        // for user data: 1 is the SSOT default, undefined was the bug.
+        snacks_count: dp?.snacks_count ?? 1,
         // Diet-readiness toggles (6)
         keto_ready: dp?.keto_ready,
         intermittent_fasting_ready: dp?.intermittent_fasting_ready,
