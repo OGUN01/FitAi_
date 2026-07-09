@@ -373,12 +373,43 @@ export class CrudOperationsService {
   }
 
   async deleteMealLog(logId: string): Promise<void> {
+    // P2-9 fix: this was a soft-delete that appended " [DELETED]" to the notes
+    // string. That left the row in meal_logs (still summed by
+    // getTodaysConsumedNutrition, which does not filter on a delete marker),
+    // and the realtime DELETE handler in nutritionStore never fired because no
+    // actual SQL DELETE happened. Now issue a real hard delete so:
+    //   (a) the meal stops counting toward daily totals, and
+    //   (b) the realtime DELETE handler fires and removes it from dailyMeals.
     try {
-      // For now, we'll mark as deleted rather than actually removing
-      await this.updateMealLog(logId, {
-        notes:
-          (await this.readMealLog(logId))?.notes + " [DELETED]" || "[DELETED]",
-      });
+      await this.initialize();
+      // Local first (optimistic) so the UI reflects the delete immediately.
+      await dataBridge.deleteMealLog(logId);
+      // Then the authoritative Supabase delete (RLS-protected: only the owner
+      // can delete their own meal_logs row).
+      const { error } = await supabase
+        .from("meal_logs")
+        .delete()
+        .eq("id", logId);
+      if (error) {
+        console.error(
+          "[crudOperations.deleteMealLog] Supabase delete error:",
+          error,
+        );
+        // Queue for offline retry only if we can resolve a real userId from the
+        // local log row (Principle 8: never fabricate a user id). Skip queueing
+        // for guests — RLS would reject every retry (mirrors completeMeal pattern).
+        const localLog = await this.readMealLog(logId);
+        const syncableUserId = localLog?.userId || null;
+        if (syncableUserId) {
+          await offlineService.queueAction({
+            type: "DELETE",
+            table: "meal_logs",
+            data: { id: logId },
+            userId: syncableUserId,
+            maxRetries: 3,
+          });
+        }
+      }
     } catch (error) {
       console.error("Failed to delete meal log:", error);
       throw error;

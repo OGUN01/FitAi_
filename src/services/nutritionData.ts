@@ -6,6 +6,7 @@ import { MealLog, SyncStatus } from "../types/localData";
 import { MealLogProvenance } from "../types/nutritionLogging";
 import { analyticsDataService } from "./analyticsData";
 import { nutritionRefreshService } from "./nutritionRefreshService";
+import { useNutritionStore } from "../stores/nutritionStore";
 import {
   deriveMealLogFiber,
   normalizeMealLogFoodItems,
@@ -523,11 +524,50 @@ class NutritionDataService {
 
       if (error) {
         console.error("Error creating meal:", error);
+        // P1-7 fix: symmetric rollback. crudOperations.createMealLog already
+        // wrote an AsyncStorage row; without this rollback the two stores would
+        // diverge (local phantom meal inflating totals, never reaching Supabase).
+        try {
+          await crudOperations.deleteMealLog(mealLog.id);
+        } catch (revertError) {
+          console.error(
+            "[NutritionData.logMeal] failed to roll back local meal log after Supabase insert error:",
+            revertError,
+          );
+        }
         return {
           success: false,
           error: error.message,
         };
       }
+
+      // P1-6 fix: update the Zustand store immediately after the successful DB
+      // write (Principle 6). Previously this path wrote Supabase directly and
+      // relied on the realtime meal_logs channel to fire handleMealLogRealtimeChange
+      // — leaving getTodaysConsumedNutrition stale for seconds (or forever if
+      // realtime was disconnected). addDailyMeal with loggedAt set makes the
+      // meal visible to getConsumedMealsFromState right away.
+      useNutritionStore.getState().addDailyMeal({
+        id: mealLog.id,
+        type: mealData.type,
+        name: mealData.name,
+        items: (resolvedFoods as unknown as import("../types/ai").MealItem[]) ?? [],
+        totalCalories: nutritionTotals.calories,
+        totalMacros: {
+          protein: nutritionTotals.protein,
+          carbohydrates: nutritionTotals.carbs,
+          fat: nutritionTotals.fat,
+          fiber: nutritionTotals.fiber,
+          sugar: nutritionTotals.sugar,
+          sodium: nutritionTotals.sodium,
+        },
+        tags: [],
+        isPersonalized: false,
+        aiGenerated: false,
+        createdAt: loggedAt,
+        updatedAt: loggedAt,
+        loggedAt,
+      } as unknown as import("../types/ai").Meal);
 
       analyticsDataService
         .updateTodaysMetrics(userId, {
@@ -705,9 +745,18 @@ class NutritionDataService {
    * Convert Track B's MealLog to our Meal format
    */
   private convertMealLogToMeal(mealLog: MealLog): Meal {
+    // P2-8 fix: surface null + warn instead of the "local-user" sentinel
+    // (Principle 8: no hardcoded fallbacks for user data). Mirrors the P2-15
+    // fix applied in progressData.ts.
+    const userId = mealLog.userId || null;
+    if (!userId) {
+      console.warn(
+        "[NutritionData.convertMealLogToMeal] mealLog has no userId — surfacing null",
+      );
+    }
     return {
       id: mealLog.id,
-      user_id: mealLog.userId || "local-user",
+      user_id: userId as string,
       name: mealLog.notes || `${mealLog.mealType} meal`,
       type: mealLog.mealType,
       total_calories: mealLog.totalCalories,

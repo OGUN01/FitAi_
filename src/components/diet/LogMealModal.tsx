@@ -167,7 +167,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
   >(null);
   const [activeMultiplier, setActiveMultiplier] = useState<number>(1);
 
-  const { weeklyMealPlan, setWeeklyMealPlan, saveWeeklyMealPlan } =
+  const { weeklyMealPlan, setWeeklyMealPlan, addDailyMeal } =
     useNutritionStore();
   const { user } = useAuth();
 
@@ -419,10 +419,27 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
       createdAt: today.toISOString(),
       isCompleted: true,
       completedAt: today.toISOString(),
+      // P0-2 fix: loggedAt is the SSOT marker for consumed meals
+      // (getConsumedMealsFromState filters by typeof meal.loggedAt === "string").
+      // Without it the just-logged meal is invisible to calorie/macro rings until
+      // the realtime meal_logs round-trip completes.
+      loggedAt: today.toISOString(),
       sourceMetadata: scanProvenance,
     };
 
     try {
+      // P0-1 fix: manual meal logs must NEVER be persisted into weeklyMealPlan
+      // (the AI planning array). Previously this appended newMeal into
+      // weeklyMealPlan.meals and called saveWeeklyMealPlan, which wrote the
+      // manual meal into the weekly_meal_plans Supabase row — corrupting the AI
+      // plan and conflating "what to eat" (plan) with "what was eaten" (meal_logs).
+      //
+      // The consumption SSOT is meal_logs. completionTrackingService.completeMeal
+      // performs that insert (plus analytics + refresh) but looks the meal up from
+      // weeklyMealPlan.meals, so we temporarily stage newMeal in the in-memory plan
+      // (setWeeklyMealPlan only — NO saveWeeklyMealPlan DB persist) so the service
+      // can find it. addDailyMeal is called so getTodaysConsumedNutrition reflects
+      // the meal immediately (Principle 6: store is the runtime source).
       const currentPlan = weeklyMealPlan || {
         id: `plan_${Date.now()}`,
         weekNumber: 1,
@@ -430,15 +447,19 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
         planTitle: "Manual Meals",
       };
 
-      const updatedPlan = {
+      const stagedPlan = {
         ...currentPlan,
-        meals: [...currentPlan.meals, newMeal as unknown as typeof currentPlan.meals[number]],
+        meals: [
+          ...currentPlan.meals,
+          newMeal as unknown as typeof currentPlan.meals[number],
+        ],
       };
-      // Update local store first so completionTrackingService can find the meal
-      setWeeklyMealPlan(updatedPlan);
-      // Persist plan to DB
-      await saveWeeklyMealPlan(updatedPlan);
-      // completionTrackingService handles: mealProgress update + Supabase meal_logs insert + analytics + refresh
+      // In-memory stage only — do NOT persist the manual meal into the AI plan.
+      setWeeklyMealPlan(stagedPlan);
+      // Reflect in consumed totals immediately (loggedAt set above).
+      addDailyMeal(newMeal as unknown as import("../../types/ai").Meal);
+      // completionTrackingService handles: mealProgress update + Supabase
+      // meal_logs insert (the consumption SSOT) + analytics + refresh.
       await completionTrackingService.completeMeal(
         mealId,
         {
@@ -691,7 +712,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                     <View>
                       {/* Column headers */}
                       <View style={styles.ingredientColumnHeaders}>
-                        <Text style={[styles.colHeader, { width: rw(108) }]}>
+                        <Text style={[styles.colHeader, { width: rw(80) }]}>
                           Ingredient
                         </Text>
                         <Text style={[styles.colHeader, styles.colFixed]}>
@@ -709,7 +730,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                         <Text style={[styles.colHeader, styles.colFixed]}>
                           Fiber
                         </Text>
-                        <View style={{ width: rw(26) }} />
+                        <View style={{ width: rw(22) }} />
                       </View>
 
                       {ingredients.map((ing, idx) => (
@@ -718,7 +739,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                             style={[
                               styles.ingredientInput,
                               {
-                                width: rw(108),
+                                width: rw(80),
                                 textAlign: "left" as const,
                                 paddingHorizontal: rp(8),
                               },
@@ -1143,7 +1164,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   colFixed: {
-    width: rw(50),
+    width: rw(41),
   },
   ingredientColumnHeaders: {
     flexDirection: "row",

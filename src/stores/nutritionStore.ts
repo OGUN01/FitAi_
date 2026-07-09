@@ -31,6 +31,7 @@ import {
 } from "../utils/weekUtils";
 import {
   deriveMealLogFiber,
+  deriveMealLogSodium,
   deriveMealLogSugar,
   normalizeMealLogFoodItems,
 } from "../utils/mealLogNutrition";
@@ -1122,6 +1123,10 @@ export const useNutritionStore = create<NutritionState>()(
                     fat: log.total_fat || 0,
                     fiber: deriveMealLogFiber(foodItems),
                     sugar: deriveMealLogSugar(foodItems),
+                    // P1-3 fix: derive sodium from food_items (mirrors fiber/sugar)
+                    // — meal_logs has no total_sodium column, so without this the
+                    // sodium ring is always 0 for Supabase-hydrated meals.
+                    sodium: deriveMealLogSodium(foodItems),
                   },
                   items: foodItems as unknown as MealItem[],
                   loggedAt: log.logged_at || undefined,
@@ -1269,6 +1274,9 @@ export const useNutritionStore = create<NutritionState>()(
               fat: log.total_fat || 0,
               fiber: deriveMealLogFiber(foodItems),
               sugar: deriveMealLogSugar(foodItems),
+              // P1-3 fix: derive sodium from food_items (mirrors fiber/sugar)
+              // so the realtime path matches the loadData hydrate path.
+              sodium: deriveMealLogSodium(foodItems),
             },
             items: foodItems as unknown as MealItem[],
             loggedAt: log.logged_at || undefined,

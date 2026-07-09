@@ -102,3 +102,33 @@ export function deriveMealLogSugar(foodItems: unknown): number {
 
   return roundToTenth(totalSugar);
 }
+
+export function getMealLogItemSodium(item: unknown): number {
+  if (!isRecord(item)) return 0;
+
+  const nestedSodium = isRecord(item.macros)
+    ? normalizeMealLogSodiumValue(item.macros.sodium)
+    : null;
+  const flatSodium = normalizeMealLogSodiumValue(item.sodium);
+
+  return nestedSodium ?? flatSodium ?? 0;
+}
+
+export function normalizeMealLogSodiumValue(value: unknown): number | null {
+  const parsed = toFiniteNumber(value);
+  if (parsed === null || parsed < 0) {
+    return null;
+  }
+
+  // Sodium is tracked at 0.1mg resolution (mirrors the sugar/fiber pattern).
+  return roundToTenth(parsed);
+}
+
+export function deriveMealLogSodium(foodItems: unknown): number {
+  const totalSodium = normalizeMealLogFoodItems(foodItems).reduce(
+    (sum, item) => sum + getMealLogItemSodium(item),
+    0,
+  );
+
+  return roundToTenth(totalSodium);
+}

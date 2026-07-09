@@ -641,7 +641,14 @@ class CompletionTrackingService {
                 `❌ Failed to sync to Supabase meal_logs:`,
                 supabaseError,
               );
-              // Revert the optimistic completeMeal() state since DB write failed
+              // P0-2 fix: SYMMETRIC revert. The optimistic
+              // nutritionStore.completeMeal() (line 470) already set
+              // mealProgress[mealId] = {progress:100, completedAt, logId}, and
+              // crudOperations.createMealLog() (line 529) already wrote an
+              // AsyncStorage row. Previously the revert only reset mealProgress,
+              // leaving an orphaned AsyncStorage meal log with no matching
+              // Supabase row → local/Supabase divergence on every offline meal
+              // completion. Now roll back BOTH writers:
               useNutritionStore.setState((state) => ({
                 mealProgress: {
                   ...state.mealProgress,
@@ -653,6 +660,18 @@ class CompletionTrackingService {
                   },
                 },
               }));
+              // Remove the orphaned AsyncStorage meal-log row written at 529.
+              // deleteMealLog is a hard delete (P2-9 fix); the Supabase row was
+              // never inserted, so the .delete() is a harmless no-op server-side
+              // and removes the local row that would otherwise re-inflate totals.
+              try {
+                await crudOperations.deleteMealLog(mealLogId);
+              } catch (revertError) {
+                console.error(
+                  `❌ Failed to roll back local meal log ${mealLogId} after Supabase insert failure:`,
+                  revertError,
+                );
+              }
             }
           } else {
             // Continue with completion even if no user

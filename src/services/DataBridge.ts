@@ -1353,6 +1353,29 @@ class DataBridge {
     }
   }
 
+  /**
+   * Hard-delete a meal log from local AsyncStorage.
+   * P2-9 fix: replaces the previous "[DELETED]" notes-append soft-delete, which
+   * left the row in place (still counted toward totals) and relied on a
+   * spoofable string marker. The realtime DELETE handler in nutritionStore
+   * expects an actual SQL DELETE to fire — this local delete mirrors that.
+   */
+  async deleteMealLog(logId: string): Promise<boolean> {
+    try {
+      const existingStr = await AsyncStorage.getItem(MEAL_LOGS_KEY);
+      const existing = existingStr ? JSON.parse(existingStr) : [];
+      const next = existing.filter((log: any) => log.id !== logId);
+      await AsyncStorage.setItem(
+        MEAL_LOGS_KEY,
+        JSON.stringify(next.slice(0, 500)),
+      );
+      return true;
+    } catch (error) {
+      console.error("[DataBridge] deleteMealLog error:", error);
+      return false;
+    }
+  }
+
   // ============================================================================
   // BODY MEASUREMENTS (backward compatibility)
   // ============================================================================
