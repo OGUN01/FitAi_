@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../theme/aurora-tokens";
-import { rf, rp, rbr } from "../../utils/responsive";
+import { rf, rp, rbr, rh } from "../../utils/responsive";
 import { DayMeal } from "../../types/ai";
 import { completionTrackingService } from "../../services/completionTracking";
 import { mealMotivationService } from "../../features/nutrition/MealMotivation";
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     borderRadius: rbr(16),
     padding: spacing.lg,
     width: screenWidth - rp(40),
-    maxHeight: "80%",
+    maxHeight: rh(682),
   },
   header: {
     flexDirection: "row",

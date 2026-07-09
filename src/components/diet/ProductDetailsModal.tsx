@@ -15,7 +15,7 @@ import { Modal } from '@/components/ui/Modal';
 import { flatColors as colors, spacing, borderRadius, typography } from '../../theme/aurora-tokens';
 import { HealthScoreIndicator } from './HealthScoreIndicator';
 import type { ScannedProduct } from '../../services/barcodeService';
-import { rf, rp } from '../../utils/responsive';
+import { rf, rp, rh } from '../../utils/responsive';
 import {
   clampPackagedFoodGrams,
   getDefaultPackagedFoodGrams,
@@ -463,7 +463,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
 const styles = StyleSheet.create({
   sharedModalContent: {
     width: '94%',
-    maxHeight: '88%',
+    maxHeight: rh(750),
     padding: 0,
     overflow: 'hidden' as const,
   },

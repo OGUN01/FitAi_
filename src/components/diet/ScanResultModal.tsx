@@ -10,7 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
-import { rf, rp } from "../../utils/responsive";
+import { rf, rp, rh } from "../../utils/responsive";
 import { gradients, toLinearGradientProps } from "../../theme/gradients";
 
 export interface ScanResultData {
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: borderRadius.xl,
     padding: spacing.lg,
     paddingBottom: rp(32),
-    maxHeight: "85%",
+    maxHeight: rh(724),
   },
   header: {
     flexDirection: "row",

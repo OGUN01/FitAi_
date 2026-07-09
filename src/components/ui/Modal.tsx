@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.xl,
     padding: spacing.lg,
     width: "90%", // Use percentage instead of screenWidth calculation
-    maxHeight: "80%", // Use percentage instead of screenHeight calculation
+    maxHeight: rh(682), // Absolute (was "80%") — percentage maxHeight causes a11y inverted-bounds on Android
     ...shadows.lg,
   },
 

@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { Button } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { rs, rbr, rp } from '../../utils/responsive';
+import { rs, rbr, rp, rh } from '../../utils/responsive';
 
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 interface Option {
@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderTopLeftRadius: borderRadius.xl,
     borderTopRightRadius: borderRadius.xl,
-    maxHeight: "80%",
+    maxHeight: rh(682),
   },
 
   modalHeader: {

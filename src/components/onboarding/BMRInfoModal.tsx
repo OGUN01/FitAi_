@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   blurContainer: {
     width: "90%",
     maxWidth: rw(400),
-    maxHeight: "85%",
+    maxHeight: rh(724),
     borderRadius: rbr(20),
     overflow: "hidden",
   },

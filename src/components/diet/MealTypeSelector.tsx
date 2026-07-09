@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopLeftRadius: rs(24),
     borderTopRightRadius: rs(24),
-    maxHeight: "80%",
+    maxHeight: rh(682),
     paddingBottom: rh(34), // Account for home indicator
   },
 

@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   dialogWrapper: {
     width: "90%",
     maxWidth: 420,
-    maxHeight: "85%",
+    maxHeight: rh(724),
   },
   iconContainer: {
     alignItems: "center",

@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: borderRadius.xl,
     borderTopRightRadius: borderRadius.xl,
     paddingBottom: spacing.xl,
-    maxHeight: "80%",
+    maxHeight: rh(682),
   },
 
   header: {

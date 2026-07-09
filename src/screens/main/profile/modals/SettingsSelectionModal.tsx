@@ -18,7 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
-import { rf, rp, rbr, rw } from "../../../../utils/responsive";
+import { rf, rp, rbr, rw, rh } from "../../../../utils/responsive";
 
 export interface SelectionOption {
   value: string;
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   dialogContainer: {
     width: "88%",
     maxWidth: 380,
-    maxHeight: "80%",
+    maxHeight: rh(682),
   },
   headerRow: {
     flexDirection: "row",

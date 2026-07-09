@@ -10,7 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
-import { rf, rw, rp, rbr } from "../../utils/responsive";
+import { rf, rw, rp, rbr, rh } from "../../utils/responsive";
 import { DayMeal } from "../../types/ai";
 
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   container: {
-    maxHeight: "85%",
+    maxHeight: rh(724),
     marginHorizontal: spacing.md,
     marginBottom: spacing.lg,
   },

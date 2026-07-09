@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     width: "100%",
-    maxHeight: "85%",
+    maxHeight: rh(724),
   },
   modalContent: {
     backgroundColor: colors.backgroundSecondary,

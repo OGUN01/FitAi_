@@ -13,7 +13,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rw, rp, rbr } from "../../utils/responsive";
+import { rf, rw, rp, rbr, rh } from "../../utils/responsive";
 import { ValidationResult } from "../../services/validationEngine";
 import {
   useAdjustmentWizard,
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
   },
 
   modalContainer: {
-    maxHeight: "92%",
+    maxHeight: rh(784),
     backgroundColor: colors.background,
     borderTopLeftRadius: rbr(24),
     borderTopRightRadius: rbr(24),

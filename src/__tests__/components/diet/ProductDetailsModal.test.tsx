@@ -52,6 +52,7 @@ jest.mock("@/components/ui/Modal", () => ({
 jest.mock("@/utils/responsive", () => ({
   rf: (value: number) => value,
   rp: (value: number) => value,
+  rh: (value: number) => value,
 }));
 
 jest.mock("@/utils/constants", () => ({
@@ -140,7 +141,7 @@ describe("ProductDetailsModal", () => {
     const sharedModal = screen.UNSAFE_getByType("SharedModal");
     expect(sharedModal.props.animationType).toBe("fade");
     expect(sharedModal.props.closeOnOverlayPress).toBe(true);
-    expect(sharedModal.props.contentStyle.maxHeight).toBe("88%");
+    expect(sharedModal.props.contentStyle.maxHeight).toBe(750);
 
     expect(screen.getByText("Sabudana Khichdi")).toBeTruthy();
     expect(screen.getByText("Nutrition for 100g")).toBeTruthy();

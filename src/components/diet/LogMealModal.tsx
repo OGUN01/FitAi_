@@ -1040,7 +1040,7 @@ const styles = StyleSheet.create({
   },
   container: {
     width: "93%",
-    maxHeight: "90%",
+    maxHeight: rh(767),
   },
   content: {
     borderRadius: rbr(20),

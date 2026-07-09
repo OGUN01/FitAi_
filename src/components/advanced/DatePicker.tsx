@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Button } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { rh } from "../../utils/responsive";
 
 interface DatePickerProps {
   value: Date;
@@ -352,7 +353,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderTopLeftRadius: borderRadius.xl,
     borderTopRightRadius: borderRadius.xl,
-    maxHeight: "80%",
+    maxHeight: rh(682),
   },
 
   modalHeader: {
