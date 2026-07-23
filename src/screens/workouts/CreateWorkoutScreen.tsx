@@ -37,7 +37,7 @@ import {
   AuroraSpinner,
 } from "../../components/ui/aurora";
 import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
-import { rp, rf, rw } from "../../utils/responsive";
+import { rp, rf, rw, rh } from "../../utils/responsive";
 
 interface Props {
   navigation: any;
@@ -601,13 +601,13 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     marginBottom: rp(spacing.xs),
   },
-  inputRow: { flexDirection: "row", alignItems: "center", gap: rp(spacing.xs) },
+  inputRow: { flexDirection: "row", alignItems: "center", gap: rp(spacing.xs), flexWrap: "wrap" },
   inputLabel: { fontSize: rf(typography.fontSize.micro), color: colors.text.secondary },
   smallInput: {
     backgroundColor: colors.background.DEFAULT,
     color: colors.text.primary,
     width: rw(44),
-    height: rf(28),
+    height: rh(32),
     borderRadius: borderRadius.md,
     textAlign: "center",
     fontSize: rf(13),
@@ -619,11 +619,10 @@ const styles = StyleSheet.create({
     marginLeft: rp(spacing.sm),
   },
   iconBtn: {
-    paddingVertical: rp(spacing.xxs),
     alignItems: "center",
     justifyContent: "center",
-    width: 28,
-    height: 24,
+    width: rw(36),
+    height: rw(36),
   },
   categoryTabs: {
     flexDirection: "row",
@@ -635,7 +634,7 @@ const styles = StyleSheet.create({
   },
   tab: {
     paddingHorizontal: rp(spacing.md),
-    paddingVertical: rp(spacing.xs),
+    paddingVertical: rp(spacing.sm),
     borderRadius: borderRadius.xl,
     backgroundColor: colors.glass.background,
   },

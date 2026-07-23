@@ -138,6 +138,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
                 }}
                 scaleValue={0.9}
                 hapticFeedback={false}
+                hitSlop={{ top: 7, bottom: 7, left: 7, right: 7 }}
               >
                 <View style={styles.editButton}>
                   <Ionicons
@@ -396,6 +397,7 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     flex: 1,
+    minWidth: 0,
     marginRight: spacing.sm,
   },
   notificationTitle: {

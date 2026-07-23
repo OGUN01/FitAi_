@@ -110,6 +110,7 @@ const styles = StyleSheet.create({
   },
   stepOverviewInfo: {
     flex: 1,
+    minWidth: 0,
   },
   stepOverviewName: {
     fontSize: rf(14),

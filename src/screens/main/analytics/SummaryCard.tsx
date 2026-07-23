@@ -71,7 +71,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
   },
   summaryStatItem: {
+    flex: 1,
     alignItems: "center",
+    minWidth: 0,
   },
   summaryStatValue: {
     fontSize: rf(24),

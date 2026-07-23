@@ -238,6 +238,7 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     flex: 1,
+    minWidth: 0,
   },
   titleRow: {
     flexDirection: "row",
@@ -249,6 +250,8 @@ const styles = StyleSheet.create({
     fontSize: rf(14),
     fontWeight: "700",
     letterSpacing: 0.2,
+    flexShrink: 1,
+    minWidth: 0,
   },
   categoryBadge: {
     paddingHorizontal: spacing.sm,
@@ -299,9 +302,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     alignSelf: "flex-start",
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
     gap: spacing.xs,
+    minHeight: 44,
   },
   actionText: {
     fontSize: rf(12),

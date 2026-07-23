@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
   },
   emptyStateIcon: {
     fontSize: rf(32),
-    marginBottom: rh(1.5),
+    marginBottom: rh(8),
   },
   emptyStateTitle: {
     fontSize: rf(14),
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(20),
-    marginBottom: rh(1.5),
+    marginBottom: rh(8),
   },
   emptyStateAction: {
     fontSize: rf(13),

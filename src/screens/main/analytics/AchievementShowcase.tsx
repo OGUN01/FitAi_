@@ -256,8 +256,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexShrink: 0,
   },
-  textBlock: { flex: 1, gap: rp(2), overflow: "hidden" },
-  titleRow: { flexDirection: "row", alignItems: "center", gap: rw(6) },
+  textBlock: { flex: 1, minWidth: 0, gap: rp(2), overflow: "hidden" },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rw(6),
+    minWidth: 0,
+    flexShrink: 1,
+  },
   title: {
     fontSize: rf(12),
     fontWeight: "700",

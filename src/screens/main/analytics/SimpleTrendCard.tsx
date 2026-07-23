@@ -139,9 +139,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: rp(12),
+    gap: rp(6),
   },
   trendStatItem: {
+    flex: 1,
     alignItems: "center",
+    minWidth: 0,
   },
   trendStatLabel: {
     fontSize: rf(11),
@@ -184,8 +187,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: rbr(24),
     paddingHorizontal: rp(20),
-    paddingVertical: rp(10),
+    paddingVertical: rp(14),
     alignSelf: "flex-start",
+    minHeight: 44,
   },
   ctaButtonText: {
     fontSize: rf(13),

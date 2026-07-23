@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
 
   analyticsBaseline: {
     width: rs(18),
-    height: rs(1.5),
+    height: rs(2),
     position: "absolute",
     bottom: 2,
     borderRadius: rbr(1),

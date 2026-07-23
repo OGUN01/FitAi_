@@ -12,7 +12,7 @@ import {
   EmptyState,
 } from "../../components/ui/aurora";
 import { colors, spacing } from "../../theme/aurora-tokens";
-import { rp, rf } from "../../utils/responsive";
+import { rp, rw } from "../../utils/responsive";
 import { useExerciseData } from "./hooks/useExerciseData";
 import { useExerciseVisual } from "./hooks/useExerciseVisual";
 import { useStepAnimation } from "./hooks/useStepAnimation";
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   side: {
-    width: rf(44),
+    width: rw(44),
   },
   scrollView: {
     flex: 1,

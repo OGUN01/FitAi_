@@ -308,8 +308,8 @@ const styles = StyleSheet.create({
     fontWeight: String(typography.fontWeight.semibold) as any,
   },
   addButton: {
-    width: rw(36),
-    height: rw(36),
+    width: rw(40),
+    height: rw(40),
     borderRadius: 999,
     backgroundColor: colors.glass.background,
     alignItems: "center",
@@ -329,7 +329,13 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     flex: 1,
   },
-  menuBtn: { paddingLeft: rp(spacing.sm) },
+  menuBtn: {
+    paddingLeft: rp(spacing.sm),
+    paddingVertical: rp(spacing.xs),
+    minWidth: rw(44),
+    alignItems: "center",
+    justifyContent: "center",
+  },
   badgeRow: { flexDirection: "row", flexWrap: "wrap", gap: rp(spacing.xs), marginTop: rp(spacing.sm) },
   badge: {
     backgroundColor: colors.background.DEFAULT,
@@ -356,7 +362,7 @@ const styles = StyleSheet.create({
   startButton: {
     marginTop: rp(spacing.md),
     backgroundColor: colors.primary.DEFAULT,
-    paddingVertical: rp(spacing.sm),
+    paddingVertical: rp(spacing.md),
     borderRadius: borderRadius.lg,
     alignItems: "center",
   },
@@ -372,7 +378,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: rp(spacing.xxs),
+    paddingVertical: rp(spacing.xs),
     borderBottomWidth: 1,
     borderBottomColor: colors.glass.backgroundDark,
   },

@@ -677,7 +677,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary.DEFAULT,
     width: rs(13),
     height: rs(13),
-    borderRadius: rbr(6.5),
+    borderRadius: rbr(7),
     borderWidth: 2,
     borderColor: colors.text.primary,
   },

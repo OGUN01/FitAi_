@@ -64,5 +64,6 @@ const styles = StyleSheet.create({
     fontSize: rf(13),
     color: colors.textSecondary,
     flex: 1,
+    minWidth: 0,
   },
 });

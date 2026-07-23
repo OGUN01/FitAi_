@@ -128,9 +128,10 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
     alignItems: "center",
     justifyContent: "center",
+    minHeight: 44,
   },
   buttonText: {
     fontSize: rf(13),

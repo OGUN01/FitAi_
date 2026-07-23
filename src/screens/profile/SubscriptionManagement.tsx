@@ -668,9 +668,9 @@ const styles = StyleSheet.create({
     paddingVertical: rh(12),
   },
   backButton: {
-    width: rw(36),
-    height: rw(36),
-    borderRadius: rw(18),
+    width: rw(44),
+    height: rw(44),
+    borderRadius: rw(22),
     backgroundColor: "rgba(255,255,255,0.1)",
     alignItems: "center",
     justifyContent: "center",
@@ -684,7 +684,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   headerSpacer: {
-    width: rw(36),
+    width: rw(44),
   },
   scrollView: {
     flex: 1,

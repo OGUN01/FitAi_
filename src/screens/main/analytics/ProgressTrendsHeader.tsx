@@ -63,6 +63,7 @@ const styles = StyleSheet.create({
   },
   headerTextContainer: {
     flex: 1,
+    minWidth: 0,
   },
   headerTitle: {
     fontSize: rf(28),

@@ -144,6 +144,7 @@ const styles = StyleSheet.create({
   },
   stepInfo: {
     flex: 1,
+    minWidth: 0,
   },
   stepCounter: {
     fontSize: rf(16),
@@ -162,7 +163,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "rgba(255, 107, 53, 0.12)",
     paddingHorizontal: rp(12),
-    paddingVertical: rp(6),
+    paddingVertical: rp(10),
     borderRadius: rbr(16),
   },
   timerButtonText: {

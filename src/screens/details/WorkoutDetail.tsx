@@ -15,7 +15,7 @@ import {
   AnimatedPressable,
 } from "../../components/ui/aurora";
 import { colors, spacing, typography } from "../../theme/aurora-tokens";
-import { rp, rf } from "../../utils/responsive";
+import { rp, rf, rw } from "../../utils/responsive";
 import { useWorkoutDetailLogic } from "../../hooks/useWorkoutDetailLogic";
 import { WorkoutInfoCard } from "../../components/details/WorkoutInfoCard";
 import { ExerciseListItem } from "../../components/details/ExerciseListItem";
@@ -147,8 +147,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   favoriteButton: {
-    width: rf(40),
-    height: rf(40),
+    width: rw(44),
+    height: rw(44),
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",

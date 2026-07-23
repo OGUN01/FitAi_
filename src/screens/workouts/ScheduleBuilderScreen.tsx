@@ -758,13 +758,13 @@ const styles = StyleSheet.create({
   assignedMeta: { fontSize: rf(typography.fontSize.micro), color: colors.text.secondary, marginTop: rp(spacing.xxs) },
   changeBtn: {
     paddingHorizontal: rp(spacing.sm),
-    paddingVertical: rp(spacing.xxs),
+    paddingVertical: rp(spacing.sm),
     borderRadius: borderRadius.sm,
     borderWidth: 1,
     borderColor: colors.primary.DEFAULT,
   },
   changeBtnText: { fontSize: rf(typography.fontSize.micro), color: colors.primary.DEFAULT },
-  clearBtn: { padding: rp(spacing.xs) },
+  clearBtn: { padding: rp(spacing.sm) },
 
   restBox: {
     flex: 1,
@@ -891,8 +891,8 @@ const styles = StyleSheet.create({
     gap: rp(spacing.xs),
   },
   stepperBtn: {
-    width: rw(24),
-    height: rw(24),
+    width: rw(32),
+    height: rw(32),
     borderRadius: 999,
     backgroundColor: colors.background.tertiary,
     justifyContent: "center",
@@ -913,7 +913,7 @@ const styles = StyleSheet.create({
   },
 
   removeExBtn: {
-    padding: rp(spacing.xs),
+    padding: rp(spacing.sm),
     marginLeft: rp(spacing.xxs),
   },
 
@@ -981,7 +981,7 @@ const styles = StyleSheet.create({
   },
   categoryTab: {
     paddingHorizontal: rp(spacing.md),
-    paddingVertical: rp(spacing.xs),
+    paddingVertical: rp(spacing.sm),
     borderRadius: borderRadius.xl,
     backgroundColor: colors.glass.background,
   },

@@ -1102,7 +1102,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   prevExButton: {
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 16,
   },
   prevExText: {
@@ -1167,8 +1167,8 @@ const styles = StyleSheet.create({
   warmupDoneBtn: {
     backgroundColor: colors.glass.background,
     borderRadius: borderRadius.md,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderWidth: 1,
     borderColor: colors.glass.border,
   },

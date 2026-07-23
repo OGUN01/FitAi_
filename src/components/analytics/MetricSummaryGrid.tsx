@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
   },
   sparklineBar: {
     flex: 1,
-    borderRadius: rw(1.5),
+    borderRadius: rw(2),
     minHeight: 3,
   },
   streakContent: {

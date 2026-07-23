@@ -78,8 +78,8 @@ export default function CookingSessionScreen({
         completedSteps: completedSteps.size,
       });
 
-      if (success) {
-      } else {
+      if (!success) {
+        console.warn("completeMeal returned false — meal completion not recorded", meal.id);
       }
     } catch (error) {
       console.error("❌ Error tracking meal completion:", error);
@@ -218,8 +218,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   closeButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
@@ -236,6 +236,7 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     flex: 1,
+    minWidth: 0,
     marginLeft: rp(16),
   },
   mealName: {

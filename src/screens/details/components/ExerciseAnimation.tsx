@@ -8,11 +8,7 @@ import {
 } from "react-native";
 import { Card } from "../../../components/ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
-import { rf, rw, rh, rbr, dimensions } from '../../../utils/responsive';
-
-// Clamped screen width (capped to 480 on web/tablet) so the GIF/placeholder
-// sizes against the mobile design width, not a 1920px desktop window.
-const screenWidth = dimensions.screenWidth;
+import { rf, rw, rh, rbr } from '../../../utils/responsive';
 
 interface ExerciseAnimationProps {
   gifUrl?: string;
@@ -49,7 +45,12 @@ export const ExerciseAnimation: React.FC<ExerciseAnimationProps> = ({
 
         {instructionsCount > 1 && (
           <View style={styles.animationControls}>
-            <TouchableOpacity style={styles.playButton} onPress={onTogglePlay}>
+            <TouchableOpacity
+              style={styles.playButton}
+              onPress={onTogglePlay}
+              accessibilityRole="button"
+              accessibilityLabel={isPlaying ? "Pause animation" : "Play animation"}
+            >
               <Text style={styles.playButtonText}>
                 {isPlaying ? "⏸️" : "▶️"}
               </Text>
@@ -64,6 +65,9 @@ export const ExerciseAnimation: React.FC<ExerciseAnimationProps> = ({
                     currentStep === index && styles.stepIndicatorActive,
                   ]}
                   onPress={() => onStepChange(index)}
+                  hitSlop={{ top: 18, bottom: 18, left: 18, right: 18 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Go to step ${index + 1}`}
                 />
               ))}
             </View>
@@ -80,15 +84,17 @@ const styles = StyleSheet.create({
   },
   animationContainer: {
     alignItems: "center",
+    minWidth: 0,
+    flexShrink: 1,
   },
   exerciseGif: {
-    width: screenWidth - 64,
+    width: "100%",
     height: rh(200),
     borderRadius: borderRadius.lg,
     marginBottom: spacing.md,
   },
   animationPlaceholder: {
-    width: screenWidth - 64,
+    width: "100%",
     height: rh(200),
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,

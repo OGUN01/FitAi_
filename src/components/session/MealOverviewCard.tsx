@@ -80,6 +80,7 @@ const styles = StyleSheet.create({
   },
   mealInfo: {
     flex: 1,
+    minWidth: 0,
   },
   mealName: {
     fontSize: rf(20),

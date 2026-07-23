@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: rw(4),
     paddingHorizontal: rw(12),
-    paddingVertical: rh(0.8),
+    paddingVertical: rh(8),
     borderRadius: borderRadius.full,
     backgroundColor: colors.backgroundTertiary,
     borderWidth: 1,

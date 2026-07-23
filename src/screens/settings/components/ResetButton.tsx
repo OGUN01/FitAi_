@@ -72,6 +72,7 @@ const styles = StyleSheet.create({
   },
   actionTextContainer: {
     flex: 1,
+    minWidth: 0,
     marginRight: spacing.sm,
   },
   actionTitle: {

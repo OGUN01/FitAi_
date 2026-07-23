@@ -675,6 +675,7 @@ const styles = StyleSheet.create({
   },
   dateLabelCol: {
     flex: 1,
+    minWidth: 0,
     marginLeft: spacing.sm,
   },
   dateLabel: {

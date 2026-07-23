@@ -163,6 +163,7 @@ const styles = StyleSheet.create({
   },
   stepTextContainer: {
     flex: 1,
+    minWidth: 0,
     marginLeft: rp(12),
   },
   stepItemText: {

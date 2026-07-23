@@ -552,8 +552,8 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.glass.border,
   },
   headerBackBtn: {
-    width: rw(40),
-    height: rw(40),
+    width: rw(44),
+    height: rw(44),
     borderRadius: rbr(borderRadius.full),
     backgroundColor: colors.glass.background,
     justifyContent: "center",
@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   headerSpacer: {
-    width: rw(40),
+    width: rw(44),
   },
   // Scroll
   scrollView: {
@@ -596,6 +596,7 @@ const styles = StyleSheet.create({
   },
   barcodeBadge: {
     flex: 1,
+    minWidth: 0,
   },
   barcodeBadgeLabel: {
     fontSize: rf(11),
@@ -649,6 +650,7 @@ const styles = StyleSheet.create({
   },
   submitErrorText: {
     flex: 1,
+    minWidth: 0,
     fontSize: rf(13),
     color: colors.error.light,
     lineHeight: rf(18),
