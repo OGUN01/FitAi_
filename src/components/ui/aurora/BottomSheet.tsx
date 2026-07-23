@@ -28,7 +28,6 @@ import {
   View,
   ViewStyle,
   Pressable,
-  Dimensions,
   KeyboardAvoidingView,
   Platform,
   Modal as RNModal,
@@ -52,19 +51,13 @@ import { GlassCard } from "./GlassCard";
 import { colors, spacing, borderRadius, zIndex } from "../../../theme/aurora-tokens";
 import { animations } from "../../../theme/animations";
 import { haptics } from "../../../utils/haptics";
-import { rp, rf } from "../../../utils/responsive";
+import { rp, rf, dimensions } from "../../../utils/responsive";
 
-// Resolve screen height lazily so the module is safe to import in environments
-// where `Dimensions` is mocked away (e.g. jest test files that stub
-// react-native with a minimal object). Mirrors the defensive pattern in
-// utils/responsive.ts. Falls back to the reference device height (852).
-const getScreenHeight = (): number => {
-  try {
-    return Dimensions.get("window").height;
-  } catch {
-    return 852;
-  }
-};
+// Clamped screen height from responsive.ts (capped to 900 on web/tablet so the
+// sheet sizes against the mobile design height, not a 1080px desktop window).
+// `dimensions` already has its own fallback when Dimensions is mocked (jest),
+// so it is safe to import in test environments that stub react-native.
+const SCREEN_HEIGHT = dimensions.screenHeight;
 const DISMISS_THRESHOLD = 120; // px dragged before dismissing
 
 export interface BottomSheetProps {
@@ -106,7 +99,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   testID,
 }) => {
   const insets = useSafeAreaInsets();
-  const translateY = useSharedValue(getScreenHeight());
+  const translateY = useSharedValue(SCREEN_HEIGHT);
   const backdropOpacitySV = useSharedValue(0);
 
   // Animate in/out when `visible` changes.
@@ -117,7 +110,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
         duration: animations.duration.normal,
       });
     } else {
-      translateY.value = withTiming(getScreenHeight(), {
+      translateY.value = withTiming(SCREEN_HEIGHT, {
         duration: animations.duration.normal,
       });
       backdropOpacitySV.value = withTiming(0, {
@@ -146,7 +139,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
       },
       onEnd: (event, _ctx) => {
         if (event.translationY > DISMISS_THRESHOLD) {
-          translateY.value = withTiming(getScreenHeight(), {
+          translateY.value = withTiming(SCREEN_HEIGHT, {
             duration: animations.duration.normal,
           });
           runOnJS(handleClose)();
@@ -197,7 +190,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
           style={[
             styles.sheetWrapper,
             {
-              maxHeight: getScreenHeight() * maxHeightFraction,
+              maxHeight: SCREEN_HEIGHT * maxHeightFraction,
               paddingBottom: insets.bottom || rp(spacing.md),
             },
             sheetAnimatedStyle,

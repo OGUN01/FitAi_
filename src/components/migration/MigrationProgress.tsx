@@ -7,7 +7,6 @@ import {
   Text,
   StyleSheet,
   Animated,
-  Dimensions,
   Modal,
   TouchableOpacity,
 } from "react-native";
@@ -114,8 +113,6 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
   const [pulseAnimation] = useState(new Animated.Value(1));
   const [celebrationAnimation] = useState(new Animated.Value(0));
   const loopsRef = useRef<Animated.CompositeAnimation[]>([]);
-
-  const screenWidth = Dimensions.get("window").width;
 
   // ============================================================================
   // ANIMATION EFFECTS

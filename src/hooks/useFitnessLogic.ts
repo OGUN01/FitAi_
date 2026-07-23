@@ -891,9 +891,12 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
 
   const handleViewHistoryWorkout = useCallback(
     (workout: CompletedWorkoutItem) => {
+      // Full detail screen is out of scope, so enrich the alert with the
+      // available data. workoutSnapshot.exercises carries the logged sets.
+      const exerciseCount = workout.workoutSnapshot?.exercises?.length ?? 0;
       crossPlatformAlert(
         workout.title,
-        `Completed on ${new Date(workout.completedAt).toLocaleDateString()}\n\nDuration: ${workout.duration ?? "N/A"} min\nCalories: ${workout.caloriesBurned ?? "N/A"}`,
+        `Completed on ${new Date(workout.completedAt).toLocaleDateString()}\n\nDuration: ${workout.duration ?? "N/A"} min\nCalories: ${workout.caloriesBurned ?? "N/A"}\nExercises: ${exerciseCount || "N/A"}`,
       );
     },
     [],

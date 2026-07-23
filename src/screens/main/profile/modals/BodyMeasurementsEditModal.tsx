@@ -76,15 +76,16 @@ export const BodyMeasurementsEditModal: React.FC<
     }
   }, [visible, bodyAnalysis, weightUnit]);
 
-  // Calculate BMI
+  // Calculate BMI — weight state is in display units (lbs when imperial);
+  // convert to kg first so BMI is always kg/m^2.
   const bmi = useMemo(() => {
-    const w = parseFloat(weight);
-    const h = parseFloat(height) / 100; // Convert cm to meters
+    const w = convertWeight(parseLocalFloat(weight), weightUnit, "kg");
+    const h = parseLocalFloat(height) / 100; // Convert cm to meters
     if (w > 0 && h > 0) {
       return (w / (h * h)).toFixed(1);
     }
     return null;
-  }, [weight, height]);
+  }, [weight, height, weightUnit]);
 
   // Get BMI category
   const bmiCategory = useMemo(() => {
@@ -211,9 +212,6 @@ export const BodyMeasurementsEditModal: React.FC<
 
       // ✅ Update bodyAnalysis in profileStore
       updateBodyAnalysis(nextBodyAnalysis);
-      console.log(
-        "✅ BodyMeasurementsEditModal: Saved body metrics locally",
-      );
 
       // Sync to Supabase body_analysis table
       if (user?.id) {
@@ -228,8 +226,6 @@ export const BodyMeasurementsEditModal: React.FC<
               "Saved Locally",
               "Your measurements were saved locally but failed to sync to the server. They will sync automatically when connection is restored.",
             );
-          } else {
-            console.log("✅ Body measurements synced to database");
           }
         } catch (syncError) {
           console.error("Error syncing body measurements:", syncError);
@@ -272,16 +268,22 @@ export const BodyMeasurementsEditModal: React.FC<
 
     const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
     if (!bodyAnalysisData) return true;
+    // weight/targetWeight are in display units; stored values are kg.
+    // Convert local to kg before comparing so the Save button enables correctly.
+    const weightKg = convertWeight(parseLocalFloat(weight), weightUnit, "kg");
+    const targetKg = targetWeight
+      ? convertWeight(parseLocalFloat(targetWeight), weightUnit, "kg")
+      : null;
     return (
       floatChanged(height, bodyAnalysisData.height_cm) ||
-      floatChanged(weight, bodyAnalysisData.current_weight_kg) ||
-      floatChanged(targetWeight, bodyAnalysisData.target_weight_kg) ||
+      floatChanged(String(weightKg), bodyAnalysisData.current_weight_kg) ||
+      floatChanged(targetKg != null ? String(targetKg) : "", bodyAnalysisData.target_weight_kg) ||
       floatChanged(bodyFat, bodyAnalysisData.body_fat_percentage) ||
       floatChanged(chest, bodyAnalysisData.chest_cm) ||
       floatChanged(waist, bodyAnalysisData.waist_cm) ||
       floatChanged(hips, bodyAnalysisData.hip_cm)
     );
-  }, [height, weight, targetWeight, bodyFat, chest, waist, hips, bodyAnalysis]);
+  }, [height, weight, targetWeight, bodyFat, chest, waist, hips, bodyAnalysis, weightUnit]);
 
   return (
     <SettingsModalWrapper

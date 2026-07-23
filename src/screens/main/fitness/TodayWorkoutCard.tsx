@@ -101,8 +101,9 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
           <View style={styles.container}>
             <Pressable
               onPress={onViewDetails}
-              accessibilityLabel={`${isRestDay ? "Rest & Recover" : workout?.title || "Today's Workout"}, ${config.label}`}
-              accessibilityHint="Double tap to view details"
+              accessibilityRole="button"
+              accessibilityLabel={`View workout details for ${isRestDay ? "Rest & Recover" : workout?.title || "Today's Workout"}`}
+              accessibilityHint="Double tap to view workout details"
             >
             {/* Top Section - Status + Info */}
             <View style={styles.topSection}>
@@ -238,6 +239,13 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                 hapticFeedback={true}
                 hapticType="medium"
                 style={styles.actionButton}
+                accessibilityLabel={
+                  isRestDay
+                    ? "Recovery tips"
+                    : isCompleted
+                      ? "View workout summary"
+                      : "Start workout"
+                }
               >
                 <LinearGradient
                   colors={config.gradient}
@@ -287,6 +295,7 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     flex: 1,
+    minWidth: 0,
   },
   dayIndicator: {
     flexDirection: "row",
@@ -313,6 +322,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.text,
     flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
   },
   statusBadge: {
     flexDirection: "row",
@@ -335,6 +346,7 @@ const styles = StyleSheet.create({
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
     gap: spacing.md,
     marginTop: spacing.sm,
   },

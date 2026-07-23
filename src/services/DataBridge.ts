@@ -245,8 +245,20 @@ class DataBridge {
     // initialize() already has this check; loadAllData must mirror it so sequential callers
     // don't trigger a redundant Supabase round-trip and a second hydrateFromLegacy call.
     // When forceRefresh is true, bypass the cache to fetch fresh data from the server.
+    //
+    // Short-circuit ONLY when the store actually holds real data. profileStore's
+    // onRehydrateStorage forces isHydrated=true on every cold launch — even when
+    // AsyncStorage was empty — so gating on isHydrated alone meant the store
+    // reported "hydrated" with all-null sections and never fetched from Supabase.
+    // Result: Home rings showed 0/0 cal, 0/0 kcal for existing users whose
+    // advanced_review / body_analysis / workout_preferences live only in the DB.
     const profileStoreState = useProfileStore.getState();
-    if (profileStoreState.isHydrated && !options?.forceRefresh) {
+    const storeHasRealData =
+      !!profileStoreState.advancedReview ||
+      !!profileStoreState.bodyAnalysis ||
+      !!profileStoreState.workoutPreferences ||
+      !!profileStoreState.personalInfo;
+    if (profileStoreState.isHydrated && storeHasRealData && !options?.forceRefresh) {
       return {
         personalInfo: profileStoreState.personalInfo,
         dietPreferences: profileStoreState.dietPreferences,

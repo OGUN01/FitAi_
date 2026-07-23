@@ -11,16 +11,18 @@ import {
   StyleSheet,
   Modal,
   Animated,
-  Dimensions,
   SafeAreaView,
   TouchableOpacity,
 } from "react-native";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { rf, rbr, rh, rw } from "../../utils/responsive";
+import { rf, rbr, rh, rw, dimensions } from "../../utils/responsive";
 import { migrationManager } from "../../services/migrationManager";
 import { MigrationStatus } from "../../types/profileData";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+// Clamped screen width (capped to 480 on web/tablet) so the modal sizes against
+// the mobile design width, not a 1920px desktop window. `dimensions` carries
+// its own fallback when Dimensions is mocked (jest).
+const SCREEN_WIDTH = dimensions.screenWidth;
 
 interface MigrationStatusModalProps {
   visible: boolean;

@@ -103,7 +103,7 @@ export interface WorkoutPlan {
   description: string;
   duration: number; // in days
   workouts: Workout[];
-  restDays: number[];
+  restDays: (number | string)[];
   progression: {
     week: number;
     adjustments: string[];

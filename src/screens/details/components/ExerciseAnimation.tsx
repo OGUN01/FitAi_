@@ -5,13 +5,14 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
 } from "react-native";
 import { Card } from "../../../components/ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
-import { rf, rw, rh, rbr } from '../../../utils/responsive';
+import { rf, rw, rh, rbr, dimensions } from '../../../utils/responsive';
 
-const { width: screenWidth } = Dimensions.get("window");
+// Clamped screen width (capped to 480 on web/tablet) so the GIF/placeholder
+// sizes against the mobile design width, not a 1920px desktop window.
+const screenWidth = dimensions.screenWidth;
 
 interface ExerciseAnimationProps {
   gifUrl?: string;

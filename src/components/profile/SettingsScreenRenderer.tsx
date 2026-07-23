@@ -48,7 +48,13 @@ export const SettingsScreenRenderer: React.FC<SettingsScreenRendererProps> = ({
         />
       );
     case "manualHealth":
-      return <ManualHealthEntryScreen onBack={onBack} />;
+      // Back returns to Wearables (the screen that launched manual entry),
+      // falling back to the root onBack when sideways nav isn't wired.
+      return (
+        <ManualHealthEntryScreen
+          onBack={() => onNavigateSettings?.("wearables") ?? onBack()}
+        />
+      );
     case "subscription":
       return <SubscriptionManagement onBack={onBack} />;
     default:

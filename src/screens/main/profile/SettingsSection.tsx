@@ -168,7 +168,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
                         item.isPremium && styles.premiumSubtitle,
                         item.disabled && styles.disabledSubtitle,
                       ]}
-                      numberOfLines={1}
+                      numberOfLines={2}
                       ellipsizeMode="tail"
                     >
                       {item.subtitle}
@@ -278,11 +278,13 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
+    flexShrink: 1,
   },
   title: {
     fontSize: rf(15),
     fontWeight: "500",
     color: colors.white,
+    flexShrink: 1,
   },
   destructiveText: {
     color: colors.error,

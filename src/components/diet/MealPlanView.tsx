@@ -1,11 +1,9 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, StyleProp, ViewStyle } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { GlassCard } from "../ui/aurora/GlassCard";
-import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { PremiumMealCard } from "./PremiumMealCard";
 import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { getMealTime } from "../../utils/mealSchedule";
-import { rs, rw, rh, rbr } from "../../utils/responsive";
 
 interface MealPlanViewProps {
   weeklyMealPlan: any;
@@ -40,54 +38,6 @@ export const MealPlanView: React.FC<MealPlanViewProps> = React.memo(({
 }) => {
   return (
     <View style={styles.section}>
-      {weeklyMealPlan && (
-        <View style={styles.daySelectorContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {[
-              "monday",
-              "tuesday",
-              "wednesday",
-              "thursday",
-              "friday",
-              "saturday",
-              "sunday",
-            ].map((day) => {
-              const isToday =
-                day ===
-                new Date()
-                  .toLocaleDateString("en-US", { weekday: "long" })
-                  .toLowerCase();
-              return (
-                <AnimatedPressable
-                  key={day}
-                  style={
-                    [
-                      styles.dayButton,
-                      selectedDay === day
-                        ? styles.selectedDayButton
-                        : undefined,
-                      isToday ? styles.todayDayButton : undefined,
-                    ] as StyleProp<ViewStyle>
-                  }
-                  onPress={() => setSelectedDay(day)}
-                  scaleValue={0.95}
-                >
-                  <Text
-                    style={[
-                      styles.dayButtonText,
-                      selectedDay === day && styles.selectedDayButtonText,
-                    ]}
-                  >
-                    {day.charAt(0).toUpperCase() + day.slice(1, 3)}
-                  </Text>
-                  {isToday && <View style={styles.todayIndicator} />}
-                </AnimatedPressable>
-              );
-            })}
-          </ScrollView>
-        </View>
-      )}
-
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>
           {selectedDay
@@ -144,44 +94,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.xl,
   },
-  daySelectorContainer: {
-    marginBottom: spacing.md,
-    marginTop: -spacing.sm,
-  },
-  dayButton: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    marginRight: spacing.sm,
-    borderRadius: rs(20),
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    position: "relative",
-    alignItems: "center",
-  },
-  todayDayButton: {
-    borderColor: colors.primary,
-    borderWidth: 2,
-  },
-  todayIndicator: {
-    width: rw(6),
-    height: rh(6),
-    borderRadius: rbr(3),
-    backgroundColor: colors.primary,
-    position: "absolute",
-    bottom: -2,
-  },
-  selectedDayButton: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  dayButtonText: {
-    fontSize: fontSize.sm,
-    fontWeight: "600",
-    color: colors.text,
-    opacity: 0.75,
-  },
-  selectedDayButtonText: { color: colors.surface },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",

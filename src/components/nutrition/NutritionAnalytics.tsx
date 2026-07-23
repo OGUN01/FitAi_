@@ -5,14 +5,11 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
 } from "react-native";
 import { Card } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rh } from "../../utils/responsive";
 import { useNutritionData } from "../../hooks/useNutritionData";
-
-const { width } = Dimensions.get("window");
 
 interface NutritionAnalyticsProps {
   timeRange?: "week" | "month" | "year";
@@ -95,6 +92,7 @@ export const NutritionAnalytics: React.FC<NutritionAnalyticsProps> = ({
   };
 
   const getProgressPercentage = (current: number, target: number) => {
+    if (!target || target === 0) return 0;
     return Math.min((current / target) * 100, 100);
   };
 

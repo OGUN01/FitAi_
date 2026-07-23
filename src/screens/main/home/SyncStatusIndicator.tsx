@@ -131,6 +131,7 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
       scaleValue={0.98}
       hapticFeedback
       disabled={isSyncing}
+      hitSlop={{ top: 6, bottom: 6, left: 8, right: 8 }}
     >
       <View style={styles.container}>
         <View style={styles.iconContainer}>
@@ -193,9 +194,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.05)",
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
     gap: spacing.xs,
+    minHeight: 44,
   },
   iconContainer: {
     width: rw(24),

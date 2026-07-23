@@ -23,7 +23,7 @@ import {
   Achievement,
 } from "../../services/achievements/types";
 import { colors, typography } from "../../theme/aurora-tokens";
-import { rh, rw, rf } from "../../utils/responsive";
+import { rh, rw, rf, rbr } from "../../utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 
 interface AchievementsScreenProps {
@@ -245,17 +245,35 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
         {!catalogEmpty && (
           <View style={styles.statsBanner}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{stats.completed}</Text>
+              <Text
+                style={styles.statValue}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                {stats.completed}
+              </Text>
               <Text style={styles.statLabel}>Earned</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{stats.completionRate}%</Text>
+              <Text
+                style={styles.statValue}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                {stats.completionRate}%
+              </Text>
               <Text style={styles.statLabel}>Complete</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>🪙 {stats.totalFitCoins}</Text>
+              <Text
+                style={styles.statValue}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                🪙 {stats.totalFitCoins}
+              </Text>
               <Text style={styles.statLabel}>FitCoins</Text>
             </View>
           </View>
@@ -334,84 +352,88 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: rw(4),
-    paddingVertical: rh(2),
+    paddingHorizontal: rw(16),
+    paddingVertical: rh(16),
   },
   backButton: {
-    padding: 8,
+    width: Math.max(rw(10), 44),
+    height: Math.max(rw(10), 44),
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
-    fontSize: rf(2.2),
+    fontSize: rf(20),
     fontWeight: "700",
     color: colors.text.primary,
   },
   placeholder: {
-    width: 40,
+    width: Math.max(rw(10), 44),
   },
   listContent: {
-    paddingHorizontal: rw(4),
-    paddingBottom: rh(4),
+    paddingHorizontal: rw(16),
+    paddingBottom: rh(32),
   },
   statsBanner: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    marginHorizontal: rw(4),
-    marginBottom: rh(1.5),
-    paddingVertical: rh(1.5),
-    paddingHorizontal: rw(4),
+    marginHorizontal: rw(16),
+    marginBottom: rh(12),
+    paddingVertical: rh(12),
+    paddingHorizontal: rw(16),
     backgroundColor: colors.glass.backgroundDark,
-    borderRadius: rw(4),
+    borderRadius: rbr(16),
     borderWidth: 1,
     borderColor: colors.glass.border,
   },
   statItem: {
     flex: 1,
     alignItems: "center",
+    minWidth: 0,
   },
   statValue: {
-    fontSize: rf(2),
+    fontSize: rf(18),
     fontWeight: "800",
     color: colors.text.primary,
   },
   statLabel: {
-    fontSize: rf(1.2),
+    fontSize: rf(10),
     color: colors.text.tertiary,
-    marginTop: rh(0.3),
+    marginTop: rh(2),
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   statDivider: {
     width: 1,
-    height: rh(4),
+    height: rh(32),
     backgroundColor: colors.glass.border,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "baseline",
     justifyContent: "space-between",
-    marginTop: rh(2.5),
-    marginBottom: rh(1),
-    paddingHorizontal: rw(1),
+    marginTop: rh(20),
+    marginBottom: rh(8),
+    paddingHorizontal: rw(4),
   },
   sectionTitle: {
-    fontSize: rf(1.8),
+    fontSize: rf(15),
     fontWeight: "700",
     color: colors.text.primary,
   },
   sectionSubtitle: {
-    fontSize: rf(1.3),
+    fontSize: rf(12),
     color: colors.text.tertiary,
   },
   loadingContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: rh(10),
+    marginTop: rh(80),
   },
   loadingText: {
     color: colors.text.secondary,
-    fontSize: rf(1.6),
-    marginTop: rh(2),
+    fontSize: rf(14),
+    marginTop: rh(16),
   },
 });

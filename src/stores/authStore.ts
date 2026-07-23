@@ -340,7 +340,21 @@ export const useAuthStore = create<AuthState>()(
               authStateUnsubscribe();
             }
             const subscription = authService.onAuthStateChange((user) => {
+              // Detect a fresh sign-in (guest/none → real user) to emit SIGNED_IN.
+              // The explicit login()/signInWithGoogle() paths emit SIGNED_IN themselves,
+              // but OAuth redirect flows (web Google sign-in) and cross-device session
+              // restores establish the session via the SDK without going through those
+              // methods — so without this, remoteDataSync (which listens for SIGNED_IN
+              // to call dataBridge.loadAllData forceRefresh) never fires for web OAuth,
+              // and profileStore.advancedReview/bodyAnalysis stay null → Home shows 0/0.
+              const prevUser = get().user;
               get().setUser(user);
+              if (user && user.id !== prevUser?.id) {
+                authEvents.emit("SIGNED_IN", {
+                  userId: user.id,
+                  email: user.email,
+                });
+              }
             });
             authStateUnsubscribe = subscription?.data?.subscription?.unsubscribe ?? null;
 

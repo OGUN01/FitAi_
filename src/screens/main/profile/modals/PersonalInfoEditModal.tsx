@@ -269,8 +269,6 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
               "[PersonalInfoModal] Failed to sync to Supabase:",
               result.error,
             );
-          } else {
-            console.log("✅ Personal info synced to Supabase");
           }
 
           // ✅ Sync activity_level to workout_preferences table
@@ -284,8 +282,6 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
                   "[PersonalInfoModal] Activity level sync error:",
                   wpError,
                 );
-              } else {
-                console.log("✅ Activity level synced to workout_preferences");
               }
             } catch (activitySyncError) {
               console.error(

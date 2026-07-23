@@ -123,10 +123,10 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                     <Ionicons name={icon} size={rf(18)} color={iconColor} />
                   </View>
                 )}
-                <View>
-                  <Text style={styles.headerTitle}>{title}</Text>
+                <View style={styles.headerTitleText}>
+                  <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text>
                   {subtitle && (
-                    <Text style={styles.headerSubtitle}>{subtitle}</Text>
+                    <Text style={styles.headerSubtitle} numberOfLines={1}>{subtitle}</Text>
                   )}
                 </View>
               </View>
@@ -226,9 +226,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerCenter: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
+    minWidth: 0,
   },
   headerIcon: {
     width: rw(36),
@@ -236,6 +238,10 @@ const styles = StyleSheet.create({
     borderRadius: rw(18),
     justifyContent: "center",
     alignItems: "center",
+  },
+  headerTitleText: {
+    flex: 1,
+    minWidth: 0,
   },
   headerTitle: {
     fontSize: rf(18),

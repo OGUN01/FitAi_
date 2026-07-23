@@ -25,7 +25,7 @@
  */
 
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Dimensions } from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../services/supabase";
@@ -34,8 +34,6 @@ import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable"
 import { Button, Input, PasswordInput } from "../../components/ui";
 import { rf, rh, rw } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 interface PasswordResetScreenProps {
   /** Recovery token from the deep link, if any (diagnostic; not required for PKCE). */

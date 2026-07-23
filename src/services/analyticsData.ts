@@ -230,7 +230,7 @@ class AnalyticsDataService {
     // --- Fallback path: progress_entries ---
     // analytics_metrics has no weight data for this period. Read directly from
     // the source-of-truth table so the chart is never empty after a failed sync.
-    console.warn(
+    if (__DEV__) console.warn(
       "[getWeightHistory] analytics_metrics has no weight rows for",
       days,
       "days — falling back to progress_entries.",
@@ -335,7 +335,7 @@ class AnalyticsDataService {
     }
 
     // --- Fallback: meals table ---
-    console.warn(
+    if (__DEV__) console.warn(
       "[getCalorieHistory] analytics_metrics has no calorie rows for",
       days,
       "days — falling back to meals table.",

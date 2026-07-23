@@ -83,12 +83,6 @@ const WaterDrop: React.FC<{ progress: number; size: number }> = ({
           stroke="rgba(33, 150, 243, 0.3)"
           strokeWidth="2"
         />
-        {/* Water fill (clipped to drop shape) */}
-        <Path
-          d={`M50 10 C50 10, 20 45, 20 65 C20 85, 35 95, 50 95 C65 95, 80 85, 80 65 C80 45, 50 10, 50 10`}
-          fill="none"
-          clipPath="url(#dropClip)"
-        />
         {/* Animated water level */}
         <Path
           d={`M20 ${waterTop} Q35 ${waterMid}, 50 ${waterTop} T80 ${waterTop} L80 95 L20 95 Z`}
@@ -328,7 +322,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     alignItems: "center",
     top: "50%",
-    marginTop: rh(5),
+    transform: [{ translateY: -10 }],
   },
   dropPercentage: {
     fontSize: rf(18),

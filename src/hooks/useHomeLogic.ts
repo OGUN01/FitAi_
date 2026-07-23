@@ -108,10 +108,19 @@ export const useHomeLogic = () => {
   const { metrics: calculatedMetrics } = useCalculatedMetrics();
 
   // P1-10 (H22): Hydration goal is set EXCLUSIVELY in useNutritionTracking
-  // (the SSOT). Previously this hook ALSO called setDailyGoalFromMetrics, which
-  // raced with useNutritionTracking's setHydrationGoal() — if this hook's
-  // effect ran after a user customized their goal, it would overwrite the
-  // custom value and lock out auto-updates (isGoalUserSet=true). Removed.
+  // (the SSOT) via setHydrationGoal (which marks isGoalUserSet=true). That hook
+  // only mounts on DietScreen, so on Home the water ring reads dailyGoalML=null
+  // and shows "0.0L Goal" even though advanced_review.daily_water_ml exists.
+  // Use the metrics-only setter here: it respects a user override
+  // (isGoalUserSet) and only fills the goal when none is set yet, so it cannot
+  // race with or clobber useNutritionTracking's explicit setHydrationGoal.
+  const setDailyGoalFromMetrics = useHydrationStore((s) => s.setDailyGoalFromMetrics);
+  useEffect(() => {
+    const goalML = calculatedMetrics?.dailyWaterML;
+    if (goalML && goalML > 0) {
+      setDailyGoalFromMetrics(goalML);
+    }
+  }, [calculatedMetrics?.dailyWaterML, setDailyGoalFromMetrics]);
 
   const completedSessions = useFitnessStore((s) => s.completedSessions);
   const workoutProgress = useFitnessStore((s) => s.workoutProgress);
@@ -405,19 +414,27 @@ export const useHomeLogic = () => {
   );
 
   const realCaloriesBurned = useMemo(() => {
+    // The Move ring goal is TDEE - BMR (active-only calories — see
+    // HomeScreen caloriesGoal). Wearable providers expose two calorie
+    // metrics: `activeCalories` (activity only) and `totalCalories`
+    // (BMR + activity). Prefer `activeCalories` so the burned value matches
+    // the active-only goal; only fall back to `totalCalories` if the
+    // provider doesn't surface active calories (e.g. HealthKit sometimes
+    // omits it). Using totalCalories here inflated the ring to ~360% because
+    // it counted resting metabolism against an activity-only goal.
     if (hasFreshWearableMetrics) {
-      if (healthMetrics?.totalCalories && healthMetrics.totalCalories > 0) {
-        return healthMetrics.totalCalories;
-      }
       if (healthMetrics?.activeCalories && healthMetrics.activeCalories > 0) {
         return healthMetrics.activeCalories;
+      }
+      if (healthMetrics?.totalCalories && healthMetrics.totalCalories > 0) {
+        return healthMetrics.totalCalories;
       }
     }
     return appCaloriesBurned;
   }, [
     hasFreshWearableMetrics,
-    healthMetrics?.totalCalories,
     healthMetrics?.activeCalories,
+    healthMetrics?.totalCalories,
     appCaloriesBurned,
   ]);
 

@@ -9,7 +9,7 @@
  */
 
 import React from "react";
-import { View, Text, StyleSheet, Platform } from "react-native";
+import { View, Text, StyleSheet, Platform, Pressable } from "react-native";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -36,7 +36,7 @@ interface ProfileHeaderProps {
 export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   userName,
   memberSince,
-  onEditPress: _onEditPress,
+  onEditPress,
 }) => {
   const getInitials = (name?: string) => {
     if (!name) return "U";
@@ -50,7 +50,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
   const memberSinceLabel =
     memberSince === null || memberSince === undefined
-      ? null
+      ? "Just joined today"
       : /^\d+ (day|week)/.test(memberSince)
         ? `Member for ${memberSince}`
         : `Member since ${memberSince}`;
@@ -61,19 +61,26 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       style={styles.container}
     >
       <View style={styles.content}>
-        {/* Avatar (non-interactive — use Personal Information below to edit) */}
+        {/* Avatar — tap to edit personal info */}
         <Animated.View
           entering={FadeIn.delay(100).duration(400)}
           style={styles.avatarContainer}
         >
-          <LinearGradient
-            colors={["#FF6B6B", "#FF8E53"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.avatar, Platform.OS !== 'web' && avatarShadow]}
+          <Pressable
+            onPress={onEditPress}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Edit personal information"
           >
-            <Text style={styles.avatarText}>{getInitials(userName)}</Text>
-          </LinearGradient>
+            <LinearGradient
+              colors={["#FF6B6B", "#FF8E53"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.avatar, Platform.OS !== 'web' && avatarShadow]}
+            >
+              <Text style={styles.avatarText}>{getInitials(userName)}</Text>
+            </LinearGradient>
+          </Pressable>
         </Animated.View>
 
         {/* User Info */}

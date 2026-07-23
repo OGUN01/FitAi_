@@ -247,6 +247,7 @@ const styles = StyleSheet.create({
   infoContainer: {
     flex: 1,
     marginLeft: spacing.md,
+    minWidth: 0,
   },
   title: {
     fontSize: rf(15),

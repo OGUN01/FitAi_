@@ -380,23 +380,28 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   const nutritionTargets = {
     calories: {
       current: currentNutrition.calories,
-      target: calorieTarget as number,
+      target: calorieTarget,
     },
     protein: {
       current: currentNutrition.protein,
-      target: (macroTargets.protein ?? 0) as number,
+      target: macroTargets.protein ?? 0,
     },
     carbs: {
       current: currentNutrition.carbs,
-      target: (macroTargets.carbs ?? 0) as number,
+      target: macroTargets.carbs ?? 0,
     },
     fat: {
       current: currentNutrition.fat,
-      target: (macroTargets.fat ?? 0) as number,
+      target: macroTargets.fat ?? 0,
     },
     fiber: {
       current: currentNutrition.fiber,
-      target: (calculatedMetrics?.dailyFiberG ?? 0) as number, // From onboarding calculation (14g per 1000 cal)
+      // Prefer the onboarding-calculated value (advancedReview.daily_fiber_g).
+      // Runtime fallback mirrors the architecture-doc formula (calories/1000 × 14)
+      // so a partial profile still shows a reasonable fiber target instead of 0.
+      target:
+        calculatedMetrics?.dailyFiberG ??
+        (calorieTarget ? Math.round((calorieTarget / 1000) * 14) : 0),
     },
     sugar: {
       current: currentNutrition.sugar,

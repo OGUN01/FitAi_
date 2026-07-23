@@ -7,22 +7,22 @@
 	"name": "fitai-workers",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-11-13",
-	"account_id": "914022281183abb7ca6a5590fec4b994",
+	"account_id": "03b0a2097c32f21fc6f4598e1d6b1f1e",
 	"observability": {
 		"enabled": true,
 	},
 	"kv_namespaces": [
 		{
 			"binding": "WORKOUT_CACHE",
-			"id": "942e889744074aaf8fec18b8fcfcead2",
+			"id": "38616f820d3047b0a026f6172dfdad34",
 		},
 		{
 			"binding": "MEAL_CACHE",
-			"id": "cbb7e628737b44a2ba1fe4ba5b1db738",
+			"id": "a3d42d1c59ef4615badec933ddfa3ae4",
 		},
 		{
 			"binding": "RATE_LIMIT_KV",
-			"id": "8d7801f724f44f3f88af4902de262551",
+			"id": "db78eaa947434c4181681bf2aa88da7c",
 		},
 	],
 	"r2_buckets": [
@@ -37,9 +37,9 @@
 	// Required secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY
 	"vars": {
 		"VERCEL_AI_GATEWAY_URL": "https://ai-gateway.vercel.sh/v1",
-		"CLOUDFLARE_AI_GATEWAY_ACCOUNT_ID": "914022281183abb7ca6a5590fec4b994",
+		"CLOUDFLARE_AI_GATEWAY_ACCOUNT_ID": "03b0a2097c32f21fc6f4598e1d6b1f1e",
 		"CLOUDFLARE_AI_GATEWAY_SLUG": "fitai-production",
-		"CLOUDFLARE_AI_GATEWAY_URL": "https://gateway.ai.cloudflare.com/v1/914022281183abb7ca6a5590fec4b994/fitai-production",
+		"CLOUDFLARE_AI_GATEWAY_URL": "https://gateway.ai.cloudflare.com/v1/03b0a2097c32f21fc6f4598e1d6b1f1e/fitai-production",
 		"RULE_BASED_ROLLOUT_PERCENTAGE": "100",
 		"ALLOWED_ORIGINS": "https://fitai-admin.pages.dev,https://admin.fitai.health,http://localhost:3001",
 	},

@@ -153,12 +153,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+    flex: 1,
+    minWidth: 0,
   },
   headerTitle: {
     fontSize: rf(14),
     fontWeight: '700',
     color: colors.text,
     letterSpacing: 0.3,
+    flexShrink: 1,
   },
   statusBadge: {
     flexDirection: 'row',
@@ -187,6 +190,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
+    minWidth: 0,
   },
   metricCell: {
     width: '47%',

@@ -235,10 +235,7 @@ export const useOnboardingLogic = ({
   }, [getTabAccessibility, hasUnsavedChanges, currentTab, setCurrentTab]);
 
   const handleNextTab = useCallback(async (currentTabData?: any) => {
-    console.warn(`\n🔄 handleNextTab called — tab=${currentTab} isNavigating=${isNavigating} isSaving=${isSaving}`);
-
     if (isNavigating || isSaving) {
-      console.warn('⛔ handleNextTab BLOCKED by isNavigating/isSaving guard');
       return;
     }
 
@@ -246,7 +243,6 @@ export const useOnboardingLogic = ({
 
     try {
       const validation = validateTab(currentTab, currentTabData);
-      console.warn(`📋 Validation tab=${currentTab}: is_valid=${validation.is_valid} errors=${JSON.stringify(validation.errors)}`);
 
       if (!validation.is_valid) {
         crossPlatformAlert(
@@ -274,7 +270,6 @@ export const useOnboardingLogic = ({
         // 💾 Immediately persist to AsyncStorage so data survives reload
         try {
           await saveToLocalRef.current();
-          console.warn(`✅ [Onboarding] Tab ${currentTab} saved to local storage — moving to tab ${nextTab}`);
           markTabCompleted(currentTab);
         } catch (saveErr) {
           console.error('❌ [Onboarding] Failed to save tab data locally:', saveErr);

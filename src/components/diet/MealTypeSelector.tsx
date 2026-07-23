@@ -9,13 +9,12 @@ import {
   Modal,
   StyleSheet,
   Animated,
-  Dimensions,
   ScrollView,
   } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MealType } from "../../services/foodRecognitionService";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { rf, rh, rw, rs, rp, rbr } from "../../utils/responsive";
+import { rf, rh, rw, rs, rp, rbr, dimensions } from "../../utils/responsive";
 
 interface MealTypeSelectorProps {
   visible: boolean;
@@ -74,8 +73,11 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
 }) => {
   const [selectedType, setSelectedType] = useState<MealType | null>(null);
   const [fadeAnim] = useState(new Animated.Value(0));
+  // Use the clamped screen height from the responsive module so the slide
+  // animation distance stays phone-sized on web/tablet (capped at 900)
+  // instead of the full desktop window height.
   const [slideAnim] = useState(
-    new Animated.Value(Dimensions.get("window").height),
+    new Animated.Value(dimensions.screenHeight),
   );
 
   React.useEffect(() => {
@@ -100,7 +102,7 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
           useNativeDriver: true,
         }),
         Animated.timing(slideAnim, {
-          toValue: Dimensions.get("window").height,
+          toValue: dimensions.screenHeight,
           duration: 200,
           useNativeDriver: true,
         }),

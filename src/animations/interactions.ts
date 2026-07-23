@@ -1,6 +1,5 @@
-import { Animated, Easing, Dimensions } from 'react-native';
-
-const { width } = Dimensions.get('window');
+import { Animated, Easing } from 'react-native';
+import { dimensions } from '../utils/responsive';
 
 /**
  * Global Animation Library
@@ -279,7 +278,7 @@ export const pageTransitions = {
    * Slide in from right
    */
   slideInRight: {
-    from: { translateX: width },
+    from: { translateX: dimensions.screenWidth },
     to: { translateX: 0 },
     duration: 300,
     easing: Easing.out(Easing.ease),
@@ -290,7 +289,7 @@ export const pageTransitions = {
    */
   slideOutLeft: {
     from: { translateX: 0 },
-    to: { translateX: -width },
+    to: { translateX: -dimensions.screenWidth },
     duration: 300,
     easing: Easing.in(Easing.ease),
   },

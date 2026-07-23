@@ -2,9 +2,9 @@
 // Beautiful charts for analytics visualization using Victory Native
 
 import React from "react";
-import { View, Text, Dimensions } from "react-native";
+import { View, Text } from "react-native";
 import { colors } from "../../theme/aurora-tokens";
-import { rf, rp, rbr } from "../../utils/responsive";
+import { rf, rp, rbr, rw } from "../../utils/responsive";
 
 // Temporarily disabled victory-native to resolve Skia module issues
 // import { VictoryChart, VictoryLine, VictoryArea, VictoryBar, VictoryAxis, VictoryTheme, VictoryTooltip } from 'victory-native';
@@ -27,8 +27,6 @@ interface ProgressChartProps {
   gradientColors?: string[]; // Added for gradient support
 }
 
-const { width: screenWidth } = Dimensions.get("window");
-
 export const ProgressChart: React.FC<ProgressChartProps> = ({
   title,
   data,
@@ -42,7 +40,7 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
   return (
     <View
       style={{
-        width: screenWidth - 40,
+        width: rw(353),
         height: height + 60,
         backgroundColor: colors.background.secondary,
         justifyContent: "center",

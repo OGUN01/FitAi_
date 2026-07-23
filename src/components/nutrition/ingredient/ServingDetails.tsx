@@ -20,7 +20,7 @@ export const ServingDetails: React.FC<ServingDetailsProps> = ({
           {ingredientData.unit || "grams"}
         </Text>
         <Text style={styles.quantityText}>
-          ⚖️ Calories per gram:{" "}
+          ⚖️ Calories per 100g:{" "}
           {(() => {
             const qty = Number(ingredientData.quantity);
             const calsPerUnit = qty > 0 ? (ingredientData.calories / qty) * 100 : null;

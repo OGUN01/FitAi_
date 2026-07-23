@@ -244,6 +244,7 @@ const styles = StyleSheet.create({
   },
   currentWeight: {
     alignItems: 'flex-start',
+    flexShrink: 0,
   },
   weightValue: {
     fontSize: rf(24),
@@ -263,9 +264,11 @@ const styles = StyleSheet.create({
   chartContainer: {
     flex: 1,
     alignItems: 'center',
+    minWidth: 0,
   },
   goalWeight: {
     alignItems: 'flex-end',
+    flexShrink: 0,
   },
   goalValue: {
     fontSize: rf(18),
@@ -318,7 +321,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.sm,
+    minHeight: 44,
   },
   actionButtonText: {
     fontSize: rf(12),
@@ -363,8 +367,9 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     backgroundColor: colors.primary,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
     borderRadius: borderRadius.full,
+    minHeight: 44,
   },
   startButtonText: {
     fontSize: rf(13),

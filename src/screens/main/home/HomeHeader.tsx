@@ -79,6 +79,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
           hapticType="light"
           accessibilityRole="button"
           accessibilityLabel="Profile"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <LinearGradient
             colors={gradientColors}
@@ -134,6 +135,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
             style={styles.notificationBtn}
             accessibilityRole="button"
             accessibilityLabel="Notifications"
+            hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
           >
             <Ionicons
               name="notifications-outline"
@@ -166,9 +168,9 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   avatarGradient: {
-    width: rs(36),
-    height: rs(36),
-    borderRadius: rs(18),
+    width: rs(40),
+    height: rs(40),
+    borderRadius: rs(20),
     justifyContent: "center",
     alignItems: "center",
     elevation: 4,
@@ -180,6 +182,7 @@ const styles = StyleSheet.create({
   },
   greetingSection: {
     flex: 1,
+    minWidth: 0,
   },
   greetingRow: {
     flexDirection: "row",
@@ -229,9 +232,9 @@ const styles = StyleSheet.create({
     color: colors.errorLight,
   },
   notificationBtn: {
-    width: rs(36),
-    height: rs(36),
-    borderRadius: rs(18),
+    width: rs(40),
+    height: rs(40),
+    borderRadius: rs(20),
     backgroundColor: colors.glassBorder,
     justifyContent: "center",
     alignItems: "center",

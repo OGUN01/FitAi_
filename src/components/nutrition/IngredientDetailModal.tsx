@@ -6,13 +6,12 @@ import {
   Modal,
   TouchableOpacity,
   ScrollView,
-  Dimensions,
   SafeAreaView,
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../theme/aurora-tokens";
-import { rf, rp, rbr, rh } from "../../utils/responsive";
+import { rf, rp, rw, rbr, rh } from "../../utils/responsive";
 import { DayMeal } from "../../types/ai";
 import { completionTrackingService } from "../../services/completionTracking";
 import { mealMotivationService } from "../../features/nutrition/MealMotivation";
@@ -26,8 +25,6 @@ interface IngredientDetailModalProps {
   onMealComplete?: (mealId: string) => void;
   mealProgress?: number;
 }
-
-const { width: screenWidth } = Dimensions.get("window");
 
 export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
   visible,
@@ -117,6 +114,16 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
     );
   }
 
+  // Percentage of calories each macro contributes — guarded against
+  // divide-by-zero so a 0-calorie ingredient renders nothing instead of
+  // NaN/Infinity. Defined after the !ingredientData early return so the
+  // closure captures a narrowed (non-null) ingredientData.
+  const macroPercent = (grams: number, kcalPerGram: number) => {
+    const cals = ingredientData.calories;
+    if (!cals || !Number.isFinite(cals) || cals <= 0) return undefined;
+    return ((grams * kcalPerGram) / cals) * 100;
+  };
+
   return (
     <Modal
       visible={visible}
@@ -186,33 +193,21 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
                 value={ingredientData.macros?.protein || 0}
                 unit="g"
                 color="#4ECDC4"
-                percentage={
-                  (((ingredientData.macros?.protein || 0) * 4) /
-                    ingredientData.calories) *
-                  100
-                }
+                percentage={macroPercent(ingredientData.macros?.protein || 0, 4)}
               />
               <NutritionRow
                 label="Carbohydrates"
                 value={ingredientData.macros?.carbohydrates || 0}
                 unit="g"
                 color="#45B7D1"
-                percentage={
-                  (((ingredientData.macros?.carbohydrates || 0) * 4) /
-                    ingredientData.calories) *
-                  100
-                }
+                percentage={macroPercent(ingredientData.macros?.carbohydrates || 0, 4)}
               />
               <NutritionRow
                 label="Fat"
                 value={ingredientData.macros?.fat || 0}
                 unit="g"
                 color="#96CEB4"
-                percentage={
-                  (((ingredientData.macros?.fat || 0) * 9) /
-                    ingredientData.calories) *
-                  100
-                }
+                percentage={macroPercent(ingredientData.macros?.fat || 0, 9)}
               />
               <NutritionRow
                 label="Fiber"
@@ -230,9 +225,11 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
               <Text style={styles.contextText}>🍽️ Part of: {meal.name}</Text>
               <Text style={styles.contextText}>
                 📊 Contributes{" "}
-                {Math.round(
-                  (ingredientData.calories / meal.totalCalories) * 100,
-                )}
+                {meal.totalCalories > 0
+                  ? Math.round(
+                      (ingredientData.calories / meal.totalCalories) * 100,
+                    )
+                  : 0}
                 % of total calories
               </Text>
               <Text style={styles.contextText}>
@@ -252,7 +249,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
                 {ingredientData.unit || "grams"}
               </Text>
               <Text style={styles.quantityText}>
-                ⚖️ Calories per gram:{" "}
+                ⚖️ Calories per 100g:{" "}
                 {(() => {
                   const qty = Number(ingredientData.quantity);
                   const calsPerUnit = qty > 0 ? (ingredientData.calories / qty) * 100 : null;
@@ -375,7 +372,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: rbr(16),
     padding: spacing.lg,
-    width: screenWidth - rp(40),
+    // Constrain to the phone-width column (rw clamps at 480 on web/tablet).
+    // rp(40) reserves horizontal margin so the modal never touches the edges.
+    width: rw(393) - rp(40),
+    maxWidth: "92%",
     maxHeight: rh(682),
   },
   header: {

@@ -91,7 +91,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     realCaloriesBurned,
     currentSteps,
     currentStepsSource,
-    actualCaloriesGoal,
     todaysWorkoutInfo,
     todaysData,
     caloriesConsumed,
@@ -108,6 +107,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     syncHealthData,
     syncFromHealthConnect,
   } = useHomeLogic();
+
+  // createQuickActions needs per-platform auth flags. useHomeLogic exports
+  // `wearableConnected` (= isHealthKitAuthorized || isHealthConnectAuthorized)
+  // but not the individual flags, and we must not edit the orchestrator.
+  // Per-platform this is equivalent: on iOS only HealthKit can be authorized
+  // (so wearableConnected == isHealthKitAuthorized); on Android only Health
+  // Connect (so wearableConnected == isHealthConnectAuthorized). Passing
+  // wearableConnected to both is therefore semantically correct per platform
+  // and avoids the prior derivation from healthMetrics.sources (which only
+  // reflects whether sync ever produced a snapshot, not authorization state).
+  const isHealthKitAuthorized = wearableConnected;
+  const isHealthConnectAuthorized = wearableConnected;
 
   // Achievement data
   const achievements = useAchievementStore((s) => s.achievements);
@@ -168,8 +179,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   const quickActions = React.useMemo(
     () =>
       createQuickActions({
-        isHealthKitAuthorized: healthMetrics?.sources ? true : false,
-        isHealthConnectAuthorized: healthMetrics?.sources ? true : false,
+        isHealthKitAuthorized,
+        isHealthConnectAuthorized,
         syncHealthData:
           Platform.OS === 'web'
             ? async () => {
@@ -198,7 +209,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         onScanLabel: () => onNavigateToTab?.('diet', { openLabelScanPrep: true }),
         onRecipes: () => onNavigateToTab?.('diet', { openCreateRecipe: true }),
       }),
-    [healthMetrics, setShowWeightModal, onNavigateToTab, syncHealthData, syncFromHealthConnect]
+    [wearableConnected, setShowWeightModal, onNavigateToTab, syncHealthData, syncFromHealthConnect]
   );
 
   // Reanimated entrance fade — shared value driven from useHomeLogic.
@@ -260,6 +271,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 onProfilePress={handleProfilePress}
                 onNotificationPress={handleNotificationPress}
                 onStreakPress={handleStreakPress}
+                // TODO: notificationStore.getScheduledCount() is async — wire a
+                // synchronous unread count accessor there and pass it here so the
+                // badge can show. Until then pass 0 (badge stays hidden).
+                notificationCount={0}
               />
 
               {/* Error Banner */}
@@ -283,16 +298,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   sleepHours={healthMetrics?.sleepHours}
                   sleepQuality={healthMetrics?.sleepQuality} // NO FALLBACK - single source
                   restingHeartRate={healthMetrics?.restingHeartRate}
-                  hrTrend={
-                    healthMetrics?.restingHeartRate && healthMetrics.restingHeartRate < 65
-                      ? 'down'
-                      : 'stable'
-                  }
-                  steps={healthMetrics?.steps}
+                  // No real trend available from a single snapshot — omit hrTrend
+                  // so MetricItem doesn't render a misleading trend arrow based
+                  // on a <65 bpm threshold masquerading as "trending down".
+                  steps={currentSteps} // Freshness-gated (today's synced snapshot only)
                   stepsGoal={healthMetrics?.stepsGoal} // NO HARDCODED - from healthDataStore
                   activeCalories={healthMetrics?.activeCalories} // NO FALLBACK - single source
                   onPress={handleHealthHubPress}
-                  onDetailPress={handleHealthHubPress}
+                  // All per-metric detail taps route to the same analytics tab —
+                  // omitted onDetailPress so individual metric taps don't imply
+                  // distinct destinations.
                 />
               </View>
 

@@ -73,6 +73,15 @@ export async function signInWithGoogleWeb(): Promise<GoogleSignInResult> {
       };
     }
 
+    // Supabase returns the OAuth URL in data.url. On web, explicitly navigate
+    // to it rather than relying on the SDK's implicit browser redirect, which
+    // is unreliable across Expo web bundles — without this the call resolves
+    // { success: true } but the browser never leaves the page, so sign-in
+    // appears to do nothing.
+    if (data?.url) {
+      window.location.assign(data.url);
+    }
+
     return {
       success: true,
     };

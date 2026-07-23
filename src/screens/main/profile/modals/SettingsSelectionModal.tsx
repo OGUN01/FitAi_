@@ -82,9 +82,9 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
                     <Ionicons name={icon} size={rf(22)} color={iconColor} />
                   </View>
                   <View style={styles.headerText}>
-                    <Text style={styles.title}>{title}</Text>
+                    <Text style={styles.title} numberOfLines={1}>{title}</Text>
                     {subtitle && (
-                      <Text style={styles.subtitle}>{subtitle}</Text>
+                      <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>
                     )}
                   </View>
                   <AnimatedPressable
@@ -224,6 +224,7 @@ const styles = StyleSheet.create({
   },
   headerText: {
     flex: 1,
+    minWidth: 0,
   },
   title: {
     fontSize: rf(18),
@@ -279,6 +280,7 @@ const styles = StyleSheet.create({
   },
   optionContent: {
     flex: 1,
+    minWidth: 0,
   },
   optionLabel: {
     fontSize: rf(15),

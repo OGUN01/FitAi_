@@ -147,6 +147,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
           hapticType="light"
           accessibilityRole="button"
           accessibilityLabel="View all achievements"
+          hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
         >
           <View style={styles.viewAllBtn}>
             <Text style={styles.viewAllText}>View All</Text>

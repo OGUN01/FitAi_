@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -90,6 +90,8 @@ export const MealSuggestions: React.FC = () => {
   const personalInfo = useProfileStore((s) => s.personalInfo);
   const dietPreferences = useProfileStore((s) => s.dietPreferences);
   const addDailyMeal = useNutritionStore((s) => s.addDailyMeal);
+  const setDailyMeals = useNutritionStore((s) => s.setDailyMeals);
+  const dailyMeals = useNutritionStore((s) => s.dailyMeals);
 
   const suggestions = useMemo<MealSuggestion[]>(() => {
     const country = personalInfo?.country ?? "global";
@@ -112,6 +114,12 @@ export const MealSuggestions: React.FC = () => {
     Record<number, Animated.Value>
   >({});
   const [addedToPlan, setAddedToPlan] = useState<Set<number>>(new Set());
+  // Tracks the created dailyMeal id for each suggestion so "Log this" can flip
+  // it from planned (no loggedAt) to logged (loggedAt set) without a duplicate.
+  const [loggedSuggestionIds, setLoggedSuggestionIds] = useState<Set<number>>(
+    new Set(),
+  );
+  const suggestionMealIdRef = useRef<Record<number, string>>({});
 
   const getCardFlipState = (cardId: number): Animated.Value => {
     if (!cardFlipStates[cardId]) {
@@ -158,8 +166,10 @@ export const MealSuggestions: React.FC = () => {
     // Suggestions stay visible on today's plan, but they should not count as consumed
     // nutrition until the user actually logs the meal.
     const now = new Date().toISOString();
+    const mealId = `suggestion_${suggestionId}_${Date.now()}`;
+    suggestionMealIdRef.current[suggestionId] = mealId;
     const meal: Meal = {
-      id: `suggestion_${suggestionId}_${Date.now()}`,
+      id: mealId,
       type: 'snack',
       name: suggestion.name,
       items: [],
@@ -185,6 +195,39 @@ export const MealSuggestions: React.FC = () => {
         `${suggestion.name} has been added as a planned meal suggestion`,
       );
     }, 500);
+  };
+
+  // Flip a planned suggestion into a logged meal by setting loggedAt in place.
+  // Mirrors completionTrackingService.completeMeal's store update (addDailyMeal
+  // with loggedAt), but reuses the existing dailyMeals entry instead of
+  // inserting a duplicate. Triggers a nutrition refresh so calorie rings update.
+  const handleLogSuggestion = (suggestionId: number, suggestion: MealSuggestion) => {
+    const mealId = suggestionMealIdRef.current[suggestionId];
+    if (!mealId) return;
+    const loggedAt = new Date().toISOString();
+    setDailyMeals(
+      dailyMeals.map((m) =>
+        m.id === mealId
+          ? {
+              ...m,
+              loggedAt,
+              updatedAt: loggedAt,
+              tags: (m.tags ?? []).includes("logged")
+                ? m.tags
+                : [...(m.tags ?? []), "logged"],
+            }
+          : m,
+      ),
+    );
+    setLoggedSuggestionIds((prev) => new Set(prev).add(suggestionId));
+    haptics.medium();
+    import("../../services/nutritionRefreshService")
+      .then(({ nutritionRefreshService }) => nutritionRefreshService.triggerRefresh())
+      .catch(() => {});
+    crossPlatformAlert(
+      "Meal Logged",
+      `${suggestion.name} has been logged — your nutrition totals are updated.`,
+    );
   };
 
   const handleDismissSuggestion = (suggestionId: number) => {
@@ -269,6 +312,7 @@ export const MealSuggestions: React.FC = () => {
             const panResponder = createSuggestionPanResponder(suggestion.id);
             const swipeState = getSuggestionSwipeState(suggestion.id);
             const isAdded = addedToPlan.has(suggestion.id);
+            const isLogged = loggedSuggestionIds.has(suggestion.id);
             // Ensure flip state is created/retrieved before render
             const flipValue = getCardFlipState(suggestion.id);
             const addBtnBg = flipValue.interpolate({
@@ -299,24 +343,42 @@ export const MealSuggestions: React.FC = () => {
                     <Text style={styles.suggestionMacros}>
                       {suggestion.calories} cal | {suggestion.protein}g P | {suggestion.carbs}g C | {suggestion.fat}g F
                     </Text>
-                    <AnimatedPressable
-                      style={[
-                        styles.addToPlanButton,
-                        isAdded ? styles.addToPlanButtonAdded : undefined,
-                      ] as StyleProp<ViewStyle>}
-                      onPress={() =>
-                        handleAddToPlan(suggestion.id, suggestion)
-                      }
-                      disabled={isAdded}
-                    >
-                      <Animated.View style={[
-                        StyleSheet.absoluteFill,
-                        { backgroundColor: addBtnBg, borderRadius: borderRadius.md },
-                      ]} />
-                      <Text style={styles.addToPlanButtonText}>
-                        {isAdded ? "Logged" : "Log"}
-                      </Text>
-                    </AnimatedPressable>
+                    <View style={styles.buttonRow}>
+                      <AnimatedPressable
+                        style={[
+                          styles.addToPlanButton,
+                          isAdded ? styles.addToPlanButtonAdded : undefined,
+                        ] as StyleProp<ViewStyle>}
+                        onPress={() =>
+                          handleAddToPlan(suggestion.id, suggestion)
+                        }
+                        disabled={isAdded}
+                      >
+                        <Animated.View style={[
+                          StyleSheet.absoluteFill,
+                          { backgroundColor: addBtnBg, borderRadius: borderRadius.md },
+                        ]} />
+                        <Text style={styles.addToPlanButtonText}>
+                          {isAdded ? "Added" : "Add to Plan"}
+                        </Text>
+                      </AnimatedPressable>
+                      {isAdded && !isLogged && (
+                        <AnimatedPressable
+                          style={styles.logButton as StyleProp<ViewStyle>}
+                          onPress={() =>
+                            handleLogSuggestion(suggestion.id, suggestion)
+                          }
+                          scaleValue={0.95}
+                        >
+                          <Text style={styles.logButtonText}>Log this</Text>
+                        </AnimatedPressable>
+                      )}
+                      {isLogged && (
+                        <View style={styles.loggedBadge}>
+                          <Text style={styles.loggedBadgeText}>✓ Logged</Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
                 </GlassCard>
               </Animated.View>
@@ -353,7 +415,13 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginBottom: spacing.sm,
   },
+  buttonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
   addToPlanButton: {
+    flex: 1,
     backgroundColor: colors.primary.DEFAULT,
     borderRadius: borderRadius.md,
     paddingVertical: spacing.xs,
@@ -369,6 +437,32 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     fontWeight: "600",
     zIndex: 1,
+  },
+  logButton: {
+    backgroundColor: "#22c55e",
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logButtonText: {
+    color: "#ffffff",
+    fontSize: fontSize.xs,
+    fontWeight: "700",
+  },
+  loggedBadge: {
+    backgroundColor: "#16a34a",
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loggedBadgeText: {
+    color: "#ffffff",
+    fontSize: fontSize.xs,
+    fontWeight: "700",
   },
   emptyState: {
     paddingVertical: spacing.xl,

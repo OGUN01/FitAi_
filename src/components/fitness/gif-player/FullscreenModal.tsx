@@ -6,11 +6,10 @@ import {
   TouchableOpacity,
   Modal,
   StatusBar,
-  Dimensions,
 } from "react-native";
 import { Image } from "expo-image";
 import { spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
-import { rf, rp, rbr, rs } from "../../../utils/responsive";
+import { rf, rp, rbr, rs, dimensions } from "../../../utils/responsive";
 
 interface FullscreenModalProps {
   visible: boolean;
@@ -25,9 +24,12 @@ export const FullscreenModal: React.FC<FullscreenModalProps> = ({
   gifUrl,
   displayName,
 }) => {
-  const screenDimensions = Dimensions.get("window");
-  const modalWidth = screenDimensions.width * 0.9;
-  const modalHeight = screenDimensions.height * 0.7;
+  // Use the clamped dimensions from responsive.ts so the GIF stays phone-sized
+  // on web/desktop (capped to 480x900) instead of sizing against a 1920x1080
+  // browser window. The fullscreen dark overlay itself (flex:1) still covers
+  // the whole viewport; only the inset image is clamped.
+  const modalWidth = dimensions.screenWidth * 0.9;
+  const modalHeight = dimensions.screenHeight * 0.7;
 
   return (
     <Modal

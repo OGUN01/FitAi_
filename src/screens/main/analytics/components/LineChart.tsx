@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet, useWindowDimensions } from "react-native";
+import { View, Text, StyleSheet, LayoutChangeEvent } from "react-native";
 import {
   useSharedValue,
   useAnimatedProps,
@@ -56,10 +56,23 @@ export const LineChart: React.FC<LineChartProps> = ({
   const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
   const animationProgress = useSharedValue(0);
   const glowIntensity = useSharedValue(0);
-  const { width: screenWidth } = useWindowDimensions();
 
-  // Chart dimensions — dynamic width based on screen size
-  const CHART_WIDTH = screenWidth - rw(60); // 30px padding each side
+  // Measure the actual container width so the SVG chart fits inside the
+  // centered 480px app column on web/tablet. Using useWindowDimensions() here
+  // returned the full desktop window width (e.g. 1920px), making the chart
+  // massively overflow the phone-width column.
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const handleLayout = (e: LayoutChangeEvent) => {
+    const { width } = e.nativeEvent.layout;
+    if (width > 0) {
+      setContainerWidth(width);
+    }
+  };
+
+  // Chart dimensions — use measured container width (clamped to the 480px
+  // app column on web/tablet via responsive.ts). Fall back to a phone-sized
+  // estimate until layout fires so the first paint isn't zero-width.
+  const CHART_WIDTH = containerWidth > 0 ? containerWidth : rw(300);
   const CHART_HEIGHT = rh(180);
   const PADDING_LEFT = rw(45);
   const PADDING_RIGHT = rw(15);
@@ -154,7 +167,7 @@ export const LineChart: React.FC<LineChartProps> = ({
   const { trend, trendPercent, isPositiveTrend } = calculateTrend(data);
 
   return (
-    <View style={styles.premiumChartContainer}>
+    <View style={styles.premiumChartContainer} onLayout={handleLayout}>
       {/* Stats Header */}
       {showHeader && <View style={styles.chartStatsHeader}>
         <View style={styles.currentValueContainer}>

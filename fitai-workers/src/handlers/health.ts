@@ -136,11 +136,19 @@ export async function handleHealthCheck(c: Context<{ Bindings: Env }>): Promise<
     checkSupabaseHealth(env),
   ]);
 
-  // Determine overall health status
-  const allServicesUp = [kvStatus, r2Status, supabaseStatus].every((s) => s.status === 'up');
-  const anyServiceDown = [kvStatus, r2Status, supabaseStatus].some((s) => s.status === 'down');
+  // Determine overall health status.
+  // Critical services (KV, Supabase) must be up. R2 is non-critical: media storage
+  // is optional, so R2 being down degrades but does not fail the health check.
+  const criticalServices = [kvStatus, supabaseStatus];
+  const anyCriticalDown = criticalServices.some((s) => s.status === 'down');
+  const anyCriticalDegraded = criticalServices.some((s) => s.status === 'degraded');
+  const r2Unhealthy = r2Status.status !== 'up';
 
-  const overallStatus = allServicesUp ? 'healthy' : anyServiceDown ? 'unhealthy' : 'degraded';
+  const overallStatus = anyCriticalDown
+    ? 'unhealthy'
+    : anyCriticalDegraded || r2Unhealthy
+      ? 'degraded'
+      : 'healthy';
 
   // Calculate uptime in seconds
   const uptimeSeconds = Math.floor((Date.now() - WORKER_START_TIME) / 1000);

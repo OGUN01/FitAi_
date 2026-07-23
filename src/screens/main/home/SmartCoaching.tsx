@@ -395,6 +395,7 @@ const styles = StyleSheet.create({
   },
   textContent: {
     flex: 1,
+    minWidth: 0,
   },
   cardTitle: {
     fontSize: rf(13),

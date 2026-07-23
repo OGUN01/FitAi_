@@ -55,6 +55,15 @@ interface NutritionCardProps {
 export const NutritionCard: React.FC<NutritionCardProps> = ({
   ingredientData,
 }) => {
+  // Percentage of calories each macro contributes — guarded against
+  // divide-by-zero so a 0-calorie ingredient renders nothing instead of
+  // NaN/Infinity.
+  const macroPercent = (grams: number, kcalPerGram: number) => {
+    const cals = ingredientData.calories;
+    if (!cals || !Number.isFinite(cals) || cals <= 0) return undefined;
+    return ((grams * kcalPerGram) / cals) * 100;
+  };
+
   return (
     <View style={styles.nutritionCard}>
       <Text style={styles.sectionTitle}>Nutrition Facts</Text>
@@ -74,33 +83,21 @@ export const NutritionCard: React.FC<NutritionCardProps> = ({
           value={ingredientData.macros?.protein || 0}
           unit="g"
           color="#4ECDC4"
-          percentage={
-            (((ingredientData.macros?.protein || 0) * 4) /
-              ingredientData.calories) *
-            100
-          }
+          percentage={macroPercent(ingredientData.macros?.protein || 0, 4)}
         />
         <NutritionRow
           label="Carbohydrates"
           value={ingredientData.macros?.carbohydrates || 0}
           unit="g"
           color="#45B7D1"
-          percentage={
-            (((ingredientData.macros?.carbohydrates || 0) * 4) /
-              ingredientData.calories) *
-            100
-          }
+          percentage={macroPercent(ingredientData.macros?.carbohydrates || 0, 4)}
         />
         <NutritionRow
           label="Fat"
           value={ingredientData.macros?.fat || 0}
           unit="g"
           color="#96CEB4"
-          percentage={
-            (((ingredientData.macros?.fat || 0) * 9) /
-              ingredientData.calories) *
-            100
-          }
+          percentage={macroPercent(ingredientData.macros?.fat || 0, 9)}
         />
         <NutritionRow
           label="Fiber"

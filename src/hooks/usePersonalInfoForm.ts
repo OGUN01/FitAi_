@@ -13,6 +13,11 @@ export const usePersonalInfoForm = ({
   onUpdate,
   validationResult,
 }: UsePersonalInfoFormProps) => {
+  // occupation_type intentionally omitted from form state: the field is deprecated
+  // (activity_level in WorkoutPreferences is the SSOT), there is no UI to collect it,
+  // and the TDEE/validation engine reads activity_level, not occupation_type. By
+  // keeping the key absent here, spreading formData into onUpdate preserves any
+  // pre-existing data.occupation_type value rather than overwriting it with undefined.
   const [formData, setFormData] = useState<PersonalInfoData>({
     first_name: data?.first_name ?? "",
     last_name: data?.last_name ?? "",
@@ -37,6 +42,7 @@ export const usePersonalInfoForm = ({
 
   useEffect(() => {
     if (data && !isSyncingFromProps.current) {
+      // occupation_type intentionally omitted (see useState comment above).
       const newFormData = {
         first_name: data.first_name ?? "",
         last_name: data.last_name ?? "",

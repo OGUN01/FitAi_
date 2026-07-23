@@ -8,7 +8,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Dimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
@@ -20,8 +19,6 @@ import {
   } from "../../hooks/adjustment-wizard";
 import type { Alternative } from "../../hooks/adjustment-wizard/types";
 import { AlternativeCard } from "./wizard/AlternativeCard";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 interface AdjustmentWizardProps {
   visible: boolean;

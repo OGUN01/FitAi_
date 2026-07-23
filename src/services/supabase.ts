@@ -117,13 +117,18 @@ if (!supabaseUrl || !supabaseAnonKey) {
   }
 }
 
-// Create Supabase client with SecureStore for session persistence
+// Create Supabase client with SecureStore for session persistence.
+// detectSessionInUrl: on web, the Supabase SDK must auto-parse the OAuth
+// response from the URL — both the implicit-flow hash fragment
+// (`#access_token=...`) and the PKCE query param (`?code=...`). Without this,
+// Google OAuth redirects back with tokens in the URL but nothing consumes them,
+// so the user stays in guest mode. On native, deep links handle this instead.
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: ExpoSecureStoreAdapter,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,
+    detectSessionInUrl: Platform.OS === "web",
   },
 });
 

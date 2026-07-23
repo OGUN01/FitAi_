@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState, useCallback, useEffect } from "react";
 
 import { View, StyleSheet, ScrollView, Text, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -130,6 +130,16 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
     }
     return bestMatch?.id ?? null;
   }, [selectedCardId, workoutPreferences?.weekly_weight_loss_goal, smartAlternatives]);
+
+  // Auto-surface the AdjustmentWizard whenever validation produces blocking errors.
+  // Without this, the "Complete Setup" button stays disabled (errors.length > 0) but
+  // the wizard never appears (showErrorWizard is initialized false and only toggled
+  // by other paths), leaving the user stuck with no way to resolve the error.
+  useEffect(() => {
+    if (validationResults && validationResults.errors.length > 0) {
+      setShowErrorWizard(true);
+    }
+  }, [validationResults, setShowErrorWizard]);
 
 
   return (
@@ -399,6 +409,7 @@ const styles = StyleSheet.create({
     gap: rp(12),
   },
   errorText: {
+    flex: 1,
     color: colors.error,
     fontSize: rf(14),
     textAlign: "center",

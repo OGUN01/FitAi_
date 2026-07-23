@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { flatColors as colors } from "../../theme/aurora-tokens";
 import { AchievementCategory } from "../../services/achievements/types";
-import { rh, rw, rf, rp, rbr } from "../../utils/responsive";
+import { rh, rw, rf, rbr } from "../../utils/responsive";
 
 interface AchievementCategoryTabsProps {
   selectedCategory: AchievementCategory | "all";
@@ -64,22 +64,22 @@ export const AchievementCategoryTabs: React.FC<
 
 const styles = StyleSheet.create({
   container: {
-    height: rh(6),
-    marginBottom: rh(1),
+    height: rh(48),
+    marginBottom: rh(8),
   },
   scrollContent: {
-    paddingHorizontal: rw(4),
+    paddingHorizontal: rw(16),
     alignItems: "center",
   },
   tab: {
-    paddingHorizontal: rw(4),
-    paddingVertical: rh(0.8),
+    paddingHorizontal: rw(16),
+    paddingVertical: rh(8),
     borderRadius: rbr(20),
-    marginRight: rw(2),
+    marginRight: rw(8),
     backgroundColor: colors.glassSurface,
     borderWidth: 1,
     borderColor: colors.glassHighlight,
-    minHeight: rp(44),
+    minHeight: 44,
     justifyContent: "center" as const,
   },
   selectedTab: {
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   },
   tabText: {
     color: colors.textSecondary,
-    fontSize: rf(1.8),
+    fontSize: rf(14),
     fontWeight: "500",
   },
   selectedTabText: {

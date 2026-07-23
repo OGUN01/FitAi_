@@ -76,7 +76,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
+    minHeight: 44,
   },
   iconContainer: {
     marginRight: spacing.sm,

@@ -262,6 +262,37 @@ export default function App() {
     return () => clearTimeout(timeout);
   }, [isInitialized]);
 
+  // Web Google OAuth callback: Supabase redirects back to /auth/callback with
+  // either a hash fragment (`#access_token=...`, implicit flow) or a query param
+  // (`?code=...`, PKCE flow). The Supabase client is created with
+  // detectSessionInUrl: true on web (see src/services/supabase.ts), so the SDK
+  // auto-parses the tokens/code from the URL on init and establishes the
+  // session. Once the session is set, onAuthStateChange fires SIGNED_IN and
+  // authStore routes the user into the app. Clean the URL after the SDK
+  // consumes it so a refresh doesn't reprocess stale tokens.
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    if (typeof window === "undefined" || !window.location) return;
+
+    const hasHash = window.location.hash.includes("access_token");
+    const hasCode = new URLSearchParams(window.location.search).get("code");
+    if (!hasHash && !hasCode) return;
+
+    // Give the SDK a tick to parse the URL and establish the session, then
+    // strip the token-bearing fragment/query so it doesn't linger in history.
+    const t = setTimeout(() => {
+      try {
+        const cleanUrl =
+          window.location.pathname + window.location.search.replace(/[?&]code=[^&]*/, "").replace(/[?&]state=[^&]*/, "").replace(/[?&]/, "?");
+        window.history.replaceState({}, "", cleanUrl.replace(/#access_token.*/, ""));
+      } catch (error) {
+        console.error("[App] Web OAuth URL cleanup failed:", error);
+      }
+    }, 1500);
+
+    return () => clearTimeout(t);
+  }, []);
+
   // DBUG-005/016 FIX: Reset to WelcomeScreen on sign-out
   // When user becomes null (signed out) while app was initialized,
   // reset showWelcome to true so returning users see the Sign In option
@@ -422,9 +453,6 @@ export default function App() {
     const missingTables: string[] = [];
 
     try {
-      console.warn(`\n🔍 [SYNC DEBUG] verifyDatabaseData START — userId=${userId}`);
-
-
       // Check profiles table
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
@@ -482,8 +510,6 @@ export default function App() {
       }
       if (!advancedReview) missingTables.push("advanced_review");
 
-      console.warn(`  🔍 [SYNC DEBUG] verifyDatabaseData RESULT — hasData=${missingTables.length === 0}, missing=[${missingTables.join(', ')}]`);
-
       return {
         hasData: missingTables.length === 0,
         missingTables,
@@ -502,11 +528,6 @@ export default function App() {
     const savedTables: string[] = [];
 
     try {
-      console.warn(`\n${'='.repeat(60)}`);
-      console.warn(`🔄 [SYNC DEBUG] syncLocalToDatabase START — userId=${userId}`);
-      console.warn(`${'='.repeat(60)}`);
-
-
       // Load from onboarding_data (primary source used by useOnboardingState)
       const onboardingDataStr = await AsyncStorage.getItem("onboarding_data");
       if (!onboardingDataStr) {
@@ -515,8 +536,6 @@ export default function App() {
       }
 
       const onboardingData = JSON.parse(onboardingDataStr);
-
-      console.warn(`  📋 Local data found: PI=${!!onboardingData.personalInfo} DP=${!!onboardingData.dietPreferences} BA=${!!onboardingData.bodyAnalysis} WP=${!!onboardingData.workoutPreferences} AR=${!!onboardingData.advancedReview}`);
 
       // CONFLICT RESOLUTION: Check if database already has data
       const existingProfile = await PersonalInfoService.load(userId);
@@ -532,8 +551,6 @@ export default function App() {
         existingWorkout ||
         existingAdvanced
       );
-
-      console.warn(`  🔍 Remote data exists: Profile=${!!existingProfile} Diet=${!!existingDiet} Body=${!!existingBody} Workout=${!!existingWorkout} Advanced=${!!existingAdvanced}`);
 
       if (hasRemoteData) {
 
@@ -649,8 +666,6 @@ export default function App() {
 
       // Success if personal info saved (minimum requirement)
       const hasMinimumData = savedTables.includes("profiles");
-      console.warn(`✅ [SYNC DEBUG] syncLocalToDatabase COMPLETE — saved=[${savedTables.join(', ')}], errors=${errors.length}, success=${hasMinimumData}`);
-      console.warn(`${'='.repeat(60)}\n`);
       return {
         success: hasMinimumData,
         errors,
@@ -723,19 +738,6 @@ export default function App() {
 
     const loadExistingData = async () => {
       if (!isInitialized) return;
-
-      console.warn(`\n${'='.repeat(60)}`);
-      console.warn(`🚀 [APP DEBUG] loadExistingData START`);
-      console.warn(`${'='.repeat(60)}`);
-      console.warn(`  👤 user=${user?.id || 'null'} | isGuestMode=${isGuestMode} | guestId=${guestId} | hasProfile=${!!profile}`);
-
-      // 🔍 DEBUG: Check if onboarding_data survives to this point
-      try {
-        const onboardingDataCheck = await AsyncStorage.getItem('onboarding_data');
-        console.warn(`  🔍 [APP DEBUG] onboarding_data at loadExistingData START: ${onboardingDataCheck ? 'EXISTS (' + onboardingDataCheck.length + ' chars)' : 'NULL/MISSING'}`);
-      } catch(e) {
-        console.warn('  🔍 [APP DEBUG] Could not check onboarding_data:', e);
-      }
 
       // Only show loading spinner for authenticated users who need profile checks.
       // Unauthenticated users resolve quickly — no need to re-show the spinner.
@@ -1088,14 +1090,6 @@ export default function App() {
   };
 
   const handleOnboardingComplete = async (data: OnboardingReviewData) => {
-
-    console.warn(`\n${'='.repeat(60)}`);
-    console.warn(`📱 [APP DEBUG] handleOnboardingComplete called`);
-    console.warn(`${'='.repeat(60)}`);
-    console.warn(`👤 User: ${user?.id || 'guest'} | GuestMode: ${isGuestMode} | GuestId: ${guestId}`);
-    console.warn(`📋 Data received:`, JSON.stringify(data, null, 2));
-    console.warn(`${'='.repeat(60)}\n`);
-
     try {
       // Ensure guest mode is enabled if not authenticated
       if (!user && !isGuestMode) {
@@ -1108,14 +1102,6 @@ export default function App() {
 
       // Convert to profile format and store in userStore for persistence
       const userProfile = convertOnboardingToProfile(data, guestId);
-
-      console.warn(`\n📱 [APP DEBUG] Profile converted from onboarding:`);
-      console.warn(`  Name: ${userProfile.personalInfo?.name}`);
-      console.warn(`  Age: ${(userProfile.personalInfo as any)?.age} | Gender: ${(userProfile.personalInfo as any)?.gender}`);
-      console.warn(`  Goals: [${(userProfile.fitnessGoals as any)?.primary_goals?.join(', ') || 'none'}]`);
-      console.warn(`  Height: ${(userProfile.bodyMetrics as any)?.height_cm}cm | Weight: ${(userProfile.bodyMetrics as any)?.current_weight_kg}kg`);
-      console.warn(`  Diet: ${(userProfile.dietPreferences as any)?.diet_type}`);
-      console.warn(`  Workout: ${(userProfile.workoutPreferences as any)?.location} | ${(userProfile.workoutPreferences as any)?.intensity}`);
 
       setProfile(userProfile);
 
@@ -1175,7 +1161,6 @@ export default function App() {
       await dataBridge.loadAllData(user?.id);
 
       // Set complete flag LAST after all async operations finish
-      console.warn(`✅ [APP DEBUG] Onboarding complete — transitioning to MainNavigation`);
       setIsOnboardingComplete(true);
     } catch (error) {
       console.error("❌ App: Failed to store onboarding data:", error);
@@ -1249,7 +1234,7 @@ export default function App() {
         <GluestackUIProvider config={config}>
           <ThemeProvider>
           <ErrorBoundary>
-            <View style={styles.container}>
+            <View style={styles.appColumn}>
               <StatusBar
                 style="light"
                 translucent
@@ -1330,6 +1315,17 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background.DEFAULT,
+  },
+  // WEB/TABLET RESPONSIVE: Render the app as a centered phone-width column on
+  // large screens instead of stretching phone-UI across a 1920px desktop. This
+  // is the companion to the widthScale clamp in src/utils/responsive.ts. On
+  // native (phone) the constraint is never hit so behavior is unchanged.
+  appColumn: {
+    flex: 1,
+    maxWidth: 480,
+    width: "100%",
+    alignSelf: "center",
     backgroundColor: colors.background.DEFAULT,
   },
   loadingContainer: {

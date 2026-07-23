@@ -168,7 +168,7 @@ export class DietPreferencesService {
     try {
       const dietData: Partial<DietPreferencesRow> = {
         user_id: userId,
-        diet_type: data.diet_type ?? "non-veg", // NOT NULL - constraint: vegetarian|vegan|non-veg|non_veg|pescatarian
+        diet_type: data.diet_type ?? "balanced", // NOT NULL - constraint: vegetarian|vegan|non-veg|non_veg|pescatarian|balanced. Default matches onboarding form (useDietPreferences)
         allergies: data.allergies || [], // NOT NULL - default to empty array
         restrictions: data.restrictions || [], // NOT NULL - default to empty array
         cuisine_preferences: data.cuisine_preferences ?? [],
@@ -260,7 +260,7 @@ export class DietPreferencesService {
       }
 
       const dietPreferences: DietPreferencesData = {
-        diet_type: data.diet_type ?? "non-veg",
+        diet_type: data.diet_type ?? "balanced",
         allergies: data.allergies || [],
         restrictions: data.restrictions || [],
         cuisine_preferences: data.cuisine_preferences || [],
@@ -1119,7 +1119,6 @@ export class OnboardingUtils {
           "Gender selection is required",
           "Country is required",
           "State is required",
-          "Occupation type is required",
         ],
         warnings: [],
         completion_percentage: 0,

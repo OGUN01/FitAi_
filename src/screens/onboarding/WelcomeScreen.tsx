@@ -4,7 +4,8 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Dimensions,
+  Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,8 +18,6 @@ import { rf, rp, rh, rw, rs } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { LoginCredentials } from "../../types/user";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 interface WelcomeScreenProps {
   onGetStarted: () => void;
@@ -68,7 +67,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   const [errors, setErrors] = useState<Partial<LoginCredentials>>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const { login, signInWithGoogle } = useAuth();
+  const { login, signInWithGoogle, resetPassword } = useAuth();
 
   const updateField = (field: keyof LoginCredentials, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -102,7 +101,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     try {
       const result = await login({
         email: formData.email.trim().toLowerCase(),
-        password: formData.password.trim(),
+        password: formData.password,
       });
 
       if (result.success && result.user) {
@@ -128,6 +127,10 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
       if (response.success && response.user) {
         onSignInSuccess();
+      } else if (Platform.OS === "web" && response.success && !response.user) {
+        // Web OAuth is redirect-based: signInWithGoogleWeb() returns success
+        // after initiating the redirect, but the user hasn't completed sign-in
+        // yet. The browser is navigating to Google — don't show a failure alert.
       } else {
         crossPlatformAlert("Sign In Failed", response.error || "Please try again.");
       }
@@ -136,6 +139,37 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       console.error("Google Sign In error:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    let email: string | null = null;
+    if (Platform.OS === 'web') {
+      email = window.prompt('Enter your email address to reset your password:');
+    } else {
+      // On native, pre-fill with current email if available
+      email = formData.email.trim() || null;
+      if (!email) {
+        crossPlatformAlert(
+          'Forgot Password',
+          'Please enter your email address in the Email field first, then tap Forgot Password.',
+        );
+        return;
+      }
+    }
+
+    if (!email || !email.trim()) return;
+
+    try {
+      const result = await resetPassword(email.trim().toLowerCase());
+      crossPlatformAlert(
+        result.success ? 'Password Reset Email Sent' : 'Reset Failed',
+        result.success
+          ? 'Check your inbox for a link to reset your password.'
+          : result.error || 'Unable to send reset email. Please try again.',
+      );
+    } catch (err) {
+      crossPlatformAlert('Error', 'Failed to send reset email. Please try again.');
     }
   };
 
@@ -155,10 +189,15 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     return (
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
         <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ flex: 1 }}
+          >
           <ScrollView
             style={styles.scrollView}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
           >
             <View style={styles.signInHeader}>
               <AnimatedPressable
@@ -226,6 +265,14 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                   error={errors.password}
                 />
 
+                <AnimatedPressable
+                  onPress={handleForgotPassword}
+                  scaleValue={0.97}
+                  style={styles.forgotPasswordContainer}
+                >
+                  <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                </AnimatedPressable>
+
                 <Button
                   title="Sign In"
                   onPress={handleEmailSignIn}
@@ -247,6 +294,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
               </View>
             </View>
           </ScrollView>
+          </KeyboardAvoidingView>
         </SafeAreaView>
       </AuroraBackground>
     );
@@ -531,6 +579,7 @@ const styles = StyleSheet.create({
   },
 
   googleButtonText: {
+    flexShrink: 1,
     color: colors.white,
     fontSize: fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
@@ -563,6 +612,19 @@ const styles = StyleSheet.create({
   signInButton: {
     marginTop: spacing.lg,
     marginBottom: spacing.md,
+  },
+
+  forgotPasswordContainer: {
+    alignSelf: "flex-end",
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
+    padding: spacing.xs,
+  },
+
+  forgotPasswordText: {
+    fontSize: fontSize.sm,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.medium,
   },
 
   footerContainer: {

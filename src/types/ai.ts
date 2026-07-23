@@ -231,7 +231,7 @@ export interface WeeklyWorkoutPlan {
   // Additional properties used in FitnessScreen
   planTitle?: string;
   planDescription?: string;
-  restDays?: number[];
+  restDays?: (number | string)[];
   totalEstimatedCalories?: number;
   duration?: number; // Total duration in minutes for the week
 }

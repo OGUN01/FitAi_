@@ -164,6 +164,7 @@ const styles = StyleSheet.create({
     fontSize: rf(14),
     color: colors.textSecondary,
     paddingRight: spacing.md,
+    flexShrink: 0,
   },
   errorContainer: {
     flexDirection: "row",

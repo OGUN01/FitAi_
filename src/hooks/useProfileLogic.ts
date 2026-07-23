@@ -12,6 +12,7 @@ import { useFitnessStore } from "../stores/fitnessStore";
 import { useHealthDataStore } from "../stores/healthDataStore";
 import { crudOperations } from "../services/crudOperations";
 import { userProfileService } from "../services/userProfile";
+import { resolveCurrentWeightFromStores } from "../services/currentWeight";
 import { getSubscriptionSubtitle as getSubscriptionSubtitleText } from "../utils/subscriptionUi";
 import { buildLegacyProfileAdapter } from "../utils/profileLegacyAdapter";
 import type { SettingItem } from "../screens/main/profile";
@@ -151,8 +152,6 @@ export const useProfileLogic = () => {
 
       // CRITICAL: Clear ALL user data from ALL stores to prevent data leakage
       await clearAllUserData();
-
-      console.log("[ProfileScreen] Logout complete - all user data cleared");
     } catch (error) {
       console.error("[ProfileScreen] Logout error:", error);
       crossPlatformAlert("Error", "Failed to sign out. Please try again.");
@@ -215,9 +214,6 @@ export const useProfileLogic = () => {
       if (cacheKeys.length > 0) {
         await AsyncStorage.multiRemove(cacheKeys);
       }
-      console.log(
-        `[useProfileLogic] Cache cleared (${cacheKeys.length} entries removed)`,
-      );
     } catch (error) {
       console.error("[useProfileLogic] Error clearing cache:", error);
     }
@@ -446,8 +442,14 @@ export const useProfileLogic = () => {
           profile?.fitnessGoals?.primary_goals;
         return !resolvedGoals || resolvedGoals.length === 0;
       case "measurements":
+        // SSOT: height from profileStore.bodyAnalysis; weight from the
+        // canonical cross-store resolver (manual log > body analysis), not
+        // bodyAnalysis.current_weight_kg alone (stale when a manual log exists).
         const height = bodyAnalysis?.height_cm;
-        const weight = bodyAnalysis?.current_weight_kg;
+        const weight =
+          resolveCurrentWeightFromStores({
+            bodyAnalysisWeight: bodyAnalysis?.current_weight_kg ?? null,
+          }).value ?? null;
         return !height || !weight;
       default:
         return false;

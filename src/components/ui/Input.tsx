@@ -118,6 +118,10 @@ export const Input: React.FC<InputProps> = ({
             style={styles.rightIconContainer}
             onPress={onRightIconPress}
             disabled={!onRightIconPress}
+            accessibilityRole="button"
+            accessibilityLabel={
+              secureTextEntry ? "Show password" : "Hide password"
+            }
           >
             {rightIcon}
           </TouchableOpacity>

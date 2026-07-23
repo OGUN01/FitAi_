@@ -4,7 +4,7 @@
  * Provides HTTP client for communicating with Cloudflare Workers backend.
  * Handles authentication, request formatting, response parsing, and error handling.
  *
- * Base URL: https://fitai-workers.sharmaharsh9887.workers.dev
+ * Base URL: https://fitai-workers.fitai-prod.workers.dev
  *
  * Features:
  * - JWT authentication via Supabase
@@ -411,7 +411,7 @@ export class FitAIWorkersClient {
 
   constructor(config: WorkersClientConfig = {}) {
     this.baseUrl =
-      config.baseUrl || "https://fitai-workers.sharmaharsh9887.workers.dev";
+      config.baseUrl || "https://fitai-workers.fitai-prod.workers.dev";
     // Cloudflare Workers Free plan has 30s hard limit; 35s gives a small buffer
     this.timeout = config.timeout || 35000; // 35 seconds
     this.maxRetries = config.maxRetries || 3;

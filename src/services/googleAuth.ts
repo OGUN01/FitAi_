@@ -3,7 +3,6 @@ import type { AuthResponse } from './auth';
 import type { AuthUser } from '../types/user';
 import { Platform } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
-import * as Crypto from 'expo-crypto';
 import Constants from 'expo-constants';
 
 // Conditionally import Google Sign-in only if not in Expo Go
@@ -273,14 +272,11 @@ class GoogleAuthService {
    */
   private async signInWithGoogleWeb(): Promise<GoogleSignInResult> {
     try {
-      // Generate random state for security
-      const state = await Crypto.digestStringAsync(
-        Crypto.CryptoDigestAlgorithm.SHA256,
-        Math.random().toString(),
-        { encoding: Crypto.CryptoEncoding.HEX }
-      );
-
-      // Use Supabase OAuth for web
+      // Use Supabase OAuth for web. Supabase manages the PKCE code_verifier and
+      // OAuth `state` internally — passing a custom `state` in queryParams
+      // overwrites Supabase's own state, so the callback fails with
+      // `bad_oauth_state` / `OAuth state parameter is invalid`. Do NOT add a
+      // custom state here.
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -291,7 +287,6 @@ class GoogleAuthService {
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
-            state,
           },
         },
       });
@@ -304,7 +299,15 @@ class GoogleAuthService {
         };
       }
 
-      // For web, the OAuth flow will handle the redirect
+      // Supabase returns the OAuth URL in data.url. On web, explicitly navigate
+      // to it rather than relying on the SDK's implicit browser redirect, which
+      // is unreliable across Expo web bundles — without this the call resolves
+      // { success: true } but the browser never leaves the page, so sign-in
+      // appears to do nothing.
+      if (data?.url) {
+        window.location.assign(data.url);
+      }
+
       return {
         success: true,
       };

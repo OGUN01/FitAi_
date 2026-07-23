@@ -503,7 +503,7 @@ function generatePlanDescription(split: any, profile: any, warnings: string[], b
 /**
  * Generate gentle movement fallback plan for extreme constraints
  */
-function generateGentleMovementFallback(
+export function generateGentleMovementFallback(
 	request: WorkoutGenerationRequest,
 	warnings: string[],
 	requiresMedicalClearance: boolean,

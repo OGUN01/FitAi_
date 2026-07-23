@@ -12,6 +12,7 @@ import {
   ViewStyle,
 } from "react-native";
 import { Image } from "expo-image"; // ✅ Use Expo Image for GIF animation support
+import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rs } from "../../utils/responsive";
@@ -145,8 +146,13 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
     if (!exercise || !exercise.gifUrl) return null;
 
     const screenDimensions = Dimensions.get("window");
-    const modalWidth = screenDimensions.width * 0.9;
-    const modalHeight = screenDimensions.height * 0.7;
+    // Clamp to the phone-column width on web/tablet so the fullscreen GIF
+    // doesn't balloon to 1728px on a 1920px desktop window. Mirrors the
+    // clamping in src/utils/responsive.ts (effective design width ≤480px).
+    const effectiveWidth = Math.min(screenDimensions.width, 480);
+    const effectiveHeight = Math.min(screenDimensions.height, 900);
+    const modalWidth = effectiveWidth * 0.9;
+    const modalHeight = effectiveHeight * 0.7;
 
     return (
       <Modal
@@ -332,9 +338,11 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
                 accessibilityLabel={isPlaying ? "Pause exercise demonstration" : "Play exercise demonstration"}
               >
                 <View style={styles.playbackButton}>
-                  <Text style={styles.playbackIcon}>
-                    {isPlaying ? "||" : ">"}
-                  </Text>
+                  <Ionicons
+                    name={isPlaying ? "pause" : "play"}
+                    size={rf(16)}
+                    color="white"
+                  />
                 </View>
               </TouchableOpacity>
             )}
@@ -424,10 +432,6 @@ const styles = StyleSheet.create({
     height: Math.max(rs(40), 44),
     justifyContent: "center",
     alignItems: "center",
-  },
-
-  playbackIcon: {
-    fontSize: rf(16),
   },
 
   placeholder: {

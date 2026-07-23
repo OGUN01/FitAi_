@@ -1,9 +1,10 @@
 import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import React from "react";
-import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { GlassCard } from "../../../components/ui/aurora";
 import { AnimatedChart } from "../../../components/ui";
 import { BodyAnalysisData } from "../../../types/onboarding";
+import { dimensions } from "../../../utils/responsive";
 
 interface GoalVisualizationSectionProps {
   formData: BodyAnalysisData;
@@ -51,7 +52,9 @@ export const GoalVisualizationSection: React.FC<
           showProgress={true}
           progressWeeks={formData.target_timeline_weeks || 12}
           width={
-            Dimensions.get("window").width - spacing.lg * 4
+            // Clamped screen width (capped to 480 on web/tablet) so the chart
+            // sizes against the mobile design width, not a 1920px window.
+            dimensions.screenWidth - spacing.lg * 4
           }
           height={280}
           style={styles.goalChart}

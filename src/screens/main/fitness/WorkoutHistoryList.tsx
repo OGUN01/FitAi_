@@ -242,7 +242,7 @@ const WorkoutHistoryCard: React.FC<{
                 <Text style={styles.date}>
                   {getRelativeDate(workout.completedAt)}
                 </Text>
-                <Text style={styles.title} numberOfLines={1}>
+                <Text style={styles.title} numberOfLines={2}>
                   {workout.title}
                 </Text>
                 <Text style={styles.meta}>
@@ -423,6 +423,7 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     flex: 1,
+    minWidth: 0,
   },
   date: {
     fontSize: rf(11),
@@ -442,6 +443,7 @@ const styles = StyleSheet.create({
   },
   statusContainer: {
     alignItems: "flex-end",
+    flexShrink: 0,
   },
   completedBadge: {
     backgroundColor: `${colors.successAlt}25`,

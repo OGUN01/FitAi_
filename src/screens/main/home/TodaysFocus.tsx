@@ -178,6 +178,7 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     flex: 1,
+    minWidth: 0,
   },
   title: {
     fontSize: rf(15),
@@ -211,9 +212,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   actionButton: {
-    width: rw(40),
-    height: rw(40),
-    borderRadius: rw(20),
+    width: rw(44),
+    height: rw(44),
+    borderRadius: rw(22),
     justifyContent: "center",
     alignItems: "center",
   },

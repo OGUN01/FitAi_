@@ -32,24 +32,10 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
   onViewFullCalendar,
 }) => {
   const week = useMemo(() => {
+    // SSOT: do not fabricate workout data when the caller has none. Returning
+    // an empty array renders an empty grid rather than fake Mon-Fri workouts.
     if (weekData && weekData.length === 7) return weekData;
-
-    const today = new Date();
-    const startOfWeek = new Date(today);
-    const dayOfWeek = today.getDay();
-    // Start from Monday (day 1), not Sunday (day 0)
-    startOfWeek.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-
-    return Array.from({ length: 7 }, (_, i) => {
-      const date = new Date(startOfWeek);
-      date.setDate(startOfWeek.getDate() + i);
-      return {
-        date,
-        hasWorkout: i < 5, // Mon-Fri have workouts in fallback
-        workoutCompleted: false,
-        isRestDay: i >= 5, // Sat-Sun are rest days in fallback
-      };
-    });
+    return [] as DayActivity[];
   }, [weekData]);
 
   const stats = useMemo(() => {
@@ -57,6 +43,9 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
     const total = week.filter((d) => d.hasWorkout).length;
     return { completed, total };
   }, [week]);
+
+  // No real week data → render nothing rather than an empty/misleading card.
+  if (week.length === 0) return null;
 
   return (
     <View>
@@ -126,6 +115,7 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
                 hapticFeedback={true}
                 hapticType="light"
                 style={styles.dayWrapper}
+                hitSlop={{ top: 6, bottom: 6, left: 2, right: 2 }}
               >
                 <Text style={[styles.dayLabel, isToday && styles.todayLabel]}>
                   {DAY_LABELS[index]}
@@ -188,8 +178,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   dayWrapper: {
+    flex: 1,
     alignItems: "center",
     gap: rp(4),
+    minHeight: 44,
+    justifyContent: "center",
   },
   dayLabel: {
     fontSize: rf(10),

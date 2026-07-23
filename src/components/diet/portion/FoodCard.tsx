@@ -75,6 +75,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.text,
     flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
   },
   badge: {
     backgroundColor: colors.backgroundTertiary,

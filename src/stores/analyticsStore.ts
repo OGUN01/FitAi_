@@ -186,8 +186,6 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
         set({ isLoading: true });
 
         try {
-          console.log("📊 Initializing analytics store...");
-
           // Initialize analytics engine
           await analyticsEngine.initialize();
 
@@ -238,9 +236,6 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
             isLoading: false,
           });
 
-          console.log(
-            `✅ Analytics store initialized with ${metricsHistory.length} data points`,
-          );
         } catch (error) {
           console.error("❌ Error initializing analytics store:", error);
           set({
@@ -258,8 +253,6 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
       // Add daily fitness metrics
       addDailyMetrics: async (metrics: FitnessMetrics) => {
         try {
-          console.log(`📈 Adding metrics for ${metrics.date}`);
-
           // Add to analytics engine
           await analyticsEngine.addDailyMetrics(metrics);
 

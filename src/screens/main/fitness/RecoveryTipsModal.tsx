@@ -424,17 +424,22 @@ const styles = StyleSheet.create({
   },
   tipTextContainer: {
     flex: 1,
+    minWidth: 0,
   },
   tipHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: rp(4),
+    gap: spacing.sm,
   },
   tipTitle: {
     fontSize: rf(14),
     fontWeight: "700",
     color: colors.text,
+    flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
   },
   durationBadge: {
     flexDirection: "row",
@@ -444,6 +449,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
     paddingVertical: rp(2),
     borderRadius: borderRadius.sm,
+    flexShrink: 0,
   },
   durationText: {
     fontSize: rf(10),

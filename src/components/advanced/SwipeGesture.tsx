@@ -5,15 +5,12 @@ import {
   StyleSheet,
   PanResponder,
   Animated,
-  Dimensions,
   Vibration,
   StyleProp,
   ViewStyle,
 } from "react-native";
 import { flatColors as colors, typography } from "../../theme/aurora-tokens";
 import { rf, rp } from '../../utils/responsive';
-
-const { width: screenWidth } = Dimensions.get("window");
 
 interface SwipeAction {
   id: string;

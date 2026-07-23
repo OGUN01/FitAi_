@@ -310,11 +310,13 @@ const styles = StyleSheet.create({
   },
   headerLeft: {
     flex: 1,
+    minWidth: 0,
   },
   planTitle: {
     fontSize: rf(15),
     fontWeight: "700",
     color: colors.text,
+    flexShrink: 1,
   },
   planSubtitle: {
     fontSize: rf(12),
@@ -325,9 +327,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
+    flexShrink: 0,
   },
   regenerateButton: {
     padding: spacing.xs,
+    minHeight: 44,
+    justifyContent: "center",
   },
   regenerateButtonInner: {
     flexDirection: "row",
@@ -349,6 +354,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: rp(2),
+    minHeight: 44,
+    justifyContent: "center",
   },
   seeAllText: {
     fontSize: rf(12),
@@ -379,9 +386,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   dayCircle: {
-    width: rw(36),
-    height: rw(36),
-    borderRadius: rbr(18),
+    width: Math.max(rw(36), 44),
+    height: Math.max(rw(36), 44),
+    borderRadius: rbr(22),
     backgroundColor: colors.glassSurface,
     justifyContent: "center",
     alignItems: "center",

@@ -7,8 +7,25 @@ const baseHeight = 852;
 // SAFE: Lazy dimension calculation - only called when functions are used
 const getDimensions = () => {
   try {
-    const { width: screenWidth, height: screenHeight } =
+    let { width: screenWidth, height: screenHeight } =
       Dimensions.get("window");
+
+    // WEB/TABLET RESPONSIVE GUARD: On desktop browsers the window can be
+    // 1920px+ wide, which made widthScale = 1920/393 ≈ 4.9 — every rw()/rp()
+    // call blew up ~4.9×, making the whole app giant + cramped (not
+    // mobile-ready). Cap the effective design width at 480px so large screens
+    // render at phone/tablet-app scale (~1.0-1.2×), not desktop-stretched.
+    // The app is a mobile app rendered in a browser; it should look mobile.
+    const isWeb = Platform.OS === "web";
+    const isTablet = screenWidth >= 768;
+    if (isWeb || isTablet) {
+      // Constrain to a phone-like column width for scaling math. The actual
+      // centered max-width container is applied in App.tsx; here we only clamp
+      // the scale factor so tokens stay phone-sized on big screens.
+      screenWidth = Math.min(screenWidth, 480);
+      screenHeight = Math.min(screenHeight, 900);
+    }
+
     const widthScale = screenWidth / baseWidth;
     const heightScale = screenHeight / baseHeight;
     const scale = Math.min(widthScale, heightScale);

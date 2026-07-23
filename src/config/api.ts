@@ -6,7 +6,7 @@ export const API_CONFIG = {
   WORKERS_BASE_URL:
     extra.EXPO_PUBLIC_WORKERS_URL ||
     process.env.EXPO_PUBLIC_WORKERS_URL ||
-    "https://fitai-workers.sharmaharsh9887.workers.dev",
+    "https://fitai-workers.fitai-prod.workers.dev",
 
   WORKOUT_GENERATE_ENDPOINT: "/workout/generate",
   DIET_GENERATE_ENDPOINT: "/diet/generate",

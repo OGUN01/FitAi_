@@ -84,6 +84,8 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
                 >
                   {achievement.title}
                 </Text>
+              </View>
+              <View style={styles.tierRow}>
                 <View style={[styles.tierBadge, { borderColor: tierColor }]}>
                   <Text style={[styles.tierText, { color: tierColor }]}>
                     {achievement.tier.toUpperCase()}
@@ -91,7 +93,7 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
                 </View>
               </View>
 
-              <Text style={styles.description} numberOfLines={2}>
+              <Text style={styles.description}>
                 {achievement.description}
               </Text>
             </View>
@@ -134,7 +136,7 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: rh(1.5),
+    marginBottom: rh(12),
   },
   lockedCard: {
     opacity: 0.7,
@@ -145,19 +147,19 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: rh(1),
+    marginBottom: rh(8),
   },
   iconContainer: {
-    width: rw(12),
-    height: rw(12),
+    width: rw(48),
+    height: rw(48),
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.05)",
-    borderRadius: rw(3),
-    marginRight: rw(3),
+    borderRadius: rw(12),
+    marginRight: rw(12),
   },
   icon: {
-    fontSize: rf(3.5),
+    fontSize: rf(24),
   },
   iconLocked: {
     opacity: 0.5,
@@ -165,47 +167,54 @@ const styles = StyleSheet.create({
   },
   checkBadge: {
     position: "absolute",
-    bottom: -rp(4),
-    right: -rp(4),
+    bottom: -rp(6),
+    right: -rp(6),
     backgroundColor: colors.background,
-    borderRadius: rbr(8),
+    borderRadius: rbr(10),
   },
   info: {
     flex: 1,
+    minWidth: 0,
   },
   titleRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: rh(0.5),
+    marginBottom: rh(4),
+  },
+  tierRow: {
+    flexDirection: "row",
+    marginBottom: rh(6),
   },
   title: {
-    fontSize: rf(1.8),
+    fontSize: rf(16),
     fontWeight: "700",
     color: colors.text,
     flex: 1,
-    marginRight: rw(2),
+    flexWrap: "wrap",
   },
   titleLocked: {
     color: colors.textMuted,
   },
   tierBadge: {
+    alignSelf: "flex-start",
     borderWidth: 1,
-    paddingHorizontal: rw(1.5),
-    paddingVertical: rh(0.2),
+    paddingHorizontal: rw(8),
+    paddingVertical: rh(2),
     borderRadius: rbr(6),
   },
   tierText: {
-    fontSize: rf(1),
+    fontSize: rf(10),
     fontWeight: "800",
+    letterSpacing: 0.5,
   },
   description: {
-    fontSize: rf(1.5),
+    fontSize: rf(13),
     color: colors.textSecondary,
-    lineHeight: rf(2),
+    lineHeight: rf(18),
+    flexShrink: 1,
   },
   progressSection: {
-    marginTop: rh(1),
+    marginTop: rh(8),
   },
   progressBar: {
     flexDirection: "row",
@@ -213,10 +222,10 @@ const styles = StyleSheet.create({
   },
   progressTrack: {
     flex: 1,
-    height: rh(0.6),
+    height: rh(6),
     backgroundColor: "rgba(255,255,255,0.1)",
     borderRadius: rs(3),
-    marginRight: rw(2),
+    marginRight: rw(8),
     overflow: "hidden",
   },
   progressFill: {
@@ -224,16 +233,16 @@ const styles = StyleSheet.create({
     borderRadius: rs(3),
   },
   progressText: {
-    fontSize: rf(1.2),
+    fontSize: rf(11),
     fontWeight: "600",
     color: colors.textTertiary,
-    width: rw(10),
+    width: rw(42),
     textAlign: "right",
   },
   unlockedText: {
-    fontSize: rf(1.2),
+    fontSize: rf(11),
     color: colors.success,
-    marginTop: rh(1),
+    marginTop: rh(8),
     textAlign: "right",
   },
 });

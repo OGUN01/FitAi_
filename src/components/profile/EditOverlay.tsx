@@ -18,7 +18,6 @@ import {
   Modal,
   StyleSheet,
   Animated,
-  Dimensions,
   Pressable,
   StatusBar,
   TouchableOpacity,
@@ -27,9 +26,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useEditContext } from "../../contexts/EditContext";
 import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
-import { rf, rp, rbr } from "../../utils/responsive";
+import { rf, rp, rbr, dimensions } from "../../utils/responsive";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+// Clamped screen height (capped to 900 on web/tablet) so the sheet's
+// slide-animation distance and maxHeight/minHeight fractions size against the
+// mobile design height, not a 1080px desktop window. `dimensions` carries its
+// own fallback when Dimensions is mocked (jest).
+const SCREEN_HEIGHT = dimensions.screenHeight;
 
 interface EditOverlayProps {
   visible: boolean;

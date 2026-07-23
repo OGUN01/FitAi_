@@ -43,7 +43,18 @@ export interface QuickWorkoutsHook {
 export const useQuickWorkouts = (
   navigation: FitnessNavigation,
 ): QuickWorkoutsHook => {
+  // P0: Subscribe to ALL plan inputs so Quick Workouts visibility tracks the
+  // plan the user is actually viewing. getActivePlan() reads these via get()
+  // at call-time, but selecting the function returns a stable reference that
+  // never triggers re-renders — so we select the underlying state and derive
+  // the active plan here, mirroring getActivePlan's logic. Without this,
+  // custom-plan users never saw Quick Workouts even when today's custom
+  // workout was done (isVisible only ever checked weeklyWorkoutPlan).
   const weeklyWorkoutPlan = useFitnessStore((state) => state.weeklyWorkoutPlan);
+  const customWeeklyPlan = useFitnessStore((state) => state.customWeeklyPlan);
+  const activePlanSource = useFitnessStore((state) => state.activePlanSource);
+  const activePlan =
+    activePlanSource === "custom" ? customWeeklyPlan : weeklyWorkoutPlan;
   const completedSessions = useFitnessStore((state) => state.completedSessions);
   const activeExtraSession = useFitnessStore(
     (state) => state.activeExtraSession,
@@ -71,7 +82,7 @@ export const useQuickWorkouts = (
   const [isGenerating, setIsGenerating] = useState(false);
 
   const isVisible = useMemo(() => {
-    if (!weeklyWorkoutPlan?.workouts) return false;
+    if (!activePlan?.workouts) return false;
 
     const todayDayNames = [
       "sunday",
@@ -84,13 +95,13 @@ export const useQuickWorkouts = (
     ];
     const todayName = todayDayNames[new Date().getDay()];
 
-    const hasTodayPlannedWorkout = weeklyWorkoutPlan.workouts.some(
+    const hasTodayPlannedWorkout = activePlan.workouts.some(
       (w) => w.dayOfWeek?.toLowerCase() === todayName,
     );
 
     if (!hasTodayPlannedWorkout) return false;
 
-    const todayWorkouts = weeklyWorkoutPlan.workouts.filter(
+    const todayWorkouts = activePlan.workouts.filter(
       (w) => w.dayOfWeek?.toLowerCase() === todayName,
     );
 
@@ -103,7 +114,7 @@ export const useQuickWorkouts = (
           getLocalDateString(s.completedAt) === getLocalDateString(),
       ),
     );
-  }, [weeklyWorkoutPlan, completedSessions]);
+  }, [activePlan, completedSessions]);
 
   const suggestions = useMemo((): ExtraWorkoutTemplate[] => {
     if (!fitnessGoals?.primary_goals?.length) return [];

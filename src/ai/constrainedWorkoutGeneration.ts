@@ -248,7 +248,7 @@ export const generateConstrainedWorkout = async (
   throw new Error(
     'Client-side AI generation is deprecated. ' +
     'Please use Cloudflare Workers backend at: ' +
-    'https://fitai-workers.sharmaharsh9887.workers.dev/workout/generate'
+    'https://fitai-workers.fitai-prod.workers.dev/workout/generate'
   );
 };
 

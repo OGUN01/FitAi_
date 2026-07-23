@@ -257,6 +257,7 @@ const styles = StyleSheet.create({
     fontSize: rf(12),
     color: colors.text,
     flex: 1,
+    minWidth: 0,
   },
   featuresContainer: {
     width: "100%",

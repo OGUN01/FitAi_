@@ -249,6 +249,7 @@ const styles = StyleSheet.create({
   },
   optionTextContainer: {
     flex: 1,
+    minWidth: 0,
   },
   optionLabel: {
     fontSize: rf(14),

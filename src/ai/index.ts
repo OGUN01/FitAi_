@@ -2,7 +2,7 @@
  * AI Module - Main Entry Point
  *
  * CONNECTED TO CLOUDFLARE WORKERS BACKEND
- * Base URL: https://fitai-workers.sharmaharsh9887.workers.dev
+ * Base URL: https://fitai-workers.fitai-prod.workers.dev
  *
  * Endpoints:
  * - Workout Generation: POST /workout/generate
@@ -963,7 +963,7 @@ class UnifiedAIService {
         mode: "real",
         modelVersion: "google/gemini-2.0-flash-exp",
         message:
-          "✅ Connected to FitAI Workers backend (https://fitai-workers.sharmaharsh9887.workers.dev)",
+          "✅ Connected to FitAI Workers backend (https://fitai-workers.fitai-prod.workers.dev)",
       };
     }
 
@@ -975,7 +975,7 @@ class UnifiedAIService {
         mode: "real",
         modelVersion: "google/gemini-2.0-flash-exp",
         message:
-          "✅ Connected to FitAI Workers backend (https://fitai-workers.sharmaharsh9887.workers.dev)",
+          "✅ Connected to FitAI Workers backend (https://fitai-workers.fitai-prod.workers.dev)",
       };
     }
 

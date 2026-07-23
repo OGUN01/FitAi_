@@ -9,7 +9,6 @@ import {
   Text,
   StyleSheet,
   LayoutChangeEvent,
-  Dimensions,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -19,7 +18,7 @@ import Animated, {
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
-import { rf, rp } from "../../utils/responsive";
+import { rf, rp, dimensions } from "../../utils/responsive";
 
 export type Period = "week" | "month" | "year";
 
@@ -108,7 +107,9 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   );
 };
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+// Clamped screen width (capped to 480 on web/tablet) so the segmented control
+// sizes against the mobile design width, not a 1920px desktop window.
+const SCREEN_WIDTH = dimensions.screenWidth;
 const HORIZONTAL_PADDING = spacing.lg * 2; // Account for parent padding
 
 const styles = StyleSheet.create({

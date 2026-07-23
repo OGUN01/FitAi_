@@ -4,6 +4,7 @@ import { render } from "@testing-library/react-native";
 jest.mock("react-native", () => ({
   View: "View",
   Text: "Text",
+  Pressable: "Pressable",
   StyleSheet: {
     create: (styles: unknown) => styles,
     flatten: (styles: unknown) => {
@@ -59,7 +60,7 @@ jest.mock("@/utils/responsive", () => ({
 import { ProfileHeader } from "@/screens/main/profile/ProfileHeader";
 
 describe("ProfileHeader", () => {
-  it("does not fabricate a join date when memberSince is missing", () => {
+  it("shows a friendly join label when memberSince is missing", () => {
     const screen = render(
       <ProfileHeader
         userName="FitAI Tester"
@@ -68,7 +69,7 @@ describe("ProfileHeader", () => {
       />,
     );
 
-    expect(screen.queryByText("Just joined today")).toBeNull();
+    expect(screen.getByText("Just joined today")).toBeTruthy();
   });
 
   it("shows the provided membership copy when available", () => {

@@ -354,29 +354,31 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
                 <Text style={styles.statUnit}>/{mealsGoal} kcal</Text>
               </Text>
             </View>
-            {/* Steps from Health Connect/HealthKit */}
-            <View style={styles.statRow}>
-              <View
-                style={[styles.statDot, { backgroundColor: RINGS.steps.color }]}
-              />
-              <Ionicons
-                name={RINGS.steps.icon}
-                size={rf(14)}
-                color={RINGS.steps.color}
-              />
-              <View style={styles.statLabelContainer}>
-                <Text style={styles.statLabel}>Steps</Text>
-                {stepsSource?.name ? (
-                  <Text style={styles.sourceLabel}>via {stepsSource.name}</Text>
-                ) : null}
-              </View>
-              <Text style={styles.statValue}>
-                {steps.toLocaleString()}
-                <Text style={styles.statUnit}>
-                  /{stepsGoal.toLocaleString()}
+            {/* Steps from Health Connect/HealthKit — only when wearable data exists */}
+            {hasStepsData ? (
+              <View style={styles.statRow}>
+                <View
+                  style={[styles.statDot, { backgroundColor: RINGS.steps.color }]}
+                />
+                <Ionicons
+                  name={RINGS.steps.icon}
+                  size={rf(14)}
+                  color={RINGS.steps.color}
+                />
+                <View style={styles.statLabelContainer}>
+                  <Text style={styles.statLabel}>Steps</Text>
+                  {stepsSource?.name ? (
+                    <Text style={styles.sourceLabel}>via {stepsSource.name}</Text>
+                  ) : null}
+                </View>
+                <Text style={styles.statValue}>
+                  {steps.toLocaleString()}
+                  <Text style={styles.statUnit}>
+                    /{stepsGoal.toLocaleString()}
+                  </Text>
                 </Text>
-              </Text>
-            </View>
+              </View>
+            ) : null}
           </View>
         </View>
       </GlassCard>
@@ -440,6 +442,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
+    minWidth: 0,
   },
   statDot: {
     width: rw(6),
@@ -448,12 +451,13 @@ const styles = StyleSheet.create({
   },
   statLabelContainer: {
     flex: 1,
+    minWidth: 0,
   },
   statLabel: {
     fontSize: rf(12),
     fontWeight: "600",
     color: colors.text,
-    flex: 1,
+    flexShrink: 1,
   },
   sourceLabel: {
     fontSize: rf(9),
@@ -465,6 +469,7 @@ const styles = StyleSheet.create({
     fontSize: rf(13),
     fontWeight: "700",
     color: colors.text,
+    flexShrink: 0,
   },
   statUnit: {
     fontSize: rf(10),

@@ -195,52 +195,6 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
     [setShowGuestSignUp],
   );
 
-  const calendarWorkoutData = useMemo(() => {
-    const data: Record<
-      string,
-      { hasWorkout: boolean; isCompleted: boolean; isRestDay: boolean }
-    > = {};
-    const dayKeys = [
-      "monday",
-      "tuesday",
-      "wednesday",
-      "thursday",
-      "friday",
-      "saturday",
-      "sunday",
-    ];
-    const restDayIndices = activePlan?.restDays || [];
-    for (const dayKey of dayKeys) {
-      const workout = activePlan?.workouts?.find(
-        (w) => w.dayOfWeek === dayKey,
-      );
-      const dayIndex = dayKeys.indexOf(dayKey);
-      // Handle both number indices (Monday=0) and string day names from AI
-      const isRestDay = restDayIndices.some((d: number | string) =>
-        typeof d === "string" ? d === dayKey : d === dayIndex,
-      );
-      const completedSession = workout
-        ? findCompletedSessionForWorkout({
-            completedSessions: state.completedSessions,
-            workout,
-            plan: activePlan,
-            weekStart: currentWeekStart,
-          })
-        : null;
-      data[dayKey] = {
-        hasWorkout: !!workout && !isRestDay,
-        isCompleted: !!completedSession,
-        isRestDay,
-      };
-    }
-    return data;
-  }, [
-    activePlan,
-    state.workoutProgress,
-    state.completedSessions,
-    currentWeekStart,
-  ]);
-
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top"]}>
@@ -341,8 +295,9 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
               </View>
             )}
 
-            {/* 3. Error State */}
-            {planError && !activePlan && (
+            {/* 3. Error State — shown whenever a plan error exists so
+                regeneration failures surface even when a plan is present. */}
+            {planError && (
               <View style={styles.errorCard}>
                 <Text style={styles.errorTitle}>Plan Generation Failed</Text>
                 <Text style={styles.errorMessage}>{planError}</Text>

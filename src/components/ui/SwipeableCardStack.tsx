@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
   Platform,
   PanResponder,
   StyleProp,
@@ -25,11 +24,11 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
-import { rf, rp, rh, rw } from "../../utils/responsive";
+import { rf, rp, rh, rw, dimensions } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { hapticSwipeAction } from "../../utils/haptics";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const SCREEN_WIDTH = dimensions.screenWidth;
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3;
 
 export interface SwipeableCard {

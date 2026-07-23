@@ -7,15 +7,12 @@ import {
   Image,
 
   ScrollView,
-  Dimensions,
 } from "react-native";
 import * as ImagePickerExpo from "expo-image-picker";
 import { Button, Card, Modal } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rs, rbr } from '../../utils/responsive';
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
-
-const { width: screenWidth } = Dimensions.get("window");
 
 interface ImagePickerProps {
   mode: "single" | "multiple";

@@ -20,8 +20,10 @@ export const MealContext: React.FC<MealContextProps> = ({
         <Text style={styles.contextText}>🍽️ Part of: {meal.name}</Text>
         <Text style={styles.contextText}>
           📊 Contributes{" "}
-          {Math.round((ingredientData.calories / meal.totalCalories) * 100)}% of
-          total calories
+          {meal.totalCalories > 0
+            ? Math.round((ingredientData.calories / meal.totalCalories) * 100)
+            : 0}
+          % of total calories
         </Text>
         <Text style={styles.contextText}>
           💪 Provides {Math.round(ingredientData.macros?.protein || 0)}g of the

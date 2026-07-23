@@ -110,6 +110,7 @@ const styles = StyleSheet.create({
   },
   info: {
     flex: 1,
+    minWidth: 0,
   },
   nameRow: {
     flexDirection: "row",
@@ -147,6 +148,8 @@ const styles = StyleSheet.create({
   footerContent: {
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
+    justifyContent: "center",
   },
   footerText: {
     fontSize: rf(12),

@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     gap: rp(spacing.sm),
   },
   statCardWrapper: {

@@ -190,6 +190,7 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     flex: 1,
+    minWidth: 0,
   },
   providerName: {
     fontSize: rf(15),
@@ -210,6 +211,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.md,
+    flexShrink: 0,
   },
   connectedBadge: {
     backgroundColor: "rgba(76, 175, 80, 0.15)",

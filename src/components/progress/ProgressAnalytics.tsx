@@ -4,14 +4,11 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
   } from "react-native";
 import { Card } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rh, rbr } from "../../utils/responsive";
 import { useProgressData } from "../../hooks/useProgressData";
-
-const { width } = Dimensions.get("window");
 
 interface ProgressAnalyticsProps {
   timeRange?: "week" | "month" | "year";

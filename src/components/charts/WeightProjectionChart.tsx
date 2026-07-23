@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
   LayoutChangeEvent,
   StyleProp,
   ViewStyle,
@@ -16,11 +15,10 @@ import Animated, {
   cancelAnimation,
 } from "react-native-reanimated";
 import Svg, { Path, Circle, Line, G, Text as SvgText } from "react-native-svg";
-import { rf, rp, rh } from "../../utils/responsive";
+import { rf, rp, rh, rw } from "../../utils/responsive";
 import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export interface MilestonePoint {
   week: number;
@@ -56,9 +54,10 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
     setContainerWidth(Math.round(width));
   };
 
-  // Calculate actual width - use container width if available, otherwise fallback
-  const actualWidth =
-    containerWidth > 0 ? containerWidth : Math.round(SCREEN_WIDTH * 0.85);
+  // Calculate actual width - use measured container width if available,
+  // otherwise fall back to a phone-sized estimate (clamped to the 480px app
+  // column on web/tablet via rw()) until onLayout fires.
+  const actualWidth = containerWidth > 0 ? containerWidth : rw(300);
 
   const padding = 40;
   const chartWidth = Math.round(actualWidth - padding * 2);

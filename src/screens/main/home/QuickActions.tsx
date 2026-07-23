@@ -125,7 +125,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ actions }) => {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: rp(spacing.md),
     gap: spacing.md,
   },
   actionItem: {

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Dimensions, PanResponder } from "react-native";
+import { PanResponder } from "react-native";
 import {
   useSharedValue,
   useAnimatedStyle,
@@ -11,9 +11,10 @@ import {
 } from "react-native-reanimated";
 import { PanGestureHandlerGestureEvent } from "react-native-gesture-handler";
 import { hapticSwipeAction } from "../utils/haptics";
+import { dimensions } from "../utils/responsive";
 import { SwipeableCard } from "../components/ui/swipeable/types";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const SCREEN_WIDTH = dimensions.screenWidth;
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3;
 
 interface UseSwipeableCardStackProps {

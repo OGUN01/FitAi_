@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { AuthUser, LoginCredentials, RegisterCredentials } from '../types/user';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { googleAuthService, GoogleSignInResult } from './googleAuth';
 import { migrationManager } from './migrationManager';
@@ -528,7 +529,10 @@ class AuthService {
   async resetPassword(email: string): Promise<AuthResponse> {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: "fitai://auth/reset",
+        redirectTo:
+          Platform.OS === 'web' && typeof window !== 'undefined' && window.location
+            ? `${window.location.origin}/auth/reset`
+            : "fitai://auth/reset",
       });
 
       if (error) {
@@ -564,7 +568,10 @@ class AuthService {
         type: 'signup',
         email,
         options: {
-          emailRedirectTo: 'fitai://auth/verify',
+          emailRedirectTo:
+            Platform.OS === 'web' && typeof window !== 'undefined' && window.location
+              ? `${window.location.origin}/auth/verify`
+              : 'fitai://auth/verify',
         },
       });
 
@@ -676,7 +683,7 @@ class AuthService {
         // Update stored session with refreshed token data
         const authUser = this.buildAuthUser(
           session.user,
-          this.currentSession?.user.lastLoginAt,
+          this.currentSession?.user?.lastLoginAt,
         );
 
         await this.persistSession({

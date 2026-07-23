@@ -137,11 +137,13 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
     setIsLoading(true);
     try {
 
-      // Ensure we trim and normalize the credentials before sending
+      // Ensure we trim and normalize the credentials before sending.
+      // NOTE: password/confirmPassword are NOT trimmed — leading/trailing
+      // spaces may be intentional parts of a real password.
       const trimmedCredentials = {
         email: formData.email.trim().toLowerCase(),
-        password: formData.password.trim(),
-        confirmPassword: formData.confirmPassword.trim(),
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
       };
 
       const result = await register(trimmedCredentials);
@@ -201,7 +203,7 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
 
       const trimmedCredentials = {
         email: formData.email.trim().toLowerCase(),
-        password: formData.password.trim(),
+        password: formData.password,
       };
 
       const result = await login(trimmedCredentials);
