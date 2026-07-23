@@ -27,10 +27,10 @@ export async function processPendingJobs(env: Env): Promise<void> {
 		// 1. Create Supabase client
 		const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
-		// 2. Find oldest pending job
+		// 2. Find oldest pending job (include retry_count so attempts reflects reality)
 		const { data: pendingJobs, error: fetchError } = await supabase
 			.from('meal_generation_jobs')
-			.select('id, user_id, cache_key, generation_params')
+			.select('id, user_id, cache_key, generation_params, retry_count')
 			.eq('status', 'pending')
 			.order('created_at', { ascending: true })
 			.limit(1);
@@ -51,6 +51,12 @@ export async function processPendingJobs(env: Env): Promise<void> {
 		// 2. Import queue consumer and process the job
 		const { consumeDietJobs } = await import('./queueConsumer');
 
+		// attempts is 1-based: first try = 1, first retry = 2, etc.
+		// consumeDietJobs retries only when attempts < 2, so a job that has
+		// already been retried once (retry_count=1 → attempts=2) will be acked
+		// (left as 'failed') instead of looping forever.
+		const attempts = (job.retry_count ?? 0) + 1;
+
 		// Create a mock message batch for the job
 		const mockBatch = {
 			queue: 'fitai-diet-generation-cron',
@@ -58,7 +64,7 @@ export async function processPendingJobs(env: Env): Promise<void> {
 				{
 					id: job.id,
 					timestamp: new Date(),
-					attempts: 1,
+					attempts,
 					body: {
 						jobId: job.id,
 						userId: job.user_id,
@@ -73,7 +79,19 @@ export async function processPendingJobs(env: Env): Promise<void> {
 						console.log(`[CronJobProcessor] Job ${job.id} acknowledged`);
 					},
 					retry: async (options?: { delaySeconds?: number }) => {
-						console.log(`[CronJobProcessor] Job ${job.id} retrying with delay ${options?.delaySeconds || 0}s`);
+						// The queue consumer already marked the job 'failed' + set
+						// retry_count. Reset it to 'pending' so the next cron tick
+						// reprocesses it — otherwise a transient AI error strands the
+						// job in 'failed' forever (free-plan has no real queue retry).
+						console.log(`[CronJobProcessor] Job ${job.id} retrying with delay ${options?.delaySeconds || 0}s — resetting to pending`);
+						try {
+							await supabase
+								.from('meal_generation_jobs')
+								.update({ status: 'pending' })
+								.eq('id', job.id);
+						} catch (resetErr) {
+							console.error(`[CronJobProcessor] Failed to reset job ${job.id} to pending:`, resetErr);
+						}
 					},
 				},
 			],
@@ -114,10 +132,10 @@ export async function processJobsManually(env: Env, limit: number = 5): Promise<
 		// Create Supabase client
 		const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
-		// Find pending jobs
+		// Find pending jobs (include retry_count so attempts reflects reality)
 		const { data: pendingJobs, error: fetchError } = await supabase
 			.from('meal_generation_jobs')
-			.select('id, user_id, cache_key, generation_params')
+			.select('id, user_id, cache_key, generation_params, retry_count')
 			.eq('status', 'pending')
 			.order('created_at', { ascending: true })
 			.limit(limit);
@@ -142,13 +160,15 @@ export async function processJobsManually(env: Env, limit: number = 5): Promise<
 			try {
 				console.log(`[CronJobProcessor] Processing job ${job.id}`);
 
+				const attempts = (job.retry_count ?? 0) + 1;
+
 				const mockBatch = {
 					queue: 'fitai-diet-generation-manual',
 					messages: [
 						{
 							id: job.id,
 							timestamp: new Date(),
-							attempts: 1,
+							attempts,
 							body: {
 								jobId: job.id,
 								userId: job.user_id,
@@ -163,7 +183,16 @@ export async function processJobsManually(env: Env, limit: number = 5): Promise<
 								console.log(`[CronJobProcessor] Job ${job.id} acknowledged`);
 							},
 							retry: async (options?: { delaySeconds?: number }) => {
-								console.log(`[CronJobProcessor] Job ${job.id} retrying`);
+								// Reset to pending so the next cron tick reprocesses it.
+								console.log(`[CronJobProcessor] Job ${job.id} retrying — resetting to pending`);
+								try {
+									await supabase
+										.from('meal_generation_jobs')
+										.update({ status: 'pending' })
+										.eq('id', job.id);
+								} catch (resetErr) {
+									console.error(`[CronJobProcessor] Failed to reset job ${job.id} to pending:`, resetErr);
+								}
 							},
 						},
 					],

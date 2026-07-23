@@ -16,14 +16,14 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import type { Env } from './types';
 
 /**
- * Map Vercel AI Gateway model IDs  (e.g. "google/gemini-2.5-flash")
- * to bare Google model IDs         (e.g. "gemini-2.5-flash")
+ * Map Vercel AI Gateway model IDs  (e.g. "google/gemini-3.5-flash-lite")
+ * to bare Google model IDs         (e.g. "gemini-3.5-flash-lite")
  * when falling back to @ai-sdk/google.
  */
 function toGoogleModelId(modelId: string): string {
-	// "google/gemini-2.5-flash" → "gemini-2.5-flash"
+	// "google/gemini-3.5-flash-lite" → "gemini-3.5-flash-lite"
 	if (modelId.startsWith('google/')) return modelId.slice('google/'.length);
-	// Already bare (e.g. "gemini-2.0-flash-exp")
+	// Already bare (e.g. "gemini-3.5-flash-lite")
 	return modelId;
 }
 
@@ -32,7 +32,7 @@ function toGoogleModelId(modelId: string): string {
  * Automatically selects the best available provider based on env secrets.
  */
 export function createAIProvider(env: Env, modelId?: string) {
-	const model = modelId || 'google/gemini-2.5-flash';
+	const model = modelId || 'google/gemini-3.5-flash-lite';
 
 	// ── Path 1: Vercel AI Gateway ────────────────────────────────────────────
 	if (env.AI_GATEWAY_API_KEY) {

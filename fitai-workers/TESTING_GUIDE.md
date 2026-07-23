@@ -149,7 +149,7 @@ X-RateLimit-Reset: 1699876543
 Success: true
 Cached: false
 Cache Source: fresh
-Model: google:gemini-2.0-flash-001
+Model: google/gemini-3.5-flash-lite
 Generation Time: 2847ms
 AI Generation Time: 2245ms
 Tokens Used: 687
@@ -275,7 +275,7 @@ You should see:
 - `[Filter Layer 2] Body parts: 412 → 156 exercises`
 - `[Filter Layer 3] Experience: 156 → 98 exercises`
 - `[Filter Layer 4] Ranking: 98 → 40 exercises`
-- `[Workout Generation] Calling AI model: google:gemini-2.0-flash-001`
+- `[Workout Generation] Calling AI model: google/gemini-3.5-flash-lite`
 - `[Workout Generation] AI generation complete: { generationTime: 2245ms }`
 - `[Workout Generation] Cached successfully`
 

@@ -34,9 +34,19 @@ function mergeRecentWorkouts(
   const seen = new Set<string>();
   return [...incoming, ...existing]
     .filter((workout) => {
-      const key = `${workout.source}:${workout.id}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
+      // Primary dedup: exact source:id (same provider, same record id).
+      const sourceKey = `${workout.source}:${workout.id}`;
+      // Secondary dedup: a workout FitAI exports to HealthKit/Health Connect
+      // is later read back with a DIFFERENT source:id (e.g. source "FitAI"
+      // id "fitai_hc_<ts>" vs source "HealthConnect" id "<hc uuid>"). They are
+      // the same workout, so collapse on normalized (type, start-minute) — the
+      // fields that are stable across the write-back/read-back round trip.
+      const normalizedType = (workout.type || "").toLowerCase();
+      const normalizedDate = (workout.date || "").slice(0, 16); // ISO → minute
+      const contentKey = `${normalizedType}|${normalizedDate}`;
+      if (seen.has(sourceKey) || seen.has(contentKey)) return false;
+      seen.add(sourceKey);
+      seen.add(contentKey);
       return true;
     })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())

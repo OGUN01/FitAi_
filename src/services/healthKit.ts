@@ -208,24 +208,25 @@ class HealthKitService {
         getWorkouts(options),
       ]);
 
-      // Process heart rate data
-      let heartRate, restingHeartRate, heartRateVariability;
+      // Process heart rate data.
+      // Only the average HR (heartRate) is derived from the HeartRate samples —
+      // that is a legitimate aggregate. restingHeartRate and HRV are NOT
+      // derivable from downsampled HR samples:
+      //  - restingHeartRate must come from the dedicated RestingHeartRate
+      //    record type, not Math.min() of HR samples (that returns the lowest
+      //    single sample, often a sleeping/overnight reading, and would inflate
+      //    the Karvonen heart-rate-reserve in getHeartRateZones).
+      //  - HRV (RMSSD/SDNN) requires beat-to-beat RR-interval data; computing it
+      //    as the mean abs-diff of consecutive HR samples produces a meaningless
+      //    number.
+      // Both are left undefined (CLAUDE.md #8 — no fake values) until a real
+      // query for RestingHeartRate / HeartRateVariabilitySDNN is wired in.
+      let heartRate;
       if (heartRateData && heartRateData.length > 0) {
         const hrValues = heartRateData.map((hr: any) => hr.value);
         heartRate = Math.round(
           hrValues.reduce((a: number, b: number) => a + b, 0) / hrValues.length,
         );
-        restingHeartRate = Math.min(...hrValues);
-
-        // Calculate HRV (simplified)
-        if (hrValues.length > 1) {
-          const diffs = hrValues
-            .slice(1)
-            .map((val: number, i: number) => Math.abs(val - hrValues[i]));
-          heartRateVariability = Math.round(
-            diffs.reduce((a: number, b: number) => a + b, 0) / diffs.length,
-          );
-        }
       }
 
       // Process sleep data
@@ -278,8 +279,9 @@ class HealthKitService {
         steps: steps || 0,
         activeEnergy: activeEnergy || 0,
         heartRate,
-        restingHeartRate,
-        heartRateVariability,
+        // restingHeartRate and heartRateVariability intentionally omitted —
+        // not derivable from HR samples (see comment above). HealthKitData
+        // marks both optional, so they stay undefined here.
         sleepHours,
         sleepQuality: sleepQuality as HealthKitData["sleepQuality"],
         bodyWeight: bodyMass?.value,

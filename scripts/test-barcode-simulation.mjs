@@ -6,11 +6,9 @@
  *   2. OpenFoodFacts India  (in.openfoodfacts.org)
  *   3. UPCitemdb            (all barcodes → product name)
  *   4. USDA FoodData Central name-search
- *   5. Workers AI           (productName → Gemini via Cloudflare AI Gateway)
+ *   5. Workers AI           (REMOVED — barcode is DB-only since 2026-07)
  *
  * Run: node scripts/test-barcode-simulation.mjs
- *
- * Set FITAI_TEST_JWT in scripts/.env to enable the AI estimation step (Step 5).
  */
 
 import { readFileSync, existsSync } from "fs";
@@ -294,35 +292,12 @@ async function queryUSDA(productName) {
   }
 }
 
-// ─── Step 5: Workers /nutrition/barcode-estimate (Gemini via AI Gateway) ─────
+// ─── Step 5: AI estimation (REMOVED — barcode is DB-only as of 2026-07) ─────
+// The /nutrition/barcode-estimate endpoint was removed; barcode flow is now
+// OpenFoodFacts-only. This function is retained as a no-op so the pipeline
+// below still runs but skips the AI step, falling through to DB-only results.
 async function queryWorkersNutrition(productName, brand, country) {
-  if (!TEST_JWT) return null;
-  try {
-    const res = await withTimeout(
-      fetch(`${WORKERS_BASE}/nutrition/barcode-estimate`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${TEST_JWT}`,
-        },
-        body: JSON.stringify({ productName, brand, country }),
-      }),
-      15000,
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (!data.success || !data.data) return null;
-    const d = data.data;
-    return {
-      calories: d.calories,
-      protein: d.protein,
-      carbs: d.carbs,
-      fat: d.fat,
-      confidence: d.confidence,
-    };
-  } catch {
-    return null;
-  }
+  return null;
 }
 
 // ─── Full pipeline (mirrors freeNutritionAPIs.searchByBarcode) ───────────────

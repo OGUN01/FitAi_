@@ -194,15 +194,15 @@ describe("useAIMealGeneration", () => {
         outcome: "weak_data",
         product: {
           ...product,
-          confidence: 40,
-          isAIEstimated: true,
-          source: "openfoodfacts+gemini-estimation",
+          confidence: 50,
+          needsNutritionEstimate: true,
+          source: "openfoodfacts",
         },
         meta: {
           rawBarcode: product.barcode,
           normalizedBarcode: product.barcode,
           retryable: false,
-          lookupPath: ["supabase", "off_world", "ai_estimate"],
+          lookupPath: ["supabase", "off_world"],
         },
       });
     });
@@ -214,9 +214,9 @@ describe("useAIMealGeneration", () => {
     const { result } = renderHook(() => useAIMealGeneration());
     const weakProduct = {
       ...product,
-      confidence: 40,
-      isAIEstimated: true,
-      source: "openfoodfacts+gemini-estimation",
+      confidence: 50,
+      needsNutritionEstimate: true,
+      source: "openfoodfacts",
     };
 
     await act(async () => {
@@ -227,7 +227,7 @@ describe("useAIMealGeneration", () => {
           rawBarcode: product.barcode,
           normalizedBarcode: product.barcode,
           retryable: false,
-          lookupPath: ["supabase", "off_world", "ai_estimate"],
+          lookupPath: ["supabase", "off_world"],
         },
       });
     });
@@ -246,7 +246,7 @@ describe("useAIMealGeneration", () => {
 
     expect(result.current.showProductModal).toBe(true);
     expect(result.current.scannedProduct?.name).toBe("Sabudana Khichdi");
-    expect(result.current.scannedProduct?.isAIEstimated).toBe(true);
+    expect(result.current.scannedProduct?.needsNutritionEstimate).toBe(true);
   });
 
   it("keeps the camera open and shows inline fallback actions on not_found", async () => {

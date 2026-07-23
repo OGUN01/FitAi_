@@ -93,7 +93,7 @@ This document provides a comprehensive testing framework for all major features 
 
 3. **Google Gemini** (AI Models)
    - Via Vercel AI Gateway
-   - Models: gemini-2.0-flash-exp, gemini-2.5-flash
+   - Models: gemini-3.5-flash-lite, gemini-2.5-flash
    - Structured output with Zod schemas
 
 ---

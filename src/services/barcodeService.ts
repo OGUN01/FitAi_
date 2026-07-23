@@ -125,16 +125,11 @@ class BarcodeService {
   private deriveLookupPathFromSource(source: string): BarcodeLookupPath[] {
     if (source.includes("sqlite")) return ["sqlite"];
     if (source.includes("openfoodfacts-india")) {
-      return source.includes("gemini-estimation")
-        ? ["off_india", "ai_estimate"]
-        : ["off_india"];
+      return ["off_india"];
     }
     if (source.includes("openfoodfacts")) {
-      return source.includes("gemini-estimation")
-        ? ["off_world", "ai_estimate"]
-        : ["off_world"];
+      return ["off_world"];
     }
-    if (source.includes("gemini-estimation")) return ["ai_estimate"];
     return ["supabase"];
   }
 

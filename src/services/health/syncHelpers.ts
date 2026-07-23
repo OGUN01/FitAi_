@@ -132,7 +132,13 @@ export async function syncHeartRate(ctx: SyncContext): Promise<void> {
 
     if (heartRateAggregate && typeof heartRateAggregate.BPM_AVG === "number") {
       ctx.healthData.heartRate = Math.round(heartRateAggregate.BPM_AVG);
-      ctx.healthData.restingHeartRate = heartRateAggregate.BPM_MIN;
+      // Resting HR must NOT be derived from BPM_MIN — that is the lowest single
+      // HR sample (often a sleeping/overnight reading), NOT true resting HR.
+      // Using it here would inflate the Karvonen heart-rate-reserve in
+      // getHeartRateZones, shifting every zone boundary up. Health Connect has
+      // no dedicated RestingHeartRate record type (unlike Apple HealthKit), so we
+      // leave this undefined rather than fabricate a value (CLAUDE.md #8 — no
+      // fake values). True resting HR needs a dedicated query not available here.
       addOriginSource(ctx, "heartRate", heartRateAggregate.dataOrigins || []);
     }
   } catch (error) {
@@ -153,14 +159,52 @@ export async function syncActiveCalories(ctx: SyncContext): Promise<void> {
     });
 
     if (caloriesAggregate?.ACTIVE_CALORIES_TOTAL) {
-      ctx.healthData.activeCalories = Math.round(
-        caloriesAggregate.ACTIVE_CALORIES_TOTAL.inKilocalories || 0,
+      const origins = caloriesAggregate.dataOrigins || [];
+      // Filter out FitAI's own write-back (ActiveCaloriesBurned records we
+      // wrote on workout completion) and other excluded sources so the MET
+      // calories already tracked via completionTracking are NOT double-counted
+      // against the Move ring. Mirrors the steps/distance source-exclusion
+      // pattern — the raw aggregate is recomputed against app sources only.
+      const appSources = origins.filter(
+        (o: string) => !ctx.excludedRawSources.includes(o),
       );
-      addOriginSource(
-        ctx,
-        "activeCalories",
-        caloriesAggregate.dataOrigins || [],
+      const hasExcluded = origins.some((o: string) =>
+        ctx.excludedRawSources.includes(o),
       );
+
+      if (hasExcluded && appSources.length > 0 && appSources.length < origins.length) {
+        // Recompute excluding FitAI / raw-sensor sources so we only count
+        // active calories from external wearable/watch providers.
+        const filteredAggregate = await ctx.aggregateRecord({
+          recordType: "ActiveCaloriesBurned",
+          timeRangeFilter: {
+            operator: "between",
+            startTime: ctx.todayStart.toISOString(),
+            endTime: ctx.endDate.toISOString(),
+          },
+          dataOriginFilter: appSources,
+        });
+
+        if (
+          filteredAggregate?.ACTIVE_CALORIES_TOTAL
+        ) {
+          ctx.healthData.activeCalories = Math.round(
+            filteredAggregate.ACTIVE_CALORIES_TOTAL.inKilocalories || 0,
+          );
+          addOriginSource(ctx, "activeCalories", appSources);
+        } else {
+          // Fallback: filtered re-query returned nothing usable — use raw.
+          ctx.healthData.activeCalories = Math.round(
+            caloriesAggregate.ACTIVE_CALORIES_TOTAL.inKilocalories || 0,
+          );
+          addOriginSource(ctx, "activeCalories", origins);
+        }
+      } else {
+        ctx.healthData.activeCalories = Math.round(
+          caloriesAggregate.ACTIVE_CALORIES_TOTAL.inKilocalories || 0,
+        );
+        addOriginSource(ctx, "activeCalories", origins);
+      }
     }
   } catch (error) {
     ctx.healthData.metadata!.isPartial = true;
@@ -371,25 +415,40 @@ export async function syncExerciseSessions(ctx: SyncContext): Promise<void> {
     });
 
     if (exerciseRecords?.records && exerciseRecords.records.length > 0) {
-      ctx.healthData.exerciseSessions = exerciseRecords.records.map(
-        (exercise) => ({
-          id: exercise.metadata?.id || `exercise_${Date.now()}`,
-          startTime: exercise.startTime!,
-          endTime: exercise.endTime!,
-          exerciseType: exercise.exerciseType?.toString() || "unknown",
-          title: exercise.title,
-          calories: exercise.energy?.inKilocalories,
-          distance: exercise.distance?.inMeters,
-          duration: Math.round(
-            (new Date(exercise.endTime!).getTime() -
-              new Date(exercise.startTime!).getTime()) /
-              60000,
-          ),
-        }),
+      // Exclude FitAI's own write-back source. exportWorkoutToHealthConnect
+      // writes ExerciseSession records under dataOrigin "com.fitai.app"
+      // (core.ts writeWorkoutSession) on workout completion, and already adds
+      // the workout to recentWorkouts locally with source "FitAI". Without
+      // filtering it out here, the next sync reads that record back as a
+      // "HealthConnect" workout with a different id (the HC uuid), and
+      // mergeRecentWorkouts' source:id dedup leaves both — same workout twice.
+      // Mirrors the EXCLUDED_RAW_SOURCES filter applied to active-calories,
+      // steps, and distance aggregates.
+      const filteredRecords = exerciseRecords.records.filter(
+        (exercise) =>
+          !ctx.excludedRawSources.includes(exercise.metadata?.dataOrigin || ""),
       );
 
-      const firstRecord = exerciseRecords.records[0];
-      if (firstRecord.metadata?.dataOrigin) {
+      const recordsToMap =
+        filteredRecords.length > 0 ? filteredRecords : exerciseRecords.records;
+
+      ctx.healthData.exerciseSessions = recordsToMap.map((exercise) => ({
+        id: exercise.metadata?.id || `exercise_${Date.now()}`,
+        startTime: exercise.startTime!,
+        endTime: exercise.endTime!,
+        exerciseType: exercise.exerciseType?.toString() || "unknown",
+        title: exercise.title,
+        calories: exercise.energy?.inKilocalories,
+        distance: exercise.distance?.inMeters,
+        duration: Math.round(
+          (new Date(exercise.endTime!).getTime() -
+            new Date(exercise.startTime!).getTime()) /
+            60000,
+        ),
+      }));
+
+      const firstRecord = recordsToMap[0];
+      if (firstRecord?.metadata?.dataOrigin) {
         ctx.allDataOrigins.add(firstRecord.metadata.dataOrigin);
         const source = getDataSource(firstRecord.metadata.dataOrigin);
         ctx.healthData.sources!.exerciseSessions = {

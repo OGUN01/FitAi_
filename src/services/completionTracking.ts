@@ -22,6 +22,7 @@ import { getWorkoutDayKey, getWorkoutSlotKey } from "../utils/workoutIdentity";
 import { generateUUID } from "../utils/uuid";
 import { MealLogProvenance } from "../types/nutritionLogging";
 import { offlineService } from "./offline";
+import { getCurrentUserId } from "./authUtils";
 
 export interface CompletionEvent {
   id: string;
@@ -470,6 +471,24 @@ class CompletionTrackingService {
       // Update meal progress to 100%
       await nutritionStore.completeMeal(mealId, logData?.logId);
 
+      // P1-fix: resolve userId here when the caller omits it. Four of six
+      // call sites (useMealSessionLogic, useIngredientDetail,
+      // CookingSessionScreen, IngredientDetailModal) do NOT thread userId
+      // through, so the Supabase meal_logs insert below was skipped entirely
+      // (the `if (currentUserId)` guard evaluated false). The meal was marked
+      // complete in local UI but never persisted to the consumption SSOT →
+      // consumed calories/macros were lost on reload. Resolve internally
+      // using the same guest-filtering pattern as nutritionStore.getSyncableUserId
+      // so guest ids never reach a Supabase write (RLS would reject + pollute
+      // the offline retry queue).
+      const resolvedUserId =
+        userId ||
+        (() => {
+          const id = getCurrentUserId();
+          if (!id || id.startsWith("guest")) return undefined;
+          return id;
+        })();
+
       // Get meal details for the event
       const meal = nutritionStore.weeklyMealPlan?.meals.find(
         (m) => m.id === mealId,
@@ -492,8 +511,9 @@ class CompletionTrackingService {
 
         // Create actual meal log in database for calorie tracking
         try {
-          // Use provided userId - NO FALLBACK to fake user IDs
-          const currentUserId = userId;
+          // Use the resolved userId (caller-provided OR internally resolved
+          // from authStore) — NO FALLBACK to fake user IDs.
+          const currentUserId = resolvedUserId;
           const completedAt = new Date().toISOString();
           const planMealId = meal.id;
           const mealLogId = generateUUID();
@@ -587,8 +607,18 @@ class CompletionTrackingService {
 
                   // Bug 1 fix: update dailyMeals so getTodaysConsumedNutrition reflects
                   // this meal immediately (Rule 6: store is the runtime source).
+                  // P1-dedup fix: use mealLogId (the canonical meal_logs row id) as
+                  // the dailyMeals entry id — NOT meal.id (the plan meal id). The
+                  // realtime handler (handleMealLogRealtimeChange) dedups by the
+                  // meal_logs row id (logId). Using meal.id broke dedup: the
+                  // realtime INSERT found existingIdx === -1 and prepended a second
+                  // entry, both carrying loggedAt → getTodaysConsumedNutrition
+                  // double-counted the meal's calories/macros until loadData()
+                  // (from triggerRefresh) replaced dailyMeals. If triggerRefresh
+                  // failed, the duplicate persisted. The DELETE handler also
+                  // couldn't remove the optimistic entry (m.id !== deletedId).
                   useNutritionStore.getState().addDailyMeal({
-                    id: meal.id,
+                    id: mealLogId,
                     type: meal.type,
                     name: meal.name,
                     items: meal.items || [],

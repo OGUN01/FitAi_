@@ -55,7 +55,7 @@ export async function consumeDietJobs(batch: MessageBatch<DietJobMessage>, env: 
 
 			// 4. Save to cache (KV + DB)
 			const cacheMetadata: CacheMetadata = {
-				modelUsed: params.model || 'google/gemini-2.5-flash',
+				modelUsed: params.model || 'google/gemini-3.5-flash-lite',
 				generationTimeMs: aiGenerationTime,
 				tokensUsed: generationMetadata.tokensUsed,
 			};
@@ -68,7 +68,7 @@ export async function consumeDietJobs(batch: MessageBatch<DietJobMessage>, env: 
 				completed_at: new Date().toISOString(),
 				result_data: finalResult,
 				generation_time_ms: totalTime,
-				ai_model: params.model || 'google/gemini-2.5-flash',
+				ai_model: params.model || 'google/gemini-3.5-flash-lite',
 			});
 
 			console.log(`[QueueConsumer] Job ${jobId} completed successfully in ${totalTime}ms`);

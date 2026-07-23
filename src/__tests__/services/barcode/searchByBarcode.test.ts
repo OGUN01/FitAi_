@@ -1,22 +1,10 @@
-jest.mock("@/services/fitaiWorkersClient", () => ({
-  __esModule: true,
-  default: {
-    estimateNutrition: jest.fn(),
-  },
-}));
-
 import {
   FreeNutritionAPIs,
-  estimateNutritionWithAI,
   clearBarcodeCache,
 } from "@/services/freeNutritionAPIs";
-import fitaiWorkersClient from "@/services/fitaiWorkersClient";
 
 let api: FreeNutritionAPIs;
 const originalFetch = global.fetch;
-const mockedWorkersClient = fitaiWorkersClient as unknown as {
-  estimateNutrition: jest.Mock;
-};
 
 function makeOFFResponse(overrides: Record<string, unknown> = {}) {
   return {
@@ -56,7 +44,6 @@ beforeEach(() => {
   clearBarcodeCache();
   global.fetch = jest.fn();
   jest.useRealTimers();
-  mockedWorkersClient.estimateNutrition.mockReset();
 });
 
 afterEach(() => {
@@ -122,21 +109,23 @@ describe("searchByBarcode", () => {
     );
   });
 
-  it("keeps packaged food unresolved when OFF has no nutrition and AI estimate is unavailable", async () => {
-    const warnSpy = jest.spyOn(console, "warn").mockImplementation();
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () =>
-        makeOFFResponse({
-          nutriments: {},
-          nutrition_grades: undefined,
-          nova_group: undefined,
-        }),
-    });
-    mockedWorkersClient.estimateNutrition.mockResolvedValueOnce({
-      success: false,
-      error: "Worker unavailable",
-    });
+  it("keeps needsNutritionEstimate true when OFF has no nutrition and name search also misses (no AI fallback)", async () => {
+    (global.fetch as jest.Mock)
+      // 1st call: OFF world barcode lookup — product found, no nutrition
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () =>
+          makeOFFResponse({
+            nutriments: {},
+            nutrition_grades: undefined,
+            nova_group: undefined,
+          }),
+      })
+      // 2nd call: OFF name search — no results
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ products: [] }),
+      });
 
     const result = await api.searchByBarcode("3017620422004");
 
@@ -145,61 +134,55 @@ describe("searchByBarcode", () => {
     expect(result!.needsNutritionEstimate).toBe(true);
     expect(result!.nutrition).toBeNull();
     expect(result!.confidence).toBe(50);
-    expect(mockedWorkersClient.estimateNutrition).toHaveBeenCalledWith(
-      "Test Product EN",
-      "TestBrand",
-      "France",
-    );
-    expect(warnSpy).toHaveBeenCalled();
-    warnSpy.mockRestore();
+    expect(result!.isAIEstimated).toBeUndefined();
   });
 
-  it("uses AI estimation only when a trusted product identity exists but nutrition is missing", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () =>
-        makeOFFResponse({
-          product_name: "Mystery Snack",
-          product_name_en: "Mystery Snack",
-          brands: "SnackCo",
-          nutriments: {},
-          nutrition_grades: undefined,
-          nova_group: undefined,
+  it("uses OFF name-search to fill nutrition when product identity exists but barcode lacks nutrition (no AI)", async () => {
+    (global.fetch as jest.Mock)
+      // 1st call: OFF world barcode lookup — product found, no nutrition
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () =>
+          makeOFFResponse({
+            product_name: "Mystery Snack",
+            product_name_en: "Mystery Snack",
+            brands: "SnackCo",
+            nutriments: {},
+            nutrition_grades: undefined,
+            nova_group: undefined,
+          }),
+      })
+      // 2nd call: OFF name search — finds a nutrition match
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          products: [
+            {
+              product_name: "Mystery Snack",
+              nutriments: {
+                "energy-kcal_100g": 462,
+                proteins_100g: 6.7,
+                carbohydrates_100g: 72.3,
+                fat_100g: 16.7,
+                fiber_100g: 2.4,
+                sugars_100g: 26.9,
+                salt_100g: 0.85,
+              },
+            },
+          ],
         }),
-    });
-    mockedWorkersClient.estimateNutrition.mockResolvedValueOnce({
-      success: true,
-      data: {
-        calories: 462,
-        protein: 6.7,
-        carbs: 72.3,
-        fat: 16.7,
-        fiber: 2.4,
-        sugar: 26.9,
-        sodium: 340,
-        confidence: 88,
-        isAIEstimated: true,
-      },
-    });
+      });
 
     const result = await api.searchByBarcode("3017620422005");
 
     expect(result).not.toBeNull();
-    expect(result!.source).toBe("openfoodfacts+gemini-estimation");
-    expect(result!.isAIEstimated).toBe(true);
+    expect(result!.source).toBe("openfoodfacts+name-search");
     expect(result!.needsNutritionEstimate).toBe(false);
-    expect(result!.confidence).toBe(40);
-    expect(result!.nutrition).toEqual(
-      expect.objectContaining({
-        calories: 462,
-        protein: 6.7,
-        carbs: 72.3,
-        fat: 16.7,
-        fiber: 2.4,
-        source: "gemini-estimation",
-        confidence: 40,
-      }),
-    );
+    expect(result!.nutrition).not.toBeNull();
+    expect(result!.nutrition!.calories).toBe(462);
+    expect(result!.nutrition!.protein).toBe(6.7);
+    expect(result!.nutrition!.source).toBe("OpenFoodFacts");
+    expect(result!.isAIEstimated).toBeUndefined();
   });
 
   it("returns null when both OFF endpoints miss instead of inventing a product", async () => {
@@ -216,7 +199,8 @@ describe("searchByBarcode", () => {
     const result = await api.searchByBarcode("0012345678909");
 
     expect(result).toBeNull();
-    expect(mockedWorkersClient.estimateNutrition).not.toHaveBeenCalled();
+    // No AI fallback: only the 2 real-DB OFF fetches (world + india) occur.
+    expect(global.fetch).toHaveBeenCalledTimes(2);
   });
 
   it("does not AI-estimate an Indian barcode when no trusted product identity exists", async () => {
@@ -234,7 +218,6 @@ describe("searchByBarcode", () => {
 
     expect(result).toBeNull();
     expect(global.fetch).toHaveBeenCalledTimes(2);
-    expect(mockedWorkersClient.estimateNutrition).not.toHaveBeenCalled();
   });
 
   it("returns cached result on second call without additional fetch", async () => {
@@ -316,67 +299,5 @@ describe("searchByBarcode", () => {
     expect(callUrl).toContain("nutriments");
     expect(callUrl).toContain("nutrition_grades");
     expect(callUrl).toContain("nova_group");
-  });
-});
-
-describe("estimateNutritionWithAI", () => {
-  it("returns worker-backed AI nutrition with capped low-trust confidence", async () => {
-    mockedWorkersClient.estimateNutrition.mockResolvedValueOnce({
-      success: true,
-      data: {
-        calories: 462,
-        protein: 6.7,
-        carbs: 72.3,
-        fat: 16.7,
-        fiber: 2.4,
-        sugar: 26.9,
-        sodium: 340,
-        confidence: 95,
-        isAIEstimated: true,
-      },
-    });
-
-    const result = await estimateNutritionWithAI("Parle-G", "Parle", "India");
-
-    expect(result).not.toBeNull();
-    expect(result!.source).toBe("gemini-estimation");
-    expect(result!.isAIEstimated).toBe(true);
-    expect(result!.needsNutritionEstimate).toBe(false);
-    expect(result!.confidence).toBe(40);
-    expect(result!.nutrition).toEqual(
-      expect.objectContaining({
-        calories: 462,
-        protein: 6.7,
-        source: "gemini-estimation",
-        confidence: 40,
-      }),
-    );
-  });
-
-  it("returns null and warns when the worker rejects the estimate", async () => {
-    const warnSpy = jest.spyOn(console, "warn").mockImplementation();
-    mockedWorkersClient.estimateNutrition.mockResolvedValueOnce({
-      success: false,
-      error: "rate limited",
-    });
-
-    const result = await estimateNutritionWithAI("Bad Product", "Brand", "USA");
-
-    expect(result).toBeNull();
-    expect(warnSpy).toHaveBeenCalled();
-    warnSpy.mockRestore();
-  });
-
-  it("returns null and warns when the worker throws", async () => {
-    const warnSpy = jest.spyOn(console, "warn").mockImplementation();
-    mockedWorkersClient.estimateNutrition.mockRejectedValueOnce(
-      new Error("network error"),
-    );
-
-    const result = await estimateNutritionWithAI("Slow Product", "Brand", "USA");
-
-    expect(result).toBeNull();
-    expect(warnSpy).toHaveBeenCalled();
-    warnSpy.mockRestore();
   });
 });

@@ -328,6 +328,18 @@ export const useHydrationStore = create<HydrationState>()(
 
       // Reset store to initial state (for logout)
       reset: () => {
+        // Cancel any pending Supabase retry so it cannot fire AFTER logout and
+        // re-inject the previous user's water total into the just-reset store
+        // (cross-user data leak). resetDaily() already does this; reset() must
+        // mirror it because clearUserData calls reset(), not resetDaily().
+        if (syncRetryTimeoutId !== null) {
+          clearTimeout(syncRetryTimeoutId);
+          syncRetryTimeoutId = null;
+        }
+        // Clear the in-flight add accumulator so the previous user's pending
+        // adds are not re-applied on top of the next user's remote total during
+        // syncWithSupabase reconciliation (reconciled = total_ml + pendingAddML).
+        pendingAddML = 0;
         set({
           waterIntakeML: 0,
           dailyGoalML: null,

@@ -528,7 +528,7 @@ Send 51 requests in 1 hour.
 
 ```typescript
 {
-  model: "google/gemini-2.0-flash-exp",
+  model: "google/gemini-3.5-flash-lite",
   temperature: 0.3,  // Lower = more consistent
   maxTokens: 4096,
   schema: FoodRecognitionSchema  // Zod validation

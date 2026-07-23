@@ -961,7 +961,7 @@ class UnifiedAIService {
       return {
         isAvailable: true,
         mode: "real",
-        modelVersion: "google/gemini-2.0-flash-exp",
+        modelVersion: "google/gemini-3.5-flash-lite",
         message:
           "✅ Connected to FitAI Workers backend (https://fitai-workers.fitai-prod.workers.dev)",
       };
@@ -973,7 +973,7 @@ class UnifiedAIService {
       return {
         isAvailable: true,
         mode: "real",
-        modelVersion: "google/gemini-2.0-flash-exp",
+        modelVersion: "google/gemini-3.5-flash-lite",
         message:
           "✅ Connected to FitAI Workers backend (https://fitai-workers.fitai-prod.workers.dev)",
       };

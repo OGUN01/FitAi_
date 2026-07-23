@@ -9,7 +9,7 @@
  */
 
 /** Single place to update the AI model used for all requests (BUG-59) */
-const DEFAULT_AI_MODEL = "google/gemini-2.5-flash";
+const DEFAULT_AI_MODEL = "google/gemini-3.5-flash-lite";
 
 import type {
   PersonalInfo,

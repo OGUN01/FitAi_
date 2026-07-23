@@ -23,7 +23,7 @@ import type { WorkoutGenerationRequest, WorkoutResponse } from '../utils/validat
 import { loadExerciseDatabase, enrichExercises } from '../utils/exerciseDatabase';
 import { applySafetyFilter, type UserSafetyProfile } from '../utils/safetyFilter';
 import { selectOptimalSplit } from '../utils/workoutSplits';
-import { generateWeeklyExercisePlan, validateMuscleBalance } from '../utils/exerciseSelection';
+import { generateWeeklyExercisePlan, validateMuscleBalance, rebalanceMuscleBalance } from '../utils/exerciseSelection';
 import {
 	assignWorkoutParameters,
 	generateCoachingTips,
@@ -213,11 +213,17 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 
 	console.log(`[Rule-Based] Step 6: Generated ${weeklyPlan.workouts.length} workouts, ${weeklyPlan.totalExercisesPerWeek} total exercises`);
 
-	// Validate muscle balance
+	// Validate muscle balance, then FIX any deficit by injecting exercises for
+	// under-hit major groups (pectorals/lats/quads/hamstrings/delts to >=2x/week).
+	// Previously this only warned — a 4-day plan could ship with chest 0x.
 	const balanceWarnings = validateMuscleBalance(weeklyPlan);
 	if (balanceWarnings.length > 0) {
-		console.warn('[Rule-Based] Muscle balance warnings:', balanceWarnings);
-		allWarnings.push(...balanceWarnings);
+		console.warn('[Rule-Based] Muscle balance warnings before rebalance:', balanceWarnings);
+		const residualWarnings = rebalanceMuscleBalance(weeklyPlan, exercises);
+		if (residualWarnings.length > 0) {
+			console.warn('[Rule-Based] Muscle balance warnings after rebalance:', residualWarnings);
+			allWarnings.push(...residualWarnings);
+		}
 	}
 
 	// ============================================================================

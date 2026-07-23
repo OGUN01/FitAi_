@@ -62,7 +62,7 @@ transformDietResponse(
   },
   metadata: {
     cuisine: "Indian",
-    model: "google/gemini-2.0-flash-exp",
+    model: "google/gemini-3.5-flash-lite",
     warnings: [...]
   }
 }

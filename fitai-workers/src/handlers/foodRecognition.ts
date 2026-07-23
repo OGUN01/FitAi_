@@ -93,7 +93,7 @@ function createAIProvider(env: Env, modelId: string) {
 	const gatewayInstance = createGateway({
 		apiKey: env.AI_GATEWAY_API_KEY,
 	});
-	const model = modelId || 'google/gemini-2.5-flash';
+	const model = modelId || 'google/gemini-3.5-flash-lite';
 	return gatewayInstance(model);
 }
 
@@ -178,7 +178,7 @@ export async function handleFoodRecognition(c: Context<{ Bindings: Env }>) {
 		const prompt = buildFoodRecognitionPrompt(request.mealType, request.userContext);
 
 		// FIX H — use env var with fallback instead of hardcoded model
-		const modelId = (c.env as any).FOOD_RECOGNITION_MODEL ?? 'google/gemini-2.5-flash';
+		const modelId = (c.env as any).FOOD_RECOGNITION_MODEL ?? 'google/gemini-3.5-flash-lite';
 		const model = createAIProvider(c.env, modelId);
 
 		console.log('[Food Recognition] Calling Gemini Vision API...');
@@ -240,7 +240,7 @@ export async function handleFoodRecognition(c: Context<{ Bindings: Env }>) {
 				},
 			metadata: {
 				processingTime,
-				model: 'google/gemini-2.5-flash',
+				model: 'google/gemini-3.5-flash-lite',
 				userId: user.id,
 			},
 		});

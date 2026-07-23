@@ -64,7 +64,14 @@ class HealthConnectService {
   private readonly SYNC_INTERVAL_KEY = "fitai_healthconnect_last_sync";
   private isInitialized = false;
   private permissionsGranted = false;
-  private readonly EXCLUDED_RAW_SOURCES = ["android"];
+  // Sources excluded from aggregation reads. "android" is the phone's raw
+  // pedometer (low accuracy). "com.fitai.app" is FitAI's own package — we
+  // write ActiveCaloriesBurned back to HC on workout completion
+  // (writeWorkoutSession, see core.ts). Without excluding it here, the next
+  // sync reads that record back into activeCalories, double-counting the
+  // workout's MET calories (already tracked via completionTracking) against
+  // the Move ring. Mirrors the steps/distance raw-sensor exclusion pattern.
+  private readonly EXCLUDED_RAW_SOURCES = ["android", "com.fitai.app"];
 
   private readonly permissions: PermissionType[] = [
     { accessType: "read", recordType: "Steps" },

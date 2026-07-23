@@ -449,6 +449,11 @@ class DataBridge {
       );
       if (hasPendingProfileAction) {
         console.warn('[DataBridge] Skipping profile hydration: a profile-related table has pending offline actions — will hydrate after sync');
+        // BUG-1 fix: still flip isHydrated=true (empty batch preserves existing
+        // store state) so downstream hooks (useCalculatedMetrics gates isLoading
+        // on storeIsHydrated) don't leave Home spinning forever. Without this,
+        // a stuck offline queue (maxRetries) would hang Home indefinitely.
+        profileStore.hydrateFromLegacy({});
         profileStore.setSyncStatus("synced");
       } else {
         profileStore.hydrateFromLegacy(batchUpdate);
@@ -476,6 +481,11 @@ class DataBridge {
         "error",
         "Cloud load failed. Showing local data instead.",
       );
+      // BUG-3 mitigation: flip isHydrated=true (empty batch) so Home doesn't
+      // hang on cloud-load failure. Previously onRehydrateStorage forced this
+      // true on every cold launch; now only hydrateFromLegacy sets it, so the
+      // error path must also set it to prevent an infinite loading spinner.
+      profileStore.hydrateFromLegacy({});
       const localData = await this.loadFromLocal();
       return {
         ...localData,

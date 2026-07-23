@@ -262,14 +262,13 @@ export const useProfileStore = create<ProfileStore>()(
           lastSyncedAt: state.lastSyncedAt,
           syncStatus: state.syncStatus,
           syncError: state.syncError,
-          isHydrated: state.isHydrated,
+          // BUG-3: isHydrated is NOT persisted. Previously it was persisted +
+          // force-set true in onRehydrateStorage, so a cold launch with empty
+          // storage reported "hydrated" with all-null sections — loadAllData
+          // short-circuited and never fetched from Supabase (wave-b3-03 B3-P0-1).
+          // Now only hydrateFromLegacy (called by DataBridge with real data) sets
+          // isHydrated=true, so loadAllData always fetches fresh on cold launch.
         }),
-        // Handle rehydration from storage
-        onRehydrateStorage: () => (state) => {
-          if (state) {
-            state.isHydrated = true;
-          }
-        },
       },
     ),
   ),

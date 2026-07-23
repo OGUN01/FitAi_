@@ -27,6 +27,20 @@ import {
   getWeekStartForDate,
 } from "../utils/weekUtils";
 
+/**
+ * BUG-2: Returns the real authenticated user id, or null when the user is a
+ * guest / not authenticated. Callers use this to SKIP offline-queue sync for
+ * guests (matching the pattern in nutritionStore, hydrationStore). Guest IDs
+ * ("guest"/"guest-*") must never reach Supabase writes — RLS rejects them and
+ * they pollute the retry queue indefinitely.
+ */
+function getSyncableUserId(): string | null {
+  const userId = getCurrentUserId();
+  if (!userId) return null;
+  if (userId.startsWith("guest")) return null;
+  return userId;
+}
+
 // Realtime subscription channel reference (outside store to persist across re-renders)
 let workoutSessionsChannel: RealtimeChannel | null = null;
 
@@ -134,8 +148,15 @@ export const useFitnessStore = create<FitnessState>()(
 
         // ALSO save the complete weekly plan to the new weekly_workout_plans table
         try {
-          // Get authenticated user ID via StoreCoordinator (removes cross-store dependency)
-          const userId = getCurrentUserId();
+          // BUG-2: Skip Supabase sync for guest users — local Zustand save above
+          // is sufficient. Queueing a guest action would have RLS reject it on
+          // every retry, polluting the offline queue indefinitely (mirrors
+          // nutritionStore.getSyncableUserId pattern).
+          const syncableUserId = getSyncableUserId();
+          if (!syncableUserId) {
+            return; // Guest or unauthenticated: local save already succeeded.
+          }
+          const userId = syncableUserId;
           const planId = generateUUID();
 
           // Ensure user is authenticated before database operation
@@ -213,7 +234,7 @@ export const useFitnessStore = create<FitnessState>()(
             type: activePlanRowId ? "UPDATE" : "CREATE",
             table: "weekly_workout_plans",
             data: weeklyPlanData,
-            userId: getUserIdOrGuest(),
+            userId,
             maxRetries: 3,
           });
         } catch (weeklyPlanError) {
@@ -346,7 +367,13 @@ export const useFitnessStore = create<FitnessState>()(
 
         // Persist to weekly_workout_plans with plan_source = 'custom'
         try {
-          const userId = getCurrentUserId();
+          // BUG-2: Skip Supabase sync for guest users — local Zustand save above
+          // is sufficient (mirrors nutritionStore.getSyncableUserId pattern).
+          const syncableUserId = getSyncableUserId();
+          if (!syncableUserId) {
+            return; // Guest or unauthenticated: local save already succeeded.
+          }
+          const userId = syncableUserId;
           const planId = generateUUID();
 
           if (!userId) {
@@ -420,7 +447,7 @@ export const useFitnessStore = create<FitnessState>()(
             type: activeCustomPlanRowId ? "UPDATE" : "CREATE",
             table: "weekly_workout_plans",
             data: weeklyPlanData,
-            userId: getUserIdOrGuest(),
+            userId,
             maxRetries: 3,
           });
         } catch (customPlanError) {

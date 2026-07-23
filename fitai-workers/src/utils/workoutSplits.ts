@@ -416,15 +416,20 @@ const HIIT_CIRCUIT_SPLIT: WorkoutSplit = {
 			suggestedDayOfWeek: 'monday',
 			focusAreas: ['chest', 'back', 'legs', 'cardio'],
 			workoutType: 'Full Body HIIT',
-			muscleGroups: ['pecs', 'lats', 'quads', 'hamstrings', 'cardiovascular system'],
+			// muscleGroups MUST use DB-exact values (exerciseDatabase.json uses
+			// 'pectorals', NOT 'pecs'). A mismatch silently zeroes chest/back
+			// exercise selection for the day. See validateMuscleBalance contract.
+			muscleGroups: ['pectorals', 'lats', 'quads', 'hamstrings', 'cardiovascular system'],
 			compoundFocus: true,
 		},
 		{
 			dayName: 'Day 2',
 			suggestedDayOfWeek: 'tuesday',
-			focusAreas: ['legs', 'core', 'cardio'],
+			// focusAreas includes 'back' so the weekly back/lats frequency stays
+			// >=2x (HIIT Day 2 previously had no back focus → lats landed at 1x).
+			focusAreas: ['back', 'legs', 'core', 'cardio'],
 			workoutType: 'Lower Body Circuit',
-			muscleGroups: ['quads', 'hamstrings', 'glutes', 'abs', 'cardiovascular system'],
+			muscleGroups: ['lats', 'quads', 'hamstrings', 'glutes', 'abs', 'cardiovascular system'],
 			compoundFocus: true,
 		},
 		{
@@ -432,7 +437,7 @@ const HIIT_CIRCUIT_SPLIT: WorkoutSplit = {
 			suggestedDayOfWeek: 'thursday',
 			focusAreas: ['chest', 'shoulders', 'arms', 'cardio'],
 			workoutType: 'Upper Body Circuit',
-			muscleGroups: ['pecs', 'delts', 'biceps', 'triceps', 'cardiovascular system'],
+			muscleGroups: ['pectorals', 'delts', 'biceps', 'triceps', 'cardiovascular system'],
 			compoundFocus: true,
 		},
 		{
@@ -440,7 +445,7 @@ const HIIT_CIRCUIT_SPLIT: WorkoutSplit = {
 			suggestedDayOfWeek: 'saturday',
 			focusAreas: ['chest', 'back', 'legs', 'cardio'],
 			workoutType: 'Full Body Metabolic',
-			muscleGroups: ['pecs', 'lats', 'quads', 'hamstrings', 'cardiovascular system'],
+			muscleGroups: ['pectorals', 'lats', 'quads', 'hamstrings', 'cardiovascular system'],
 			compoundFocus: true,
 		},
 	],
@@ -466,7 +471,7 @@ const FULL_BODY_2X_SPLIT: WorkoutSplit = {
 			suggestedDayOfWeek: 'monday',
 			focusAreas: ['chest', 'back', 'legs', 'shoulders', 'arms', 'core'],
 			workoutType: 'Full Body A',
-			muscleGroups: ['pecs', 'lats', 'quads', 'hamstrings', 'delts', 'biceps', 'triceps', 'abs'],
+			muscleGroups: ['pectorals', 'lats', 'quads', 'hamstrings', 'delts', 'biceps', 'triceps', 'abs'],
 			compoundFocus: true,
 		},
 		{
@@ -474,7 +479,7 @@ const FULL_BODY_2X_SPLIT: WorkoutSplit = {
 			suggestedDayOfWeek: 'thursday',
 			focusAreas: ['chest', 'back', 'legs', 'shoulders', 'arms', 'core'],
 			workoutType: 'Full Body B',
-			muscleGroups: ['pecs', 'lats', 'quads', 'hamstrings', 'glutes', 'delts', 'biceps', 'triceps', 'abs'],
+			muscleGroups: ['pectorals', 'lats', 'quads', 'hamstrings', 'glutes', 'delts', 'biceps', 'triceps', 'abs'],
 			compoundFocus: true,
 		},
 	],
@@ -504,7 +509,7 @@ const ACTIVE_RECOVERY_SPLIT: WorkoutSplit = {
 			suggestedDayOfWeek: 'monday',
 			focusAreas: ['chest', 'back', 'legs', 'shoulders'],
 			workoutType: 'Full Body Light',
-			muscleGroups: ['pecs', 'lats', 'quads', 'hamstrings', 'delts'],
+			muscleGroups: ['pectorals', 'lats', 'quads', 'hamstrings', 'delts'],
 			compoundFocus: false,
 		},
 		{

@@ -12,9 +12,9 @@ const mockProduct = {
   barcode: "8900000000012",
   name: "Sabudana Khichdi",
   brand: "FitAI",
-  source: "openfoodfacts+gemini-estimation",
-  confidence: 40,
-  isAIEstimated: true,
+  source: "openfoodfacts",
+  confidence: 50,
+  needsNutritionEstimate: true,
   nutrition: {
     calories: 152,
     protein: 4.5,

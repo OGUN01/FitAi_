@@ -4,27 +4,65 @@ import { getSupabaseClient } from '../utils/supabase';
 
 vi.mock('../utils/supabase');
 
+/**
+ * Builds a thenable Supabase query-builder mock that mirrors how supabase-js
+ * works: chain methods (from/select/eq/gte/lte/insert/limit) return the builder
+ * (so chains compose), and the builder itself is thenable — `await builder`
+ * resolves to `directResponse`. Terminal methods (.single/.maybeSingle/.order/
+ * .upsert) return their own Promises so they can be configured independently
+ * for operations that the handler awaits at the terminal.
+ */
+function createMockSupabase() {
+	let directResponse: any = { data: null, error: null };
+	let singleResponse: any = { data: null, error: null };
+	let maybeSingleResponse: any = { data: null, error: null };
+	let orderResponse: any = { data: null, error: null };
+	let upsertResponse: any = { data: null, error: null };
+
+	const builder: any = {
+		from: vi.fn(() => builder),
+		insert: vi.fn(() => builder),
+		select: vi.fn(() => builder),
+		eq: vi.fn(() => builder),
+		gte: vi.fn(() => builder),
+		lte: vi.fn(() => builder),
+		limit: vi.fn(() => builder),
+		upsert: vi.fn(async () => upsertResponse),
+		order: vi.fn(async () => orderResponse),
+		single: vi.fn(async () => singleResponse),
+		maybeSingle: vi.fn(async () => maybeSingleResponse),
+		// thenable — chains awaited without a terminal resolve here.
+		then: (resolve: any, reject: any) => Promise.resolve(directResponse).then(resolve, reject),
+		_setDirect: (r: any) => {
+			directResponse = r;
+		},
+		_setSingle: (r: any) => {
+			singleResponse = r;
+		},
+		_setMaybeSingle: (r: any) => {
+			maybeSingleResponse = r;
+		},
+		_setOrder: (r: any) => {
+			orderResponse = r;
+		},
+		_setUpsert: (r: any) => {
+			upsertResponse = r;
+		},
+	};
+	return builder;
+}
+
 describe('Health Sync Handler', () => {
 	let mockContext: any;
 	let mockSupabase: any;
 
 	beforeEach(() => {
-		mockSupabase = {
-			from: vi.fn().mockReturnThis(),
-			upsert: vi.fn().mockReturnThis(),
-			insert: vi.fn().mockReturnThis(),
-			select: vi.fn().mockReturnThis(),
-			single: vi.fn(),
-			eq: vi.fn().mockReturnThis(),
-			gte: vi.fn().mockReturnThis(),
-			lte: vi.fn().mockReturnThis(),
-			order: vi.fn().mockReturnThis(),
-		};
+		mockSupabase = createMockSupabase();
 
 		mockContext = {
 			get: vi.fn((key) => {
 				if (key === 'user') {
-					return { id: 'test-user-123', email: 'test@example.com' };
+					return { id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', email: 'test@example.com' };
 				}
 				return undefined;
 			}),
@@ -46,7 +84,11 @@ describe('Health Sync Handler', () => {
 	});
 
 	describe('POST /api/health/sync', () => {
-		it('accepts valid health data with all fields', async () => {
+		it('accepts valid health data with all fields and expands to EAV rows', async () => {
+			// manual-priority read returns no existing manual rows.
+			mockSupabase._setDirect({ data: [], error: null });
+			mockSupabase._setUpsert({ data: null, error: null });
+
 			const validPayload = {
 				log_date: '2026-02-05',
 				data_source: 'apple_health',
@@ -60,37 +102,38 @@ describe('Health Sync Handler', () => {
 			};
 
 			mockContext.req.json.mockResolvedValue(validPayload);
-			mockSupabase.single.mockResolvedValue({
-				data: { id: 'uuid-123', ...validPayload, user_id: 'test-user-123' },
-				error: null,
-			});
 
 			const response = await handleHealthSync(mockContext);
 
 			expect(response.status).toBe(200);
 			expect(response.data.success).toBe(true);
-			expect(response.data.data).toHaveProperty('id');
+			// 6 metrics: steps, active_calories, total_calories, heart_rate,
+			// resting_heart_rate, sleep_hours. water_intake_ml has no metric_type.
+			expect(response.data.data.saved).toBe(6);
+			expect(response.data.data.date).toBe('2026-02-05');
 		});
 
-		it('accepts valid health data with minimal fields', async () => {
+		it('accepts valid health data with minimal fields (no metrics)', async () => {
 			const validPayload = {
 				log_date: '2026-02-05',
 				data_source: 'apple_health',
 			};
 
 			mockContext.req.json.mockResolvedValue(validPayload);
-			mockSupabase.single.mockResolvedValue({
-				data: { id: 'uuid-124', ...validPayload, user_id: 'test-user-123' },
-				error: null,
-			});
 
 			const response = await handleHealthSync(mockContext);
 
 			expect(response.status).toBe(200);
 			expect(response.data.success).toBe(true);
+			expect(response.data.data.saved).toBe(0);
+			// No metrics → no DB calls at all.
+			expect(mockSupabase.upsert).not.toHaveBeenCalled();
 		});
 
-		it('performs upsert with UNIQUE(user_id, log_date) constraint', async () => {
+		it('upserts EAV rows on (user_id, date, metric_type) conflict', async () => {
+			mockSupabase._setDirect({ data: [], error: null });
+			mockSupabase._setUpsert({ data: null, error: null });
+
 			const payload = {
 				log_date: '2026-02-05',
 				data_source: 'apple_health',
@@ -98,24 +141,29 @@ describe('Health Sync Handler', () => {
 			};
 
 			mockContext.req.json.mockResolvedValue(payload);
-			mockSupabase.single.mockResolvedValue({
-				data: { id: 'uuid-123', ...payload, user_id: 'test-user-123' },
-				error: null,
-			});
 
 			await handleHealthSync(mockContext);
 
+			expect(mockSupabase.from).toHaveBeenCalledWith('health_metrics');
 			expect(mockSupabase.upsert).toHaveBeenCalledWith(
-				expect.objectContaining({
-					user_id: 'test-user-123',
-					log_date: '2026-02-05',
-					data_source: 'apple_health',
-				}),
-				{ onConflict: 'user_id,log_date' },
+				expect.arrayContaining([
+					expect.objectContaining({
+						user_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+						date: '2026-02-05',
+						metric_type: 'steps',
+						value: 5000,
+						unit: 'count',
+						source: 'healthconnect',
+					}),
+				]),
+				{ onConflict: 'user_id,date,metric_type' },
 			);
 		});
 
-		it('includes data_source in payload (apple_health)', async () => {
+		it('maps data_source apple_health -> healthconnect', async () => {
+			mockSupabase._setDirect({ data: [], error: null });
+			mockSupabase._setUpsert({ data: null, error: null });
+
 			const payload = {
 				log_date: '2026-02-05',
 				data_source: 'apple_health',
@@ -123,17 +171,19 @@ describe('Health Sync Handler', () => {
 			};
 
 			mockContext.req.json.mockResolvedValue(payload);
-			mockSupabase.single.mockResolvedValue({
-				data: { id: 'uuid', ...payload, user_id: 'test-user-123' },
-				error: null,
-			});
 
 			await handleHealthSync(mockContext);
 
-			expect(mockSupabase.upsert).toHaveBeenCalledWith(expect.objectContaining({ data_source: 'apple_health' }), expect.anything());
+			expect(mockSupabase.upsert).toHaveBeenCalledWith(
+				expect.arrayContaining([expect.objectContaining({ source: 'healthconnect' })]),
+				expect.anything(),
+			);
 		});
 
-		it('includes data_source in payload (google_fit)', async () => {
+		it('maps data_source google_fit -> healthconnect', async () => {
+			mockSupabase._setDirect({ data: [], error: null });
+			mockSupabase._setUpsert({ data: null, error: null });
+
 			const payload = {
 				log_date: '2026-02-05',
 				data_source: 'google_fit',
@@ -141,17 +191,18 @@ describe('Health Sync Handler', () => {
 			};
 
 			mockContext.req.json.mockResolvedValue(payload);
-			mockSupabase.single.mockResolvedValue({
-				data: { id: 'uuid', ...payload, user_id: 'test-user-123' },
-				error: null,
-			});
 
 			await handleHealthSync(mockContext);
 
-			expect(mockSupabase.upsert).toHaveBeenCalledWith(expect.objectContaining({ data_source: 'google_fit' }), expect.anything());
+			expect(mockSupabase.upsert).toHaveBeenCalledWith(
+				expect.arrayContaining([expect.objectContaining({ source: 'healthconnect' })]),
+				expect.anything(),
+			);
 		});
 
-		it('includes data_source in payload (manual)', async () => {
+		it('maps data_source manual -> manual (and skips manual-priority read)', async () => {
+			mockSupabase._setUpsert({ data: null, error: null });
+
 			const payload = {
 				log_date: '2026-02-05',
 				data_source: 'manual',
@@ -159,97 +210,155 @@ describe('Health Sync Handler', () => {
 			};
 
 			mockContext.req.json.mockResolvedValue(payload);
-			mockSupabase.single.mockResolvedValue({
-				data: { id: 'uuid', ...payload, user_id: 'test-user-123' },
-				error: null,
-			});
 
 			await handleHealthSync(mockContext);
 
-			expect(mockSupabase.upsert).toHaveBeenCalledWith(expect.objectContaining({ data_source: 'manual' }), expect.anything());
+			expect(mockSupabase.upsert).toHaveBeenCalledWith(
+				expect.arrayContaining([expect.objectContaining({ source: 'manual' })]),
+				expect.anything(),
+			);
+			// Manual writes must NOT read existing manual rows (manual is authoritative).
+			expect(mockSupabase.eq).not.toHaveBeenCalledWith('source', 'manual');
+		});
+
+		it('excludes metrics the user already logged manually (healthconnect write)', async () => {
+			// Existing manual 'steps' row for this date → steps excluded from the
+			// healthconnect batch, but active_calories still upserted.
+			mockSupabase._setDirect({ data: [{ metric_type: 'steps' }], error: null });
+			mockSupabase._setUpsert({ data: null, error: null });
+
+			const payload = {
+				log_date: '2026-02-05',
+				data_source: 'apple_health',
+				steps: 5000,
+				active_calories: 320,
+			};
+
+			mockContext.req.json.mockResolvedValue(payload);
+
+			const response = await handleHealthSync(mockContext);
+
+			expect(response.data.data.saved).toBe(1);
+			expect(response.data.data.skipped_manual).toBe(1);
+			expect(mockSupabase.upsert).toHaveBeenCalledWith(
+				expect.arrayContaining([expect.objectContaining({ metric_type: 'active_calories' })]),
+				expect.anything(),
+			);
+			// steps must NOT be in the upsert batch.
+			const upsertArg = mockSupabase.upsert.mock.calls[0][0] as any[];
+			expect(upsertArg.find((r) => r.metric_type === 'steps')).toBeUndefined();
+		});
+
+		it('rejects when payload user_id does not match JWT user.id', async () => {
+			mockSupabase._setUpsert({ data: null, error: null });
+
+			const payload = {
+				user_id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+				log_date: '2026-02-05',
+				data_source: 'apple_health',
+				steps: 5000,
+			};
+
+			mockContext.req.json.mockResolvedValue(payload);
+
+			const err = await handleHealthSync(mockContext).catch((e: any) => e);
+
+			expect(err.name).toBe('ForbiddenError');
+			expect(mockSupabase.upsert).not.toHaveBeenCalled();
+		});
+
+		it('accepts matching payload user_id', async () => {
+			mockSupabase._setDirect({ data: [], error: null });
+			mockSupabase._setUpsert({ data: null, error: null });
+
+			const payload = {
+				user_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+				log_date: '2026-02-05',
+				data_source: 'apple_health',
+				steps: 5000,
+			};
+
+			mockContext.req.json.mockResolvedValue(payload);
+
+			const response = await handleHealthSync(mockContext);
+
+			expect(response.status).toBe(200);
+			expect(response.data.success).toBe(true);
 		});
 
 		it('handles invalid date format', async () => {
-			const invalidPayload = {
-				log_date: '2026-13-45',
+			// The schema validates the YYYY-MM-DD *format* (regex), not calendar
+			// validity, so '2026-13-45' actually passes. Use a string that
+			// genuinely fails the format regex to exercise the rejection path.
+			mockContext.req.json.mockResolvedValue({
+				log_date: '2026/02/05',
 				data_source: 'apple_health',
 				steps: 5000,
-			};
+			});
 
-			mockContext.req.json.mockResolvedValue(invalidPayload);
-
-			expect(async () => {
-				await handleHealthSync(mockContext);
-			}).rejects.toThrow();
+			await expect(handleHealthSync(mockContext)).rejects.toThrow();
 		});
 
 		it('handles invalid data_source', async () => {
-			const invalidPayload = {
+			mockContext.req.json.mockResolvedValue({
 				log_date: '2026-02-05',
 				data_source: 'invalid_source',
 				steps: 5000,
-			};
+			});
 
-			mockContext.req.json.mockResolvedValue(invalidPayload);
-
-			expect(async () => {
-				await handleHealthSync(mockContext);
-			}).rejects.toThrow();
+			await expect(handleHealthSync(mockContext)).rejects.toThrow();
 		});
 
 		it('handles heart rate outside valid range (>300)', async () => {
-			const invalidPayload = {
+			mockContext.req.json.mockResolvedValue({
 				log_date: '2026-02-05',
 				data_source: 'apple_health',
 				heart_rate_avg: 500,
-			};
+			});
 
-			mockContext.req.json.mockResolvedValue(invalidPayload);
+			await expect(handleHealthSync(mockContext)).rejects.toThrow();
+		});
 
-			expect(async () => {
-				await handleHealthSync(mockContext);
-			}).rejects.toThrow();
+		it('propagates supabase upsert errors', async () => {
+			mockSupabase._setDirect({ data: [], error: null });
+			mockSupabase._setUpsert({ data: null, error: { message: 'constraint violation', code: '23505' } });
+
+			mockContext.req.json.mockResolvedValue({
+				log_date: '2026-02-05',
+				data_source: 'apple_health',
+				steps: 5000,
+			});
+
+			await expect(handleHealthSync(mockContext)).rejects.toThrow();
 		});
 	});
 
 	describe('GET /api/health/latest', () => {
-		it('returns latest health data with default 7 days', async () => {
+		it('returns latest health data grouped by date', async () => {
 			mockContext.req.query.mockReturnValue(undefined);
 
-			const mockData = [
-				{ id: '1', log_date: '2026-02-05', steps: 8500 },
-				{ id: '2', log_date: '2026-02-04', steps: 7200 },
-			];
-
-			const selectFn = vi.fn().mockResolvedValue({
-				data: mockData,
+			mockSupabase._setOrder({
+				data: [
+					{ date: '2026-02-05', metric_type: 'steps', value: 8500, unit: 'count', source: 'healthconnect' },
+					{ date: '2026-02-05', metric_type: 'heart_rate', value: 72, unit: 'bpm', source: 'healthconnect' },
+					{ date: '2026-02-04', metric_type: 'steps', value: 7200, unit: 'count', source: 'healthconnect' },
+				],
 				error: null,
 			});
-
-			mockSupabase.order.mockReturnValue({
-				select: selectFn,
-			});
-			mockSupabase.lte.mockReturnThis();
-			mockSupabase.gte.mockReturnThis();
 
 			const response = await handleHealthLatest(mockContext);
 
 			expect(response.status).toBe(200);
 			expect(response.data.success).toBe(true);
 			expect(Array.isArray(response.data.data)).toBe(true);
+			expect(response.data.data[0].date).toBe('2026-02-05');
+			expect(response.data.data[0].metrics.steps.value).toBe(8500);
+			expect(response.data.data[0].metrics.heart_rate.value).toBe(72);
 		});
 
 		it('accepts custom days parameter', async () => {
 			mockContext.req.query.mockReturnValue('14');
-
-			mockSupabase.order.mockReturnValue({
-				select: vi.fn().mockResolvedValue({
-					data: [],
-					error: null,
-				}),
-			});
-			mockSupabase.lte.mockReturnThis();
-			mockSupabase.gte.mockReturnThis();
+			mockSupabase._setOrder({ data: [], error: null });
 
 			await handleHealthLatest(mockContext);
 
@@ -258,76 +367,61 @@ describe('Health Sync Handler', () => {
 
 		it('returns empty array when no data found', async () => {
 			mockContext.req.query.mockReturnValue(undefined);
-
-			mockSupabase.order.mockReturnValue({
-				select: vi.fn().mockResolvedValue({
-					data: [],
-					error: null,
-				}),
-			});
-			mockSupabase.lte.mockReturnThis();
-			mockSupabase.gte.mockReturnThis();
+			mockSupabase._setOrder({ data: [], error: null });
 
 			const response = await handleHealthLatest(mockContext);
 
 			expect(response.data.data).toEqual([]);
 		});
 
-		it('filters by date range correctly', async () => {
+		it('queries health_metrics table filtered by user_id', async () => {
 			mockContext.req.query.mockReturnValue('7');
-
-			mockSupabase.order.mockReturnValue({
-				select: vi.fn().mockResolvedValue({
-					data: [],
-					error: null,
-				}),
-			});
-			mockSupabase.lte.mockReturnThis();
-			mockSupabase.gte.mockReturnThis();
+			mockSupabase._setOrder({ data: [], error: null });
 
 			await handleHealthLatest(mockContext);
 
-			expect(mockSupabase.from).toHaveBeenCalledWith('daily_health_logs');
-			expect(mockSupabase.eq).toHaveBeenCalledWith('user_id', 'test-user-123');
+			expect(mockSupabase.from).toHaveBeenCalledWith('health_metrics');
+			expect(mockSupabase.eq).toHaveBeenCalledWith('user_id', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
 		});
 
 		it('handles invalid days parameter (<1)', async () => {
 			mockContext.req.query.mockReturnValue('0');
 
-			expect(async () => {
-				await handleHealthLatest(mockContext);
-			}).rejects.toThrow();
+			await expect(handleHealthLatest(mockContext)).rejects.toThrow();
 		});
 
 		it('handles invalid days parameter (>365)', async () => {
 			mockContext.req.query.mockReturnValue('400');
 
-			expect(async () => {
-				await handleHealthLatest(mockContext);
-			}).rejects.toThrow();
+			await expect(handleHealthLatest(mockContext)).rejects.toThrow();
 		});
 
 		it('orders results by date descending', async () => {
 			mockContext.req.query.mockReturnValue(undefined);
-
-			mockSupabase.order.mockReturnValue({
-				select: vi.fn().mockResolvedValue({
-					data: [],
-					error: null,
-				}),
-			});
-			mockSupabase.lte.mockReturnThis();
-			mockSupabase.gte.mockReturnThis();
+			mockSupabase._setOrder({ data: [], error: null });
 
 			await handleHealthLatest(mockContext);
 
-			expect(mockSupabase.order).toHaveBeenCalledWith('log_date', { ascending: false });
+			expect(mockSupabase.order).toHaveBeenCalledWith('date', { ascending: false });
 		});
 	});
 
 	describe('POST /api/health/workout', () => {
-		it('accepts complete workout data', async () => {
-			const validPayload = {
+		function stubSuccess() {
+			// workout_sessions insert (terminal .single)
+			mockSupabase._setSingle({
+				data: { id: 'uuid-456', workout_type: 'running', user_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' },
+				error: null,
+			});
+			// calories mirror manual-priority check (terminal .maybeSingle) → no manual row
+			mockSupabase._setMaybeSingle({ data: null, error: null });
+			// calories mirror upsert
+			mockSupabase._setUpsert({ data: null, error: null });
+		}
+
+		it('accepts complete workout data and inserts into workout_sessions', async () => {
+			stubSuccess();
+			const payload = {
 				workout_type: 'running',
 				start_time: '2026-02-05T10:00:00Z',
 				end_time: '2026-02-05T10:45:00Z',
@@ -337,32 +431,27 @@ describe('Health Sync Handler', () => {
 				intensity: 'vigorous',
 			};
 
-			mockContext.req.json.mockResolvedValue(validPayload);
-			mockSupabase.single.mockResolvedValue({
-				data: { id: 'uuid-456', ...validPayload, user_id: 'test-user-123' },
-				error: null,
-			});
+			mockContext.req.json.mockResolvedValue(payload);
 
 			const response = await handleWorkoutSession(mockContext);
 
 			expect(response.status).toBe(201);
 			expect(response.data.success).toBe(true);
 			expect(response.data.data).toHaveProperty('id');
+			expect(mockSupabase.from).toHaveBeenCalledWith('workout_sessions');
+			expect(mockSupabase.insert).toHaveBeenCalled();
 		});
 
 		it('accepts minimal workout data (only required fields)', async () => {
-			const minimalPayload = {
+			stubSuccess();
+			const payload = {
 				workout_type: 'cycling',
 				start_time: '2026-02-05T14:00:00Z',
 				end_time: '2026-02-05T15:30:00Z',
 				duration_minutes: 90,
 			};
 
-			mockContext.req.json.mockResolvedValue(minimalPayload);
-			mockSupabase.single.mockResolvedValue({
-				data: { id: 'uuid-456', ...minimalPayload, user_id: 'test-user-123' },
-				error: null,
-			});
+			mockContext.req.json.mockResolvedValue(payload);
 
 			const response = await handleWorkoutSession(mockContext);
 
@@ -371,6 +460,7 @@ describe('Health Sync Handler', () => {
 		});
 
 		it('returns 201 status for successful creation', async () => {
+			stubSuccess();
 			const payload = {
 				workout_type: 'swimming',
 				start_time: '2026-02-05T09:00:00Z',
@@ -379,18 +469,79 @@ describe('Health Sync Handler', () => {
 			};
 
 			mockContext.req.json.mockResolvedValue(payload);
-			mockSupabase.single.mockResolvedValue({
-				data: { id: 'uuid', ...payload, user_id: 'test-user-123' },
-				error: null,
-			});
 
 			const response = await handleWorkoutSession(mockContext);
 
 			expect(response.status).toBe(201);
 		});
 
-		it('inserts workout into database', async () => {
+		it('mirrors calories_burned to health_metrics as active_calories', async () => {
+			stubSuccess();
 			const payload = {
+				workout_type: 'running',
+				start_time: '2026-02-05T10:00:00Z',
+				end_time: '2026-02-05T10:45:00Z',
+				duration_minutes: 45,
+				calories_burned: 420,
+			};
+
+			mockContext.req.json.mockResolvedValue(payload);
+
+			await handleWorkoutSession(mockContext);
+
+			expect(mockSupabase.from).toHaveBeenCalledWith('health_metrics');
+			expect(mockSupabase.upsert).toHaveBeenCalledWith(
+				expect.objectContaining({
+					metric_type: 'active_calories',
+					value: 420,
+					date: '2026-02-05',
+					source: 'healthconnect',
+				}),
+				{ onConflict: 'user_id,date,metric_type' },
+			);
+		});
+
+		it('does not mirror calories when a manual active_calories entry exists', async () => {
+			stubSuccess();
+			// Existing manual active_calories row → mirror skipped.
+			mockSupabase._setMaybeSingle({ data: { id: 'manual-row' }, error: null });
+
+			const payload = {
+				workout_type: 'running',
+				start_time: '2026-02-05T10:00:00Z',
+				end_time: '2026-02-05T10:45:00Z',
+				duration_minutes: 45,
+				calories_burned: 420,
+			};
+
+			mockContext.req.json.mockResolvedValue(payload);
+
+			await handleWorkoutSession(mockContext);
+
+			// Only workout_sessions insert happened; NO health_metrics upsert.
+			expect(mockSupabase.upsert).not.toHaveBeenCalled();
+		});
+
+		it('skips the calories mirror when calories_burned is absent', async () => {
+			stubSuccess();
+			const payload = {
+				workout_type: 'yoga',
+				start_time: '2026-02-05T10:00:00Z',
+				end_time: '2026-02-05T10:30:00Z',
+				duration_minutes: 30,
+			};
+
+			mockContext.req.json.mockResolvedValue(payload);
+
+			await handleWorkoutSession(mockContext);
+
+			expect(mockSupabase.upsert).not.toHaveBeenCalled();
+		});
+
+		it('rejects when payload user_id does not match JWT user.id', async () => {
+			stubSuccess();
+			const payload = {
+				user_id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
 				workout_type: 'running',
 				start_time: '2026-02-05T10:00:00Z',
 				end_time: '2026-02-05T10:45:00Z',
@@ -398,21 +549,18 @@ describe('Health Sync Handler', () => {
 			};
 
 			mockContext.req.json.mockResolvedValue(payload);
-			mockSupabase.single.mockResolvedValue({
-				data: { id: 'uuid', ...payload, user_id: 'test-user-123' },
-				error: null,
-			});
 
-			await handleWorkoutSession(mockContext);
+			const err = await handleWorkoutSession(mockContext).catch((e: any) => e);
 
-			expect(mockSupabase.from).toHaveBeenCalledWith('workout_sessions');
-			expect(mockSupabase.insert).toHaveBeenCalled();
+			expect(err.name).toBe('ForbiddenError');
+			expect(mockSupabase.insert).not.toHaveBeenCalled();
 		});
 
 		it('accepts all valid intensity levels', async () => {
 			const intensities = ['light', 'moderate', 'vigorous'];
 
 			for (const intensity of intensities) {
+				stubSuccess();
 				const payload = {
 					workout_type: 'running',
 					start_time: '2026-02-05T10:00:00Z',
@@ -422,10 +570,6 @@ describe('Health Sync Handler', () => {
 				};
 
 				mockContext.req.json.mockResolvedValue(payload);
-				mockSupabase.single.mockResolvedValue({
-					data: { id: 'uuid', ...payload, user_id: 'test-user-123' },
-					error: null,
-				});
 
 				const response = await handleWorkoutSession(mockContext);
 				expect(response.status).toBe(201);
@@ -433,54 +577,45 @@ describe('Health Sync Handler', () => {
 		});
 
 		it('handles invalid duration (0)', async () => {
-			const invalidPayload = {
+			mockContext.req.json.mockResolvedValue({
 				workout_type: 'running',
 				start_time: '2026-02-05T10:00:00Z',
 				end_time: '2026-02-05T10:00:00Z',
 				duration_minutes: 0,
-			};
+			});
 
-			mockContext.req.json.mockResolvedValue(invalidPayload);
-
-			expect(async () => {
-				await handleWorkoutSession(mockContext);
-			}).rejects.toThrow();
+			await expect(handleWorkoutSession(mockContext)).rejects.toThrow();
 		});
 
 		it('handles invalid intensity', async () => {
-			const invalidPayload = {
+			mockContext.req.json.mockResolvedValue({
 				workout_type: 'running',
 				start_time: '2026-02-05T10:00:00Z',
 				end_time: '2026-02-05T10:45:00Z',
 				duration_minutes: 45,
 				intensity: 'extreme',
-			};
+			});
 
-			mockContext.req.json.mockResolvedValue(invalidPayload);
-
-			expect(async () => {
-				await handleWorkoutSession(mockContext);
-			}).rejects.toThrow();
+			await expect(handleWorkoutSession(mockContext)).rejects.toThrow();
 		});
 
 		it('handles empty workout_type', async () => {
-			const invalidPayload = {
+			mockContext.req.json.mockResolvedValue({
 				workout_type: '',
 				start_time: '2026-02-05T10:00:00Z',
 				end_time: '2026-02-05T10:45:00Z',
 				duration_minutes: 45,
-			};
+			});
 
-			mockContext.req.json.mockResolvedValue(invalidPayload);
-
-			expect(async () => {
-				await handleWorkoutSession(mockContext);
-			}).rejects.toThrow();
+			await expect(handleWorkoutSession(mockContext)).rejects.toThrow();
 		});
 	});
 
 	describe('Rate Limiting Support', () => {
-		it('health sync endpoint schema supports frequent calls', async () => {
+		it('health sync endpoint supports frequent calls', async () => {
+			mockSupabase._setDirect({ data: [], error: null });
+			mockSupabase._setUpsert({ data: null, error: null });
+
 			const payload = {
 				log_date: '2026-02-05',
 				data_source: 'apple_health',
@@ -488,10 +623,6 @@ describe('Health Sync Handler', () => {
 			};
 
 			mockContext.req.json.mockResolvedValue(payload);
-			mockSupabase.single.mockResolvedValue({
-				data: { id: 'uuid', ...payload, user_id: 'test-user-123' },
-				error: null,
-			});
 
 			for (let i = 0; i < 3; i++) {
 				await handleHealthSync(mockContext);
@@ -502,14 +633,7 @@ describe('Health Sync Handler', () => {
 
 		it('health latest endpoint handles rapid queries', async () => {
 			mockContext.req.query.mockReturnValue(undefined);
-			mockSupabase.order.mockReturnValue({
-				select: vi.fn().mockResolvedValue({
-					data: [],
-					error: null,
-				}),
-			});
-			mockSupabase.lte.mockReturnThis();
-			mockSupabase.gte.mockReturnThis();
+			mockSupabase._setOrder({ data: [], error: null });
 
 			for (let i = 0; i < 3; i++) {
 				await handleHealthLatest(mockContext);
@@ -519,6 +643,13 @@ describe('Health Sync Handler', () => {
 		});
 
 		it('workout session endpoint handles frequent requests', async () => {
+			mockSupabase._setSingle({
+				data: { id: 'uuid-456', workout_type: 'running', user_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' },
+				error: null,
+			});
+			mockSupabase._setMaybeSingle({ data: null, error: null });
+			mockSupabase._setUpsert({ data: null, error: null });
+
 			const payload = {
 				workout_type: 'running',
 				start_time: '2026-02-05T10:00:00Z',
@@ -527,15 +658,12 @@ describe('Health Sync Handler', () => {
 			};
 
 			mockContext.req.json.mockResolvedValue(payload);
-			mockSupabase.single.mockResolvedValue({
-				data: { id: 'uuid', ...payload, user_id: 'test-user-123' },
-				error: null,
-			});
 
 			for (let i = 0; i < 3; i++) {
 				await handleWorkoutSession(mockContext);
 			}
 
+			// 3 workout_sessions inserts.
 			expect(mockSupabase.insert).toHaveBeenCalledTimes(3);
 		});
 	});

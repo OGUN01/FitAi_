@@ -77,7 +77,7 @@ describe('handleNutritionLabelScan', () => {
 		expect(createGatewayMock).toHaveBeenCalledWith({
 			apiKey: 'test-gateway-key',
 		});
-		expect(gatewayInstanceMock).toHaveBeenCalledWith('google/gemini-2.5-flash');
+		expect(gatewayInstanceMock).toHaveBeenCalledWith('google/gemini-3.5-flash-lite');
 		expect(generateObjectMock).toHaveBeenCalledTimes(1);
 
 		const generateArgs = generateObjectMock.mock.calls[0][0];

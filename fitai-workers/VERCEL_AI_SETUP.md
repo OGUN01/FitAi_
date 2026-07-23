@@ -130,8 +130,8 @@ model: 'anthropic/claude-sonnet-4'
 model: 'anthropic/claude-3-5-haiku'
 
 // Google
-model: 'google/gemini-2.0-flash-exp'
-model: 'google/gemini-1.5-pro'
+model: 'google/gemini-3.5-flash-lite'
+model: 'google/gemini-3.5-flash-lite'
 
 // xAI
 model: 'xai/grok-2'

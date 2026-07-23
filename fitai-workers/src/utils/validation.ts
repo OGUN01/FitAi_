@@ -252,7 +252,7 @@ export const WorkoutGenerationRequestSchema = z.object({
 	regenerationSeed: z.number().int().optional(),
 
 	// AI parameters (optional)
-	model: z.string().default('google/gemini-2.5-flash'), // Vercel AI Gateway model ID (format: provider/model)
+	model: z.string().default('google/gemini-3.5-flash-lite'), // Vercel AI Gateway model ID (format: provider/model)
 	temperature: z.number().min(0).max(2).default(0.7),
 
 	// Cache control — set true to bypass all cache tiers and force fresh generation
@@ -543,7 +543,7 @@ export const DietGenerationRequestSchema = z.object({
 	excludeIngredients: z.array(z.string()).optional(),
 
 	// AI parameters
-	model: z.string().default('google/gemini-2.5-flash'), // Vercel AI Gateway model ID (format: provider/model)
+	model: z.string().default('google/gemini-3.5-flash-lite'), // Vercel AI Gateway model ID (format: provider/model)
 	temperature: z.number().min(0).max(2).default(0.7),
 
 	// Goal rate and deadline — used by the handler to calibrate calorie deficit and pacing
@@ -591,7 +591,7 @@ export const ChatRequestSchema = z.object({
 		.optional(),
 
 	// AI parameters
-	model: z.string().default('google/gemini-2.5-flash'), // Vercel AI Gateway model ID (format: provider/model)
+	model: z.string().default('google/gemini-3.5-flash-lite'), // Vercel AI Gateway model ID (format: provider/model)
 	temperature: z.number().min(0).max(2).default(0.9),
 	maxTokens: z.number().int().min(100).max(4000).default(1000),
 	stream: z.boolean().default(false),

@@ -16,21 +16,10 @@ jest.mock("@/services/supabase", () => ({
   },
 }));
 
-jest.mock("@/services/fitaiWorkersClient", () => ({
-  __esModule: true,
-  default: {
-    estimateNutrition: jest.fn(),
-  },
-}));
-
 import barcodeService from "@/services/barcodeService";
 import type { ProductLookupResult } from "@/services/barcodeService";
-import fitaiWorkersClient from "@/services/fitaiWorkersClient";
 
 const originalFetch = global.fetch;
-const mockedWorkersClient = fitaiWorkersClient as unknown as {
-  estimateNutrition: jest.Mock;
-};
 
 function makeOFFResponse(overrides: Record<string, unknown> = {}) {
   return {
@@ -68,7 +57,6 @@ function makeOFFNotFound() {
 beforeEach(() => {
   global.fetch = jest.fn();
   jest.useRealTimers();
-  mockedWorkersClient.estimateNutrition.mockReset();
   barcodeService.clearCache();
 });
 
@@ -165,7 +153,8 @@ describe("lookupProduct integration", () => {
 
     expect(result.outcome).toBe("not_found");
     expect(result.product).toBeUndefined();
-    expect(mockedWorkersClient.estimateNutrition).not.toHaveBeenCalled();
+    // No AI fallback: only the 2 real-DB OFF fetches (world + india) occur.
+    expect(global.fetch).toHaveBeenCalledTimes(2);
   });
 
   it("returns invalid_scan for malformed input without calling fetch", async () => {
@@ -207,45 +196,35 @@ describe("lookupProduct integration", () => {
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
-  it("returns weak_data when a trusted identity exists but nutrition is AI-estimated", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () =>
-        makeOFFResponse({
-          product_name: "Mystery Snack",
-          product_name_en: "Mystery Snack",
-          brands: "SnackCo",
-          nutriments: {},
-          nutrition_grades: undefined,
-          nova_group: undefined,
-        }),
-    });
-    mockedWorkersClient.estimateNutrition.mockResolvedValueOnce({
-      success: true,
-      data: {
-        calories: 450,
-        protein: 8,
-        carbs: 65,
-        fat: 18,
-        fiber: 2,
-        sugar: 25,
-        sodium: 150,
-        confidence: 85,
-        isAIEstimated: true,
-      },
-    });
+  it("returns weak_data when a trusted identity exists but nutrition is missing (no AI fallback)", async () => {
+    (global.fetch as jest.Mock)
+      // 1st call: OFF world barcode lookup — product found, no nutrition
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () =>
+          makeOFFResponse({
+            product_name: "Mystery Snack",
+            product_name_en: "Mystery Snack",
+            brands: "SnackCo",
+            nutriments: {},
+            nutrition_grades: undefined,
+            nova_group: undefined,
+          }),
+      })
+      // 2nd call: OFF name search — no results either
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ products: [] }),
+      });
 
     const result = await barcodeService.lookupProduct("3017620422055");
 
     expect(result.outcome).toBe("weak_data");
     expect(result.product).toBeDefined();
-    expect(result.product!.source).toBe("openfoodfacts+gemini-estimation");
-    expect(result.product!.isAIEstimated).toBe(true);
-    expect(result.meta.lookupPath).toEqual([
-      "supabase",
-      "off_world",
-      "ai_estimate",
-    ]);
+    expect(result.product!.needsNutritionEstimate).toBe(true);
+    expect(result.product!.nutrition.calories).toBe(0);
+    expect(result.product!.source).toBe("openfoodfacts");
+    expect(result.meta.lookupPath).toEqual(["supabase", "off_world"]);
   });
 
   it("returns transient_failure when trusted sources do not complete cleanly", async () => {

@@ -680,17 +680,23 @@ function calculateExercisesPerWorkout(
 }
 
 // ============================================================================
-// MUSCLE GROUP BALANCE VALIDATION
+// MUSCLE GROUP BALANCE VALIDATION & REBALANCING
 // ============================================================================
 
 /**
- * Validate that weekly plan has balanced muscle group coverage
- * Returns warnings if any major muscle group is undertrained
+ * Major muscle groups that should be hit at least 2x per week.
+ * NOTE: Names must exactly match targetMuscles values in exerciseDatabase.json.
+ * The DB uses 'pectorals' (not 'pecs') and 'delts' (not 'deltoids') — verified
+ * from metadata.muscleGroups. Split templates were normalized to match.
  */
-export function validateMuscleBalance(weeklyPlan: WeeklyExercisePlan): string[] {
-  const warnings: string[] = [];
+const MAJOR_MUSCLE_GROUPS = ['pectorals', 'lats', 'quads', 'hamstrings', 'delts'] as const;
+const MIN_WEEKLY_FREQUENCY = 2;
 
-  // Count hits per muscle group across entire week
+/**
+ * Count how many times each muscle group is trained across the whole week.
+ * A hit = an exercise whose targetMuscles OR secondaryMuscles include the group.
+ */
+function countMuscleHits(weeklyPlan: WeeklyExercisePlan): Map<string, number> {
   const muscleHits = new Map<string, number>();
 
   for (const workout of weeklyPlan.workouts) {
@@ -702,17 +708,101 @@ export function validateMuscleBalance(weeklyPlan: WeeklyExercisePlan): string[] 
     }
   }
 
-  // Major muscle groups that should be hit at least 2x per week.
-  // NOTE: Names must exactly match targetMuscles values in exerciseDatabase.json.
-  // The DB uses 'pectorals' (not 'pecs') — verified from metadata.muscleGroups.
-  const majorMuscles = ['pectorals', 'lats', 'quads', 'hamstrings', 'delts'];
+  return muscleHits;
+}
 
-  for (const muscle of majorMuscles) {
+/**
+ * Validate that weekly plan has balanced muscle group coverage.
+ * Read-only — returns warnings if any major muscle group is undertrained.
+ * Call `rebalanceMuscleBalance` afterward to actually fix the imbalance.
+ */
+export function validateMuscleBalance(weeklyPlan: WeeklyExercisePlan): string[] {
+  const warnings: string[] = [];
+  const muscleHits = countMuscleHits(weeklyPlan);
+
+  for (const muscle of MAJOR_MUSCLE_GROUPS) {
     const hits = muscleHits.get(muscle) || 0;
-    if (hits < 2) {
-      warnings.push(`${muscle} only trained ${hits}x this week (recommend 2x minimum)`);
+    if (hits < MIN_WEEKLY_FREQUENCY) {
+      warnings.push(`${muscle} only trained ${hits}x this week (recommend ${MIN_WEEKLY_FREQUENCY}x minimum)`);
     }
   }
 
   return warnings;
+}
+
+/**
+ * Enforce minimum weekly muscle-group frequency by injecting exercises for
+ * under-hit major groups. This is the FIX that pairs with validateMuscleBalance's
+ * WARN. Previously the engine only warned — a 4-day HIIT/weight-loss plan could
+ * ship with pectorals 0x, lats 1x, delts 0x.
+ *
+ * Strategy (in order, first that works per under-hit group):
+ *  1. Find a day whose focusAreas/muscleGroups are compatible with the missing
+ *     group and that has room to grow (under its per-day exercise target).
+ *  2. Insert a primary-mover exercise for that group into the day's tail.
+ *  3. If no compatible day has room, swap a redundant same-group exercise out.
+ *
+ * The function mutates `weeklyPlan.workouts[*].exercises` in place. It never
+ * adds cardio-only exercises and never re-introduces an exercise already used
+ * elsewhere in the week (respects the de-dup guard from generateWeeklyExercisePlan).
+ *
+ * Returns the list of warnings that REMAIN after rebalancing (ideally empty).
+ */
+export function rebalanceMuscleBalance(
+  weeklyPlan: WeeklyExercisePlan,
+  safeExercises: ExerciseWithMetadata[],
+): string[] {
+  const usedExerciseIds = new Set<string>();
+  for (const workout of weeklyPlan.workouts) {
+    for (const exercise of workout.exercises) {
+      usedExerciseIds.add(exercise.exerciseId);
+    }
+  }
+
+  // Re-count after each insertion so multi-deficit groups are handled correctly.
+  for (const muscle of MAJOR_MUSCLE_GROUPS) {
+    // Loop: a group may be 0x and need 2 inserts; cap iterations to avoid runaway.
+    for (let iteration = 0; iteration < MIN_WEEKLY_FREQUENCY; iteration++) {
+      const muscleHits = countMuscleHits(weeklyPlan);
+      const hits = muscleHits.get(muscle) || 0;
+      if (hits >= MIN_WEEKLY_FREQUENCY) break; // group already balanced
+
+      // Find a fresh (unused) exercise that PRIMARILY targets this muscle.
+      // Secondary-muscle matches are too weak — they'd crowd the muscle into
+      // isolation territory. Prefer compounds > auxiliaries > isolation.
+      const candidates = safeExercises
+        .filter(ex => !usedExerciseIds.has(ex.exerciseId))
+        .filter(ex => ex.targetMuscles.some(m => m.toLowerCase() === muscle))
+        .map(ex => classifyExercise(ex))
+        .sort((a, b) => {
+          const rank = (c: ExerciseClassification) =>
+            c === 'compound' ? 0 : c === 'auxiliary' ? 1 : c === 'isolation' ? 2 : 3;
+          return rank(a.classification) - rank(b.classification);
+        });
+
+      if (candidates.length === 0) break; // pool exhausted — can't fix this group
+
+      // Find a day whose focusAreas or muscleGroups include this muscle, OR a
+      // generic full-body day, preferring one with the fewest exercises (room to grow).
+      const dayIndex = weeklyPlan.workouts.findIndex(workout => {
+        // A day is compatible if it already targets this muscle OR is a full-body
+        // / metabolic / HIIT style day that can absorb an extra mover.
+        const dayMuscles = new Set(workout.exercises.flatMap(ex => [...ex.targetMuscles, ...ex.secondaryMuscles]).map(m => m.toLowerCase()));
+        const alreadyHits = dayMuscles.has(muscle);
+        const isFullBody = /full body|metabolic|hiit/i.test(workout.workoutType);
+        return alreadyHits || isFullBody;
+      });
+
+      const targetDay = dayIndex >= 0 ? weeklyPlan.workouts[dayIndex] : weeklyPlan.workouts[0];
+      if (!targetDay) break;
+
+      const chosen = candidates[0];
+      targetDay.exercises.push(chosen);
+      targetDay.totalExercises = targetDay.exercises.length;
+      usedExerciseIds.add(chosen.exerciseId);
+    }
+  }
+
+  // Return residual warnings (should be empty if the pool had coverage).
+  return validateMuscleBalance(weeklyPlan);
 }

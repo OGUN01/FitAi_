@@ -28,7 +28,7 @@ const testRequest = {
   workoutType: 'push',
   duration: 45,
   focusMuscles: ['pecs', 'delts', 'triceps'],
-  model: 'google:gemini-2.0-flash-001',
+  model: 'google/gemini-3.5-flash-lite',
   temperature: 0.7,
 };
 

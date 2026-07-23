@@ -9,7 +9,6 @@
  */
 
 import { getCountryFromBarcode } from "@/utils/countryMapping";
-import fitaiWorkersClient from "./fitaiWorkersClient";
 
 interface NutritionData {
   calories: number;
@@ -48,7 +47,7 @@ export type BarcodeLookupPath =
   | "supabase"
   | "off_world"
   | "off_india"
-  | "ai_estimate";
+  | "off_name_search";
 
 export interface BarcodeSearchDetailedResult {
   outcome: "match" | "not_found" | "transient_failure";
@@ -92,51 +91,6 @@ interface OFFv2Product {
   image_front_url?: string;
   countries_tags?: string[];
   labels_tags?: string[];
-}
-
-export async function estimateNutritionWithAI(
-  productName: string,
-  brand: string,
-  gs1Country: string,
-): Promise<BarcodeSearchResult | null> {
-  try {
-    const response = await fitaiWorkersClient.estimateNutrition(
-      productName,
-      brand,
-      gs1Country,
-    );
-    if (!response.success || !response.data) {
-      console.warn("[BarcodeAI] Nutrition estimate unavailable:", response.error);
-      return null;
-    }
-    const d = response.data;
-    const cappedConfidence = Math.min(Math.max(d.confidence ?? 0, 0), 40);
-    return {
-      nutrition: {
-        calories: d.calories,
-        protein: d.protein,
-        carbs: d.carbs,
-        fat: d.fat,
-        fiber: d.fiber,
-        sugar: d.sugar,
-        sodium: d.sodium,
-        source: "gemini-estimation",
-        confidence: cappedConfidence,
-      },
-      productInfo: {
-        name: productName,
-        brand,
-        gs1Country,
-      },
-      source: "gemini-estimation",
-      needsNutritionEstimate: false,
-      confidence: cappedConfidence,
-      isAIEstimated: true,
-    };
-  } catch (error) {
-    console.warn("[BarcodeAI] Nutrition estimate failed:", error);
-    return null;
-  }
 }
 
 const barcodeCache = new Map<string, BarcodeSearchResult>();
@@ -505,19 +459,11 @@ export class FreeNutritionAPIs {
 
   private deriveLookupPathFromSource(source: string): BarcodeLookupPath[] {
     if (source.includes("openfoodfacts-india")) {
-      return source.includes("gemini-estimation")
-        ? ["off_india", "ai_estimate"]
-        : ["off_india"];
+      return ["off_india"];
     }
 
     if (source.includes("openfoodfacts")) {
-      return source.includes("gemini-estimation")
-        ? ["off_world", "ai_estimate"]
-        : ["off_world"];
-    }
-
-    if (source.includes("gemini-estimation")) {
-      return ["ai_estimate"];
+      return ["off_world"];
     }
 
     return [];
@@ -610,20 +556,22 @@ export class FreeNutritionAPIs {
     }
 
     if (offResult) {
-      // OFF found product but no nutrition data — try Gemini AI estimation
+      // OFF found product identity but no nutrition — try OFF name search
+      // (real DB, no AI). If that also misses, leave needsNutritionEstimate
+      // true so the UI offers "Scan Label" / "Contribute Product".
       if (offResult.needsNutritionEstimate && offResult.productInfo.name) {
-        const aiResult = await estimateNutritionWithAI(
+        const nameNutrition = await this.searchOpenFoodFacts(
           offResult.productInfo.name,
-          offResult.productInfo.brand || "",
-          offResult.productInfo.gs1Country || getCountryFromBarcode(barcode),
         );
-        if (aiResult && aiResult.nutrition) {
-          lookupPath.push("ai_estimate");
-          offResult.nutrition = aiResult.nutrition;
+        if (nameNutrition) {
+          lookupPath.push("off_name_search");
+          offResult.nutrition = nameNutrition;
           offResult.needsNutritionEstimate = false;
-          offResult.isAIEstimated = true;
-          offResult.confidence = aiResult.confidence;
-          offResult.source = "openfoodfacts+gemini-estimation";
+          offResult.confidence = Math.min(
+            nameNutrition.confidence,
+            offResult.confidence,
+          );
+          offResult.source = "openfoodfacts+name-search";
         }
       }
       this.cacheBarcodeResult(barcode, offResult);
@@ -700,22 +648,26 @@ export class FreeNutritionAPIs {
     }
 
     if (offIndiaResult) {
+      // OFF India found product identity but no nutrition — try OFF name
+      // search (real DB, no AI). If that also misses, leave
+      // needsNutritionEstimate true so the UI offers "Scan Label" /
+      // "Contribute Product".
       if (
         offIndiaResult.needsNutritionEstimate &&
         offIndiaResult.productInfo.name
       ) {
-        const aiResult = await estimateNutritionWithAI(
+        const nameNutrition = await this.searchOpenFoodFacts(
           offIndiaResult.productInfo.name,
-          offIndiaResult.productInfo.brand || "",
-          gs1Country || "",
         );
-        if (aiResult && aiResult.nutrition) {
-          lookupPath.push("ai_estimate");
-          offIndiaResult.nutrition = aiResult.nutrition;
+        if (nameNutrition) {
+          lookupPath.push("off_name_search");
+          offIndiaResult.nutrition = nameNutrition;
           offIndiaResult.needsNutritionEstimate = false;
-          offIndiaResult.isAIEstimated = true;
-          offIndiaResult.confidence = aiResult.confidence;
-          offIndiaResult.source = "openfoodfacts-india+gemini-estimation";
+          offIndiaResult.confidence = Math.min(
+            nameNutrition.confidence,
+            offIndiaResult.confidence,
+          );
+          offIndiaResult.source = "openfoodfacts-india+name-search";
         }
       }
       this.cacheBarcodeResult(barcode, offIndiaResult);

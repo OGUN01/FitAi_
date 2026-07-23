@@ -1217,10 +1217,10 @@ export async function generateFreshDiet(request: DietGenerationRequest, env: Env
 	return {
 		diet: adjustedDiet,
 		metadata: {
-			model: request.model || 'google/gemini-2.5-flash',
+			model: request.model || 'google/gemini-3.5-flash-lite',
 			aiGenerationTime,
 			tokensUsed: result.usage?.totalTokens,
-			costUsd: calculateCost(request.model || 'google/gemini-2.5-flash', result.usage?.totalTokens || 0),
+			costUsd: calculateCost(request.model || 'google/gemini-3.5-flash-lite', result.usage?.totalTokens || 0),
 			validationPassed: true,
 			warningsCount: validationResult.warnings.length,
 			warnings: validationResult.warnings,
@@ -1329,9 +1329,8 @@ function filterDisabledMeals(mealPlan: DietResponse, prefs: DietPreferences | nu
  */
 function calculateCost(modelId: string, tokens: number): number {
 	const costPer1kTokens: Record<string, number> = {
-		'google/gemini-2.0-flash-exp': 0.0001, // $0.10 per 1M tokens
+		'google/gemini-3.5-flash-lite': 0.0001, // $0.10 per 1M tokens
 		'google/gemini-2.5-flash': 0.0001, // $0.10 per 1M tokens
-		'google/gemini-1.5-pro': 0.002, // $2.00 per 1M tokens
 		'openai/gpt-4': 0.03, // $30 per 1M tokens
 		'openai/gpt-3.5-turbo': 0.0015, // $1.50 per 1M tokens
 	};

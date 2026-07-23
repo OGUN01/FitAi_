@@ -78,7 +78,7 @@ const NutritionLabelSchema = z.object({
 
 function createAIProvider(env: Env) {
 	const gateway = createGateway({ apiKey: env.AI_GATEWAY_API_KEY });
-	return gateway('google/gemini-2.5-flash');
+	return gateway('google/gemini-3.5-flash-lite');
 }
 
 // ============================================================================
@@ -208,7 +208,7 @@ export async function handleNutritionLabelScan(c: Context<{ Bindings: Env; Varia
 			fat:      object.fatPer100g      ?? Math.round(object.fatPerServing      * scale * 10) / 10,
 			fiber:    object.fiberPerServing  != null ? Math.round(object.fiberPerServing  * scale * 10) / 10 : undefined,
 			sugar:    object.sugarPerServing  != null ? Math.round(object.sugarPerServing  * scale * 10) / 10 : undefined,
-			// sodium stored as mg/100g (consistent with nutritionEstimate handler)
+			// sodium stored as mg/100g (consistent across barcode/label handlers)
 			sodium:   sodiumPerServingMg != null ? Math.round(sodiumPerServingMg * scale) : undefined,
 		};
 
@@ -247,7 +247,7 @@ export async function handleNutritionLabelScan(c: Context<{ Bindings: Env; Varia
 			},
 			metadata: {
 				processingTime,
-				model: 'google/gemini-2.5-flash',
+				model: 'google/gemini-3.5-flash-lite',
 				userId: user.id,
 			},
 		});
