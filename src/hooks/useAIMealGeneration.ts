@@ -85,6 +85,81 @@ const buildPackagedFoodEntry = (product: ScannedProduct, grams: number) => {
 const getNormalizedRecognizedFoodFiber = (food: any) =>
   normalizeMealLogFiberValue(food?.nutrition?.fiber) ?? 0;
 
+/**
+ * Recompute recognized foods' nutrition for a user-specified total weight.
+ *
+ * The worker always returns nutrition for the AI's `estimatedGrams` per food,
+ * ignoring any pre-scan `portionGrams` hint (the request schema strips it). When
+ * the user enters an exact weight, we must rescale so the displayed and logged
+ * macros reflect the grams the user is actually eating.
+ *
+ * The requested grams is distributed across foods proportionally to each food's
+ * `estimatedGrams` (so a 2-food plate whose AI estimate was 80g+120g=200g, with
+ * a user-entered 100g, becomes 40g+60g). Each food's macros are then derived
+ * from its `nutritionPer100g` (preferred) or by ratio against `estimatedGrams`.
+ */
+const scaleRecognizedFoodsToGrams = (
+  foods: any[],
+  requestedGrams: number,
+): any[] => {
+  const totalEstimated = foods.reduce(
+    (sum, f) => sum + (f.estimatedGrams > 0 ? f.estimatedGrams : 0),
+    0,
+  );
+  return foods.map((food) => {
+    const baseGrams = food.estimatedGrams > 0 ? food.estimatedGrams : 100;
+    // Per-food grams: proportional share of the requested total (single-food
+    // case collapses to the full requestedGrams).
+    const foodGrams =
+      totalEstimated > 0
+        ? (baseGrams / totalEstimated) * requestedGrams
+        : requestedGrams;
+    const per100 = food.nutritionPer100g;
+    if (per100 && per100.calories != null) {
+      const m = foodGrams / 100;
+      return {
+        ...food,
+        userGrams: Math.round(foodGrams),
+        nutrition: {
+          calories: Math.round(per100.calories * m),
+          protein: Math.round((per100.protein ?? 0) * m * 10) / 10,
+          carbs: Math.round((per100.carbs ?? 0) * m * 10) / 10,
+          fat: Math.round((per100.fat ?? 0) * m * 10) / 10,
+          fiber: Math.round((per100.fiber ?? 0) * m * 10) / 10,
+          sugar:
+            food.nutrition?.sugar != null
+              ? Math.round(food.nutrition.sugar * m * 10) / 10
+              : undefined,
+          sodium:
+            food.nutrition?.sodium != null
+              ? Math.round(food.nutrition.sodium * m)
+              : undefined,
+        },
+      };
+    }
+    // Fallback: scale the per-serving values by the ratio against the base portion.
+    const ratio = foodGrams / baseGrams;
+    const scaledNutrition: any = {
+      calories: Math.round(food.nutrition.calories * ratio),
+      protein: Math.round(food.nutrition.protein * ratio * 10) / 10,
+      carbs: Math.round(food.nutrition.carbs * ratio * 10) / 10,
+      fat: Math.round(food.nutrition.fat * ratio * 10) / 10,
+      fiber: Math.round((food.nutrition.fiber ?? 0) * ratio * 10) / 10,
+    };
+    if (food.nutrition?.sugar != null) {
+      scaledNutrition.sugar = Math.round(food.nutrition.sugar * ratio * 10) / 10;
+    }
+    if (food.nutrition?.sodium != null) {
+      scaledNutrition.sodium = Math.round(food.nutrition.sodium * ratio);
+    }
+    return {
+      ...food,
+      userGrams: Math.round(foodGrams),
+      nutrition: scaledNutrition,
+    };
+  });
+};
+
 type BarcodeEntryPoint =
   | "diet_barcode"
   | "log_meal_barcode"
@@ -555,10 +630,18 @@ export const useAIMealGeneration = (options?: {
         userCountry,
         userCuisine,
       );
+      // The worker's Zod schema drops portionGrams and always returns nutrition
+      // for the AI's estimatedGrams. If the user provided an exact weight, we must
+      // recompute each food's macros from nutritionPer100g so the ScanResultModal,
+      // totals, and downstream log/adjustment flows reflect the grams the user is
+      // actually eating (SSOT — applied once here).
+      const requestedGrams = weightGrams ?? portionGrams ?? undefined;
       setPortionGrams(null);
 
       if (result.success && result.foods) {
-        const recognizedFoods = result.foods;
+        const recognizedFoods = requestedGrams
+          ? scaleRecognizedFoodsToGrams(result.foods, requestedGrams)
+          : result.foods;
         const totalCalories = recognizedFoods.reduce(
           (sum: number, food: any) => sum + food.nutrition.calories,
           0,

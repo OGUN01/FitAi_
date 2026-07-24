@@ -34,7 +34,7 @@ export const FoodCard: React.FC<FoodCardProps> = ({ food }) => {
         </View>
         <View style={styles.detailItem}>
           <Text style={styles.detailLabel}>Portion</Text>
-          <Text style={styles.detailValue}>{food.estimatedGrams}g</Text>
+          <Text style={styles.detailValue}>{food.userGrams ?? food.estimatedGrams}g</Text>
         </View>
         <View style={styles.detailItem}>
           <Text style={styles.detailLabel}>Cuisine</Text>

@@ -9,7 +9,7 @@
  * - Saves to nutritionStore (weeklyMealPlan + marks complete → shows in daily macros)
  */
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -20,13 +20,19 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  useWindowDimensions,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rh, rw, rp, rbr } from "../../utils/responsive";
 import { useNutritionStore } from "../../stores/nutritionStore";
+import {
+  useSavedMealsStore,
+  type SavedMeal,
+} from "../../stores/savedMealsStore";
 import { haptics } from "../../utils/haptics";
 import { parseLocalFloat } from "../../utils/units";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -115,6 +121,15 @@ interface Ingredient {
   carbs: string;
   fat: string;
   fiber: string;
+  // FEATURE 1: per-100g nutrient density (grams of macro per 100g of food).
+  // Captured when the ingredient is auto-filled from a saved meal or when the
+  // user edits a macro+grams pair. Drives proportional rescaling when the user
+  // adjusts the grams field up/down. null = no density known (manual entry with
+  // no grams yet) → grams edits leave macros untouched (legacy behavior).
+  per100gProtein?: number | null;
+  per100gCarbs?: number | null;
+  per100gFat?: number | null;
+  per100gFiber?: number | null;
 }
 
 const makeIngredient = (): Ingredient => ({
@@ -125,6 +140,10 @@ const makeIngredient = (): Ingredient => ({
   carbs: "",
   fat: "",
   fiber: "",
+  per100gProtein: null,
+  per100gCarbs: null,
+  per100gFat: null,
+  per100gFiber: null,
 });
 
 const parseNum = (v: string) => parseLocalFloat(v) || 0;
@@ -167,9 +186,15 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
   >(null);
   const [activeMultiplier, setActiveMultiplier] = useState<number>(1);
 
+  // FEATURE 1: saved-meals autocomplete state
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
   const { weeklyMealPlan, setWeeklyMealPlan, addDailyMeal } =
     useNutritionStore();
   const { user } = useAuth();
+  const savedMealsStore = useSavedMealsStore();
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
 
   // Derived totals from ingredient mode
   const totalProtein = ingredients.reduce((s, i) => s + parseNum(i.protein), 0);
@@ -233,6 +258,111 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
     haptics.light();
   };
 
+  // FEATURE 1: saved-meal suggestions filtered by typed name + selected meal type.
+  // ≥2 chars triggers the dropdown; matches are case-insensitive substrings.
+  const mealNameSuggestions = useMemo<SavedMeal[]>(() => {
+    const q = mealName.trim();
+    if (q.length < 2) return [];
+    return savedMealsStore
+      .getMealsByName(q, mealType)
+      .slice(0, 6);
+  }, [mealName, mealType, savedMealsStore]);
+
+  // Auto-fill the form from a saved meal: name, type, ingredients, totals.
+  // Rebuilds ingredient rows with fresh ids so editing is independent of the
+  // saved copy. The nutrition summary (totalCalories etc.) is already derived
+  // reactively from `ingredients`, so it updates automatically.
+  //
+  // FEATURE 1: we also capture each ingredient's per-100g density from the
+  // saved portion (grams + macros both known), so the user can then nudge the
+  // grams field up/down and all macros rescale proportionally.
+  const handleSelectSavedMeal = useCallback(
+    (meal: SavedMeal) => {
+      setMealName(meal.name);
+      if (meal.ingredients.length > 0) {
+        setMode("ingredients");
+        setIngredients(
+          meal.ingredients.map((ing) => {
+            const base = makeIngredient();
+            base.name = ing.name;
+            base.grams = ing.grams;
+            base.protein = ing.protein;
+            base.carbs = ing.carbs;
+            base.fat = ing.fat;
+            base.fiber = ing.fiber;
+            // Capture per-100g density from this known portion so later grams
+            // edits rescale the macros. density = macroValue * (100 / grams).
+            const g = parseNum(ing.grams);
+            if (g > 0) {
+              base.per100gProtein = parseNum(ing.protein) * (100 / g);
+              base.per100gCarbs = parseNum(ing.carbs) * (100 / g);
+              base.per100gFat = parseNum(ing.fat) * (100 / g);
+              base.per100gFiber = parseNum(ing.fiber) * (100 / g);
+            }
+            return base;
+          }),
+        );
+        setBaseDirectEntry(null);
+        setActiveMultiplier(1);
+      }
+      setShowSuggestions(false);
+      haptics.light();
+    },
+    [],
+  );
+
+  // FEATURE 1: "Save Meal" — persist the current ingredients + totals for
+  // future reuse. Requires a name and at least one ingredient with a name.
+  const handleSaveMeal = useCallback(() => {
+    const trimmedName = mealName.trim();
+    if (!trimmedName) {
+      crossPlatformAlert(
+        "Missing Name",
+        "Enter a meal name first to save it for reuse.",
+      );
+      return;
+    }
+    if (mode !== "ingredients") {
+      crossPlatformAlert(
+        "Save Meal",
+        "Saving meals is available in the By Ingredients mode.",
+      );
+      return;
+    }
+    const hasAnyIngredient = ingredients.some((i) => i.name.trim());
+    if (!hasAnyIngredient) {
+      crossPlatformAlert(
+        "No Ingredients",
+        "Add at least one ingredient before saving the meal.",
+      );
+      return;
+    }
+    try {
+      savedMealsStore.saveMeal({
+        name: trimmedName,
+        mealType,
+        ingredients: ingredients
+          .filter((i) => i.name.trim())
+          .map((i) => ({
+            name: i.name.trim(),
+            grams: i.grams,
+            protein: i.protein,
+            carbs: i.carbs,
+            fat: i.fat,
+            fiber: i.fiber,
+          })),
+      });
+      haptics.success();
+      crossPlatformAlert(
+        "Meal Saved",
+        `"${trimmedName}" is now available to reuse when you start typing its name in Log Meal.`,
+      );
+    } catch (err) {
+      console.error("Failed to save meal:", err);
+      crossPlatformAlert("Error", "Failed to save meal. Please try again.");
+    }
+  }, [mealName, mode, ingredients, mealType, savedMealsStore]);
+
   const resetForm = () => {
     setMealName("");
     setMealType("lunch");
@@ -249,6 +379,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
     setPortionAssumptionGrams(null);
     setBaseDirectEntry(null);
     setActiveMultiplier(1);
+    setShowSuggestions(false);
     setIsSubmitting(false);
   };
 
@@ -275,7 +406,57 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
   const updateIngredient = useCallback(
     (id: string, field: keyof Omit<Ingredient, "id">, value: string) => {
       setIngredients((prev) =>
-        prev.map((i) => (i.id === id ? { ...i, [field]: value } : i)),
+        prev.map((i) => {
+          if (i.id !== id) return i;
+          const next = { ...i, [field]: value };
+
+          // FEATURE 1: proportional macro rescaling.
+          // When grams change and we know the per-100g density (captured from a
+          // saved meal or from a prior macro+grams pairing), rescale all macro
+          // fields to match the new portion. When a macro field changes while
+          // grams are present, re-capture the density so future grams edits
+          // track the user's intent. This keeps the nutrition summary live as
+          // the user nudges grams up/down. Reuses the shared nutritionRecalc
+          // math (scaleMacrosByGrams would require a per-100g shape — we inline
+          // the ratio here since density fields are optional/sparse).
+          const gramsNum = parseNum(next.grams);
+
+          if (field === "grams") {
+            // Rescale macros from density if we have it.
+            if (gramsNum > 0) {
+              const ratio = gramsNum / 100;
+              if (next.per100gProtein != null) {
+                next.protein = (next.per100gProtein * ratio).toFixed(1);
+              }
+              if (next.per100gCarbs != null) {
+                next.carbs = (next.per100gCarbs * ratio).toFixed(1);
+              }
+              if (next.per100gFat != null) {
+                next.fat = (next.per100gFat * ratio).toFixed(1);
+              }
+              if (next.per100gFiber != null) {
+                next.fiber = (next.per100gFiber * ratio).toFixed(1);
+              }
+            }
+          } else if (
+            field === "protein" ||
+            field === "carbs" ||
+            field === "fat" ||
+            field === "fiber"
+          ) {
+            // Re-capture density from (grams, macro) so later grams edits
+            // rescale proportionally. Only when grams present & > 0.
+            if (gramsNum > 0) {
+              const density = parseNum(value) * (100 / gramsNum);
+              if (field === "protein") next.per100gProtein = density;
+              if (field === "carbs") next.per100gCarbs = density;
+              if (field === "fat") next.per100gFat = density;
+              if (field === "fiber") next.per100gFiber = density;
+            }
+          }
+
+          return next;
+        }),
       );
     },
     [],
@@ -489,9 +670,15 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
     >
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={
+          Platform.OS === "ios"
+            ? "padding"
+            : Platform.OS === "android"
+              ? "height"
+              : undefined
+        }
       >
-        <View style={styles.container}>
+        <View style={[styles.container, { maxHeight: windowHeight - insets.top - insets.bottom - rh(24) }]}>
           <GlassCard style={styles.content}>
             {/* Header */}
             <View style={styles.header}>
@@ -513,6 +700,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
 
             <ScrollView
               style={styles.scrollView}
+              contentContainerStyle={styles.scrollViewContent}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               nestedScrollEnabled
@@ -534,11 +722,63 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                 <TextInput
                   style={styles.input}
                   value={mealName}
-                  onChangeText={setMealName}
+                  onChangeText={(v) => {
+                    setMealName(v);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 180)}
                   placeholder="e.g. Dal Rice, Chicken Salad"
                   placeholderTextColor={colors.textSecondary}
                   autoFocus
                 />
+
+                {/* FEATURE 1: Saved-meals autocomplete dropdown */}
+                {showSuggestions && mealNameSuggestions.length > 0 && (
+                  <View style={styles.suggestionsList}>
+                    <ScrollView
+                      style={styles.suggestionsScroll}
+                      showsVerticalScrollIndicator={false}
+                      keyboardShouldPersistTaps="handled"
+                      nestedScrollEnabled
+                    >
+                      {mealNameSuggestions.map((m) => {
+                        const mealIcon =
+                          (MEAL_ICONS as Record<string, string>)[
+                            m.mealType
+                          ] || "restaurant-outline";
+                        return (
+                        <TouchableOpacity
+                          key={m.id}
+                          style={styles.suggestionItem}
+                          onPress={() => handleSelectSavedMeal(m)}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Reuse saved meal ${m.name}`}
+                        >
+                          <Ionicons
+                            name={mealIcon as keyof typeof Ionicons.glyphMap}
+                            size={rf(15)}
+                            color={colors.primary}
+                          />
+                          <View style={styles.suggestionTextWrap}>
+                            <Text style={styles.suggestionName} numberOfLines={1}>
+                              {m.name}
+                            </Text>
+                            <Text style={styles.suggestionMeta} numberOfLines={1}>
+                              {m.ingredients.length} ingredient{m.ingredients.length !== 1 ? "s" : ""} · {m.totalCalories} cal · {m.totalProtein.toFixed(1)}g protein
+                            </Text>
+                          </View>
+                          <Ionicons
+                            name="arrow-undo-circle-outline"
+                            size={rf(16)}
+                            color={colors.textSecondary}
+                          />
+                        </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+                )}
               </View>
 
               {/* Meal Type */}
@@ -1001,13 +1241,26 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
               )}
             </ScrollView>
 
-            {/* Action Buttons */}
+            {/* Action Buttons — pinned below the ScrollView so they are always
+                visible regardless of content/keyboard height (BUG 2 fix). */}
             <View style={styles.footer}>
               <AnimatedPressable
                 style={[styles.button, styles.cancelButton]}
                 onPress={handleClose}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
+              </AnimatedPressable>
+              {/* FEATURE 1: Save Meal for future reuse (ingredients mode only) */}
+              <AnimatedPressable
+                style={[styles.button, styles.saveMealButton]}
+                onPress={handleSaveMeal}
+              >
+                <Ionicons
+                  name="bookmark-outline"
+                  size={rf(16)}
+                  color={colors.primary}
+                />
+                <Text style={styles.saveMealButtonText}>Save Meal</Text>
               </AnimatedPressable>
               <AnimatedPressable
                 style={[styles.button, styles.saveButton]}
@@ -1042,10 +1295,18 @@ const styles = StyleSheet.create({
     width: "93%",
     maxHeight: rh(767),
   },
+  // BUG 2 fix: content is a flex column so the ScrollView can flex-grow/shrink
+  // within the available height while the footer stays pinned at the bottom,
+  // always visible even with the keyboard open. Previously content had no
+  // flex direction and the ScrollView used a fixed maxHeight: rh(500) which
+  // did not shrink when the keyboard reduced the window height, pushing the
+  // footer below the viewport.
   content: {
     borderRadius: rbr(20),
     padding: rp(20),
     backgroundColor: colors.backgroundSecondary,
+    flexDirection: "column" as const,
+    maxHeight: "100%" as const,
   },
   header: {
     flexDirection: "row",
@@ -1065,8 +1326,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  // BUG 2 fix: flex:1 lets the scroll area take whatever vertical space is
+  // left after the header + footer, shrinking when the keyboard is open so the
+  // Log Meal button can never be pushed off-screen.
   scrollView: {
-    maxHeight: rh(500),
+    flex: 1,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    paddingBottom: rh(8),
   },
   section: {
     marginBottom: rh(16),
@@ -1326,7 +1594,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: "row",
-    gap: rw(12),
+    gap: rw(8),
     marginTop: rh(14),
   },
   button: {
@@ -1334,7 +1602,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    gap: rw(6),
+    gap: rw(5),
     paddingVertical: rh(13),
     borderRadius: rbr(12),
   },
@@ -1344,17 +1612,64 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   cancelButtonText: {
-    fontSize: rf(15),
+    fontSize: rf(14),
     fontWeight: "600",
     color: colors.text,
+  },
+  // FEATURE 1: tertiary "Save Meal" button — outline style so it reads as a
+  // secondary action distinct from the primary "Log Meal".
+  saveMealButton: {
+    backgroundColor: `${colors.primary}18`,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  saveMealButtonText: {
+    fontSize: rf(13),
+    fontWeight: "600",
+    color: colors.primary,
   },
   saveButton: {
     backgroundColor: colors.primary,
   },
   saveButtonText: {
-    fontSize: rf(15),
+    fontSize: rf(14),
     fontWeight: "600",
     color: colors.white,
+  },
+  // FEATURE 1: autocomplete dropdown styles
+  suggestionsList: {
+    marginTop: rh(6),
+    backgroundColor: colors.surface,
+    borderRadius: rbr(12),
+    borderWidth: 1,
+    borderColor: colors.border,
+    maxHeight: rh(220),
+    overflow: "hidden",
+  },
+  suggestionsScroll: {
+    flexGrow: 0,
+  },
+  suggestionItem: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: rw(8),
+    paddingHorizontal: rp(12),
+    paddingVertical: rh(11),
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  suggestionTextWrap: {
+    flex: 1,
+  },
+  suggestionName: {
+    fontSize: rf(14),
+    fontWeight: "600",
+    color: colors.text,
+  },
+  suggestionMeta: {
+    fontSize: rf(11),
+    color: colors.textSecondary,
+    marginTop: rh(1),
   },
 });
 
