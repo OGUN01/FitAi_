@@ -86,16 +86,9 @@ const FoodRecognitionResponseSchema = z.object({
 });
 
 // ============================================================================
-// AI PROVIDER
+// AI PROVIDER — uses the shared createAIProvider from utils/aiProvider.ts
+// (imported above). It handles Vercel AI Gateway init + fallbacks centrally.
 // ============================================================================
-
-function createAIProvider(env: Env, modelId: string) {
-	const gatewayInstance = createGateway({
-		apiKey: env.AI_GATEWAY_API_KEY,
-	});
-	const model = modelId || 'google/gemini-3.5-flash-lite';
-	return gatewayInstance(model);
-}
 
 // ============================================================================
 // SIMPLIFIED PROMPT - FOCUSED ON RELIABLE DETECTION

@@ -30,7 +30,7 @@ export async function consumeDietJobs(batch: MessageBatch<DietJobMessage>, env: 
 
 		try {
 			// 1. Update status to processing
-			await updateJobStatus(env, jobId, 'processing', {
+			await updateJobStatus(env, jobId, 'processing', userId, {
 				started_at: new Date().toISOString(),
 			});
 
@@ -64,7 +64,7 @@ export async function consumeDietJobs(batch: MessageBatch<DietJobMessage>, env: 
 
 			// 5. Update job as completed
 			const totalTime = Date.now() - startTime;
-			await updateJobStatus(env, jobId, 'completed', {
+			await updateJobStatus(env, jobId, 'completed', userId, {
 				completed_at: new Date().toISOString(),
 				result_data: finalResult,
 				generation_time_ms: totalTime,
@@ -80,7 +80,7 @@ export async function consumeDietJobs(batch: MessageBatch<DietJobMessage>, env: 
 			console.error(`[QueueConsumer] Job ${jobId} failed:`, error);
 
 			// Update job with error details
-			await updateJobStatus(env, jobId, 'failed', {
+			await updateJobStatus(env, jobId, 'failed', userId, {
 				completed_at: new Date().toISOString(),
 				error_code: error.code || 'AI_GENERATION_FAILED',
 				error_message: error.message || 'Unknown error during generation',

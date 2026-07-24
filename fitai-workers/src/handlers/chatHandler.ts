@@ -26,21 +26,10 @@ import { getSupabaseClient } from '../utils/supabase';
 // AI PROVIDER CONFIGURATION
 // ============================================================================
 
-/**
- * Initialize Vercel AI SDK with Vercel AI Gateway
- * Creates gateway instance with explicit API key (Cloudflare Workers don't have process.env)
- * Model format: provider/model (e.g., 'google/gemini-3.5-flash-lite', 'openai/gpt-4-turbo-preview')
- */
-function createAIProvider(env: Env, modelId: string) {
-  // Create gateway instance with explicit API key for Cloudflare Workers
-  const gatewayInstance = createGateway({
-    apiKey: env.AI_GATEWAY_API_KEY,
-  });
-
-  // Return model from gateway
-  const model = modelId || 'google/gemini-3.5-flash-lite';
-  return gatewayInstance(model);
-}
+// ============================================================================
+// AI PROVIDER — uses the shared createAIProvider from utils/aiProvider.ts
+// (imported above). It handles Vercel AI Gateway init + fallbacks centrally.
+// ============================================================================
 
 // ============================================================================
 // SYSTEM PROMPT

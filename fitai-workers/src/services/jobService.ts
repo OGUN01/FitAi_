@@ -105,7 +105,17 @@ export async function getJobStatus(env: Env, jobId: string, userId: string): Pro
 			return getJobFromDatabase(env, jobId, userId);
 		}
 
-		// Return cached status for pending/processing
+		// Return cached status for pending/processing.
+		// KV is eventually consistent — a stale "pending" may persist after the
+		// job already completed in the DB. If the job has been pending for more
+		// than 30 seconds, fall back to the DB for the authoritative status.
+		const pendingAgeMs = cached.createdAt
+			? Date.now() - new Date(cached.createdAt).getTime()
+			: 0;
+		if (cached.status === 'pending' && pendingAgeMs > 30000) {
+			return getJobFromDatabase(env, jobId, userId);
+		}
+
 		return {
 			jobId,
 			status: cached.status,
@@ -159,6 +169,7 @@ export async function updateJobStatus(
 	env: Env,
 	jobId: string,
 	status: JobStatus,
+	userId?: string,
 	updates: Partial<{
 		started_at: string;
 		completed_at: string;
@@ -195,6 +206,21 @@ export async function updateJobStatus(
 				...cached,
 				status,
 				startedAt: updates.started_at || cached.startedAt,
+				completedAt: updates.completed_at,
+			}),
+			{ expirationTtl: JOB_KV_TTL },
+		);
+	} else if (userId) {
+		// KV entry missing (expired or race) — write a minimal entry so
+		// getJobStatus sees the updated status and falls back to DB for
+		// completed/failed jobs instead of returning stale "pending" forever.
+		await env.MEAL_CACHE.put(
+			kvKey,
+			JSON.stringify({
+				jobId,
+				userId,
+				status,
+				startedAt: updates.started_at,
 				completedAt: updates.completed_at,
 			}),
 			{ expirationTtl: JOB_KV_TTL },

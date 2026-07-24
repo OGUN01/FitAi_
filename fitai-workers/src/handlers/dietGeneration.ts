@@ -290,6 +290,11 @@ function checkDietTypeViolations(meals: Meal[], dietType: string, restrictions?:
 	const dairyKeywords = ['milk', 'cheese', 'yogurt', 'yoghurt', 'paneer', 'butter', 'ghee', 'cream', 'whey'];
 	const eggKeywords = ['egg', 'omelette', 'omelet', 'scrambled', 'albumin'];
 
+	// Word-boundary matcher — prevents false positives like "veggies" matching "egg".
+	// Uses \b so "egg" matches "egg" or "eggs" but NOT "veggies" or "veggie".
+	const matchesKeyword = (foodName: string, keywords: string[]): boolean =>
+		keywords.some((k) => new RegExp(`\\b${k}\\b`, 'i').test(foodName));
+
 	for (const meal of meals) {
 		for (const food of meal.foods) {
 			const foodLower = food.name.toLowerCase();
@@ -301,7 +306,7 @@ function checkDietTypeViolations(meals: Meal[], dietType: string, restrictions?:
 
 			// Vegan checks (strictest)
 			if (dietType.toLowerCase() === 'vegan') {
-				if (meatKeywords.some((k) => foodLower.includes(k))) {
+				if (matchesKeyword(foodLower, meatKeywords)) {
 					errors.push({
 						severity: 'CRITICAL',
 						code: 'DIET_TYPE_VIOLATION',
@@ -311,7 +316,7 @@ function checkDietTypeViolations(meals: Meal[], dietType: string, restrictions?:
 						dietType,
 					});
 				}
-				if (fishKeywords.some((k) => foodLower.includes(k))) {
+				if (matchesKeyword(foodLower, fishKeywords)) {
 					errors.push({
 						severity: 'CRITICAL',
 						code: 'DIET_TYPE_VIOLATION',
@@ -321,7 +326,7 @@ function checkDietTypeViolations(meals: Meal[], dietType: string, restrictions?:
 						dietType,
 					});
 				}
-				if (dairyKeywords.some((k) => foodLower.includes(k))) {
+				if (matchesKeyword(foodLower, dairyKeywords)) {
 					errors.push({
 						severity: 'CRITICAL',
 						code: 'DIET_TYPE_VIOLATION',
@@ -331,7 +336,7 @@ function checkDietTypeViolations(meals: Meal[], dietType: string, restrictions?:
 						dietType,
 					});
 				}
-				if (eggKeywords.some((k) => foodLower.includes(k))) {
+				if (matchesKeyword(foodLower, eggKeywords)) {
 					errors.push({
 						severity: 'CRITICAL',
 						code: 'DIET_TYPE_VIOLATION',
@@ -345,7 +350,7 @@ function checkDietTypeViolations(meals: Meal[], dietType: string, restrictions?:
 
 			// Vegetarian checks
 			if (dietType.toLowerCase() === 'vegetarian') {
-				if (meatKeywords.some((k) => foodLower.includes(k))) {
+				if (matchesKeyword(foodLower, meatKeywords)) {
 					errors.push({
 						severity: 'CRITICAL',
 						code: 'DIET_TYPE_VIOLATION',
@@ -355,7 +360,7 @@ function checkDietTypeViolations(meals: Meal[], dietType: string, restrictions?:
 						dietType,
 					});
 				}
-				if (fishKeywords.some((k) => foodLower.includes(k))) {
+				if (matchesKeyword(foodLower, fishKeywords)) {
 					errors.push({
 						severity: 'CRITICAL',
 						code: 'DIET_TYPE_VIOLATION',
@@ -370,7 +375,7 @@ function checkDietTypeViolations(meals: Meal[], dietType: string, restrictions?:
 				const isIndianVegetarian = country?.toLowerCase() === 'india';
 				if (
 					(restrictions?.includes('egg_free') || isIndianVegetarian) &&
-					eggKeywords.some((k) => foodLower.includes(k))
+					matchesKeyword(foodLower, eggKeywords)
 				) {
 					errors.push({
 						severity: 'CRITICAL',
@@ -383,7 +388,7 @@ function checkDietTypeViolations(meals: Meal[], dietType: string, restrictions?:
 						dietType,
 					});
 				}
-				if (restrictions?.includes('dairy_free') && dairyKeywords.some((k) => foodLower.includes(k))) {
+				if (restrictions?.includes('dairy_free') && matchesKeyword(foodLower, dairyKeywords)) {
 					errors.push({
 						severity: 'CRITICAL',
 						code: 'DIET_TYPE_VIOLATION',
@@ -397,7 +402,7 @@ function checkDietTypeViolations(meals: Meal[], dietType: string, restrictions?:
 
 			// Pescatarian checks
 			if (dietType.toLowerCase() === 'pescatarian') {
-				if (meatKeywords.some((k) => foodLower.includes(k))) {
+				if (matchesKeyword(foodLower, meatKeywords)) {
 					errors.push({
 						severity: 'CRITICAL',
 						code: 'DIET_TYPE_VIOLATION',

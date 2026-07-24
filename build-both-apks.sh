@@ -18,7 +18,7 @@ PROJECT_DIR="D:/FitAi/FitAI"
 ANDROID_DIR="$PROJECT_DIR/android"
 APK_DEBUG_DIR="$ANDROID_DIR/app/build/outputs/apk/debug"
 APK_RELEASE_DIR="$ANDROID_DIR/app/build/outputs/apk/release"
-ADB="C:/Users/Harsh/AppData/Local/Android/Sdk/platform-tools/adb"
+ADB="C:/Users/Harsh/AppData/Local/fitai-toolchain/sdk/platform-tools/adb.exe"
 
 BUILD_DEV=true
 BUILD_PREVIEW=true
