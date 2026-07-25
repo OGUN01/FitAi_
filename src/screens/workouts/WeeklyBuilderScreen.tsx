@@ -28,6 +28,8 @@ import {
   LayoutChangeEvent,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { GestureDetector } from "react-native-gesture-handler";
+import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import { AuroraBackground, GlassHeader } from "../../components/ui/aurora";
 import { SegmentedControl, SegmentOption } from "../../components/ui/SegmentedControl";
 import { CustomDialog } from "../../components/ui/CustomDialog";
@@ -40,10 +42,10 @@ import { WeeklyInsightsPanel } from "../../components/fitness/builder/WeeklyInsi
 import { useWorkoutBuilderStore, DAYS_OF_WEEK } from "../../stores/workoutBuilderStore";
 import { useProfileStore } from "../../stores/profileStore";
 import { validatePlan, type ValidationProfile } from "../../services/builderValidationService";
+import { usePullToRefresh } from "../../gestures/handlers";
 import { haptics } from "../../utils/haptics";
 import { colors, spacing, typography } from "../../theme/aurora-tokens";
 import { rp, rf } from "../../utils/responsive";
-import type { PlannedExercise } from "../../types/workout";
 
 interface Props {
   navigation: {
@@ -72,6 +74,7 @@ export default function WeeklyBuilderScreen({ navigation }: Props) {
   const openEditor = useWorkoutBuilderStore((s) => s.openEditor);
   const addExercise = useWorkoutBuilderStore((s) => s.addExercise);
   const removeExercise = useWorkoutBuilderStore((s) => s.removeExercise);
+  const duplicateExercise = useWorkoutBuilderStore((s) => s.duplicateExercise);
   const reorderExercise = useWorkoutBuilderStore((s) => s.reorderExercise);
   const duplicateDay = useWorkoutBuilderStore((s) => s.duplicateDay);
   const clearDay = useWorkoutBuilderStore((s) => s.clearDay);
@@ -197,17 +200,12 @@ export default function WeeklyBuilderScreen({ navigation }: Props) {
 
   const handleDuplicateExercise = useCallback(
     (dayIndex: number, exerciseIndex: number) => {
-      const day = draft?.workouts[dayIndex];
-      const ex = day?.plannedExercises?.[exerciseIndex];
-      if (!ex) return;
-      const clone: PlannedExercise = {
-        ...JSON.parse(JSON.stringify(ex)),
-        sets: ex.sets.map((s) => ({ ...s, setNumber: s.setNumber })),
-      };
-      addExercise(dayIndex, clone);
+      // Phase 8: delegate to the store's canonical duplicateExercise action
+      // (single SSOT — inserts the clone immediately after the source).
+      duplicateExercise(dayIndex, exerciseIndex);
       haptics.success();
     },
-    [draft, addExercise],
+    [duplicateExercise],
   );
 
   const handleRemoveExercise = useCallback(
@@ -315,6 +313,33 @@ export default function WeeklyBuilderScreen({ navigation }: Props) {
     [],
   );
 
+  // ── Phase 8 gesture wiring ──
+  // Pull-to-refresh on the day list: recompute insights + success haptic.
+  // usePullToRefresh drives the rubber-band pull + spinner; we hand it a
+  // refresh callback that recomputes insights (the SSOT for the footer +
+  // insights panel). Haptic `success` fires on completion (refreshComplete is
+  // wired inside the hook itself).
+  const handleRefresh = useCallback(async () => {
+    await computeInsights(userWeightKg);
+    haptics.success();
+  }, [computeInsights, userWeightKg]);
+
+  const { gesture: pullToRefreshGesture, translateY: pullTranslateY, isRefreshing: pullIsRefreshing } =
+    usePullToRefresh({
+      onRefresh: handleRefresh,
+      threshold: 80,
+      refreshingHeight: 60,
+    });
+
+  const pullAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: pullTranslateY.value }],
+  }));
+
+  // Collapse-all (pinch-to-collapse on any DayBlock fires this).
+  const handleCollapseAll = useCallback(() => {
+    setExpandedDay(null);
+  }, [setExpandedDay]);
+
   // ── Loading state ──
   if (!draft) {
     return (
@@ -347,49 +372,63 @@ export default function WeeklyBuilderScreen({ navigation }: Props) {
           />
         </View>
 
-        <ScrollView
-          ref={scrollRef}
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Inline validation — surfaces warnings above the day list (Phase 6) */}
-          <InlineValidationBanner />
-
-          {draft.workouts.map((day, idx) => (
-            <View
-              key={`${day.id}_${idx}`}
-              onLayout={(e: LayoutChangeEvent) =>
-                handleDayBlockLayout(idx, e.nativeEvent.layout.y)
-              }
-            >
-              <DayBlock
-                dayIndex={idx}
-                day={day}
-                isExpanded={expandedDayIndex === idx}
-                onToggleExpand={() => toggleExpand(idx)}
-                onAddExercise={handleAddExercise}
-                onOpenEditor={handleOpenEditor}
-                onDuplicateExercise={handleDuplicateExercise}
-                onRemoveExercise={handleRemoveExercise}
-                onReplaceExercise={handleReplaceExercise}
-                onMoveExerciseTo={handleMoveExerciseTo}
-                onReorderExercise={handleReorderExercise}
-                onDuplicateDay={handleDuplicateDay}
-                onClearDay={handleClearDay}
-                onUpdateNotes={handleUpdateNotes}
-                onReorderDay={handleReorderDay}
-                testID={`day-block-${idx}`}
-              />
+        <GestureDetector gesture={pullToRefreshGesture}>
+          <Animated.View style={[styles.scrollWrap, pullAnimatedStyle]}>
+            {/* Pull-to-refresh indicator (Phase 8) */}
+            <View style={styles.refreshIndicator} pointerEvents="none">
+              {pullIsRefreshing.value ? (
+                <Text style={styles.refreshText}>Recalculating insights…</Text>
+              ) : (
+                <Text style={styles.refreshText}>Pull to refresh</Text>
+              )}
             </View>
-          ))}
 
-          {/* Weekly insights — radar + stat grid + coverage bars (Phase 6) */}
-          <WeeklyInsightsPanel />
+            <ScrollView
+              ref={scrollRef}
+              style={styles.scroll}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Inline validation — surfaces warnings above the day list (Phase 6) */}
+              <InlineValidationBanner />
 
-          {/* Spacer so the last day isn't hidden behind the footer */}
-          <View style={styles.footerSpacer} />
-        </ScrollView>
+              {draft.workouts.map((day, idx) => (
+                <View
+                  key={`${day.id}_${idx}`}
+                  onLayout={(e: LayoutChangeEvent) =>
+                    handleDayBlockLayout(idx, e.nativeEvent.layout.y)
+                  }
+                >
+                  <DayBlock
+                    dayIndex={idx}
+                    day={day}
+                    isExpanded={expandedDayIndex === idx}
+                    onToggleExpand={() => toggleExpand(idx)}
+                    onAddExercise={handleAddExercise}
+                    onOpenEditor={handleOpenEditor}
+                    onDuplicateExercise={handleDuplicateExercise}
+                    onRemoveExercise={handleRemoveExercise}
+                    onReplaceExercise={handleReplaceExercise}
+                    onMoveExerciseTo={handleMoveExerciseTo}
+                    onReorderExercise={handleReorderExercise}
+                    onDuplicateDay={handleDuplicateDay}
+                    onClearDay={handleClearDay}
+                    onUpdateNotes={handleUpdateNotes}
+                    onReorderDay={handleReorderDay}
+                    onCollapseAll={handleCollapseAll}
+                    testID={`day-block-${idx}`}
+                  />
+                </View>
+              ))}
+
+              {/* Weekly insights — radar + stat grid + coverage bars (Phase 6) */}
+              <WeeklyInsightsPanel />
+
+              {/* Spacer so the last day isn't hidden behind the footer */}
+              <View style={styles.footerSpacer} />
+            </ScrollView>
+          </Animated.View>
+        </GestureDetector>
 
         <BuilderSummaryFooter onSaved={handleSaved} testID="builder-footer" />
       </SafeAreaView>
@@ -449,9 +488,22 @@ const styles = StyleSheet.create({
   scroll: {
     flex: 1,
   },
+  scrollWrap: {
+    flex: 1,
+  },
   scrollContent: {
     paddingHorizontal: rp(spacing.md),
     paddingTop: rp(spacing.sm),
+  },
+  refreshIndicator: {
+    height: rp(40),
+    alignItems: "center",
+    justifyContent: "center",
+    opacity: 0.7,
+  },
+  refreshText: {
+    color: colors.text.tertiary,
+    fontSize: rf(typography.fontSize.micro),
   },
   footerSpacer: {
     height: rp(140),

@@ -25,6 +25,10 @@ jest.mock("react-native", () => {
     Pressable: RealReact.forwardRef((props: any, ref: any) =>
       RealReact.createElement("Pressable", { ...props, ref }, props.children),
     ),
+    TextInput: (props: any) =>
+      RealReact.createElement("TextInput", props, props.children),
+    ScrollView: ({ children, ...props }: any) =>
+      RealReact.createElement("View", props, children),
     SafeAreaView: ({ children, ...props }: any) =>
       RealReact.createElement("View", props, children),
     ActivityIndicator: () => null,
@@ -36,6 +40,89 @@ jest.mock("react-native", () => {
           : (style ?? {}),
     },
     Platform: { OS: "ios" },
+  };
+});
+
+// Phase 7 redesign reads weight from profileStore.bodyAnalysis and gates the
+// Community tab via subscriptionStore.isPremium(). Both are mocked so the
+// screen renders "My Templates" (default tab) without a live Supabase call.
+jest.mock("../../../stores/profileStore", () => ({
+  useProfileStore: (selector?: (state: any) => any) => {
+    const state = { bodyAnalysis: { current_weight_kg: 75 }, personalInfo: null };
+    return selector ? selector(state) : state;
+  },
+}));
+
+jest.mock("../../../stores/subscriptionStore", () => ({
+  useSubscriptionStore: (selector?: (state: any) => any) => {
+    const state = { isPremium: () => false };
+    return selector ? selector(state) : state;
+  },
+}));
+
+// expo-linear-gradient + reanimated are not part of the minimal RN mock above.
+jest.mock("expo-linear-gradient", () => {
+  const RealReact = require("react");
+  return {
+    LinearGradient: (props: any) =>
+      RealReact.createElement("View", props, props.children),
+  };
+});
+
+jest.mock("react-native-reanimated", () => {
+  const RealReact = require("react");
+  const chainable = {
+    delay: () => chainable,
+    duration: () => chainable,
+  };
+  // Easing is imported by theme/animations.ts at module-eval time. Provide a
+  // stub where every method is an identity that returns a function (the real
+  // Easing.* calls return easing factories used only inside Reanimated
+  // worklets, which never execute in the node test env).
+  const easingFn = () => () => 0;
+  const Easing = {
+    in: easingFn,
+    out: easingFn,
+    inOut: easingFn,
+    ease: easingFn,
+    bezier: easingFn,
+    bounce: easingFn,
+    elastic: easingFn,
+    linear: easingFn,
+  };
+  const Animated = {
+    View: RealReact.forwardRef((props: any, ref: any) =>
+      RealReact.createElement("View", { ...props, ref }, props.children),
+    ),
+    Text: RealReact.forwardRef((props: any, ref: any) =>
+      RealReact.createElement("Text", { ...props, ref }, props.children),
+    ),
+    createAnimatedComponent: (Comp: any) => Comp,
+    FadeIn: chainable,
+    FadeInDown: chainable,
+    Easing,
+    // Hooks used by Aurora primitives at module-eval/render time. All no-ops
+    // in the node test env — they return stubs so the components render
+    // without driving a real Reanimated UI thread.
+    useSharedValue: (initial: any) => ({ value: initial }),
+    useAnimatedStyle: () => ({}),
+    useDerivedValue: (fn: any) => ({ value: typeof fn === "function" ? fn() : fn }),
+    useAnimatedGestureHandler: () => undefined,
+    withSpring: (v: any) => v,
+    withTiming: (v: any) => v,
+    withRepeat: (v: any) => v,
+    withSequence: (...vals: any[]) => vals[0],
+    withDelay: (_d: any, v: any) => v,
+    runOnJS: (fn: any) => fn,
+    interpolate: (_v: any, _input: any, output: any) =>
+      Array.isArray(output) ? output[0] : output,
+    Extrapolate: { CLAMP: "clamp", EXTEND: "extend", IDENTITY: "identity" },
+    cancelAnimation: () => undefined,
+  };
+  return {
+    __esModule: true,
+    default: Animated,
+    ...Animated,
   };
 });
 

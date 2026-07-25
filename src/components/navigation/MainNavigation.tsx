@@ -29,6 +29,7 @@ import ExerciseHistoryScreen from "../../screens/workouts/ExerciseHistoryScreen"
 import ScheduleBuilderScreen from "../../screens/workouts/ScheduleBuilderScreen";
 import WeeklyBuilderScreen from "../../screens/workouts/WeeklyBuilderScreen";
 import { BuildMethodLandingScreen } from "../../screens/workouts/BuildMethodLandingScreen";
+import { WorkoutDetailScreen } from "../../screens/workouts/WorkoutDetailScreen";
 import { flatColors as colors } from "../../theme/aurora-tokens";
 import { DayWorkout, DayMeal } from "../../types/ai";
 import { useAppConfig } from "../../hooks/useAppConfig";
@@ -160,6 +161,14 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
   const [buildMethodLandingSession, setBuildMethodLandingSession] = useState<{
     isActive: boolean;
   }>({ isActive: false });
+
+  // Workout Detail overlay state (Phase 8 — replaces the WorkoutDetailsDialog
+  // modal with a full screen). Carries the DayWorkout + optional editor wiring.
+  const [workoutDetailSession, setWorkoutDetailSession] = useState<{
+    isActive: boolean;
+    workout?: DayWorkout;
+    dayIndex?: number;
+  }>({ isActive: false });
   const ensureTabMounted = (tab: MainTabKey) => {
     setMountedTabs((prev) => (prev[tab] ? prev : { ...prev, [tab]: true }));
   };
@@ -178,6 +187,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     setScheduleBuilderSession({ isActive: false });
     setWeeklyBuilderSession({ isActive: false });
     setBuildMethodLandingSession({ isActive: false });
+    setWorkoutDetailSession({ isActive: false });
   };
   const resolveTabKey = (screen: string): MainTabKey | null => {
     switch (screen) {
@@ -335,6 +345,21 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         setScheduleBuilderSession({ isActive: false });
         setWeeklyBuilderSession({ isActive: false });
         setBuildMethodLandingSession({ isActive: true });
+      } else if (screen === "WorkoutDetail") {
+        // Phase 8 — full-screen workout detail (replaces WorkoutDetailsDialog).
+        // Additive overlay: other builder/overlay sessions are cleared so the
+        // detail screen owns the surface, mirroring the scheduleBuilder pattern.
+        setTemplateLibrarySession({ isActive: false });
+        setCreateWorkoutSession({ isActive: false });
+        setExerciseHistorySession({ isActive: false });
+        setScheduleBuilderSession({ isActive: false });
+        setWeeklyBuilderSession({ isActive: false });
+        setBuildMethodLandingSession({ isActive: false });
+        setWorkoutDetailSession({
+          isActive: true,
+          workout: params?.workout as DayWorkout | undefined,
+          dayIndex: params?.dayIndex as number | undefined,
+        });
       }
     },
     goBack: () => {
@@ -374,7 +399,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           exerciseHistorySession.isActive ||
           scheduleBuilderSession.isActive ||
           weeklyBuilderSession.isActive ||
-          buildMethodLandingSession.isActive
+          buildMethodLandingSession.isActive ||
+          workoutDetailSession.isActive
         ) {
           navigation.goBack();
           return true; // Prevent default behavior
@@ -405,6 +431,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     scheduleBuilderSession.isActive,
     weeklyBuilderSession.isActive,
     buildMethodLandingSession.isActive,
+    workoutDetailSession.isActive,
   ]);
 
   // Analytics tab is always enabled — no redirect needed
@@ -459,7 +486,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     exerciseHistorySession.isActive ||
     scheduleBuilderSession.isActive ||
     weeklyBuilderSession.isActive ||
-    buildMethodLandingSession.isActive;
+    buildMethodLandingSession.isActive ||
+    workoutDetailSession.isActive;
 
   const tabs = [
     {
@@ -671,6 +699,17 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       return (
         <ScreenErrorBoundary screenName="WeeklyBuilderScreen">
           <WeeklyBuilderScreen navigation={navigation} />
+        </ScreenErrorBoundary>
+      );
+    } else if (workoutDetailSession.isActive && workoutDetailSession.workout) {
+      // Phase 8 — full-screen workout detail (replaces WorkoutDetailsDialog).
+      return (
+        <ScreenErrorBoundary screenName="WorkoutDetailScreen">
+          <WorkoutDetailScreen
+            workout={workoutDetailSession.workout}
+            dayIndex={workoutDetailSession.dayIndex ?? 0}
+            navigation={navigation}
+          />
         </ScreenErrorBoundary>
       );
     } else if (createWorkoutSession.isActive) {

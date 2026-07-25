@@ -45,9 +45,13 @@ import {
 } from "../../../theme/aurora-tokens";
 import { rp, rf, rw } from "../../../utils/responsive";
 import { CURATED_EXERCISES } from "../../../data/curatedExercises";
+import { toggleFavorite as serviceToggleFavorite } from "../../../services/exercisePickerService";
 import type { PlannedExercise } from "../../../types/workout";
 
-// AsyncStorage key for favourite exercises (v1: local-only persistence)
+// AsyncStorage key for favourite exercises (v1: local-only persistence).
+// SHARED with exercisePickerService — both read/write this key so the picker
+// and the row stay in sync. The service is the persistence SSOT; the local
+// module-level cache mirrors it for instant visual re-renders.
 const FAV_STORAGE_KEY = "favorite_exercises";
 
 const EXERCISE_ROW_HEIGHT = 76; // approximate row height for drag snap math
@@ -92,21 +96,35 @@ function loadFavourites(): void {
     });
 }
 
+/**
+ * Toggle favourite state. Phase 8: persistence is delegated to
+ * exercisePickerService.toggleFavorite (the single SSOT — same AsyncStorage
+ * key). The local module-level cache is updated optimistically for instant
+ * visual re-render, then the service call persists. If the service fails, the
+ * local cache is rolled back so the UI doesn't lie.
+ */
 function toggleFavourite(exerciseId: string): void {
   if (!favouriteSet) {
     favouriteSet = new Set();
   }
-  if (favouriteSet.has(exerciseId)) {
+  const wasFav = favouriteSet.has(exerciseId);
+  // Optimistic local update (instant visual feedback)
+  if (wasFav) {
     favouriteSet.delete(exerciseId);
   } else {
     favouriteSet.add(exerciseId);
   }
   favouriteListeners.forEach((fn) => fn(new Set(favouriteSet!)));
-  AsyncStorage.setItem(
-    FAV_STORAGE_KEY,
-    JSON.stringify(Array.from(favouriteSet)),
-  ).catch(() => {
-    /* non-critical */
+  // Persist via the picker service (SSOT). Roll back the optimistic cache on
+  // failure so the UI reflects the true persisted state.
+  serviceToggleFavorite(exerciseId).catch(() => {
+    // Roll back — service failed, restore prior state.
+    if (wasFav) {
+      favouriteSet!.add(exerciseId);
+    } else {
+      favouriteSet!.delete(exerciseId);
+    }
+    favouriteListeners.forEach((fn) => fn(new Set(favouriteSet!)));
   });
 }
 

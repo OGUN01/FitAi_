@@ -35,12 +35,13 @@ import Animated, {
   withSpring,
   interpolate,
   withTiming,
+  runOnJS,
 } from "react-native-reanimated";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 import { GlassCard } from "../../ui/aurora/GlassCard";
 import { GlassButton } from "../../ui/aurora/GlassButton";
 import { AnimatedPressable } from "../../ui/aurora/AnimatedPressable";
-import { useDragToReorder } from "../../../gestures/handlers";
+import { useDragToReorder, usePinchToZoom } from "../../../gestures/handlers";
 import { animations } from "../../../theme/animations";
 import { haptics } from "../../../utils/haptics";
 import {
@@ -81,6 +82,12 @@ export interface DayBlockProps {
   onUpdateNotes: (dayIndex: number, notes: string) => void;
   /** Drag-handle reorder of the day itself (workout across days). */
   onReorderDay: (fromIndex: number, toIndex: number) => void;
+  /**
+   * Fired when a pinch-IN gesture (scale < 0.8) is detected on this day block —
+   * the caller collapses ALL expanded days (setExpandedDay(null)). Phase 8
+   * gesture wiring (additive — does not affect existing expand/drag behavior).
+   */
+  onCollapseAll?: () => void;
   /** Test ID prefix. */
   testID?: string;
 }
@@ -116,6 +123,7 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
     onClearDay,
     onUpdateNotes,
     onReorderDay,
+    onCollapseAll,
     testID,
   }) => {
     const dayLabel = DAY_LABELS[dayIndex] ?? day.dayOfWeek;
@@ -186,6 +194,33 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
       opacity: interpolate(swipeX.value, [-COPY_WIDTH, 0], [1, 0]),
     }));
 
+    // ── Pinch-to-collapse-all (Phase 8 — usePinchToZoom repurposed).
+    //    A pinch IN (scale < 0.8) collapses every expanded day. The gesture is
+    //    composed alongside the day-drag + swipe so existing behavior is
+    //    untouched; it only ADDS a collapse-all affordance. Haptic `selection`
+    //    fires once on collapse. We use usePinchToZoom for its scale tracking
+    //    and route the collapse decision through an onEnd observer composed on
+    //    top of the returned gesture. ──
+    const { gesture: basePinchGesture, scale: pinchScale } = usePinchToZoom(
+      0.5,
+      1.5,
+      { hapticAtLimits: false },
+    );
+    const handlePinchCollapse = useCallback(() => {
+      if (!onCollapseAll) return;
+      onCollapseAll();
+      haptics.selection();
+    }, [onCollapseAll]);
+    // Compose an onEnd observer onto the base pinch: if the final scale is
+    // below the collapse threshold, fire the collapse handler. `.onEnd()` runs
+    // on the UI thread, so the JS callback is routed via runOnJS (mirrors the
+    // pattern in handlers.ts useDragToReorder).
+    const pinchGesture = basePinchGesture.onEnd(() => {
+      if (pinchScale.value < 0.8) {
+        runOnJS(handlePinchCollapse)();
+      }
+    });
+
     // ── Expand chevron rotation ──
     const chevronRotation = useSharedValue(isExpanded ? 1 : 0);
     // keep in sync with prop (useEffect-free via direct assignment on render path
@@ -223,7 +258,9 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
         style={[styles.blockWrap, dayDragStyle]}
         testID={testID}
       >
-        <GestureDetector gesture={Gesture.Simultaneous(dayDragGesture, swipeGesture)}>
+        <GestureDetector
+          gesture={Gesture.Simultaneous(dayDragGesture, swipeGesture, pinchGesture)}
+        >
           <Animated.View style={swipeStyle}>
             <GlassCard
               blurIntensity="default"
@@ -462,7 +499,10 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
             })}
             <Pressable
               style={styles.copyPickerCancel}
-              onPress={() => setShowCopyPicker(false)}
+              onPress={() => {
+                haptics.selection();
+                setShowCopyPicker(false);
+              }}
               accessibilityRole="button"
               accessibilityLabel="Cancel copy"
             >

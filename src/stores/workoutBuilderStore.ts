@@ -81,6 +81,13 @@ export interface WorkoutBuilderState {
   updateDay: (index: number, day: DayWorkout) => void;
   addExercise: (dayIndex: number, exercise: PlannedExercise) => void;
   removeExercise: (dayIndex: number, exerciseIndex: number) => void;
+  /**
+   * Duplicate an exercise in-place at the given day/exercise index. The clone
+   * is appended immediately after the source (Phase 8 — surfaced by
+   * ExerciseRow's swipe-left "Duplicate" action and the kebab menu). Additive —
+   * the screen-level inline clone in WeeklyBuilderScreen still works.
+   */
+  duplicateExercise: (dayIndex: number, exerciseIndex: number) => void;
   updateExercise: (
     dayIndex: number,
     exerciseIndex: number,
@@ -324,6 +331,45 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
       exerciseName: p.name,
     }));
     day.duration = estimateDayDuration(day.plannedExercises);
+    workouts[dayIndex] = day;
+    set({ draft: { ...draft, workouts }, draftDirty: true });
+    void get().computeInsights();
+  },
+
+  duplicateExercise: (dayIndex, exerciseIndex) => {
+    const { draft } = get();
+    if (!draft) return;
+    const workouts = [...draft.workouts];
+    const day = { ...workouts[dayIndex] };
+    const source = (day.plannedExercises ?? [])[exerciseIndex];
+    if (!source) return;
+    // Deep clone the planned exercise (structured clone for plain JSON data).
+    const clone: PlannedExercise = JSON.parse(JSON.stringify(source));
+    // Reset set numbers to be sequential within the clone.
+    clone.sets = clone.sets.map((s, i) => ({ ...s, setNumber: i + 1 }));
+    // Insert immediately after the source so the duplicate is visually adjacent.
+    const next = [...(day.plannedExercises ?? [])];
+    next.splice(exerciseIndex + 1, 0, clone);
+    day.plannedExercises = next;
+    day.exercises = next.map((p) => ({
+      exerciseId: p.exerciseId,
+      sets: p.sets.length,
+      reps: p.sets[0]?.reps ?? 8,
+      weight: p.sets[0]?.weightKg,
+      restTime: p.restSeconds,
+      notes: p.notes,
+      tempo: p.tempo,
+      rpe: p.targetRpe,
+      name: p.name,
+      exerciseName: p.name,
+    }));
+    day.duration = estimateDayDuration(next);
+    day.targetMuscleGroups = Array.from(
+      new Set([
+        ...day.targetMuscleGroups,
+        ...getMuscleGroupsForExercise(source.exerciseId),
+      ]),
+    );
     workouts[dayIndex] = day;
     set({ draft: { ...draft, workouts }, draftDirty: true });
     void get().computeInsights();

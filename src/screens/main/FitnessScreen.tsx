@@ -21,7 +21,6 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import {
   WorkoutStartDialog,
-  WorkoutDetailsDialog,
 } from "../../components/ui/CustomDialog";
 import { SegmentedControl } from "../../components/ui/SegmentedControl";
 import { colors, spacing, shadows } from "../../theme/aurora-tokens";
@@ -375,28 +374,11 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
           onClose={actions.handleCloseRecoveryTips}
         />
 
-        {/* Workout Details Modal */}
-        <WorkoutDetailsDialog
-          visible={!!state.workoutDetailsWorkout}
-          title={state.workoutDetailsWorkout?.title ?? ""}
-          description={state.workoutDetailsWorkout?.description}
-          duration={state.workoutDetailsWorkout?.duration ?? 0}
-          calories={
-            state.workoutDetailsWorkout
-              ? (state.workoutProgress[state.workoutDetailsWorkout.id]
-                  ?.caloriesBurned ??
-                findCompletedSessionForWorkout({
-                  completedSessions: state.completedSessions,
-                  workout: state.workoutDetailsWorkout,
-                  plan: state.weeklyWorkoutPlan,
-                  weekStart: currentWeekStart,
-                })?.caloriesBurned ??
-                state.workoutDetailsWorkout.estimatedCalories)
-              : undefined
-          }
-          exerciseCount={state.workoutDetailsWorkout?.exercises?.length ?? 0}
-          onClose={actions.handleCloseWorkoutDetails}
-        />
+        {/* Workout Details — Phase 8: now a full screen (WorkoutDetailScreen)
+            registered as the `workoutDetailSession` overlay. The legacy
+            WorkoutDetailsDialog modal was removed; handleViewWorkoutDetails
+            navigates to "WorkoutDetail". The `workoutDetailsWorkout` state is
+            retained for callers that read it, but no modal is rendered here. */}
 
         {state.proactiveDeload && (
           <DeloadModal
