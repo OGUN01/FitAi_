@@ -12,7 +12,6 @@ import {
   RefreshControl,
   Text,
   Platform,
-  Pressable,
 } from "react-native";
 import {
   SafeAreaView,
@@ -46,8 +45,10 @@ import {
   WorkoutHistoryList,
   SuggestedWorkouts,
   RecoveryTipsModal,
+  MyWorkoutsCard,
 } from "./fitness";
 import { PlanSection } from "../../components/fitness/PlanSection";
+import { CustomPlanEmptyState } from "../../components/fitness/CustomPlanEmptyState";
 import { GuestSignUpScreen } from "./GuestSignUpScreen";
 import { DeloadModal } from "../../features/workouts/components/DeloadModal";
 
@@ -276,22 +277,14 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
             {/* Custom Plan Empty State */}
             {activePlanSource === "custom" && !customWeeklyPlan && (
               <View style={styles.section}>
-                <Pressable
-                  style={styles.customPlanCta}
-                  onPress={() => navigation.navigate("ScheduleBuilder")}
-                  testID="build-custom-schedule-button"
-                >
-                  <Text style={styles.customPlanCtaTitle}>
-                    No Custom Schedule Yet
-                  </Text>
-                  <Text style={styles.customPlanCtaSubtitle}>
-                    Build your own weekly workout schedule with your saved
-                    templates or pick exercises for each day.
-                  </Text>
-                  <Text style={styles.customPlanCtaAction}>
-                    Build My Schedule →
-                  </Text>
-                </Pressable>
+                <CustomPlanEmptyState
+                  onBuildSchedule={() =>
+                    navigation.navigate("BuildMethodLanding")
+                  }
+                  onBrowseTemplates={() =>
+                    navigation.navigate("TemplateLibrary")
+                  }
+                />
               </View>
             )}
 
@@ -319,16 +312,11 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
               />
             )}
 
-            {/* Custom Workouts entry point */}
+            {/* My Workouts library summary — replaces the old simple button.
+                testID `template-library-button` is preserved on the card's
+                tappable area (see MyWorkoutsCard). */}
             <View style={styles.section}>
-              <Pressable
-                style={styles.templateLibraryButton}
-                onPress={() => navigation.navigate("TemplateLibrary")}
-                testID="template-library-button"
-              >
-                <Text style={styles.templateLibraryText}>My Workouts</Text>
-                <Text style={styles.templateLibraryArrow}>→</Text>
-              </Pressable>
+              <MyWorkoutsCard navigation={navigation} />
             </View>
 
             {/* 4. Workout History (from real data) */}
@@ -476,56 +464,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     zIndex: 100,
   },
-  templateLibraryButton: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    justifyContent: "space-between" as const,
-    backgroundColor: `${colors.success.DEFAULT}1F`,
-    borderRadius: rbr(12),
-    paddingVertical: rp(14),
-    paddingHorizontal: rp(16),
-    borderWidth: 1,
-    borderColor: `${colors.success.DEFAULT}4D`,
-  },
-  templateLibraryText: {
-    fontSize: rf(15),
-    fontWeight: "600" as const,
-    color: colors.success.DEFAULT,
-  },
-  templateLibraryArrow: {
-    fontSize: rf(18),
-    color: colors.success.DEFAULT,
-  },
   planToggleContainer: {
     paddingHorizontal: rp(spacing.lg),
     marginBottom: rp(12),
-  },
-  customPlanCta: {
-    backgroundColor: `${colors.success.DEFAULT}14`,
-    borderRadius: rbr(16),
-    padding: rp(20),
-    borderWidth: 1,
-    borderColor: `${colors.success.DEFAULT}33`,
-    borderStyle: "dashed" as const,
-    alignItems: "center" as const,
-  },
-  customPlanCtaTitle: {
-    fontSize: rf(16),
-    fontWeight: "700" as const,
-    color: colors.text.primary,
-    marginBottom: rp(8),
-  },
-  customPlanCtaSubtitle: {
-    fontSize: rf(13),
-    color: colors.text.secondary,
-    textAlign: "center" as const,
-    lineHeight: rf(18),
-    marginBottom: rp(12),
-  },
-  customPlanCtaAction: {
-    fontSize: rf(15),
-    fontWeight: "600" as const,
-    color: colors.success.DEFAULT,
   },
 });
 

@@ -27,6 +27,8 @@ import TemplateLibraryScreen from "../../screens/workouts/TemplateLibraryScreen"
 import CreateWorkoutScreen from "../../screens/workouts/CreateWorkoutScreen";
 import ExerciseHistoryScreen from "../../screens/workouts/ExerciseHistoryScreen";
 import ScheduleBuilderScreen from "../../screens/workouts/ScheduleBuilderScreen";
+import WeeklyBuilderScreen from "../../screens/workouts/WeeklyBuilderScreen";
+import { BuildMethodLandingScreen } from "../../screens/workouts/BuildMethodLandingScreen";
 import { flatColors as colors } from "../../theme/aurora-tokens";
 import { DayWorkout, DayMeal } from "../../types/ai";
 import { useAppConfig } from "../../hooks/useAppConfig";
@@ -146,6 +148,18 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
   const [scheduleBuilderSession, setScheduleBuilderSession] = useState<{
     isActive: boolean;
   }>({ isActive: false });
+
+  // Weekly Builder overlay state (Phase 3 — new premium schedule builder;
+  // replaces ScheduleBuilder for the "Build From Scratch" path. The old
+  // ScheduleBuilderSession stays for safety until Phase 8 cleanup.)
+  const [weeklyBuilderSession, setWeeklyBuilderSession] = useState<{
+    isActive: boolean;
+  }>({ isActive: false });
+
+  // Build Method Landing overlay state (Phase 2 — 4-option build entry)
+  const [buildMethodLandingSession, setBuildMethodLandingSession] = useState<{
+    isActive: boolean;
+  }>({ isActive: false });
   const ensureTabMounted = (tab: MainTabKey) => {
     setMountedTabs((prev) => (prev[tab] ? prev : { ...prev, [tab]: true }));
   };
@@ -162,6 +176,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     setCreateWorkoutSession({ isActive: false });
     setExerciseHistorySession({ isActive: false });
     setScheduleBuilderSession({ isActive: false });
+    setWeeklyBuilderSession({ isActive: false });
+    setBuildMethodLandingSession({ isActive: false });
   };
   const resolveTabKey = (screen: string): MainTabKey | null => {
     switch (screen) {
@@ -274,11 +290,15 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         setCreateWorkoutSession({ isActive: false });
         setExerciseHistorySession({ isActive: false });
         setScheduleBuilderSession({ isActive: false });
+        setWeeklyBuilderSession({ isActive: false });
+        setBuildMethodLandingSession({ isActive: false });
         setTemplateLibrarySession({ isActive: true });
       } else if (screen === "CreateWorkout") {
         setTemplateLibrarySession({ isActive: false });
         setExerciseHistorySession({ isActive: false });
         setScheduleBuilderSession({ isActive: false });
+        setWeeklyBuilderSession({ isActive: false });
+        setBuildMethodLandingSession({ isActive: false });
         setCreateWorkoutSession({
           isActive: true,
           templateId: params?.templateId,
@@ -287,6 +307,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         setTemplateLibrarySession({ isActive: false });
         setCreateWorkoutSession({ isActive: false });
         setScheduleBuilderSession({ isActive: false });
+        setWeeklyBuilderSession({ isActive: false });
+        setBuildMethodLandingSession({ isActive: false });
         setExerciseHistorySession({
           isActive: true,
           exerciseId: params?.exerciseId,
@@ -296,7 +318,23 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         setTemplateLibrarySession({ isActive: false });
         setCreateWorkoutSession({ isActive: false });
         setExerciseHistorySession({ isActive: false });
+        setWeeklyBuilderSession({ isActive: false });
+        setBuildMethodLandingSession({ isActive: false });
         setScheduleBuilderSession({ isActive: true });
+      } else if (screen === "WeeklyBuilder") {
+        setTemplateLibrarySession({ isActive: false });
+        setCreateWorkoutSession({ isActive: false });
+        setExerciseHistorySession({ isActive: false });
+        setScheduleBuilderSession({ isActive: false });
+        setBuildMethodLandingSession({ isActive: false });
+        setWeeklyBuilderSession({ isActive: true });
+      } else if (screen === "BuildMethodLanding") {
+        setTemplateLibrarySession({ isActive: false });
+        setCreateWorkoutSession({ isActive: false });
+        setExerciseHistorySession({ isActive: false });
+        setScheduleBuilderSession({ isActive: false });
+        setWeeklyBuilderSession({ isActive: false });
+        setBuildMethodLandingSession({ isActive: true });
       }
     },
     goBack: () => {
@@ -334,7 +372,9 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           templateLibrarySession.isActive ||
           createWorkoutSession.isActive ||
           exerciseHistorySession.isActive ||
-          scheduleBuilderSession.isActive
+          scheduleBuilderSession.isActive ||
+          weeklyBuilderSession.isActive ||
+          buildMethodLandingSession.isActive
         ) {
           navigation.goBack();
           return true; // Prevent default behavior
@@ -363,6 +403,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     createWorkoutSession.isActive,
     exerciseHistorySession.isActive,
     scheduleBuilderSession.isActive,
+    weeklyBuilderSession.isActive,
+    buildMethodLandingSession.isActive,
   ]);
 
   // Analytics tab is always enabled — no redirect needed
@@ -415,7 +457,9 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     templateLibrarySession.isActive ||
     createWorkoutSession.isActive ||
     exerciseHistorySession.isActive ||
-    scheduleBuilderSession.isActive;
+    scheduleBuilderSession.isActive ||
+    weeklyBuilderSession.isActive ||
+    buildMethodLandingSession.isActive;
 
   const tabs = [
     {
@@ -611,10 +655,22 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           <TemplateLibraryScreen navigation={navigation} />
         </ScreenErrorBoundary>
       );
+    } else if (buildMethodLandingSession.isActive) {
+      return (
+        <ScreenErrorBoundary screenName="BuildMethodLandingScreen">
+          <BuildMethodLandingScreen navigation={navigation} />
+        </ScreenErrorBoundary>
+      );
     } else if (scheduleBuilderSession.isActive) {
       return (
         <ScreenErrorBoundary screenName="ScheduleBuilderScreen">
           <ScheduleBuilderScreen navigation={navigation} />
+        </ScreenErrorBoundary>
+      );
+    } else if (weeklyBuilderSession.isActive) {
+      return (
+        <ScreenErrorBoundary screenName="WeeklyBuilderScreen">
+          <WeeklyBuilderScreen navigation={navigation} />
         </ScreenErrorBoundary>
       );
     } else if (createWorkoutSession.isActive) {
