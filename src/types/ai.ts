@@ -2,6 +2,11 @@
 
 import { PersonalInfo, FitnessGoals } from "./user";
 import { Workout } from "./workout";
+import type {
+  PlannedExercise,
+  SupersetGroup,
+  CircuitGroup,
+} from "./workout";
 import { NutritionPlan } from "./diet";
 
 // Re-export types from other modules that AI uses
@@ -13,6 +18,18 @@ export type {
   CompletedExercise,
   CompletedSet,
   WorkoutSession,
+  PlannedExercise,
+  PlannedSet,
+  SupersetGroup,
+  CircuitGroup,
+  ValidationWarning,
+  ValidationSeverity,
+  WeeklyInsights,
+  AiSuggestion,
+  toWorkoutSet,
+  toTemplateExercise,
+  fromTemplateExercise,
+  toAiExercise,
 } from "./workout";
 
 export type {
@@ -203,6 +220,9 @@ export interface DayMeal {
   isCompleted?: boolean;
   completedAt?: string;
   timing?: string; // Meal timing
+  // Meal photo — resolved server-side by the diet worker (Wikimedia Commons,
+  // cached in MEAL_CACHE KV). Absent → client renders gradient placeholder.
+  imageUrl?: string;
 }
 
 export interface ExerciseInstruction {
@@ -221,6 +241,14 @@ export interface DayWorkout extends Workout {
   safetyConsiderations: string[];
   expectedBenefits: string[];
   isExtra?: boolean;
+  // ── Workout Builder additions (Phase 0) ──────────────────────────────────
+  // Canonical planned exercises for the builder. Additive — legacy `exercises`
+  // (WorkoutSet[]) stays as the session-execution shape. Adapter `toWorkoutSet`
+  // bridges planned → session. Builder UI reads/writes `plannedExercises`;
+  // session flow still reads `exercises`.
+  plannedExercises?: PlannedExercise[];
+  supersetGroups?: SupersetGroup[];
+  circuitGroups?: CircuitGroup[];
 }
 
 export interface WeeklyWorkoutPlan {

@@ -892,6 +892,33 @@ export class FitAIWorkersClient {
   }
 
   /**
+   * Resolve real food photos for meal-suggestion dish names (from the static
+   * regional cuisine DB, which has no imageUrl). Server-side Wikimedia lookup
+   * cached in MEAL_CACHE KV — keeps the device off third-party APIs.
+   * Returns a map of dish name → image URL (or null if none found).
+   */
+  async resolveSuggestionImages(
+    names: string[],
+  ): Promise<WorkersResponse<{ images: Record<string, string | null> }>> {
+    if (!(await this.isAuthenticated())) {
+      return { success: false, error: "Sign up to load meal suggestion images" };
+    }
+    const token = await this.getAuthToken();
+
+    return this.makeRequest<{ images: Record<string, string | null> }>(
+      "/diet/suggestion-images",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ names }),
+      },
+    );
+  }
+
+  /**
    * List user's recent jobs
    */
   async listJobs(): Promise<
@@ -1037,6 +1064,168 @@ export class FitAIWorkersClient {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ imageBase64, productName }),
+    });
+  }
+
+  // ==========================================================================
+  // PHASE 9 — WORKOUT BUILDER AI ENDPOINTS
+  // Each method POSTs to the corresponding builder-AI route. Auth + rate limit
+  // are enforced server-side. Returns the standard WorkersResponse<T> shape.
+  // ==========================================================================
+
+  /** POST /workout/suggest-day — complementary exercise suggestions for a day. */
+  async suggestDay(request: {
+    dayIndex: number;
+    currentExercises: unknown[];
+    profile: unknown;
+    goals?: string[];
+    weekNumber?: number;
+    skipCache?: boolean;
+  }): Promise<WorkersResponse<{
+    suggestedExercises: Array<{
+      exerciseId: string;
+      name: string;
+      reason: string;
+      confidence: number;
+      muscleGroup: string;
+      sets: number;
+      reps: number | string;
+      restSeconds: number;
+    }>;
+    confidence: number;
+    reasoning: string;
+  }>> {
+    if (!(await this.isAuthenticated())) {
+      return { success: false, error: 'Sign up to use AI workout features' };
+    }
+    const token = await this.getAuthToken();
+    return this.makeRequest('/workout/suggest-day', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(request),
+    });
+  }
+
+  /** POST /workout/validate — muscle-balance + safety warnings + fixActions. */
+  async validateWorkoutPlan(request: {
+    plan: unknown;
+    profile?: unknown;
+    skipCache?: boolean;
+  }): Promise<WorkersResponse<{
+    warnings: unknown[];
+    fixActions: unknown[];
+  }>> {
+    if (!(await this.isAuthenticated())) {
+      return { success: false, error: 'Sign up to use AI workout features' };
+    }
+    const token = await this.getAuthToken();
+    return this.makeRequest('/workout/validate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(request),
+    });
+  }
+
+  /** POST /workout/edit-natural-language — NL instruction → updated plan. */
+  async editWorkoutNaturalLanguage(request: {
+    plan: unknown;
+    instruction: string;
+    profile?: unknown;
+    skipCache?: boolean;
+  }): Promise<WorkersResponse<{
+    updatedPlan: unknown;
+    summary: string;
+  }>> {
+    if (!(await this.isAuthenticated())) {
+      return { success: false, error: 'Sign up to use AI workout features' };
+    }
+    const token = await this.getAuthToken();
+    return this.makeRequest('/workout/edit-natural-language', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(request),
+    });
+  }
+
+  /** POST /workout/generate-full-week — fill missing days from a partial plan. */
+  async generateFullWeek(request: {
+    partialPlan: unknown;
+    profile: unknown;
+    skipCache?: boolean;
+  }): Promise<WorkersResponse<{
+    completePlan: unknown;
+    daysGenerated: number;
+  }>> {
+    if (!(await this.isAuthenticated())) {
+      return { success: false, error: 'Sign up to use AI workout features' };
+    }
+    const token = await this.getAuthToken();
+    return this.makeRequest('/workout/generate-full-week', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(request),
+    });
+  }
+
+  /** POST /workout/apply-progression — Double Progression on prior performance. */
+  async applyProgression(request: {
+    plan: unknown;
+    priorPerformance: unknown[];
+    skipCache?: boolean;
+  }): Promise<WorkersResponse<{
+    updatedPlan: unknown;
+    changes: Array<{
+      exerciseId: string;
+      dayIndex: number;
+      action: 'increase' | 'hold' | 'deload';
+      reason: string;
+    }>;
+  }>> {
+    if (!(await this.isAuthenticated())) {
+      return { success: false, error: 'Sign up to use AI workout features' };
+    }
+    const token = await this.getAuthToken();
+    return this.makeRequest('/workout/apply-progression', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(request),
+    });
+  }
+
+  /** POST /workout/deload — 40% volume reduction deload week. */
+  async deloadWorkoutPlan(request: {
+    plan: unknown;
+    skipCache?: boolean;
+  }): Promise<WorkersResponse<{
+    deloadPlan: unknown;
+    volumeReductionPercent: number;
+  }>> {
+    if (!(await this.isAuthenticated())) {
+      return { success: false, error: 'Sign up to use AI workout features' };
+    }
+    const token = await this.getAuthToken();
+    return this.makeRequest('/workout/deload', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(request),
     });
   }
 

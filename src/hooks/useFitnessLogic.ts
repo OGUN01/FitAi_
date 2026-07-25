@@ -83,6 +83,17 @@ export interface FitnessNavigation {
   goBack: () => void;
 }
 
+/** Day-of-week keys (Monday-first) for index derivation. Mirrors DAYS_OF_WEEK. */
+const DAY_KEYS_MON = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+];
+
 export const useFitnessLogic = (navigation: FitnessNavigation) => {
   // Auth & User
   const { user, isGuestMode } = useAuth();
@@ -334,15 +345,6 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
   // This matches DAY_KEYS in WeeklyPlanOverview and calendarWorkoutData in FitnessScreen
   const isSelectedDayRestDay = useMemo(() => {
     if (!displayPlan?.restDays) return false;
-    const DAY_KEYS_MON = [
-      "monday",
-      "tuesday",
-      "wednesday",
-      "thursday",
-      "friday",
-      "saturday",
-      "sunday",
-    ];
     const dayIndex = DAY_KEYS_MON.indexOf(selectedDay);
     // restDays may contain number indices (Monday-based) or string day names
     return displayPlan.restDays.some((d: number | string) =>
@@ -717,10 +719,24 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     (workoutArg?: DayWorkout) => {
       const targetWorkout = workoutArg || selectedDayWorkout;
       if (targetWorkout) {
+        // Phase 8: navigate to the full-screen WorkoutDetailScreen (replaces
+        // the WorkoutDetailsDialog modal). The overlay-session router in
+        // MainNavigation owns the surface. We still seed the legacy modal state
+        // so any caller reading `workoutDetailsWorkout` keeps working, but the
+        // modal itself is no longer rendered (see FitnessScreen render tree).
         setWorkoutDetailsWorkout(targetWorkout);
+        // Derive a numeric day index (0-6) from the day-of-week key for the
+        // optional editor context. Falls back to the workout's own dayOfWeek.
+        const dayIdx = DAY_KEYS_MON.indexOf(
+          targetWorkout.dayOfWeek ?? selectedDay,
+        );
+        navigation.navigate("WorkoutDetail", {
+          workout: targetWorkout,
+          dayIndex: dayIdx >= 0 ? dayIdx : 0,
+        });
       }
     },
-    [selectedDayWorkout],
+    [selectedDayWorkout, navigation, selectedDay],
   );
 
   const handleCloseWorkoutDetails = useCallback(() => {

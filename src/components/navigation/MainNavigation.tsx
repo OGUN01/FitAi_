@@ -1,5 +1,5 @@
-import React, { startTransition, useEffect, useState } from "react";
-import { View, Text, StyleSheet, BackHandler, Platform } from "react-native";
+import React, { startTransition, useEffect, useState, useCallback } from "react";
+import { View, Text, StyleSheet, BackHandler, Platform, Linking } from "react-native";
 import { rf, rh, rw } from "../../utils/responsive";
 import { TabBar } from "./TabBar";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -27,10 +27,17 @@ import TemplateLibraryScreen from "../../screens/workouts/TemplateLibraryScreen"
 import CreateWorkoutScreen from "../../screens/workouts/CreateWorkoutScreen";
 import ExerciseHistoryScreen from "../../screens/workouts/ExerciseHistoryScreen";
 import ScheduleBuilderScreen from "../../screens/workouts/ScheduleBuilderScreen";
+import WeeklyBuilderScreen from "../../screens/workouts/WeeklyBuilderScreen";
+import { BuildMethodLandingScreen } from "../../screens/workouts/BuildMethodLandingScreen";
+import { WorkoutDetailScreen } from "../../screens/workouts/WorkoutDetailScreen";
 import { flatColors as colors } from "../../theme/aurora-tokens";
 import { DayWorkout, DayMeal } from "../../types/ai";
 import { useAppConfig } from "../../hooks/useAppConfig";
 import { ScreenErrorBoundary } from "../errors/ScreenErrorBoundary";
+import {
+  isTemplateLink,
+  parseTemplateLink,
+} from "../../services/templateShareService";
 
 type MainTabKey = "home" | "fitness" | "diet" | "profile" | "analytics";
 
@@ -146,6 +153,35 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
   const [scheduleBuilderSession, setScheduleBuilderSession] = useState<{
     isActive: boolean;
   }>({ isActive: false });
+
+  // Weekly Builder overlay state (Phase 3 — new premium schedule builder;
+  // replaces ScheduleBuilder for the "Build From Scratch" path. The old
+  // ScheduleBuilderSession stays for safety until Phase 8 cleanup.)
+  const [weeklyBuilderSession, setWeeklyBuilderSession] = useState<{
+    isActive: boolean;
+  }>({ isActive: false });
+
+  // Build Method Landing overlay state (Phase 2 — 4-option build entry)
+  const [buildMethodLandingSession, setBuildMethodLandingSession] = useState<{
+    isActive: boolean;
+  }>({ isActive: false });
+
+  // Workout Detail overlay state (Phase 8 — replaces the WorkoutDetailsDialog
+  // modal with a full screen). Carries the DayWorkout + optional editor wiring.
+  const [workoutDetailSession, setWorkoutDetailSession] = useState<{
+    isActive: boolean;
+    workout?: DayWorkout;
+    dayIndex?: number;
+  }>({ isActive: false });
+
+  // Template deep-link import session (Phase 10). When an incoming
+  // fitai://template/{id} link arrives (cold start OR runtime), we open the
+  // TemplateLibraryScreen and pass the linked templateId so it can be fetched
+  // + presented in the TemplateDetailSheet for the user to fork.
+  const [templateShareSession, setTemplateShareSession] = useState<{
+    isActive: boolean;
+    templateId?: string;
+  }>({ isActive: false });
   const ensureTabMounted = (tab: MainTabKey) => {
     setMountedTabs((prev) => (prev[tab] ? prev : { ...prev, [tab]: true }));
   };
@@ -162,6 +198,10 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     setCreateWorkoutSession({ isActive: false });
     setExerciseHistorySession({ isActive: false });
     setScheduleBuilderSession({ isActive: false });
+    setWeeklyBuilderSession({ isActive: false });
+    setBuildMethodLandingSession({ isActive: false });
+    setWorkoutDetailSession({ isActive: false });
+    setTemplateShareSession({ isActive: false });
   };
   const resolveTabKey = (screen: string): MainTabKey | null => {
     switch (screen) {
@@ -274,11 +314,15 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         setCreateWorkoutSession({ isActive: false });
         setExerciseHistorySession({ isActive: false });
         setScheduleBuilderSession({ isActive: false });
+        setWeeklyBuilderSession({ isActive: false });
+        setBuildMethodLandingSession({ isActive: false });
         setTemplateLibrarySession({ isActive: true });
       } else if (screen === "CreateWorkout") {
         setTemplateLibrarySession({ isActive: false });
         setExerciseHistorySession({ isActive: false });
         setScheduleBuilderSession({ isActive: false });
+        setWeeklyBuilderSession({ isActive: false });
+        setBuildMethodLandingSession({ isActive: false });
         setCreateWorkoutSession({
           isActive: true,
           templateId: params?.templateId,
@@ -287,6 +331,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         setTemplateLibrarySession({ isActive: false });
         setCreateWorkoutSession({ isActive: false });
         setScheduleBuilderSession({ isActive: false });
+        setWeeklyBuilderSession({ isActive: false });
+        setBuildMethodLandingSession({ isActive: false });
         setExerciseHistorySession({
           isActive: true,
           exerciseId: params?.exerciseId,
@@ -296,7 +342,38 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         setTemplateLibrarySession({ isActive: false });
         setCreateWorkoutSession({ isActive: false });
         setExerciseHistorySession({ isActive: false });
+        setWeeklyBuilderSession({ isActive: false });
+        setBuildMethodLandingSession({ isActive: false });
         setScheduleBuilderSession({ isActive: true });
+      } else if (screen === "WeeklyBuilder") {
+        setTemplateLibrarySession({ isActive: false });
+        setCreateWorkoutSession({ isActive: false });
+        setExerciseHistorySession({ isActive: false });
+        setScheduleBuilderSession({ isActive: false });
+        setBuildMethodLandingSession({ isActive: false });
+        setWeeklyBuilderSession({ isActive: true });
+      } else if (screen === "BuildMethodLanding") {
+        setTemplateLibrarySession({ isActive: false });
+        setCreateWorkoutSession({ isActive: false });
+        setExerciseHistorySession({ isActive: false });
+        setScheduleBuilderSession({ isActive: false });
+        setWeeklyBuilderSession({ isActive: false });
+        setBuildMethodLandingSession({ isActive: true });
+      } else if (screen === "WorkoutDetail") {
+        // Phase 8 — full-screen workout detail (replaces WorkoutDetailsDialog).
+        // Additive overlay: other builder/overlay sessions are cleared so the
+        // detail screen owns the surface, mirroring the scheduleBuilder pattern.
+        setTemplateLibrarySession({ isActive: false });
+        setCreateWorkoutSession({ isActive: false });
+        setExerciseHistorySession({ isActive: false });
+        setScheduleBuilderSession({ isActive: false });
+        setWeeklyBuilderSession({ isActive: false });
+        setBuildMethodLandingSession({ isActive: false });
+        setWorkoutDetailSession({
+          isActive: true,
+          workout: params?.workout as DayWorkout | undefined,
+          dayIndex: params?.dayIndex as number | undefined,
+        });
       }
     },
     goBack: () => {
@@ -334,7 +411,11 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           templateLibrarySession.isActive ||
           createWorkoutSession.isActive ||
           exerciseHistorySession.isActive ||
-          scheduleBuilderSession.isActive
+          scheduleBuilderSession.isActive ||
+          weeklyBuilderSession.isActive ||
+          buildMethodLandingSession.isActive ||
+          workoutDetailSession.isActive ||
+          templateShareSession.isActive
         ) {
           navigation.goBack();
           return true; // Prevent default behavior
@@ -363,6 +444,10 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     createWorkoutSession.isActive,
     exerciseHistorySession.isActive,
     scheduleBuilderSession.isActive,
+    weeklyBuilderSession.isActive,
+    buildMethodLandingSession.isActive,
+    workoutDetailSession.isActive,
+    templateShareSession.isActive,
   ]);
 
   // Analytics tab is always enabled — no redirect needed
@@ -379,6 +464,45 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     );
     setContributeFoodSession({ isActive: false });
   }, [appConfig.featureFoodContributions, contributeFoodSession.isActive]);
+
+  // ── Phase 10: Template deep-link handling ─────────────────────────────────
+  // Listens for incoming fitai://template/{id} (or https://fitai.app/template/{id})
+  // links from both cold-start (Linking.getInitialURL) and runtime
+  // (Linking.addEventListener 'url'). When a template link arrives, we open the
+  // TemplateLibraryScreen overlay with the linked templateId so it can be
+  // fetched + presented in the TemplateDetailSheet for the user to review/fork.
+  //
+  // Non-template links (e.g. auth deep links owned by useAuthDeepLinks) are
+  // left alone — isTemplateLink returns false for those.
+  const handleTemplateDeepLink = useCallback((url: string | null) => {
+    if (!url || !isTemplateLink(url)) return;
+    const templateId = parseTemplateLink(url);
+    if (!templateId) return;
+    // Clear any other active overlay so the template library owns the surface.
+    clearTransientScreens();
+    setTemplateShareSession({ isActive: true, templateId });
+  }, []);
+
+  useEffect(() => {
+    // Cold start: the URL that launched the app (if any).
+    Linking.getInitialURL()
+      .then((url) => {
+        if (url) handleTemplateDeepLink(url);
+      })
+      .catch((error) => {
+        // Swallow — a transient getInitialURL failure must not crash on launch.
+        console.error("[MainNavigation] getInitialURL failed:", error);
+      });
+
+    // Runtime: links tapped while the app is open.
+    const subscription = Linking.addEventListener("url", ({ url }) => {
+      handleTemplateDeepLink(url);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [handleTemplateDeepLink]);
 
   const handleHomeNavigation = (
     tab: string,
@@ -415,7 +539,11 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     templateLibrarySession.isActive ||
     createWorkoutSession.isActive ||
     exerciseHistorySession.isActive ||
-    scheduleBuilderSession.isActive;
+    scheduleBuilderSession.isActive ||
+    weeklyBuilderSession.isActive ||
+    buildMethodLandingSession.isActive ||
+    workoutDetailSession.isActive ||
+    templateShareSession.isActive;
 
   const tabs = [
     {
@@ -611,10 +739,33 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           <TemplateLibraryScreen navigation={navigation} />
         </ScreenErrorBoundary>
       );
+    } else if (buildMethodLandingSession.isActive) {
+      return (
+        <ScreenErrorBoundary screenName="BuildMethodLandingScreen">
+          <BuildMethodLandingScreen navigation={navigation} />
+        </ScreenErrorBoundary>
+      );
     } else if (scheduleBuilderSession.isActive) {
       return (
         <ScreenErrorBoundary screenName="ScheduleBuilderScreen">
           <ScheduleBuilderScreen navigation={navigation} />
+        </ScreenErrorBoundary>
+      );
+    } else if (weeklyBuilderSession.isActive) {
+      return (
+        <ScreenErrorBoundary screenName="WeeklyBuilderScreen">
+          <WeeklyBuilderScreen navigation={navigation} />
+        </ScreenErrorBoundary>
+      );
+    } else if (workoutDetailSession.isActive && workoutDetailSession.workout) {
+      // Phase 8 — full-screen workout detail (replaces WorkoutDetailsDialog).
+      return (
+        <ScreenErrorBoundary screenName="WorkoutDetailScreen">
+          <WorkoutDetailScreen
+            workout={workoutDetailSession.workout}
+            dayIndex={workoutDetailSession.dayIndex ?? 0}
+            navigation={navigation}
+          />
         </ScreenErrorBoundary>
       );
     } else if (createWorkoutSession.isActive) {
@@ -627,6 +778,20 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
                 ? { params: { templateId: createWorkoutSession.templateId } }
                 : undefined
             }
+          />
+        </ScreenErrorBoundary>
+      );
+    } else if (templateShareSession.isActive && templateShareSession.templateId) {
+      // Phase 10 — incoming template deep link. Render the TemplateLibraryScreen
+      // with the linked templateId so it can fetch the public template and open
+      // the TemplateDetailSheet for the user to review / fork.
+      return (
+        <ScreenErrorBoundary screenName="TemplateLibraryScreen (share import)">
+          <TemplateLibraryScreen
+            navigation={navigation}
+            route={{
+              params: { sharedTemplateId: templateShareSession.templateId },
+            }}
           />
         </ScreenErrorBoundary>
       );

@@ -48,6 +48,246 @@ export interface WorkoutSet {
   };
 }
 
+// ============================================================================
+// CANONICAL PLANNED EXERCISE TYPES (workout builder SSOT)
+// ============================================================================
+// One canonical shape for all builder, template, and AI paths. Adapters below
+// convert to/from the legacy WorkoutSet, TemplateExercise, and AI schemas.
+// Supersedes the three divergent shapes — never import WorkoutSet for new
+// builder code; use PlannedExercise + PlannedSet instead.
+
+/**
+ * Per-set definition in a planned exercise. Distinct from CompletedSet (which
+ * tracks actual reps performed). PlannedSet is the *intent* — CompletedSet is
+ * the *result*.
+ */
+export interface PlannedSet {
+  setNumber: number;
+  reps: number | string; // number or "8-12" range
+  weightKg?: number;
+  setType:
+    | "normal"
+    | "warmup"
+    | "failure"
+    | "drop"
+    | "superset"
+    | "circuit";
+  /** Drop-set only: weight & reps for the drop portion. */
+  dropWeightKg?: number;
+  dropReps?: number;
+  /** Time-based exercises (planks, holds) — overrides reps when present. */
+  durationSeconds?: number;
+}
+
+/** Group of exercises performed back-to-back with minimal rest. */
+export interface SupersetGroup {
+  id: string;
+  exerciseIds: string[]; // exerciseIds in this superset, in order
+  restBetweenExercises?: number; // seconds
+  restAfterGroup?: number; // seconds
+}
+
+/** Group of exercises performed as a circuit (repeated rounds). */
+export interface CircuitGroup {
+  id: string;
+  exerciseIds: string[]; // exerciseIds in this circuit, in order
+  rounds: number;
+  restBetweenExercises?: number;
+  restBetweenRounds?: number;
+}
+
+/**
+ * Canonical planned exercise — the single source of truth for the builder.
+ * Adapters convert to WorkoutSet (session execution), TemplateExercise
+ * (template save), and AI WorkoutExercise (re-generation).
+ */
+export interface PlannedExercise {
+  exerciseId: string;
+  name: string;
+  sets: PlannedSet[];
+  /** Rest between sets, in seconds. Falls back to 60 if absent. */
+  restSeconds: number;
+  notes?: string;
+  /** Tempo string, e.g. "3-1-2-0" (eccentric-pause-concentric-pause). */
+  tempo?: string;
+  /** Target RPE 1-10 (industry standard; session UI uses 1-3 simplification). */
+  targetRpe?: number;
+  /** Groups this exercise into a superset (matches SupersetGroup.id). */
+  supersetId?: string;
+  /** Groups this exercise into a circuit (matches CircuitGroup.id). */
+  circuitId?: string;
+  /** Ordering within the superset/circuit. */
+  blockIndex?: number;
+  /** Optional alternative exercise id (user-swappable). */
+  alternativeExerciseId?: string;
+}
+
+// ----------------------------------------------------------------------------
+// ADAPTERS — convert PlannedExercise to/from legacy shapes.
+// Boundary: keep adapters pure (no side effects, no DB calls).
+// ----------------------------------------------------------------------------
+
+import type {
+  TemplateExercise,
+} from "../services/workoutTemplateService";
+
+/** PlannedExercise → WorkoutSet (for session execution). */
+export function toWorkoutSet(planned: PlannedExercise): WorkoutSet {
+  const totalSets = planned.sets.length;
+  const firstSet = planned.sets[0];
+  const reps =
+    planned.sets.length === 1
+      ? firstSet.reps
+      : planned.sets.every((s) => s.reps === firstSet.reps)
+        ? firstSet.reps
+        : planned.sets.map((s) => String(s.reps)).join(",");
+  return {
+    exerciseId: planned.exerciseId,
+    sets: totalSets,
+    reps,
+    weight: firstSet?.weightKg,
+    duration: firstSet?.durationSeconds,
+    restTime: planned.restSeconds,
+    notes: planned.notes,
+    tempo: planned.tempo,
+    rpe: planned.targetRpe,
+    name: planned.name,
+    exerciseName: planned.name,
+  };
+}
+
+/** PlannedExercise → TemplateExercise (for template save). */
+export function toTemplateExercise(
+  planned: PlannedExercise,
+): TemplateExercise {
+  const firstReps = planned.sets[0]?.reps;
+  const reps: [number, number] =
+    typeof firstReps === "string"
+      ? parseRepRange(firstReps)
+      : [firstReps ?? 8, firstReps ?? 12];
+  return {
+    exerciseId: planned.exerciseId,
+    name: planned.name,
+    sets: planned.sets.length,
+    repRange: reps,
+    restSeconds: planned.restSeconds,
+    targetWeightKg: planned.sets[0]?.weightKg,
+  };
+}
+
+/** TemplateExercise → PlannedExercise (when loading a template into builder). */
+export function fromTemplateExercise(
+  template: TemplateExercise,
+): PlannedExercise {
+  const repValue =
+    template.repRange[0] === template.repRange[1]
+      ? template.repRange[0]
+      : `${template.repRange[0]}-${template.repRange[1]}`;
+  return {
+    exerciseId: template.exerciseId,
+    name: template.name,
+    sets: Array.from({ length: template.sets }, (_, i) => ({
+      setNumber: i + 1,
+      reps: repValue,
+      weightKg: template.targetWeightKg,
+      setType: "normal" as const,
+    })),
+    restSeconds: template.restSeconds,
+  };
+}
+
+/**
+ * PlannedExercise → AI WorkoutExercise (for AI re-generation / NL edits).
+ * Mirrors fitai-workers/src/utils/validation.ts WorkoutExerciseSchema.
+ */
+export function toAiExercise(planned: PlannedExercise): {
+  exerciseId: string;
+  sets: number;
+  reps: number | string;
+  restSeconds?: number;
+  notes?: string;
+  tempo?: string;
+} {
+  return {
+    exerciseId: planned.exerciseId,
+    sets: planned.sets.length,
+    reps: planned.sets[0]?.reps ?? 8,
+    restSeconds: planned.restSeconds,
+    notes: planned.notes,
+    tempo: planned.tempo,
+  };
+}
+
+/** Parse a reps range string like "8-12" → [8, 12]. Single value → [n, n]. */
+function parseRepRange(reps: string): [number, number] {
+  const parts = reps.split("-").map((p) => parseInt(p.trim(), 10));
+  if (parts.length === 2 && !parts.some(isNaN)) {
+    return [parts[0], parts[1]];
+  }
+  const n = parseInt(reps, 10);
+  return isNaN(n) ? [8, 12] : [n, n];
+}
+
+// ============================================================================
+// BUILDER VALIDATION + INSIGHTS TYPES
+// ============================================================================
+
+export type ValidationSeverity = "info" | "warning" | "error";
+
+export interface ValidationWarning {
+  id: string;
+  type:
+    | "excessive_volume"
+    | "insufficient_pull"
+    | "missing_legs"
+    | "too_many_compounds"
+    | "missing_warmup"
+    | "recovery_conflict"
+    | "safety_constraint"
+    | "muscle_imbalance";
+  severity: ValidationSeverity;
+  message: string;
+  exerciseId?: string;
+  dayIndex?: number;
+  fixAction?: {
+    label: string;
+    type: "add_exercise" | "remove_exercise" | "replace_exercise" | "adjust_volume";
+    payload?: Record<string, unknown>;
+  };
+}
+
+export interface WeeklyInsights {
+  /** Push / Pull ratio — e.g. 1.0 = balanced, >1 = push-heavy, <1 = pull-heavy. */
+  pushPullRatio: number;
+  /** Sets per muscle group across the week. */
+  muscleCoverage: Record<string, number>;
+  /** 0-100 recovery score (inverse of consecutive-day same-muscle hits + volume load). */
+  recoveryScore: number;
+  /** Total tonnage (sets × reps × weight) across the week, in kg. */
+  totalVolume: number;
+  /** Estimated calories burned across the week (MET calc). */
+  calorieEstimate: number;
+  /** Total minutes committed across the week. */
+  timeCommitment: number;
+  /** Sum of estimated calories × days per week. */
+  weeklyCalories: number;
+  /** Soft warnings surfaced inline (not popups). */
+  balanceWarnings: ValidationWarning[];
+  /** 0-100 volume score (current volume vs max-recoverable-volume). */
+  volumeScore: number;
+}
+
+export interface AiSuggestion {
+  exerciseId: string;
+  name: string;
+  reason: string;
+  confidence: number; // 0-1
+  muscleGroup: string;
+  sets: number;
+  reps: number | string;
+  restSeconds: number;
+}
+
 export interface Workout {
   id: string;
   title: string;
