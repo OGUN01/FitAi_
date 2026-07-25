@@ -24,6 +24,7 @@ import type {
 } from "../types/ai";
 import { useFitnessStore } from "./fitnessStore";
 import { computeWeeklyInsights } from "../services/workoutInsightsService";
+import { workoutBuilderAi } from "../ai/workoutBuilderAi";
 
 // ----------------------------------------------------------------------------
 // TYPES
@@ -125,6 +126,36 @@ export interface WorkoutBuilderState {
   save: () => Promise<void>;
   /** Discard draft without saving. */
   discard: () => void;
+
+  // ── Phase 9 AI actions ──────────────────────────────────────────────────
+  /** AI loading flag (true during any builder-AI call). */
+  aiLoading: boolean;
+  setAiLoading: (loading: boolean) => void;
+
+  /** Append AI-suggested exercises to a day (from suggest-day). */
+  applyAiSuggestions: (dayIndex: number, suggestions: AiSuggestion[]) => void;
+  /** Replace draft with an AI-edited plan (from NL edit / progression / deload). */
+  applyAiEdit: (updatedPlan: WeeklyWorkoutPlan) => void;
+  /** Generate a full week from the current partial draft (≥2 filled days). */
+  generateFullWeek: () => Promise<{ success: boolean; error?: string }>;
+  /** Apply Double Progression to the draft based on prior performance. */
+  applyProgression: (
+    priorPerformance: Array<{
+      exerciseId: string;
+      exerciseName?: string;
+      lastSession?: {
+        completedAt: string;
+        sets: Array<{
+          setNumber: number;
+          weightKg: number | null;
+          reps: number | null;
+          rpe?: 1 | 2 | 3 | null;
+        }>;
+      };
+    }>,
+  ) => Promise<{ success: boolean; error?: string }>;
+  /** Apply a deload week (≈40% volume reduction) to the draft. */
+  deloadWeek: () => Promise<{ success: boolean; error?: string }>;
 }
 
 // ----------------------------------------------------------------------------
@@ -212,6 +243,7 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
   aiSuggestions: [],
   insights: null,
   isComputingInsights: false,
+  aiLoading: false,
 
   hydrateFromCustomPlan: async () => {
     const customPlan = useFitnessStore.getState().customWeeklyPlan;
@@ -503,6 +535,7 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
 
   setValidationWarnings: (warnings) => set({ validationWarnings: warnings }),
   setAiSuggestions: (suggestions) => set({ aiSuggestions: suggestions }),
+  setAiLoading: (loading) => set({ aiLoading: loading }),
 
   computeInsights: async (userWeightKg) => {
     const { draft } = get();
@@ -548,7 +581,119 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
       aiSuggestions: [],
       insights: null,
       isComputingInsights: false,
+      aiLoading: false,
     });
+  },
+
+  // ── Phase 9 AI actions ──────────────────────────────────────────────────
+
+  applyAiSuggestions: (dayIndex, suggestions) => {
+    const { draft } = get();
+    if (!draft) return;
+    for (const s of suggestions) {
+      const planned: PlannedExercise = {
+        exerciseId: s.exerciseId,
+        name: s.name,
+        sets: Array.from({ length: s.sets }, (_, i) => ({
+          setNumber: i + 1,
+          reps: s.reps,
+          setType: "normal" as const,
+        })),
+        restSeconds: s.restSeconds,
+        notes: s.reason,
+      };
+      get().addExercise(dayIndex, planned);
+    }
+    // Clear suggestions after applying so the picker doesn't re-show them.
+    set({ aiSuggestions: [] });
+  },
+
+  applyAiEdit: (updatedPlan) => {
+    set({ draft: clonePlan(updatedPlan), draftDirty: true });
+    void get().computeInsights();
+  },
+
+  generateFullWeek: async () => {
+    const { draft } = get();
+    if (!draft) {
+      return { success: false, error: "No draft to generate from" };
+    }
+    set({ aiLoading: true });
+    try {
+      const result = await workoutBuilderAi.generateFullWeek({
+        partialPlan: draft,
+      });
+      if (!result.success || !result.data) {
+        console.error("[workoutBuilderStore] generateFullWeek failed:", result.error);
+        return { success: false, error: result.error };
+      }
+      set({ draft: clonePlan(result.data.completePlan), draftDirty: true });
+      void get().computeInsights();
+      return { success: true };
+    } catch (error) {
+      console.error("[workoutBuilderStore] generateFullWeek error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    } finally {
+      set({ aiLoading: false });
+    }
+  },
+
+  applyProgression: async (priorPerformance) => {
+    const { draft } = get();
+    if (!draft) {
+      return { success: false, error: "No draft to apply progression to" };
+    }
+    set({ aiLoading: true });
+    try {
+      const result = await workoutBuilderAi.applyProgression({
+        plan: draft,
+        priorPerformance,
+      });
+      if (!result.success || !result.data) {
+        console.error("[workoutBuilderStore] applyProgression failed:", result.error);
+        return { success: false, error: result.error };
+      }
+      set({ draft: clonePlan(result.data.updatedPlan), draftDirty: true });
+      void get().computeInsights();
+      return { success: true };
+    } catch (error) {
+      console.error("[workoutBuilderStore] applyProgression error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    } finally {
+      set({ aiLoading: false });
+    }
+  },
+
+  deloadWeek: async () => {
+    const { draft } = get();
+    if (!draft) {
+      return { success: false, error: "No draft to deload" };
+    }
+    set({ aiLoading: true });
+    try {
+      const result = await workoutBuilderAi.deloadPlan({ plan: draft });
+      if (!result.success || !result.data) {
+        console.error("[workoutBuilderStore] deloadWeek failed:", result.error);
+        return { success: false, error: result.error };
+      }
+      set({ draft: clonePlan(result.data.deloadPlan), draftDirty: true });
+      void get().computeInsights();
+      return { success: true };
+    } catch (error) {
+      console.error("[workoutBuilderStore] deloadWeek error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    } finally {
+      set({ aiLoading: false });
+    }
   },
 }));
 

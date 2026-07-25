@@ -39,6 +39,7 @@ import { ExerciseEditorSheet } from "../../components/fitness/builder/ExerciseEd
 import { BuilderSummaryFooter } from "../../components/fitness/builder/BuilderSummaryFooter";
 import { InlineValidationBanner } from "../../components/fitness/builder/InlineValidationBanner";
 import { WeeklyInsightsPanel } from "../../components/fitness/builder/WeeklyInsightsPanel";
+import { NaturalLanguageEditBar } from "../../components/fitness/builder/NaturalLanguageEditBar";
 import { useWorkoutBuilderStore, DAYS_OF_WEEK } from "../../stores/workoutBuilderStore";
 import { useProfileStore } from "../../stores/profileStore";
 import { validatePlan, type ValidationProfile } from "../../services/builderValidationService";
@@ -389,6 +390,9 @@ export default function WeeklyBuilderScreen({ navigation }: Props) {
               contentContainerStyle={styles.scrollContent}
               showsVerticalScrollIndicator={false}
             >
+              {/* Phase 9 — Natural language AI edit bar */}
+              <NaturalLanguageEditBar />
+
               {/* Inline validation — surfaces warnings above the day list (Phase 6) */}
               <InlineValidationBanner />
 

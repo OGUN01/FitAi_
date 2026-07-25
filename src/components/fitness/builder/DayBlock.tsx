@@ -276,6 +276,8 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
                 onPress={handleHeaderPress}
                 accessibilityRole="button"
                 accessibilityLabel={`${dayLabel}. ${workoutTitle}. ${exerciseCount} exercises.`}
+                accessibilityHint="Tap to expand or collapse. Long-press to drag this day. Pinch in to collapse all days."
+                accessibilityState={{ expanded: isExpanded }}
                 style={styles.header}
               >
                 {/* Day short label badge */}

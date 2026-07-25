@@ -39,6 +39,10 @@ import {
   AnimatedPressable,
 } from "../../components/ui/aurora";
 import { CommunityTemplatesTab } from "../../components/fitness/builder/CommunityTemplatesTab";
+import {
+  getBookmarks,
+  toggleBookmark,
+} from "../../services/templateBookmarksService";
 // Lazy-load TemplateDetailSheet so its Skia dependency (@shopify/react-native-skia,
 // pulled in via MuscleBalanceRadar) is only evaluated when the user actually
 // opens a template preview. This keeps the screen's module-eval cost low and
@@ -83,7 +87,7 @@ interface TabDef {
 
 const TABS: TabDef[] = [
   { key: "recent", label: "Recent", icon: "time-outline" },
-  { key: "pinned", label: "Pinned", icon: "pin-outline" },
+  { key: "pinned", label: "Bookmarks", icon: "bookmark-outline" },
   { key: "mine", label: "My Templates", icon: "person-outline" },
   { key: "community", label: "Community", icon: "people-outline" },
   { key: "ai", label: "AI Generated", icon: "sparkles-outline" },
@@ -133,7 +137,7 @@ const DIFFICULTY_LABEL: Record<
 // COMPONENT
 // ============================================================================
 
-export default function TemplateLibraryScreen({ navigation }: Props) {
+export default function TemplateLibraryScreen({ navigation, route }: Props) {
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
@@ -147,6 +151,21 @@ export default function TemplateLibraryScreen({ navigation }: Props) {
     null,
   );
   const [detailVisible, setDetailVisible] = useState(false);
+  // ── Bookmarks (Phase 10) — local-only store of bookmarked template ids.
+  // Loaded once on mount + refreshed after every toggle so card icons stay
+  // in sync. Stored as a Set for O(1) lookup during card render.
+  const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
+
+  // ── Phase 10: incoming shared template (deep-link import) ─────────────────
+  // When the screen is opened via a fitai://template/{id} deep link, the
+  // router passes `sharedTemplateId` in route.params. We fetch that public
+  // template via getPublicTemplates-free read (forkTemplate fetches it
+  // internally) and present it in the detail sheet so the user can review /
+  // fork it. The deep-link import flow does NOT auto-fork — the user taps
+  // "Fork to Library" in the sheet, keeping the user in control.
+  const sharedTemplateId = route?.params?.sharedTemplateId as
+    | string
+    | undefined;
 
   const startTemplateSession = useFitnessStore((s) => s.startTemplateSession);
   // Weight SSOT: profileStore.bodyAnalysis.current_weight_kg (mirrors
@@ -172,9 +191,134 @@ export default function TemplateLibraryScreen({ navigation }: Props) {
     }
   }, []);
 
+  // Load bookmarked template ids from AsyncStorage. Runs on mount + after
+  // every toggle so card icons reflect the latest state.
+  const loadBookmarks = useCallback(async () => {
+    try {
+      const ids = await getBookmarks();
+      setBookmarks(new Set(ids));
+    } catch (err) {
+      console.error("Failed to load bookmarks:", err);
+    }
+  }, []);
+
   useEffect(() => {
     loadTemplates();
-  }, [loadTemplates]);
+    loadBookmarks();
+  }, [loadTemplates, loadBookmarks]);
+
+  // ── Phase 10: present a shared template from an incoming deep link ────────
+  // When `sharedTemplateId` is set (router passed it from a fitai://template
+  // link), fetch that public template and open the detail sheet so the user
+  // can review + fork it. We switch to the Community tab so the sheet renders
+  // in community mode (enables the Fork action).
+  useEffect(() => {
+    if (!sharedTemplateId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        // Fetch the public template via the supabase client directly — there's
+        // no getTemplateById in the service, and getPublicTemplates would
+        // paginate the whole catalog to find one row. A direct read is cheaper
+        // and respects RLS (public templates are readable by all).
+        const { supabase } = await import("../../services/supabase");
+        const { data, error } = await supabase
+          .from("workout_templates")
+          .select("*")
+          .eq("id", sharedTemplateId)
+          .eq("is_public", true)
+          .maybeSingle();
+        if (error) {
+          console.error(
+            "[TemplateLibraryScreen] Failed to fetch shared template:",
+            error,
+          );
+          crossPlatformAlert(
+            "Template not found",
+            "This shared template may have been deleted or is no longer public.",
+          );
+          return;
+        }
+        if (!data || cancelled) return;
+        // Map the row to the WorkoutTemplate shape. The service's internal
+        // mapRow is private, so we inline the same mapping here (kept in sync
+        // with workoutTemplateService.mapRow). This is the only place in the
+        // app that reads a single public template by id for preview.
+        const template: WorkoutTemplate = {
+          id: data.id,
+          userId: data.user_id,
+          name: data.name,
+          description: data.description ?? undefined,
+          exercises: data.exercises ?? [],
+          targetMuscleGroups: data.target_muscle_groups ?? [],
+          estimatedDurationMinutes: data.estimated_duration_minutes ?? undefined,
+          isPublic: data.is_public ?? false,
+          usageCount: data.usage_count ?? 0,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+          category: data.category ?? undefined,
+          difficulty: data.difficulty ?? undefined,
+          tags: data.tags ?? [],
+          ratingAvg: data.rating_avg ?? 0,
+          ratingCount: data.rating_count ?? 0,
+          forkCount: data.fork_count ?? 0,
+          authorName: data.author_name ?? undefined,
+          parentTemplateId: data.parent_template_id ?? undefined,
+          version: data.version ?? 1,
+        };
+        if (cancelled) return;
+        // Switch to the community tab + open the detail sheet.
+        setActiveTab("community");
+        setDetailTemplate(template);
+        setDetailVisible(true);
+      } catch (err) {
+        console.error(
+          "[TemplateLibraryScreen] Shared template fetch error:",
+          err,
+        );
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sharedTemplateId]);
+
+  // Toggle a bookmark with optimistic UI update + haptic celebration on add.
+  const handleToggleBookmark = useCallback(
+    async (templateId: string) => {
+      // Optimistic flip: update the local Set immediately so the icon animates
+      // before AsyncStorage confirms. If the write fails, we revert.
+      const wasBookmarked = bookmarks.has(templateId);
+      setBookmarks((prev) => {
+        const next = new Set(prev);
+        if (wasBookmarked) next.delete(templateId);
+        else next.add(templateId);
+        return next;
+      });
+      if (!wasBookmarked) {
+        haptics.celebration();
+      } else {
+        haptics.light();
+      }
+      try {
+        await toggleBookmark(templateId);
+      } catch (err) {
+        console.error("Failed to toggle bookmark:", err);
+        // Revert on failure.
+        setBookmarks((prev) => {
+          const next = new Set(prev);
+          if (wasBookmarked) next.add(templateId);
+          else next.delete(templateId);
+          return next;
+        });
+        crossPlatformAlert(
+          "Bookmark failed",
+          "Could not update bookmarks. Please try again.",
+        );
+      }
+    },
+    [bookmarks],
+  );
 
   // ── Derived: filtered templates for the current tab ──────────────────────
   const filteredTemplates = useMemo(() => {
@@ -182,8 +326,15 @@ export default function TemplateLibraryScreen({ navigation }: Props) {
     if (activeTab === "recent") {
       list = [...templates].sort((a, b) => (b.usageCount ?? 0) - (a.usageCount ?? 0));
     } else if (activeTab === "pinned") {
-      // v1: no pinned store — treat most-used (usageCount >= 1) as pinned.
-      list = templates.filter((t) => (t.usageCount ?? 0) > 0);
+      // Phase 10: when the user has bookmarks, "Pinned" shows bookmarked
+      // templates. When there are no bookmarks, fall back to the legacy
+      // most-used heuristic (usageCount >= 1) so the tab is never empty for
+      // existing users.
+      if (bookmarks.size > 0) {
+        list = templates.filter((t) => bookmarks.has(t.id));
+      } else {
+        list = templates.filter((t) => (t.usageCount ?? 0) > 0);
+      }
     } else if (activeTab === "collections") {
       if (activeCollection) {
         list = templates.filter((t) => t.category === activeCollection);
@@ -201,7 +352,7 @@ export default function TemplateLibraryScreen({ navigation }: Props) {
       );
     }
     return list;
-  }, [templates, activeTab, activeCollection, search]);
+  }, [templates, activeTab, activeCollection, search, bookmarks]);
 
   const hasContent = filteredTemplates.length > 0;
 
@@ -398,15 +549,35 @@ export default function TemplateLibraryScreen({ navigation }: Props) {
     );
   }, [selectedIds, handleExitMultiSelect, loadTemplates]);
 
-  const handleBulkShare = useCallback(() => {
+  const handleBulkShare = useCallback(async () => {
     if (selectedIds.size === 0) return;
-    haptics.warning();
-    // v1 placeholder — deep-link sharing wired in Phase 10.
-    console.error(
-      "[TemplateLibraryScreen] bulk share not wired (Phase 10) — count:",
-      selectedIds.size,
-    );
-  }, [selectedIds]);
+    haptics.light();
+    // Phase 10: share the first selected template via the share service. The
+    // OS share sheet only accepts one payload, so when multiple templates are
+    // selected we share the first and inform the user. This keeps the flow
+    // simple — users who want to share a different template deselect others.
+    const firstId = Array.from(selectedIds)[0];
+    const firstTemplate = templates.find((t) => t.id === firstId);
+    if (!firstTemplate) {
+      haptics.warning();
+      crossPlatformAlert("Share failed", "Could not find the selected template.");
+      return;
+    }
+    try {
+      const { shareTemplate } = await import(
+        "../../services/templateShareService"
+      );
+      await shareTemplate(firstTemplate.id, firstTemplate.name);
+      handleExitMultiSelect();
+    } catch (err) {
+      console.error("[TemplateLibraryScreen] bulk share failed:", err);
+      haptics.error();
+      crossPlatformAlert(
+        "Share failed",
+        "Could not open the share sheet. Please try again.",
+      );
+    }
+  }, [selectedIds, templates, handleExitMultiSelect]);
 
   // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) {
@@ -708,9 +879,11 @@ export default function TemplateLibraryScreen({ navigation }: Props) {
                   index={index}
                   selected={selectedIds.has(item.id)}
                   multiSelect={multiSelect}
+                  bookmarked={bookmarks.has(item.id)}
                   onPress={handleOpenDetail}
                   onLongPress={handleLongPress}
                   onToggleSelect={handleToggleSelect}
+                  onToggleBookmark={handleToggleBookmark}
                   onStart={handleStart}
                 />
               ) : (
@@ -720,6 +893,7 @@ export default function TemplateLibraryScreen({ navigation }: Props) {
                   selected={selectedIds.has(item.id)}
                   multiSelect={multiSelect}
                   menuOpen={menuOpenId === item.id}
+                  bookmarked={bookmarks.has(item.id)}
                   onPress={handleOpenDetail}
                   onLongPress={handleLongPress}
                   onToggleSelect={handleToggleSelect}
@@ -727,6 +901,7 @@ export default function TemplateLibraryScreen({ navigation }: Props) {
                     haptics.light();
                     setMenuOpenId((prev) => (prev === id ? null : id));
                   }}
+                  onToggleBookmark={handleToggleBookmark}
                   onEdit={handleEdit}
                   onDuplicate={handleDuplicate}
                   onDelete={handleDelete}
@@ -756,12 +931,26 @@ export default function TemplateLibraryScreen({ navigation }: Props) {
             visible={detailVisible}
             onClose={handleCloseDetail}
             template={detailTemplate}
-            isCommunity={activeTab === "community"}
-            isOwned={detailTemplate ? activeTab !== "community" : false}
+            isCommunity={
+              activeTab === "community" ||
+              (detailTemplate ? detailTemplate.isPublic : false)
+            }
+            isOwned={
+              detailTemplate
+                ? activeTab !== "community" && !detailTemplate.isPublic
+                : false
+            }
             userWeightKg={userWeightKg}
             onStart={handleStart}
             onUseInSchedule={handleUseInSchedule}
             onForkComplete={loadTemplates}
+            onRated={() => {
+              // Refresh the user's own template list so rating aggregates on
+              // owned templates reflect the new rating. Community templates are
+              // re-fetched by their own tab's refresh; we don't need to force
+              // it here since the detail sheet shows optimistic local values.
+              loadTemplates();
+            }}
           />
         </Suspense>
       ) : null}
@@ -778,7 +967,7 @@ function emptyIconFor(tab: TabKey): keyof typeof Ionicons.glyphMap {
     case "recent":
       return "time-outline";
     case "pinned":
-      return "pin-outline";
+      return "bookmark-outline";
     case "collections":
       return "albums-outline";
     case "mine":
@@ -792,7 +981,7 @@ function emptyTitleFor(tab: TabKey): string {
     case "recent":
       return "No recently used templates";
     case "pinned":
-      return "No pinned templates yet";
+      return "No bookmarked templates yet";
     case "collections":
       return "No templates in this collection";
     case "mine":
@@ -806,7 +995,7 @@ function emptySubtitleFor(tab: TabKey): string {
     case "recent":
       return "Start a workout to see it here.";
     case "pinned":
-      return "Templates you use most will appear here for quick access.";
+      return "Tap the bookmark icon on any template to pin it here for quick access.";
     case "collections":
       return "Create a template and tag it with this category to fill this collection.";
     case "mine":
@@ -824,9 +1013,11 @@ interface GridCardProps {
   index: number;
   selected: boolean;
   multiSelect: boolean;
+  bookmarked: boolean;
   onPress: (t: WorkoutTemplate) => void;
   onLongPress: (t: WorkoutTemplate) => void;
   onToggleSelect: (id: string) => void;
+  onToggleBookmark: (id: string) => void;
   onStart: (t: WorkoutTemplate) => void;
 }
 
@@ -835,9 +1026,11 @@ const TemplateGridCard: React.FC<GridCardProps> = ({
   index,
   selected,
   multiSelect,
+  bookmarked,
   onPress,
   onLongPress,
   onToggleSelect,
+  onToggleBookmark,
   onStart,
 }) => {
   const duration = template.estimatedDurationMinutes ?? 0;
@@ -900,6 +1093,29 @@ const TemplateGridCard: React.FC<GridCardProps> = ({
                   />
                 ) : null}
               </View>
+            ) : null}
+            {/* Bookmark icon (Phase 10) — top-right of thumbnail. Hidden during
+                multi-select so it doesn't conflict with the selection checkbox. */}
+            {!multiSelect ? (
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation();
+                  onToggleBookmark(template.id);
+                }}
+                hitSlop={8}
+                style={styles.gridBookmarkBtn}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  bookmarked ? "Remove bookmark" : "Bookmark template"
+                }
+                testID={`bookmark-${template.id}`}
+              >
+                <Ionicons
+                  name={bookmarked ? "bookmark" : "bookmark-outline"}
+                  size={rf(18)}
+                  color={colors.text.primary}
+                />
+              </Pressable>
             ) : null}
           </LinearGradient>
 
@@ -970,10 +1186,12 @@ interface ListRowProps {
   selected: boolean;
   multiSelect: boolean;
   menuOpen: boolean;
+  bookmarked: boolean;
   onPress: (t: WorkoutTemplate) => void;
   onLongPress: (t: WorkoutTemplate) => void;
   onToggleSelect: (id: string) => void;
   onToggleMenu: (id: string) => void;
+  onToggleBookmark: (id: string) => void;
   onEdit: (t: WorkoutTemplate) => void;
   onDuplicate: (t: WorkoutTemplate) => void;
   onDelete: (t: WorkoutTemplate) => void;
@@ -987,10 +1205,12 @@ const TemplateListRow: React.FC<ListRowProps> = ({
   selected,
   multiSelect,
   menuOpen,
+  bookmarked,
   onPress,
   onLongPress,
   onToggleSelect,
   onToggleMenu,
+  onToggleBookmark,
   onEdit,
   onDuplicate,
   onDelete,
@@ -1054,6 +1274,29 @@ const TemplateListRow: React.FC<ListRowProps> = ({
                 <Text style={styles.listName} numberOfLines={1}>
                   {template.name}
                 </Text>
+                {!multiSelect ? (
+                  <Pressable
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      onToggleBookmark(template.id);
+                    }}
+                    hitSlop={8}
+                    style={styles.listBookmarkBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      bookmarked ? "Remove bookmark" : "Bookmark template"
+                    }
+                    testID={`bookmark-${template.id}`}
+                  >
+                    <Ionicons
+                      name={bookmarked ? "bookmark" : "bookmark-outline"}
+                      size={rf(18)}
+                      color={
+                        bookmarked ? colors.primary.DEFAULT : colors.text.secondary
+                      }
+                    />
+                  </Pressable>
+                ) : null}
                 {multiSelect ? (
                   <View
                     style={[
@@ -1428,6 +1671,25 @@ const styles = StyleSheet.create({
   gridCheckboxSelected: {
     backgroundColor: colors.primary.DEFAULT,
     borderColor: colors.primary.DEFAULT,
+  },
+  // Bookmark icon on grid card (Phase 10) — top-right of the thumbnail.
+  gridBookmarkBtn: {
+    position: "absolute",
+    top: rp(spacing.xs),
+    right: rp(spacing.xs),
+    width: rw(32),
+    height: rw(32),
+    borderRadius: 999,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  // Bookmark icon on list row (Phase 10) — inline in the header row.
+  listBookmarkBtn: {
+    paddingLeft: rp(spacing.sm),
+    minWidth: rw(36),
+    alignItems: "center",
+    justifyContent: "center",
   },
   gridBody: {
     padding: rp(spacing.sm),

@@ -58,6 +58,10 @@ import {
   type ExercisePickerFilter,
 } from "../../../services/exercisePickerService";
 import { ExercisePickerCard } from "./ExercisePickerCard";
+import { workoutBuilderAi } from "../../../ai/workoutBuilderAi";
+import { useProfileStore } from "../../../stores/profileStore";
+import { AuroraSpinner } from "../../ui/aurora/AuroraSpinner";
+import type { AiSuggestion } from "../../../types/workout";
 
 // ----------------------------------------------------------------------------
 // CONSTANTS — filter chip options (sourced from the curated library itself so
@@ -115,7 +119,14 @@ export const ExercisePickerSheet: React.FC = () => {
   const pickerContext = useWorkoutBuilderStore((s) => s.pickerContext);
   const closePicker = useWorkoutBuilderStore((s) => s.closePicker);
   const addExercise = useWorkoutBuilderStore((s) => s.addExercise);
+  const applyAiSuggestions = useWorkoutBuilderStore((s) => s.applyAiSuggestions);
   const draft = useWorkoutBuilderStore((s) => s.draft);
+
+  // ── AI suggestions (Phase 9) ──
+  const aiSuggestions = useWorkoutBuilderStore((s) => s.aiSuggestions);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiReasoning, setAiReasoning] = useState<string>("");
+  const [aiError, setAiError] = useState<string>("");
 
   // ── UI state ──
   const [query, setQuery] = useState("");
@@ -147,6 +158,47 @@ export const ExercisePickerSheet: React.FC = () => {
     setMultiSelectMode(false);
     setSelectedIds(new Set());
   }, [pickerOpen]);
+
+  // ── Fetch AI suggestions when the picker opens (Phase 9) ──
+  // Fires suggest-day with the current day's exercises + profile so the user
+  // sees complementary recommendations immediately. Non-blocking — picker
+  // is usable while the AI call is in flight.
+  useEffect(() => {
+    if (!pickerOpen || !pickerContext || !draft) {
+      setAiError("");
+      setAiReasoning("");
+      return;
+    }
+    const day = draft.workouts[pickerContext.dayIndex];
+    const currentExercises = day?.plannedExercises ?? [];
+    let cancelled = false;
+    setAiLoading(true);
+    setAiError("");
+    workoutBuilderAi
+      .suggestDay({
+        dayIndex: pickerContext.dayIndex,
+        currentExercises,
+      })
+      .then((result) => {
+        if (cancelled) return;
+        if (result.success && result.data) {
+          setAiReasoning(result.data.reasoning);
+        } else {
+          setAiError(result.error ?? "AI suggestions unavailable");
+        }
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error("[ExercisePickerSheet] AI suggest failed:", err);
+        setAiError("AI suggestions unavailable");
+      })
+      .finally(() => {
+        if (!cancelled) setAiLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pickerOpen, pickerContext, draft]);
 
   // ── Search results (when query non-empty) ──
   const searchResults = useMemo(() => {
@@ -216,6 +268,36 @@ export const ExercisePickerSheet: React.FC = () => {
     (exercise: CuratedExercise) => {
       if (!pickerContext) return;
       const planned: PlannedExercise = curatedToPlanned(exercise);
+      addExercise(pickerContext.dayIndex, planned);
+      haptics.success();
+      closePicker();
+    },
+    [pickerContext, addExercise, closePicker],
+  );
+
+  // ── Phase 9: Apply all AI suggestions at once ──
+  const handleApplyAiSuggestions = useCallback(() => {
+    if (!pickerContext || aiSuggestions.length === 0) return;
+    applyAiSuggestions(pickerContext.dayIndex, aiSuggestions);
+    haptics.success();
+    closePicker();
+  }, [pickerContext, aiSuggestions, applyAiSuggestions, closePicker]);
+
+  // ── Phase 9: Apply a single AI suggestion ──
+  const handleAddAiSuggestion = useCallback(
+    (suggestion: AiSuggestion) => {
+      if (!pickerContext) return;
+      const planned: PlannedExercise = {
+        exerciseId: suggestion.exerciseId,
+        name: suggestion.name,
+        sets: Array.from({ length: suggestion.sets }, (_, i) => ({
+          setNumber: i + 1,
+          reps: suggestion.reps,
+          setType: "normal" as const,
+        })),
+        restSeconds: suggestion.restSeconds,
+        notes: suggestion.reason,
+      };
       addExercise(pickerContext.dayIndex, planned);
       haptics.success();
       closePicker();
@@ -579,6 +661,71 @@ export const ExercisePickerSheet: React.FC = () => {
                 )}
               </Section>
 
+              {/* Phase 9 — AI-powered suggestions (complementary exercises) */}
+              {(aiLoading || aiSuggestions.length > 0 || aiError.length > 0) && (
+                <View style={styles.aiSection}>
+                  <View style={styles.aiSectionHeader}>
+                    <Ionicons
+                      name="sparkles"
+                      size={rf(14)}
+                      color={colors.primary.DEFAULT}
+                    />
+                    <Text style={styles.aiSectionTitle}>Recommended (AI)</Text>
+                    {aiLoading && (
+                      <AuroraSpinner customSize={rf(12)} theme="white" />
+                    )}
+                  </View>
+                  {aiError.length > 0 && !aiLoading && (
+                    <Text style={styles.aiErrorText}>{aiError}</Text>
+                  )}
+                  {!aiLoading && aiSuggestions.length > 0 && (
+                    <>
+                      {aiReasoning.length > 0 && (
+                        <Text style={styles.aiReasoning} numberOfLines={2}>
+                          {aiReasoning}
+                        </Text>
+                      )}
+                      {aiSuggestions.map((s, i) => (
+                        <Pressable
+                          key={`ai-${s.exerciseId}-${i}`}
+                          onPress={() => handleAddAiSuggestion(s)}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Add AI suggestion: ${s.name}`}
+                          style={styles.aiSuggestionCard}
+                        >
+                          <View style={styles.aiSuggestionHeader}>
+                            <Text style={styles.aiSuggestionName} numberOfLines={1}>
+                              {s.name}
+                            </Text>
+                            <View style={styles.confidenceBadge}>
+                              <Text style={styles.confidenceText}>
+                                {Math.round(s.confidence * 100)}%
+                              </Text>
+                            </View>
+                          </View>
+                          <Text style={styles.aiSuggestionReason} numberOfLines={2}>
+                            {s.reason}
+                          </Text>
+                          <Text style={styles.aiSuggestionMeta}>
+                            {s.sets} sets · {s.reps} reps · {s.muscleGroup}
+                          </Text>
+                        </Pressable>
+                      ))}
+                      {aiSuggestions.length > 1 && (
+                        <GlassButton
+                          label="Apply AI Recommendation"
+                          onPress={handleApplyAiSuggestions}
+                          variant="primary"
+                          icon="sparkles"
+                          style={styles.aiApplyBtn}
+                          textStyle={styles.aiApplyBtnText}
+                        />
+                      )}
+                    </>
+                  )}
+                </View>
+              )}
+
               {favoriteExercises.length > 0 && (
                 <Section title="Pinned favourites">
                   {favoriteExercises.map((ex, i) => renderCard(ex, i))}
@@ -846,6 +993,85 @@ const styles = StyleSheet.create({
   },
   emptyBtn: {
     marginTop: rp(spacing.sm),
+  },
+  // Phase 9 — AI suggestions
+  aiSection: {
+    marginBottom: rp(spacing.md),
+    padding: rp(spacing.sm),
+    backgroundColor: "rgba(255, 107, 53, 0.08)",
+    borderWidth: rw(1),
+    borderColor: "rgba(255, 107, 53, 0.25)",
+    borderRadius: borderRadius.lg,
+    gap: rp(spacing.xs),
+  },
+  aiSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(spacing.xs),
+  },
+  aiSectionTitle: {
+    flex: 1,
+    color: colors.primary.light,
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.bold) as TextStyleWeight,
+    textTransform: "uppercase",
+  } as TextStyle,
+  aiErrorText: {
+    color: colors.text.tertiary,
+    fontSize: rf(typography.fontSize.micro),
+    fontStyle: "italic",
+  },
+  aiReasoning: {
+    color: colors.text.secondary,
+    fontSize: rf(typography.fontSize.micro),
+    lineHeight: rf(typography.fontSize.caption) * typography.lineHeight.normal,
+  },
+  aiSuggestionCard: {
+    backgroundColor: colors.glass.backgroundLight,
+    borderWidth: rw(1),
+    borderColor: colors.glass.border,
+    borderRadius: borderRadius.md,
+    padding: rp(spacing.sm),
+    gap: rp(spacing.xxs),
+  },
+  aiSuggestionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: rp(spacing.xs),
+  },
+  aiSuggestionName: {
+    flex: 1,
+    color: colors.text.primary,
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.semibold) as TextStyleWeight,
+  } as TextStyle,
+  confidenceBadge: {
+    paddingHorizontal: rp(spacing.xs),
+    paddingVertical: rp(2),
+    borderRadius: borderRadius.full,
+    backgroundColor: "rgba(76, 175, 80, 0.18)",
+  },
+  confidenceText: {
+    color: colors.success.light,
+    fontSize: rf(typography.fontSize.micro),
+    fontWeight: String(typography.fontWeight.semibold) as TextStyleWeight,
+  } as TextStyle,
+  aiSuggestionReason: {
+    color: colors.text.secondary,
+    fontSize: rf(typography.fontSize.micro),
+    lineHeight: rf(typography.fontSize.caption) * typography.lineHeight.normal,
+  },
+  aiSuggestionMeta: {
+    color: colors.text.tertiary,
+    fontSize: rf(typography.fontSize.micro),
+  },
+  aiApplyBtn: {
+    marginTop: rp(spacing.xs),
+    minHeight: rf(36),
+  },
+  aiApplyBtnText: {
+    fontSize: rf(typography.fontSize.caption),
   },
 });
 

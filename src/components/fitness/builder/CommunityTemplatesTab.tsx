@@ -21,7 +21,7 @@
  * re-check here — the parent is the single gate.
  */
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -69,6 +69,14 @@ interface CommunityTemplatesTabProps {
   /** Optional extra container style. */
   style?: ViewStyle;
 }
+
+/**
+ * Threshold for "Featured": templates with this many forks (or more) appear in
+ * the Featured section when sort=trending. Tuned low so a fresh community has
+ * some featured content; raise once volume grows.
+ */
+const FEATURED_FORK_THRESHOLD = 1;
+const FEATURED_MAX = 5;
 
 interface SortChip {
   id: CommunitySortOption;
@@ -192,6 +200,17 @@ export const CommunityTemplatesTab: React.FC<CommunityTemplatesTabProps> = ({
     setSort(next);
   }, [sort]);
 
+  // ── Featured: a curated slice of the trending list (high fork_count) shown
+  // above the paginated list when sort=trending. We derive it from the first
+  // page so we don't issue a second request. Once the community grows, this
+  // can be swapped for a dedicated `getFeaturedTemplates` service call.
+  const featured: WorkoutTemplate[] = useMemo(() => {
+    if (sort !== "trending") return [];
+    return templates
+      .filter((t) => (t.forkCount ?? 0) >= FEATURED_FORK_THRESHOLD)
+      .slice(0, FEATURED_MAX);
+  }, [templates, sort]);
+
   const handleCardPress = useCallback((tpl: WorkoutTemplate) => {
     haptics.light();
     onOpenTemplate(tpl);
@@ -244,6 +263,32 @@ export const CommunityTemplatesTab: React.FC<CommunityTemplatesTabProps> = ({
         contentContainerStyle={styles.list}
         onEndReached={fetchNextPage}
         onEndReachedThreshold={0.4}
+        ListHeaderComponent={
+          featured.length > 0 ? (
+            <View style={styles.featuredWrap} testID="community-featured-section">
+              <View style={styles.featuredHeader}>
+                <Ionicons name="flame" size={rf(typography.fontSize.body)} color={colors.amber} />
+                <Text style={styles.featuredTitle}>Featured</Text>
+              </View>
+              <Text style={styles.featuredSubtitle}>
+                Most-forked templates this week
+              </Text>
+              <View style={styles.featuredList}>
+                {featured.map((tpl, i) => (
+                  <CommunityCard
+                    key={tpl.id}
+                    template={tpl}
+                    index={i}
+                    onPress={handleCardPress}
+                  />
+                ))}
+              </View>
+              <View style={styles.featuredDivider}>
+                <Text style={styles.featuredDividerText}>All templates</Text>
+              </View>
+            </View>
+          ) : null
+        }
         ListFooterComponent={
           loadingMore ? <SkeletonCard compact /> : null
         }
@@ -617,6 +662,42 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: rp(spacing.xs),
     marginTop: rp(spacing.xs),
+  },
+  // Featured section (Phase 10 — sort=trending header)
+  featuredWrap: {
+    marginBottom: rp(spacing.md),
+  },
+  featuredHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(spacing.xs),
+    marginBottom: rp(spacing.xxs),
+  },
+  featuredTitle: {
+    fontSize: rf(typography.fontSize.h3),
+    fontWeight: fw(typography.fontWeight.bold),
+    color: colors.text,
+  },
+  featuredSubtitle: {
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.textSecondary,
+    marginBottom: rp(spacing.sm),
+  },
+  featuredList: {
+    gap: rp(spacing.sm),
+  },
+  featuredDivider: {
+    marginTop: rp(spacing.md),
+    paddingTop: rp(spacing.sm),
+    borderTopWidth: 1,
+    borderTopColor: colors.glassBorder,
+  },
+  featuredDividerText: {
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: fw(typography.fontWeight.semibold),
+    color: colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
 });
 

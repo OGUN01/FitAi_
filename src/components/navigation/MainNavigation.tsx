@@ -1,5 +1,5 @@
-import React, { startTransition, useEffect, useState } from "react";
-import { View, Text, StyleSheet, BackHandler, Platform } from "react-native";
+import React, { startTransition, useEffect, useState, useCallback } from "react";
+import { View, Text, StyleSheet, BackHandler, Platform, Linking } from "react-native";
 import { rf, rh, rw } from "../../utils/responsive";
 import { TabBar } from "./TabBar";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -34,6 +34,10 @@ import { flatColors as colors } from "../../theme/aurora-tokens";
 import { DayWorkout, DayMeal } from "../../types/ai";
 import { useAppConfig } from "../../hooks/useAppConfig";
 import { ScreenErrorBoundary } from "../errors/ScreenErrorBoundary";
+import {
+  isTemplateLink,
+  parseTemplateLink,
+} from "../../services/templateShareService";
 
 type MainTabKey = "home" | "fitness" | "diet" | "profile" | "analytics";
 
@@ -169,6 +173,15 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     workout?: DayWorkout;
     dayIndex?: number;
   }>({ isActive: false });
+
+  // Template deep-link import session (Phase 10). When an incoming
+  // fitai://template/{id} link arrives (cold start OR runtime), we open the
+  // TemplateLibraryScreen and pass the linked templateId so it can be fetched
+  // + presented in the TemplateDetailSheet for the user to fork.
+  const [templateShareSession, setTemplateShareSession] = useState<{
+    isActive: boolean;
+    templateId?: string;
+  }>({ isActive: false });
   const ensureTabMounted = (tab: MainTabKey) => {
     setMountedTabs((prev) => (prev[tab] ? prev : { ...prev, [tab]: true }));
   };
@@ -188,6 +201,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     setWeeklyBuilderSession({ isActive: false });
     setBuildMethodLandingSession({ isActive: false });
     setWorkoutDetailSession({ isActive: false });
+    setTemplateShareSession({ isActive: false });
   };
   const resolveTabKey = (screen: string): MainTabKey | null => {
     switch (screen) {
@@ -400,7 +414,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           scheduleBuilderSession.isActive ||
           weeklyBuilderSession.isActive ||
           buildMethodLandingSession.isActive ||
-          workoutDetailSession.isActive
+          workoutDetailSession.isActive ||
+          templateShareSession.isActive
         ) {
           navigation.goBack();
           return true; // Prevent default behavior
@@ -432,6 +447,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     weeklyBuilderSession.isActive,
     buildMethodLandingSession.isActive,
     workoutDetailSession.isActive,
+    templateShareSession.isActive,
   ]);
 
   // Analytics tab is always enabled — no redirect needed
@@ -448,6 +464,45 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     );
     setContributeFoodSession({ isActive: false });
   }, [appConfig.featureFoodContributions, contributeFoodSession.isActive]);
+
+  // ── Phase 10: Template deep-link handling ─────────────────────────────────
+  // Listens for incoming fitai://template/{id} (or https://fitai.app/template/{id})
+  // links from both cold-start (Linking.getInitialURL) and runtime
+  // (Linking.addEventListener 'url'). When a template link arrives, we open the
+  // TemplateLibraryScreen overlay with the linked templateId so it can be
+  // fetched + presented in the TemplateDetailSheet for the user to review/fork.
+  //
+  // Non-template links (e.g. auth deep links owned by useAuthDeepLinks) are
+  // left alone — isTemplateLink returns false for those.
+  const handleTemplateDeepLink = useCallback((url: string | null) => {
+    if (!url || !isTemplateLink(url)) return;
+    const templateId = parseTemplateLink(url);
+    if (!templateId) return;
+    // Clear any other active overlay so the template library owns the surface.
+    clearTransientScreens();
+    setTemplateShareSession({ isActive: true, templateId });
+  }, []);
+
+  useEffect(() => {
+    // Cold start: the URL that launched the app (if any).
+    Linking.getInitialURL()
+      .then((url) => {
+        if (url) handleTemplateDeepLink(url);
+      })
+      .catch((error) => {
+        // Swallow — a transient getInitialURL failure must not crash on launch.
+        console.error("[MainNavigation] getInitialURL failed:", error);
+      });
+
+    // Runtime: links tapped while the app is open.
+    const subscription = Linking.addEventListener("url", ({ url }) => {
+      handleTemplateDeepLink(url);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [handleTemplateDeepLink]);
 
   const handleHomeNavigation = (
     tab: string,
@@ -487,7 +542,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     scheduleBuilderSession.isActive ||
     weeklyBuilderSession.isActive ||
     buildMethodLandingSession.isActive ||
-    workoutDetailSession.isActive;
+    workoutDetailSession.isActive ||
+    templateShareSession.isActive;
 
   const tabs = [
     {
@@ -722,6 +778,20 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
                 ? { params: { templateId: createWorkoutSession.templateId } }
                 : undefined
             }
+          />
+        </ScreenErrorBoundary>
+      );
+    } else if (templateShareSession.isActive && templateShareSession.templateId) {
+      // Phase 10 — incoming template deep link. Render the TemplateLibraryScreen
+      // with the linked templateId so it can fetch the public template and open
+      // the TemplateDetailSheet for the user to review / fork.
+      return (
+        <ScreenErrorBoundary screenName="TemplateLibraryScreen (share import)">
+          <TemplateLibraryScreen
+            navigation={navigation}
+            route={{
+              params: { sharedTemplateId: templateShareSession.templateId },
+            }}
           />
         </ScreenErrorBoundary>
       );

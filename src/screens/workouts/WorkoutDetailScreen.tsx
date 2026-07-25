@@ -61,6 +61,7 @@ import { GlassButton } from "../../components/ui/aurora/GlassButton";
 import { ProgressRing } from "../../components/ui/aurora/ProgressRing";
 import { SupersetConnector } from "../../components/ui/aurora/SupersetConnector";
 import { GradientBarChart, type BarData } from "../../components/ui/GradientBarChart";
+import { BuilderAnalyticsPanel } from "../../components/fitness/builder/BuilderAnalyticsPanel";
 import { useFitnessStore } from "../../stores/fitnessStore";
 import { useProfileStore } from "../../stores/profileStore";
 import { calculateWorkoutCalories } from "../../services/calorieCalculator";
@@ -627,6 +628,13 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
               </Text>
             </View>
           )}
+
+          {/* ── Training analytics (Phase 11) ── */}
+          {/* Historical trends (volume, heatmap, PRs, streak). Collapsible, with
+              its own empty state when the user has no training history. */}
+          <BuilderAnalyticsPanel
+            testID={`${testID ?? "workout-detail"}-analytics`}
+          />
 
           <View style={styles.footerSpacer} />
         </ScrollView>

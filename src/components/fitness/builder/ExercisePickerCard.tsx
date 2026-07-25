@@ -152,11 +152,12 @@ export const ExercisePickerCard: React.FC<ExercisePickerCardProps> = ({
       {/* Favourite star OR multi-select checkbox */}
       {multiSelectMode ? (
         <Pressable
-          hitSlop={10}
+          hitSlop={11}
           onPress={handleSelectPress}
           accessibilityRole="checkbox"
           accessibilityState={{ checked: isSelected }}
           accessibilityLabel={`Select ${exercise.name}`}
+          accessibilityHint="Double tap to toggle selection"
           style={styles.favBtn}
         >
           <Ionicons
@@ -167,10 +168,11 @@ export const ExercisePickerCard: React.FC<ExercisePickerCardProps> = ({
         </Pressable>
       ) : (
         <Pressable
-          hitSlop={10}
+          hitSlop={11}
           onPress={handleFavPress}
           accessibilityRole="button"
           accessibilityLabel={isFavorite ? `Unfavourite ${exercise.name}` : `Favourite ${exercise.name}`}
+          accessibilityHint="Double tap to favorite this exercise"
           style={styles.favBtn}
         >
           <Ionicons

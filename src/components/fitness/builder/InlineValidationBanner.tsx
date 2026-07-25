@@ -21,7 +21,7 @@
  * All colors / spacing / radii come from aurora-tokens. Animations use
  * springConfig presets + haptics from src/utils/haptics.ts.
  */
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
 import type { TextStyle } from "react-native";
 
@@ -40,6 +40,7 @@ import { GlassButton } from "../../ui/aurora/GlassButton";
 import { useWorkoutBuilderStore } from "../../../stores/workoutBuilderStore";
 import type { ValidationWarning } from "../../../types/workout";
 import { haptics } from "../../../utils/haptics";
+import { workoutBuilderAi } from "../../../ai/workoutBuilderAi";
 import {
   colors,
   spacing,
@@ -83,8 +84,52 @@ const SEVERITY_STYLES: Record<ValidationWarning["severity"], SeverityStyle> = {
 export const InlineValidationBanner: React.FC = () => {
   const warnings = useWorkoutBuilderStore((s) => s.validationWarnings);
   const openPicker = useWorkoutBuilderStore((s) => s.openPicker);
+  const draft = useWorkoutBuilderStore((s) => s.draft);
+  const applyAiSuggestions = useWorkoutBuilderStore((s) => s.applyAiSuggestions);
 
   const [expanded, setExpanded] = useState(false);
+  const [fixingDayIndex, setFixingDayIndex] = useState<number | null>(null);
+
+  // ── Phase 9: AI-powered "Fix Imbalance" for replace_exercise ──
+  // Fetches an AI suggestion for a replacement exercise and applies it.
+  const handleAiReplace = useCallback(
+    async (warning: ValidationWarning) => {
+      const payload = warning.fixAction?.payload as {
+        exerciseId?: string;
+        dayIndex?: number;
+        muscleGroup?: string;
+      } | undefined;
+      const dayIndex = payload?.dayIndex ?? warning.dayIndex ?? 0;
+      if (!draft) return;
+      const day = draft.workouts[dayIndex];
+      if (!day) return;
+
+      setFixingDayIndex(dayIndex);
+      haptics.light();
+      try {
+        const currentExercises = day.plannedExercises ?? [];
+        const result = await workoutBuilderAi.suggestDay({
+          dayIndex,
+          currentExercises,
+          goals: [`replace ${payload?.exerciseId ?? "exercise"}`],
+        });
+        if (result.success && result.data && result.data.suggestions.length > 0) {
+          // Apply the top AI suggestion as the replacement.
+          applyAiSuggestions(dayIndex, [result.data.suggestions[0]]);
+          haptics.success();
+        } else {
+          // AI failed or returned nothing — fall back to opening the picker.
+          openPicker({ dayIndex });
+        }
+      } catch (err) {
+        console.error("[InlineValidationBanner] AI replace failed:", err);
+        openPicker({ dayIndex });
+      } finally {
+        setFixingDayIndex(null);
+      }
+    },
+    [draft, applyAiSuggestions, openPicker],
+  );
 
   // Track previous warning IDs so we fire a single haptic when a NEW warning
   // appears (not on every re-render that preserves the same set).
@@ -196,7 +241,16 @@ export const InlineValidationBanner: React.FC = () => {
                 key={w.id}
                 warning={w}
                 index={idx}
-                onFix={() => handleFixAction(w, openPicker)}
+                isFixing={fixingDayIndex === (w.dayIndex ?? -1)}
+                onFix={() => {
+                  // Phase 9: replace_exercise uses AI to suggest a replacement;
+                  // other action types fall through to the picker/store.
+                  if (w.fixAction?.type === "replace_exercise") {
+                    void handleAiReplace(w);
+                  } else {
+                    handleFixAction(w, openPicker);
+                  }
+                }}
               />
             ))}
           </ScrollView>
@@ -213,10 +267,11 @@ export const InlineValidationBanner: React.FC = () => {
 interface WarningCardProps {
   warning: ValidationWarning;
   index: number;
+  isFixing: boolean;
   onFix: () => void;
 }
 
-const WarningCard: React.FC<WarningCardProps> = ({ warning, index, onFix }) => {
+const WarningCard: React.FC<WarningCardProps> = ({ warning, index, isFixing, onFix }) => {
   const style = SEVERITY_STYLES[warning.severity];
 
   return (
@@ -235,8 +290,10 @@ const WarningCard: React.FC<WarningCardProps> = ({ warning, index, onFix }) => {
 
         {warning.fixAction && (
           <GlassButton
-            label={warning.fixAction.label}
+            label={isFixing ? "Fixing…" : warning.fixAction.label}
             onPress={onFix}
+            loading={isFixing}
+            disabled={isFixing}
             variant={
               warning.severity === "error"
                 ? "error"

@@ -332,6 +332,7 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
           }}
           accessibilityRole="button"
           accessibilityLabel="Duplicate exercise"
+          accessibilityHint="Creates a copy of this exercise immediately below"
         >
           <Ionicons name="copy-outline" size={rf(18)} color={colors.text.primary} />
         </Pressable>
@@ -344,6 +345,7 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
           }}
           accessibilityRole="button"
           accessibilityLabel="Replace exercise"
+          accessibilityHint="Opens the exercise picker to swap this exercise"
         >
           <Ionicons name="swap-horizontal-outline" size={rf(18)} color={colors.text.primary} />
         </Pressable>
@@ -356,6 +358,7 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
           }}
           accessibilityRole="button"
           accessibilityLabel="Delete exercise"
+          accessibilityHint="Removes this exercise from the day"
         >
           <Ionicons name="trash-outline" size={rf(18)} color={colors.text.primary} />
         </Pressable>
@@ -363,7 +366,12 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
 
       {/* The row itself — draggable + swipeable + tappable */}
       <GestureDetector gesture={Gesture.Simultaneous(dragGesture, swipeGesture)}>
-        <Animated.View style={[styles.row, dragAnimatedStyle]}>
+        <Animated.View
+          style={[styles.row, dragAnimatedStyle]}
+          accessibilityRole="button"
+          accessibilityLabel={`${exercise.name}. ${setCount} sets of ${repsLabel}. Double-tap to favorite, swipe left for actions, long-press to drag.`}
+          accessibilityHint="Double tap to enter reorder mode, then swipe up/down to move. Swipe left to reveal duplicate, replace, delete actions."
+        >
           {/* Tap gestures on a separate inner detector so the row body is
               tappable without conflicting with the drag/swipe pan. */}
           <GestureDetector gesture={tapGestures}>
@@ -433,13 +441,14 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
 
               {/* Favourite */}
               <Pressable
-                hitSlop={8}
+                hitSlop={13}
                 onPress={() => {
                   toggleFavourite(exercise.exerciseId);
                   haptics.celebration();
                 }}
                 accessibilityRole="button"
-                accessibilityLabel={isFavourite ? "Unfavourite" : "Favourite"}
+                accessibilityLabel={isFavourite ? `Unfavourite ${exercise.name}` : `Favourite ${exercise.name}`}
+                accessibilityHint="Double tap to favorite this exercise"
               >
                 <Ionicons
                   name={isFavourite ? "heart" : "heart-outline"}
@@ -450,7 +459,7 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
 
               {/* Kebab */}
               <Pressable
-                hitSlop={8}
+                hitSlop={13}
                 onPress={() => {
                   haptics.selection();
                   setMenuOpen((v) => !v);

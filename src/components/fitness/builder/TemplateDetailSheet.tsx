@@ -45,11 +45,13 @@ import {
   type TemplateExercise,
 } from "../../../services/workoutTemplateService";
 import { calculateWorkoutCalories } from "../../../services/calorieCalculator";
+import { shareTemplate } from "../../../services/templateShareService";
 import { DetentBottomSheet } from "../../ui/aurora/DetentBottomSheet";
 import { GlassCard } from "../../ui/aurora/GlassCard";
 import { GlassButton } from "../../ui/aurora/GlassButton";
 import { Confetti } from "../../ui/aurora/Confetti";
 import { MuscleBalanceRadar } from "../../charts/MuscleBalanceRadar";
+import { TemplateRatingSheet } from "./TemplateRatingSheet";
 import {
   flatColors as colors,
   spacing,
@@ -58,6 +60,8 @@ import {
 } from "../../../theme/aurora-tokens";
 import { animations } from "../../../theme/animations";
 import { haptics } from "../../../utils/haptics";
+import { crossPlatformAlert } from "../../../utils/crossPlatformAlert";
+import { getCurrentUserId } from "../../../services/authUtils";
 import { rf, rp, rw, rs } from "../../../utils/responsive";
 
 // ----------------------------------------------------------------------------
@@ -83,6 +87,11 @@ export interface TemplateDetailSheetProps {
   onUseInSchedule: (template: WorkoutTemplate) => void;
   /** "Fork to Library" success callback (parent refreshes its list). */
   onForkComplete?: () => void;
+  /**
+   * "Rate" success callback (parent can refresh the template's rating_avg).
+   * Fires after the user submits a rating via the embedded TemplateRatingSheet.
+   */
+  onRated?: (templateId: string, rating: number) => void;
   /** Test ID prefix. */
   testID?: string;
 }
@@ -158,11 +167,29 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
   onStart,
   onUseInSchedule,
   onForkComplete,
+  onRated,
   testID,
 }) => {
   const [forking, setForking] = React.useState(false);
   const [forked, setForked] = React.useState(false);
   const [confettiTrigger, setConfettiTrigger] = React.useState(false);
+  // Local fork-count mirror: we optimistically bump it after a fork so the
+  // stats grid reflects the new count before the parent list refetches.
+  const [localForkCount, setLocalForkCount] = React.useState<number | null>(
+    null,
+  );
+  // Share state: the share-sheet call is async + can be dismissed by the OS.
+  // We track a "shared" flag to surface a confirmation after the sheet closes.
+  const [shared, setShared] = React.useState(false);
+  // Rating sheet visibility (embedded — community templates only).
+  const [ratingSheetVisible, setRatingSheetVisible] = React.useState(false);
+  // Local rating mirror: optimistically reflect the user's submitted rating.
+  const [localRatingAvg, setLocalRatingAvg] = React.useState<number | null>(
+    null,
+  );
+  const [localRatingCount, setLocalRatingCount] = React.useState<number | null>(
+    null,
+  );
 
   // Reset transient state when a different template is shown.
   React.useEffect(() => {
@@ -170,8 +197,30 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
       setForking(false);
       setForked(false);
       setConfettiTrigger(false);
+      setLocalForkCount(null);
+      setShared(false);
+      setRatingSheetVisible(false);
+      setLocalRatingAvg(null);
+      setLocalRatingCount(null);
     }
   }, [visible, template?.id]);
+
+  // Derived: the display values prefer optimistic local state over the
+  // template prop so the UI feels instant after a fork / rate.
+  const displayForkCount = localForkCount ?? template?.forkCount ?? 0;
+  const displayRatingAvg = localRatingAvg ?? template?.ratingAvg ?? 0;
+  const displayRatingCount = localRatingCount ?? template?.ratingCount ?? 0;
+  const displayUserId = useMemo(() => {
+    // Lazily read the current user id once per template. We don't re-read on
+    // every render — getCurrentUserId() hits the auth store which is cheap
+    // but not free. Cache via useMemo keyed on template id.
+    if (!template) return null;
+    try {
+      return getCurrentUserId();
+    } catch {
+      return null;
+    }
+  }, [template?.id]);
 
   // ── Derived data ──────────────────────────────────────────────────────────
   const exerciseCount = template?.exercises.length ?? 0;
@@ -246,7 +295,6 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
     try {
       // forkTemplate needs the current user's id; we read it lazily here so the
       // sheet stays decoupled from auth plumbing. The service logs on failure.
-      const { getCurrentUserId } = await import("../../../services/authUtils");
       const userId = getCurrentUserId();
       if (!userId) {
         haptics.warning();
@@ -255,6 +303,11 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
       await workoutTemplateService.forkTemplate(template.id, userId);
       setForked(true);
       setConfettiTrigger(true);
+      // Optimistically bump the displayed fork count so the stats grid
+      // reflects the user's fork before the parent list refetches.
+      setLocalForkCount((prev) =>
+        prev == null ? (template.forkCount ?? 0) + 1 : prev + 1,
+      );
       haptics.celebration();
       onForkComplete?.();
     } catch (err) {
@@ -265,15 +318,58 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
     }
   }, [template, forking, forked, onForkComplete]);
 
-  const handleShare = useCallback(() => {
+  const handleShare = useCallback(async () => {
     if (!template) return;
     haptics.light();
-    // v1 placeholder — deep-link sharing wired in Phase 10.
-    console.error(
-      "[TemplateDetailSheet] share not wired (Phase 10) — template id:",
-      template.id,
-    );
+    try {
+      // shareTemplate builds a fitai://template/{id} deep link + opens the OS
+      // share sheet (SMS chooser fallback). Returns the link so we can show a
+      // confirmation toast even if the user dismisses the sheet.
+      await shareTemplate(template.id, template.name);
+      setShared(true);
+    } catch (err) {
+      console.error("[TemplateDetailSheet] share failed:", err);
+      haptics.error();
+      crossPlatformAlert(
+        "Share failed",
+        "Could not open the share sheet. Please try again.",
+      );
+    }
   }, [template]);
+
+  const handleOpenRating = useCallback(() => {
+    if (!template) return;
+    haptics.light();
+    setRatingSheetVisible(true);
+  }, [template]);
+
+  const handleRated = useCallback(
+    (templateId: string, rating: number) => {
+      // Optimistically reflect the new rating. The exact new avg depends on
+      // whether this was a first rating or an update; we approximate by
+      // bumping the count by 1 and nudging the avg toward the user's rating.
+      // The parent's onRated callback will refresh from the server.
+      setLocalRatingCount((prevCount) => {
+        const baseCount = prevCount ?? template?.ratingCount ?? 0;
+        const baseAvg = localRatingAvg ?? template?.ratingAvg ?? 0;
+        const newCount = baseCount + 1;
+        // Weighted: new avg = (old_avg * old_count + new_rating) / new_count.
+        // If the user already rated (count doesn't grow), avg just shifts.
+        const newAvg =
+          baseCount === 0
+            ? rating
+            : (baseAvg * baseCount + rating) / newCount;
+        setLocalRatingAvg(Math.round(newAvg * 100) / 100);
+        return newCount;
+      });
+      onRated?.(templateId, rating);
+    },
+    [template, localRatingAvg, onRated],
+  );
+
+  const handleCloseRating = useCallback(() => {
+    setRatingSheetVisible(false);
+  }, []);
 
   const handleConfettiComplete = useCallback(() => {
     setConfettiTrigger(false);
@@ -306,6 +402,9 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
             <Animated.View entering={FadeInDown.delay(60).duration(300)}>
               <Text style={styles.name}>{template.name}</Text>
 
+              {/* Author (community templates) — v2 author profiles placeholder.
+                  Tap is a no-op; the row is styled to look disabled with a
+                  "coming soon" note so users know the affordance exists. */}
               {isCommunity && template.authorName ? (
                 <View style={styles.authorRow}>
                   <Ionicons
@@ -315,6 +414,26 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
                   />
                   <Text style={styles.authorText} numberOfLines={1}>
                     {template.authorName}
+                  </Text>
+                  <View style={styles.authorBadge}>
+                    <Text style={styles.authorBadgeText}>Profiles soon</Text>
+                  </View>
+                </View>
+              ) : null}
+
+              {/* Lineage: if this template was forked from another, show the
+                  source author so the chain is visible. Only applies to the
+                  user's own forked templates (community templates show their
+                  own author above). */}
+              {!isCommunity && template.parentTemplateId && template.authorName ? (
+                <View style={styles.lineageRow}>
+                  <Ionicons
+                    name="git-branch-outline"
+                    size={rf(typography.fontSize.caption)}
+                    color={colors.secondary}
+                  />
+                  <Text style={styles.lineageText} numberOfLines={1}>
+                    Forked from {template.authorName}
                   </Text>
                 </View>
               ) : null}
@@ -357,10 +476,22 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
                   tint={colors.amber}
                 />
                 <StatTile
-                  icon="trending-up-outline"
-                  value={String(template.usageCount ?? 0)}
-                  label="Uses"
+                  icon="git-branch-outline"
+                  value={String(displayForkCount)}
+                  label="Forks"
                   tint={colors.purple}
+                />
+                <StatTile
+                  icon="star-outline"
+                  value={
+                    displayRatingAvg > 0
+                      ? displayRatingAvg.toFixed(1)
+                      : "—"
+                  }
+                  label={`${displayRatingCount} rating${
+                    displayRatingCount === 1 ? "" : "s"
+                  }`}
+                  tint={colors.amber}
                 />
               </View>
             </Animated.View>
@@ -468,13 +599,27 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
                 </View>
               ) : null}
 
+              {isCommunity ? (
+                <View style={styles.actionRow}>
+                  <GlassButton
+                    label="Rate this template"
+                    onPress={handleOpenRating}
+                    variant="secondary"
+                    icon="star-outline"
+                    fullWidth
+                    hapticType="light"
+                    testID="detail-rate-button"
+                  />
+                </View>
+              ) : null}
+
               {isOwned ? (
                 <View style={styles.actionRow}>
                   <GlassButton
-                    label="Share"
+                    label={shared ? "Shared ✓" : "Share"}
                     onPress={handleShare}
-                    variant="secondary"
-                    icon="share-outline"
+                    variant={shared ? "success" : "secondary"}
+                    icon={shared ? "checkmark-circle-outline" : "share-outline"}
                     fullWidth
                     hapticType="light"
                     testID="detail-share-button"
@@ -485,6 +630,17 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
           </View>
         ) : null}
       </ScrollView>
+
+      {/* Embedded rating sheet — community templates only. Renders above this
+          detail sheet so the rating flow stays within the preview context. */}
+      <TemplateRatingSheet
+        visible={ratingSheetVisible}
+        onClose={handleCloseRating}
+        template={template}
+        userId={displayUserId}
+        onRated={handleRated}
+        testID="detail-rating-sheet"
+      />
     </DetentBottomSheet>
   );
 };
@@ -619,6 +775,31 @@ const styles = StyleSheet.create({
   authorText: {
     color: colors.textSecondary,
     fontSize: rf(typography.fontSize.caption),
+    flex: 1,
+  },
+  authorBadge: {
+    paddingHorizontal: rp(spacing.xs),
+    paddingVertical: rp(spacing.xxs),
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundTertiary,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+  },
+  authorBadgeText: {
+    color: colors.textTertiary,
+    fontSize: rf(typography.fontSize.micro),
+    fontStyle: "italic",
+  },
+  lineageRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(spacing.xxs),
+    marginBottom: rp(spacing.sm),
+  },
+  lineageText: {
+    color: colors.secondary,
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: fw(typography.fontWeight.medium),
     flex: 1,
   },
   badgeRow: {
