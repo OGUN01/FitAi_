@@ -19,7 +19,7 @@
  * useDragToReorder, and the cross-day hook is available for Phase 8 polish
  * wiring once DayBlock layout rects are measured).
  */
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -32,9 +32,14 @@ import { AuroraBackground, GlassHeader } from "../../components/ui/aurora";
 import { SegmentedControl, SegmentOption } from "../../components/ui/SegmentedControl";
 import { CustomDialog } from "../../components/ui/CustomDialog";
 import { DayBlock } from "../../components/fitness/builder/DayBlock";
+import { ExercisePickerSheet } from "../../components/fitness/builder/ExercisePickerSheet";
+import { ExerciseEditorSheet } from "../../components/fitness/builder/ExerciseEditorSheet";
 import { BuilderSummaryFooter } from "../../components/fitness/builder/BuilderSummaryFooter";
+import { InlineValidationBanner } from "../../components/fitness/builder/InlineValidationBanner";
+import { WeeklyInsightsPanel } from "../../components/fitness/builder/WeeklyInsightsPanel";
 import { useWorkoutBuilderStore, DAYS_OF_WEEK } from "../../stores/workoutBuilderStore";
 import { useProfileStore } from "../../stores/profileStore";
+import { validatePlan, type ValidationProfile } from "../../services/builderValidationService";
 import { haptics } from "../../utils/haptics";
 import { colors, spacing, typography } from "../../theme/aurora-tokens";
 import { rp, rf } from "../../utils/responsive";
@@ -72,11 +77,26 @@ export default function WeeklyBuilderScreen({ navigation }: Props) {
   const clearDay = useWorkoutBuilderStore((s) => s.clearDay);
   const updateDay = useWorkoutBuilderStore((s) => s.updateDay);
   const computeInsights = useWorkoutBuilderStore((s) => s.computeInsights);
+  const setValidationWarnings = useWorkoutBuilderStore((s) => s.setValidationWarnings);
   const discard = useWorkoutBuilderStore((s) => s.discard);
 
   // ── User weight (for insights calorie calc) ──
   const bodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
   const userWeightKg = bodyAnalysis?.current_weight_kg ?? null;
+
+  // ── Safety profile (for validation's safety_constraint checks) ──
+  // Derived from BodyAnalysisData (pregnancy / injuries / medical conditions).
+  // Memoized so the validation effect's dependency only changes when the
+  // underlying values actually change (not on every bodyAnalysis reference swap).
+  const safetyProfile = useMemo<ValidationProfile | null>(() => {
+    if (!bodyAnalysis) return null;
+    return {
+      pregnancyStatus: bodyAnalysis.pregnancy_status ?? undefined,
+      pregnancyTrimester: bodyAnalysis.pregnancy_trimester,
+      injuries: bodyAnalysis.physical_limitations,
+      medicalConditions: bodyAnalysis.medical_conditions,
+    };
+  }, [bodyAnalysis]);
 
   // ── Scroll refs for jump-to-day ──
   const scrollRef = useRef<ScrollView>(null);
@@ -100,6 +120,39 @@ export default function WeeklyBuilderScreen({ navigation }: Props) {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userWeightKg]);
+
+  // ── Validation: re-run on every draft change + when safety profile changes ──
+  // The store fires computeInsights on every mutation (insights panel reads
+  // that), but validation warnings are a separate concern — we compute them
+  // here and push to the store so InlineValidationBanner can subscribe.
+  useEffect(() => {
+    if (!draft) {
+      setValidationWarnings([]);
+      return;
+    }
+    try {
+      const warnings = validatePlan(draft, { profile: safetyProfile });
+      setValidationWarnings(warnings);
+    } catch (err) {
+      console.error("[WeeklyBuilderScreen] validatePlan failed:", err);
+      setValidationWarnings([]);
+    }
+  }, [draft, safetyProfile, setValidationWarnings]);
+
+  // Ensure insights compute on mount once a hydrated draft is present. The
+  // store's mutations (addExercise, removeExercise, etc.) already call
+  // computeInsights, and hydrateFromCustomPlan kicks it on hydrate — this is
+  // a safety net for the case where hydrate completes but the user-weight
+  // effect hasn't fired yet. Runs only when draft goes from null → non-null.
+  const didInitialInsightsKickRef = useRef(false);
+  useEffect(() => {
+    if (!draft || didInitialInsightsKickRef.current) return;
+    didInitialInsightsKickRef.current = true;
+    computeInsights(userWeightKg).catch(() => {
+      /* logged in store */
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft]);
 
   // ── Back-with-discard-confirm ──
   const [discardDialogVisible, setDiscardDialogVisible] = useState(false);
@@ -300,6 +353,9 @@ export default function WeeklyBuilderScreen({ navigation }: Props) {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          {/* Inline validation — surfaces warnings above the day list (Phase 6) */}
+          <InlineValidationBanner />
+
           {draft.workouts.map((day, idx) => (
             <View
               key={`${day.id}_${idx}`}
@@ -327,6 +383,10 @@ export default function WeeklyBuilderScreen({ navigation }: Props) {
               />
             </View>
           ))}
+
+          {/* Weekly insights — radar + stat grid + coverage bars (Phase 6) */}
+          <WeeklyInsightsPanel />
+
           {/* Spacer so the last day isn't hidden behind the footer */}
           <View style={styles.footerSpacer} />
         </ScrollView>
@@ -357,10 +417,13 @@ export default function WeeklyBuilderScreen({ navigation }: Props) {
         onDismiss={() => setDiscardDialogVisible(false)}
       />
 
-      {/* NOTE: The exercise picker (Phase 4) and exercise editor (Phase 5) are
-          driven by pickerOpen/editorOpen store flags. They are not rendered
-          here — Phase 4/5 will mount them as overlays. For now, picker/editor
-          state is set on the store so the flows are wired end-to-end. */}
+      {/* Exercise picker — Phase 4 overlay. Mounted once at screen level and
+          driven by pickerOpen/pickerContext on the workoutBuilderStore. */}
+      <ExercisePickerSheet />
+
+      {/* Exercise editor — Phase 5 overlay. Mounted once at screen level and
+          driven by editorOpen/editorContext on the workoutBuilderStore. */}
+      <ExerciseEditorSheet />
     </AuroraBackground>
   );
 }

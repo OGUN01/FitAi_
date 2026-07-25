@@ -1,0 +1,628 @@
+/**
+ * SetRow — single set row inside the ExerciseEditorSheet's sets list.
+ *
+ * Layout (left → right):
+ *   [drag handle] [set # badge] [reps input] [weight input] [set-type chip] [delete X]
+ *
+ * Below the row, conditionally:
+ *   - setType === 'drop'     → 2 extra inputs (dropWeightKg, dropReps)
+ *   - setType === 'superset'  → group-id text input (auto-generated UUID-friendly id)
+ *   - setType === 'circuit'   → group-id text input
+ *
+ * Interactions (all tokenized + haptic):
+ *  - Long-press drag handle = reorder sets within the exercise (useDragToReorder).
+ *  - Tap set-type chip = cycle normal→warmup→failure→drop→superset→circuit→normal
+ *    with `selection` haptic + tokenized color per type.
+ *  - Delete X = `warning` haptic + onDelete().
+ *  - Add/remove animated via Reanimated `SlideInRight` / `SlideOutLeft` + `Layout`.
+ *
+ * Reduce-motion is respected on the layout animations (entrance/exit fall back to
+ * a plain fade so reduce-motion users don't see sliding).
+ */
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  Pressable,
+  ViewStyle,
+  KeyboardTypeOptions,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import Animated, {
+  SlideInRight,
+  SlideOutLeft,
+  Layout,
+  FadeIn,
+  FadeOut,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+  interpolate,
+} from "react-native-reanimated";
+import { GestureDetector, Gesture } from "react-native-gesture-handler";
+import { useDragToReorder } from "../../../gestures/handlers";
+import { animations, duration } from "../../../theme/animations";
+import { haptics } from "../../../utils/haptics";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
+import {
+  colors,
+  flatColors,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../../theme/aurora-tokens";
+import { rp, rf, rw, rs } from "../../../utils/responsive";
+import type { PlannedSet } from "../../../types/workout";
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+/** All possible set types in the cycle order. */
+const SET_TYPE_CYCLE: PlannedSet["setType"][] = [
+  "normal",
+  "warmup",
+  "failure",
+  "drop",
+  "superset",
+  "circuit",
+];
+
+/** Per-type color + label metadata, sourced from aurora tokens / flatColors. */
+const SET_TYPE_META: Record<
+  PlannedSet["setType"],
+  { label: string; color: string; bgTint: string }
+> = {
+  normal: { label: "Normal", color: flatColors.neutral, bgTint: "rgba(158, 158, 158, 0.18)" },
+  warmup: { label: "Warmup", color: flatColors.amber, bgTint: "rgba(255, 193, 7, 0.18)" },
+  failure: { label: "Failure", color: colors.error.DEFAULT, bgTint: "rgba(244, 67, 54, 0.18)" },
+  drop: { label: "Drop", color: flatColors.purple, bgTint: "rgba(147, 51, 234, 0.18)" },
+  superset: { label: "Superset", color: flatColors.cyan, bgTint: "rgba(6, 182, 212, 0.18)" },
+  circuit: { label: "Circuit", color: flatColors.teal, bgTint: "rgba(78, 205, 196, 0.18)" },
+};
+
+export interface SetRowProps {
+  /** The set being edited. */
+  set: PlannedSet;
+  /** 1-based set number for the badge. */
+  setNumber: number;
+  /** Total sets in the parent list (clamps the drag target). */
+  totalCount: number;
+  /** Fires with the updated set on any field change. */
+  onChange: (updated: PlannedSet) => void;
+  /** Fires when the delete X is pressed. */
+  onDelete: () => void;
+  /** Fires on drag end with from/to indices (1-based setNumber space). */
+  onReorder: (from: number, to: number) => void;
+  /** Whether this row is the active drag target (drives elevation styling). */
+  isDragging?: boolean;
+  /** Test ID prefix. */
+  testID?: string;
+}
+
+// Approximate row height — used by useDragToReorder for snap math. Tuned to the
+// collapsed (non-drop) row height; extra rows below don't affect snap target
+// math materially because we reorder by set index, not absolute pixel offset.
+const SET_ROW_HEIGHT = 64;
+
+// ============================================================================
+// COMPONENT
+// ============================================================================
+
+export const SetRow: React.FC<SetRowProps> = ({
+  set,
+  setNumber,
+  totalCount,
+  onChange,
+  onDelete,
+  onReorder,
+  isDragging: isDraggingProp = false,
+  testID,
+}) => {
+  const reduceMotion = useReducedMotion();
+
+  // ── Local input state ──
+  // We mirror reps/weight as strings so the user can type "8-12" ranges and
+  // intermediate states like "" without the parent PlannedSet coercing to a
+  // number. On blur / submit we reconcile back into the PlannedSet shape.
+  const [repsText, setRepsText] = useState<string>(
+    typeof set.reps === "string" ? set.reps : set.reps != null ? String(set.reps) : "",
+  );
+  const [weightText, setWeightText] = useState<string>(
+    set.weightKg != null ? String(set.weightKg) : "",
+  );
+  const [dropWeightText, setDropWeightText] = useState<string>(
+    set.dropWeightKg != null ? String(set.dropWeightKg) : "",
+  );
+  const [dropRepsText, setDropRepsText] = useState<string>(
+    set.dropReps != null ? String(set.dropReps) : "",
+  );
+  // NOTE: supersetId / circuitId live on PlannedExercise, NOT on PlannedSet.
+  // The set-type chip here only cycles the setType; the exercise-level
+  // Superset/Circuit section in ExerciseEditorSheet owns the group id.
+
+  // Keep local text in sync if the parent set reference changes externally
+  // (e.g. undo, AI fill). We compare against the canonical values so we don't
+  // clobber in-flight typing.
+  useEffect(() => {
+    const canonicalReps =
+      typeof set.reps === "string" ? set.reps : set.reps != null ? String(set.reps) : "";
+    if (canonicalReps !== repsText && set.reps !== parseRepsOrNumber(repsText)) {
+      setRepsText(canonicalReps);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [set.reps]);
+
+  useEffect(() => {
+    const canonicalWeight = set.weightKg != null ? String(set.weightKg) : "";
+    if (canonicalWeight !== weightText && set.weightKg !== parseNumberOrNull(weightText)) {
+      setWeightText(canonicalWeight);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [set.weightKg]);
+
+  useEffect(() => {
+    if (set.setType !== "drop") return;
+    const canonical = set.dropWeightKg != null ? String(set.dropWeightKg) : "";
+    if (canonical !== dropWeightText && set.dropWeightKg !== parseNumberOrNull(dropWeightText)) {
+      setDropWeightText(canonical);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [set.dropWeightKg, set.setType]);
+
+  useEffect(() => {
+    if (set.setType !== "drop") return;
+    const canonical = set.dropReps != null ? String(set.dropReps) : "";
+    if (canonical !== dropRepsText && set.dropReps !== parseNumberOrNull(dropRepsText)) {
+      setDropRepsText(canonical);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [set.dropReps, set.setType]);
+
+  // ── Drag-to-reorder ──
+  const handleDragEnd = useCallback(
+    (from: number, to: number) => {
+      const clamped = Math.max(0, Math.min(totalCount - 1, to));
+      if (from !== clamped) {
+        // Convert 0-based itemIndex to 1-based setNumber space.
+        onReorder(from + 1, clamped + 1);
+      }
+    },
+    [totalCount, onReorder],
+  );
+
+  const { gesture: dragGesture, translateY, isDragging } = useDragToReorder(
+    setNumber - 1,
+    {
+      itemHeight: SET_ROW_HEIGHT,
+      activationDelay: animations.gesture.longPressDuration - 100,
+      onDragEnd: handleDragEnd,
+      hapticFeedback: true,
+    },
+  );
+
+  const dragAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+    opacity: isDragging.value ? 0.92 : 1,
+    zIndex: isDragging.value ? 100 : 0,
+    elevation: isDragging.value ? 6 : 0,
+    ...(isDragging.value
+      ? {
+          shadowColor: "#000000",
+          shadowOffset: { width: 0, height: rs(4) },
+          shadowOpacity: 0.3,
+          shadowRadius: rs(8),
+        }
+      : {}),
+  }));
+
+  // Entrance/exit animations: reduce-motion falls back to a short fade so users
+  // who disable motion don't see a slide. `springify()` is called with no
+  // config (Reanimated v3 layout builders don't accept a spring config object
+  // as a positional arg — the builder API uses chained `.damping()/.stiffness()`
+  // methods; the defaults are tuned for UI motion).
+  const entering = reduceMotion
+    ? FadeIn.duration(duration.quick)
+    : SlideInRight.springify().duration(duration.normal);
+  const exiting = reduceMotion
+    ? FadeOut.duration(duration.quick)
+    : SlideOutLeft.springify().duration(duration.normal);
+
+  // ── Field update helpers ──
+  const patch = useCallback(
+    (partial: Partial<PlannedSet>) => {
+      onChange({ ...set, ...partial });
+    },
+    [onChange, set],
+  );
+
+  const commitReps = useCallback(() => {
+    const trimmed = repsText.trim();
+    if (trimmed === "") {
+      patch({ reps: 0 });
+      return;
+    }
+    // Range string ("8-12") stays a string; pure number becomes a number.
+    const asNum = Number(trimmed);
+    if (!Number.isNaN(asNum) && !trimmed.includes("-")) {
+      patch({ reps: asNum });
+    } else {
+      patch({ reps: trimmed });
+    }
+  }, [repsText, patch]);
+
+  const commitWeight = useCallback(() => {
+    const trimmed = weightText.trim();
+    if (trimmed === "") {
+      patch({ weightKg: undefined });
+      return;
+    }
+    const asNum = Number(trimmed);
+    patch({ weightKg: Number.isNaN(asNum) ? undefined : asNum });
+  }, [weightText, patch]);
+
+  const commitDropWeight = useCallback(() => {
+    const trimmed = dropWeightText.trim();
+    if (trimmed === "") {
+      patch({ dropWeightKg: undefined });
+      return;
+    }
+    const asNum = Number(trimmed);
+    patch({ dropWeightKg: Number.isNaN(asNum) ? undefined : asNum });
+  }, [dropWeightText, patch]);
+
+  const commitDropReps = useCallback(() => {
+    const trimmed = dropRepsText.trim();
+    if (trimmed === "") {
+      patch({ dropReps: undefined });
+      return;
+    }
+    const asNum = parseInt(trimmed, 10);
+    patch({ dropReps: Number.isNaN(asNum) ? undefined : asNum });
+  }, [dropRepsText, patch]);
+
+  // ── Set-type cycle (normal→warmup→failure→drop→superset→circuit→normal) ──
+  // The group id (supersetId/circuitId) lives on PlannedExercise, not on the
+  // set — it is owned by the editor's Superset/Circuit section. The chip here
+  // only cycles the setType.
+  const cycleSetType = useCallback(() => {
+    const currentIdx = SET_TYPE_CYCLE.indexOf(set.setType);
+    const nextIdx = (currentIdx + 1) % SET_TYPE_CYCLE.length;
+    const nextType = SET_TYPE_CYCLE[nextIdx];
+    haptics.selection();
+    patch({ setType: nextType });
+  }, [set.setType, patch]);
+
+  // ── Delete ──
+  const handleDelete = useCallback(() => {
+    haptics.warning();
+    onDelete();
+  }, [onDelete]);
+
+  const typeMeta = SET_TYPE_META[set.setType];
+  const isDrop = set.setType === "drop";
+
+  return (
+    <Animated.View
+      entering={entering}
+      exiting={exiting}
+      layout={Layout.springify()}
+      style={styles.outer}
+      testID={testID}
+    >
+      <GestureDetector gesture={dragGesture}>
+        <Animated.View
+          style={[styles.row, dragAnimatedStyle]}
+          accessibilityRole="button"
+          accessibilityLabel={`Set ${setNumber}, ${typeMeta.label}, ${repsText || "—"} reps${
+            weightText ? `, ${weightText} kg` : ""
+          }`}
+          accessibilityHint="Long-press the drag handle to reorder this set"
+        >
+          {/* Drag handle */}
+          <View style={styles.dragHandle} pointerEvents="box-none">
+            <Ionicons
+              name="menu-outline"
+              size={rf(20)}
+              color={colors.text.tertiary}
+            />
+          </View>
+
+          {/* Set number badge */}
+          <View style={styles.setNumberBadge}>
+            <Text style={styles.setNumberText}>{setNumber}</Text>
+          </View>
+
+          {/* Reps input */}
+          <LabeledInput
+            label="Reps"
+            value={repsText}
+            onChangeText={setRepsText}
+            onEndEditing={commitReps}
+            placeholder="8-12"
+            keyboardType="numeric"
+            accessibilityLabel={`Reps for set ${setNumber}`}
+            style={styles.repsInput}
+          />
+
+          {/* Weight input */}
+          <LabeledInput
+            label="kg"
+            value={weightText}
+            onChangeText={setWeightText}
+            onEndEditing={commitWeight}
+            placeholder="—"
+            keyboardType="numeric"
+            accessibilityLabel={`Weight in kilograms for set ${setNumber}`}
+            style={styles.weightInput}
+          />
+
+          {/* Set-type chip */}
+          <Pressable
+            onPress={cycleSetType}
+            hitSlop={6}
+            accessibilityRole="button"
+            accessibilityLabel={`Set type: ${typeMeta.label}. Tap to cycle.`}
+            accessibilityHint="Cycles through Normal, Warmup, Failure, Drop, Superset, Circuit"
+          >
+            <View
+              style={[
+                styles.typeChip,
+                { backgroundColor: typeMeta.bgTint, borderColor: typeMeta.color },
+              ]}
+            >
+              <Text style={[styles.typeChipText, { color: typeMeta.color }]}>
+                {typeMeta.label}
+              </Text>
+            </View>
+          </Pressable>
+
+          {/* Delete */}
+          <Pressable
+            onPress={handleDelete}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={`Delete set ${setNumber}`}
+            style={styles.deleteBtn}
+          >
+            <Ionicons
+              name="close"
+              size={rf(16)}
+              color={colors.text.tertiary}
+            />
+          </Pressable>
+        </Animated.View>
+      </GestureDetector>
+
+      {/* Drop-set extra inputs (only shown when this set is a drop set). The
+          superset/circuit group id lives on PlannedExercise and is owned by
+          the editor's Superset/Circuit section, so there's no extra row here
+          for those set types. */}
+      {isDrop && (
+        <Animated.View
+          entering={reduceMotion ? FadeIn.duration(duration.quick) : SlideInRight.springify()}
+          exiting={reduceMotion ? FadeOut.duration(duration.quick) : SlideOutLeft.springify()}
+          layout={Layout.springify()}
+          style={styles.extraRow}
+        >
+          <Text style={styles.extraLabel}>Drop to:</Text>
+          <LabeledInput
+            label="kg"
+            value={dropWeightText}
+            onChangeText={setDropWeightText}
+            onEndEditing={commitDropWeight}
+            placeholder="—"
+            keyboardType="numeric"
+            accessibilityLabel="Drop set weight in kilograms"
+            style={styles.dropWeightInput}
+          />
+          <LabeledInput
+            label="Reps"
+            value={dropRepsText}
+            onChangeText={setDropRepsText}
+            onEndEditing={commitDropReps}
+            placeholder="—"
+            keyboardType="numeric"
+            accessibilityLabel="Drop set reps"
+            style={styles.dropRepsInput}
+          />
+        </Animated.View>
+      )}
+
+      {isDraggingProp && <View style={styles.dragOverlay} pointerEvents="none" />}
+    </Animated.View>
+  );
+};
+
+// ============================================================================
+// LABELED INPUT (small text field with a caption above)
+// ============================================================================
+
+interface LabeledInputProps {
+  label: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  onEndEditing: () => void;
+  placeholder?: string;
+  keyboardType?: KeyboardTypeOptions;
+  accessibilityLabel?: string;
+  style?: ViewStyle;
+}
+
+const LabeledInput: React.FC<LabeledInputProps> = ({
+  label,
+  value,
+  onChangeText,
+  onEndEditing,
+  placeholder,
+  keyboardType = "default",
+  accessibilityLabel,
+  style,
+}) => (
+  <View style={[styles.labeledInput, style]}>
+    <Text style={styles.labeledInputLabel}>{label}</Text>
+    <TextInput
+      value={value}
+      onChangeText={onChangeText}
+      onEndEditing={onEndEditing}
+      placeholder={placeholder}
+      placeholderTextColor={colors.text.tertiary}
+      keyboardType={keyboardType}
+      style={styles.labeledInputField}
+      accessibilityLabel={accessibilityLabel}
+      returnKeyType="done"
+      selectTextOnFocus
+    />
+  </View>
+);
+
+// ============================================================================
+// PARSERS
+// ============================================================================
+
+/** Parse a reps string that may be "8-12" (range) or "8" (number). */
+function parseRepsOrNumber(text: string): number | string {
+  const trimmed = text.trim();
+  if (trimmed === "") return 0;
+  if (trimmed.includes("-")) return trimmed;
+  const n = Number(trimmed);
+  return Number.isNaN(n) ? trimmed : n;
+}
+
+function parseNumberOrNull(text: string): number | undefined {
+  const trimmed = text.trim();
+  if (trimmed === "") return undefined;
+  const n = Number(trimmed);
+  return Number.isNaN(n) ? undefined : n;
+}
+
+// ============================================================================
+// STYLES
+// ============================================================================
+
+const styles = StyleSheet.create({
+  outer: {
+    marginBottom: rp(spacing.xs),
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.glass.background,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: rp(spacing.sm),
+    paddingVertical: rp(spacing.xs),
+    gap: rp(spacing.xs),
+    minHeight: rp(SET_ROW_HEIGHT),
+  },
+  dragHandle: {
+    width: rw(24),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  setNumberBadge: {
+    width: rw(28),
+    height: rw(28),
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary.DEFAULT,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  setNumberText: {
+    color: colors.text.primary,
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.bold) as TextStyleWeight,
+  },
+  labeledInput: {
+    flex: 1,
+  },
+  labeledInputLabel: {
+    color: colors.text.tertiary,
+    fontSize: rf(typography.fontSize.micro),
+    marginBottom: rp(2),
+  },
+  labeledInputField: {
+    color: colors.text.primary,
+    fontSize: rf(typography.fontSize.body),
+    fontWeight: String(typography.fontWeight.semibold) as TextStyleWeight,
+    paddingVertical: rp(spacing.xxs),
+    paddingHorizontal: rp(spacing.xs),
+    backgroundColor: colors.glass.backgroundDark,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
+    minWidth: 0,
+  },
+  repsInput: {
+    flex: 1.1,
+  },
+  weightInput: {
+    flex: 1,
+  },
+  typeChip: {
+    paddingHorizontal: rp(spacing.xs),
+    paddingVertical: rp(spacing.xxs),
+    borderRadius: borderRadius.full,
+    borderWidth: 1.5,
+  },
+  typeChipText: {
+    fontSize: rf(typography.fontSize.micro),
+    fontWeight: String(typography.fontWeight.semibold) as TextStyleWeight,
+  },
+  deleteBtn: {
+    width: rw(28),
+    height: rw(28),
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.glass.backgroundDark,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  // Extra rows (drop set / superset / circuit)
+  extraRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: rp(spacing.xxs),
+    marginLeft: rw(24 + 28 + spacing.xs), // indent past handle + badge
+    gap: rp(spacing.xs),
+    paddingHorizontal: rp(spacing.sm),
+    paddingVertical: rp(spacing.xxs),
+    backgroundColor: colors.glass.backgroundDark,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
+  },
+  extraLabel: {
+    color: colors.text.secondary,
+    fontSize: rf(typography.fontSize.micro),
+    fontWeight: String(typography.fontWeight.semibold) as TextStyleWeight,
+  },
+  dropWeightInput: {
+    flex: 1,
+  },
+  dropRepsInput: {
+    flex: 1,
+  },
+  dragOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: borderRadius.lg,
+    backgroundColor: "transparent",
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+});
+
+// Cast helper for `fontWeight` which RN types as a specific union.
+type TextStyleWeight = "300" | "400" | "500" | "600" | "700" | "800" | "900" | "bold" | "normal";
+
+export default SetRow;
