@@ -272,8 +272,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: rf(13),
-    color: colors.text,
-    opacity: 0.75,
+    color: colors.textSecondary,
     textAlign: "left",
     lineHeight: rf(20),
     paddingHorizontal: 0,

@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
   // GAP-15: last performed label
   lastPerformedText: {
     fontSize: rf(12),
-    color: colors.text,
+    color: colors.textSecondary,
     marginTop: spacing.xs,
     fontStyle: 'italic',
   },

@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: fontSize.md,
-    color: "rgba(255, 255, 255, 0.9)",
+    color: hexToRgba(colors.white, 0.85),
     lineHeight: fontSize.md * 1.5,
     marginBottom: spacing.md,
     textAlign: "center",
@@ -269,11 +269,11 @@ const styles = StyleSheet.create({
     width: rf(80),
     height: rf(80),
     borderRadius: borderRadius.full,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: hexToRgba(colors.white, 0.2),
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.4)",
+    borderColor: hexToRgba(colors.white, 0.4),
   },
   content: {
     paddingHorizontal: spacing.lg,

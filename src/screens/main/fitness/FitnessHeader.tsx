@@ -89,20 +89,24 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
             size={rf(20)}
             color={colors.text}
           />
-          {progressPercent > 0 && progressPercent < 100 && (
-            <View style={styles.progressIndicator}>
-              <Text style={styles.progressIndicatorText}>
-                {progressPercent}%
-              </Text>
-            </View>
-          )}
-          {progressPercent === 100 && (
-            <View style={[styles.progressIndicator, styles.progressIndicatorDone]}>
-              <Ionicons
-                name="checkmark"
-                size={rf(10)}
-                color={colors.white}
-              />
+          {progressPercent > 0 && (
+            <View
+              style={[
+                styles.progressIndicator,
+                progressPercent === 100 && styles.progressIndicatorDone,
+              ]}
+            >
+              {progressPercent === 100 ? (
+                <Ionicons
+                  name="checkmark"
+                  size={rf(10)}
+                  color={colors.white}
+                />
+              ) : (
+                <Text style={styles.progressIndicatorText} numberOfLines={1}>
+                  {progressPercent}%
+                </Text>
+              )}
             </View>
           )}
         </View>
@@ -180,14 +184,16 @@ const styles = StyleSheet.create({
     paddingVertical: rp(2),
     borderRadius: rbr(8),
     minWidth: rw(28),
+    minHeight: rw(18),
+    justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
     borderColor: colors.background,
   },
   progressIndicatorDone: {
     backgroundColor: colors.successAlt,
-    minWidth: rw(28),
-    paddingHorizontal: rp(2),
+    minWidth: rw(18),
+    paddingHorizontal: rp(4),
   },
   progressIndicatorText: {
     fontSize: rf(11),

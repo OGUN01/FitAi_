@@ -300,7 +300,12 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit={true} minimumFontScale={0.7}>
+            <Text
+              style={styles.statValue}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.6}
+            >
               {Math.round(stats.totalCalories)}
             </Text>
             <Text style={styles.statLabel} numberOfLines={1}>Est. Calories</Text>

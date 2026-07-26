@@ -15,9 +15,21 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
-import { rf, rw, rh, rp } from "../../../utils/responsive";
+import { rf, rw, rp } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
 import { useProfileStore } from "../../../stores/profileStore";
+
+// Semantic gradient pairs sourced from theme tokens (avoids fragile inline
+// hex literals scattered across tip definitions). Each pair maps to a
+// recovery-tip category so the visual language stays consistent and tokenized.
+const GRADIENTS = {
+  primary: [colors.primary, colors.primaryLight] as [string, string],
+  blue: [colors.blue, colors.cyan] as [string, string],
+  teal: [colors.teal, colors.successBright] as [string, string],
+  coral: [colors.errorLight, colors.orange] as [string, string],
+  pink: [colors.pink, colors.purple] as [string, string],
+  cyan: [colors.cyan, colors.secondaryLight] as [string, string],
+};
 
 interface RecoveryTipsModalProps {
   visible: boolean;
@@ -40,7 +52,7 @@ const RECOVERY_TIPS: RecoveryTip[] = [
     title: "Prioritize Sleep",
     description:
       "Aim for 7-9 hours of quality sleep. Your muscles repair and grow during deep sleep cycles.",
-    gradient: [colors.primary, colors.primaryLight],
+    gradient: GRADIENTS.primary,
     duration: "7-9 hours",
   },
   {
@@ -49,7 +61,7 @@ const RECOVERY_TIPS: RecoveryTip[] = [
     title: "Stay Hydrated",
     description:
       "Drink plenty of water throughout the day. Proper hydration aids muscle recovery and reduces soreness.",
-    gradient: ["#2196F3", "#03A9F4"],
+    gradient: GRADIENTS.blue,
     duration: "8+ glasses",
   },
   {
@@ -58,7 +70,7 @@ const RECOVERY_TIPS: RecoveryTip[] = [
     title: "Light Stretching",
     description:
       "Gentle stretching improves blood flow and flexibility. Focus on areas that feel tight or sore.",
-    gradient: ["#11998e", "#38ef7d"],
+    gradient: GRADIENTS.teal,
     duration: "10-15 min",
   },
   {
@@ -67,7 +79,7 @@ const RECOVERY_TIPS: RecoveryTip[] = [
     title: "Protein & Nutrients",
     description:
       "Eat protein-rich foods to support muscle repair. Include anti-inflammatory foods like berries and leafy greens.",
-    gradient: ["#FF6B6B", "#FF8E53"],
+    gradient: GRADIENTS.coral,
   },
   {
     id: "walking",
@@ -75,7 +87,7 @@ const RECOVERY_TIPS: RecoveryTip[] = [
     title: "Active Recovery",
     description:
       "A light 20-30 minute walk promotes blood circulation without stressing your muscles.",
-    gradient: ["#f093fb", "#f5576c"],
+    gradient: GRADIENTS.pink,
     duration: "20-30 min",
   },
   {
@@ -84,7 +96,7 @@ const RECOVERY_TIPS: RecoveryTip[] = [
     title: "Foam Rolling",
     description:
       "Self-myofascial release helps reduce muscle tension and can speed up recovery time.",
-    gradient: ["#4facfe", "#00f2fe"],
+    gradient: GRADIENTS.cyan,
     duration: "5-10 min",
   },
 ];
@@ -332,10 +344,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "100%",
     paddingHorizontal: spacing.lg,
-  },
-  modalContainer: {
-    width: "100%",
-    maxHeight: rh(724),
   },
   modalContent: {
     backgroundColor: colors.backgroundSecondary,

@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp } from "../../../utils/responsive";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography, shadows } from "../../../theme/aurora-tokens";
 import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
 import {
   AnimatedPressable,
@@ -46,6 +46,8 @@ interface WorkoutPreferencesTabProps {
   onNavigateToTab?: (tabNumber: number) => void;
   isLoading?: boolean;
   isAutoSaving?: boolean;
+  isEditingFromReview?: boolean;
+  onReturnToReview?: () => void;
 }
 
 const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
@@ -57,6 +59,8 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
   onBack,
   onUpdate,
   isAutoSaving = false,
+  isEditingFromReview = false,
+  onReturnToReview,
 }) => {
   const isSubmittingRef = useRef(false);
 
@@ -208,25 +212,44 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
           </AnimatedPressable>
 
           <AnimatedPressable
-            style={styles.nextButtonCompact}
+            style={[
+              styles.nextButtonCompact,
+              validationResult && !validationResult.is_valid && styles.nextButtonDisabled,
+            ]}
+            disabled={!!(validationResult && !validationResult.is_valid)}
             onPress={() => {
               if (isSubmittingRef.current) return;
               isSubmittingRef.current = true;
               try {
                 onUpdate(formData);
-                setTimeout(() => {
-                  onNext(formData);
-                }, 100);
+                if (isEditingFromReview && onReturnToReview) {
+                  onReturnToReview();
+                } else {
+                  setTimeout(() => {
+                    onNext(formData);
+                  }, 100);
+                }
               } finally {
                 isSubmittingRef.current = false;
               }
             }}
             scaleValue={0.96}
             accessibilityRole="button"
-            accessibilityLabel="Continue to next step"
+            accessibilityLabel={isEditingFromReview ? "Return to review" : "Continue to next step"}
+            accessibilityState={{ disabled: !!(validationResult && !validationResult.is_valid) }}
           >
-            <Text style={styles.nextButtonText}>Next</Text>
-            <Ionicons name="chevron-forward" size={rf(18)} color="#FFFFFF" />
+            <Text style={styles.nextButtonText}>
+              {isEditingFromReview ? "Review" : "Next"}
+            </Text>
+            <Ionicons
+              name={
+                isEditingFromReview
+                  ? "checkmark-circle-outline"
+                  : "chevron-forward"
+              }
+              size={rf(18)}
+              color="#FFFFFF"
+            />
           </AnimatedPressable>
         </View>
       </View>
@@ -255,7 +278,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: fontSize.md,
-    color: "rgba(255, 255, 255, 0.85)",
+    color: hexToRgba(colors.white, 0.85),
     lineHeight: fontSize.md * 1.5,
     marginBottom: spacing.md,
     textAlign: "center",
@@ -318,6 +341,10 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.xl,
     backgroundColor: colors.primary,
     minHeight: 52,
+    ...shadows.level3,
+  },
+  nextButtonDisabled: {
+    opacity: 0.5,
   },
   nextButtonText: {
     fontSize: fontSize.md,

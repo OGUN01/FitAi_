@@ -60,7 +60,7 @@ export const DietQuickActions: React.FC<DietQuickActionsProps> = React.memo(
         id: "scan-label",
         label: "Scan Label",
         icon: "document-text-outline",
-        color: "#8B5CF6",
+        color: colors.purple,
         onPress: onScanLabel,
       },
       {
@@ -101,12 +101,14 @@ export const DietQuickActions: React.FC<DietQuickActionsProps> = React.memo(
               hapticFeedback={true}
               hapticType="medium"
               disabled={action.disabled}
+              hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
               style={[
                 styles.actionItem,
                 ...(action.disabled ? [styles.actionItemDisabled] : []),
               ]}
               accessibilityRole="button"
               accessibilityLabel={action.label}
+              accessibilityState={{ disabled: !!action.disabled }}
             >
               {/* Icon Circle */}
               <View
@@ -192,12 +194,12 @@ const styles = StyleSheet.create({
     borderColor: colors.background,
   },
   badgeText: {
-    fontSize: Math.max(rf(9), 10),
+    fontSize: Math.max(rf(10), 10),
     fontWeight: "700",
     color: colors.white,
   },
   label: {
-    fontSize: rf(11),
+    fontSize: Math.max(rf(11), 11),
     fontWeight: "600",
     color: colors.text,
     textAlign: "center",

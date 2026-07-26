@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: fontSize.md,
-    color: "rgba(255, 255, 255, 0.85)",
+    color: hexToRgba(colors.white, 0.85),
     lineHeight: fontSize.md * 1.5,
     marginBottom: spacing.md,
     textAlign: "center",

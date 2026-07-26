@@ -1009,6 +1009,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                     handleScanProduct();
                   }}
                   scaleValue={0.96}
+                  accessibilityRole="button"
+                  accessibilityLabel="Scan Barcode"
                 >
                   <Ionicons
                     name="barcode-outline"
@@ -1024,6 +1026,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                     setShowManualEntry(true);
                   }}
                   scaleValue={0.96}
+                  accessibilityRole="button"
+                  accessibilityLabel="Enter barcode manually"
                 >
                   <Ionicons
                     name="keypad-outline"
@@ -1036,6 +1040,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                   style={[styles.optionButton, styles.optionButtonCancel]}
                   onPress={() => setShowBarcodeOptions(false)}
                   scaleValue={0.96}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel"
                 >
                   <Text style={styles.optionCancelText}>Cancel</Text>
                 </AnimatedPressable>
@@ -1095,11 +1101,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                     void handleLabelScanned(setShowGuestSignUp, portionG);
                   }}
                   scaleValue={0.96}
+                  accessibilityRole="button"
+                  accessibilityLabel="Scan Label"
                 >
                   <Ionicons
                     name="document-text-outline"
                     size={rf(22)}
-                    color="#8B5CF6"
+                    color={colors.purple}
                   />
                   <Text style={styles.optionText}>Scan Label</Text>
                 </AnimatedPressable>
@@ -1110,6 +1118,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                     setLabelScanGramsInput("");
                   }}
                   scaleValue={0.96}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel"
                 >
                   <Text style={styles.optionCancelText}>Cancel</Text>
                 </AnimatedPressable>
@@ -1170,6 +1180,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                     confirmPhotoRecognition(portionG);
                   }}
                   scaleValue={0.96}
+                  accessibilityRole="button"
+                  accessibilityLabel="Recognise Food"
                 >
                   <Ionicons
                     name="camera-outline"
@@ -1185,6 +1197,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                     setPhotoWeightInput("");
                   }}
                   scaleValue={0.96}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel"
                 >
                   <Text style={styles.optionCancelText}>Cancel</Text>
                 </AnimatedPressable>
