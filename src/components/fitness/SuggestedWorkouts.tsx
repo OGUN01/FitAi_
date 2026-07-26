@@ -251,9 +251,9 @@ export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
                     colors={["#f59e0b", "#d97706"]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
-                    style={[styles.startButton, styles.resumeButton]}
+                    style={styles.startButton}
                   >
-                    <Ionicons name="play-circle-outline" size={rf(12)} color="#fff" />
+                    <Ionicons name="play-circle-outline" size={rf(12)} color={colors.white} />
                     <Text style={styles.startButtonText}>RESUME</Text>
                   </LinearGradient>
                 ) : (
@@ -352,7 +352,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: rp(4),
   },
-  resumeButton: {},
   startButtonText: {
     fontSize: rf(11),
     fontWeight: "700",

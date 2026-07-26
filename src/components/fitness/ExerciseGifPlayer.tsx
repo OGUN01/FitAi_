@@ -8,6 +8,7 @@ import {
   Modal,
   StatusBar,
   Dimensions,
+  Platform,
   StyleProp,
   ViewStyle,
 } from "react-native";
@@ -430,7 +431,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+    // boxShadow is web-only — including it unconditionally on native logs a
+    // warning (mirrors the gating in gif-player/GifPlayerContent.tsx).
+    ...(Platform.OS === "web"
+      ? { boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)" }
+      : {}),
   },
 
   gif: {

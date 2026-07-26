@@ -128,20 +128,20 @@ const styles = StyleSheet.create({
   },
 
   primaryChip: {
-    // Was hardcoded "rgba(255, 107, 53, 0.3)" — hexToRgba tracks colors.primary.
-    backgroundColor: hexToRgba(colors.primary, 0.3),
+    // 0.3 alpha bg + primaryLight text was ~2:1 contrast on dark surfaces.
+    // Use 0.12 alpha + DEFAULT text (mirrors ExerciseInstructionModal chips).
+    backgroundColor: hexToRgba(colors.primary, 0.12),
   },
 
   primaryChipText: {
-    color: colors.primaryLight,
+    color: colors.primary,
     fontSize: fontSize.sm,
     fontWeight: "600",
     textTransform: "capitalize",
   },
 
   secondaryChip: {
-    // Was hardcoded "rgba(245, 158, 11, 0.3)" — hexToRgba tracks colors.warningAlt.
-    backgroundColor: hexToRgba(colors.warningAlt, 0.3),
+    backgroundColor: hexToRgba(colors.warningAlt, 0.12),
   },
 
   secondaryChipText: {
@@ -152,8 +152,7 @@ const styles = StyleSheet.create({
   },
 
   equipmentChip: {
-    // Was hardcoded "rgba(33, 150, 243, 0.3)" — hexToRgba tracks colors.info.
-    backgroundColor: hexToRgba(colors.info, 0.3),
+    backgroundColor: hexToRgba(colors.info, 0.12),
   },
 
   equipmentChipText: {
@@ -164,12 +163,11 @@ const styles = StyleSheet.create({
   },
 
   bodyPartChip: {
-    // Was hardcoded "rgba(76, 175, 80, 0.3)" — hexToRgba tracks colors.success.
-    backgroundColor: hexToRgba(colors.success, 0.3),
+    backgroundColor: hexToRgba(colors.success, 0.12),
   },
 
   bodyPartChipText: {
-    color: colors.successLight,
+    color: colors.success,
     fontSize: fontSize.sm,
     fontWeight: "600",
     textTransform: "capitalize",

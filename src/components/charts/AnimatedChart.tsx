@@ -246,8 +246,12 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
     };
   });
 
-  // Calculate percentage change
-  const percentageChange = ((targetValue - currentValue) / currentValue) * 100;
+  // Calculate percentage change — guard against zero currentValue (NaN/Infinity
+  // would otherwise render "NaN% increase" / "Infinity% increase" in the header).
+  const percentageChange =
+    currentValue !== 0
+      ? ((targetValue - currentValue) / currentValue) * 100
+      : 0;
   const changeDirection = percentageChange > 0 ? "increase" : "decrease";
   const changeText = `${Math.abs(percentageChange).toFixed(1)}% ${changeDirection}`;
 

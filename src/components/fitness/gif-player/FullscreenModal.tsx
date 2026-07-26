@@ -97,7 +97,12 @@ const styles = StyleSheet.create({
     right: rp(20),
     zIndex: 10,
     elevation: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    // 0.35 alpha + border so the close button stays visible on a 95% black
+    // overlay (was 0.2 alpha nearly invisible — mirrors the parent
+    // ExerciseGifPlayer fullscreen modal fix).
+    backgroundColor: "rgba(255, 255, 255, 0.35)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.4)",
     borderRadius: Math.max(rbr(20), 22),
     width: Math.max(rs(40), 44),
     height: Math.max(rs(40), 44),

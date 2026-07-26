@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rbr, rs } from "../../../utils/responsive";
-import { hexToRgba } from "../../../utils/colors";
 
 interface ModalHeaderProps {
   displayName: string;
@@ -67,8 +66,10 @@ const styles = StyleSheet.create({
   },
 
   qualityBadge: {
-    // Was hardcoded "rgba(76, 175, 80, 0.2)" — hexToRgba tracks colors.success.
-    backgroundColor: hexToRgba(colors.success, 0.2),
+    // Solid success bg + white text — was 0.2 alpha tint + success text
+    // (~2.5:1 fail on surface). Mirrors the ExerciseGifPlayer "Demo" badge
+    // pattern (solid bg + white text passes WCAG AA across themes).
+    backgroundColor: colors.success,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.sm,
@@ -77,7 +78,7 @@ const styles = StyleSheet.create({
 
   qualityBadgeText: {
     fontSize: fontSize.xs,
-    color: colors.success,
+    color: colors.white,
     fontWeight: "600",
   },
 

@@ -298,7 +298,8 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     borderRightColor: "transparent",
     borderBottomColor: "transparent",
-    transform: [{ rotate: "-90deg" }],
+    // Rotation is applied inline (merged with the baseline -90deg rotation
+    // in a single transform array) — leaving it here would be overwritten.
   },
 
   timerDisplay: {
@@ -383,11 +384,6 @@ const styles = StyleSheet.create({
 
   outlineButtonText: {
     color: colors.text,
-  },
-
-  controlButton: {
-    flex: 1,
-    maxWidth: 100,
   },
 
   quickAdjustments: {
