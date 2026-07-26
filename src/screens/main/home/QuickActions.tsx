@@ -105,7 +105,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ actions }) => {
             {/* Badge */}
             {action.badge !== undefined && (
               <View style={[styles.badge, { backgroundColor: action.color }]}>
-                <Text style={styles.badgeText}>
+                <Text style={styles.badgeText} numberOfLines={1}>
                   {typeof action.badge === "number" && action.badge > 9
                     ? "9+"
                     : action.badge}

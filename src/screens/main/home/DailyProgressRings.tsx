@@ -18,6 +18,7 @@ import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf, rw } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 import type { MetricSource } from "../../../stores/healthDataStore";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -105,7 +106,7 @@ const Ring: React.FC<{
         cx={center}
         cy={center}
         r={radius}
-        stroke={`${color}15`}
+        stroke={hexToRgba(color, 0.08)}
         strokeWidth={strokeWidth}
         fill="transparent"
       />
@@ -164,8 +165,8 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
               size={rf(48)}
               color={colors.textSecondary}
             />
-            <Text style={styles.emptyStateTitle}>Set Your Goals</Text>
-            <Text style={styles.emptyStateText}>
+            <Text style={styles.emptyStateTitle} numberOfLines={1}>Set Your Goals</Text>
+            <Text style={styles.emptyStateText} numberOfLines={2}>
               Complete your profile to track daily progress
             </Text>
           </View>
@@ -296,8 +297,8 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
               />
             </View>
             <View style={styles.centerContent}>
-              <Text style={styles.scoreText}>{overallScore}</Text>
-              <Text style={styles.scoreLabel}>%</Text>
+              <Text style={styles.scoreText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{overallScore}</Text>
+              <Text style={styles.scoreLabel} numberOfLines={1}>%</Text>
             </View>
           </View>
 
@@ -313,7 +314,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
                 color={RINGS.move.color}
               />
               <Text style={styles.statLabel}>Move</Text>
-              <Text style={styles.statValue}>
+              <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                 {caloriesBurned}
                 <Text style={styles.statUnit}>/{caloriesGoal} cal</Text>
               </Text>
@@ -331,7 +332,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
                 color={RINGS.exercise.color}
               />
               <Text style={styles.statLabel}>Exercise</Text>
-              <Text style={styles.statValue}>
+              <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                 {workoutMinutes}
                 <Text style={styles.statUnit}>/{workoutGoal} min</Text>
               </Text>
@@ -349,7 +350,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
                 color={RINGS.nutrition.color}
               />
               <Text style={styles.statLabel}>Nutrition</Text>
-              <Text style={styles.statValue}>
+              <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                 {mealsLogged}
                 <Text style={styles.statUnit}>/{mealsGoal} kcal</Text>
               </Text>
@@ -371,7 +372,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
                     <Text style={styles.sourceLabel}>via {stepsSource.name}</Text>
                   ) : null}
                 </View>
-                <Text style={styles.statValue}>
+                <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                   {steps.toLocaleString()}
                   <Text style={styles.statUnit}>
                     /{stepsGoal.toLocaleString()}

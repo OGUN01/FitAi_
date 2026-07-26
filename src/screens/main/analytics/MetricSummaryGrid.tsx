@@ -143,12 +143,15 @@ const MetricCard: React.FC<{
                       : colors.text,
                 },
               ]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
             >
               {value}
             </Text>
 
             {/* Label */}
-            <Text style={styles.metricLabel}>{title}</Text>
+            <Text style={styles.metricLabel} numberOfLines={1}>{title}</Text>
 
             {/* Subtitle or Trend */}
             {trend && trendValue ? (
@@ -158,12 +161,12 @@ const MetricCard: React.FC<{
                   size={rf(12)}
                   color={getTrendColor()}
                 />
-                <Text style={[styles.trendText, { color: getTrendColor() }]}>
+                <Text style={[styles.trendText, { color: getTrendColor() }]} numberOfLines={1}>
                   {trendValue}
                 </Text>
               </View>
             ) : subtitle ? (
-              <Text style={styles.subtitleText}>{subtitle}</Text>
+              <Text style={styles.subtitleText} numberOfLines={1}>{subtitle}</Text>
             ) : null}
           </View>
         </GlassCard>

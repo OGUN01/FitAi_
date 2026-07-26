@@ -158,8 +158,8 @@ export const MotivationBanner: React.FC<MotivationBannerProps> = ({
           <Ionicons name={icon} size={rf(16)} color={colors.white} />
         </View>
         <View style={styles.textContainer}>
-          <Text style={styles.quoteText}>{quote.text}</Text>
-          <Text style={styles.subtextText}>{quote.subtext}</Text>
+          <Text style={styles.quoteText} numberOfLines={1} adjustsFontSizeToFit>{quote.text}</Text>
+          <Text style={styles.subtextText} numberOfLines={2}>{quote.subtext}</Text>
         </View>
       </LinearGradient>
     </AnimatedPressable>

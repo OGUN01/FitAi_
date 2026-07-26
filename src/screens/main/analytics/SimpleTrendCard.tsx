@@ -4,6 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 import { TrendData } from "../../../hooks/useProgressTrendsLogic";
 import { haptics } from "../../../utils/haptics";
 
@@ -33,19 +34,19 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
     >
       <View style={styles.trendHeader}>
         <View
-          style={[styles.trendIconContainer, { backgroundColor: color + "20" }]}
+          style={[styles.trendIconContainer, { backgroundColor: hexToRgba(color, 0.2) }]}
         >
           <Ionicons name={icon} size={20} color={color} />
         </View>
-        <Text style={styles.trendTitle}>{title}</Text>
+        <Text style={styles.trendTitle} numberOfLines={1}>{title}</Text>
       </View>
 
       {trend ? (
         <>
           <View style={styles.trendStats}>
             <View style={styles.trendStatItem}>
-              <Text style={styles.trendStatLabel}>Current</Text>
-              <Text style={styles.trendStatValue}>
+              <Text style={styles.trendStatLabel} numberOfLines={1}>Current</Text>
+              <Text style={styles.trendStatValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                 {trend.data.length > 0
                   ? trend.data[trend.data.length - 1]?.toFixed(1)
                   : null}{" "}
@@ -53,18 +54,21 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
               </Text>
             </View>
             <View style={styles.trendStatItem}>
-              <Text style={styles.trendStatLabel}>Avg</Text>
-              <Text style={styles.trendStatValue}>
+              <Text style={styles.trendStatLabel} numberOfLines={1}>Avg</Text>
+              <Text style={styles.trendStatValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                 {trend.avg.toFixed(1)} {unit}
               </Text>
             </View>
             <View style={styles.trendStatItem}>
-              <Text style={styles.trendStatLabel}>Change</Text>
+              <Text style={styles.trendStatLabel} numberOfLines={1}>Change</Text>
               <Text
                 style={[
                   styles.trendStatValue,
                   { color: trend.change >= 0 ? colors.success : colors.error },
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
               >
                 {trend.change >= 0 ? "+" : ""}
                 {trend.change.toFixed(1)} {unit}
@@ -89,8 +93,8 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
         </>
       ) : (
         <View style={styles.noDataContainer}>
-          <Text style={styles.noDataText}>Not enough data yet</Text>
-          <Text style={styles.noDataSubtext}>
+          <Text style={styles.noDataText} numberOfLines={1}>Not enough data yet</Text>
+          <Text style={styles.noDataSubtext} numberOfLines={2}>
             Keep tracking to see your trends
           </Text>
           {ctaLabel && onCtaPress ? (
@@ -101,8 +105,10 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
                 onCtaPress();
               }}
               activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel={ctaLabel}
             >
-              <Text style={styles.ctaButtonText}>{ctaLabel}</Text>
+              <Text style={styles.ctaButtonText} numberOfLines={1}>{ctaLabel}</Text>
             </TouchableOpacity>
           ) : null}
         </View>

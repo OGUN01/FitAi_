@@ -108,11 +108,11 @@ const WebSlider: React.FC<SliderProps> = ({
       {/* Label and Value */}
       {(label || showValue) && (
         <View style={styles.header}>
-          {label && <Text style={styles.label}>{label}</Text>}
+          {label && <Text style={styles.label} numberOfLines={1} adjustsFontSizeToFit>{label}</Text>}
           {showValue && (
             <View style={styles.valueContainer}>
-              <Text style={styles.value}>{getDisplayValue()}</Text>
-              <Text style={styles.percentage}>({percentage.toFixed(0)}%)</Text>
+              <Text style={styles.value} numberOfLines={1}>{getDisplayValue()}</Text>
+              <Text style={styles.percentage} numberOfLines={1}>({percentage.toFixed(0)}%)</Text>
             </View>
           )}
         </View>
@@ -143,8 +143,8 @@ const WebSlider: React.FC<SliderProps> = ({
 
       {/* Min/Max Labels */}
       <View style={styles.minMaxContainer}>
-        <Text style={styles.minMaxText}>{min}{unit}</Text>
-        <Text style={styles.minMaxText}>{max}{unit}</Text>
+        <Text style={styles.minMaxText} numberOfLines={1}>{min}{unit}</Text>
+        <Text style={styles.minMaxText} numberOfLines={1}>{max}{unit}</Text>
       </View>
     </View>
   );
@@ -229,11 +229,11 @@ const NativeSlider: React.FC<SliderProps> = ({
     <View style={[styles.container, style]}>
       {(label || showValue) && (
         <View style={styles.header}>
-          {label && <Text style={styles.label}>{label}</Text>}
+          {label && <Text style={styles.label} numberOfLines={1} adjustsFontSizeToFit>{label}</Text>}
           {showValue && (
             <View style={styles.valueContainer}>
-              <Text style={styles.value}>{getDisplayValue()}</Text>
-              <Text style={styles.percentage}>
+              <Text style={styles.value} numberOfLines={1}>{getDisplayValue()}</Text>
+              <Text style={styles.percentage} numberOfLines={1}>
                 ({getValuePercentage().toFixed(0)}%)
               </Text>
             </View>
@@ -279,8 +279,8 @@ const NativeSlider: React.FC<SliderProps> = ({
       </View>
 
       <View style={styles.minMaxContainer}>
-        <Text style={styles.minMaxText}>{min}{unit}</Text>
-        <Text style={styles.minMaxText}>{max}{unit}</Text>
+        <Text style={styles.minMaxText} numberOfLines={1}>{min}{unit}</Text>
+        <Text style={styles.minMaxText} numberOfLines={1}>{max}{unit}</Text>
       </View>
 
       {step > 1 && (

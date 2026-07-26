@@ -439,7 +439,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
                 {filteredOptions.length === 0 && (
                   <View style={styles.noResults}>
                     <Ionicons name="search-outline" size={rf(28)} color={colors.textMuted} />
-                    <Text style={styles.noResultsText}>No options found</Text>
+                    <Text style={styles.noResultsText} numberOfLines={1}>No options found</Text>
                   </View>
                 )}
               </ScrollView>
@@ -582,6 +582,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: fontSize.md,
     color: colors.text,
+    minHeight: 44,
   },
 
   searchIcon: {
@@ -609,6 +610,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.primary,
     marginBottom: spacing.md,
+    minHeight: 44,
   },
 
   customInputActions: {

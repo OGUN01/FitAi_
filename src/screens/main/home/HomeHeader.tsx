@@ -94,7 +94,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
         {/* Center: Greeting + Name */}
         <View style={styles.greetingSection}>
           <View style={styles.greetingRow}>
-            <Text style={styles.greetingText}>{greeting},</Text>
+            <Text style={styles.greetingText} numberOfLines={1}>{greeting},</Text>
             <Ionicons
               name={icon}
               size={rf(14)}
@@ -102,10 +102,10 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
               style={styles.greetingIcon}
             />
           </View>
-          <Text style={styles.userName} numberOfLines={1}>
+          <Text style={styles.userName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
             {userName}
           </Text>
-          <Text style={styles.dateText}>{todayDate}</Text>
+          <Text style={styles.dateText} numberOfLines={1}>{todayDate}</Text>
         </View>
 
         {/* Right: Actions */}

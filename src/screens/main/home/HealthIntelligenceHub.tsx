@@ -16,6 +16,7 @@ import { GlassCard } from '../../../components/ui/aurora/GlassCard';
 import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
 import { flatColors as colors, spacing, borderRadius } from '../../../theme/aurora-tokens';
 import { rf, rw } from '../../../utils/responsive';
+import { hexToRgba } from '../../../utils/colors';
 import { useHealthIntelligenceLogic } from '../../../hooks/useHealthIntelligenceLogic';
 import { RecoveryRing } from '../../../components/home/RecoveryRing';
 import { MetricItem } from '../../../components/home/MetricItem';
@@ -84,9 +85,9 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = React
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Ionicons name="pulse" size={rf(16)} color={colors.primary} />
-            <Text style={styles.headerTitle}>Health Intelligence</Text>
+            <Text style={styles.headerTitle} numberOfLines={1}>Health Intelligence</Text>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: `${recoveryColor}20` }]}>
+          <View style={[styles.statusBadge, { backgroundColor: hexToRgba(recoveryColor, 0.2) }]}>
             <View style={[styles.statusDot, { backgroundColor: recoveryColor }]} />
             <Text style={[styles.statusText, { color: recoveryColor }]}>{recoveryLabel}</Text>
           </View>

@@ -43,9 +43,9 @@ export const GuestPromptBanner: React.FC<GuestPromptBannerProps> = ({
               color={colors.primary}
             />
           </View>
-          <Text style={styles.text}>Create account to save progress</Text>
+          <Text style={styles.text} numberOfLines={1}>Create account to save progress</Text>
           <View style={styles.button}>
-            <Text style={styles.buttonText}>Sign Up</Text>
+            <Text style={styles.buttonText} numberOfLines={1}>Sign Up</Text>
           </View>
         </View>
       </GlassCard>

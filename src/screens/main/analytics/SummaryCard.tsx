@@ -22,24 +22,24 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
       entering={FadeInDown.duration(400)}
       style={styles.summaryCard}
     >
-      <Text style={styles.summaryTitle}>
+      <Text style={styles.summaryTitle} numberOfLines={1}>
         {selectedPeriod.charAt(0).toUpperCase() +
           selectedPeriod.slice(1) +
           "ly Summary"}
       </Text>
       <View style={styles.summaryStats}>
         <View style={styles.summaryStatItem}>
-          <Text style={styles.summaryStatValue}>{workoutTrend.total}</Text>
-          <Text style={styles.summaryStatLabel}>Workouts</Text>
+          <Text style={styles.summaryStatValue} numberOfLines={1} adjustsFontSizeToFit>{workoutTrend.total}</Text>
+          <Text style={styles.summaryStatLabel} numberOfLines={1}>Workouts</Text>
         </View>
         <View style={styles.summaryStatItem}>
-          <Text style={styles.summaryStatValue}>
+          <Text style={styles.summaryStatValue} numberOfLines={1} adjustsFontSizeToFit>
             {metricsHistory.reduce((sum, m) => sum + (m.mealsLogged || 0), 0)}
           </Text>
-          <Text style={styles.summaryStatLabel}>Meals Logged</Text>
+          <Text style={styles.summaryStatLabel} numberOfLines={1}>Meals Logged</Text>
         </View>
         <View style={styles.summaryStatItem}>
-          <Text style={styles.summaryStatValue}>
+          <Text style={styles.summaryStatValue} numberOfLines={1} adjustsFontSizeToFit>
             {(
               metricsHistory.reduce(
                 (sum, m) => sum + (m.waterIntakeMl || 0),
@@ -47,7 +47,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
               ) / 1000
             ).toFixed(1) + "L"}
           </Text>
-          <Text style={styles.summaryStatLabel}>Water</Text>
+          <Text style={styles.summaryStatLabel} numberOfLines={1}>Water</Text>
         </View>
       </View>
     </Animated.View>

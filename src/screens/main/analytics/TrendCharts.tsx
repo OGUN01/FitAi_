@@ -87,10 +87,10 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
                 size={rf(32)}
                 color={colors.textMuted}
               />
-              <Text style={styles.emptyChartText}>
+              <Text style={styles.emptyChartText} numberOfLines={2}>
                 No calorie data recorded
               </Text>
-              <Text style={styles.emptyChartSubtext}>
+              <Text style={styles.emptyChartSubtext} numberOfLines={2}>
                 Start tracking meals to see analysis
               </Text>
             </View>
@@ -118,10 +118,10 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
                 size={rf(32)}
                 color={colors.textMuted}
               />
-              <Text style={styles.emptyChartText}>
+              <Text style={styles.emptyChartText} numberOfLines={2}>
                 No workout data this {period}
               </Text>
-              <Text style={styles.emptyChartSubtext}>
+              <Text style={styles.emptyChartSubtext} numberOfLines={2}>
                 Complete workouts to see consistency
               </Text>
             </View>

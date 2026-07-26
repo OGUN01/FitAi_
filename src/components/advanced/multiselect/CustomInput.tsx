@@ -22,7 +22,7 @@ export const CustomInput: React.FC<CustomInputProps> = ({
 }) => {
   return (
     <View style={styles.customInputContainer}>
-      <Text style={styles.customInputLabel}>
+      <Text style={styles.customInputLabel} numberOfLines={1} adjustsFontSizeToFit>
         Add Custom {label?.replace("Select ", "")}
       </Text>
       <TextInput
@@ -79,6 +79,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.primary,
     marginBottom: spacing.md,
+    minHeight: 44,
   },
 
   customInputActions: {

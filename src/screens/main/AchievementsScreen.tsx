@@ -229,6 +229,7 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
               style={styles.backButton}
               accessibilityRole="button"
               accessibilityLabel="back"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Ionicons
                 name="arrow-back"
@@ -407,7 +408,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   statDivider: {
-    width: 1,
+    width: rw(1),
     alignSelf: "stretch",
     backgroundColor: colors.glass.border,
   },

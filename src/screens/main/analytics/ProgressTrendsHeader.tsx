@@ -24,6 +24,7 @@ export const ProgressTrendsHeader: React.FC<ProgressTrendsHeaderProps> = ({
           }}
           accessibilityRole="button"
           accessibilityLabel="Back"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Ionicons
             name="arrow-back"
@@ -32,8 +33,8 @@ export const ProgressTrendsHeader: React.FC<ProgressTrendsHeaderProps> = ({
           />
         </TouchableOpacity>
         <View style={styles.headerTextContainer}>
-          <Text style={styles.headerTitle}>Progress Trends</Text>
-          <Text style={styles.headerSubtitle}>
+          <Text style={styles.headerTitle} numberOfLines={1}>Progress Trends</Text>
+          <Text style={styles.headerSubtitle} numberOfLines={2}>
             Track your fitness journey over time
           </Text>
         </View>

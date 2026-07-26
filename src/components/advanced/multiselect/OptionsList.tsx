@@ -33,7 +33,7 @@ export const OptionsList: React.FC<OptionsListProps> = ({
     return (
       <View style={styles.noResults}>
         <Ionicons name="search-outline" size={rf(28)} color={colors.textMuted} />
-        <Text style={styles.noResultsText}>No options found</Text>
+        <Text style={styles.noResultsText} numberOfLines={1}>No options found</Text>
       </View>
     );
   }

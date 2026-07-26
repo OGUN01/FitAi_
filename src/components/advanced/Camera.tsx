@@ -47,8 +47,8 @@ class CameraErrorBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Camera Error</Text>
-          <Text style={styles.errorSubtext}>
+          <Text style={styles.errorText} numberOfLines={1}>Camera Error</Text>
+          <Text style={styles.errorSubtext} numberOfLines={3}>
             Unable to load camera. Please try again.
           </Text>
           <Button
@@ -171,7 +171,7 @@ const CameraComponent: React.FC<CameraProps> = ({
     return (
       <View style={styles.permissionContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.permissionText}>
+        <Text style={styles.permissionText} numberOfLines={2}>
           Requesting camera permission...
         </Text>
       </View>
@@ -181,8 +181,8 @@ const CameraComponent: React.FC<CameraProps> = ({
   if (!permission.granted) {
     return (
       <View style={styles.permissionContainer}>
-        <Text style={styles.permissionText}>No access to camera</Text>
-        <Text style={styles.permissionSubtext}>
+        <Text style={styles.permissionText} numberOfLines={1}>No access to camera</Text>
+        <Text style={styles.permissionSubtext} numberOfLines={3}>
           Please enable camera permissions in your device settings
         </Text>
         <Button
@@ -270,7 +270,9 @@ const CameraComponent: React.FC<CameraProps> = ({
 
       {/* Instructions */}
       <View style={styles.instructionsContainer}>
-        <Text style={styles.instructionsText}>{getModeInstructions()}</Text>
+        <Text style={styles.instructionsText} numberOfLines={2} adjustsFontSizeToFit>
+          {getModeInstructions()}
+        </Text>
       </View>
 
       {/* Camera View */}
@@ -321,7 +323,7 @@ const CameraComponent: React.FC<CameraProps> = ({
                   <View style={styles.scanningLine} />
                   {isBarcodeBusy && (
                     <View style={styles.scanningIndicator}>
-                      <Text style={styles.scanningText}>
+                      <Text style={styles.scanningText} numberOfLines={1} adjustsFontSizeToFit>
                         {effectiveBarcodeStatus}
                       </Text>
                     </View>
@@ -393,7 +395,7 @@ const CameraComponent: React.FC<CameraProps> = ({
           </TouchableOpacity>
         ) : (
           <View style={styles.scanningStatus}>
-            <Text style={styles.scanningStatusText}>{effectiveBarcodeStatus}</Text>
+            <Text style={styles.scanningStatusText} numberOfLines={2} adjustsFontSizeToFit>{effectiveBarcodeStatus}</Text>
           </View>
         )}
 
@@ -417,6 +419,8 @@ const CameraComponent: React.FC<CameraProps> = ({
                   styles.barcodeActionText,
                   action.variant === "primary" && styles.barcodeActionTextPrimary,
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
               >
                 {action.label}
               </Text>
@@ -433,7 +437,7 @@ const CameraComponent: React.FC<CameraProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Choose nutrition label from library"
           >
-            <Text style={styles.labelLibraryButtonText}>Choose From Library</Text>
+            <Text style={styles.labelLibraryButtonText} numberOfLines={1} adjustsFontSizeToFit>Choose From Library</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -443,7 +447,7 @@ const CameraComponent: React.FC<CameraProps> = ({
         <View style={styles.portionHintContainer}>
           <View style={styles.portionHintLabelRow}>
             <Ionicons name="scale-outline" size={rf(13)} color={colors.text} />
-            <Text style={styles.portionHintLabel}>Portion size hint (optional)</Text>
+            <Text style={styles.portionHintLabel} numberOfLines={1} adjustsFontSizeToFit>Portion size hint (optional)</Text>
           </View>
           <View style={styles.portionHintRow}>
             <TextInput
@@ -484,11 +488,11 @@ const CameraComponent: React.FC<CameraProps> = ({
             {portionGrams != null && portionGrams > 0 && (
               <View style={styles.portionActiveRow}>
                 <Ionicons name="checkmark" size={rf(11)} color={colors.primary} />
-                <Text style={styles.portionActiveText}>{portionGrams}g set</Text>
+                <Text style={styles.portionActiveText} numberOfLines={1}>{portionGrams}g set</Text>
               </View>
             )}
           </View>
-          <Text style={styles.portionHintSubtext}>
+          <Text style={styles.portionHintSubtext} numberOfLines={2}>
             Helps AI estimate nutrients more accurately
           </Text>
         </View>
@@ -499,7 +503,7 @@ const CameraComponent: React.FC<CameraProps> = ({
         {mode === "food" && (
           <View style={styles.tipItem}>
             <Ionicons name="bulb-outline" size={rf(16)} color={colors.textSecondary} style={styles.tipIcon} />
-            <Text style={styles.tipText}>
+            <Text style={styles.tipText} numberOfLines={3}>
               Ensure good lighting and place food on a contrasting background
             </Text>
           </View>
@@ -508,7 +512,7 @@ const CameraComponent: React.FC<CameraProps> = ({
         {mode === "progress" && (
           <View style={styles.tipItem}>
             <Ionicons name="resize-outline" size={rf(16)} color={colors.textSecondary} style={styles.tipIcon} />
-            <Text style={styles.tipText}>
+            <Text style={styles.tipText} numberOfLines={3}>
               Stand 3-4 feet away from the camera for best results
             </Text>
           </View>
@@ -517,7 +521,7 @@ const CameraComponent: React.FC<CameraProps> = ({
         {mode === "barcode" && (
           <View style={styles.tipItem}>
             <Ionicons name="search" size={rf(16)} color={colors.textSecondary} style={styles.tipIcon} />
-            <Text style={styles.tipText}>
+            <Text style={styles.tipText} numberOfLines={3}>
               Hold the barcode 6-8 inches away and keep it steady for best
               scanning
             </Text>
@@ -527,7 +531,7 @@ const CameraComponent: React.FC<CameraProps> = ({
         {mode === "label" && (
           <View style={styles.tipItem}>
             <Ionicons name="document-text-outline" size={rf(16)} color={colors.textSecondary} style={styles.tipIcon} />
-            <Text style={styles.tipText}>
+            <Text style={styles.tipText} numberOfLines={3}>
               Keep the label flat, fill the frame, and avoid glare for the best
               reading accuracy
             </Text>

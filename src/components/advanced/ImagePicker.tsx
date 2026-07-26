@@ -162,7 +162,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
               <View style={styles.actionIcon}>
                 <Ionicons name="camera" size={rf(24)} color={colors.primary} />
               </View>
-              <Text style={styles.actionText} numberOfLines={1}>Take Photo</Text>
+              <Text style={styles.actionText} numberOfLines={1} adjustsFontSizeToFit>Take Photo</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -176,14 +176,14 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
               <View style={styles.actionIcon}>
                 <Ionicons name="images" size={rf(24)} color={colors.primary} />
               </View>
-              <Text style={styles.actionText} numberOfLines={1}>Choose from Library</Text>
+              <Text style={styles.actionText} numberOfLines={1} adjustsFontSizeToFit>Choose from Library</Text>
             </TouchableOpacity>
           </View>
 
           {/* Selected Images (Multiple Mode) */}
           {mode === "multiple" && selectedImages.length > 0 && (
             <View style={styles.selectedSection}>
-              <Text style={styles.selectedTitle} numberOfLines={1}>
+              <Text style={styles.selectedTitle} numberOfLines={1} adjustsFontSizeToFit>
                 Selected Images ({selectedImages.length}/{maxImages})
               </Text>
 
@@ -214,12 +214,12 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
           <Card style={styles.tipsCard}>
             <View style={styles.tipsTitleRow}>
               <Ionicons name="create-outline" size={rf(16)} color={colors.info} />
-              <Text style={styles.tipsTitle}>Tips for better photos:</Text>
+              <Text style={styles.tipsTitle} numberOfLines={1}>Tips for better photos:</Text>
             </View>
-            <Text style={styles.tipText}>• Use good lighting</Text>
-            <Text style={styles.tipText}>• Keep the camera steady</Text>
-            <Text style={styles.tipText}>• Fill the frame with your subject</Text>
-            <Text style={styles.tipText}>• Avoid shadows and reflections</Text>
+            <Text style={styles.tipText} numberOfLines={1}>• Use good lighting</Text>
+            <Text style={styles.tipText} numberOfLines={1}>• Keep the camera steady</Text>
+            <Text style={styles.tipText} numberOfLines={1}>• Fill the frame with your subject</Text>
+            <Text style={styles.tipText} numberOfLines={1}>• Avoid shadows and reflections</Text>
           </Card>
         </ScrollView>
 

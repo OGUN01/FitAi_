@@ -75,8 +75,8 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
               size={rf(24)}
               color={colors.textMuted}
             />
-            <Text style={styles.stateTitle}>Loading achievements...</Text>
-            <Text style={styles.stateSubtitle}>
+            <Text style={styles.stateTitle} numberOfLines={1}>Loading achievements...</Text>
+            <Text style={styles.stateSubtitle} numberOfLines={2}>
               Checking your latest progress and unlocks.
             </Text>
           </View>
@@ -87,8 +87,8 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
               size={rf(24)}
               color={colors.textMuted}
             />
-            <Text style={styles.stateTitle}>No achievements yet</Text>
-            <Text style={styles.stateSubtitle}>
+            <Text style={styles.stateTitle} numberOfLines={1}>No achievements yet</Text>
+            <Text style={styles.stateSubtitle} numberOfLines={2}>
               Complete workouts and log meals to start unlocking milestones.
             </Text>
           </View>

@@ -67,7 +67,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(({
         >
           <View style={styles.headerLeft}>
             <Ionicons name="body" size={rf(16)} color={colors.primary} />
-            <Text style={styles.headerTitle}>Body Progress</Text>
+            <Text style={styles.headerTitle} numberOfLines={1}>Body Progress</Text>
           </View>
           {hasData && (
             <View style={[styles.trendBadge, { backgroundColor: hexToRgba(trendInfo.color, 0.125) }]}>
@@ -82,11 +82,11 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(({
             {/* Main Stats */}
             <View style={styles.mainStats}>
               <View style={styles.currentWeight}>
-                <Text style={styles.weightValue}>
+                <Text style={styles.weightValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                   {displayCurrentWeight != null ? displayCurrentWeight.toFixed(1) : '--'}
                   <Text style={styles.weightUnit}> {unit}</Text>
                 </Text>
-                <Text style={styles.weightLabel}>Current</Text>
+                <Text style={styles.weightLabel} numberOfLines={1}>Current</Text>
               </View>
 
               {/* Mini Chart */}
@@ -108,26 +108,26 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(({
               </View>
 
               <View style={styles.goalWeight}>
-                <Text style={styles.goalValue}>
+                <Text style={styles.goalValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                   {displayGoalWeight != null ? displayGoalWeight.toFixed(1) : '—'}
                   <Text style={styles.goalUnit}> {unit}</Text>
                 </Text>
-                <Text style={styles.goalLabel}>Goal</Text>
+                <Text style={styles.goalLabel} numberOfLines={1}>Goal</Text>
               </View>
             </View>
 
             {/* Progress Section */}
             <View style={styles.progressSection}>
               <View style={styles.progressHeader}>
-                <Text style={styles.progressLabel}>
+                <Text style={styles.progressLabel} numberOfLines={1}>
                   {goalWeight ? 'Goal Progress' : 'Body Progress'}
                 </Text>
-                <Text style={[styles.progressPercent, { color: progressColor }]}>
+                <Text style={[styles.progressPercent, { color: progressColor }]} numberOfLines={1}>
                   {goalWeight ? `${progress.toFixed(0)}%` : ''}
                 </Text>
               </View>
               <GoalProgressBar progress={progress} color={progressColor} />
-              <Text style={styles.remainingText}>
+              <Text style={styles.remainingText} numberOfLines={1}>
                 {!goalWeight
                   ? 'Set a goal weight'
                   : remaining > 0 && displayRemaining != null
@@ -151,7 +151,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(({
                   size={rf(16)}
                   color={colors.primary}
                 />
-                <Text style={styles.actionButtonText}>Log Weight</Text>
+                <Text style={styles.actionButtonText} numberOfLines={1}>Log Weight</Text>
               </AnimatedPressable>
 
               {onPhotoPress ? (
@@ -172,7 +172,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(({
                       size={rf(16)}
                       color={colors.primary}
                     />
-                    <Text style={styles.actionButtonText}>Progress Photo</Text>
+                    <Text style={styles.actionButtonText} numberOfLines={1}>Progress Photo</Text>
                   </AnimatedPressable>
                 </>
               ) : null}
@@ -184,8 +184,8 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(({
             <View style={styles.emptyIconContainer}>
               <Ionicons name="scale-outline" size={rf(32)} color={colors.primary} />
             </View>
-            <Text style={styles.emptyTitle}>Track Your Progress</Text>
-            <Text style={styles.emptyDescription}>
+            <Text style={styles.emptyTitle} numberOfLines={1}>Track Your Progress</Text>
+            <Text style={styles.emptyDescription} numberOfLines={3}>
               Log your weight to see trends and track your fitness journey
             </Text>
             <AnimatedPressable
@@ -198,7 +198,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(({
               accessibilityLabel="Log first weight"
             >
               <Ionicons name="add" size={rf(16)} color={colors.white} />
-              <Text style={styles.startButtonText}>Log First Weight</Text>
+              <Text style={styles.startButtonText} numberOfLines={1}>Log First Weight</Text>
             </AnimatedPressable>
           </View>
         )}
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   actionDivider: {
-    width: 1,
+    width: rw(1),
     height: rh(20),
     backgroundColor: colors.glassHighlight,
   },

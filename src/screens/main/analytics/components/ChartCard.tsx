@@ -6,6 +6,7 @@ import { GlassCard } from "../../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing } from "../../../../theme/aurora-tokens";
 import { rf, rw } from "../../../../utils/responsive";
+import { hexToRgba } from "../../../../utils/colors";
 
 interface ChartCardProps {
   title: string;
@@ -46,12 +47,12 @@ export const ChartCard: React.FC<ChartCardProps> = ({
               <View
                 style={[
                   styles.chartIconContainer,
-                  { backgroundColor: `${iconColor}20` },
+                  { backgroundColor: hexToRgba(iconColor, 0.2) },
                 ]}
               >
                 <Ionicons name={icon} size={rf(16)} color={iconColor} />
               </View>
-              <Text style={styles.chartTitle}>{title}</Text>
+              <Text style={styles.chartTitle} numberOfLines={1}>{title}</Text>
             </View>
 
             {legend && (

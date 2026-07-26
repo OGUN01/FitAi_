@@ -45,6 +45,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: fontSize.md,
     color: colors.text,
+    minHeight: 44,
   },
 
   searchIcon: {

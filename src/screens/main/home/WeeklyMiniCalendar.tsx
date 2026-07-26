@@ -66,7 +66,7 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
                 color={colors.primary}
               />
             </View>
-            <Text style={styles.headerTitle}>This Week</Text>
+            <Text style={styles.headerTitle} numberOfLines={1}>This Week</Text>
           </View>
           <AnimatedPressable
             onPress={onViewFullCalendar}
@@ -75,7 +75,7 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
             hapticType="light"
             style={styles.statsRow}
           >
-            <Text style={styles.statsText}>
+            <Text style={styles.statsText} numberOfLines={1}>
               {stats.completed}/{stats.total}
             </Text>
             <Ionicons
@@ -118,14 +118,14 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
                 style={styles.dayWrapper}
                 hitSlop={{ top: 6, bottom: 6, left: 2, right: 2 }}
               >
-                <Text style={[styles.dayLabel, isToday && styles.todayLabel]}>
+                <Text style={[styles.dayLabel, isToday && styles.todayLabel]} numberOfLines={1}>
                   {DAY_LABELS[index]}
                 </Text>
                 <View style={[styles.dayCell, cellStyle]}>
                   {day.workoutCompleted ? (
                     <Ionicons name="checkmark" size={rf(14)} color={colors.white} />
                   ) : (
-                    <Text style={[styles.dayNumber, { color: textColor }]}>
+                    <Text style={[styles.dayNumber, { color: textColor }]} numberOfLines={1}>
                       {day.date.getDate()}
                     </Text>
                   )}

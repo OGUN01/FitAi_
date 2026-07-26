@@ -161,7 +161,7 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
 
   return (
     <View style={[styles.container, style]}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && <Text style={styles.label} numberOfLines={1} adjustsFontSizeToFit>{label}</Text>}
 
       <View style={styles.ratingContainer}>
         <View style={styles.iconsContainer}>

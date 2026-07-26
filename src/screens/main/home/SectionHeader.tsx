@@ -43,6 +43,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
           style={styles.title}
           accessibilityRole="header"
           accessibilityLabel={accessibilityLabel || title}
+          numberOfLines={1}
         >
           {title}
         </Text>

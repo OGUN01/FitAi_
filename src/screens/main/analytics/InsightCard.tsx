@@ -142,7 +142,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({
 
                 <View style={styles.headerContent}>
                   <View style={styles.titleRow}>
-                    <Text style={[styles.title, { color: config.color }]}>
+                    <Text style={[styles.title, { color: config.color }]} numberOfLines={2}>
                       {title}
                     </Text>
                     {category && (
@@ -154,6 +154,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({
                       >
                         <Text
                           style={[styles.categoryText, { color: config.color }]}
+                          numberOfLines={1}
                         >
                           {category}
                         </Text>
@@ -174,14 +175,14 @@ export const InsightCard: React.FC<InsightCardProps> = ({
                           ]}
                         />
                       </View>
-                      <Text style={styles.confidenceText}>{confidence}%</Text>
+                      <Text style={styles.confidenceText} numberOfLines={1}>{confidence}%</Text>
                     </View>
                   )}
                 </View>
               </View>
 
               {/* Description */}
-              <Text style={styles.description}>{description}</Text>
+              <Text style={styles.description} numberOfLines={3}>{description}</Text>
 
               {/* Action Button */}
               {actionText && onAction && (
@@ -192,7 +193,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({
                       { backgroundColor: hexToRgba(config.color, 0.12) },
                     ]}
                   >
-                    <Text style={[styles.actionText, { color: config.color }]}>
+                    <Text style={[styles.actionText, { color: config.color }]} numberOfLines={1}>
                       {actionText}
                     </Text>
                     <Ionicons

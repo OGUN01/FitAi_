@@ -71,8 +71,8 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
             <Ionicons name="analytics" size={rf(18)} color={colors.white} />
           </LinearGradient>
           <View>
-            <Text style={styles.title}>Analytics</Text>
-            <Text style={styles.subtitle}>{getPeriodLabel()}</Text>
+            <Text style={styles.title} numberOfLines={1}>Analytics</Text>
+            <Text style={styles.subtitle} numberOfLines={1}>{getPeriodLabel()}</Text>
           </View>
         </View>
 

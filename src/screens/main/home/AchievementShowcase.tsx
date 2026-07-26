@@ -130,7 +130,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
               color={colors.amber}
             />
           </View>
-          <Text style={styles.headerTitle}>Achievements</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>Achievements</Text>
           {totalAchievements > 0 ? (
             <View style={styles.countBadge}>
               <Text style={styles.countText}>
@@ -150,7 +150,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
           hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
         >
           <View style={styles.viewAllBtn}>
-            <Text style={styles.viewAllText}>View All</Text>
+            <Text style={styles.viewAllText} numberOfLines={1}>View All</Text>
             <Ionicons
               name="chevron-forward"
               size={rf(14)}
@@ -218,8 +218,8 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
                 />
               </View>
             </View>
-            <Text style={styles.emptyTitle}>Start earning achievements</Text>
-            <Text style={styles.emptySubtitle}>
+            <Text style={styles.emptyTitle} numberOfLines={1}>Start earning achievements</Text>
+            <Text style={styles.emptySubtitle} numberOfLines={2}>
               Complete workouts to unlock badges
             </Text>
           </View>

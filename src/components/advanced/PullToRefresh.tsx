@@ -216,6 +216,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
                   : colors.textSecondary,
               },
             ]}
+            numberOfLines={1}
           >
             {getRefreshText()}
           </Text>

@@ -166,7 +166,7 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
               </Text>
             </>
           ) : (
-            <Text style={[styles.status, { color: getStatusColor() }]}>
+            <Text style={[styles.status, { color: getStatusColor() }]} numberOfLines={1}>
               {isSyncing ? "Syncing..." : formatLastSync(lastSyncTime)}
               {primarySource && !isSyncing && ` • Tier ${primarySource.tier}`}
             </Text>

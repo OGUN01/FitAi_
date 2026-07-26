@@ -92,7 +92,7 @@ const WaterDrop: React.FC<{ progress: number; size: number }> = ({
         />
       </Svg>
       <View style={styles.dropCenter}>
-        <Text style={styles.dropPercentage}>{Math.round(progress)}%</Text>
+        <Text style={styles.dropPercentage} numberOfLines={1} adjustsFontSizeToFit>{Math.round(progress)}%</Text>
       </View>
     </View>
   );
@@ -118,8 +118,8 @@ const QuickAddButton: React.FC<{
       <View style={styles.quickAddIconContainer}>
         <Ionicons name={icon} size={rf(18)} color={colors.info} />
       </View>
-      <Text style={styles.quickAddAmount}>{amount}ml</Text>
-      <Text style={styles.quickAddLabel}>{label}</Text>
+      <Text style={styles.quickAddAmount} numberOfLines={1}>{amount}ml</Text>
+      <Text style={styles.quickAddLabel} numberOfLines={1}>{label}</Text>
     </AnimatedPressable>
   );
 };
@@ -180,7 +180,7 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Ionicons name="water" size={rf(16)} color={colors.info} />
-            <Text style={styles.headerTitle}>Hydration</Text>
+            <Text style={styles.headerTitle} numberOfLines={1}>Hydration</Text>
           </View>
           <View
             style={[
@@ -194,7 +194,7 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
                 { backgroundColor: hydrationStatus.color },
               ]}
             />
-            <Text style={[styles.statusText, { color: hydrationStatus.color }]}>
+            <Text style={[styles.statusText, { color: hydrationStatus.color }]} numberOfLines={1}>
               {hydrationStatus.status}
             </Text>
           </View>
@@ -208,36 +208,40 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
           {/* Stats */}
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>
+              <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                 {(currentIntake / 1000).toFixed(1)}
                 <Text style={styles.statUnit}>L</Text>
               </Text>
-              <Text style={styles.statLabel}>Consumed</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>Consumed</Text>
             </View>
 
             <View style={styles.divider} />
 
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>
+              <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                 {(dailyGoal / 1000).toFixed(1)}
                 <Text style={styles.statUnit}>L</Text>
               </Text>
-              <Text style={styles.statLabel}>Goal</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>Goal</Text>
             </View>
 
             <View style={styles.divider} />
 
             <View style={styles.statItem}>
-              <Text
-                style={[
-                  styles.statValue,
-                  remainingGlasses > 0 ? {} : { color: colors.success },
-                ]}
-              >
-                {remainingGlasses > 0 ? remainingGlasses : "✓"}
-                {remainingGlasses > 0 && <Text style={styles.statUnit}></Text>}
-              </Text>
-              <Text style={styles.statLabel}>
+              {remainingGlasses > 0 ? (
+                <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+                  {remainingGlasses}
+                  <Text style={styles.statUnit}> glasses</Text>
+                </Text>
+              ) : (
+                <Ionicons
+                  name="checkmark-circle"
+                  size={rf(22)}
+                  color={colors.success}
+                  accessibilityLabel="Hydration goal complete"
+                />
+              )}
+              <Text style={styles.statLabel} numberOfLines={1}>
                 {remainingGlasses > 0 ? "Glasses left" : "Complete!"}
               </Text>
             </View>
@@ -251,13 +255,13 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
             size={rf(12)}
             color={hydrationStatus.color}
           />
-          <Text style={styles.reminderText}>{hydrationStatus.message}</Text>
+          <Text style={styles.reminderText} numberOfLines={1}>{hydrationStatus.message}</Text>
         </View>
       </AnimatedPressable>
 
       {/* Quick Add Section — outside the pressable to avoid nested <button> */}
       <View style={styles.quickAddSection}>
-        <Text style={styles.quickAddTitle}>Quick Add</Text>
+        <Text style={styles.quickAddTitle} numberOfLines={1}>Quick Add</Text>
         <View style={styles.quickAddButtons}>
           {QUICK_ADD_OPTIONS.map((option) => (
             <QuickAddButton
@@ -356,7 +360,7 @@ const styles = StyleSheet.create({
     marginTop: rp(2),
   },
   divider: {
-    width: 1,
+    width: rw(1),
     height: rh(30),
     backgroundColor: colors.glassHighlight,
   },

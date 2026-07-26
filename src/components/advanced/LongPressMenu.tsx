@@ -299,10 +299,10 @@ const styles = StyleSheet.create({
   },
 
   menuIcon: {
-    fontSize: fontSize.lg,
     marginRight: spacing.sm,
     width: 24,
-    textAlign: "center",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   menuLabel: {

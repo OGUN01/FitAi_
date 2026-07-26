@@ -261,7 +261,7 @@ const RecommendationCard: React.FC<{
 
           {recommendation.action && (
             <View style={styles.actionContainer}>
-              <Text style={[styles.actionText, { color: style.gradient[0] }]}>
+              <Text style={[styles.actionText, { color: style.gradient[0] }]} numberOfLines={1}>
                 {recommendation.action}
               </Text>
               <Ionicons
@@ -308,7 +308,7 @@ export const SmartCoaching: React.FC<SmartCoachingProps> = React.memo((props) =>
           <View style={styles.aiIconContainer}>
             <Ionicons name="sparkles" size={rf(14)} color={colors.gold} />
           </View>
-          <Text style={styles.headerTitle}>Smart Coach</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>Smart Coach</Text>
         </View>
         <AnimatedPressable
           onPress={onViewAll}
@@ -316,14 +316,14 @@ export const SmartCoaching: React.FC<SmartCoachingProps> = React.memo((props) =>
           hapticFeedback={true}
           hapticType="light"
         >
-          <Text style={styles.viewAllText}>See All</Text>
+          <Text style={styles.viewAllText} numberOfLines={1}>See All</Text>
         </AnimatedPressable>
       </View>
 
       {recommendations.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="checkmark-circle-outline" size={rf(20)} color={colors.success} />
-          <Text style={styles.emptyStateText}>Great job! No adjustments needed today.</Text>
+          <Text style={styles.emptyStateText} numberOfLines={2}>Great job! No adjustments needed today.</Text>
         </View>
       ) : (
         /* Recommendations */

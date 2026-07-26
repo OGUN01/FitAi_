@@ -47,14 +47,14 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
         >
           <Ionicons name="flag-outline" size={rf(20)} color={colors.primary} />
         </View>
-        <Text style={styles.trendTitle}>Goal Progress</Text>
+        <Text style={styles.trendTitle} numberOfLines={1}>Goal Progress</Text>
       </View>
 
       <View style={styles.goalContainer}>
         {calculatedMetrics?.targetWeightKg != null &&
           calculatedMetrics?.currentWeightKg != null && (
             <View style={styles.goalItem}>
-              <Text style={styles.goalLabel}>Weight Goal</Text>
+              <Text style={styles.goalLabel} numberOfLines={1}>Weight Goal</Text>
               <View style={styles.goalProgressBar}>
                 <View
                   style={[
@@ -66,7 +66,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
                   ]}
                 />
               </View>
-              <Text style={styles.goalText}>
+              <Text style={styles.goalText} numberOfLines={1} adjustsFontSizeToFit>
                 {calculatedMetrics.currentWeightKg > 0
                   ? `${calculatedMetrics.currentWeightKg.toFixed(1)} kg -> ${calculatedMetrics.targetWeightKg.toFixed(1)} kg`
                   : "-- kg -> -- kg"}
@@ -76,8 +76,8 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
 
         {calculatedMetrics?.dailyCalories != null && calculatedMetrics.dailyCalories > 0 && (
           <View style={styles.goalItem}>
-            <Text style={styles.goalLabel}>Daily Calorie Target</Text>
-            <Text style={styles.goalValue}>
+            <Text style={styles.goalLabel} numberOfLines={1}>Daily Calorie Target</Text>
+            <Text style={styles.goalValue} numberOfLines={1} adjustsFontSizeToFit>
               {calculatedMetrics.dailyCalories.toLocaleString()} kcal/day
             </Text>
           </View>
@@ -93,8 +93,8 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
               size={rf(28)}
               color={colors.textSecondary}
             />
-            <Text style={styles.emptyStateValue}>--</Text>
-            <Text style={styles.emptyStateText}>
+            <Text style={styles.emptyStateValue} numberOfLines={1}>--</Text>
+            <Text style={styles.emptyStateText} numberOfLines={2}>
               Set goals in Profile to track progress
             </Text>
           </View>

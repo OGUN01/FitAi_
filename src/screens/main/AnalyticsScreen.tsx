@@ -715,16 +715,19 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
         <SafeAreaView style={styles.container} edges={["top"]}>
           <View style={styles.lockedContainer}>
-            <View style={styles.lockedIconContainer}>
+            <View
+              style={styles.lockedIconContainer}
+              accessibilityRole="image"
+              accessibilityLabel="Analytics is a premium feature"
+            >
               <Ionicons
                 name="analytics-outline"
                 size={rf(40)}
                 color={colors.primary.light}
-                accessibilityLabel="Analytics is a premium feature"
               />
             </View>
-            <Text style={styles.lockedTitle}>Premium Feature</Text>
-            <Text style={styles.lockedDescription}>
+            <Text style={styles.lockedTitle} numberOfLines={1}>Premium Feature</Text>
+            <Text style={styles.lockedDescription} numberOfLines={4}>
               {showLockedInitializing
                 ? "Loading your subscription..."
                 : "Detailed analytics and trend charts are available on Basic and Pro plans."}
@@ -781,7 +784,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
             {showLoading && (
               <View style={styles.loadingContainer}>
                 <AuroraSpinner size="lg" />
-                <Text style={styles.loadingText}>Loading analytics...</Text>
+                <Text style={styles.loadingText} numberOfLines={1}>Loading analytics...</Text>
               </View>
             )}
 
@@ -815,21 +818,22 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
                 {calBreakdown.extra > 0 && (
                   <View style={styles.sectionContainer}>
                     <View style={styles.calorieBreakdown}>
-                      <Text style={styles.breakdownTitle}>
+                      <Text style={styles.breakdownTitle} numberOfLines={1}>
                         Calorie Breakdown
                       </Text>
                       <View style={styles.breakdownRow}>
-                        <Text style={styles.breakdownLabel}>Plan workouts</Text>
-                        <Text style={styles.breakdownValue}>
+                        <Text style={styles.breakdownLabel} numberOfLines={1}>Plan workouts</Text>
+                        <Text style={styles.breakdownValue} numberOfLines={1}>
                           {calBreakdown.planned} kcal
                         </Text>
                       </View>
                       <View style={styles.breakdownRow}>
-                        <Text style={styles.breakdownLabel}>
+                        <Text style={styles.breakdownLabel} numberOfLines={1}>
                           Extra workouts
                         </Text>
                         <Text
                           style={[styles.breakdownValue, styles.breakdownExtra]}
+                          numberOfLines={1}
                         >
                           {calBreakdown.extra} kcal
                         </Text>
@@ -969,7 +973,7 @@ const styles = StyleSheet.create({
     borderRadius: rw(16),
   },
   lockedUpgradeText: {
-    color: colors.text.primary,
+    color: "#ffffff",
     fontWeight: "700",
     fontSize: rf(16),
   },

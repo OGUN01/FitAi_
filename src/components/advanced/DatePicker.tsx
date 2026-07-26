@@ -164,6 +164,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                     isSelected && styles.optionTextSelected,
                     isPast && styles.optionTextPast,
                   ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
                 >
                   {date.toLocaleDateString("en-US", {
                     weekday: "short",
@@ -219,6 +221,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                   styles.optionText,
                   isSelected && styles.optionTextSelected,
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
               >
                 {time.toLocaleTimeString("en-US", {
                   hour: "2-digit",
