@@ -36,7 +36,14 @@ export const DietScreenHeader: React.FC<DietScreenHeaderProps> = React.memo(({
   return (
     <View style={styles.header}>
       {/* Title row */}
-      <Text style={styles.title}>Nutrition Plan</Text>
+      <Text
+        style={styles.title}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
+      >
+        Nutrition Plan
+      </Text>
 
       {/* Date navigator row */}
       <View style={styles.dateSelector}>
@@ -46,8 +53,9 @@ export const DietScreenHeader: React.FC<DietScreenHeaderProps> = React.memo(({
           scaleValue={0.9}
           accessibilityRole="button"
           accessibilityLabel="Previous day"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={styles.dateNavIcon}>‹</Text>
+          <Ionicons name="chevron-back" size={rf(22)} color={colors.text} />
         </AnimatedPressable>
         <GlassCard
           elevation={1}
@@ -56,8 +64,22 @@ export const DietScreenHeader: React.FC<DietScreenHeaderProps> = React.memo(({
           borderRadius="lg"
           style={styles.dateBadge}
         >
-          <Text style={styles.dateText}>{dateLabel}</Text>
-          <Text style={styles.dateSubtext}>{dateSubLabel}</Text>
+          <Text
+            style={styles.dateText}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
+            {dateLabel}
+          </Text>
+          <Text
+            style={styles.dateSubtext}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
+            {dateSubLabel}
+          </Text>
         </GlassCard>
         <AnimatedPressable
           style={styles.dateNavButton}
@@ -65,8 +87,9 @@ export const DietScreenHeader: React.FC<DietScreenHeaderProps> = React.memo(({
           scaleValue={0.9}
           accessibilityRole="button"
           accessibilityLabel="Next day"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={styles.dateNavIcon}>›</Text>
+          <Ionicons name="chevron-forward" size={rf(22)} color={colors.text} />
         </AnimatedPressable>
       </View>
 
@@ -85,7 +108,12 @@ export const DietScreenHeader: React.FC<DietScreenHeaderProps> = React.memo(({
           ) : (
             <View style={styles.buttonInner}>
               <Ionicons name="calendar-outline" size={rf(13)} color={colors.white} />
-              <Text style={styles.aiButtonText}>
+              <Text
+                style={styles.aiButtonText}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
                 {hasPlan ? "Refresh Week" : "Generate Week"}
               </Text>
             </View>
@@ -97,6 +125,7 @@ export const DietScreenHeader: React.FC<DietScreenHeaderProps> = React.memo(({
           scaleValue={0.95}
           accessibilityRole="button"
           accessibilityLabel="Log Meal"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Ionicons name="add-circle-outline" size={rf(20)} color={colors.white} />
         </AnimatedPressable>
@@ -133,11 +162,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
-  },
-  dateNavIcon: {
-    fontSize: rf(24),
-    color: colors.text,
-    fontWeight: "bold",
   },
   dateBadge: {
     flex: 1,

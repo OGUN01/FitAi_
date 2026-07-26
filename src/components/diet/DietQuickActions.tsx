@@ -136,7 +136,12 @@ export const DietQuickActions: React.FC<DietQuickActionsProps> = React.memo(
               </View>
 
               {/* Label */}
-              <Text style={styles.label} numberOfLines={1}>
+              <Text
+                style={styles.label}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
                 {action.label}
               </Text>
             </AnimatedPressable>
@@ -163,10 +168,11 @@ const styles = StyleSheet.create({
   actionItemDisabled: {
     opacity: 0.4,
   },
+  // Icon circle clamped to 44px min touch target (WCAG 2.5.5).
   iconCircle: {
-    width: rw(48),
-    height: rw(48),
-    borderRadius: rw(24),
+    width: Math.max(rw(48), 44),
+    height: Math.max(rw(48), 44),
+    borderRadius: Math.max(rw(24), 22),
     justifyContent: "center" as const,
     alignItems: "center" as const,
     marginBottom: spacing.xs,
@@ -176,9 +182,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: rp(-4),
     right: rp(-4),
-    minWidth: rw(18),
-    height: rw(18),
-    borderRadius: rw(9),
+    minWidth: Math.max(rw(18), 18),
+    height: Math.max(rw(18), 18),
+    borderRadius: Math.max(rw(9), 9),
     justifyContent: "center" as const,
     alignItems: "center" as const,
     paddingHorizontal: rp(4),
@@ -186,7 +192,7 @@ const styles = StyleSheet.create({
     borderColor: colors.background,
   },
   badgeText: {
-    fontSize: rf(9),
+    fontSize: Math.max(rf(9), 10),
     fontWeight: "700",
     color: colors.white,
   },

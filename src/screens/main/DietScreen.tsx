@@ -597,8 +597,20 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           >
             <View style={styles.dailyMealRow}>
               <View style={styles.dailyMealInfo}>
-                <Text style={styles.dailyMealName} numberOfLines={1}>{meal.name || meal.type}</Text>
-                <Text style={styles.dailyMealMacros} numberOfLines={1}>
+                <Text
+                  style={styles.dailyMealName}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  {meal.name || meal.type}
+                </Text>
+                <Text
+                  style={styles.dailyMealMacros}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.75}
+                >
                   {meal.totalCalories || 0} cal |{" "}
                   {Math.round(meal.totalMacros?.protein || 0)}g P |{" "}
                   {Math.round(meal.totalMacros?.carbohydrates || 0)}g C |{" "}
@@ -633,6 +645,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                       ? styles.dailyMealLoggedText
                       : styles.dailyMealPlannedText,
                   ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
                 >
                   {status === "logged" ? "Logged" : "Planned"}
                 </Text>
@@ -1322,7 +1337,7 @@ const styles = StyleSheet.create({
   // Barcode/Label options modals
   optionsOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: colors.overlayDark,
     justifyContent: "flex-end" as const,
   },
   optionsSheet: {

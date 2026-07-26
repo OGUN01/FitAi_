@@ -75,7 +75,12 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = React.m
             gradientColors={calorieOverflow ? ["#ef4444", "#ef4444", "#ef4444"] : ["#FF6B6B", "#FF8E53", "#FFC107"]}
           >
             <View style={styles.calorieCenter}>
-              <Text style={[styles.caloriesRemaining, calorieOverflow && { color: OVERFLOW_COLOR }]}>
+              <Text
+                style={[styles.caloriesRemaining, calorieOverflow && { color: OVERFLOW_COLOR }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.6}
+              >
                 {resolvedTargets.calories.target
                   ? calorieOverflow
                     ? `+${Math.round(resolvedTargets.calories.current - resolvedTargets.calories.target)}`
@@ -86,8 +91,20 @@ export const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = React.m
                       )
                   : 0}
               </Text>
-              <Text style={styles.caloriesLabel}>{calorieOverflow ? 'Over target' : 'Calories left'}</Text>
-              <Text style={styles.caloriesTarget}>
+              <Text
+                style={styles.caloriesLabel}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
+                {calorieOverflow ? 'Over target' : 'Calories left'}
+              </Text>
+              <Text
+                style={styles.caloriesTarget}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
                 of {resolvedTargets.calories.target}
               </Text>
             </View>
@@ -266,7 +283,7 @@ const styles = StyleSheet.create({
   caloriesTarget: {
     fontSize: fontSize.lg,
     color: colors.textSecondary,
-    marginLeft: spacing.sm,
+    marginTop: spacing.xxs,
   },
   macroList: {
     marginTop: spacing.lg,
@@ -300,6 +317,7 @@ const styles = StyleSheet.create({
   },
   macroAmount: {
     fontSize: fontSize.sm,
+    flexShrink: 1,
   },
   macroValue: {
     fontSize: fontSize.sm,
