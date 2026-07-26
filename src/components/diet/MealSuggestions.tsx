@@ -370,10 +370,7 @@ export const MealSuggestions: React.FC = () => {
                     </Text>
                     <View style={styles.buttonRow}>
                       <AnimatedPressable
-                        style={[
-                          styles.addToPlanButton,
-                          isAdded ? styles.addToPlanButtonAdded : undefined,
-                        ] as StyleProp<ViewStyle>}
+                        style={styles.addToPlanButton as StyleProp<ViewStyle>}
                         onPress={() =>
                           handleAddToPlan(suggestion.id, suggestion)
                         }
@@ -479,9 +476,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
     position: "relative",
-  },
-  addToPlanButtonAdded: {
-    backgroundColor: flatColors.successAlt,
   },
   addToPlanButtonText: {
     color: flatColors.white,

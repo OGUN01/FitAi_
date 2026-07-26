@@ -123,7 +123,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xl,
     fontWeight: "700",
     color: colors.text,
-    marginBottom: spacing.lg,
   },
   premiumMealsContainer: { gap: spacing.md },
   emptyStateInner: {

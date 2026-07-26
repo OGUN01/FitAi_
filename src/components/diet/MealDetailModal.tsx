@@ -121,6 +121,8 @@ export const MealDetailModal: React.FC<MealDetailModalProps> = ({
                 <Text
                   style={styles.description}
                   numberOfLines={4}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}
                 >
                   {meal.description}
                 </Text>
@@ -218,9 +220,19 @@ export const MealDetailModal: React.FC<MealDetailModalProps> = ({
                   <Text style={styles.sectionLabel}>Ingredients</Text>
                   {(meal.items || meal.foods || []).map((item, index) => (
                     <View key={index} style={styles.foodItemRow}>
-                      <Text style={styles.foodItemName}>{item.name}</Text>
+                      <Text
+                        style={styles.foodItemName}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.8}
+                      >
+                        {item.name}
+                      </Text>
                       {item.calories ? (
-                        <Text style={styles.foodItemCal}>
+                        <Text
+                          style={styles.foodItemCal}
+                          numberOfLines={1}
+                        >
                           {Math.round(item.calories)} cal
                         </Text>
                       ) : null}
@@ -442,11 +454,13 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.text,
     flex: 1,
+    flexShrink: 1,
   },
   foodItemCal: {
     fontSize: fontSize.xs,
     color: colors.textSecondary,
     marginLeft: spacing.sm,
+    flexShrink: 0,
   },
   actions: {
     flexDirection: "row",
