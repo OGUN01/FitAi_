@@ -11,6 +11,7 @@ import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rp } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 
 interface WorkoutInfo {
   hasWeeklyPlan: boolean;
@@ -112,7 +113,7 @@ export const TodaysFocus: React.FC<TodaysFocusProps> = ({
         <View style={styles.container}>
           {/* Left: Icon */}
           <View
-            style={[styles.iconContainer, { backgroundColor: `${color}12` }]}
+            style={[styles.iconContainer, { backgroundColor: hexToRgba(color, 0.07) }]}
           >
             <Ionicons name={getWorkoutIcon()} size={rf(24)} color={color} />
           </View>

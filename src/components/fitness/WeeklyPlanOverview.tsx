@@ -11,6 +11,7 @@ import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 import { WeeklyWorkoutPlan } from "../../types/ai";
 import { DayName } from "../../stores/appStateStore";
 import { useFitnessStore } from "../../stores/fitnessStore";
@@ -328,7 +329,7 @@ const styles = StyleSheet.create({
     borderColor: colors.glassBorder,
   },
   dayCircleSelected: {
-    backgroundColor: `${colors.primary}20`,
+    backgroundColor: hexToRgba(colors.primary, 0.125),
     borderColor: colors.primary,
   },
   dayCircleToday: {

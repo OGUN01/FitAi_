@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard, AnimatedPressable } from "../ui/aurora";
 import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rh, rw } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 
 interface WorkoutHeaderProps {
   workoutTitle: string;
@@ -147,11 +148,11 @@ const styles = StyleSheet.create({
     width: Math.max(rw(40), 44),
     height: Math.max(rw(40), 44),
     borderRadius: rbr(20),
-    backgroundColor: `${colors.error.DEFAULT}20`,
+    backgroundColor: hexToRgba(colors.error.DEFAULT, 0.125),
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: `${colors.error.DEFAULT}40`,
+    borderColor: hexToRgba(colors.error.DEFAULT, 0.25),
   },
   headerInfo: {
     flex: 1,
@@ -171,9 +172,9 @@ const styles = StyleSheet.create({
   },
   mesoPill: {
     marginTop: rp(spacing.xxs),
-    backgroundColor: `${colors.secondary.DEFAULT}1A`,
+    backgroundColor: hexToRgba(colors.secondary.DEFAULT, 0.1),
     borderWidth: 1,
-    borderColor: `${colors.secondary.DEFAULT}40`,
+    borderColor: hexToRgba(colors.secondary.DEFAULT, 0.25),
     borderRadius: borderRadius.full,
     paddingHorizontal: rp(spacing.sm),
     paddingVertical: rp(spacing.xxs),

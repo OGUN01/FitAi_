@@ -41,6 +41,7 @@ import {
 } from "../ui/aurora";
 import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rh, rw, rs } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 import { haptics } from "../../utils/haptics";
 import { useReducedMotion } from "../../utils/accessibility/hooks";
 import { animations } from "../../theme/animations";
@@ -606,18 +607,18 @@ const styles = StyleSheet.create({
     width: rs(200),
     height: rs(200),
     borderRadius: rbr(100),
-    backgroundColor: `${colors.primary.DEFAULT}20`,
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, 0.125),
     borderWidth: 2,
-    borderColor: `${colors.primary.DEFAULT}40`,
+    borderColor: hexToRgba(colors.primary.DEFAULT, 0.25),
   },
   breathingCircleMiddle: {
     position: "absolute",
     width: rs(180),
     height: rs(180),
     borderRadius: rbr(90),
-    backgroundColor: `${colors.primary.DEFAULT}10`,
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, 0.06),
     borderWidth: 1,
-    borderColor: `${colors.primary.DEFAULT}30`,
+    borderColor: hexToRgba(colors.primary.DEFAULT, 0.19),
   },
   exerciseGifContainer: {
     position: "relative",

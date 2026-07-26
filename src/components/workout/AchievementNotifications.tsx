@@ -1,9 +1,25 @@
 import React from "react";
-import { View, Text, StyleSheet, Animated } from "react-native";
+import { View, Text, StyleSheet, Animated, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../utils/responsive";
 import AchievementCelebration from "../achievements/AchievementCelebration";
+
+/** Map legacy emoji icon strings (stored in DB) to Ionicons names. */
+const ACHIEVEMENT_ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
+  "🎯": "trophy-outline",
+  "🌟": "star-outline",
+  "💪": "fitness-outline",
+  "🏆": "trophy",
+  "🥇": "medal-outline",
+  "🔥": "flame-outline",
+  "🌋": "flame",
+  "⚡": "flash-outline",
+  "🎨": "color-palette-outline",
+};
+const iconToIonicons = (icon: string): keyof typeof Ionicons.glyphMap =>
+  ACHIEVEMENT_ICON_MAP[icon] ?? "trophy-outline";
 
 interface AchievementNotificationsProps {
   showCelebration: boolean;
@@ -63,9 +79,11 @@ export const AchievementNotifications: React.FC<
         >
           <View style={styles.achievementToastContent}>
             <View style={styles.achievementToastIconWrap}>
-              <Text style={styles.achievementToastIcon}>
-                {toastAchievement.icon}
-              </Text>
+              <Ionicons
+                name={iconToIonicons(String(toastAchievement.icon ?? ""))}
+                size={rf(24)}
+                color={colors.white}
+              />
             </View>
             <View style={styles.achievementToastText}>
               <Text style={styles.achievementToastTitle}>
@@ -129,7 +147,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
-    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
+    ...(Platform.OS === "web"
+      ? { boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.3)" }
+      : {}),
   },
 
   achievementToastIconWrap: {
@@ -181,7 +201,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.2)',
+    ...(Platform.OS === "web"
+      ? { boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.2)" }
+      : {}),
   },
 
   miniToastText: {

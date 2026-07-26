@@ -1058,7 +1058,7 @@ const styles = StyleSheet.create({
     paddingTop: rp(spacing.sm),
   },
   headerStartBtn: {
-    minHeight: rf(36),
+    minHeight: 44,
     paddingVertical: rp(spacing.xs),
   },
   headerStartText: {

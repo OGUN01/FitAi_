@@ -631,7 +631,7 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
         >
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : undefined}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
             style={styles.pickerKav}
           >
             {/* Search */}

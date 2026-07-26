@@ -38,6 +38,7 @@ import {
   typography,
 } from "../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 
 /** Narrow a typography.fontWeight token to RN's literal fontWeight union. */
 const fw = (w: string): TextStyle["fontWeight"] =>
@@ -330,7 +331,7 @@ interface PreviewStatProps {
 
 const PreviewStat: React.FC<PreviewStatProps> = ({ value, label, icon, tint }) => (
   <View style={styles.previewStat} accessibilityRole="text">
-    <View style={[styles.previewStatIcon, { backgroundColor: `${tint}1F` }]}>
+    <View style={[styles.previewStatIcon, { backgroundColor: hexToRgba(tint, 0.12) }]}>
       <Ionicons name={icon} size={rf(15)} color={tint} />
     </View>
     <Text style={styles.previewStatValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>

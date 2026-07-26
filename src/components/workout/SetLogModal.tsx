@@ -43,6 +43,7 @@ import { colors, spacing, borderRadius, typography } from "../../theme/aurora-to
 import { rp, rf } from "../../utils/responsive";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { parseLocalFloat } from "../../utils/units";
+import { hexToRgba } from "../../utils/colors";
 import { totalVolume } from "../../utils/volumeCalculator";
 import {
   exerciseHistoryService,
@@ -748,9 +749,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: rp(spacing.xxs),
-    backgroundColor: `${colors.warning.DEFAULT}22`,
+    backgroundColor: hexToRgba(colors.warning.DEFAULT, 0.13),
     borderWidth: 1,
-    borderColor: `${colors.warning.DEFAULT}66`,
+    borderColor: hexToRgba(colors.warning.DEFAULT, 0.4),
     borderRadius: borderRadius.full,
     paddingHorizontal: rp(spacing.sm),
     paddingVertical: rp(spacing.xxs),
@@ -762,7 +763,7 @@ const styles = StyleSheet.create({
   },
   // Calibration banner
   calibrationBanner: {
-    backgroundColor: `${colors.secondary.DEFAULT}1A`,
+    backgroundColor: hexToRgba(colors.secondary.DEFAULT, 0.1),
     borderLeftWidth: 3,
     borderLeftColor: colors.secondary.DEFAULT,
     borderRadius: borderRadius.md,
@@ -811,9 +812,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: rp(spacing.xxs),
-    backgroundColor: `${colors.primary.DEFAULT}1A`,
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, 0.1),
     borderWidth: 1,
-    borderColor: `${colors.primary.DEFAULT}40`,
+    borderColor: hexToRgba(colors.primary.DEFAULT, 0.25),
     borderRadius: borderRadius.full,
     paddingHorizontal: rp(spacing.sm),
     paddingVertical: rp(spacing.xxs),
@@ -947,19 +948,19 @@ const styles = StyleSheet.create({
     gap: rp(spacing.xxs),
   },
   rpeEasy: {
-    backgroundColor: `${colors.success.DEFAULT}1A`,
+    backgroundColor: hexToRgba(colors.success.DEFAULT, 0.1),
     borderWidth: 1,
-    borderColor: `${colors.success.DEFAULT}66`,
+    borderColor: hexToRgba(colors.success.DEFAULT, 0.4),
   },
   rpeRight: {
-    backgroundColor: `${colors.warning.DEFAULT}1A`,
+    backgroundColor: hexToRgba(colors.warning.DEFAULT, 0.1),
     borderWidth: 1,
-    borderColor: `${colors.warning.DEFAULT}66`,
+    borderColor: hexToRgba(colors.warning.DEFAULT, 0.4),
   },
   rpeHard: {
-    backgroundColor: `${colors.error.DEFAULT}1A`,
+    backgroundColor: hexToRgba(colors.error.DEFAULT, 0.1),
     borderWidth: 1,
-    borderColor: `${colors.error.DEFAULT}66`,
+    borderColor: hexToRgba(colors.error.DEFAULT, 0.4),
   },
   rpeText: {
     fontSize: rf(typography.fontSize.micro),

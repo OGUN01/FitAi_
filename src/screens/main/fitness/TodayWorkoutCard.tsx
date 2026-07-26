@@ -12,6 +12,7 @@ import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rp } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 import { DayWorkout } from "../../../ai";
 
 interface TodayWorkoutCardProps {
@@ -203,7 +204,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                 <View
                   style={[
                     styles.statusBadge,
-                    { backgroundColor: `${config.color}20` },
+                    { backgroundColor: hexToRgba(config.color, 0.125) },
                   ]}
                 >
                   <View

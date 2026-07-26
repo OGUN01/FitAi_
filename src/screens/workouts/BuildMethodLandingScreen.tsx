@@ -46,6 +46,7 @@ import {
   typography,
 } from "../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 import { haptics } from "../../utils/haptics";
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
 import { usePaywall } from "../../hooks/usePaywall";
@@ -240,8 +241,8 @@ const MethodCard: React.FC<MethodCardProps> = ({
             style={[
               styles.iconDisc,
               {
-                backgroundColor: `${method.accent}1F`,
-                borderColor: `${method.accent}59`,
+                backgroundColor: hexToRgba(method.accent, 0.12),
+                borderColor: hexToRgba(method.accent, 0.35),
               },
             ]}
           >
@@ -267,8 +268,8 @@ const MethodCard: React.FC<MethodCardProps> = ({
                   style={[
                     styles.badge,
                     {
-                      backgroundColor: `${method.badgeTint}1F`,
-                      borderColor: `${method.badgeTint}59`,
+                      backgroundColor: hexToRgba(method.badgeTint ?? method.accent, 0.12),
+                      borderColor: hexToRgba(method.badgeTint ?? method.accent, 0.35),
                     },
                   ]}
                 >

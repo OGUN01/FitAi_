@@ -15,6 +15,7 @@ import { GlassCard } from '../../../components/ui/aurora/GlassCard';
 import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
 import { flatColors as colors, spacing, borderRadius } from '../../../theme/aurora-tokens';
 import { rf, rw, rh } from '../../../utils/responsive';
+import { hexToRgba } from '../../../utils/colors';
 import { useBodyProgressLogic, WeightEntry } from './useBodyProgressLogic';
 import { TrendChart } from './components/TrendChart';
 import { GoalProgressBar } from './components/GoalProgressBar';
@@ -69,7 +70,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(({
             <Text style={styles.headerTitle}>Body Progress</Text>
           </View>
           {hasData && (
-            <View style={[styles.trendBadge, { backgroundColor: `${trendInfo.color}20` }]}>
+            <View style={[styles.trendBadge, { backgroundColor: hexToRgba(trendInfo.color, 0.125) }]}>
               <Ionicons name={trendInfo.icon} size={rf(12)} color={trendInfo.color} />
               <Text style={[styles.trendText, { color: trendInfo.color }]}>{trendInfo.label}</Text>
             </View>

@@ -857,9 +857,11 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
                     springConfig="snappy"
                     hapticType="selection"
                   >
-                    <Text style={styles.warmupDoneText}>
-                      {warmupDoneMap[idx] ? '✓' : 'Done'}
-                    </Text>
+                    {warmupDoneMap[idx] ? (
+                      <Ionicons name="checkmark" size={rf(14)} color={colors.text.primary} />
+                    ) : (
+                      <Text style={styles.warmupDoneText}>Done</Text>
+                    )}
                   </AnimatedPressable>
                 </View>
               ))}

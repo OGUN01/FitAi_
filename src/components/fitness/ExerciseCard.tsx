@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw, rs } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 import { Exercise, WorkoutSet } from "../../types/workout";
 import { useReducedMotion } from "../../utils/accessibility/hooks";
 
@@ -372,7 +373,7 @@ const styles = StyleSheet.create({
   },
 
   cardCompleted: {
-    backgroundColor: `${colors.success}08`,
+    backgroundColor: hexToRgba(colors.success, 0.03),
     borderColor: colors.success,
   },
 

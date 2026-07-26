@@ -10,6 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 
 interface FitnessHeaderProps {
   userName: string;
@@ -129,7 +130,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: rp(4),
-    backgroundColor: `${colors.primary}15`,
+    backgroundColor: hexToRgba(colors.primary, 0.08),
     paddingHorizontal: spacing.sm,
     paddingVertical: rp(4),
     borderRadius: borderRadius.full,
@@ -154,7 +155,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: `${colors.primary}60`,
+    borderColor: hexToRgba(colors.primary, 0.38),
   },
   progressIndicator: {
     position: "absolute",

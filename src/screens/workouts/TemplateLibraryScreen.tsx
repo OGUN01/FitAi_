@@ -61,6 +61,7 @@ import {
 import { animations } from "../../theme/animations";
 import { haptics } from "../../utils/haptics";
 import { rf, rp, rw } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -941,7 +942,6 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
                   }
                 : undefined
             }
-            testID="template-list"
             showsVerticalScrollIndicator={false}
           />
         )}
@@ -1175,7 +1175,7 @@ const TemplateGridCard: React.FC<GridCardProps> = ({
             <View
               style={[
                 styles.gridDifficulty,
-                { backgroundColor: `${tint}1F` },
+                { backgroundColor: hexToRgba(tint, 0.12) },
               ]}
             >
               <Text style={[styles.gridDifficultyText, { color: tint }]}>
@@ -1202,7 +1202,6 @@ const TemplateGridCard: React.FC<GridCardProps> = ({
                   ? "Template has no exercises yet"
                   : "Begin a workout session from this template"
               }
-              testID={`start-button-${template.id}`}
             >
               <Text style={styles.gridStartBtnText}>Start</Text>
             </Pressable>
@@ -1398,7 +1397,7 @@ const TemplateListRow: React.FC<ListRowProps> = ({
                 <View
                   style={[
                     styles.listDifficulty,
-                    { backgroundColor: `${tint}1F` },
+                    { backgroundColor: hexToRgba(tint, 0.12) },
                   ]}
                 >
                   <Text style={[styles.listDifficultyText, { color: tint }]}>
@@ -1529,7 +1528,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary.DEFAULT,
     paddingHorizontal: rp(spacing.sm),
     paddingVertical: rp(spacing.xs),
-    minHeight: Math.max(rw(36), 36),
+    minHeight: Math.max(rw(36), 44),
     alignItems: "center",
     justifyContent: "center",
     borderRadius: borderRadius.md,
@@ -1607,7 +1606,7 @@ const styles = StyleSheet.create({
     minHeight: Math.max(rp(spacing.xl), 44),
   },
   tabChipActive: {
-    backgroundColor: `${colors.primary.DEFAULT}26`,
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, 0.15),
     borderColor: colors.primary.DEFAULT,
   },
   tabChipLocked: {
@@ -1645,7 +1644,7 @@ const styles = StyleSheet.create({
     borderColor: colors.glass.border,
   },
   collectionChipActive: {
-    backgroundColor: `${colors.secondary.DEFAULT}26`,
+    backgroundColor: hexToRgba(colors.secondary.DEFAULT, 0.15),
     borderColor: colors.secondary.DEFAULT,
   },
   collectionChipText: {
