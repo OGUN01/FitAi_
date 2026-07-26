@@ -28,7 +28,7 @@ export const ErrorFallback: React.FC<ErrorFallbackProps> = ({
 }) => {
   return (
     <View style={styles.container}>
-      <Ionicons name={icon} size={48} color={colors.error} />
+      <Ionicons name={icon} size={rf(48)} color={colors.error} />
 
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.message}>{message}</Text>
@@ -101,7 +101,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 }) => {
   return (
     <View style={styles.container}>
-      <Ionicons name={icon} size={48} color={colors.textSecondary} />
+      <Ionicons name={icon} size={rf(48)} color={colors.textSecondary} />
 
       <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
       <Text style={styles.message}>{message}</Text>

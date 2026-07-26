@@ -78,7 +78,7 @@ export class ScreenErrorBoundary extends Component<Props, State> {
           <View style={styles.content}>
             <Ionicons
               name="alert-circle"
-              size={64}
+              size={rf(64)}
               color={colors.error}
             />
 
