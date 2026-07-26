@@ -27,6 +27,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { haptics } from "../../utils/haptics";
 import { flatColors as colors, borderRadius } from "../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 import { rf, rp } from "../../utils/responsive";
 
 interface WaterIntakeModalProps {
@@ -186,8 +187,8 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                   >
                     <LinearGradient
                       colors={[
-                        `${colors.primary}33`,
-                        `${colors.primaryLight}33`,
+                        hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
+                        hexToRgba(colors.primaryLight, TINT_ALPHA_MEDIUM),
                       ]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
@@ -366,7 +367,7 @@ const styles = StyleSheet.create({
     paddingVertical: rp(20),
     borderRadius: borderRadius.xl,
     borderWidth: 1,
-    borderColor: `${colors.primary}4D`,
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
   },
   quickOptionLabel: {
     fontSize: rf(14),
@@ -382,7 +383,7 @@ const styles = StyleSheet.create({
     paddingVertical: rp(14),
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: `${colors.primary}4D`,
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
     borderStyle: "dashed",
   },
   customButtonText: {
@@ -398,7 +399,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(16),
     marginBottom: rp(16),
     borderWidth: 1,
-    borderColor: `${colors.primary}4D`,
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
   },
   inputIcon: {
     marginRight: rp(12),
