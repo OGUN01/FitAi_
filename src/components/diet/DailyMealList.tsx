@@ -17,11 +17,18 @@ export interface DailyMealListProps {
 
 export const DailyMealList = React.memo(({ title, meals, status }: DailyMealListProps) => (
   <View style={styles.section}>
-    <Text style={styles.title}>{title}</Text>
+    <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+      {title}
+    </Text>
     {meals.map((meal) => (
       <View key={meal.id} style={styles.row}>
         <View style={styles.info}>
-          <Text numberOfLines={1} style={styles.name}>
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+            style={styles.name}
+          >
             {meal.name || meal.type}
           </Text>
           <Text
@@ -36,7 +43,12 @@ export const DailyMealList = React.memo(({ title, meals, status }: DailyMealList
             {Math.round(meal.totalMacros?.fat || 0)}F
           </Text>
         </View>
-        <Text style={status === 'logged' ? styles.logged : styles.planned}>
+        <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.85}
+          style={status === 'logged' ? styles.logged : styles.planned}
+        >
           {status === 'logged' ? 'Logged' : 'Planned'}
         </Text>
       </View>
@@ -86,11 +98,13 @@ const styles = StyleSheet.create({
     color: colors.success,
     fontSize: fontSize.xs,
     fontWeight: '700',
+    marginLeft: spacing.xs,
   },
   planned: {
     flexShrink: 0,
     color: colors.purple,
     fontSize: fontSize.xs,
     fontWeight: '700',
+    marginLeft: spacing.xs,
   },
 });

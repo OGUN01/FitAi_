@@ -96,16 +96,31 @@ export const MealPlanCard = React.memo(
         <MealImage uri={meal.imageUrl} meal={meal} />
         <View style={styles.content}>
           <View style={styles.topLine}>
-            <Text numberOfLines={1} style={styles.type}>
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+              style={styles.type}
+            >
               {meal.type}
             </Text>
             <View style={[styles.badge, { backgroundColor: config.background }]}>
-              <Text numberOfLines={1} style={[styles.badgeText, { color: config.color }]}>
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}
+                style={[styles.badgeText, { color: config.color }]}
+              >
                 {config.label}
               </Text>
             </View>
           </View>
-          <Text numberOfLines={2} style={styles.name}>
+          <Text
+            numberOfLines={2}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+            style={styles.name}
+          >
             {meal.name || meal.type}
           </Text>
           <Text
@@ -131,7 +146,13 @@ export const MealPlanCard = React.memo(
             </View>
           ) : null}
         </View>
-        <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+        <Ionicons
+          name="chevron-forward"
+          size={18}
+          color={colors.textSecondary}
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
+        />
       </Pressable>
     );
   }

@@ -265,6 +265,7 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({
                 <TouchableOpacity
                   onPress={() => setQuery("")}
                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  style={styles.clearBtn}
                   accessibilityRole="button"
                   accessibilityLabel="Clear search"
                 >
@@ -279,6 +280,7 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({
             <TouchableOpacity
               onPress={onClose}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              style={styles.closeBtn}
               accessibilityRole="button"
               accessibilityLabel="Close food search"
             >
@@ -292,10 +294,17 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({
               {loading ? (
                 <>
                   <ActivityIndicator size="small" color={colors.primary} />
-                  <Text style={styles.statusText}>Searching…</Text>
+                  <Text style={styles.statusText} numberOfLines={1}>Searching…</Text>
                 </>
               ) : (
-                <Text style={styles.statusText}>{resultsFooter}</Text>
+                <Text
+                  style={styles.statusText}
+                  numberOfLines={2}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}
+                >
+                  {resultsFooter}
+                </Text>
               )}
             </View>
           )}
@@ -312,27 +321,41 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({
                 scaleValue={0.98}
                 hapticFeedback
                 hapticType="light"
+                accessibilityRole="button"
+                accessibilityLabel={`Select ${item.name}`}
               >
                 <GlassCard elevation={2} style={styles.card} padding="sm" borderRadius="lg">
                   <View style={styles.row}>
                     <View style={[styles.sourceTag, item.source === "sqlite" ? styles.sqliteTag : styles.indianTag]}>
-                      <Text style={styles.sourceTagText}>
+                      <Text style={styles.sourceTagText} numberOfLines={1}>
                         {item.source === "sqlite" ? "Packaged" : "Dish"}
                       </Text>
                     </View>
                     <View style={styles.nameWrap}>
-                      <Text style={styles.name} numberOfLines={2}>
+                      <Text
+                        style={styles.name}
+                        numberOfLines={2}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.85}
+                      >
                         {item.name}
                       </Text>
                       {item.subtitle ? (
-                        <Text style={styles.subtitle} numberOfLines={1}>
+                        <Text
+                          style={styles.subtitle}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.85}
+                        >
                           {item.subtitle}
                         </Text>
                       ) : null}
                     </View>
                     <View style={styles.calsWrap}>
-                      <Text style={styles.cals}>{Math.round(item.per100g.calories)}</Text>
-                      <Text style={styles.calsUnit}>kcal/100g</Text>
+                      <Text style={styles.cals} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                        {Math.round(item.per100g.calories)}
+                      </Text>
+                      <Text style={styles.calsUnit} numberOfLines={1}>kcal/100g</Text>
                     </View>
                   </View>
                 </GlassCard>
@@ -383,6 +406,19 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: rf(fontSize.md),
     padding: 0,
+  },
+  // 44px touch floor for icon-only buttons (icons themselves are ~18-20px).
+  clearBtn: {
+    minWidth: Math.max(rw(44), 44),
+    minHeight: Math.max(rw(44), 44),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closeBtn: {
+    minWidth: Math.max(rw(44), 44),
+    minHeight: Math.max(rw(44), 44),
+    alignItems: "center",
+    justifyContent: "center",
   },
   statusRow: {
     flexDirection: "row",
