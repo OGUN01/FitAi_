@@ -49,6 +49,8 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
         <Text
           style={styles.greeting}
           numberOfLines={1}
+          adjustsFontSizeToFit={true}
+          minimumFontScale={0.7}
           ellipsizeMode="tail"
         >
           {getGreeting()}, {userName}
@@ -60,10 +62,10 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
               size={rf(12)}
               color={colors.primary}
             />
-            <Text style={styles.weekText}>Week {weekNumber}</Text>
+            <Text style={styles.weekText} numberOfLines={1}>Week {weekNumber}</Text>
           </View>
           {totalWorkouts > 0 && (
-            <Text style={styles.progressText}>
+            <Text style={styles.progressText} numberOfLines={1}>
               {completedWorkouts}/{totalWorkouts} workouts
             </Text>
           )}

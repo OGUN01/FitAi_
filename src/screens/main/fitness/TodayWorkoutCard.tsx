@@ -396,10 +396,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: spacing.sm,
   },
-  metaText: {
-    fontSize: rf(12),
-    color: colors.textSecondary,
-  },
   restDaySubtitle: {
     fontSize: rf(12),
     color: colors.textSecondary,
@@ -411,7 +407,7 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: rh(6),
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: hexToRgba(colors.white, 0.08),
     borderRadius: rh(3),
     overflow: "hidden",
   },

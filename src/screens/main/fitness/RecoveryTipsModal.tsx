@@ -167,7 +167,7 @@ const RecoveryTipCard: React.FC<{ tip: RecoveryTip; index: number }> = ({
         </LinearGradient>
         <View style={styles.tipTextContainer}>
           <View style={styles.tipHeader}>
-            <Text style={styles.tipTitle}>{tip.title}</Text>
+            <Text style={styles.tipTitle} numberOfLines={2}>{tip.title}</Text>
             {tip.duration && (
               <View style={styles.durationBadge}>
                 <Ionicons
@@ -322,7 +322,7 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    backgroundColor: colors.overlayDark,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.xl,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: hexToRgba(colors.white, 0.1),
     flex: 1,
   },
   header: {
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: spacing.lg,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255, 255, 255, 0.1)",
+    borderBottomColor: hexToRgba(colors.white, 0.1),
   },
   headerIconContainer: {
     width: rw(48),
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     width: Math.max(rw(36), 44),
     height: Math.max(rw(36), 44),
     borderRadius: Math.max(rw(18), 22),
-    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    backgroundColor: hexToRgba(colors.white, 0.12),
     justifyContent: "center",
     alignItems: "center",
     flexShrink: 0,
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
   },
   tipCard: {
     marginBottom: spacing.md,
-    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    backgroundColor: hexToRgba(colors.white, 0.12),
     borderRadius: borderRadius.lg,
     overflow: "hidden",
   },
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: rp(3),
-    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    backgroundColor: hexToRgba(colors.white, 0.12),
     paddingHorizontal: spacing.xs,
     paddingVertical: rp(2),
     borderRadius: borderRadius.sm,
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
   footer: {
     padding: spacing.lg,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "rgba(255, 255, 255, 0.1)",
+    borderTopColor: hexToRgba(colors.white, 0.1),
   },
   gotItButton: {
     borderRadius: borderRadius.lg,

@@ -315,7 +315,7 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
                   <Ionicons
                     name="refresh"
                     size={rf(14)}
-                    color="#ffffff"
+                    color={colors.text.primary}
                   />
                   <Text style={styles.errorRetryText}>Retry</Text>
                 </AnimatedPressable>
@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
   errorRetryText: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: "#ffffff",
+    color: colors.text.primary,
   },
   guestSignUpOverlay: {
     position: "absolute" as const,
