@@ -81,6 +81,9 @@ export const PhotoUploadCard: React.FC<PhotoUploadCardProps> = ({
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           style={styles.uploadArea}
+          accessibilityRole="button"
+          accessibilityLabel={imageUri ? "Replace photo" : "Upload photo"}
+          accessibilityHint="Tap to select a photo from your gallery"
         >
           {imageUri ? (
             <>
@@ -116,6 +119,9 @@ export const PhotoUploadCard: React.FC<PhotoUploadCardProps> = ({
                 <TouchableOpacity
                   style={styles.deleteButton}
                   onPress={onDelete}
+                  accessibilityRole="button"
+                  accessibilityLabel="Delete photo"
+                  accessibilityHint="Removes the current photo"
                 >
                   <LinearGradient
                     colors={[colors.error, colors.error]}

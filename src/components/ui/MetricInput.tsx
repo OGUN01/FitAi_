@@ -116,6 +116,9 @@ export const MetricInput: React.FC<MetricInputProps> = ({
           onBlur={handleInputBlur}
           keyboardType="numeric"
           selectTextOnFocus
+          accessibilityLabel={`${label} input in ${unit}`}
+          accessibilityHint={`Enter a value between ${minValue} and ${maxValue} ${unit}`}
+          placeholderTextColor={colors.textMuted}
         />
         <Text style={styles.unit}>{unit}</Text>
       </View>

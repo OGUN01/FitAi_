@@ -94,8 +94,8 @@ export const FoodRecognitionTest: React.FC = () => {
 
         crossPlatformAlert(
           "Test Completed",
-          `Food recognition completed in ${(processingTime / 1000).toFixed(2)}s\\n\\n` +
-            `Detected: ${recognitionResult.foods?.length || 0} food items\\n` +
+          `Food recognition completed in ${(processingTime / 1000).toFixed(2)}s\n\n` +
+            `Detected: ${recognitionResult.foods?.length || 0} food items\n` +
             `Accuracy: ${recognitionResult.overallConfidence || 0}%`,
           [{ text: "OK" }],
         );
