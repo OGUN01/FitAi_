@@ -11,6 +11,7 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr, rs } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 
 interface GifPlayerContentProps {
   exercise: any;
@@ -143,7 +144,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: borderRadius.lg,
     alignSelf: "center",
     borderWidth: 1,
-    borderColor: "rgba(255, 107, 53, 0.2)",
+    // Was hardcoded "rgba(255, 107, 53, 0.2)" — hexToRgba tracks colors.primary.
+    borderColor: hexToRgba(colors.primary, 0.2),
     // Native shadow props (ignored on web — web gets boxShadow via inline style
     // at the call site to avoid the RN warning).
     shadowColor: colors.text,
@@ -158,7 +160,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: borderRadius.lg,
     backgroundColor: "transparent",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255, 107, 53, 0.1)",
+    // Was hardcoded "rgba(255, 107, 53, 0.1)" — hexToRgba tracks colors.primary.
+    borderColor: hexToRgba(colors.primary, 0.1),
   },
 
   loadingOverlay: {

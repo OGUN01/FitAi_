@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+import { hexToRgba } from "../../../utils/colors";
 
 interface Exercise {
   name: string;
@@ -91,7 +92,9 @@ const styles = StyleSheet.create({
   },
 
   qualityIndicator: {
-    backgroundColor: colors.success + "20",
+    // Was colors.success + "20" (fragile hex-append) — hexToRgba tracks the
+    // token if it ever changes to an rgba()/named color.
+    backgroundColor: hexToRgba(colors.success, 0.13),
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.sm,
@@ -124,13 +127,17 @@ const styles = StyleSheet.create({
   },
 
   instructionsButton: {
-    backgroundColor: colors.primary + "10",
+    // Was colors.primary + "10" / "30" (fragile hex-append) — hexToRgba
+    // survives any future token format change.
+    backgroundColor: hexToRgba(colors.primary, 0.1),
     borderWidth: 1,
-    borderColor: colors.primary + "30",
+    borderColor: hexToRgba(colors.primary, 0.3),
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.md,
     alignSelf: "flex-start",
+    minHeight: 44,
+    justifyContent: "center",
   },
 
   instructionsButtonText: {

@@ -37,32 +37,34 @@ const getCategoryConfig = (category: string) => {
       return {
         icon: "barbell-outline" as const,
         gradient: ["#4ECDC4", "#44A08D"] as [string, string],
-        bgColor: "rgba(78, 205, 196, 0.15)",
+        // Derived from the gradient start color via hexToRgba (was a duplicate
+        // rgba() literal that would drift if the gradient changed).
+        bgColor: hexToRgba("#4ECDC4", 0.15),
       };
     case "cardio":
       return {
         icon: "heart-outline" as const,
         gradient: ["#FF6B6B", "#FF8E53"] as [string, string],
-        bgColor: "rgba(255, 107, 107, 0.15)",
+        bgColor: hexToRgba("#FF6B6B", 0.15),
       };
     case "hiit":
       return {
         icon: "flash-outline" as const,
         gradient: ["#f093fb", "#f5576c"] as [string, string],
-        bgColor: "rgba(240, 147, 251, 0.15)",
+        bgColor: hexToRgba("#f093fb", 0.15),
       };
     case "flexibility":
     case "yoga":
       return {
         icon: "body-outline" as const,
         gradient: ["#FF6B35", "#E55A2B"] as [string, string],
-        bgColor: "rgba(255, 107, 53, 0.15)",
+        bgColor: hexToRgba(colors.primary, 0.15),
       };
     default:
       return {
         icon: "fitness-outline" as const,
         gradient: ["#FF6B6B", "#FF8E53"] as [string, string],
-        bgColor: "rgba(255, 107, 107, 0.15)",
+        bgColor: hexToRgba("#FF6B6B", 0.15),
       };
   }
 };
@@ -70,11 +72,14 @@ const getCategoryConfig = (category: string) => {
 const getDifficultyConfig = (difficulty: string) => {
   switch (difficulty?.toLowerCase()) {
     case "beginner":
-      return { label: "Beginner", color: "#10b981" };
+      // Was hardcoded "#10b981" — use the success token (single source of truth).
+      return { label: "Beginner", color: colors.success };
     case "intermediate":
-      return { label: "Intermediate", color: "#FF8E53" };
+      // Was hardcoded "#FF8E53" — use primary.light token.
+      return { label: "Intermediate", color: colors.primaryLight };
     case "advanced":
-      return { label: "Advanced", color: "#ef4444" };
+      // Was hardcoded "#ef4444" — use the error token.
+      return { label: "Advanced", color: colors.error };
     default:
       return { label: difficulty, color: colors.textSecondary };
   }

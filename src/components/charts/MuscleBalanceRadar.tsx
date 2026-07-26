@@ -35,6 +35,7 @@ import { springConfig } from "../../theme/animations";
 import { haptics } from "../../utils/haptics";
 import { useReducedMotion } from "../../utils/accessibility/hooks";
 import { rf, rs, rp, rbr } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 
 // ============================================================================
 // TYPES
@@ -78,9 +79,11 @@ const RING_LEVELS = [0.25, 0.5, 0.75, 1.0] as const; // Concentric grid rings.
 const VERTEX_RADIUS = 3; // px radius of the data-point dots.
 
 // Default orange -> transparent gradient (matches plan spec).
+// Use hexToRgba with alpha=0 instead of the fragile `${hex}00` append (breaks
+// if the token ever changes to an rgba()/named color string).
 const DEFAULT_GRADIENT: [string, string] = [
   colors.primary[500], // #FF8A5C
-  `${colors.primary[500]}00`, // transparent
+  hexToRgba(colors.primary[500], 0), // transparent
 ];
 
 // System font (no bundled TTF available in the project). matchFont resolves

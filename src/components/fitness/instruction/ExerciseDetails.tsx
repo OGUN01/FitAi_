@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 import { ExerciseTipsCard } from "./ExerciseTipsCard";
 
 interface ExerciseDetailsProps {
@@ -127,7 +128,8 @@ const styles = StyleSheet.create({
   },
 
   primaryChip: {
-    backgroundColor: "rgba(255, 107, 53, 0.3)",
+    // Was hardcoded "rgba(255, 107, 53, 0.3)" — hexToRgba tracks colors.primary.
+    backgroundColor: hexToRgba(colors.primary, 0.3),
   },
 
   primaryChipText: {
@@ -138,7 +140,8 @@ const styles = StyleSheet.create({
   },
 
   secondaryChip: {
-    backgroundColor: "rgba(245, 158, 11, 0.3)",
+    // Was hardcoded "rgba(245, 158, 11, 0.3)" — hexToRgba tracks colors.warningAlt.
+    backgroundColor: hexToRgba(colors.warningAlt, 0.3),
   },
 
   secondaryChipText: {
@@ -149,7 +152,8 @@ const styles = StyleSheet.create({
   },
 
   equipmentChip: {
-    backgroundColor: "rgba(33, 150, 243, 0.3)",
+    // Was hardcoded "rgba(33, 150, 243, 0.3)" — hexToRgba tracks colors.info.
+    backgroundColor: hexToRgba(colors.info, 0.3),
   },
 
   equipmentChipText: {
@@ -160,7 +164,8 @@ const styles = StyleSheet.create({
   },
 
   bodyPartChip: {
-    backgroundColor: "rgba(76, 175, 80, 0.3)",
+    // Was hardcoded "rgba(76, 175, 80, 0.3)" — hexToRgba tracks colors.success.
+    backgroundColor: hexToRgba(colors.success, 0.3),
   },
 
   bodyPartChipText: {

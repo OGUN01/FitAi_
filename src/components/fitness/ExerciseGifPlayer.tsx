@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rs } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 import { exerciseFilterService } from "../../services/exerciseFilterService";
 import { getFallbackGifUrl } from "../../services/exercise-visual/urlUtils";
 
@@ -422,7 +423,8 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     // Fixed 1px border (was rw(1) — scaled with screen width).
     borderWidth: 1,
-    borderColor: "rgba(255, 107, 53, 0.2)",
+    // Was hardcoded "rgba(255, 107, 53, 0.2)" — hexToRgba tracks colors.primary.
+    borderColor: hexToRgba(colors.primary, 0.2),
     shadowColor: colors.text,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -437,7 +439,8 @@ const styles = StyleSheet.create({
     // Transparent so it adapts to dark mode (was hardcoded #ffffff).
     backgroundColor: "transparent",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255, 107, 53, 0.1)",
+    // Was hardcoded "rgba(255, 107, 53, 0.1)" — hexToRgba tracks colors.primary.
+    borderColor: hexToRgba(colors.primary, 0.1),
   },
 
   loadingOverlay: {
@@ -591,9 +594,10 @@ const styles = StyleSheet.create({
   },
 
   instructionsButton: {
-    backgroundColor: "rgba(255, 107, 53, 0.1)",
+    // Was hardcoded "rgba(255, 107, 53, 0.1/0.3)" — hexToRgba tracks colors.primary.
+    backgroundColor: hexToRgba(colors.primary, 0.1),
     borderWidth: 1,
-    borderColor: "rgba(255, 107, 53, 0.3)",
+    borderColor: hexToRgba(colors.primary, 0.3),
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     minHeight: 44,

@@ -11,6 +11,7 @@ import { Card } from "../ui";
 import { AuroraSpinner } from "../ui/aurora";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rbr, rs } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../services/supabase";
@@ -446,7 +447,9 @@ const styles = StyleSheet.create({
     width: rs(48),
     height: rs(48),
     borderRadius: rbr(24),
-    backgroundColor: "rgba(255, 107, 53, 0.2)",
+    // Was hardcoded "rgba(255, 107, 53, 0.2)" — use hexToRgba so the tint
+    // tracks colors.primary if the token ever changes.
+    backgroundColor: hexToRgba(colors.primary, 0.2),
     justifyContent: "center",
     alignItems: "center",
     marginRight: spacing.md,

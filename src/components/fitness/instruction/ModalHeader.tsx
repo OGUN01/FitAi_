@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rbr, rs } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 
 interface ModalHeaderProps {
   displayName: string;
@@ -66,7 +67,8 @@ const styles = StyleSheet.create({
   },
 
   qualityBadge: {
-    backgroundColor: "rgba(76, 175, 80, 0.2)",
+    // Was hardcoded "rgba(76, 175, 80, 0.2)" — hexToRgba tracks colors.success.
+    backgroundColor: hexToRgba(colors.success, 0.2),
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.sm,
