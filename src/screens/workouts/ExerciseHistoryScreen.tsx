@@ -28,6 +28,7 @@ import {
   StyleSheet,
   SafeAreaView,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import Svg, { Rect, Polyline, Line, Text as SvgText } from "react-native-svg";
 import {
   AuroraBackground,
@@ -199,7 +200,11 @@ function PersonalRecordsCard({ prs }: { prs: ExercisePR[] }) {
         {prs.map((pr, i) => (
           <View key={`pr-${i}-${pr.prType}`} style={styles.prRow}>
             <View style={styles.prBadge}>
-              <Text style={styles.prBadgeEmoji}>🏆</Text>
+              <Ionicons
+                name="trophy"
+                size={rf(typography.fontSize.caption)}
+                color={colors.warning.DEFAULT}
+              />
               <Text style={styles.prBadgeLabel}>
                 {pr.prType === "weight" ? "Weight PR" : "Est. 1RM PR"}
               </Text>
@@ -270,7 +275,12 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
           <Text style={styles.sessionDate}>{formatDate(item.completedAt)}</Text>
           {hasPR && (
             <View style={styles.prPill}>
-              <Text style={styles.prPillText}>🏆 PR</Text>
+              <Ionicons
+                name="trophy"
+                size={rf(typography.fontSize.micro)}
+                color={colors.warning.DEFAULT}
+              />
+              <Text style={styles.prPillText}>PR</Text>
             </View>
           )}
         </View>
@@ -401,9 +411,6 @@ const styles = StyleSheet.create({
     paddingVertical: rp(spacing.xxs),
     flex: 1,
   },
-  prBadgeEmoji: {
-    fontSize: rf(typography.fontSize.caption),
-  },
   prBadgeLabel: {
     fontSize: rf(typography.fontSize.micro),
     color: colors.warning.DEFAULT,
@@ -433,6 +440,9 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   prPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(spacing.xxs),
     backgroundColor: hexToRgba(colors.warning.DEFAULT, 0.13),
     borderWidth: 1,
     borderColor: hexToRgba(colors.warning.DEFAULT, 0.4),

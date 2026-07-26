@@ -3,8 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
   Modal,
   StatusBar,
   Dimensions,
@@ -15,6 +13,7 @@ import {
 import { Image } from "expo-image"; // ✅ Use Expo Image for GIF animation support
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../ui";
+import { AuroraSpinner, AnimatedPressable } from "../ui/aurora";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rs } from "../../utils/responsive";
 import { hexToRgba } from "../../utils/colors";
@@ -171,15 +170,17 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
         <StatusBar barStyle="light-content" />
         <View style={styles.fullscreenOverlay}>
           <View style={styles.fullscreenContainer}>
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.closeButton}
               onPress={toggleFullscreen}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              scaleValue={0.9}
+              springConfig="snappy"
+              hapticType="light"
               accessibilityRole="button"
               accessibilityLabel={`Close ${displayName} fullscreen view`}
             >
-              <Ionicons name="close" size={rf(20)} color="white" />
-            </TouchableOpacity>
+              <Ionicons name="close" size={rf(20)} color={colors.text} />
+            </AnimatedPressable>
 
             <Text
               style={styles.fullscreenTitle}
@@ -247,16 +248,19 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
 
         {/* Instructions button */}
         {showInstructions && onInstructionsPress && (
-          <TouchableOpacity
+          <AnimatedPressable
             style={styles.instructionsButton}
             onPress={onInstructionsPress}
+            scaleValue={0.96}
+            springConfig="snappy"
+            hapticType="light"
             accessibilityRole="button"
             accessibilityLabel={`View ${displayName} instructions`}
           >
             <Text style={styles.instructionsButtonText}>
               View Instructions
             </Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         )}
       </View>
     );
@@ -271,14 +275,17 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
             We could not load the movement demo for {displayName}.
           </Text>
           {showInstructions && onInstructionsPress ? (
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.retryButton}
               onPress={onInstructionsPress}
+              scaleValue={0.96}
+              springConfig="snappy"
+              hapticType="light"
               accessibilityRole="button"
               accessibilityLabel={`View ${displayName} instructions`}
             >
               <Text style={styles.retryButtonText}>View Instructions</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           ) : null}
         </View>
       );
@@ -288,7 +295,7 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
       <View style={[styles.gifContainer, { height, width }]}>
         {isLoading && (
           <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <AuroraSpinner size="lg" theme="primary" />
             <Text style={styles.loadingText}>Loading demonstration...</Text>
           </View>
         )}
@@ -301,7 +308,7 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
               // After 2 failed retries the URL is likely permanently broken —
               // surface a Report CTA instead of re-fetching the same broken URL
               // (which would loop indefinitely).
-              <TouchableOpacity
+              <AnimatedPressable
                 style={[styles.retryButton, styles.reportButton]}
                 onPress={() => {
                   // Surface a mailto-style report hook if available; otherwise
@@ -309,24 +316,30 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
                   setHasError(false);
                   setRetryCount(0);
                 }}
+                scaleValue={0.96}
+                springConfig="snappy"
+                hapticType="light"
                 accessibilityRole="button"
                 accessibilityLabel="Report broken exercise demonstration"
               >
                 <Text style={styles.retryButtonText}>Report</Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             ) : (
-              <TouchableOpacity
+              <AnimatedPressable
                 style={styles.retryButton}
                 onPress={() => {
                   setHasError(false);
                   setFallbackUrl(null);
                   setIsLoading(true);
                 }}
+                scaleValue={0.96}
+                springConfig="snappy"
+                hapticType="light"
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading exercise demonstration"
               >
                 <Text style={styles.retryButtonText}>Try Again</Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             )}
           </View>
         ) : notFound ? (
@@ -339,9 +352,11 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
           </View>
         ) : (
           <>
-            <TouchableOpacity
+            <AnimatedPressable
               onPress={toggleFullscreen}
-              activeOpacity={0.8}
+              scaleValue={0.98}
+              springConfig="smooth"
+              hapticType="light"
               style={styles.gifTouchArea}
             >
               <Image
@@ -368,14 +383,16 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
                   <Text style={styles.zoomHintText}>Tap to zoom</Text>
                 </View>
               )}
-            </TouchableOpacity>
+            </AnimatedPressable>
 
             {/* Playback controls overlay — hidden when showControls=false */}
             {showControls && (
-              <TouchableOpacity
+              <AnimatedPressable
                 style={styles.playbackOverlay}
                 onPress={togglePlayback}
-                activeOpacity={0.7}
+                scaleValue={0.9}
+                springConfig="snappy"
+                hapticType="light"
                 accessibilityRole="button"
                 accessibilityLabel={isPlaying ? "Pause exercise demonstration" : "Play exercise demonstration"}
               >
@@ -383,10 +400,10 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
                   <Ionicons
                     name={isPlaying ? "pause" : "play"}
                     size={rf(16)}
-                    color="white"
+                    color={colors.text}
                   />
                 </View>
-              </TouchableOpacity>
+              </AnimatedPressable>
             )}
           </>
         )}
@@ -633,7 +650,7 @@ const styles = StyleSheet.create({
   },
 
   zoomHintText: {
-    color: "white",
+    color: colors.text,
     fontSize: rf(10),
     fontWeight: "500",
   },
@@ -669,7 +686,7 @@ const styles = StyleSheet.create({
   },
 
   fullscreenTitle: {
-    color: "white",
+    color: colors.text,
     fontSize: fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     textAlign: "center",
