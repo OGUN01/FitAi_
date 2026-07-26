@@ -14,8 +14,10 @@ import {
   Animated,
   Easing,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rh, rw, rs } from "../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../utils/colors";
 import { AsyncMealJob, JobStatus } from "../../hooks/useAsyncMealGeneration";
 
 interface JobStatusIndicatorProps {
@@ -28,46 +30,46 @@ interface JobStatusIndicatorProps {
 const STATUS_CONFIG: Record<
   JobStatus,
   {
-    emoji: string;
+    icon: keyof typeof Ionicons.glyphMap;
     color: string;
     bgColor: string;
     message: string;
   }
 > = {
   idle: {
-    emoji: "💤",
-    color: "#6b7280",
-    bgColor: "#f3f4f6",
+    icon: "moon-outline",
+    color: colors.textMuted,
+    bgColor: hexToRgba(colors.textMuted, TINT_ALPHA_LOW),
     message: "Ready to generate",
   },
   pending: {
-    emoji: "⏳",
+    icon: "hourglass-outline",
     color: colors.warningAlt,
-    bgColor: "#fffbeb",
+    bgColor: hexToRgba(colors.warningAlt, TINT_ALPHA_LOW),
     message: "Waiting in queue...",
   },
   processing: {
-    emoji: "🧠",
+    icon: "sparkles",
     color: colors.blue,
-    bgColor: "#eff6ff",
+    bgColor: hexToRgba(colors.blue, TINT_ALPHA_LOW),
     message: "AI is cooking up your meals...",
   },
   completed: {
-    emoji: "✅",
+    icon: "checkmark-circle-outline",
     color: colors.successAlt,
-    bgColor: "#ecfdf5",
+    bgColor: hexToRgba(colors.successAlt, TINT_ALPHA_LOW),
     message: "Meal plan ready!",
   },
   failed: {
-    emoji: "❌",
+    icon: "alert-circle-outline",
     color: colors.errorAlt,
-    bgColor: "#fef2f2",
+    bgColor: hexToRgba(colors.errorAlt, TINT_ALPHA_LOW),
     message: "Generation failed",
   },
   cancelled: {
-    emoji: "🚫",
-    color: "#6b7280",
-    bgColor: "#f3f4f6",
+    icon: "ban-outline",
+    color: colors.textMuted,
+    bgColor: hexToRgba(colors.textMuted, TINT_ALPHA_LOW),
     message: "Cancelled",
   },
 };
@@ -154,7 +156,7 @@ export const JobStatusIndicator: React.FC<JobStatusIndicatorProps> = ({
       <View
         style={[styles.compactContainer, { backgroundColor: config.bgColor }]}
       >
-        <Text style={styles.compactEmoji}>{config.emoji}</Text>
+        <Ionicons name={config.icon} size={rf(16)} color={config.color} />
         <Text style={[styles.compactText, { color: config.color }]}>
           {config.message}
         </Text>
@@ -178,13 +180,13 @@ export const JobStatusIndicator: React.FC<JobStatusIndicatorProps> = ({
       <View style={styles.header}>
         <View style={styles.statusBadge}>
           {isActive ? (
-            <Animated.Text
-              style={[styles.emoji, { transform: [{ rotate: spin }] }]}
-            >
-              {config.emoji}
-            </Animated.Text>
+            <Animated.View style={[styles.emojiWrap, { transform: [{ rotate: spin }] }]}>
+              <Ionicons name={config.icon} size={rf(20)} color={config.color} />
+            </Animated.View>
           ) : (
-            <Text style={styles.emoji}>{config.emoji}</Text>
+            <View style={styles.emojiWrap}>
+              <Ionicons name={config.icon} size={rf(20)} color={config.color} />
+            </View>
           )}
           <Text style={[styles.statusText, { color: config.color }]}>
             {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
@@ -198,7 +200,7 @@ export const JobStatusIndicator: React.FC<JobStatusIndicatorProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Dismiss generation status"
           >
-            <Text style={styles.dismissText}>✕</Text>
+            <Ionicons name="close" size={rf(18)} color={colors.textSecondary} />
           </TouchableOpacity>
         )}
       </View>
@@ -268,8 +270,9 @@ export const JobStatusIndicator: React.FC<JobStatusIndicatorProps> = ({
       {/* Tips for waiting users */}
       {isActive && (
         <View style={styles.tipsSection}>
+          <Ionicons name="bulb-outline" size={rf(14)} color={colors.warningAlt} style={styles.tipIcon} />
           <Text style={styles.tipText}>
-            💡 You can navigate away - we&apos;ll notify you when ready!
+            You can navigate away - we&apos;ll notify you when ready!
           </Text>
         </View>
       )}
@@ -296,10 +299,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
 
-  compactEmoji: {
-    fontSize: rf(14),
-  },
-
   compactText: {
     fontSize: fontSize.sm,
     fontWeight: typography.fontWeight.medium,
@@ -324,8 +323,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
 
-  emoji: {
-    fontSize: rf(20),
+  emojiWrap: {
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   statusText: {
@@ -337,14 +337,9 @@ const styles = StyleSheet.create({
     width: Math.max(rw(24), 44),
     height: Math.max(rh(24), 44),
     borderRadius: Math.max(rs(12), 22),
-    backgroundColor: "rgba(0,0,0,0.1)",
+    backgroundColor: colors.glassSurface,
     justifyContent: "center",
     alignItems: "center",
-  },
-
-  dismissText: {
-    fontSize: rf(12),
-    color: colors.textSecondary,
   },
 
   message: {
@@ -422,13 +417,21 @@ const styles = StyleSheet.create({
   },
 
   tipsSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
     marginTop: spacing.md,
     paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.05)",
+    borderTopColor: colors.border,
+  },
+
+  tipIcon: {
+    marginTop: spacing.xxs,
   },
 
   tipText: {
+    flex: 1,
     fontSize: fontSize.xs,
     color: colors.textMuted,
     fontStyle: "italic",

@@ -16,6 +16,7 @@ import {
   Platform,
 } from "react-native";
 import { Card } from "../ui";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rh, rw, rs } from "../../utils/responsive";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -342,7 +343,10 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
 
           {/* AI Intelligence Features */}
           <Card style={styles.aiCard} variant="outlined">
-            <Text style={styles.aiTitle}>🤖 AI Recipe Intelligence</Text>
+            <View style={styles.aiTitleRow}>
+              <Ionicons name="sparkles" size={rf(18)} color={colors.primary} />
+              <Text style={styles.aiTitle}>AI Recipe Intelligence</Text>
+            </View>
             <View style={styles.aiFeatures}>
               <Text style={styles.aiFeature}>
                 • Personalized to your profile
@@ -568,6 +572,11 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text,
+  },
+  aiTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
     marginBottom: spacing.sm,
   },
 

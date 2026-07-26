@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { Button, Card } from "../ui";
 import { RecognizedFood } from "../../services/foodRecognitionService";
@@ -112,15 +113,15 @@ export const FoodRecognitionFeedback: React.FC<
             key={star}
             onPress={() => onPress(star as 1 | 2 | 3 | 4 | 5)}
             style={styles.starButton}
+            hitSlop={{ top: 10, bottom: 10, left: 5, right: 5 }}
+            accessibilityRole="button"
+            accessibilityLabel={`${star} star${star > 1 ? "s" : ""}`}
           >
-            <Text
-              style={[
-                styles.star,
-                { color: star <= rating ? "#fbbf24" : "#d1d5db" },
-              ]}
-            >
-              ⭐
-            </Text>
+            <Ionicons
+              name={star <= rating ? "star" : "star-outline"}
+              size={rf(24)}
+              color={star <= rating ? colors.amberBright : colors.textMuted}
+            />
           </TouchableOpacity>
         ))}
       </View>
@@ -234,6 +235,12 @@ export const FoodRecognitionFeedback: React.FC<
                   })
                 }
               >
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={rf(16)}
+                  color={currentFeedback.isCorrect ? colors.white : colors.text}
+                  style={styles.correctnessButtonIcon}
+                />
                 <Text
                   style={[
                     styles.correctnessButtonText,
@@ -241,7 +248,7 @@ export const FoodRecognitionFeedback: React.FC<
                       styles.correctnessButtonTextActive,
                   ]}
                 >
-                  ✅ Correct
+                  Correct
                 </Text>
               </TouchableOpacity>
 
@@ -254,6 +261,12 @@ export const FoodRecognitionFeedback: React.FC<
                   updateFeedback(currentFoodIndex, { isCorrect: false })
                 }
               >
+                <Ionicons
+                  name="close-circle-outline"
+                  size={rf(16)}
+                  color={!currentFeedback.isCorrect ? colors.white : colors.text}
+                  style={styles.correctnessButtonIcon}
+                />
                 <Text
                   style={[
                     styles.correctnessButtonText,
@@ -261,7 +274,7 @@ export const FoodRecognitionFeedback: React.FC<
                       styles.correctnessButtonTextActive,
                   ]}
                 >
-                  ❌ Incorrect
+                  Incorrect
                 </Text>
               </TouchableOpacity>
             </View>
@@ -482,10 +495,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: spacing.sm,
+    gap: spacing.xs,
   },
 
   starButton: {
-    padding: spacing.xs,
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   star: {
@@ -506,13 +523,17 @@ const styles = StyleSheet.create({
 
   correctnessButton: {
     flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    minHeight: 44,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.background,
-    alignItems: "center",
   },
 
   correctnessButtonActive: {
@@ -524,6 +545,10 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.text,
     fontWeight: "600",
+  },
+
+  correctnessButtonIcon: {
+    marginRight: spacing.xxs,
   },
 
   correctnessButtonTextActive: {

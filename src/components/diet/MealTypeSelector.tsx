@@ -12,6 +12,7 @@ import {
   ScrollView,
   } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { MealType } from "../../services/foodRecognitionService";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rh, rw, rs, rp, rbr, dimensions } from "../../utils/responsive";
@@ -176,7 +177,7 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
             <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
               {/* Time-based suggestion */}
               <View style={styles.suggestionBanner}>
-                <Text style={styles.suggestionIcon}>💡</Text>
+                <Ionicons name="bulb-outline" size={rf(16)} color={colors.warningAlt} style={styles.suggestionIcon} />
                 <Text style={styles.suggestionText}>
                   Based on current time, we suggest:{" "}
                   <Text style={styles.suggestionMeal}>
@@ -256,7 +257,7 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
 
               {/* Footer tip */}
               <View style={styles.footer}>
-                <Text style={styles.footerIcon}>🎯</Text>
+                <Ionicons name="ribbon-outline" size={rf(16)} color={colors.primary} style={styles.footerIcon} />
                 <Text style={styles.footerText}>
                   Selecting the correct meal type helps our AI provide more
                   accurate nutrition analysis
@@ -347,14 +348,13 @@ const styles = StyleSheet.create({
   suggestionBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fef3c7", // amber-100
+    backgroundColor: colors.warningTint,
     margin: spacing.lg,
     padding: spacing.md,
     borderRadius: borderRadius.md,
   },
 
   suggestionIcon: {
-    fontSize: rf(16),
     marginRight: spacing.sm,
   },
 
@@ -484,7 +484,6 @@ const styles = StyleSheet.create({
   },
 
   footerIcon: {
-    fontSize: rf(16),
     marginRight: spacing.sm,
   },
 
