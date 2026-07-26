@@ -355,7 +355,14 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({
                       <Text style={styles.cals} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                         {Math.round(item.per100g.calories)}
                       </Text>
-                      <Text style={styles.calsUnit} numberOfLines={1}>kcal/100g</Text>
+                      <Text
+                        style={styles.calsUnit}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.85}
+                      >
+                        kcal/100g
+                      </Text>
                     </View>
                   </View>
                 </GlassCard>
@@ -476,6 +483,7 @@ const styles = StyleSheet.create({
   },
   calsWrap: {
     alignItems: "flex-end",
+    flexShrink: 0,
   },
   cals: {
     color: colors.text,

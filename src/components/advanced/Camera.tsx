@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rbr, rs, rh, rw } from '../../utils/responsive';
@@ -111,6 +112,11 @@ const CameraComponent: React.FC<CameraProps> = ({
     portionGrams != null ? String(portionGrams) : "",
   );
   const cameraRef = useRef<CameraView>(null);
+  // Top inset so the header clears notches on fullScreen modal. The previous
+  // static paddingTop: spacing.lg (24px) approximation clipped on devices
+  // with taller status bars / notches.
+  const insets = useSafeAreaInsets();
+  const headerTopInset = Math.max(insets.top, spacing.sm);
   React.useEffect(() => {
     if (!visible) {
       return;
@@ -242,7 +248,7 @@ const CameraComponent: React.FC<CameraProps> = ({
   return (
     <View style={[styles.container, style]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerTopInset }]}>
         <TouchableOpacity
           style={styles.closeButton}
           onPress={onClose}
@@ -773,7 +779,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   portionHintLabel: {
-    fontSize: rf(11),
+    fontSize: fontSize.xs,
     fontWeight: "600" as const,
     color: colors.text,
   },
@@ -789,7 +795,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: borderRadius.sm,
     paddingHorizontal: 8,
-    fontSize: rf(13),
+    fontSize: fontSize.sm,
     fontWeight: "600" as const,
     color: colors.text,
     borderWidth: 1,
@@ -797,7 +803,7 @@ const styles = StyleSheet.create({
     textAlign: "center" as const,
   },
   portionHintUnit: {
-    fontSize: rf(12),
+    fontSize: fontSize.xs,
     color: colors.textSecondary,
     fontWeight: "600" as const,
   },
@@ -813,12 +819,12 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   portionActiveText: {
-    fontSize: rf(11),
+    fontSize: fontSize.xs,
     color: colors.primary,
     fontWeight: "600" as const,
   },
   portionHintSubtext: {
-    fontSize: rf(11),
+    fontSize: fontSize.xs,
     color: colors.textSecondary,
   },
   tipsContainer: {

@@ -56,7 +56,7 @@ const MealImage = ({ uri, meal }: { uri?: string; meal: DayMeal }) => {
   if (!uri || failed) {
     return (
       <LinearGradient
-        colors={['#172237', '#0E1728']}
+        colors={[colors.backgroundTertiary, colors.backgroundSecondary]}
         testID={`meal-image-fallback-${meal.id}`}
         style={styles.image}
       >

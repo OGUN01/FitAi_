@@ -122,6 +122,13 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
     if (adjustedX + menuWidth > screenWidth - 10)
       adjustedX = screenWidth - menuWidth - 10;
     if (adjustedY < 50) adjustedY = y + 10;
+    // If the menu would extend past the bottom of the screen, render it
+    // above the touch point (already handled) but clamp so the last item
+    // remains fully visible. Previously a touch near the bottom edge would
+    // push the menu off-screen because only the top boundary was checked.
+    if (adjustedY + menuHeight > screenHeight - 10) {
+      adjustedY = Math.max(50, screenHeight - menuHeight - 10);
+    }
 
     setMenuPosition({ x: adjustedX, y: adjustedY });
     setIsMenuVisible(true);

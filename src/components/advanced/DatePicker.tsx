@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Button } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { rh, rf } from "../../utils/responsive";
+import { rh, rf, rbr } from "../../utils/responsive";
 import { hexToRgba, TINT_ALPHA_SOFT } from "../../utils/colors";
 
 interface DatePickerProps {
@@ -133,13 +133,14 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
   const renderDatePicker = () => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     return (
       <ScrollView
         style={styles.optionsContainer}
         showsVerticalScrollIndicator={false}
       >
-        {dateOptions.map((date, index) => {
+        {dateOptions.map((date) => {
           const isSelected = isDateSelected(date);
           const isToday = date.toDateString() === today.toDateString();
           const isPast = date < today && !isToday;
@@ -195,7 +196,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         style={styles.optionsContainer}
         showsVerticalScrollIndicator={false}
       >
-        {timeOptions.map((time, index) => {
+        {timeOptions.map((time) => {
           const isSelected = isDateSelected(time);
 
           return (
@@ -291,7 +292,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         onRequestClose={handleCancel}
       >
         <View style={styles.modalOverlay}>
-          <SafeAreaView style={styles.modalContent} edges={["bottom"]}>
+          <SafeAreaView style={styles.modalContent} edges={["top", "bottom"]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle} numberOfLines={1}>
                 Select{" "}
@@ -301,6 +302,16 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                     ? "Time"
                     : "Date"}
               </Text>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={handleCancel}
+                accessibilityLabel="Close date picker"
+                accessibilityRole="button"
+                accessibilityHint="Closes the date picker without saving"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="close" size={rf(22)} color={colors.text} />
+              </TouchableOpacity>
             </View>
 
             {renderPicker()}
@@ -378,9 +389,13 @@ const styles = StyleSheet.create({
   },
 
   modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     padding: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    position: "relative",
   },
 
   modalTitle: {
@@ -388,6 +403,18 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.semibold as "600",
     color: colors.text,
     textAlign: "center",
+    flex: 1,
+  },
+
+  modalCloseButton: {
+    position: "absolute",
+    right: spacing.md,
+    width: 44,
+    height: 44,
+    borderRadius: rbr(22),
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   optionsContainer: {
