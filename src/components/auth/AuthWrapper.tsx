@@ -48,9 +48,20 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({
   if (!isInitialized) {
     return (
       loadingComponent || (
-        <View style={styles.loadingContainer}>
+        <View
+          style={styles.loadingContainer}
+          accessibilityRole="progressbar"
+          accessibilityLabel="Initializing FitAI"
+        >
           <ActivityIndicator size="large" color={THEME.colors.primary} />
-          <Text style={styles.loadingText}>Initializing FitAI...</Text>
+          <Text
+            style={styles.loadingText}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
+            Initializing FitAI...
+          </Text>
         </View>
       )
     );
@@ -72,10 +83,28 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({
  */
 const AuthenticationPlaceholder: React.FC = () => {
   return (
-    <View style={styles.authContainer}>
+    <View
+      style={styles.authContainer}
+      accessibilityRole="header"
+      accessibilityLabel="Welcome to FitAI, please sign in to continue"
+    >
       <ActivityIndicator size="large" color={THEME.colors.primary} />
-      <Text style={styles.authTitle}>Welcome to FitAI</Text>
-      <Text style={styles.authSubtitle}>Please sign in to continue.</Text>
+      <Text
+        style={styles.authTitle}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
+      >
+        Welcome to FitAI
+      </Text>
+      <Text
+        style={styles.authSubtitle}
+        numberOfLines={2}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
+      >
+        Please sign in to continue.
+      </Text>
     </View>
   );
 };

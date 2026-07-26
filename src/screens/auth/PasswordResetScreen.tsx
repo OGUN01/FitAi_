@@ -225,7 +225,14 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
         <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
           <View style={styles.centeredState}>
             <AuroraSpinner size="lg" />
-            <Text style={styles.statusText}>Verifying your reset link…</Text>
+            <Text
+              style={styles.statusText}
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
+              Verifying your reset link…
+            </Text>
           </View>
         </SafeAreaView>
       </AuroraBackground>
@@ -268,7 +275,14 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
               />
 
               <View style={styles.footerRow}>
-                <Text style={styles.footerText}>Remembered your password? </Text>
+                <Text
+                  style={styles.footerText}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  Remembered your password?{" "}
+                </Text>
                 <AnimatedPressable
                   onPress={onBackToLogin}
                   scaleValue={0.97}
@@ -277,7 +291,14 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
                   accessibilityLabel="Back to login"
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Text style={styles.footerLink}>Back to Login</Text>
+                  <Text
+                    style={styles.footerLink}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.8}
+                  >
+                    Back to Login
+                  </Text>
                 </AnimatedPressable>
               </View>
             </View>
@@ -383,7 +404,14 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
               />
 
               <View style={styles.footerRow}>
-                <Text style={styles.footerText}>Link not working? </Text>
+                <Text
+                  style={styles.footerText}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  Link not working?{" "}
+                </Text>
                 <AnimatedPressable
                   onPress={onRequestNewReset}
                   scaleValue={0.97}
@@ -392,7 +420,14 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
                   accessibilityLabel="Request a new password reset link"
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Text style={styles.footerLink}>Request a new one</Text>
+                  <Text
+                    style={styles.footerLink}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.8}
+                  >
+                    Request a new one
+                  </Text>
                 </AnimatedPressable>
               </View>
             </View>
