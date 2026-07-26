@@ -90,6 +90,7 @@ export const MealDetail: React.FC<MealDetailProps> = ({
 
       <ScrollView
         style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -130,6 +131,10 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     paddingHorizontal: rp(spacing.md),
+  },
+  scrollContent: {
+    paddingBottom: rp(spacing.xl),
+    flexGrow: 1,
   },
   chartContainer: {
     marginBottom: rp(spacing.md),

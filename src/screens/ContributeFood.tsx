@@ -149,11 +149,14 @@ const FormField: React.FC<FieldProps> = ({
 }) => (
   <View style={fieldStyles.container}>
     <View style={fieldStyles.labelRow}>
-      <Text style={fieldStyles.label}>
+      <Text
+        style={fieldStyles.label}
+        nativeID={`field-label-${label.replace(/\s+/g, '-').toLowerCase()}`}
+      >
         {label}
         {required && <Text style={fieldStyles.required}> *</Text>}
       </Text>
-      {unit && <Text style={fieldStyles.unit}>{unit}</Text>}
+      {unit ? <Text style={fieldStyles.unit}>{unit}</Text> : null}
     </View>
     <TextInput
       style={[fieldStyles.input, error ? fieldStyles.inputError : null]}
@@ -165,8 +168,17 @@ const FormField: React.FC<FieldProps> = ({
       autoCorrect={false}
       autoCapitalize={keyboardType === "default" ? "words" : "none"}
       returnKeyType="next"
+      accessibilityLabel={label}
+      accessibilityHint={required ? `Required field. ${placeholder}` : placeholder}
     />
-    {error ? <Text style={fieldStyles.errorText}>{error}</Text> : null}
+    {error ? (
+      <Text
+        style={fieldStyles.errorText}
+        accessibilityRole="alert"
+      >
+        {error}
+      </Text>
+    ) : null}
   </View>
 );
 
@@ -194,7 +206,7 @@ const fieldStyles = StyleSheet.create({
   },
   input: {
     backgroundColor: colors.glass.backgroundDark,
-    borderWidth: 1,
+    borderWidth: Math.max(rw(1), 1),
     borderColor: colors.glass.border,
     borderRadius: rbr(borderRadius.lg),
     paddingHorizontal: rp(14),
@@ -487,7 +499,11 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
 
             {/* Submit error */}
             {submitError ? (
-              <View style={styles.submitErrorBox}>
+              <View
+                style={styles.submitErrorBox}
+                accessibilityRole="alert"
+                accessibilityLiveRegion="assertive"
+              >
                 <Ionicons
                   name="alert-circle-outline"
                   size={rf(16)}
@@ -507,6 +523,7 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
               hapticType="medium"
               accessibilityRole="button"
               accessibilityLabel="Submit nutrition data"
+              accessibilityHint="Uploads the nutrition info for this barcode to the community database"
               accessibilityState={{ disabled: isSubmitting || Object.keys(errors).length > 0 }}
             >
               {isSubmitting ? (
@@ -551,7 +568,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(12),
-    borderBottomWidth: 1,
+    borderBottomWidth: Math.max(rw(1), 1),
     borderBottomColor: colors.glass.border,
   },
   headerBackBtn: {

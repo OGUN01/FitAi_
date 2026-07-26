@@ -10,34 +10,59 @@ interface MealDetailHeaderProps {
   onEdit?: () => void;
 }
 
+// Shared hitSlop expands the tappable area around the 44px buttons without
+// growing their visual footprint (the touch-target test asserts exact dims).
+const HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 } as const;
+
 export const MealDetailHeader: React.FC<MealDetailHeaderProps> = ({
   onBack,
   onEdit,
 }) => {
+  const backDisabled = !onBack;
+  const editDisabled = !onEdit;
+
   return (
     <View style={styles.header}>
       <TouchableOpacity
-        style={styles.backButton}
+        style={[styles.backButton, backDisabled && styles.buttonDisabled]}
         onPress={onBack}
+        hitSlop={HIT_SLOP}
         accessibilityRole="button"
         accessibilityLabel="Back"
         accessibilityHint="Return to previous screen"
-        disabled={!onBack}
+        accessibilityState={{ disabled: backDisabled }}
+        disabled={backDisabled}
       >
-        <Ionicons name="arrow-back" size={rf(20)} color={colors.text} />
+        <Ionicons
+          name="arrow-back"
+          size={rf(20)}
+          color={backDisabled ? colors.textTertiary : colors.text}
+        />
       </TouchableOpacity>
-      <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
+      <Text
+        style={styles.headerTitle}
+        numberOfLines={1}
+        ellipsizeMode="tail"
+        adjustsFontSizeToFit
+        minimumFontScale={0.75}
+      >
         Meal Details
       </Text>
       <TouchableOpacity
-        style={styles.editButton}
+        style={[styles.editButton, editDisabled && styles.buttonDisabled]}
         onPress={onEdit}
+        hitSlop={HIT_SLOP}
         accessibilityRole="button"
         accessibilityLabel="Edit meal"
         accessibilityHint="Open meal editor"
-        disabled={!onEdit}
+        accessibilityState={{ disabled: editDisabled }}
+        disabled={editDisabled}
       >
-        <Ionicons name="create-outline" size={rf(20)} color={colors.text} />
+        <Ionicons
+          name="create-outline"
+          size={rf(20)}
+          color={editDisabled ? colors.textTertiary : colors.text}
+        />
       </TouchableOpacity>
     </View>
   );
@@ -50,7 +75,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between" as const,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
+    borderBottomWidth: Math.max(rw(1), 1),
     borderBottomColor: colors.border,
   },
 
@@ -61,6 +86,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     alignItems: "center" as const,
     justifyContent: "center" as const,
+  },
+
+  buttonDisabled: {
+    opacity: 0.5,
   },
 
   headerTitle: {
