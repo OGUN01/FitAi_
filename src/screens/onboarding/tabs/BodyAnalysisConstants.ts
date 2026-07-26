@@ -64,21 +64,18 @@ export const PHOTO_TYPES = [
     type: "front" as const,
     title: "Front",
     iconName: "person-outline",
-    icon: "👤",
     shortDesc: "Face camera",
   },
   {
     type: "side" as const,
     title: "Side",
     iconName: "git-compare-outline",
-    icon: "👤",
     shortDesc: "Turn sideways",
   },
   {
     type: "back" as const,
     title: "Back",
     iconName: "return-up-back-outline",
-    icon: "👤",
     shortDesc: "Back to camera",
   },
 ];

@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { rf } from "../../../utils/responsive";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography, shadows } from "../../../theme/aurora-tokens";
 import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
 import {
   AnimatedPressable,
@@ -319,12 +319,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.xl,
     backgroundColor: colors.primary,
     minHeight: 52,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    boxShadow: '0px 4px 8px rgba(255, 107, 53, 0.3)',
-    elevation: 4,
+    ...shadows.level3,
   },
   nextButtonDisabled: {
     opacity: 0.5,

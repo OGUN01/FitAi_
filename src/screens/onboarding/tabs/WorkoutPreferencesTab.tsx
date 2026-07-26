@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rh, rp } from "../../../utils/responsive";
+import { rf, rp } from "../../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
 import {
@@ -278,51 +278,52 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   footer: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    padding: spacing.lg,
+    paddingBottom:
+      Platform.OS === "ios"
+        ? spacing.lg
+        : spacing.xl,
     backgroundColor: "transparent",
-    elevation: 4,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.06)",
   },
   buttonRow: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
     gap: spacing.md,
   },
   backButtonCompact: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.lg,
+    justifyContent: "center",
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.xl,
     backgroundColor: colors.backgroundSecondary,
     borderWidth: 1,
     borderColor: colors.border,
-    gap: 4,
+    minWidth: 100,
     minHeight: 52,
   },
   backButtonText: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.primary,
-    lineHeight: rf(18),
+    marginLeft: spacing.xs,
   },
   nextButtonCompact: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.full,
+    borderRadius: borderRadius.xl,
     backgroundColor: colors.primary,
-    gap: 4,
     minHeight: 52,
   },
   nextButtonText: {
     fontSize: fontSize.md,
     fontWeight: typography.fontWeight.semibold,
     color: "#FFFFFF",
+    marginRight: spacing.xs,
   },
 });
 

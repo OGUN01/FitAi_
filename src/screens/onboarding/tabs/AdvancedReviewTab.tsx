@@ -3,12 +3,12 @@ import React, { useMemo, useState, useCallback, useEffect } from "react";
 import { View, StyleSheet, ScrollView, Text, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rp, rbr, rh } from "../../../utils/responsive";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
-import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_SOFT, TINT_ALPHA_MEDIUM } from "../../../utils/colors";
+import { rf, rp, rh } from "../../../utils/responsive";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography, shadows } from "../../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../../utils/colors";
 
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
-import { HeroSection } from "../../../components/ui/aurora";
+import { HeroSection, AnimatedPressable } from "../../../components/ui/aurora";
 import { gradients } from "../../../theme/gradients";
 import {
   PersonalInfoData,
@@ -132,6 +132,18 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
     }
   }, [validationResults, setShowErrorWizard]);
 
+  // Single source of truth for the Complete Setup button's disabled state.
+  // Previously this expression was duplicated across the style + disabled props,
+  // risking drift if one was updated but not the other.
+  const hasBlockingWarnings =
+    (validationResults?.warnings?.length ?? 0) > 0 && !warningsAcknowledged;
+  const hasBlockingErrors = (validationResults?.errors?.length ?? 0) > 0;
+  const isCompleteDisabled =
+    !isComplete ||
+    isCalculating ||
+    !!calculationError ||
+    hasBlockingWarnings ||
+    hasBlockingErrors;
 
   return (
     <View style={styles.container}>
@@ -162,11 +174,12 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             <Text style={styles.errorText}>{calculationError}</Text>
             <Pressable
               onPress={() => performCalculations()}
-              style={{ paddingHorizontal: rp(16), paddingVertical: rp(10), borderRadius: rbr(8), borderWidth: 1, borderColor: colors.error, minHeight: 44, justifyContent: "center" }}
+              style={styles.retryButton}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityRole="button"
               accessibilityLabel="Retry calculation"
             >
-              <Text style={{ color: colors.error, fontSize: rf(14) }}>Retry</Text>
+              <Text style={styles.retryText}>Retry</Text>
             </Pressable>
           </GlassCard>
         )}
@@ -222,36 +235,39 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
       </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable
+        <AnimatedPressable
           style={styles.backButtonCompact}
           onPress={onBack}
+          scaleValue={0.96}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
           accessibilityLabel="Go back to previous step"
         >
           <Ionicons name="chevron-back" size={rf(18)} color={colors.text} />
           <Text style={styles.backButtonText}>Back</Text>
-        </Pressable>
-        <Pressable
+        </AnimatedPressable>
+        <AnimatedPressable
           style={[
             styles.completeButtonCompact,
             {
-              backgroundColor: (!isComplete || isCalculating || !!calculationError || ((validationResults?.warnings?.length ?? 0) > 0 && !warningsAcknowledged) || ((validationResults?.errors?.length ?? 0) > 0))
-                ? colors.textMuted
-                : colors.primary,
-              opacity: (!isComplete || isCalculating || !!calculationError || ((validationResults?.warnings?.length ?? 0) > 0 && !warningsAcknowledged) || ((validationResults?.errors?.length ?? 0) > 0)) ? 0.5 : 1,
-            }
+              backgroundColor: isCompleteDisabled ? colors.textMuted : colors.primary,
+              opacity: isCompleteDisabled ? 0.5 : 1,
+            },
           ]}
           onPress={onComplete}
-          disabled={!isComplete || isCalculating || !!calculationError || ((validationResults?.warnings?.length ?? 0) > 0 && !warningsAcknowledged) || ((validationResults?.errors?.length ?? 0) > 0)}
+          disabled={isCompleteDisabled}
+          scaleValue={0.96}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
           accessibilityLabel="Complete setup"
           accessibilityHint="Complete all required sections to enable"
+          accessibilityState={{ disabled: isCompleteDisabled }}
         >
           <Text style={styles.completeButtonText}>
             {isLoading || isCalculating ? 'Processing...' : 'Complete Setup'}
           </Text>
           <Ionicons name="checkmark-circle" size={rf(18)} color={colors.white} />
-        </Pressable>
+        </AnimatedPressable>
       </View>
 
       {showErrorWizard &&
@@ -335,7 +351,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderTopWidth: 1,
     borderTopColor: hexToRgba(colors.white, 0.06),
-    elevation: 4,
+    ...shadows.level3,
   },
   backButtonCompact: {
     flexDirection: 'row',
@@ -387,17 +403,19 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   heroTitle: {
-    fontSize: rf(24),
-    fontWeight: "bold",
+    fontSize: fontSize.xxl,
+    fontWeight: typography.fontWeight.bold,
     color: colors.white,
     marginBottom: rp(8),
     textAlign: "center",
+    letterSpacing: -0.5,
   },
   heroSubtitle: {
-    fontSize: rf(16),
-    color: hexToRgba(colors.white, 0.8),
+    fontSize: fontSize.md,
+    color: hexToRgba(colors.white, 0.85),
     textAlign: "center",
     marginBottom: rp(20),
+    lineHeight: fontSize.md * 1.5,
   },
   errorCard: {
     margin: rp(20),
@@ -411,8 +429,22 @@ const styles = StyleSheet.create({
   errorText: {
     flex: 1,
     color: colors.error,
-    fontSize: rf(14),
+    fontSize: fontSize.sm,
     textAlign: "center",
+  },
+  retryButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.error,
+    minHeight: 44,
+    justifyContent: "center",
+  },
+  retryText: {
+    color: colors.error,
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
   },
 });
 

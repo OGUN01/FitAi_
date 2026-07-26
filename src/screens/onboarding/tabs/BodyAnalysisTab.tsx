@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rh, rp } from "../../../utils/responsive";
+import { rf, rp } from "../../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
 import {
