@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Animated } from "react-native";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 import { WaterIntakeModal } from "./WaterIntakeModal";
 
 interface HydrationPanelProps {
@@ -252,9 +253,9 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   waterCustomButton: {
-    backgroundColor: `${colors.primary}15`,
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
     borderWidth: 1,
-    borderColor: `${colors.primary}35`,
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
   },
   waterQuickAddButtonText: {
     fontSize: fontSize.sm,

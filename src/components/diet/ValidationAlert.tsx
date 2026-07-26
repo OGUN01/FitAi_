@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 import { rf, rp } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import type {
@@ -42,26 +43,26 @@ const SEVERITY_CONFIG = {
   error: {
     icon: "alert-circle" as const,
     color: colors.errorAlt,
-    backgroundColor: `${colors.errorAlt}26`,
-    borderColor: `${colors.errorAlt}4D`,
+    backgroundColor: hexToRgba(colors.errorAlt, TINT_ALPHA_LOW),
+    borderColor: hexToRgba(colors.errorAlt, TINT_ALPHA_MEDIUM),
   },
   warning: {
     icon: "warning" as const,
     color: colors.warningAlt,
-    backgroundColor: `${colors.warningAlt}26`,
-    borderColor: `${colors.warningAlt}4D`,
+    backgroundColor: hexToRgba(colors.warningAlt, TINT_ALPHA_LOW),
+    borderColor: hexToRgba(colors.warningAlt, TINT_ALPHA_MEDIUM),
   },
   info: {
     icon: "information-circle" as const,
     color: colors.blue,
-    backgroundColor: `${colors.blue}26`,
-    borderColor: `${colors.blue}4D`,
+    backgroundColor: hexToRgba(colors.blue, TINT_ALPHA_LOW),
+    borderColor: hexToRgba(colors.blue, TINT_ALPHA_MEDIUM),
   },
   success: {
     icon: "checkmark-circle" as const,
     color: colors.successAlt,
-    backgroundColor: `${colors.successAlt}26`,
-    borderColor: `${colors.successAlt}4D`,
+    backgroundColor: hexToRgba(colors.successAlt, TINT_ALPHA_LOW),
+    borderColor: hexToRgba(colors.successAlt, TINT_ALPHA_MEDIUM),
   },
 };
 

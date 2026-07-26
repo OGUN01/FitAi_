@@ -496,6 +496,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
               }
               disabled={currentAdjustment.adjustmentRatio === 1.0}
             >
+              <Ionicons name="refresh-outline" size={rf(14)} color={colors.primary} />
               <Text
                 style={[
                   styles.resetButtonText,
@@ -503,7 +504,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
                     styles.resetButtonTextDisabled,
                 ]}
               >
-                🔄 Reset to AI Estimate ({currentFood.estimatedGrams}g)
+                Reset to AI Estimate ({currentFood.estimatedGrams}g)
               </Text>
             </TouchableOpacity>
           </Card>
@@ -577,18 +578,12 @@ const styles = StyleSheet.create({
   },
 
   closeButton: {
-    width: rw(32),
-    height: rh(32),
+    width: Math.max(rw(32), 44),
+    height: Math.max(rh(32), 44),
     borderRadius: rbr(16),
     backgroundColor: colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
-  },
-
-  closeText: {
-    fontSize: rf(16),
-    color: colors.text,
-    fontWeight: "600",
   },
 
   progressIndicator: {
@@ -760,8 +755,15 @@ const styles = StyleSheet.create({
   manualInputLabel: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
+    flex: 1,
+  },
+
+  manualInputLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
     marginBottom: spacing.sm,
-    textAlign: "center",
+    justifyContent: "center",
   },
 
   manualInputRow: {
@@ -844,11 +846,15 @@ const styles = StyleSheet.create({
   },
 
   resetButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    minHeight: 44,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderRadius: borderRadius.md,
     backgroundColor: colors.backgroundTertiary,
-    alignItems: "center",
   },
 
   resetButtonText: {

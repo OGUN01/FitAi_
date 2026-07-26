@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
+import { hexToRgba } from "../../utils/colors";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -291,7 +292,7 @@ const styles = StyleSheet.create({
   calorieTarget: {
     fontSize: rf(10),
     fontWeight: "500",
-    color: colors.textMuted || `${colors.white}66`,
+    color: colors.textMuted || hexToRgba(colors.white, 0.4),
     marginTop: rp(2),
   },
   macrosContainer: {

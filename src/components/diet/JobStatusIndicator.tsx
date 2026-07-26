@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
   errorInfo: {
     marginTop: spacing.sm,
     padding: spacing.sm,
-    backgroundColor: `${colors.errorAlt}1A`,
+    backgroundColor: hexToRgba(colors.errorAlt, TINT_ALPHA_LOW),
     borderRadius: borderRadius.sm,
   },
 

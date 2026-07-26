@@ -13,6 +13,7 @@ import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { AuroraSpinner } from "../ui/aurora/AuroraSpinner";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 
 interface MealPlanGeneratorProps {
@@ -63,7 +64,7 @@ export const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({
           borderRadius="lg"
         >
           <LinearGradient
-            colors={[colors.primaryTint, `${colors.primaryDark}1A`]}
+            colors={[colors.primaryTint, hexToRgba(colors.primaryDark, TINT_ALPHA_MEDIUM)]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.gradientBg}

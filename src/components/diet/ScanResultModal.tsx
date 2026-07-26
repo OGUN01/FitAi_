@@ -10,6 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_SOFT } from "../../utils/colors";
 import { rf, rp, rh } from "../../utils/responsive";
 import { gradients, toLinearGradientProps } from "../../theme/gradients";
 
@@ -335,7 +336,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   mealTypeBadge: {
-    backgroundColor: `${colors.primary}20`,
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_SOFT),
     paddingHorizontal: rp(8),
     paddingVertical: rp(3),
     borderRadius: borderRadius.sm,

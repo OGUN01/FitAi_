@@ -10,6 +10,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../utils/colors";
 import { rf, rp } from "../../utils/responsive";
 import type { APIMetadata } from "../../services/fitaiWorkersClient";
 
@@ -107,10 +108,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.glassSurface,
   },
   cachedBadge: {
-    backgroundColor: `${colors.successAlt}26`,
+    backgroundColor: hexToRgba(colors.successAlt, TINT_ALPHA_LOW),
   },
   freshBadge: {
-    backgroundColor: `${colors.primary}26`,
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
   },
   badgeText: {
     fontSize: rf(11),

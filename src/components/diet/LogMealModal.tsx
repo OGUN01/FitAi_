@@ -27,6 +27,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors } from "../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../utils/colors";
 import { rf, rh, rw, rp, rbr } from "../../utils/responsive";
 import { useNutritionStore } from "../../stores/nutritionStore";
 import {
@@ -1470,7 +1471,7 @@ const styles = StyleSheet.create({
   },
   totalsSummary: {
     flexDirection: "row",
-    backgroundColor: `${colors.primary}15`,
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
     borderRadius: rbr(12),
     paddingVertical: rh(10),
     paddingHorizontal: rp(8),
@@ -1517,7 +1518,7 @@ const styles = StyleSheet.create({
     flexDirection: "row" as const,
     alignItems: "flex-start" as const,
     gap: rw(8),
-    backgroundColor: `${colors.primary}10`,
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
     borderRadius: rbr(12),
     paddingHorizontal: rp(12),
     paddingVertical: rh(10),
@@ -1549,7 +1550,7 @@ const styles = StyleSheet.create({
     borderRadius: rbr(20),
     borderWidth: 1,
     borderColor: colors.primary,
-    backgroundColor: `${colors.primary}12`,
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
   },
   scanChipText: {
     fontSize: rf(11),
@@ -1619,7 +1620,7 @@ const styles = StyleSheet.create({
   // FEATURE 1: tertiary "Save Meal" button — outline style so it reads as a
   // secondary action distinct from the primary "Log Meal".
   saveMealButton: {
-    backgroundColor: `${colors.primary}18`,
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
     borderWidth: 1,
     borderColor: colors.primary,
   },

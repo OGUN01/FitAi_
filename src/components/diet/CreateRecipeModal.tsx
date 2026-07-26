@@ -20,6 +20,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rh, rw, rs } from "../../utils/responsive";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../utils/colors";
 
 // Stub for deprecated AI service (migrated to Cloudflare Workers)
 const geminiService = {
@@ -523,7 +524,7 @@ const styles = StyleSheet.create({
   },
 
   textInputFilled: {
-    backgroundColor: colors.primary + "08",
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
   },
 
   examplesLabel: {
