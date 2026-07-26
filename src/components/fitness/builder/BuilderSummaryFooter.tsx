@@ -35,6 +35,7 @@ import {
   typography,
 } from "../../../theme/aurora-tokens";
 import { rp, rf, rw } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 
 export interface BuilderSummaryFooterProps {
   /** Navigate back after a successful save. */
@@ -511,9 +512,9 @@ const styles = StyleSheet.create({
     width: Math.max(rw(40), 44),
     height: Math.max(rw(40), 44),
     borderRadius: borderRadius.lg,
-    backgroundColor: "rgba(255, 107, 53, 0.12)",
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, 0.12),
     borderWidth: 1,
-    borderColor: "rgba(255, 107, 53, 0.3)",
+    borderColor: hexToRgba(colors.primary.DEFAULT, 0.3),
     alignItems: "center",
     justifyContent: "center",
   },

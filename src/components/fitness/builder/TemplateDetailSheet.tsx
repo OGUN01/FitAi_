@@ -595,7 +595,7 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
                 <View style={styles.secondaryActionsGrid}>
                   {isCommunity ? (
                     <GlassButton
-                      label={forked ? "Forked ✓" : "Fork"}
+                      label={forked ? "Forked" : "Fork"}
                       onPress={handleFork}
                       variant={forked ? "success" : "secondary"}
                       icon={forked ? "checkmark-circle-outline" : "git-branch-outline"}
@@ -619,7 +619,7 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
                   ) : null}
                   {isOwned ? (
                     <GlassButton
-                      label={shared ? "Shared ✓" : "Share"}
+                      label={shared ? "Shared" : "Share"}
                       onPress={handleShare}
                       variant={shared ? "success" : "secondary"}
                       icon={shared ? "checkmark-circle-outline" : "share-outline"}

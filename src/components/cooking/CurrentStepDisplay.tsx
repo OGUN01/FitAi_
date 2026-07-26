@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   tipText: {
     flex: 1,
     fontSize: rf(14),
-    color: colors.warning.DEFAULT,
+    color: colors.text.secondary,
     lineHeight: rf(20),
   },
   activeTimer: {

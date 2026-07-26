@@ -55,6 +55,7 @@ import {
   typography,
 } from "../../../theme/aurora-tokens";
 import { rp, rf, rw, rs } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 import type { PlannedSet } from "../../../types/workout";
 
 // ============================================================================
@@ -76,12 +77,12 @@ const SET_TYPE_META: Record<
   PlannedSet["setType"],
   { label: string; color: string; bgTint: string }
 > = {
-  normal: { label: "Normal", color: flatColors.neutral, bgTint: "rgba(158, 158, 158, 0.18)" },
-  warmup: { label: "Warmup", color: flatColors.amber, bgTint: "rgba(255, 193, 7, 0.18)" },
-  failure: { label: "Failure", color: colors.error.DEFAULT, bgTint: "rgba(244, 67, 54, 0.18)" },
-  drop: { label: "Drop", color: flatColors.purple, bgTint: "rgba(147, 51, 234, 0.18)" },
-  superset: { label: "Superset", color: flatColors.cyan, bgTint: "rgba(6, 182, 212, 0.18)" },
-  circuit: { label: "Circuit", color: flatColors.teal, bgTint: "rgba(78, 205, 196, 0.18)" },
+  normal: { label: "Normal", color: flatColors.neutral, bgTint: hexToRgba(flatColors.neutral, 0.18) },
+  warmup: { label: "Warmup", color: flatColors.amber, bgTint: hexToRgba(flatColors.amber, 0.18) },
+  failure: { label: "Failure", color: colors.error.DEFAULT, bgTint: hexToRgba(colors.error.DEFAULT, 0.18) },
+  drop: { label: "Drop", color: flatColors.purple, bgTint: hexToRgba(flatColors.purple, 0.18) },
+  superset: { label: "Superset", color: flatColors.cyan, bgTint: hexToRgba(flatColors.cyan, 0.18) },
+  circuit: { label: "Circuit", color: flatColors.teal, bgTint: hexToRgba(flatColors.teal, 0.18) },
 };
 
 export interface SetRowProps {

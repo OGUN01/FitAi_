@@ -86,7 +86,12 @@ export default function VideoSection({
               />
             </View>
             <View style={styles.videoDuration}>
-              <Text style={styles.videoDurationText} numberOfLines={1}>
+              <Text
+                style={styles.videoDurationText}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
                 {Math.floor(cookingVideo.lengthSeconds / 60)}:
                 {(cookingVideo.lengthSeconds % 60).toString().padStart(2, "0")}
               </Text>
@@ -100,7 +105,14 @@ export default function VideoSection({
           >
             {cookingVideo.title}
           </Text>
-          <Text style={styles.videoAuthor} numberOfLines={1}>by {cookingVideo.author}</Text>
+          <Text
+            style={styles.videoAuthor}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
+            by {cookingVideo.author}
+          </Text>
           <AnimatedPressable
             style={styles.watchVideoButton}
             onPress={() =>

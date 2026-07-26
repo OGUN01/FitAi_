@@ -44,6 +44,7 @@ import {
   typography,
 } from "../../../theme/aurora-tokens";
 import { rp, rf, rw } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 
 /**
  * Cast a typography font-weight token to RN's TextStyle['fontWeight'] without
@@ -283,9 +284,9 @@ const styles = StyleSheet.create({
     paddingVertical: rp(spacing.sm),
     minHeight: Math.max(rp(36), 44),
     borderRadius: borderRadius.full,
-    backgroundColor: "rgba(255, 107, 53, 0.18)",
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, 0.18),
     borderWidth: 1,
-    borderColor: "rgba(255, 107, 53, 0.4)",
+    borderColor: hexToRgba(colors.primary.DEFAULT, 0.4),
   },
   chipText: {
     color: colors.primary.DEFAULT,

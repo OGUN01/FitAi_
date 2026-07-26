@@ -132,6 +132,7 @@ const styles = StyleSheet.create({
     borderColor: colors.glass.border,
     maxWidth: "100%",
     minHeight: Math.max(rp(40), 44),
+    flexShrink: 1,
   },
   ingredientIcon: {
     marginRight: rp(6),

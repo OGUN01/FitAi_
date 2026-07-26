@@ -192,8 +192,8 @@ export const CustomPlanEmptyState: React.FC<CustomPlanEmptyStateProps> = ({
             onPress={onBuildSchedule}
             variant="primary"
             icon="construct-outline"
-            fullWidth
             hapticType="medium"
+            style={{ flex: 1 }}
             testID="build-schedule-button"
           />
           <View style={styles.ctaSpacer} />
@@ -202,8 +202,8 @@ export const CustomPlanEmptyState: React.FC<CustomPlanEmptyStateProps> = ({
             onPress={onBrowseTemplates}
             variant="secondary"
             icon="library-outline"
-            fullWidth
             hapticType="light"
+            style={{ flex: 1 }}
             testID="browse-templates-button"
           />
         </Animated.View>

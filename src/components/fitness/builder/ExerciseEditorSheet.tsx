@@ -76,6 +76,7 @@ import {
   typography,
 } from "../../../theme/aurora-tokens";
 import { rp, rf, rw, rs } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 import type { PlannedExercise, PlannedSet } from "../../../types/workout";
 
 // ============================================================================
@@ -1105,7 +1106,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.primary.DEFAULT,
     borderStyle: "dashed",
-    backgroundColor: "rgba(255, 107, 53, 0.08)",
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, 0.08),
     minHeight: Math.max(rp(44), 44),
   },
   addSetLabel: {

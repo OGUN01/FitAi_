@@ -36,7 +36,14 @@ export default function StepsList({
       borderRadius="xl"
       style={styles.stepsListSection}
     >
-      <Text style={styles.sectionTitle}>Cooking Steps</Text>
+      <Text
+        style={styles.sectionTitle}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
+      >
+        Cooking Steps
+      </Text>
       <View style={styles.stepsList}>
         {cookingFlow.steps.map((step, index) => (
           <AnimatedPressable
@@ -89,7 +96,12 @@ export default function StepsList({
                 {step.timeRequired && (
                   <View style={styles.stepTimeRow}>
                     <Ionicons name="timer-outline" size={rf(12)} color={colors.text.secondary} />
-                    <Text style={styles.stepTimeText} numberOfLines={1}>
+                    <Text
+                      style={styles.stepTimeText}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                    >
                       {step.timeRequired} min
                     </Text>
                   </View>
@@ -111,7 +123,14 @@ export default function StepsList({
         <View style={styles.proTipsSection}>
           <View style={styles.proTipsTitleRow}>
             <Ionicons name="bulb-outline" size={rf(16)} color={colors.warning.DEFAULT} />
-            <Text style={styles.proTipsTitle}>Pro Tips</Text>
+            <Text
+              style={styles.proTipsTitle}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
+              Pro Tips
+            </Text>
           </View>
           {cookingFlow.proTips.map((tip, index) => (
             <Text
@@ -164,8 +183,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   stepNumber: {
-    width: 32,
-    height: 32,
+    width: rp(32),
+    height: rp(32),
     borderRadius: rbr(16),
     backgroundColor: colors.background.tertiary,
     justifyContent: "center",
@@ -186,7 +205,6 @@ const styles = StyleSheet.create({
   stepTextContainer: {
     flex: 1,
     minWidth: 0,
-    marginLeft: rp(12),
   },
   stepItemText: {
     flex: 1,
@@ -222,7 +240,7 @@ const styles = StyleSheet.create({
   },
   proTipText: {
     fontSize: rf(14),
-    color: colors.warning.DEFAULT,
+    color: colors.text.secondary,
     lineHeight: rf(20),
     marginBottom: rp(4),
   },

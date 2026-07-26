@@ -48,6 +48,7 @@ import {
   typography,
 } from "../../../theme/aurora-tokens";
 import { rp, rf, rw } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 
 // ----------------------------------------------------------------------------
 // SEVERITY → TOKEN MAPPING
@@ -63,17 +64,17 @@ const SEVERITY_STYLES: Record<ValidationWarning["severity"], SeverityStyle> = {
   info: {
     color: colors.info.DEFAULT,
     icon: "information-circle-outline",
-    tint: "rgba(33, 150, 243, 0.12)",
+    tint: hexToRgba(colors.info.DEFAULT, 0.12),
   },
   warning: {
     color: colors.warning.DEFAULT,
     icon: "warning-outline",
-    tint: "rgba(255, 152, 0, 0.12)",
+    tint: hexToRgba(colors.warning.DEFAULT, 0.12),
   },
   error: {
     color: colors.error.DEFAULT,
     icon: "alert-circle-outline",
-    tint: "rgba(244, 67, 54, 0.12)",
+    tint: hexToRgba(colors.error.DEFAULT, 0.12),
   },
 };
 
@@ -395,9 +396,9 @@ const styles = StyleSheet.create({
     paddingVertical: rp(spacing.xs),
     minHeight: Math.max(rp(36), 44),
     borderRadius: borderRadius.full,
-    backgroundColor: "rgba(76, 175, 80, 0.18)",
+    backgroundColor: hexToRgba(colors.success.DEFAULT, 0.18),
     borderWidth: 1,
-    borderColor: "rgba(76, 175, 80, 0.4)",
+    borderColor: hexToRgba(colors.success.DEFAULT, 0.4),
   },
   balancedText: {
     color: colors.text.primary,

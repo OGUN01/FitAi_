@@ -45,6 +45,7 @@ import {
   typography,
 } from "../../../theme/aurora-tokens";
 import { rp, rf, rw } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 import { CURATED_EXERCISES, type CuratedExercise } from "../../../data/curatedExercises";
 import type { PlannedExercise } from "../../../types/workout";
 import {
@@ -1018,9 +1019,9 @@ const styles = StyleSheet.create({
   aiSection: {
     marginBottom: rp(spacing.md),
     padding: rp(spacing.sm),
-    backgroundColor: "rgba(255, 107, 53, 0.2)",
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, 0.2),
     borderWidth: 1,
-    borderColor: "rgba(255, 107, 53, 0.4)",
+    borderColor: hexToRgba(colors.primary.DEFAULT, 0.4),
     borderRadius: borderRadius.lg,
     gap: rp(spacing.xs),
     maxHeight: rp(220),
@@ -1080,7 +1081,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(spacing.xs),
     paddingVertical: rp(2),
     borderRadius: borderRadius.full,
-    backgroundColor: "rgba(76, 175, 80, 0.18)",
+    backgroundColor: hexToRgba(colors.success.DEFAULT, 0.18),
   },
   confidenceText: {
     color: colors.success.light,

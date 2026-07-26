@@ -75,6 +75,7 @@ import {
   typography,
 } from "../../theme/aurora-tokens";
 import { rp, rf, rw } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 import type { DayWorkout } from "../../types/ai";
 import type { PlannedExercise } from "../../types/workout";
 
@@ -1348,7 +1349,7 @@ const styles = StyleSheet.create({
     width: rw(32),
     height: rw(32),
     borderRadius: borderRadius.full,
-    backgroundColor: "rgba(0, 212, 255, 0.12)",
+    backgroundColor: hexToRgba(colors.secondary.DEFAULT, 0.12),
     alignItems: "center",
     justifyContent: "center",
   },
