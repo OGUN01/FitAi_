@@ -1,10 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors } from "../../../theme/aurora-tokens";
-import { rf, rw, rh } from "../../../utils/responsive";
+import { rf, rw, rh, rbr } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
+import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 
 interface ProgressTrendsHeaderProps {
   onBack: () => void;
@@ -16,22 +17,24 @@ export const ProgressTrendsHeader: React.FC<ProgressTrendsHeaderProps> = ({
   return (
     <Animated.View entering={FadeIn.duration(400)} style={styles.header}>
       <View style={styles.headerRow}>
-        <TouchableOpacity
+        <AnimatedPressable
           style={styles.backButton}
           onPress={() => {
             haptics.light();
             onBack();
           }}
+          scaleValue={0.9}
+          hapticFeedback={false}
           accessibilityRole="button"
           accessibilityLabel="Back"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Ionicons
-            name="arrow-back"
-            size={rf(22)}
+            name="chevron-back"
+            size={rf(20)}
             color={colors.text}
           />
-        </TouchableOpacity>
+        </AnimatedPressable>
         <View style={styles.headerTextContainer}>
           <Text style={styles.headerTitle} numberOfLines={1}>Progress Trends</Text>
           <Text style={styles.headerSubtitle} numberOfLines={2}>
@@ -56,8 +59,8 @@ const styles = StyleSheet.create({
   backButton: {
     width: Math.max(rw(40), 44),
     height: Math.max(rw(40), 44),
-    borderRadius: Math.max(rw(12), 12),
-    backgroundColor: colors.surface,
+    borderRadius: rbr(20),
+    backgroundColor: colors.glassBorder,
     justifyContent: "center",
     alignItems: "center",
     marginRight: rw(12),

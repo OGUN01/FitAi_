@@ -8,7 +8,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   Platform,
   StatusBar,
 } from "react-native";
@@ -21,6 +20,7 @@ import { rf, rw, rp } from "../../../utils/responsive";
 import { PeriodSelector, Period } from "./PeriodSelector";
 import { haptics } from "../../../utils/haptics";
 import { hexToRgba } from "../../../utils/colors";
+import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 
 interface AnalyticsHeaderProps {
   selectedPeriod: Period;
@@ -81,13 +81,14 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
         <View style={styles.titleRight}>
           {/* Progress Screen Button */}
           {onProgressPress && (
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.navButton}
               onPress={() => {
                 haptics.light();
                 onProgressPress();
               }}
-              activeOpacity={0.7}
+              scaleValue={0.9}
+              hapticFeedback={false}
               accessibilityRole="button"
               accessibilityLabel="Progress"
             >
@@ -96,7 +97,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
                 size={rf(18)}
                 color={colors.primary}
               />
-            </TouchableOpacity>
+            </AnimatedPressable>
           )}
 
 

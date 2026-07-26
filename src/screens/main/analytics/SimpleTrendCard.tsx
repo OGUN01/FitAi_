@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors } from "../../../theme/aurora-tokens";
@@ -7,6 +7,7 @@ import { rf, rw, rh, rp, rbr } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
 import { TrendData } from "../../../hooks/useProgressTrendsLogic";
 import { haptics } from "../../../utils/haptics";
+import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 
 interface SimpleTrendCardProps {
   title: string;
@@ -36,7 +37,7 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
         <View
           style={[styles.trendIconContainer, { backgroundColor: hexToRgba(color, 0.2) }]}
         >
-          <Ionicons name={icon} size={20} color={color} />
+          <Ionicons name={icon} size={rf(20)} color={color} />
         </View>
         <Text style={styles.trendTitle} numberOfLines={1}>{title}</Text>
       </View>
@@ -98,18 +99,19 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
             Keep tracking to see your trends
           </Text>
           {ctaLabel && onCtaPress ? (
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.ctaButton}
               onPress={() => {
                 haptics.light();
                 onCtaPress();
               }}
-              activeOpacity={0.75}
+              scaleValue={0.95}
+              hapticFeedback={false}
               accessibilityRole="button"
               accessibilityLabel={ctaLabel}
             >
               <Text style={styles.ctaButtonText} numberOfLines={1}>{ctaLabel}</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           ) : null}
         </View>
       )}
