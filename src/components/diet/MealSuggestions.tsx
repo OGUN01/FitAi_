@@ -13,8 +13,9 @@ import { GlassCard } from "../ui/aurora/GlassCard";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { haptics } from "../../utils/haptics";
-import { colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
-import { rw } from "../../utils/responsive";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, flatColors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
+import { rw, rf } from "../../utils/responsive";
 import { useProfileStore } from "../../stores/profileStore";
 import {
   getCuisineDataForCountry,
@@ -339,8 +340,8 @@ export const MealSuggestions: React.FC = () => {
                   borderRadius="xl"
                 >
                   <View style={styles.suggestionContent}>
-                    <Text style={styles.suggestionName}>{suggestion.name}</Text>
-                    <Text style={styles.suggestionMacros}>
+                    <Text style={styles.suggestionName} numberOfLines={2}>{suggestion.name}</Text>
+                    <Text style={styles.suggestionMacros} numberOfLines={2}>
                       {suggestion.calories} cal | {suggestion.protein}g P | {suggestion.carbs}g C | {suggestion.fat}g F
                     </Text>
                     <View style={styles.buttonRow}>
@@ -375,7 +376,8 @@ export const MealSuggestions: React.FC = () => {
                       )}
                       {isLogged && (
                         <View style={styles.loggedBadge}>
-                          <Text style={styles.loggedBadgeText}>✓ Logged</Text>
+                          <Ionicons name="checkmark" size={rf(12)} color={flatColors.white} />
+                          <Text style={styles.loggedBadgeText}>Logged</Text>
                         </View>
                       )}
                     </View>
@@ -394,6 +396,7 @@ const styles = StyleSheet.create({
   section: {
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.xl,
+    overflow: "hidden",
   },
   sectionTitle: {
     fontSize: fontSize.xl,
@@ -402,8 +405,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   suggestionsScrollContent: { paddingHorizontal: spacing.lg },
-  suggestionCard: { width: rw(200), marginRight: spacing.md },
-  suggestionContent: { padding: spacing.md },
+  suggestionCard: { width: rw(200), marginRight: spacing.md, maxWidth: rw(220) },
+  suggestionContent: { padding: spacing.md, minWidth: 0 },
   suggestionName: {
     fontSize: fontSize.md,
     fontWeight: "600",
@@ -422,15 +425,17 @@ const styles = StyleSheet.create({
   },
   addToPlanButton: {
     flex: 1,
+    minHeight: 44,
     backgroundColor: colors.primary.DEFAULT,
     borderRadius: borderRadius.md,
     paddingVertical: spacing.xs,
     alignItems: "center",
+    justifyContent: "center",
     overflow: "hidden",
     position: "relative",
   },
   addToPlanButtonAdded: {
-    backgroundColor: "#16a34a",
+    backgroundColor: flatColors.successAlt,
   },
   addToPlanButtonText: {
     color: colors.text.primary,
@@ -439,7 +444,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   logButton: {
-    backgroundColor: "#22c55e",
+    backgroundColor: flatColors.success,
     borderRadius: borderRadius.md,
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
@@ -447,20 +452,22 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   logButtonText: {
-    color: "#ffffff",
+    color: flatColors.white,
     fontSize: fontSize.xs,
     fontWeight: "700",
   },
   loggedBadge: {
-    backgroundColor: "#16a34a",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xxs,
+    backgroundColor: flatColors.successAlt,
     borderRadius: borderRadius.md,
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
-    alignItems: "center",
     justifyContent: "center",
   },
   loggedBadgeText: {
-    color: "#ffffff",
+    color: flatColors.white,
     fontSize: fontSize.xs,
     fontWeight: "700",
   },

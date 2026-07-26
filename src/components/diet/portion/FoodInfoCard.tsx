@@ -22,7 +22,7 @@ export const FoodInfoCard: React.FC<FoodInfoCardProps> = ({
   return (
     <Card style={styles.foodCard}>
       <View style={styles.foodHeader}>
-        <Text style={styles.foodName}>{currentFood.name}</Text>
+        <Text style={styles.foodName} numberOfLines={2}>{currentFood.name}</Text>
         <View style={styles.originalBadge}>
           <Text style={styles.originalText}>
             AI Estimate: {currentFood.estimatedGrams}g

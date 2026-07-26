@@ -10,6 +10,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rp } from "../../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../../utils/colors";
 
 interface CustomInputSectionProps {
   customAmount: string;
@@ -46,7 +47,7 @@ export const CustomInputSection: React.FC<CustomInputSectionProps> = ({
             onErrorChange(null);
           }}
           placeholder="e.g., 0.5"
-          placeholderTextColor={`${colors.white}66`}
+          placeholderTextColor={hexToRgba(colors.white, 0.4)}
           keyboardType="decimal-pad"
           returnKeyType="done"
           autoFocus
@@ -94,7 +95,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: `${colors.white}B3`,
+    color: hexToRgba(colors.white, 0.7),
     marginBottom: rp(12),
   },
   inputContainer: {
@@ -105,7 +106,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(16),
     marginBottom: rp(16),
     borderWidth: 1,
-    borderColor: `${colors.primary}4D`,
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
   },
   inputIcon: {
     marginRight: rp(12),
@@ -120,7 +121,7 @@ const styles = StyleSheet.create({
   unitLabel: {
     fontSize: rf(16),
     fontWeight: "500",
-    color: `${colors.white}80`,
+    color: hexToRgba(colors.white, 0.5),
     marginLeft: rp(8),
   },
   errorContainer: {
@@ -140,6 +141,7 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 0.4,
+    minHeight: 44,
     paddingVertical: rp(14),
     alignItems: "center",
     justifyContent: "center",
@@ -161,6 +163,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: rp(8),
+    minHeight: 44,
     paddingVertical: rp(14),
   },
   submitButtonText: {

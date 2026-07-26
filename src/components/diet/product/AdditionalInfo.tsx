@@ -81,6 +81,6 @@ const styles = StyleSheet.create({
   },
   alertText: {
     fontSize: fontSize.sm,
-    color: "#dc2626",
+    color: colors.error,
   },
 });

@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { rf, rw, rp, rbr, rh } from "../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_SOFT } from "../../utils/colors";
 import { DayMeal } from "../../types/ai";
 
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -273,7 +274,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
-    backgroundColor: `${colors.primary}20`,
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_SOFT),
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.sm,
@@ -284,7 +285,10 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   closeButton: {
-    padding: spacing.xs,
+    width: Math.max(rw(36), 44),
+    height: Math.max(rh(36), 44),
+    alignItems: "center",
+    justifyContent: "center",
   },
   scrollContent: {
     paddingHorizontal: spacing.lg,
@@ -343,7 +347,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: spacing.sm,
     borderRadius: borderRadius.md,
-    backgroundColor: `${colors.border}40`,
+    backgroundColor: hexToRgba(colors.border, TINT_ALPHA_SOFT),
   },
   macroDot: {
     width: rp(8),
@@ -403,6 +407,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.xs,
+    minHeight: 44,
     backgroundColor: colors.primary,
     paddingVertical: spacing.md,
     borderRadius: borderRadius.md,
@@ -433,11 +438,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.xs,
+    minHeight: 44,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: `${colors.errorAlt}40`,
+    borderColor: hexToRgba(colors.errorAlt, TINT_ALPHA_SOFT),
   },
   deleteButtonText: {
     fontSize: fontSize.sm,

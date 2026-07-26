@@ -8,6 +8,7 @@ import {
   borderRadius,
 } from "../../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_SOFT } from "../../../utils/colors";
 import { DayMeal } from "../../../types/ai";
 
 interface MealHeaderProps {
@@ -27,7 +28,7 @@ export const MealHeader: React.FC<MealHeaderProps> = ({
       <View
         style={[
           styles.iconContainer,
-          { backgroundColor: `${mealConfig.colors[0]}20` },
+          { backgroundColor: hexToRgba(mealConfig.colors[0], TINT_ALPHA_SOFT) },
         ]}
       >
         <Ionicons
@@ -48,12 +49,14 @@ export const MealHeader: React.FC<MealHeaderProps> = ({
           </Text>
           {meal.isPersonalized && (
             <View style={[styles.aiBadge, styles.personalizedBadge]}>
-              <Text style={styles.personalizedBadgeText}>🎯 For You</Text>
+              <Ionicons name="ribbon-outline" size={rf(10)} color={colors.success.DEFAULT} style={styles.badgeIcon} />
+              <Text style={styles.personalizedBadgeText}>For You</Text>
             </View>
           )}
           {meal.aiGenerated && (
             <View style={styles.aiBadge}>
-              <Text style={styles.aiBadgeText}>✨ AI</Text>
+              <Ionicons name="sparkles" size={rf(10)} color={colors.primary[500]} style={styles.badgeIcon} />
+              <Text style={styles.aiBadgeText}>AI</Text>
             </View>
           )}
         </View>
@@ -116,10 +119,16 @@ const styles = StyleSheet.create({
     lineHeight: typography.fontSize.caption * 1.4,
   },
   aiBadge: {
-    backgroundColor: `${colors.primary[500]}20`,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(2),
+    backgroundColor: hexToRgba(colors.primary[500], TINT_ALPHA_SOFT),
     paddingHorizontal: spacing.sm,
     paddingVertical: rp(2),
     borderRadius: borderRadius.full,
+  },
+  badgeIcon: {
+    marginRight: rp(1),
   },
   aiBadgeText: {
     fontSize: typography.fontSize.micro,
@@ -127,7 +136,7 @@ const styles = StyleSheet.create({
     color: colors.primary[500],
   },
   personalizedBadge: {
-    backgroundColor: `${colors.success.DEFAULT}20`,
+    backgroundColor: hexToRgba(colors.success.DEFAULT, TINT_ALPHA_SOFT),
   },
   personalizedBadgeText: {
     fontSize: typography.fontSize.micro,

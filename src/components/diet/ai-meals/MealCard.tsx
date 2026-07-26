@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import {
   flatColors as colors,
   spacing,
@@ -14,6 +15,7 @@ import {
   typography,
 } from "../../../theme/aurora-tokens";
 import { rf, rh, rw, rs } from "../../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_SOFT } from "../../../utils/colors";
 
 /** Locally-defined type — original module `useAIMealsPanel` was removed. */
 interface MealGenerationOption {
@@ -44,18 +46,21 @@ export const MealCard: React.FC<MealCardProps> = ({
     >
       <View style={styles.mealCardContent}>
         <View
-          style={[styles.mealEmoji, { backgroundColor: option.color + "20" }]}
+          style={[styles.mealEmoji, { backgroundColor: hexToRgba(option.color, TINT_ALPHA_SOFT) }]}
         >
           <Text style={styles.mealEmojiText}>{option.emoji}</Text>
         </View>
 
         <View style={styles.mealInfo}>
-          <Text style={styles.mealTitle}>{option.title}</Text>
-          <Text style={styles.mealDescription}>{option.description}</Text>
+          <Text style={styles.mealTitle} numberOfLines={1}>{option.title}</Text>
+          <Text style={styles.mealDescription} numberOfLines={2}>{option.description}</Text>
 
           <View style={styles.mealMeta}>
-            <Text style={styles.mealTime}>⏱️ {option.estimatedTime}</Text>
-            <Text style={styles.mealSuggestions}>
+            <View style={styles.mealTimeRow}>
+              <Ionicons name="time-outline" size={rf(12)} color={colors.textMuted} />
+              <Text style={styles.mealTime}>{option.estimatedTime}</Text>
+            </View>
+            <Text style={styles.mealSuggestions} numberOfLines={1}>
               {option.suggestions.slice(0, 2).join(" • ")}
             </Text>
           </View>
@@ -131,6 +136,12 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
 
+  mealTimeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+
   mealTime: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
@@ -144,6 +155,7 @@ const styles = StyleSheet.create({
 
   generateButton: {
     paddingHorizontal: spacing.md,
+    minHeight: 44,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
     backgroundColor: colors.backgroundSecondary,

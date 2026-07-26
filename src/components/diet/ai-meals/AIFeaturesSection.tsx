@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import {
   flatColors as colors,
   spacing,
@@ -9,25 +10,22 @@ import {
 } from "../../../theme/aurora-tokens";
 import { rf } from "../../../utils/responsive";
 
+const FEATURES = [
+  { icon: "ribbon-outline" as const, text: "Goal-optimized nutrition" },
+  { icon: "restaurant-outline" as const, text: "Dietary preferences" },
+  { icon: "bar-chart-outline" as const, text: "Macro calculations" },
+  { icon: "swap-horizontal-outline" as const, text: "Variety & rotation" },
+];
+
 export const AIFeaturesSection: React.FC = () => {
   return (
     <View style={styles.featuresGrid}>
-      <View style={styles.featureItem}>
-        <Text style={styles.featureEmoji}>🎯</Text>
-        <Text style={styles.featureText}>Goal-optimized nutrition</Text>
-      </View>
-      <View style={styles.featureItem}>
-        <Text style={styles.featureEmoji}>🥗</Text>
-        <Text style={styles.featureText}>Dietary preferences</Text>
-      </View>
-      <View style={styles.featureItem}>
-        <Text style={styles.featureEmoji}>📊</Text>
-        <Text style={styles.featureText}>Macro calculations</Text>
-      </View>
-      <View style={styles.featureItem}>
-        <Text style={styles.featureEmoji}>🔄</Text>
-        <Text style={styles.featureText}>Variety & rotation</Text>
-      </View>
+      {FEATURES.map((feature) => (
+        <View key={feature.text} style={styles.featureItem}>
+          <Ionicons name={feature.icon} size={rf(16)} color={colors.primary} style={styles.featureIcon} />
+          <Text style={styles.featureText}>{feature.text}</Text>
+        </View>
+      ))}
     </View>
   );
 };
@@ -49,8 +47,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
   },
 
-  featureEmoji: {
-    fontSize: rf(16),
+  featureIcon: {
     marginRight: spacing.sm,
   },
 

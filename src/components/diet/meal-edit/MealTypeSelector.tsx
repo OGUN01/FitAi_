@@ -58,6 +58,7 @@ const styles = StyleSheet.create({
   },
   typeButton: {
     flex: 1,
+    minHeight: 44,
     paddingVertical: rh(12),
     paddingHorizontal: rw(16),
     borderRadius: rbr(12),
@@ -65,6 +66,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   typeButtonActive: {
     backgroundColor: colors.primary,

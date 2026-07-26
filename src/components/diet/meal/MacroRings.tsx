@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, typography, spacing } from "../../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_SOFT } from "../../../utils/colors";
 import { MiniProgressRing } from "../../ui/aurora/ProgressRing";
 import { macroColors } from "../../../hooks/useMealCard";
 import { DayMeal } from "../../../types/ai";
@@ -29,7 +30,7 @@ export const MacroRings: React.FC<MacroRingsProps> = ({
         <MiniProgressRing
           progress={macroPercentages.protein}
           color={macroColors.protein}
-          backgroundColor={`${macroColors.protein}20`}
+          backgroundColor={hexToRgba(macroColors.protein, TINT_ALPHA_SOFT)}
           showText={false}
           animated={true}
         />
@@ -46,7 +47,7 @@ export const MacroRings: React.FC<MacroRingsProps> = ({
         <MiniProgressRing
           progress={macroPercentages.carbs}
           color={macroColors.carbs}
-          backgroundColor={`${macroColors.carbs}20`}
+          backgroundColor={hexToRgba(macroColors.carbs, TINT_ALPHA_SOFT)}
           showText={false}
           animated={true}
         />
@@ -63,7 +64,7 @@ export const MacroRings: React.FC<MacroRingsProps> = ({
         <MiniProgressRing
           progress={macroPercentages.fat}
           color={macroColors.fat}
-          backgroundColor={`${macroColors.fat}20`}
+          backgroundColor={hexToRgba(macroColors.fat, TINT_ALPHA_SOFT)}
           showText={false}
           animated={true}
         />
@@ -117,7 +118,7 @@ const styles = StyleSheet.create({
     width: rw(32),
     height: rw(32),
     borderRadius: rw(16),
-    backgroundColor: `${colors.success.DEFAULT}20`,
+    backgroundColor: hexToRgba(colors.success.DEFAULT, TINT_ALPHA_SOFT),
     justifyContent: "center",
     alignItems: "center",
   },

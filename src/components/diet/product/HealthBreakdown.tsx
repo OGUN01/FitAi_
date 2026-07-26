@@ -34,7 +34,7 @@ export const HealthBreakdown: React.FC<HealthBreakdownProps> = ({
             <Text style={styles.breakdownScoreText}>{assessment.score}</Text>
           </View>
         </View>
-        <Text style={styles.breakdownMessage}>{assessment.message}</Text>
+        <Text style={styles.breakdownMessage} numberOfLines={3}>{assessment.message}</Text>
       </View>
     ))}
   </View>

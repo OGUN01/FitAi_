@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../../ui";
 import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf } from "../../../utils/responsive";
@@ -7,7 +8,10 @@ import { rf } from "../../../utils/responsive";
 export const RecipeAIFeatures: React.FC = () => {
   return (
     <Card style={styles.aiCard} variant="outlined">
-      <Text style={styles.aiTitle}>🤖 AI Recipe Intelligence</Text>
+      <View style={styles.aiTitleRow}>
+        <Ionicons name="sparkles" size={rf(18)} color={colors.primary} />
+        <Text style={styles.aiTitle}>AI Recipe Intelligence</Text>
+      </View>
       <View style={styles.aiFeatures}>
         <Text style={styles.aiFeature}>• Personalized to your profile</Text>
         <Text style={styles.aiFeature}>• Accurate nutrition calculations</Text>
@@ -28,6 +32,11 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text,
+  },
+  aiTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
     marginBottom: spacing.sm,
   },
 

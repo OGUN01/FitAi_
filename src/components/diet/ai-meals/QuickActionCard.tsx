@@ -34,8 +34,8 @@ export const QuickActionCard: React.FC<QuickActionCardProps> = ({
       disabled={isGenerating}
     >
       <Text style={styles.quickActionEmoji}>{action.emoji}</Text>
-      <Text style={styles.quickActionTitle}>{action.title}</Text>
-      <Text style={styles.quickActionDescription}>{action.description}</Text>
+      <Text style={styles.quickActionTitle} numberOfLines={1}>{action.title}</Text>
+      <Text style={styles.quickActionDescription} numberOfLines={2}>{action.description}</Text>
     </TouchableOpacity>
   );
 };
@@ -44,6 +44,7 @@ const styles = StyleSheet.create({
   quickActionCard: {
     flex: 1,
     minWidth: "47%",
+    minHeight: 44,
     backgroundColor: colors.background,
     borderRadius: borderRadius.md,
     padding: spacing.md,

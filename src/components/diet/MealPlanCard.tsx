@@ -12,6 +12,7 @@ import {
 } from '../../theme/aurora-tokens';
 import type { MealPlanStatus } from './dietViewModel';
 import { rf } from '../../utils/responsive';
+import { hexToRgba, TINT_ALPHA_SOFT } from '../../utils/colors';
 
 export interface MealPlanCardProps {
   meal: DayMeal;
@@ -25,17 +26,17 @@ const statusConfig = {
   completed: {
     label: 'Completed',
     color: colors.success,
-    background: `${colors.success}20`,
+    background: hexToRgba(colors.success, TINT_ALPHA_SOFT),
   },
   in_progress: {
     label: 'In Progress',
     color: colors.info,
-    background: `${colors.info}20`,
+    background: hexToRgba(colors.info, TINT_ALPHA_SOFT),
   },
   upcoming: {
     label: 'Upcoming',
     color: colors.purple,
-    background: `${colors.purple}20`,
+    background: hexToRgba(colors.purple, TINT_ALPHA_SOFT),
   },
 } as const;
 

@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../utils/colors";
 
 interface QuickAction {
   id: string;
@@ -111,7 +112,7 @@ export const DietQuickActions: React.FC<DietQuickActionsProps> = React.memo(
               <View
                 style={[
                   styles.iconCircle,
-                  { backgroundColor: `${action.color}15` },
+                  { backgroundColor: hexToRgba(action.color, TINT_ALPHA_LOW) },
                 ]}
               >
                 <Ionicons

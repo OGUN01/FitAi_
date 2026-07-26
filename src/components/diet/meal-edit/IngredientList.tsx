@@ -21,7 +21,7 @@ export const IngredientList: React.FC<IngredientListProps> = ({
       {ingredients.map((item, index) => (
         <View key={index} style={styles.ingredientRow}>
           <View style={styles.ingredientInfo}>
-            <Text style={styles.ingredientName}>{item.name}</Text>
+            <Text style={styles.ingredientName} numberOfLines={2}>{item.name}</Text>
             <View style={styles.quantityControl}>
               <TouchableOpacity
                 onPress={() =>

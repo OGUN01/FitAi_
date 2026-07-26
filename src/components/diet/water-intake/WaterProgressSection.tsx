@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 
 interface WaterProgressSectionProps {
   currentLiters: number;
@@ -60,7 +61,7 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: rf(14),
-    color: "rgba(255,255,255,0.7)",
+    color: hexToRgba(colors.white, 0.7),
   },
   progressValue: {
     fontSize: rf(16),

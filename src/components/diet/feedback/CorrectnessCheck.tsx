@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   TextInput,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import {
   flatColors as colors,
   spacing,
@@ -13,6 +14,7 @@ import {
   flatFontSize as fontSize,
 } from "../../../theme/aurora-tokens";
 import { Card } from "../../ui";
+import { rf } from "../../../utils/responsive";
 import { FoodFeedback } from "./types";
 
 interface CorrectnessCheckProps {
@@ -39,14 +41,23 @@ export const CorrectnessCheck: React.FC<CorrectnessCheckProps> = ({
               correctName: undefined,
             })
           }
+          accessibilityRole="button"
+          accessibilityLabel="Food name is correct"
+          accessibilityState={{ selected: feedback.isCorrect }}
         >
+          <Ionicons
+            name="checkmark-circle-outline"
+            size={rf(16)}
+            color={feedback.isCorrect ? colors.white : colors.text}
+            style={styles.buttonIcon}
+          />
           <Text
             style={[
               styles.correctnessButtonText,
               feedback.isCorrect && styles.correctnessButtonTextActive,
             ]}
           >
-            ✅ Correct
+            Correct
           </Text>
         </TouchableOpacity>
 
@@ -56,14 +67,23 @@ export const CorrectnessCheck: React.FC<CorrectnessCheckProps> = ({
             !feedback.isCorrect && styles.correctnessButtonActive,
           ]}
           onPress={() => onFeedbackChange({ isCorrect: false })}
+          accessibilityRole="button"
+          accessibilityLabel="Food name is incorrect"
+          accessibilityState={{ selected: !feedback.isCorrect }}
         >
+          <Ionicons
+            name="close-circle-outline"
+            size={rf(16)}
+            color={!feedback.isCorrect ? colors.white : colors.text}
+            style={styles.buttonIcon}
+          />
           <Text
             style={[
               styles.correctnessButtonText,
               !feedback.isCorrect && styles.correctnessButtonTextActive,
             ]}
           >
-            ❌ Incorrect
+            Incorrect
           </Text>
         </TouchableOpacity>
       </View>
@@ -105,13 +125,21 @@ const styles = StyleSheet.create({
 
   correctnessButton: {
     flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    minHeight: 44,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.background,
-    alignItems: "center",
+  },
+
+  buttonIcon: {
+    marginRight: spacing.xxs,
   },
 
   correctnessButtonActive: {

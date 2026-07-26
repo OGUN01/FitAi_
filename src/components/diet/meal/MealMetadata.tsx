@@ -8,6 +8,7 @@ import {
   borderRadius,
 } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_SOFT } from "../../../utils/colors";
 import { DayMeal } from "../../../types/ai";
 
 interface MealMetadataProps {
@@ -76,10 +77,10 @@ export const MealMetadata: React.FC<MealMetadataProps> = ({
               {
                 backgroundColor:
                   meal.difficulty === "easy"
-                    ? `${colors.success.DEFAULT}20`
+                    ? hexToRgba(colors.success.DEFAULT, TINT_ALPHA_SOFT)
                     : meal.difficulty === "medium"
-                      ? `${colors.warning.DEFAULT}20`
-                      : `${colors.error.DEFAULT}20`,
+                      ? hexToRgba(colors.warning.DEFAULT, TINT_ALPHA_SOFT)
+                      : hexToRgba(colors.error.DEFAULT, TINT_ALPHA_SOFT),
               },
             ]}
           >

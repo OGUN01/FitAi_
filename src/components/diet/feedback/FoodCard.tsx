@@ -17,7 +17,7 @@ export const FoodCard: React.FC<FoodCardProps> = ({ food }) => {
   return (
     <Card style={styles.foodCard}>
       <View style={styles.foodHeader}>
-        <Text style={styles.foodName}>{food.name}</Text>
+        <Text style={styles.foodName} numberOfLines={2}>{food.name}</Text>
         <View style={styles.confidenceBadge}>
           <Text style={styles.confidenceText}>
             {food.confidence}% confidence
@@ -28,21 +28,21 @@ export const FoodCard: React.FC<FoodCardProps> = ({ food }) => {
       <View style={styles.detailsGrid}>
         <View style={styles.detailItem}>
           <Text style={styles.detailLabel}>Calories</Text>
-          <Text style={styles.detailValue}>
+          <Text style={styles.detailValue} numberOfLines={1}>
             {Math.round(food.nutrition.calories)}
           </Text>
         </View>
         <View style={styles.detailItem}>
           <Text style={styles.detailLabel}>Portion</Text>
-          <Text style={styles.detailValue}>{food.userGrams ?? food.estimatedGrams}g</Text>
+          <Text style={styles.detailValue} numberOfLines={1}>{food.userGrams ?? food.estimatedGrams}g</Text>
         </View>
         <View style={styles.detailItem}>
           <Text style={styles.detailLabel}>Cuisine</Text>
-          <Text style={styles.detailValue}>{food.cuisine}</Text>
+          <Text style={styles.detailValue} numberOfLines={1}>{food.cuisine}</Text>
         </View>
         <View style={styles.detailItem}>
           <Text style={styles.detailLabel}>Category</Text>
-          <Text style={styles.detailValue}>{food.category}</Text>
+          <Text style={styles.detailValue} numberOfLines={1}>{food.category}</Text>
         </View>
       </View>
     </Card>

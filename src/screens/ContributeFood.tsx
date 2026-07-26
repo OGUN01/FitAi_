@@ -21,6 +21,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../services/supabase";
 import { colors, spacing, borderRadius } from "../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../utils/responsive";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../utils/colors";
 import { AuroraBackground } from "../components/ui/aurora";
 import { AnimatedPressable } from "../components/ui/aurora";
 import { AuroraSpinner } from "../components/ui/aurora";
@@ -198,6 +199,7 @@ const fieldStyles = StyleSheet.create({
     borderRadius: rbr(borderRadius.lg),
     paddingHorizontal: rp(14),
     paddingVertical: rp(12),
+    minHeight: 44,
     fontSize: rf(15),
     color: colors.text.primary,
   },
@@ -553,8 +555,8 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.glass.border,
   },
   headerBackBtn: {
-    width: rw(44),
-    height: rw(44),
+    width: Math.max(rw(44), 44),
+    height: Math.max(rw(44), 44),
     borderRadius: rbr(borderRadius.full),
     backgroundColor: colors.glass.background,
     justifyContent: "center",
@@ -571,7 +573,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   headerSpacer: {
-    width: rw(44),
+    width: Math.max(rw(44), 44),
   },
   // Scroll
   scrollView: {
@@ -589,7 +591,7 @@ const styles = StyleSheet.create({
     gap: rp(10),
     backgroundColor: colors.background.secondary,
     borderWidth: 1,
-    borderColor: `${colors.primary.DEFAULT}30`,
+    borderColor: hexToRgba(colors.primary.DEFAULT, TINT_ALPHA_MEDIUM),
     borderRadius: rbr(borderRadius.xl),
     paddingHorizontal: rp(14),
     paddingVertical: rp(12),
@@ -642,9 +644,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: rp(8),
-    backgroundColor: `${colors.error.light}15`,
+    backgroundColor: hexToRgba(colors.error.light, TINT_ALPHA_LOW),
     borderWidth: 1,
-    borderColor: `${colors.error.light}40`,
+    borderColor: hexToRgba(colors.error.light, TINT_ALPHA_MEDIUM),
     borderRadius: rbr(borderRadius.lg),
     padding: rp(12),
     marginBottom: rp(16),

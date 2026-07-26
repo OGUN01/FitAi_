@@ -1,12 +1,15 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import {
+  flatColors as colors,
   spacing,
   borderRadius,
   flatFontSize as fontSize,
   typography,
 } from "../../../theme/aurora-tokens";
 import { rf } from "../../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
 
 interface ProfileStatusBannerProps {
   status: "complete" | "partial" | "incomplete";
@@ -17,14 +20,14 @@ export const ProfileStatusBanner: React.FC<ProfileStatusBannerProps> = ({
   status,
   message,
 }) => {
-  const backgroundColor = status === "complete" ? "#dcfce7" : "#fef3c7";
-  const textColor = status === "complete" ? "#15803d" : "#92400e";
-  const icon = status === "complete" ? "✅" : "⚠️";
+  const isComplete = status === "complete";
+  const accentColor = isComplete ? colors.success : colors.warning;
+  const iconName = isComplete ? "checkmark-circle-outline" : "alert-circle-outline";
 
   return (
-    <View style={[styles.statusBanner, { backgroundColor }]}>
-      <Text style={styles.statusIcon}>{icon}</Text>
-      <Text style={[styles.statusText, { color: textColor }]}>{message}</Text>
+    <View style={[styles.statusBanner, { backgroundColor: hexToRgba(accentColor, TINT_ALPHA_LOW) }]}>
+      <Ionicons name={iconName} size={rf(16)} color={accentColor} style={styles.statusIcon} />
+      <Text style={[styles.statusText, { color: accentColor }]}>{message}</Text>
     </View>
   );
 };
@@ -36,10 +39,11 @@ const styles = StyleSheet.create({
     margin: spacing.lg,
     padding: spacing.md,
     borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: "transparent",
   },
 
   statusIcon: {
-    fontSize: rf(16),
     marginRight: spacing.sm,
   },
 

@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import {
   flatColors as colors,
   spacing,
@@ -43,15 +44,15 @@ export const AccuracyRating: React.FC<AccuracyRatingProps> = ({
             key={star}
             onPress={() => onRatingChange(star as 1 | 2 | 3 | 4 | 5)}
             style={styles.starButton}
+            hitSlop={{ top: 10, bottom: 10, left: 5, right: 5 }}
+            accessibilityRole="button"
+            accessibilityLabel={`${star} star${star > 1 ? "s" : ""}`}
           >
-            <Text
-              style={[
-                styles.star,
-                { color: star <= rating ? colors.amberBright : "#d1d5db" },
-              ]}
-            >
-              ⭐
-            </Text>
+            <Ionicons
+              name={star <= rating ? "star" : "star-outline"}
+              size={rf(28)}
+              color={star <= rating ? colors.amberBright : colors.textMuted}
+            />
           </TouchableOpacity>
         ))}
       </View>
@@ -77,14 +78,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: spacing.sm,
+    gap: spacing.xs,
   },
 
   starButton: {
-    padding: spacing.xs,
-  },
-
-  star: {
-    fontSize: rf(24),
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   ratingLabel: {

@@ -82,7 +82,7 @@ export default function CookingSessionScreen({
         console.warn("completeMeal returned false — meal completion not recorded", meal.id);
       }
     } catch (error) {
-      console.error("❌ Error tracking meal completion:", error);
+      console.error("Error tracking meal completion:", error);
     }
 
     const completionMessage = mealMotivationService.getCompletionMessage(
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     paddingVertical: rp(16),
     backgroundColor: colors.background.secondary,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.08)",
+    borderBottomColor: colors.glass.border,
   },
   headerContent: {
     flex: 1,

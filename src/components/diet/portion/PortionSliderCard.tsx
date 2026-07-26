@@ -1,8 +1,9 @@
 import React from "react";
 import { View, Text, StyleSheet, TextInput, Keyboard } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
-import { rh, rw } from "../../../utils/responsive";
+import { rh, rw, rf } from "../../../utils/responsive";
 import { CustomSlider } from "./CustomSlider";
 import { PortionAdjustment } from "../../../hooks/usePortionAdjustment";
 
@@ -56,9 +57,12 @@ export const PortionSliderCard: React.FC<PortionSliderCardProps> = ({
       </View>
 
       <View style={styles.manualInputContainer}>
-        <Text style={styles.manualInputLabel}>
-          ⚖️ Have a scale? Enter exact grams:
-        </Text>
+        <View style={styles.manualInputLabelRow}>
+          <Ionicons name="scale-outline" size={rf(14)} color={colors.textSecondary} />
+          <Text style={styles.manualInputLabel}>
+            Have a scale? Enter exact grams:
+          </Text>
+        </View>
         <View style={styles.manualInputRow}>
           <TextInput
             style={styles.manualInput}
@@ -137,8 +141,14 @@ const styles = StyleSheet.create({
   manualInputLabel: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
+    flex: 1,
+  },
+  manualInputLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
     marginBottom: spacing.sm,
-    textAlign: "center",
+    justifyContent: "center",
   },
   manualInputRow: {
     flexDirection: "row",

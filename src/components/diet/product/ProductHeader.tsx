@@ -22,7 +22,7 @@ export const ProductHeader: React.FC<ProductHeaderProps> = ({ product }) => (
       />
     )}
     <View style={styles.productInfo}>
-      <Text style={styles.productName}>{product.name}</Text>
+      <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
       {product.brand && (
         <Text style={styles.productBrand}>{product.brand}</Text>
       )}

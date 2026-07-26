@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rh } from "../../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
 
 interface RecipePrompt {
   id: string;
@@ -137,7 +138,7 @@ const styles = StyleSheet.create({
   },
 
   textInputFilled: {
-    backgroundColor: colors.primary + "08",
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
   },
 
   examplesLabel: {

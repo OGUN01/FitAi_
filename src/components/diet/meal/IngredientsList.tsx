@@ -8,6 +8,7 @@ import {
   borderRadius,
 } from "../../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_SOFT } from "../../../utils/colors";
 import { MealItem } from "../../../types/ai";
 import { macroColors } from "../../../hooks/useMealCard";
 
@@ -63,7 +64,7 @@ export const IngredientsList: React.FC<IngredientsListProps> = ({
           style={[
             styles.expandButton,
             isExpanded && {
-              backgroundColor: `${mealConfig.colors[0]}20`,
+              backgroundColor: hexToRgba(mealConfig.colors[0], TINT_ALPHA_SOFT),
             },
           ]}
         >

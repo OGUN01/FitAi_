@@ -15,6 +15,7 @@ import { GlassCard } from "../../components/ui/aurora/GlassCard";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
 import { rf, rw, rp, rh } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 import { Button } from "../../components/ui";
 import { useAuth } from "../../hooks/useAuth";
 import {
@@ -596,8 +597,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           >
             <View style={styles.dailyMealRow}>
               <View style={styles.dailyMealInfo}>
-                <Text style={styles.dailyMealName}>{meal.name || meal.type}</Text>
-                <Text style={styles.dailyMealMacros}>
+                <Text style={styles.dailyMealName} numberOfLines={1}>{meal.name || meal.type}</Text>
+                <Text style={styles.dailyMealMacros} numberOfLines={1}>
                   {meal.totalCalories || 0} cal |{" "}
                   {Math.round(meal.totalMacros?.protein || 0)}g P |{" "}
                   {Math.round(meal.totalMacros?.carbohydrates || 0)}g C |{" "}
@@ -1238,26 +1239,9 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   bottomSpacing: { height: rh(80) },
-  manualEntryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.sm,
-    borderRadius: borderRadius.md,
-    gap: spacing.xs,
-  },
-  manualEntryText: {
-    fontSize: fontSize.xs,
-    color: colors.text,
-    fontWeight: "500" as const,
-    opacity: 0.7,
-  },
   barcodeLoadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // TODO: use theme overlay color when added
+    backgroundColor: colors.overlay,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 999,
@@ -1276,7 +1260,7 @@ const styles = StyleSheet.create({
   },
   manualEntryOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // TODO: use theme overlay color when added
+    backgroundColor: colors.overlay,
     justifyContent: "center",
   },
   dailyMealsSection: {
@@ -1320,10 +1304,10 @@ const styles = StyleSheet.create({
     gap: spacing.xxs,
   },
   dailyMealLoggedBadge: {
-    backgroundColor: `${colors.primary}18`,
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
   },
   dailyMealPlannedBadge: {
-    backgroundColor: `${colors.warning}18`,
+    backgroundColor: hexToRgba(colors.warning, TINT_ALPHA_LOW),
   },
   dailyMealBadgeText: {
     fontSize: fontSize.xs,
@@ -1367,6 +1351,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
     padding: spacing.md,
+    minHeight: 44,
   },
   optionText: {
     fontSize: fontSize.md,
@@ -1386,11 +1371,11 @@ const styles = StyleSheet.create({
   },
   // Label scan grams input
   labelGramsContainer: {
-    backgroundColor: `${colors.primary}12`,
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
     borderRadius: borderRadius.md,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: `${colors.primary}30`,
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
     marginBottom: spacing.sm,
   },
   labelGramsLabel: {
@@ -1407,7 +1392,7 @@ const styles = StyleSheet.create({
   },
   labelGramsInputField: {
     width: rw(90),
-    height: rh(40),
+    height: Math.max(rh(40), 44),
     backgroundColor: colors.surface,
     borderRadius: borderRadius.sm,
     paddingHorizontal: rp(12),

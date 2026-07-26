@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rp } from "../../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../../utils/colors";
 
 interface QuickAddOptionsProps {
   onQuickAdd: (amountML: number) => void;
@@ -32,7 +33,7 @@ export const QuickAddOptions: React.FC<QuickAddOptionsProps> = ({
             activeOpacity={0.7}
           >
             <LinearGradient
-              colors={[`${colors.primary}33`, `${colors.primaryLight}33`]}
+              colors={[hexToRgba(colors.primary, TINT_ALPHA_MEDIUM), hexToRgba(colors.primaryLight, TINT_ALPHA_MEDIUM)]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.quickOptionGradient}
@@ -68,7 +69,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: `${colors.white}B3`,
+    color: hexToRgba(colors.white, 0.7),
     marginBottom: rp(12),
   },
   quickOptionsContainer: {
@@ -85,7 +86,7 @@ const styles = StyleSheet.create({
     paddingVertical: rp(20),
     borderRadius: borderRadius.xl,
     borderWidth: 1,
-    borderColor: `${colors.primary}4D`,
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
   },
   quickOptionLabel: {
     fontSize: rf(14),
@@ -98,10 +99,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: rp(8),
+    minHeight: 44,
     paddingVertical: rp(14),
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: `${colors.primary}4D`,
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
     borderStyle: "dashed",
   },
   customButtonText: {

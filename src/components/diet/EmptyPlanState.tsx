@@ -12,6 +12,7 @@ import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../utils/colors";
 
 interface EmptyPlanStateProps {
   experienceLevel?: "beginner" | "intermediate" | "advanced";
@@ -194,7 +195,7 @@ const styles = StyleSheet.create({
     width: rw(36),
     height: rw(36),
     borderRadius: rw(18),
-    backgroundColor: `${colors.errorLight}26`,
+    backgroundColor: hexToRgba(colors.errorLight, 0.15),
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
@@ -217,7 +218,7 @@ const styles = StyleSheet.create({
   },
   previewContainer: {
     width: "100%",
-    backgroundColor: `${colors.primary}14`,
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     marginBottom: spacing.lg,
@@ -264,6 +265,7 @@ const styles = StyleSheet.create({
     width: "100%",
     borderRadius: borderRadius.lg,
     overflow: "hidden",
+    minHeight: 44,
   },
   generateButtonGradient: {
     flexDirection: "row",
@@ -272,6 +274,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: spacing.md + 2,
     paddingHorizontal: spacing.xl,
+    minHeight: 44,
   },
   generateButtonText: {
     fontSize: rf(15),

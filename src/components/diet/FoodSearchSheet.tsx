@@ -38,6 +38,7 @@ import {
 import { rf, rh, rw, rp, rbr } from "../../utils/responsive";
 import { sqliteFood, type SQLiteFoodResult } from "../../services/sqliteFood";
 import { INDIAN_FOOD_DATABASE, type IndianFoodData } from "../../data/indianFoodDatabase";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../utils/colors";
 
 /** Normalised result handed back to the parent. */
 export interface FoodSearchHit {
@@ -412,10 +413,10 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
   },
   sqliteTag: {
-    backgroundColor: colors.infoTint ?? colors.backgroundTertiary,
+    backgroundColor: hexToRgba(colors.info, TINT_ALPHA_LOW),
   },
   indianTag: {
-    backgroundColor: colors.warningTint ?? colors.backgroundTertiary,
+    backgroundColor: colors.warningTint,
   },
   sourceTagText: {
     color: colors.textSecondary,

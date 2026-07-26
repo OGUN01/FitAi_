@@ -5,6 +5,7 @@ import { GlassCard } from "../ui/aurora/GlassCard";
 import { LargeProgressRing } from "../ui/aurora/ProgressRing";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { rf, rh, rw, rbr } from "../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 
 interface NutritionSummaryCardProps {
   nutritionTargets: {
@@ -232,13 +233,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
-    backgroundColor: `${colors.warning}18`,
+    backgroundColor: hexToRgba(colors.warning, TINT_ALPHA_LOW),
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: `${colors.warning}30`,
+    borderColor: hexToRgba(colors.warning, TINT_ALPHA_MEDIUM),
   },
   defaultsNoticeText: {
     flex: 1,
@@ -320,28 +321,5 @@ const styles = StyleSheet.create({
     height: rh(6),
     borderRadius: rbr(3),
     minWidth: rw(4),
-  },
-  emptyStateContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: rh(4),
-    paddingHorizontal: rw(4),
-  },
-  emptyStateIcon: {
-    fontSize: rf(32),
-    marginBottom: rh(8),
-  },
-  emptyStateTitle: {
-    fontSize: rf(14),
-    fontWeight: "600",
-    color: colors.textSecondary,
-    textAlign: "center",
-    lineHeight: rf(20),
-    marginBottom: rh(8),
-  },
-  emptyStateAction: {
-    fontSize: rf(13),
-    fontWeight: "700",
-    color: colors.primary,
   },
 });
