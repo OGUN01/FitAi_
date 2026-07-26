@@ -2,7 +2,7 @@
 // Individual achievement display with progress and celebration
 
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import {
   Achievement,
   UserAchievement,
@@ -11,6 +11,7 @@ import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rh, rw, rs, rbr, rp } from "../../utils/responsive";
 import GlassCard from "../ui/GlassCard";
 import { Ionicons } from "@expo/vector-icons";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 
 interface AchievementCardProps {
   achievement: Achievement;
@@ -46,9 +47,9 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
   const tierColor = getTierColor(achievement.tier);
 
   return (
-    <TouchableOpacity
+    <AnimatedPressable
       onPress={onPress}
-      activeOpacity={0.8}
+      scaleValue={0.97}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       accessibilityLabel={`${achievement.title}, ${achievement.tier} tier achievement. ${isCompleted ? "Earned" : "Locked"}.`}
       accessibilityRole="button"
@@ -72,7 +73,7 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
                 <View style={styles.checkBadge}>
                   <Ionicons
                     name="checkmark-circle"
-                    size={16}
+                    size={rf(16)}
                     color={colors.success}
                   />
                 </View>
@@ -135,7 +136,7 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
           )}
         </View>
       </GlassCard>
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 };
 

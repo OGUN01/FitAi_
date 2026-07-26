@@ -15,9 +15,10 @@ import { HealthSummaryCard } from "../../components/settings/HealthSummaryCard";
 import { DataTypesSection } from "../../components/settings/DataTypesSection";
 import { AdditionalSettingsCard } from "../../components/settings/AdditionalSettingsCard";
 import { colors, spacing } from "../../theme/aurora-tokens";
-import { rf, rp, rbr, rs } from '../../utils/responsive';
+import { rf, rp, rbr, rs, rw } from '../../utils/responsive';
 import { AuroraBackground } from "../../components/ui/aurora";
 import { AnimatedPressable } from "../../components/ui/aurora";
+import { haptics } from "../../utils/haptics";
 
 interface HealthKitSettingsScreenProps {
   onBack: () => void;
@@ -118,24 +119,27 @@ export const HealthKitSettingsScreen: React.FC<
         {/* Header */}
         <View style={styles.header}>
           <AnimatedPressable
-            onPress={onBack}
+            onPress={() => {
+              haptics.light();
+              onBack();
+            }}
             scaleValue={0.9}
-            springConfig="snappy"
-            hapticType="light"
-            accessibilityRole="button"
-            accessibilityLabel="Back"
-            style={styles.headerBackButton}
+            hapticFeedback={false}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="arrow-back" size={rs(24)} color={colors.text.primary} />
+            <View style={styles.backButton}>
+              <Ionicons name="chevron-back" size={rf(20)} color={colors.text.primary} />
+            </View>
           </AnimatedPressable>
-          <Text style={styles.headerTitle}>
-            HealthKit Settings
-          </Text>
-          <Ionicons
-            name="fitness-outline"
-            size={rs(24)}
-            color={colors.primary.DEFAULT}
-          />
+          <View style={styles.headerCenter}>
+            <Ionicons
+              name="heart-outline"
+              size={rf(18)}
+              color={colors.primary.DEFAULT}
+            />
+            <Text style={styles.headerTitle}>HealthKit Settings</Text>
+          </View>
+          <View style={styles.headerSpacer} />
         </View>
 
         <ScrollView style={styles.scrollArea}>
@@ -231,22 +235,30 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    padding: rp(spacing.lg),
-    borderBottomWidth: 1,
-    borderBottomColor: colors.glass.border,
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
-  headerBackButton: {
-    marginRight: rp(spacing.lg),
-    minWidth: 44,
-    minHeight: 44,
-    alignItems: "center",
+  backButton: {
+    width: rw(40),
+    height: rw(40),
+    borderRadius: rbr(20),
+    backgroundColor: colors.glass.border,
     justifyContent: "center",
+    alignItems: "center",
+  },
+  headerCenter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   headerTitle: {
-    fontSize: rf(20),
-    fontWeight: "bold",
+    fontSize: rf(18),
+    fontWeight: "700",
     color: colors.text.primary,
-    flex: 1,
+  },
+  headerSpacer: {
+    width: rw(40),
   },
   scrollArea: {
     flex: 1,

@@ -4,10 +4,11 @@
  */
 
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
-import { rh, rw } from '../../utils/responsive';
+import { rh, rw, rf } from '../../utils/responsive';
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 
 
 interface ErrorFallbackProps {
@@ -33,9 +34,9 @@ export const ErrorFallback: React.FC<ErrorFallbackProps> = ({
       <Text style={styles.message}>{message}</Text>
 
       {onRetry && (
-        <TouchableOpacity style={styles.button} onPress={onRetry} accessibilityRole="button" accessibilityLabel={retryText}>
+        <AnimatedPressable style={styles.button} onPress={onRetry} scaleValue={0.95} accessibilityRole="button" accessibilityLabel={retryText}>
           <Text style={styles.buttonText}>{retryText}</Text>
-        </TouchableOpacity>
+        </AnimatedPressable>
       )}
     </View>
   );
@@ -106,9 +107,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       <Text style={styles.message}>{message}</Text>
 
       {onAction && actionText && (
-        <TouchableOpacity style={styles.button} onPress={onAction} accessibilityRole="button" accessibilityLabel={actionText}>
+        <AnimatedPressable style={styles.button} onPress={onAction} scaleValue={0.95} accessibilityRole="button" accessibilityLabel={actionText}>
           <Text style={styles.buttonText}>{actionText}</Text>
-        </TouchableOpacity>
+        </AnimatedPressable>
       )}
     </View>
   );
@@ -136,7 +137,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: "center",
     marginBottom: spacing.lg,
-    lineHeight: 22,
+    lineHeight: rf(22),
   },
 
   button: {

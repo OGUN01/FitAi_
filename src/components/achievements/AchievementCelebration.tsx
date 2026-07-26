@@ -6,7 +6,6 @@ import {
   View,
   Text,
   Modal,
-  Pressable,
   Animated,
   useWindowDimensions,
   PanResponder,
@@ -17,6 +16,7 @@ import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rh } from "../../utils/responsive";
 import { hexToRgba, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 import useAchievementStore from "../../stores/achievementStore";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 
 interface AchievementCelebrationProps {
   visible: boolean;
@@ -336,15 +336,16 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
             </View>
 
             {/* Close Button */}
-            <Pressable
+            <AnimatedPressable
               onPress={handleClose}
+              scaleValue={0.95}
               style={styles.closeButton}
               accessibilityRole="button"
               accessibilityLabel="Dismiss celebration"
               accessibilityHint="Closes the achievement celebration"
             >
               <Text style={styles.closeButtonText}>Awesome!</Text>
-            </Pressable>
+            </AnimatedPressable>
 
             {/* Swipe Indicator */}
             <View style={styles.swipeIndicatorContainer}>

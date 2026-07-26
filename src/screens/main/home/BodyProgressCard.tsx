@@ -9,7 +9,7 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassCard } from '../../../components/ui/aurora/GlassCard';
 import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
@@ -58,8 +58,9 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(({
     <View>
       <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
         {/* Header */}
-        <Pressable
+        <AnimatedPressable
           onPress={onPress}
+          scaleValue={0.98}
           accessibilityRole="button"
           accessibilityLabel="View Progress"
           testID="progress-card"
@@ -75,7 +76,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(({
               <Text style={[styles.trendText, { color: trendInfo.color }]}>{trendInfo.label}</Text>
             </View>
           )}
-        </Pressable>
+        </AnimatedPressable>
 
         {hasData ? (
           <>

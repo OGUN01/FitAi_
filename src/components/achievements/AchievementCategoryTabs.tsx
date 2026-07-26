@@ -1,7 +1,6 @@
 import React from "react";
 import {
   ScrollView,
-  TouchableOpacity,
   Text,
   StyleSheet,
   View,
@@ -9,6 +8,8 @@ import {
 import { flatColors as colors } from "../../theme/aurora-tokens";
 import { AchievementCategory } from "../../services/achievements/types";
 import { rh, rw, rf, rbr } from "../../utils/responsive";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+import { haptics } from "../../utils/haptics";
 
 interface AchievementCategoryTabsProps {
   selectedCategory: AchievementCategory | "all";
@@ -41,11 +42,15 @@ export const AchievementCategoryTabs: React.FC<
         {CATEGORIES.map((category) => {
           const isSelected = selectedCategory === category.id;
           return (
-            <TouchableOpacity
+            <AnimatedPressable
               key={category.id}
               style={[styles.tab, isSelected && styles.selectedTab]}
-              onPress={() => onSelectCategory(category.id)}
-              activeOpacity={0.7}
+              onPress={() => {
+                haptics.light();
+                onSelectCategory(category.id);
+              }}
+              scaleValue={0.95}
+              hapticFeedback={false}
               accessibilityRole="tab"
               accessibilityState={{ selected: isSelected }}
               accessibilityLabel={category.label}
@@ -56,7 +61,7 @@ export const AchievementCategoryTabs: React.FC<
               >
                 {category.label}
               </Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           );
         })}
       </ScrollView>

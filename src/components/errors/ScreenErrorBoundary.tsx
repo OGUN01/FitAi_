@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
-import { rh, rw } from '../../utils/responsive';
+import { rh, rw, rf } from '../../utils/responsive';
 
 
 interface Props {
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: "center",
     marginBottom: spacing.xl,
-    lineHeight: 22,
+    lineHeight: rf(22),
   },
 
   button: {

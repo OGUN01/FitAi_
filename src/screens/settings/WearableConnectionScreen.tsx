@@ -69,15 +69,23 @@ export const WearableConnectionScreen: React.FC<
               haptics.light();
               onBack?.();
             }}
-            style={styles.backButton}
             scaleValue={0.9}
             hapticFeedback={false}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="arrow-back" size={rf(24)} color={colors.text} />
+            <View style={styles.backButton}>
+              <Ionicons name="chevron-back" size={rf(20)} color={colors.text} />
+            </View>
           </AnimatedPressable>
-          <Text style={styles.headerTitle}>Connect Wearables</Text>
-          <View style={styles.headerRight} />
+          <View style={styles.headerCenter}>
+            <Ionicons
+              name="watch-outline"
+              size={rf(18)}
+              color={colors.primary}
+            />
+            <Text style={styles.headerTitle}>Connect Wearables</Text>
+          </View>
+          <View style={styles.headerSpacer} />
         </View>
 
         <ScrollView
@@ -159,27 +167,30 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
   },
   backButton: {
     width: rw(40),
     height: rw(40),
     borderRadius: rbr(20),
-    backgroundColor: colors.glassHighlight,
+    backgroundColor: colors.glassBorder,
     justifyContent: "center",
     alignItems: "center",
   },
+  headerCenter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
   headerTitle: {
-    flex: 1,
-    fontSize: rf(20),
+    fontSize: rf(18),
     fontWeight: "700",
     color: colors.text,
-    textAlign: "center",
   },
-  headerRight: {
+  headerSpacer: {
     width: rw(40),
-    alignItems: "flex-end",
   },
   scrollView: {
     flex: 1,

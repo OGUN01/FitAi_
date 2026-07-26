@@ -131,7 +131,11 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   fullWidth: {
-    width: "100%",
+    // Use flex:1 instead of width:"100%" so the button sizes correctly when
+    // placed inside a flex row alongside other elements (known issue pattern:
+    // width:100% in a row forces the button to the full container width and
+    // pushes siblings off-screen). flex:1 makes it share the row evenly.
+    flex: 1,
   },
   gradient: {
     flexDirection: "row",

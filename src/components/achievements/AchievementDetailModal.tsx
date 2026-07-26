@@ -4,7 +4,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
   Platform,
   Pressable,
@@ -19,6 +18,7 @@ import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rh, rw, rp, rbr } from "../../utils/responsive";
 import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 import { Ionicons } from "@expo/vector-icons";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 
 interface AchievementDetailModalProps {
   visible: boolean;
@@ -81,10 +81,9 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
           placed after the BlurView, which let it intercept taps meant for the
           modal content. Now it only catches taps on the area outside the card.
         */}
-        <TouchableOpacity
+        <Pressable
           style={styles.backdrop}
           onPress={onClose}
-          activeOpacity={1}
           accessibilityLabel="Dismiss modal overlay"
           accessibilityRole="button"
         />
@@ -99,8 +98,9 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
             >
               <Text style={styles.icon}>{achievement.icon}</Text>
             </View>
-            <TouchableOpacity
+            <AnimatedPressable
               onPress={onClose}
+              scaleValue={0.9}
               style={styles.closeButton}
               accessibilityRole="button"
               accessibilityLabel="Close achievement details"
@@ -111,7 +111,7 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
                 size={rf(22)}
                 color={colors.text}
               />
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
 
           <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>{achievement.title}</Text>
