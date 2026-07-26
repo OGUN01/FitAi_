@@ -65,7 +65,7 @@ export const ChartCard: React.FC<ChartCardProps> = ({
                         { backgroundColor: item.color },
                       ]}
                     />
-                    <Text style={styles.legendText}>{item.label}</Text>
+                    <Text style={styles.legendText} numberOfLines={1}>{item.label}</Text>
                   </View>
                 ))}
               </View>

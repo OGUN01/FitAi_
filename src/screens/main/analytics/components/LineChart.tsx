@@ -155,15 +155,15 @@ export const LineChart: React.FC<LineChartProps> = ({
             color="rgba(156, 39, 176, 0.6)"
           />
         </View>
-        <Text style={styles.emptyChartText}>{emptyTitle}</Text>
-        <Text style={styles.emptyChartSubtext}>{emptySubtitle}</Text>
+        <Text style={styles.emptyChartText} numberOfLines={2}>{emptyTitle}</Text>
+        <Text style={styles.emptyChartSubtext} numberOfLines={2}>{emptySubtitle}</Text>
         <View style={styles.emptyChartHint}>
           <Ionicons
             name="add-circle-outline"
             size={rf(14)}
             color={colors.primary}
           />
-          <Text style={styles.emptyChartHintText}>
+          <Text style={styles.emptyChartHintText} numberOfLines={1}>
             Open Progress to log weight
           </Text>
         </View>
@@ -213,11 +213,12 @@ export const LineChart: React.FC<LineChartProps> = ({
                 styles.trendText,
                 { color: isPositiveTrend ? colors.success : colors.error },
               ]}
+              numberOfLines={1}
             >
               {Math.abs(parseFloat(trendPercent))}%
             </Text>
           </View>
-          <Text style={styles.trendPeriod}>vs start</Text>
+          <Text style={styles.trendPeriod} numberOfLines={1}>vs start</Text>
         </View>
       </View>}
 
@@ -312,7 +313,7 @@ export const LineChart: React.FC<LineChartProps> = ({
       {/* Bottom insight */}
       <View style={styles.chartInsight}>
         <Ionicons name="sparkles" size={rf(12)} color={color} />
-        <Text style={styles.chartInsightText}>
+        <Text style={styles.chartInsightText} numberOfLines={2}>
           {trend > 0
             ? `Gained ${Math.abs(trend).toFixed(1)}${unit} over this period`
             : trend < 0

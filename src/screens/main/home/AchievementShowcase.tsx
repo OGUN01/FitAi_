@@ -92,7 +92,7 @@ const ProgressBadge: React.FC<{
     <Text style={styles.progressBadgeTitle} numberOfLines={1}>
       {title}
     </Text>
-    <Text style={styles.progressPercent}>{progress}%</Text>
+    <Text style={styles.progressPercent} numberOfLines={1}>{progress}%</Text>
   </AnimatedPressable>
 );
 
@@ -133,7 +133,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
           <Text style={styles.headerTitle} numberOfLines={1}>Achievements</Text>
           {totalAchievements > 0 ? (
             <View style={styles.countBadge}>
-              <Text style={styles.countText}>
+              <Text style={styles.countText} numberOfLines={1}>
                 {totalBadges}/{totalAchievements}
               </Text>
             </View>

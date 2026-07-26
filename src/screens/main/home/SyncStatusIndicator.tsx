@@ -146,7 +146,7 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
           )}
         </View>
         <View style={styles.textContainer}>
-          <Text style={styles.label}>
+          <Text style={styles.label} numberOfLines={1}>
             {primarySource
               ? primarySource.name
               : isIOS

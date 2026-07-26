@@ -143,7 +143,7 @@ export const TodaysFocus: React.FC<TodaysFocusProps> = ({
                       ]}
                     />
                   </View>
-                  <Text style={[styles.progressText, { color }]}>
+                  <Text style={[styles.progressText, { color }]} numberOfLines={1}>
                     {workoutProgress}%
                   </Text>
                 </View>

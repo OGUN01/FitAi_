@@ -122,7 +122,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
               accessibilityLabel={`${streak} day streak`}
             >
               <Ionicons name="flame" size={rf(16)} color={colors.errorLight} />
-              <Text style={styles.streakNumber}>{streak}</Text>
+              <Text style={styles.streakNumber} numberOfLines={1}>{streak}</Text>
             </AnimatedPressable>
           )}
 
@@ -144,7 +144,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
             />
             {notificationCount > 0 && (
               <View style={styles.notificationBadge}>
-                <Text style={styles.notificationBadgeText}>
+                <Text style={styles.notificationBadgeText} numberOfLines={1}>
                   {notificationCount > 9 ? "9+" : notificationCount}
                 </Text>
               </View>

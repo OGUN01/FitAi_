@@ -205,8 +205,8 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
     section: AchievementSection;
   }) => (
     <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{section.title}</Text>
-      <Text style={styles.sectionSubtitle}>{section.subtitle}</Text>
+      <Text style={styles.sectionTitle} numberOfLines={1}>{section.title}</Text>
+      <Text style={styles.sectionSubtitle} numberOfLines={1}>{section.subtitle}</Text>
     </View>
   );
 
@@ -253,7 +253,7 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
               >
                 {stats.completed}
               </Text>
-              <Text style={styles.statLabel}>Earned</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>Earned</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
@@ -264,18 +264,21 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
               >
                 {stats.completionRate}%
               </Text>
-              <Text style={styles.statLabel}>Complete</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>Complete</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text
-                style={styles.statValue}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-              >
-                <Ionicons name="ribbon-outline" size={rf(16)} color={flatColors.gold} /> {stats.totalFitCoins}
-              </Text>
-              <Text style={styles.statLabel}>FitCoins</Text>
+              <View style={styles.statValueRow}>
+                <Ionicons name="ribbon-outline" size={rf(16)} color={flatColors.gold} />
+                <Text
+                  style={styles.statValue}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
+                  {stats.totalFitCoins}
+                </Text>
+              </View>
+              <Text style={styles.statLabel} numberOfLines={1}>FitCoins</Text>
             </View>
           </View>
         )}
@@ -288,7 +291,7 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
         {showLoading ? (
           <View style={styles.loadingContainer}>
             <AuroraSpinner size="lg" />
-            <Text style={styles.loadingText}>Loading achievements...</Text>
+            <Text style={styles.loadingText} numberOfLines={1}>Loading achievements...</Text>
           </View>
         ) : catalogEmpty ? (
           <EmptyState
@@ -399,6 +402,11 @@ const styles = StyleSheet.create({
     fontSize: rf(18),
     fontWeight: "800",
     color: colors.text.primary,
+  },
+  statValueRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rf(4),
   },
   statLabel: {
     fontSize: rf(11),

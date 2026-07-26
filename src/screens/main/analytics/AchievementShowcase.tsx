@@ -56,7 +56,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
           iconColor={colors.gold}
         />
         {!showLoadingState && !showEmptyState && (
-          <Text style={styles.countBadge}>
+          <Text style={styles.countBadge} numberOfLines={1}>
             {completedCount}/{achievementItems.length}
           </Text>
         )}
@@ -143,6 +143,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
                       >
                         <Text
                           style={[styles.categoryText, { color: accentColor }]}
+                          numberOfLines={1}
                         >
                           {item.categoryLabel}
                         </Text>
@@ -161,7 +162,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
                             ]}
                           />
                         </View>
-                        <Text style={styles.progressLabel}>
+                        <Text style={styles.progressLabel} numberOfLines={1}>
                           {item.progress}/{item.target}
                         </Text>
                       </View>
@@ -169,7 +170,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
                   </View>
 
                   <View style={styles.rightBlock}>
-                    <Text style={[styles.pts, { color: accentColor }]}>
+                    <Text style={[styles.pts, { color: accentColor }]} numberOfLines={1}>
                       +{item.points}
                     </Text>
                     {item.completed ? (
