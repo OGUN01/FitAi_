@@ -112,7 +112,10 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
     marginBottom: rp(spacing.xxs),
     fontSize: rf(typography.fontSize.micro),
-    color: colors.text.tertiary,
+    // Bumped from text.tertiary (#8A8A8A) → text.secondary (#B0B0B0). At
+    // micro (12px) the tertiary gray failed WCAG AA on the dark aurora
+    // background. Secondary clears AA for small text.
+    color: colors.text.secondary,
     fontWeight: String(typography.fontWeight.medium) as any,
   },
 });

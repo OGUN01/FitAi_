@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 import AchievementCelebration from "../achievements/AchievementCelebration";
 
 /** Map legacy emoji icon strings (stored in DB) to Ionicons names. */
@@ -86,10 +87,10 @@ export const AchievementNotifications: React.FC<
               />
             </View>
             <View style={styles.achievementToastText}>
-              <Text style={styles.achievementToastTitle}>
+              <Text style={styles.achievementToastTitle} numberOfLines={1}>
                 Achievement Unlocked!
               </Text>
-              <Text style={styles.achievementToastDescription}>
+              <Text style={styles.achievementToastDescription} numberOfLines={2}>
                 {toastAchievement.title}
               </Text>
             </View>
@@ -117,7 +118,7 @@ export const AchievementNotifications: React.FC<
             },
           ]}
         >
-          <Text style={styles.miniToastText}>{miniToastText}</Text>
+          <Text style={styles.miniToastText} numberOfLines={2}>{miniToastText}</Text>
         </Animated.View>
       )}
     </>
@@ -183,8 +184,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: rp(120),
     alignSelf: "center",
-    // Explicit rgba (was colors.primary + "E6" — fragile hex append).
-    backgroundColor: "rgba(255, 107, 53, 0.9)",
+    // Use hexToRgba on the primary token (was a hardcoded rgba literal that
+    // would silently drift if the primary token ever changes).
+    backgroundColor: hexToRgba(colors.primary, 0.9),
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: rbr(20),

@@ -39,8 +39,8 @@ export const WorkoutErrorState: React.FC<WorkoutErrorStateProps> = ({
             color={config.iconColor}
           />
         </View>
-        <Text style={styles.errorText}>{config.title}</Text>
-        <Text style={styles.errorSubtext}>{config.subtitle}</Text>
+        <Text style={styles.errorText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{config.title}</Text>
+        <Text style={styles.errorSubtext} numberOfLines={3}>{config.subtitle}</Text>
         <Button
           title="Go Back"
           onPress={onGoBack}

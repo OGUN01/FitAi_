@@ -490,8 +490,8 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
       {!calibrationMode && previousSet && (
         <View style={styles.previousHint}>
           <View style={styles.previousRow}>
-            <Text style={styles.previousLabel}>Previous:</Text>
-            <Text style={styles.previousValue}>
+            <Text style={styles.previousLabel} numberOfLines={1}>Previous:</Text>
+            <Text style={styles.previousValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
               {previousSet.weightKg != null
                 ? `${kgToDisplay(previousSet.weightKg, userUnits)} ${userUnits}`
                 : "—"}{" "}
@@ -507,11 +507,11 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
               accessibilityLabel="Copy last set values"
             >
               <Ionicons name="copy-outline" size={rf(12)} color={colors.primary.DEFAULT} />
-              <Text style={styles.copyChipText}>Copy</Text>
+              <Text style={styles.copyChipText} numberOfLines={1}>Copy</Text>
             </AnimatedPressable>
           </View>
           {suggestedWeight?.action === "increase" && (
-            <Text style={styles.suggestionText}>
+            <Text style={styles.suggestionText} numberOfLines={2}>
               Suggested: {kgToDisplay(suggestedWeight.suggestedWeightKg, userUnits)}{" "}
               {userUnits} ↑{suggestedWeight.doubleJump ? "↑" : ""}
             </Text>
@@ -519,14 +519,14 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
           {/* Surface the progression engine's reasoning so the user understands
               why a load was suggested (increase / hold / deload). */}
           {suggestedWeight?.reason ? (
-            <Text style={styles.reasonText}>{suggestedWeight.reason}</Text>
+            <Text style={styles.reasonText} numberOfLines={3}>{suggestedWeight.reason}</Text>
           ) : null}
         </View>
       )}
 
       {/* ── Set type ── */}
       <View style={styles.setTypeRow}>
-        <Text style={styles.fieldLabel}>Set Type</Text>
+        <Text style={styles.fieldLabel} numberOfLines={1}>Set Type</Text>
         <View style={styles.setTypeButtons}>
           {SET_TYPES.map((type) => (
             <AnimatedPressable
@@ -543,7 +543,7 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
               accessibilityRole="button"
               accessibilityLabel={`Set type ${SET_TYPE_LABELS[type]}`}
             >
-              <Text style={styles.setTypeText}>{SET_TYPE_LABELS[type]}</Text>
+              <Text style={styles.setTypeText} numberOfLines={1}>{SET_TYPE_LABELS[type]}</Text>
             </AnimatedPressable>
           ))}
         </View>
@@ -552,7 +552,7 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
       {/* ── Weight input with steppers ── */}
       {!isBodyweight ? (
         <View style={styles.inputRow}>
-          <Text style={styles.fieldLabel}>
+          <Text style={styles.fieldLabel} numberOfLines={1}>
             Weight ({userUnits.toUpperCase()})
           </Text>
           <View style={styles.stepperRow}>
@@ -602,7 +602,7 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
 
       {/* ── Reps input with steppers ── */}
       <View style={styles.inputRow}>
-        <Text style={styles.fieldLabel}>{repsLabel}</Text>
+        <Text style={styles.fieldLabel} numberOfLines={1}>{repsLabel}</Text>
         <View style={styles.stepperRow}>
           <AnimatedPressable
             onPress={() => bumpReps(-1)}
@@ -697,8 +697,8 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
         contentStyle={styles.volumeFooterContent}
       >
         <Ionicons name="barbell-outline" size={rf(14)} color={colors.secondary.DEFAULT} />
-        <Text style={styles.volumeLabel}>Session volume</Text>
-        <Text style={styles.volumeValue}>
+        <Text style={styles.volumeLabel} numberOfLines={1}>Session volume</Text>
+        <Text style={styles.volumeValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
           {Math.round(sessionVolume).toLocaleString()} kg
         </Text>
       </GlassCard>
@@ -818,6 +818,10 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
     paddingHorizontal: rp(spacing.sm),
     paddingVertical: rp(spacing.xxs),
+    // Clamp to 44px minimum touch target (chip was ~28-32px tall, below the
+    // 44px accessibility minimum for the Copy action).
+    minHeight: Math.max(rp(44), 44),
+    justifyContent: "center",
   },
   copyChipText: {
     fontSize: rf(typography.fontSize.micro),
@@ -946,6 +950,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: rp(spacing.xxs),
+    // Clamp to 44px minimum touch target (paddingVertical:14 + icon + label
+    // was ~52-60px on most screens but could compress below 44 on small
+    // devices with large font scaling — enforce the floor).
+    minHeight: Math.max(rp(44), 44),
   },
   rpeEasy: {
     backgroundColor: hexToRgba(colors.success.DEFAULT, 0.1),

@@ -552,7 +552,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         throw new Error("Failed to save workout completion");
       }
     } catch (error) {
-      console.error("🚨 Error completing workout:", error);
+      // CLAUDE.md: no emoji in console; keep error log (not a debug log).
+      console.error("[WorkoutSession] Error completing workout:", error);
       // P1 race fix: do NOT reset isCompletingRef here. If the workout was
       // already persisted (workoutPersistedRef === true), re-enabling Finish
       // would let the user re-tap and re-insert into workout_sessions — the
@@ -663,7 +664,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         // when the user explicitly discards. Keeping it enables accurate resume
         // of actual logged set values.
       } catch (error) {
-        console.error("❌ Failed to save progress:", error);
+        console.error("[WorkoutSession] Failed to save progress:", error);
       }
       navigation.goBack();
     };
@@ -791,11 +792,18 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             style={styles.exerciseNameRow}
             testID="exercise-name-history-tap"
             hapticType="light"
+            accessibilityRole="button"
+            accessibilityLabel={`${exerciseName}. View exercise history.`}
           >
-            <Text style={styles.exerciseNameTap} numberOfLines={1}>
+            <Text
+              style={styles.exerciseNameTap}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
               {exerciseName}
             </Text>
-            <Text style={styles.exerciseHistoryHint}>History</Text>
+            <Text style={styles.exerciseHistoryHint} numberOfLines={1}>History</Text>
           </AnimatedPressable>
 
           {/* P2-13: During the performing phase the ExerciseSessionModal overlay
@@ -828,17 +836,17 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
               style={styles.warmupContainer}
               contentStyle={styles.warmupContent}
             >
-              <Text style={styles.warmupHeader}>WARM-UP (auto-generated)</Text>
+              <Text style={styles.warmupHeader} numberOfLines={1}>WARM-UP (auto-generated)</Text>
               {warmupSets.map((ws, idx) => (
                 <View key={idx} style={styles.warmupRow}>
                   <View style={styles.warmupInfo}>
-                    <Text style={styles.warmupWeight}>
+                    <Text style={styles.warmupWeight} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                       {userUnits === 'lbs'
                         ? `${(ws.weightKg * 2.2046).toFixed(1)} lbs`
                         : `${ws.weightKg} kg`}{' '}
                       × {ws.targetReps} reps
                     </Text>
-                    <Text style={styles.warmupPercent}>{ws.percentLabel}</Text>
+                    <Text style={styles.warmupPercent} numberOfLines={1}>{ws.percentLabel}</Text>
                   </View>
                   <AnimatedPressable
                     style={[
@@ -857,17 +865,19 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
                     scaleValue={0.94}
                     springConfig="snappy"
                     hapticType="selection"
+                    accessibilityRole="button"
+                    accessibilityLabel={`Mark warm-up set ${idx + 1} ${warmupDoneMap[idx] ? "as not done" : "as done"}`}
                   >
                     {warmupDoneMap[idx] ? (
                       <Ionicons name="checkmark" size={rf(14)} color={colors.text.primary} />
                     ) : (
-                      <Text style={styles.warmupDoneText}>Done</Text>
+                      <Text style={styles.warmupDoneText} numberOfLines={1}>Done</Text>
                     )}
                   </AnimatedPressable>
                 </View>
               ))}
               <View style={styles.warmupDivider} />
-              <Text style={styles.warmupWorkingLabel}>WORKING SETS</Text>
+              <Text style={styles.warmupWorkingLabel} numberOfLines={1}>WORKING SETS</Text>
             </GlassCard>
           )}
 
@@ -1119,13 +1129,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: rp(spacing.xxs),
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    minHeight: 44,
+    paddingVertical: rp(spacing.sm),
+    paddingHorizontal: rp(spacing.md),
+    minHeight: Math.max(rp(44), 44),
     justifyContent: "center",
   },
   prevExText: {
-    color: colors.text.tertiary,
+    color: colors.text.secondary,
     fontSize: fontSize.sm,
   },
   // GAP-05: styles for tappable exercise name → ExerciseHistory
@@ -1135,11 +1145,11 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
-    paddingVertical: 8,
+    paddingVertical: rp(spacing.sm),
     // Enforce 44px minimum touch target (paddingVertical:8 + ~20px text was
     // ~32px tall, below the 44px accessibility minimum).
-    minHeight: 44,
-    marginBottom: 4,
+    minHeight: Math.max(rp(44), 44),
+    marginBottom: rp(spacing.xxs),
   },
   exerciseNameTap: {
     fontSize: fontSize.lg,
@@ -1162,18 +1172,20 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   warmupHeader: {
-    // Responsive (was hardcoded fontSize:10).
+    // Responsive (was hardcoded fontSize:10). Use warning.light so the tiny
+    // caps label clears WCAG AA on the dark glass surface (warning.DEFAULT is
+    // #FF9800 which is borderline at 10px).
     fontSize: rf(10),
     fontWeight: String(typography.fontWeight.bold) as any,
-    color: colors.warning.DEFAULT,
+    color: colors.warning.light,
     letterSpacing: 1,
-    marginBottom: 8,
+    marginBottom: rp(spacing.xs),
   },
   warmupRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: rp(spacing.xs),
   },
   warmupInfo: {
     flex: 1,
@@ -1186,17 +1198,17 @@ const styles = StyleSheet.create({
   warmupPercent: {
     // Responsive (was hardcoded fontSize:10).
     fontSize: rf(10),
-    color: colors.text.tertiary,
-    marginTop: 1,
+    color: colors.text.secondary,
+    marginTop: rp(1),
   },
   warmupDoneBtn: {
     backgroundColor: colors.glass.background,
     borderRadius: borderRadius.md,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.sm),
     // Clamp to 44px minimum touch target (paddingVertical:10 + ~14px text
     // was ~32-36px tall, below the 44px accessibility minimum).
-    minHeight: 44,
+    minHeight: Math.max(rp(44), 44),
     justifyContent: "center",
     borderWidth: 1,
     borderColor: colors.glass.border,
@@ -1213,14 +1225,14 @@ const styles = StyleSheet.create({
   warmupDivider: {
     height: 1,
     backgroundColor: colors.glass.backgroundDark,
-    marginVertical: 10,
+    marginVertical: rp(spacing.sm),
   },
   warmupWorkingLabel: {
-    // Responsive (was hardcoded fontSize:10).
+    // Responsive (was hardcoded fontSize:10). Use primary.light for AA at 10px.
     fontSize: rf(10),
     fontWeight: String(typography.fontWeight.bold) as any,
-    color: colors.primary.DEFAULT,
+    color: colors.primary.light,
     letterSpacing: 1,
-    marginBottom: 4,
+    marginBottom: rp(spacing.xxs),
   },
 });

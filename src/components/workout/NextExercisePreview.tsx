@@ -35,7 +35,7 @@ export const NextExercisePreview: React.FC<NextExercisePreviewProps> = ({
         size={rf(16)}
         color={colors.primary.DEFAULT}
       />
-      <Text style={styles.nextExerciseTitle}>Next Up</Text>
+      <Text style={styles.nextExerciseTitle} numberOfLines={1}>Next Up</Text>
     </View>
     <Text
       style={styles.nextExerciseName}

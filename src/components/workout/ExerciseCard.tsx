@@ -66,7 +66,12 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   return (
     <Card style={styles.exerciseCard} variant="elevated">
       <View style={styles.exerciseHeader}>
-        <Text style={styles.exerciseName} numberOfLines={2}>
+        <Text
+          style={styles.exerciseName}
+          numberOfLines={2}
+          adjustsFontSizeToFit
+          minimumFontScale={0.7}
+        >
           {safeString(exerciseName, "Current Exercise")}
         </Text>
 
@@ -85,18 +90,18 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         />
 
         <View style={styles.exerciseDetails}>
-          <Text style={styles.exerciseDetailText}>
+          <Text style={styles.exerciseDetailText} numberOfLines={1}>
             {safeString(sets, "0")} sets x {repsDisplay}
           </Text>
 
           {safeNumber(weight, 0) > 0 && (
-            <Text style={styles.exerciseDetailText}>
+            <Text style={styles.exerciseDetailText} numberOfLines={1}>
               {safeString(weight, "0")}kg
             </Text>
           )}
 
           {safeNumber(restTime, 0) > 0 && (
-            <Text style={styles.exerciseDetailText}>
+            <Text style={styles.exerciseDetailText} numberOfLines={1}>
               Rest: {safeString(restTime, "0")}s
             </Text>
           )}
@@ -104,7 +109,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
       </View>
 
       <View style={styles.setsContainer}>
-        <Text style={styles.setsTitle}>Sets Progress</Text>
+        <Text style={styles.setsTitle} numberOfLines={1}>Sets Progress</Text>
         <View style={styles.setsGrid}>
           {completedSets.map((isSetCompleted, setIndex) => (
             <TouchableOpacity
@@ -115,6 +120,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               ]}
               onPress={() => onSetComplete(setIndex)}
               activeOpacity={0.8}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityRole="button"
               accessibilityLabel={`Set ${setIndex + 1}${isSetCompleted ? ", completed" : ", not completed"}`}
             >
@@ -123,6 +129,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                   styles.setButtonText,
                   isSetCompleted && styles.setButtonTextCompleted,
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
               >
                 {safeString(setIndex + 1)}
               </Text>
@@ -135,17 +144,19 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           ))}
         </View>
 
-        <Text style={styles.setsProgressText}>
+        <Text style={styles.setsProgressText} numberOfLines={1}>
           {safeString(completedSets.filter(Boolean).length || 0)} /{" "}
           {safeString(completedSets.length || 0)} completed
         </Text>
       </View>
 
       <View style={styles.instructionsContainer}>
-        <Text style={styles.instructionsTitle}>Exercise Notes</Text>
+        <Text style={styles.instructionsTitle} numberOfLines={1}>Exercise Notes</Text>
         <Text
           style={styles.instructionsText}
           numberOfLines={4}
+          adjustsFontSizeToFit
+          minimumFontScale={0.85}
         >
           {safeString(
             notes ||
@@ -157,16 +168,16 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>{safeString(setsCompleted)}</Text>
-          <Text style={styles.statLabel}>Sets Done</Text>
+          <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{safeString(setsCompleted)}</Text>
+          <Text style={styles.statLabel} numberOfLines={1}>Sets Done</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>{formatDuration(totalDuration)}</Text>
-          <Text style={styles.statLabel}>Duration</Text>
+          <Text style={styles.statValue} numberOfLines={1}>{formatDuration(totalDuration)}</Text>
+          <Text style={styles.statLabel} numberOfLines={1}>Duration</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>{safeString(caloriesBurned)}</Text>
-          <Text style={styles.statLabel}>Calories</Text>
+          <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{safeString(caloriesBurned)}</Text>
+          <Text style={styles.statLabel} numberOfLines={1}>Calories</Text>
         </View>
       </View>
     </Card>

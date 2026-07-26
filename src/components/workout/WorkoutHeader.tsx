@@ -215,7 +215,10 @@ const styles = StyleSheet.create({
   },
   volumeText: {
     fontSize: rf(typography.fontSize.caption),
-    color: colors.secondary.light,
+    // Use secondary.DEFAULT (#00D4FF) instead of secondary.light (#00FFFF).
+    // Pure cyan (#00FFFF) on a dark glass header failed WCAG AA for caption-
+    // sized text; DEFAULT cyan clears it.
+    color: colors.secondary.DEFAULT,
     fontWeight: String(typography.fontWeight.semibold) as any,
     fontVariant: ["tabular-nums"],
   },
