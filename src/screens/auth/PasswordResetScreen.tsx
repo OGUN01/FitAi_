@@ -25,7 +25,7 @@
  */
 
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../services/supabase";
@@ -352,10 +352,15 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardAvoid}
+        >
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
         >
           {renderHeader(
             "Set a New Password",
@@ -433,6 +438,7 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
             </View>
           </View>
         </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </AuroraBackground>
   );
@@ -445,6 +451,10 @@ const styles = StyleSheet.create({
   },
 
   scrollView: {
+    flex: 1,
+  },
+
+  keyboardAvoid: {
     flex: 1,
   },
 

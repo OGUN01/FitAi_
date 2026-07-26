@@ -53,7 +53,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = React.memo(({
         </Text>
       </View>
 
-      {todaysMeals.length > 0 ? (
+      {(todaysMeals?.length ?? 0) > 0 ? (
         <View style={styles.premiumMealsContainer}>
           {todaysMeals.map((meal) => {
             const progress = storeGetMealProgress(meal.id);
@@ -85,7 +85,15 @@ export const MealPlanView: React.FC<MealPlanViewProps> = React.memo(({
           padding="lg"
           borderRadius="lg"
         >
-          <View style={styles.emptyStateInner}>
+          <View
+            style={styles.emptyStateInner}
+            accessibilityRole="text"
+            accessibilityLabel={
+              weeklyMealPlan
+                ? "No meals planned for today"
+                : "Generate a meal plan to get started"
+            }
+          >
             <Ionicons
               name={weeklyMealPlan ? "restaurant-outline" : "sparkles-outline"}
               size={rf(28)}

@@ -305,7 +305,11 @@ export const MealSuggestions: React.FC = () => {
         Meal Suggestions
       </Text>
       {visibleSuggestions.length === 0 ? (
-        <View style={styles.emptyState}>
+        <View
+          style={styles.emptyState}
+          accessibilityRole="text"
+          accessibilityLabel="No meal suggestions available for your preferences"
+        >
           <Text
             style={styles.emptyStateText}
             numberOfLines={2}
@@ -370,7 +374,10 @@ export const MealSuggestions: React.FC = () => {
                     </Text>
                     <View style={styles.buttonRow}>
                       <AnimatedPressable
-                        style={styles.addToPlanButton as StyleProp<ViewStyle>}
+                        style={[
+                          styles.addToPlanButton as StyleProp<ViewStyle>,
+                          isAdded && styles.addToPlanButtonDisabled,
+                        ]}
                         onPress={() =>
                           handleAddToPlan(suggestion.id, suggestion)
                         }
@@ -378,13 +385,17 @@ export const MealSuggestions: React.FC = () => {
                         hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                         accessibilityRole="button"
                         accessibilityLabel={`Add ${suggestion.name} to today's plan`}
+                        accessibilityState={isAdded ? { disabled: true } : undefined}
                       >
                         <Animated.View style={[
                           StyleSheet.absoluteFill,
                           { backgroundColor: addBtnBg, borderRadius: borderRadius.md },
                         ]} />
                         <Text
-                          style={styles.addToPlanButtonText}
+                          style={[
+                            styles.addToPlanButtonText,
+                            isAdded && styles.addToPlanButtonTextDisabled,
+                          ]}
                           numberOfLines={1}
                           adjustsFontSizeToFit
                           minimumFontScale={0.8}
@@ -477,11 +488,17 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     position: "relative",
   },
+  addToPlanButtonDisabled: {
+    opacity: 0.7,
+  },
   addToPlanButtonText: {
     color: flatColors.white,
     fontSize: fontSize.sm,
     fontWeight: "700",
     zIndex: 1,
+  },
+  addToPlanButtonTextDisabled: {
+    opacity: 0.9,
   },
   logButton: {
     backgroundColor: flatColors.success,

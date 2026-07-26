@@ -137,7 +137,14 @@ export const MealDetailModal: React.FC<MealDetailModalProps> = ({
                       size={rf(14)}
                       color={colors.textSecondary}
                     />
-                    <Text style={styles.metaText}>{meal.timing}</Text>
+                    <Text
+                      style={styles.metaText}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                    >
+                      {meal.timing}
+                    </Text>
                   </View>
                 ) : null}
                 {meal.difficulty ? (
@@ -147,7 +154,12 @@ export const MealDetailModal: React.FC<MealDetailModalProps> = ({
                       size={rf(14)}
                       color={colors.textSecondary}
                     />
-                    <Text style={styles.metaText}>
+                    <Text
+                      style={styles.metaText}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                    >
                       {meal.difficulty.charAt(0).toUpperCase() +
                         meal.difficulty.slice(1)}
                     </Text>
@@ -160,7 +172,12 @@ export const MealDetailModal: React.FC<MealDetailModalProps> = ({
                       size={rf(14)}
                       color={colors.textSecondary}
                     />
-                    <Text style={styles.metaText}>
+                    <Text
+                      style={styles.metaText}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                    >
                       {meal.preparationTime || meal.prepTime} min prep
                     </Text>
                   </View>
@@ -232,6 +249,8 @@ export const MealDetailModal: React.FC<MealDetailModalProps> = ({
                         <Text
                           style={styles.foodItemCal}
                           numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.8}
                         >
                           {Math.round(item.calories)} cal
                         </Text>
@@ -495,7 +514,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingVertical: spacing.md,
     borderRadius: borderRadius.md,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.primary,
   },
   completedBadgeText: {
@@ -512,7 +531,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderRadius: borderRadius.md,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: hexToRgba(colors.errorAlt, TINT_ALPHA_SOFT),
   },
   deleteButtonText: {

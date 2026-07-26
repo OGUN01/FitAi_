@@ -65,7 +65,7 @@ export const WorkoutProgressBar: React.FC<WorkoutProgressBarProps> = ({
     <View
       style={styles.outerWrapper}
       accessibilityRole="progressbar"
-      accessibilityLabel={`Workout progress: ${Math.round(progress * 100)}%`}
+      accessibilityLabel={`Workout progress: ${safeString(Math.round(progress * 100))}%`}
     >
       <Text style={styles.progressPercentage}>
         {safeString(Math.round(progress * 100))}%

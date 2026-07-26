@@ -778,7 +778,11 @@ const styles = StyleSheet.create({
   },
   calibrationTitle: {
     fontSize: rf(typography.fontSize.caption),
-    color: colors.secondary.light,
+    // Use secondary.DEFAULT (#00D4FF) instead of secondary.light (#00FFFF).
+    // Pure cyan on the dark glass calibration banner failed WCAG AA for
+    // caption-sized text; DEFAULT cyan clears it (matches the WorkoutHeader
+    // volumeText fix for consistency).
+    color: colors.secondary.DEFAULT,
     fontWeight: String(typography.fontWeight.bold) as any,
   },
   calibrationBody: {
