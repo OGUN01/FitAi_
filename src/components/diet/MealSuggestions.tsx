@@ -296,10 +296,22 @@ export const MealSuggestions: React.FC = () => {
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Meal Suggestions</Text>
+      <Text
+        style={styles.sectionTitle}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.85}
+      >
+        Meal Suggestions
+      </Text>
       {visibleSuggestions.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>
+          <Text
+            style={styles.emptyStateText}
+            numberOfLines={2}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+          >
             No meal suggestions available for your preferences
           </Text>
         </View>
@@ -320,7 +332,7 @@ export const MealSuggestions: React.FC = () => {
               inputRange: [0, 0.5, 1],
               outputRange: [
                 colors.primary.DEFAULT,
-                "#22c55e",
+                flatColors.success,
                 colors.primary.DEFAULT,
               ],
             });
@@ -340,8 +352,20 @@ export const MealSuggestions: React.FC = () => {
                   borderRadius="xl"
                 >
                   <View style={styles.suggestionContent}>
-                    <Text style={styles.suggestionName} numberOfLines={2}>{suggestion.name}</Text>
-                    <Text style={styles.suggestionMacros} numberOfLines={2}>
+                    <Text
+                      style={styles.suggestionName}
+                      numberOfLines={2}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                    >
+                      {suggestion.name}
+                    </Text>
+                    <Text
+                      style={styles.suggestionMacros}
+                      numberOfLines={2}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                    >
                       {suggestion.calories} cal | {suggestion.protein}g P | {suggestion.carbs}g C | {suggestion.fat}g F
                     </Text>
                     <View style={styles.buttonRow}>
@@ -354,12 +378,20 @@ export const MealSuggestions: React.FC = () => {
                           handleAddToPlan(suggestion.id, suggestion)
                         }
                         disabled={isAdded}
+                        hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Add ${suggestion.name} to today's plan`}
                       >
                         <Animated.View style={[
                           StyleSheet.absoluteFill,
                           { backgroundColor: addBtnBg, borderRadius: borderRadius.md },
                         ]} />
-                        <Text style={styles.addToPlanButtonText}>
+                        <Text
+                          style={styles.addToPlanButtonText}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.8}
+                        >
                           {isAdded ? "Added" : "Add to Plan"}
                         </Text>
                       </AnimatedPressable>
@@ -370,12 +402,26 @@ export const MealSuggestions: React.FC = () => {
                             handleLogSuggestion(suggestion.id, suggestion)
                           }
                           scaleValue={0.95}
+                          hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Log ${suggestion.name} as consumed`}
                         >
-                          <Text style={styles.logButtonText}>Log this</Text>
+                          <Text
+                            style={styles.logButtonText}
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                            minimumFontScale={0.8}
+                          >
+                            Log this
+                          </Text>
                         </AnimatedPressable>
                       )}
                       {isLogged && (
-                        <View style={styles.loggedBadge}>
+                        <View
+                          style={styles.loggedBadge}
+                          accessibilityRole="text"
+                          accessibilityLabel={`${suggestion.name} logged`}
+                        >
                           <Ionicons name="checkmark" size={rf(12)} color={flatColors.white} />
                           <Text style={styles.loggedBadgeText}>Logged</Text>
                         </View>
@@ -438,22 +484,23 @@ const styles = StyleSheet.create({
     backgroundColor: flatColors.successAlt,
   },
   addToPlanButtonText: {
-    color: colors.text.primary,
-    fontSize: fontSize.xs,
-    fontWeight: "600",
+    color: flatColors.white,
+    fontSize: fontSize.sm,
+    fontWeight: "700",
     zIndex: 1,
   },
   logButton: {
     backgroundColor: flatColors.success,
     borderRadius: borderRadius.md,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
+    minHeight: 44,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     alignItems: "center",
     justifyContent: "center",
   },
   logButtonText: {
     color: flatColors.white,
-    fontSize: fontSize.xs,
+    fontSize: fontSize.sm,
     fontWeight: "700",
   },
   loggedBadge: {

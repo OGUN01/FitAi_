@@ -11,7 +11,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { rf, rw, rp, rbr, rh } from "../../utils/responsive";
-import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_SOFT } from "../../utils/colors";
+import { hexToRgba, TINT_ALPHA_SOFT } from "../../utils/colors";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DayMeal } from "../../types/ai";
 
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -32,12 +33,15 @@ export const MealDetailModal: React.FC<MealDetailModalProps> = ({
   onDelete,
   isCompleted = false,
 }) => {
+  const insets = useSafeAreaInsets();
   const protein = meal?.totalMacros?.protein ?? meal?.totalProtein ?? 0;
   const carbs = meal?.totalMacros?.carbohydrates ?? meal?.totalCarbs ?? 0;
   const fat = meal?.totalMacros?.fat ?? meal?.totalFat ?? 0;
   const fiber = meal?.totalMacros?.fiber ?? 0;
 
-  const mealTypeLabel = meal ? meal.type.charAt(0).toUpperCase() + meal.type.slice(1) : "";
+  const mealTypeLabel = meal?.type
+    ? meal.type.charAt(0).toUpperCase() + meal.type.slice(1)
+    : "";
 
   const mealTypeIcons: Record<string, string> = {
     breakfast: "sunny",
@@ -56,11 +60,16 @@ export const MealDetailModal: React.FC<MealDetailModalProps> = ({
     >
       {!meal ? (
         <View style={styles.overlay}>
-          <Pressable style={{ flex: 1 }} onPress={onClose} />
+          <Pressable
+            style={{ flex: 1 }}
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close meal details"
+          />
         </View>
       ) : (
         <View style={styles.overlay}>
-        <View style={styles.container}>
+        <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
           <GlassCard
             elevation={3}
             blurIntensity="medium"
@@ -79,7 +88,13 @@ export const MealDetailModal: React.FC<MealDetailModalProps> = ({
                   <Text style={styles.typeChipText}>{mealTypeLabel}</Text>
                 </View>
               </View>
-              <Pressable onPress={onClose} style={styles.closeButton}>
+              <Pressable
+                onPress={onClose}
+                style={styles.closeButton}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel="Close meal details"
+              >
                 <Ionicons
                   name="close"
                   size={rf(22)}
@@ -93,10 +108,22 @@ export const MealDetailModal: React.FC<MealDetailModalProps> = ({
               showsVerticalScrollIndicator={false}
             >
               {/* Meal Name */}
-              <Text style={styles.mealName}>{meal.name}</Text>
+              <Text
+                style={styles.mealName}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
+                {meal.name}
+              </Text>
 
               {meal.description ? (
-                <Text style={styles.description}>{meal.description}</Text>
+                <Text
+                  style={styles.description}
+                  numberOfLines={4}
+                >
+                  {meal.description}
+                </Text>
               ) : null}
 
               {/* Time & Difficulty */}
@@ -140,7 +167,12 @@ export const MealDetailModal: React.FC<MealDetailModalProps> = ({
 
               {/* Calories */}
               <View style={styles.calorieSection}>
-                <Text style={styles.calorieValue}>
+                <Text
+                  style={styles.calorieValue}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >
                   {Math.round(meal.totalCalories)}
                 </Text>
                 <Text style={styles.calorieLabel}>calories</Text>
@@ -204,16 +236,30 @@ export const MealDetailModal: React.FC<MealDetailModalProps> = ({
                 <Pressable
                   style={styles.completeButton}
                   onPress={() => onMarkComplete(meal)}
+                  hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Mark ${meal.name} as complete`}
                 >
                   <Ionicons
                     name="checkmark-circle-outline"
                     size={rf(20)}
                     color={colors.white}
                   />
-                  <Text style={styles.completeButtonText}>Mark Complete</Text>
+                  <Text
+                    style={styles.completeButtonText}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.8}
+                  >
+                    Mark Complete
+                  </Text>
                 </Pressable>
               ) : (
-                <View style={styles.completedBadge}>
+                <View
+                  style={styles.completedBadge}
+                  accessibilityRole="text"
+                  accessibilityLabel={`${meal.name} completed`}
+                >
                   <Ionicons
                     name="checkmark-circle"
                     size={rf(20)}
@@ -224,6 +270,9 @@ export const MealDetailModal: React.FC<MealDetailModalProps> = ({
               )}
               <Pressable
                 style={styles.deleteButton}
+                hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                accessibilityRole="button"
+                accessibilityLabel={`Delete ${meal.name}`}
                 onPress={() => {
                   crossPlatformAlert(
                     "Delete Meal",
@@ -236,7 +285,14 @@ export const MealDetailModal: React.FC<MealDetailModalProps> = ({
                 }}
               >
                 <Ionicons name="trash-outline" size={rf(18)} color={colors.errorAlt} />
-                <Text style={styles.deleteButtonText}>Delete</Text>
+                <Text
+                  style={styles.deleteButtonText}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  Delete
+                </Text>
               </Pressable>
             </View>
           </GlassCard>

@@ -1,8 +1,10 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { PremiumMealCard } from "./PremiumMealCard";
 import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../theme/aurora-tokens";
+import { rf } from "../../utils/responsive";
 import { getMealTime } from "../../utils/mealSchedule";
 
 interface MealPlanViewProps {
@@ -39,7 +41,12 @@ export const MealPlanView: React.FC<MealPlanViewProps> = React.memo(({
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>
+        <Text
+          style={styles.sectionTitle}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.85}
+        >
           {selectedDay
             ? `${selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1)}'s Meals`
             : "Today's Meals"}
@@ -78,11 +85,23 @@ export const MealPlanView: React.FC<MealPlanViewProps> = React.memo(({
           padding="lg"
           borderRadius="lg"
         >
-          <Text style={styles.emptyMealsText}>
-            {weeklyMealPlan
-              ? "No meals planned for today"
-              : "Generate a meal plan to get started"}
-          </Text>
+          <View style={styles.emptyStateInner}>
+            <Ionicons
+              name={weeklyMealPlan ? "restaurant-outline" : "sparkles-outline"}
+              size={rf(28)}
+              color={colors.textSecondary}
+            />
+            <Text
+              style={styles.emptyMealsText}
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+            >
+              {weeklyMealPlan
+                ? "No meals planned for today"
+                : "Generate a meal plan to get started"}
+            </Text>
+          </View>
         </GlassCard>
       )}
     </View>
@@ -107,10 +126,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   premiumMealsContainer: { gap: spacing.md },
+  emptyStateInner: {
+    alignItems: "center",
+    gap: spacing.sm,
+  },
   emptyMealsText: {
     fontSize: fontSize.md,
     color: colors.textSecondary,
     textAlign: "center",
-    marginBottom: spacing.lg,
   },
 });
