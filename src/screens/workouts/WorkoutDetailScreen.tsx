@@ -1100,7 +1100,7 @@ const styles = StyleSheet.create({
   },
   intensityChipText: {
     color: colors.text.primary,
-    fontSize: rf(9),
+    fontSize: rf(11),
     fontWeight: fw(typography.fontWeight.bold),
   },
   metaText: {

@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 import { SectionHeader } from "../home/SectionHeader";
 import { useAchievementStore } from "../../../stores/achievementStore";
 import { buildAchievementViewModels } from "../../../utils/achievementViewModel";
@@ -119,7 +120,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
                   <View
                     style={[
                       styles.iconWrap,
-                      { backgroundColor: `${accentColor}20` },
+                      { backgroundColor: hexToRgba(accentColor, 0.12) },
                     ]}
                   >
                     <Ionicons
@@ -137,7 +138,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
                       <View
                         style={[
                           styles.categoryTag,
-                          { backgroundColor: `${accentColor}18` },
+                          { backgroundColor: hexToRgba(accentColor, 0.1) },
                         ]}
                       >
                         <Text
@@ -276,8 +277,8 @@ const styles = StyleSheet.create({
     borderRadius: rp(4),
     flexShrink: 0,
   },
-  categoryText: { fontSize: rf(8), fontWeight: "700", letterSpacing: 0.4 },
-  description: { fontSize: rf(10), color: colors.textMuted },
+  categoryText: { fontSize: rf(11), fontWeight: "700", letterSpacing: 0.4 },
+  description: { fontSize: rf(12), color: colors.textMuted },
   progressRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -296,7 +297,7 @@ const styles = StyleSheet.create({
     borderRadius: rp(2),
   },
   progressLabel: {
-    fontSize: rf(9),
+    fontSize: rf(11),
     color: colors.textMuted,
     flexShrink: 0,
   },
@@ -306,7 +307,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     minWidth: rw(30),
   },
-  pts: { fontSize: rf(10), fontWeight: "700" },
+  pts: { fontSize: rf(12), fontWeight: "700" },
 });
 
 export default AchievementShowcase;

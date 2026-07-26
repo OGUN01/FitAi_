@@ -161,10 +161,6 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
 
-  achievementToastIcon: {
-    fontSize: rf(28),
-  },
-
   achievementToastText: {
     flex: 1,
   },

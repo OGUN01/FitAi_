@@ -11,6 +11,7 @@ import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rp } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 import { SectionHeader } from "../home/SectionHeader";
 
 export interface MetricData {
@@ -126,7 +127,7 @@ const MetricCard: React.FC<{
           <View style={styles.cardContent}>
             {/* Icon */}
             <View
-              style={[styles.iconCircle, { backgroundColor: `${color}20` }]}
+              style={[styles.iconCircle, { backgroundColor: hexToRgba(color, 0.12) }]}
             >
               <Ionicons name={icon} size={rf(16)} color={color} />
             </View>

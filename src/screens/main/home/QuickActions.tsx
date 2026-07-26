@@ -10,6 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rp } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 
 interface QuickAction {
   id: string;
@@ -57,7 +58,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ actions }) => {
           <View
             style={[
               styles.iconCircle,
-              { backgroundColor: `${action.color}18` },
+              { backgroundColor: hexToRgba(action.color, 0.09) },
             ]}
           >
             <Ionicons name={action.icon} size={rf(22)} color={action.color} />
@@ -69,7 +70,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ actions }) => {
                 <View
                   style={[
                     styles.progressRing,
-                    { borderColor: `${action.color}40` },
+                    { borderColor: hexToRgba(action.color, 0.25) },
                   ]}
                 >
                   <View
@@ -189,7 +190,7 @@ const styles = StyleSheet.create({
     borderColor: colors.background,
   },
   badgeText: {
-    fontSize: rf(9),
+    fontSize: rf(11),
     fontWeight: typography.fontWeight.bold,
     color: colors.white,
   },

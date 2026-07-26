@@ -31,6 +31,7 @@ import {
   borderRadius,
 } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rp } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 import { useFitnessStore } from "../../../stores/fitnessStore";
 import { workoutTemplateService } from "../../../services/workoutTemplateService";
 import { getCurrentUserId } from "../../../services/authUtils";
@@ -214,7 +215,7 @@ interface StatTileProps {
 
 const StatTile: React.FC<StatTileProps> = ({ icon, value, label, tint }) => (
   <View style={styles.statTile}>
-    <View style={[styles.statIcon, { backgroundColor: `${tint}1F` }]}>
+    <View style={[styles.statIcon, { backgroundColor: hexToRgba(tint, 0.12) }]}>
       <Ionicons name={icon} size={rf(15)} color={tint} />
     </View>
     <Text

@@ -12,6 +12,7 @@ import { GestureDetector, Gesture } from "react-native-gesture-handler";
 import Svg, { Line, Circle, Path, G, Text as SvgText } from "react-native-svg";
 import { rf, rp, rw, rh } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { hexToRgba } from "../../utils/colors";
 import { ChartTooltip } from "../ui/ChartTooltip";
 import { hapticSelection } from "../../utils/haptics";
 
@@ -411,7 +412,7 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
       {showProgress && (
         <View style={styles.timeline}>
           <Text style={styles.timelineText}>
-            📅 {progressWeeks}-week progression plan
+            {progressWeeks}-week progression plan
           </Text>
           <Text style={styles.timelineSubtext}>
             {(Math.abs(currentValue - targetValue) / progressWeeks).toFixed(2)}{" "}
@@ -478,7 +479,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: spacing.md,
     padding: spacing.sm,
-    backgroundColor: `${colors.primary}10`,
+    backgroundColor: hexToRgba(colors.primary, 0.06),
     borderRadius: borderRadius.md,
   },
 

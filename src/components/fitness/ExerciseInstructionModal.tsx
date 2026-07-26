@@ -27,6 +27,7 @@ import {
   AnimatedPressable,
 } from "../ui/aurora";
 import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
+import { hexToRgba } from "../../utils/colors";
 import { rf, rp, rh } from "../../utils/responsive";
 import { exerciseFilterService } from "../../services/exerciseFilterService";
 import { ExerciseTipsCard } from "./instruction/ExerciseTipsCard";
@@ -301,7 +302,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: rp(spacing.xxs),
-    backgroundColor: `${colors.success.DEFAULT}20`,
+    backgroundColor: hexToRgba(colors.success.DEFAULT, 0.12),
     paddingHorizontal: rp(spacing.sm),
     paddingVertical: rp(spacing.xxs),
     borderRadius: borderRadius.sm,
@@ -428,7 +429,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
   },
   primaryChip: {
-    backgroundColor: `${colors.primary.DEFAULT}20`,
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, 0.12),
   },
   primaryChipText: {
     color: colors.primary.DEFAULT,
@@ -437,7 +438,7 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
   secondaryChip: {
-    backgroundColor: `${colors.warning.DEFAULT}20`,
+    backgroundColor: hexToRgba(colors.warning.DEFAULT, 0.12),
   },
   secondaryChipText: {
     color: colors.warning.DEFAULT,
@@ -446,7 +447,7 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
   equipmentChip: {
-    backgroundColor: `${colors.info.DEFAULT}20`,
+    backgroundColor: hexToRgba(colors.info.DEFAULT, 0.12),
   },
   equipmentChipText: {
     color: colors.info.DEFAULT,
@@ -455,7 +456,7 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
   bodyPartChip: {
-    backgroundColor: `${colors.success.DEFAULT}20`,
+    backgroundColor: hexToRgba(colors.success.DEFAULT, 0.12),
   },
   bodyPartChipText: {
     color: colors.success.DEFAULT,

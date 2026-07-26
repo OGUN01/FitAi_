@@ -13,6 +13,7 @@ import Animated, {
 import { AuroraBackground, GlassCard, AnimatedPressable, GlassButton } from "../../components/ui/aurora";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { hexToRgba } from "../../utils/colors";
 import { rp, rf } from "../../utils/responsive";
 import { DayWorkout } from "../../types/ai";
 import { ExerciseGifPlayer } from "../../components/fitness/ExerciseGifPlayer";
@@ -1201,7 +1202,7 @@ const styles = StyleSheet.create({
     borderColor: colors.glass.border,
   },
   warmupDoneBtnActive: {
-    backgroundColor: `${colors.warning.DEFAULT}40`,
+    backgroundColor: hexToRgba(colors.warning.DEFAULT, 0.25),
     borderColor: colors.warning.DEFAULT,
   },
   warmupDoneText: {

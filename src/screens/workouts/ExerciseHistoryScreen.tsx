@@ -37,6 +37,7 @@ import {
   EmptyState,
 } from "../../components/ui/aurora";
 import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
+import { hexToRgba } from "../../utils/colors";
 import { rp, rf } from "../../utils/responsive";
 import {
   exerciseHistoryService,
@@ -392,9 +393,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: rp(spacing.xxs),
-    backgroundColor: `${colors.warning.DEFAULT}22`,
+    backgroundColor: hexToRgba(colors.warning.DEFAULT, 0.13),
     borderWidth: 1,
-    borderColor: `${colors.warning.DEFAULT}66`,
+    borderColor: hexToRgba(colors.warning.DEFAULT, 0.4),
     borderRadius: borderRadius.full,
     paddingHorizontal: rp(spacing.sm),
     paddingVertical: rp(spacing.xxs),
@@ -432,9 +433,9 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   prPill: {
-    backgroundColor: `${colors.warning.DEFAULT}22`,
+    backgroundColor: hexToRgba(colors.warning.DEFAULT, 0.13),
     borderWidth: 1,
-    borderColor: `${colors.warning.DEFAULT}66`,
+    borderColor: hexToRgba(colors.warning.DEFAULT, 0.4),
     borderRadius: borderRadius.full,
     paddingHorizontal: rp(spacing.sm),
     paddingVertical: rp(spacing.xxs),

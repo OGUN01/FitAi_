@@ -11,6 +11,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 
 export type InsightType =
   | "positive"
@@ -129,7 +130,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({
                 <View
                   style={[
                     styles.iconContainer,
-                    { backgroundColor: `${config.color}25` },
+                    { backgroundColor: hexToRgba(config.color, 0.15) },
                   ]}
                 >
                   <Ionicons
@@ -148,7 +149,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({
                       <View
                         style={[
                           styles.categoryBadge,
-                          { backgroundColor: `${config.color}20` },
+                          { backgroundColor: hexToRgba(config.color, 0.12) },
                         ]}
                       >
                         <Text
@@ -188,7 +189,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({
                   <View
                     style={[
                       styles.actionButton,
-                      { backgroundColor: `${config.color}20` },
+                      { backgroundColor: hexToRgba(config.color, 0.12) },
                     ]}
                   >
                     <Text style={[styles.actionText, { color: config.color }]}>

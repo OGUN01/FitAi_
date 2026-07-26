@@ -365,12 +365,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.warning,
   },
 
-  workoutIndicatorText: {
-    fontSize: rf(11),
-    fontWeight: "bold",
-    color: colors.white,
-  },
-
   restIndicator: {
     justifyContent: "center",
     alignItems: "center",

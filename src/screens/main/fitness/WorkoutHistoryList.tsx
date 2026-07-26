@@ -17,6 +17,7 @@ import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 import { haptics } from "../../../utils/haptics";
 import { crossPlatformAlert } from "../../../utils/crossPlatformAlert";
 
@@ -253,7 +254,7 @@ const WorkoutHistoryCard: React.FC<{
               <View
                 style={[
                   styles.iconContainer,
-                  { backgroundColor: `${categoryTint}25` },
+                  { backgroundColor: hexToRgba(categoryTint, 0.15) },
                 ]}
               >
                 <Ionicons
@@ -296,7 +297,7 @@ const WorkoutHistoryCard: React.FC<{
                     style={[
                       styles.progressRing,
                       {
-                        borderColor: `${colors.primary}80`,
+                        borderColor: hexToRgba(colors.primary, 0.5),
                       },
                     ]}
                   >
@@ -525,7 +526,7 @@ const styles = StyleSheet.create({
     borderRadius: rw(17),
     borderWidth: 2,
     borderColor: colors.successAlt,
-    backgroundColor: `${colors.successAlt}20`,
+    backgroundColor: hexToRgba(colors.successAlt, 0.12),
     justifyContent: "center",
     alignItems: "center",
   },
@@ -552,9 +553,9 @@ const styles = StyleSheet.create({
     width: rw(72),
     height: rw(72),
     borderRadius: rw(36),
-    backgroundColor: `${colors.primary}15`,
+    backgroundColor: hexToRgba(colors.primary, 0.08),
     borderWidth: 1,
-    borderColor: `${colors.primary}30`,
+    borderColor: hexToRgba(colors.primary, 0.2),
     justifyContent: "center",
     alignItems: "center",
     marginBottom: spacing.sm,
@@ -581,7 +582,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.xs,
     marginTop: spacing.xs,
-    backgroundColor: `${colors.primary}10`,
+    backgroundColor: hexToRgba(colors.primary, 0.06),
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.full,

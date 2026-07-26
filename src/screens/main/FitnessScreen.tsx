@@ -26,6 +26,7 @@ import {
 } from "../../components/ui/CustomDialog";
 import { SegmentedControl } from "../../components/ui/SegmentedControl";
 import { colors, spacing, shadows } from "../../theme/aurora-tokens";
+import { hexToRgba } from "../../utils/colors";
 import { rh, rf, rp, rbr } from "../../utils/responsive";
 import { useFitnessStore } from "../../stores/fitnessStore";
 import { DayWorkout } from "../../types/ai";
@@ -448,10 +449,10 @@ const styles = StyleSheet.create({
     marginHorizontal: rp(spacing.lg),
     marginBottom: rp(spacing.lg),
     padding: rp(spacing.md),
-    backgroundColor: `${colors.error.DEFAULT}1F`,
+    backgroundColor: hexToRgba(colors.error.DEFAULT, 0.12),
     borderRadius: rbr(12),
     borderWidth: 1,
-    borderColor: `${colors.error.DEFAULT}59`,
+    borderColor: hexToRgba(colors.error.DEFAULT, 0.35),
     ...shadows.level2,
   },
   errorHeader: {

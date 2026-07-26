@@ -54,6 +54,7 @@ import {
 import { animations } from "../../../theme/animations";
 import { haptics } from "../../../utils/haptics";
 import { rf, rh, rp, rw } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 
 // ----------------------------------------------------------------------------
 // TYPES & CONSTANTS
@@ -458,7 +459,7 @@ const CommunityCard: React.FC<CommunityCardProps> = ({
             <View
               style={[
                 styles.difficultyBadge,
-                { backgroundColor: `${tint}1F` },
+                { backgroundColor: hexToRgba(tint, 0.12) },
               ]}
             >
               <Text style={[styles.difficultyText, { color: tint }]}>
@@ -560,7 +561,7 @@ const styles = StyleSheet.create({
     minHeight: Math.max(rp(40), 44),
   },
   sortChipActive: {
-    backgroundColor: `${colors.primary}26`,
+    backgroundColor: hexToRgba(colors.primary, 0.15),
     borderColor: colors.primary,
   },
   sortChipIcon: {},

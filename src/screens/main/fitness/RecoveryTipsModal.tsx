@@ -16,6 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rp } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 import { useProfileStore } from "../../../stores/profileStore";
 
 interface RecoveryTipsModalProps {
@@ -392,7 +393,7 @@ const styles = StyleSheet.create({
   introCard: {
     flexDirection: "row",
     alignItems: "flex-start",
-    backgroundColor: "rgba(255, 215, 0, 0.18)",
+    backgroundColor: hexToRgba(colors.gold, 0.18),
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     marginBottom: spacing.lg,
@@ -466,7 +467,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderLeftWidth: 3,
     borderLeftColor: colors.primary,
-    backgroundColor: "rgba(255, 107, 53, 0.18)",
+    backgroundColor: hexToRgba(colors.primary, 0.18),
     borderRadius: borderRadius.md,
   },
   quoteText: {

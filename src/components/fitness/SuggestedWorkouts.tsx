@@ -13,6 +13,7 @@ import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { AuroraSpinner } from "../ui/aurora";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 import { ExtraWorkoutTemplate } from "../../stores/fitness/types";
 
 interface SuggestedWorkoutsProps {
@@ -216,7 +217,7 @@ export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
                 <View
                   style={[
                     styles.difficultyBadge,
-                    { backgroundColor: `${difficultyConfig.color}15` },
+                    { backgroundColor: hexToRgba(difficultyConfig.color, 0.08) },
                   ]}
                 >
                   <Text

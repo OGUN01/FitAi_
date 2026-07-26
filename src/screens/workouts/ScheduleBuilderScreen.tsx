@@ -30,6 +30,7 @@ import {
   AnimatedPressable,
 } from "../../components/ui/aurora";
 import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
+import { hexToRgba } from "../../utils/colors";
 import { rp, rf, rw } from "../../utils/responsive";
 
 interface Props {
@@ -1009,7 +1010,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.glass.border,
   },
-  pickerItemSelected: { backgroundColor: `${colors.primary.DEFAULT}1A` },
+  pickerItemSelected: { backgroundColor: hexToRgba(colors.primary.DEFAULT, 0.1) },
   pickerItemInfo: { flex: 1 },
   pickerItemName: {
     fontSize: rf(typography.fontSize.body),

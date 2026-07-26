@@ -20,6 +20,7 @@ import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 
 interface EmptyPlanStateProps {
   experienceLevel?: "beginner" | "intermediate" | "advanced";
@@ -280,7 +281,7 @@ const styles = StyleSheet.create({
   },
   previewContainer: {
     width: "100%",
-    backgroundColor: "rgba(255, 107, 53, 0.08)",
+    backgroundColor: hexToRgba(colors.primary, 0.08),
     borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.lg,

@@ -39,6 +39,7 @@ import {
   AuroraSpinner,
 } from "../../components/ui/aurora";
 import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
+import { hexToRgba } from "../../utils/colors";
 import { rp, rf, rw, rh } from "../../utils/responsive";
 
 interface Props {
@@ -1001,7 +1002,7 @@ const styles = StyleSheet.create({
     borderColor: colors.glass.border,
   },
   categoryChipActive: {
-    backgroundColor: `${colors.secondary.DEFAULT}26`,
+    backgroundColor: hexToRgba(colors.secondary.DEFAULT, 0.15),
     borderColor: colors.secondary.DEFAULT,
   },
   categoryChipText: {

@@ -8,6 +8,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { rp } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { hexToRgba } from "../../utils/colors";
 
 interface HeartRateZone {
   zone: number;
@@ -256,10 +257,10 @@ const styles = StyleSheet.create({
   legend: {
     marginTop: spacing.lg,
     padding: spacing.md,
-    backgroundColor: `${colors.primary}10`,
+    backgroundColor: hexToRgba(colors.primary, 0.06),
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: `${colors.primary}30`,
+    borderColor: hexToRgba(colors.primary, 0.2),
   },
 
   legendTitle: {

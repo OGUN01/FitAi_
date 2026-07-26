@@ -29,6 +29,7 @@ import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rp } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 
 // Water amount presets (in ml)
 const QUICK_ADD_OPTIONS = [
@@ -184,7 +185,7 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
           <View
             style={[
               styles.statusBadge,
-              { backgroundColor: `${hydrationStatus.color}20` },
+              { backgroundColor: hexToRgba(hydrationStatus.color, 0.12) },
             ]}
           >
             <View

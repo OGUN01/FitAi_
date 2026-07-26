@@ -10,6 +10,7 @@ import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 
 interface DayActivity {
   date: Date;
@@ -154,7 +155,7 @@ const styles = StyleSheet.create({
     width: rw(28),
     height: rw(28),
     borderRadius: rw(14),
-    backgroundColor: `${colors.primary}12`,
+    backgroundColor: hexToRgba(colors.primary, 0.07),
     justifyContent: "center",
     alignItems: "center",
   },
@@ -208,7 +209,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundTertiary,
   },
   todayCell: {
-    backgroundColor: `${colors.primary}15`,
+    backgroundColor: hexToRgba(colors.primary, 0.09),
     borderWidth: 2,
     borderColor: colors.primary,
   },
@@ -216,10 +217,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.success,
   },
   restCell: {
-    backgroundColor: `${colors.info}10`,
+    backgroundColor: hexToRgba(colors.info, 0.06),
   },
   missedCell: {
-    backgroundColor: `${colors.error}10`,
+    backgroundColor: hexToRgba(colors.error, 0.06),
   },
 });
 

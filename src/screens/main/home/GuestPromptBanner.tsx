@@ -10,6 +10,7 @@ import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rw } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 
 interface GuestPromptBannerProps {
   onSignUpPress: () => void;
@@ -54,8 +55,8 @@ export const GuestPromptBanner: React.FC<GuestPromptBannerProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: `${colors.primary}08`,
-    borderColor: `${colors.primary}20`,
+    backgroundColor: hexToRgba(colors.primary, 0.05),
+    borderColor: hexToRgba(colors.primary, 0.12),
     borderWidth: 1,
   },
   row: {
@@ -68,7 +69,7 @@ const styles = StyleSheet.create({
     width: rw(32),
     height: rw(32),
     borderRadius: rw(16),
-    backgroundColor: `${colors.primary}15`,
+    backgroundColor: hexToRgba(colors.primary, 0.09),
     justifyContent: "center",
     alignItems: "center",
   },
