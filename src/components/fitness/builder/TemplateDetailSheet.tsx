@@ -63,6 +63,7 @@ import { haptics } from "../../../utils/haptics";
 import { crossPlatformAlert } from "../../../utils/crossPlatformAlert";
 import { getCurrentUserId } from "../../../services/authUtils";
 import { rf, rp, rw, rs } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 
 // ----------------------------------------------------------------------------
 // TYPES & CONSTANTS
@@ -99,25 +100,6 @@ export interface TemplateDetailSheetProps {
 /** Narrow a typography.fontWeight token to RN's literal fontWeight union. */
 const fw = (w: string): TextStyle["fontWeight"] =>
   w as TextStyle["fontWeight"];
-
-/**
- * Convert a hex color (`#RRGGBB` or `#RGB`) to an `rgba()` string with the
- * given alpha. Replaces fragile `${color}1F` hex-append which silently breaks
- * if the input is ever switched to an `rgba()`/named color.
- */
-function hexToRgba(hex: string, alpha: number): string {
-  let h = hex.replace("#", "");
-  if (h.length === 3) {
-    h = h
-      .split("")
-      .map((c) => c + c)
-      .join("");
-  }
-  const r = parseInt(h.slice(0, 2), 16) || 0;
-  const g = parseInt(h.slice(2, 4), 16) || 0;
-  const b = parseInt(h.slice(4, 6), 16) || 0;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
 
 /** 12% tint for badge backgrounds (was `${tint}1F`). */
 const BADGE_TINT_ALPHA = 0.12;

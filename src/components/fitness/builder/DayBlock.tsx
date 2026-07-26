@@ -23,6 +23,7 @@ import {
   Pressable,
   TextInput,
   ViewStyle,
+  TextStyle,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
@@ -584,7 +585,7 @@ const styles = StyleSheet.create({
   dayShort: {
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.micro),
-    fontWeight: String(typography.fontWeight.bold) as any,
+    fontWeight: String(typography.fontWeight.bold) as TextStyle["fontWeight"],
   },
   headerInfo: {
     flex: 1,
@@ -593,7 +594,7 @@ const styles = StyleSheet.create({
   dayTitle: {
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.body),
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontWeight: String(typography.fontWeight.semibold) as TextStyle["fontWeight"],
   },
   headerMeta: {
     flexDirection: "row",
@@ -609,7 +610,7 @@ const styles = StyleSheet.create({
   intensityChipText: {
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.micro),
-    fontWeight: String(typography.fontWeight.bold) as any,
+    fontWeight: String(typography.fontWeight.bold) as TextStyle["fontWeight"],
   },
   metaText: {
     color: colors.text.secondary,
@@ -649,7 +650,7 @@ const styles = StyleSheet.create({
   notesLabel: {
     color: colors.text.secondary,
     fontSize: rf(typography.fontSize.micro),
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontWeight: String(typography.fontWeight.semibold) as TextStyle["fontWeight"],
     marginBottom: rp(spacing.xs),
   },
   notesInput: {
@@ -747,7 +748,7 @@ const styles = StyleSheet.create({
   copyBtnText: {
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.micro),
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontWeight: String(typography.fontWeight.semibold) as TextStyle["fontWeight"],
   },
   // Copy-to picker — absolute overlay so it does not push siblings down.
   copyPickerOverlay: {
@@ -778,11 +779,13 @@ const styles = StyleSheet.create({
   copyPickerTitle: {
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.caption),
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontWeight: String(typography.fontWeight.semibold) as TextStyle["fontWeight"],
     marginBottom: rp(spacing.sm),
   },
   copyPickerItem: {
     paddingVertical: rp(spacing.sm),
+    minHeight: Math.max(rp(44), 44),
+    justifyContent: "center",
   },
   copyPickerItemText: {
     color: colors.text.primary,

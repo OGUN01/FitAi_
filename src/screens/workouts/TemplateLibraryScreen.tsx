@@ -659,7 +659,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
                   haptics.light();
                   setSearch("");
                 }}
-                hitSlop={12}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityRole="button"
                 accessibilityLabel="Clear search"
                 accessibilityHint="Remove the search query"
@@ -1131,7 +1131,7 @@ const TemplateGridCard: React.FC<GridCardProps> = ({
                   e.stopPropagation();
                   onToggleBookmark(template.id);
                 }}
-                hitSlop={8}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={styles.gridBookmarkBtn}
                 accessibilityRole="button"
                 accessibilityLabel={
@@ -1316,7 +1316,7 @@ const TemplateListRow: React.FC<ListRowProps> = ({
                       e.stopPropagation();
                       onToggleBookmark(template.id);
                     }}
-                    hitSlop={8}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     style={styles.listBookmarkBtn}
                     accessibilityRole="button"
                     accessibilityLabel={

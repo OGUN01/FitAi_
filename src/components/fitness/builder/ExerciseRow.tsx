@@ -20,6 +20,7 @@ import {
   Text,
   StyleSheet,
   ViewStyle,
+  TextStyle,
   Pressable,
   Dimensions,
 } from "react-native";
@@ -566,7 +567,7 @@ const styles = StyleSheet.create({
   name: {
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.caption),
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontWeight: String(typography.fontWeight.semibold) as TextStyle["fontWeight"],
     flexShrink: 1,
   },
   supersetChip: {
