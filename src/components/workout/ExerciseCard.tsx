@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Card, Button } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../utils/responsive";
@@ -80,7 +81,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           onPress={onStartExercise}
           variant={isCompleted ? "outline" : "primary"}
           disabled={isCompleted}
-          style={{ marginTop: spacing.md }}
+          style={styles.startButton}
         />
 
         <View style={styles.exerciseDetails}>
@@ -114,6 +115,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               ]}
               onPress={() => onSetComplete(setIndex)}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={`Set ${setIndex + 1}${isSetCompleted ? ", completed" : ", not completed"}`}
             >
               <Text
                 style={[
@@ -123,7 +126,11 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               >
                 {safeString(setIndex + 1)}
               </Text>
-              {isSetCompleted && <Text style={styles.setButtonCheck}>OK</Text>}
+              {isSetCompleted && (
+                <View style={styles.setButtonCheck} pointerEvents="none">
+                  <Ionicons name="checkmark" size={rf(14)} color={colors.white} />
+                </View>
+              )}
             </TouchableOpacity>
           ))}
         </View>
@@ -136,7 +143,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
       <View style={styles.instructionsContainer}>
         <Text style={styles.instructionsTitle}>Exercise Notes</Text>
-        <Text style={styles.instructionsText}>
+        <Text
+          style={styles.instructionsText}
+          numberOfLines={4}
+        >
           {safeString(
             notes ||
               "Focus on proper form and controlled movements. Maintain steady breathing throughout each rep.",
@@ -172,6 +182,13 @@ const styles = StyleSheet.create({
 
   exerciseHeader: {
     marginBottom: spacing.xl,
+  },
+
+  startButton: {
+    // Replaces inline `marginTop: spacing.md` — that double-margined the
+    // header (exerciseName already has marginBottom: spacing.md). Now zero
+    // top margin so the Button sits flush under the title.
+    marginTop: 0,
   },
 
   exerciseName: {
@@ -220,13 +237,15 @@ const styles = StyleSheet.create({
   },
 
   setButton: {
-    width: rw(56),
-    height: rw(56),
+    // Clamp to 56px minimum (rw(56) drops below on small screens). Use a
+    // hairline border so the 2px borderWidth didn't eat into the tap area.
+    width: Math.max(rw(56), 56),
+    height: Math.max(rw(56), 56),
     borderRadius: rbr(28),
     backgroundColor: colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 2,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     position: "relative",
   },
@@ -250,9 +269,15 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: rp(-2),
     right: rp(2),
-    fontSize: rf(12),
-    color: colors.white,
-    fontWeight: typography.fontWeight.bold,
+    // Wrapper for the Ionicons checkmark (was a Text "OK" that overlapped
+    // the set number — an icon is clearer and consistent with the rest of
+    // the workout components).
+    alignItems: "center",
+    justifyContent: "center",
+    width: rf(18),
+    height: rf(18),
+    borderRadius: rf(9),
+    backgroundColor: colors.success,
   },
 
   setsProgressText: {

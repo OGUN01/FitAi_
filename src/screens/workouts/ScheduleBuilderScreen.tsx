@@ -4,10 +4,12 @@ import {
   Text,
   FlatList,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { workoutTemplateService, WorkoutTemplate, TemplateExercise } from "../../services/workoutTemplateService";
 import { useFitnessStore } from "../../stores/fitnessStore";
@@ -262,7 +264,12 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
   if (loading) {
     return (
       <AuroraBackground theme="space">
-        <SafeAreaView style={styles.flex}>
+        <SafeAreaView style={styles.flex} edges={["top"]}>
+          <GlassHeader
+            title="Build My Schedule"
+            onBack={() => navigation.goBack()}
+            backAccessibilityLabel="Go back"
+          />
           <View style={styles.loader}>
             <AuroraSpinner size="lg" />
           </View>
@@ -273,7 +280,7 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
 
   return (
     <AuroraBackground theme="space">
-      <SafeAreaView style={styles.flex}>
+      <SafeAreaView style={styles.flex} edges={["top"]}>
         {/* Header */}
         <GlassHeader
           title="Build My Schedule"
@@ -285,8 +292,18 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
               style={[styles.saveBtn, (saving || assignedCount === 0) && styles.saveBtnDisabled]}
               accessibilityRole="button"
               accessibilityLabel="Save schedule"
+              accessibilityState={{ disabled: saving || assignedCount === 0 }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Text style={styles.saveText}>{saving ? "Saving..." : "Save"}</Text>
+              <Ionicons
+                name={saving ? "hourglass-outline" : "checkmark-circle-outline"}
+                size={rf(16)}
+                color={colors.text.primary}
+                style={styles.saveBtnIcon}
+              />
+              <Text style={styles.saveText} numberOfLines={1}>
+                {saving ? "Saving" : "Save"}
+              </Text>
             </AnimatedPressable>
           }
         />
@@ -333,10 +350,10 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
                       {assigned ? (
                         <View style={styles.assignedBox}>
                           <View style={styles.assignedInfo}>
-                            <Text style={styles.assignedName} numberOfLines={1}>
+                            <Text style={styles.assignedName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                               {assigned.name}
                             </Text>
-                            <Text style={styles.assignedMeta}>
+                            <Text style={styles.assignedMeta} numberOfLines={1}>
                               {assigned.exercises.length} exercises
                               {assigned.estimatedDurationMinutes
                                 ? ` · ${assigned.estimatedDurationMinutes} min`
@@ -348,6 +365,7 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
                             style={styles.changeBtn}
                             accessibilityRole="button"
                             accessibilityLabel={`Change workout for ${day.label}`}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                           >
                             <Text style={styles.changeBtnText}>Change</Text>
                           </AnimatedPressable>
@@ -356,6 +374,7 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
                             style={styles.clearBtn}
                             accessibilityRole="button"
                             accessibilityLabel={`Clear ${day.label}`}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                           >
                             <Ionicons name="close" size={rf(16)} color={colors.error.DEFAULT} />
                           </AnimatedPressable>
@@ -366,6 +385,7 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
                           onPress={() => setPickerDay(day.key)}
                           accessibilityRole="button"
                           accessibilityLabel={`Add workout to ${day.label}`}
+                          accessibilityState={{ selected: false }}
                         >
                           <Text style={styles.restText}>Rest Day</Text>
                           <Text style={styles.addText}>+ Add Workout</Text>
@@ -432,7 +452,7 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
                       {dayExercises.map((ex, idx) => (
                         <View key={`${ex.exerciseId}_${idx}`} style={styles.exerciseItemRow}>
                           <View style={styles.exerciseItemInfo}>
-                            <Text style={styles.exerciseItemName} numberOfLines={1}>{ex.name}</Text>
+                            <Text style={styles.exerciseItemName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{ex.name}</Text>
                             <View style={styles.exerciseItemControls}>
                               {/* Sets */}
                               <View style={styles.controlGroup}>
@@ -443,6 +463,7 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
                                     onPress={() => ex.sets > 1 && updateExerciseInDay(day.key, idx, { sets: ex.sets - 1 })}
                                     accessibilityRole="button"
                                     accessibilityLabel="Decrease sets"
+                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                   >
                                     <Text style={styles.stepperBtnText}>−</Text>
                                   </AnimatedPressable>
@@ -452,6 +473,7 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
                                     onPress={() => updateExerciseInDay(day.key, idx, { sets: ex.sets + 1 })}
                                     accessibilityRole="button"
                                     accessibilityLabel="Increase sets"
+                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                   >
                                     <Text style={styles.stepperBtnText}>+</Text>
                                   </AnimatedPressable>
@@ -472,6 +494,7 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
                                     }}
                                     accessibilityRole="button"
                                     accessibilityLabel="Decrease reps"
+                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                   >
                                     <Text style={styles.stepperBtnText}>−</Text>
                                   </AnimatedPressable>
@@ -489,6 +512,7 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
                                     }}
                                     accessibilityRole="button"
                                     accessibilityLabel="Increase reps"
+                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                   >
                                     <Text style={styles.stepperBtnText}>+</Text>
                                   </AnimatedPressable>
@@ -507,6 +531,7 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
                             onPress={() => removeExerciseFromDay(day.key, idx)}
                             accessibilityRole="button"
                             accessibilityLabel="Remove exercise"
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                           >
                             <Ionicons name="close" size={rf(14)} color={colors.error.DEFAULT} />
                           </AnimatedPressable>
@@ -524,6 +549,7 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
                           }}
                           accessibilityRole="button"
                           accessibilityLabel="Add exercise"
+                          hitSlop={{ top: 8, bottom: 8, left: 0, right: 0 }}
                         >
                           <Text style={styles.addExerciseBtnText}>+ Add Exercise</Text>
                         </AnimatedPressable>
@@ -533,6 +559,7 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
                             onPress={() => clearDayExercises(day.key)}
                             accessibilityRole="button"
                             accessibilityLabel="Clear all exercises"
+                            hitSlop={{ top: 8, bottom: 8, left: 0, right: 0 }}
                           >
                             <Text style={styles.clearDayBtnText}>Clear All</Text>
                           </AnimatedPressable>
@@ -602,85 +629,95 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
           title={exercisePickerDay ? `Add exercise to ${DAYS.find((d) => d.key === exercisePickerDay)?.label ?? ""}` : "Add exercise"}
           maxHeightFraction={0.85}
         >
-          {/* Search */}
-          <View style={styles.exerciseSearchRow}>
-            <TextInput
-              style={styles.exerciseSearchInput}
-              placeholder="Search exercises..."
-              placeholderTextColor={colors.text.tertiary}
-              value={exerciseSearch}
-              onChangeText={setExerciseSearch}
-              autoCapitalize="none"
-            />
-          </View>
-
-          {/* Category tabs */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoryTabsRow}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
+            style={styles.pickerKav}
           >
-            {EXERCISE_CATEGORIES.map((cat) => (
-              <AnimatedPressable
-                key={cat.key}
-                style={[
-                  styles.categoryTab,
-                  exerciseCategory === cat.key && styles.categoryTabActive,
-                ]}
-                onPress={() => setExerciseCategory(cat.key)}
-                accessibilityRole="button"
-                accessibilityLabel={`Filter by ${cat.label}`}
-              >
-                <Text
-                  style={[
-                    styles.categoryTabText,
-                    exerciseCategory === cat.key && styles.categoryTabTextActive,
-                  ]}
-                >
-                  {cat.label}
-                </Text>
-              </AnimatedPressable>
-            ))}
-          </ScrollView>
+            {/* Search */}
+            <View style={styles.exerciseSearchRow}>
+              <TextInput
+                style={styles.exerciseSearchInput}
+                placeholder="Search exercises..."
+                placeholderTextColor={colors.text.tertiary}
+                value={exerciseSearch}
+                onChangeText={setExerciseSearch}
+                autoCapitalize="none"
+                returnKeyType="search"
+                blurOnSubmit
+              />
+            </View>
 
-          {/* Exercise list */}
-          <FlatList
-            data={filteredExercises}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => {
-              const alreadyAdded = exercisePickerDay
-                ? (exerciseAssignments[exercisePickerDay] || []).some(
-                    (ex) => ex.exerciseId === item.id
-                  )
-                : false;
-              return (
+            {/* Category tabs */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryTabsRow}
+            >
+              {EXERCISE_CATEGORIES.map((cat) => (
                 <AnimatedPressable
-                  style={[styles.pickerItem, alreadyAdded && styles.pickerItemSelected, alreadyAdded && { opacity: 0.6 }]}
-                  onPress={() => exercisePickerDay && !alreadyAdded && addExerciseToDay(exercisePickerDay, item)}
+                  key={cat.key}
+                  style={[
+                    styles.categoryTab,
+                    exerciseCategory === cat.key && styles.categoryTabActive,
+                  ]}
+                  onPress={() => setExerciseCategory(cat.key)}
                   accessibilityRole="button"
-                  accessibilityLabel={`Add ${item.name}`}
+                  accessibilityLabel={`Filter by ${cat.label}`}
+                  hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
                 >
-                  <View style={styles.pickerItemInfo}>
-                    <Text style={styles.pickerItemName}>{item.name}</Text>
-                    <Text style={styles.pickerItemMeta}>
-                      {item.muscleGroups.slice(0, 3).join(", ")}
-                      {item.isBodyweight ? " · Bodyweight" : ""}
-                    </Text>
-                    <Text style={styles.pickerItemMuscles}>
-                      {item.difficulty} · {item.category}
-                    </Text>
-                  </View>
-                  {alreadyAdded && <Ionicons name="checkmark" size={rf(18)} color={colors.primary.DEFAULT} />}
+                  <Text
+                    style={[
+                      styles.categoryTabText,
+                      exerciseCategory === cat.key && styles.categoryTabTextActive,
+                    ]}
+                  >
+                    {cat.label}
+                  </Text>
                 </AnimatedPressable>
-              );
-            }}
-            contentContainerStyle={styles.pickerList}
-            ListEmptyComponent={
-              <View style={styles.pickerEmpty}>
-                <Text style={styles.pickerEmptyText}>No exercises found</Text>
-              </View>
-            }
-          />
+              ))}
+            </ScrollView>
+
+            {/* Exercise list */}
+            <FlatList
+              data={filteredExercises}
+              keyExtractor={(item) => item.id}
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item }) => {
+                const alreadyAdded = exercisePickerDay
+                  ? (exerciseAssignments[exercisePickerDay] || []).some(
+                      (ex) => ex.exerciseId === item.id
+                    )
+                  : false;
+                return (
+                  <AnimatedPressable
+                    style={[styles.pickerItem, alreadyAdded && styles.pickerItemSelected, alreadyAdded && { opacity: 0.6 }]}
+                    onPress={() => exercisePickerDay && !alreadyAdded && addExerciseToDay(exercisePickerDay, item)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Add ${item.name}`}
+                  >
+                    <View style={styles.pickerItemInfo}>
+                      <Text style={styles.pickerItemName}>{item.name}</Text>
+                      <Text style={styles.pickerItemMeta}>
+                        {item.muscleGroups.slice(0, 3).join(", ")}
+                        {item.isBodyweight ? " · Bodyweight" : ""}
+                      </Text>
+                      <Text style={styles.pickerItemMuscles}>
+                        {item.difficulty} · {item.category}
+                      </Text>
+                    </View>
+                    {alreadyAdded && <Ionicons name="checkmark" size={rf(18)} color={colors.primary.DEFAULT} />}
+                  </AnimatedPressable>
+                );
+              }}
+              contentContainerStyle={styles.pickerList}
+              ListEmptyComponent={
+                <View style={styles.pickerEmpty}>
+                  <Text style={styles.pickerEmptyText}>No exercises found</Text>
+                </View>
+              }
+            />
+          </KeyboardAvoidingView>
         </BottomSheet>
       </SafeAreaView>
     </AuroraBackground>
@@ -692,12 +729,18 @@ const styles = StyleSheet.create({
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
 
   saveBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: colors.primary.DEFAULT,
     paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.sm),
+    minHeight: Math.max(rp(spacing.xl), 44),
     borderRadius: borderRadius.md,
+    gap: rp(spacing.xs),
   },
   saveBtnDisabled: { backgroundColor: colors.background.tertiary, opacity: 0.5 },
+  saveBtnIcon: { marginRight: 0 },
   saveText: {
     fontSize: rf(typography.fontSize.caption),
     fontWeight: String(typography.fontWeight.bold) as any,
@@ -714,7 +757,7 @@ const styles = StyleSheet.create({
     fontSize: rf(typography.fontSize.caption),
     color: colors.text.secondary,
     paddingHorizontal: rp(spacing.md),
-    paddingVertical: rp(spacing.md),
+    paddingBottom: rp(spacing.sm),
   },
 
   emptyWrap: { flex: 1, justifyContent: "center" },
@@ -737,7 +780,7 @@ const styles = StyleSheet.create({
     fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.primary.DEFAULT,
   },
-  dayFull: { fontSize: rf(11), color: colors.text.tertiary, marginTop: rp(spacing.xxs) },
+  dayFull: { fontSize: rf(typography.fontSize.micro), color: colors.text.secondary, marginTop: rp(spacing.xxs) },
 
   assignedBox: {
     flex: 1,
@@ -759,12 +802,20 @@ const styles = StyleSheet.create({
   changeBtn: {
     paddingHorizontal: rp(spacing.sm),
     paddingVertical: rp(spacing.sm),
+    minHeight: Math.max(rp(spacing.xl), 44),
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: borderRadius.sm,
     borderWidth: 1,
     borderColor: colors.primary.DEFAULT,
   },
   changeBtnText: { fontSize: rf(typography.fontSize.micro), color: colors.primary.DEFAULT },
-  clearBtn: { padding: rp(spacing.sm) },
+  clearBtn: {
+    padding: rp(spacing.sm),
+    minHeight: Math.max(rp(spacing.xl), 44),
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
   restBox: {
     flex: 1,
@@ -775,11 +826,12 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.md),
+    minHeight: Math.max(rp(spacing.xl), 44),
     borderWidth: 1,
     borderColor: colors.glass.border,
     borderStyle: "dashed",
   },
-  restText: { fontSize: rf(typography.fontSize.caption), color: colors.text.tertiary },
+  restText: { fontSize: rf(typography.fontSize.caption), color: colors.text.secondary },
   addText: {
     fontSize: rf(typography.fontSize.caption),
     color: colors.primary.DEFAULT,
@@ -838,7 +890,7 @@ const styles = StyleSheet.create({
     color: colors.primary.DEFAULT,
     fontWeight: String(typography.fontWeight.semibold) as any,
   },
-  exerciseDayRest: { fontSize: rf(typography.fontSize.micro), color: colors.text.tertiary },
+  exerciseDayRest: { fontSize: rf(typography.fontSize.micro), color: colors.text.secondary },
 
   exerciseDayDetail: {
     backgroundColor: colors.background.secondary,
@@ -852,14 +904,14 @@ const styles = StyleSheet.create({
   },
   exerciseDayEmptyHint: {
     fontSize: rf(13),
-    color: colors.text.tertiary,
+    color: colors.text.secondary,
     textAlign: "center",
     paddingVertical: rp(spacing.sm),
   },
 
   exerciseItemRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     backgroundColor: colors.glass.background,
     borderRadius: borderRadius.md,
     paddingHorizontal: rp(spacing.sm),
@@ -875,11 +927,13 @@ const styles = StyleSheet.create({
   },
   exerciseItemControls: {
     flexDirection: "row",
-    gap: rp(spacing.md),
+    flexWrap: "wrap",
+    rowGap: rp(spacing.xs),
+    columnGap: rp(spacing.sm),
     alignItems: "center",
   },
   controlGroup: { alignItems: "center" },
-  controlLabel: { fontSize: rf(10), color: colors.text.secondary, marginBottom: rp(spacing.xxs) },
+  controlLabel: { fontSize: rf(typography.fontSize.micro), color: colors.text.secondary, marginBottom: rp(spacing.xxs) },
   controlValue: {
     fontSize: rf(typography.fontSize.caption),
     color: colors.text.primary,
@@ -891,8 +945,8 @@ const styles = StyleSheet.create({
     gap: rp(spacing.xs),
   },
   stepperBtn: {
-    width: rw(32),
-    height: rw(32),
+    width: Math.max(rw(32), 44),
+    height: Math.max(rw(32), 44),
     borderRadius: 999,
     backgroundColor: colors.background.tertiary,
     justifyContent: "center",
@@ -902,7 +956,6 @@ const styles = StyleSheet.create({
     fontSize: rf(typography.fontSize.body),
     color: colors.text.primary,
     fontWeight: String(typography.fontWeight.semibold) as any,
-    lineHeight: rf(18),
   },
   stepperValue: {
     fontSize: rf(typography.fontSize.caption),
@@ -914,6 +967,10 @@ const styles = StyleSheet.create({
 
   removeExBtn: {
     padding: rp(spacing.sm),
+    minHeight: Math.max(rp(spacing.xl), 44),
+    minWidth: Math.max(rp(spacing.xl), 44),
+    alignItems: "center",
+    justifyContent: "center",
     marginLeft: rp(spacing.xxs),
   },
 
@@ -926,6 +983,8 @@ const styles = StyleSheet.create({
   addExerciseBtn: {
     paddingVertical: rp(spacing.sm),
     paddingHorizontal: rp(spacing.md),
+    minHeight: Math.max(rp(spacing.xl), 44),
+    justifyContent: "center",
   },
   addExerciseBtnText: {
     fontSize: rf(typography.fontSize.caption),
@@ -935,6 +994,8 @@ const styles = StyleSheet.create({
   clearDayBtn: {
     paddingVertical: rp(spacing.sm),
     paddingHorizontal: rp(spacing.md),
+    minHeight: Math.max(rp(spacing.xl), 44),
+    justifyContent: "center",
   },
   clearDayBtnText: { fontSize: rf(typography.fontSize.micro), color: colors.error.DEFAULT },
 
@@ -959,9 +1020,10 @@ const styles = StyleSheet.create({
   pickerItemMuscles: { fontSize: rf(typography.fontSize.micro), color: colors.primary.DEFAULT, marginTop: rp(spacing.xxs) },
 
   pickerEmpty: { padding: rp(spacing.xxl), alignItems: "center" },
-  pickerEmptyText: { fontSize: rf(typography.fontSize.caption), color: colors.text.tertiary },
+  pickerEmptyText: { fontSize: rf(typography.fontSize.caption), color: colors.text.secondary },
 
   // ── Exercise picker extras ──
+  pickerKav: { flex: 1 },
   exerciseSearchRow: {
     paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.sm),
@@ -971,17 +1033,22 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.sm),
+    minHeight: Math.max(rp(spacing.xl), 44),
     fontSize: rf(typography.fontSize.caption),
     color: colors.text.primary,
   },
   categoryTabsRow: {
     paddingHorizontal: rp(spacing.md),
+    paddingRight: rp(spacing.md),
     paddingBottom: rp(spacing.sm),
     gap: rp(spacing.xs),
   },
   categoryTab: {
     paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.sm),
+    minHeight: Math.max(rp(spacing.lg), 44),
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: borderRadius.xl,
     backgroundColor: colors.glass.background,
   },

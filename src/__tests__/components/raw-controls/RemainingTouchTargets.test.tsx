@@ -112,6 +112,16 @@ jest.mock("@/utils/responsive", () => ({
   rp: (value: number) => value,
   rs: (value: number) => Math.round(value * 0.75),
   rbr: (value: number) => Math.round(value * 0.75),
+  dimensions: {
+    screenWidth: 393,
+    screenHeight: 852,
+    isDesktop: false,
+    isMobile: true,
+    isTablet: false,
+    widthScale: 1,
+    heightScale: 1,
+    fontScale: 1,
+  },
 }));
 
 jest.mock("@/utils/constants", () => ({

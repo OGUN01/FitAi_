@@ -60,8 +60,6 @@ export interface ExerciseRowProps {
   exercise: PlannedExercise;
   dayIndex: number;
   exerciseIndex: number;
-  /** Whether this row is currently being dragged (drives elevation styling). */
-  isDragging?: boolean;
   /** Open the exercise editor (tap row). */
   onOpenEditor: (dayIndex: number, exerciseIndex: number) => void;
   /** Duplicate this exercise in-place. */
@@ -152,7 +150,6 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
   exercise,
   dayIndex,
   exerciseIndex,
-  isDragging: isDraggingProp = false,
   onOpenEditor,
   onDuplicate,
   onRemove,
@@ -410,7 +407,13 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
                       <Text style={styles.supersetChipText}>SS</Text>
                     </View>
                   )}
-                  <Text style={styles.name} numberOfLines={1}>
+                  <View style={[styles.intensityDot, { backgroundColor: intensityColor }]} />
+                  <Text
+                    style={styles.name}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
+                  >
                     {exercise.name}
                   </Text>
                 </View>
@@ -430,14 +433,9 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
 
               {/* Sets × reps */}
               <View style={styles.setsCell}>
-                <Text style={styles.setsValue}>{setCount}</Text>
-                <Text style={styles.setsLabel}>× {repsLabel}</Text>
+                <Text style={styles.setsValue} numberOfLines={1}>{setCount}</Text>
+                <Text style={styles.setsLabel} numberOfLines={1}>× {repsLabel}</Text>
               </View>
-
-              {/* Intensity dot */}
-              <View
-                style={[styles.intensityDot, { backgroundColor: intensityColor }]}
-              />
 
               {/* Favourite */}
               <Pressable
@@ -480,38 +478,37 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
 
       {/* Kebab dropdown menu */}
       {menuOpen && (
-        <View style={styles.menu}>
-          {menuItems.map((item) => (
-            <Pressable
-              key={item.label}
-              style={styles.menuItem}
-              onPress={item.onPress}
-              accessibilityRole="button"
-              accessibilityLabel={item.label}
-            >
-              <Ionicons
-                name={item.icon}
-                size={rf(16)}
-                color={item.isDestructive ? colors.error.DEFAULT : colors.text.secondary}
-                style={styles.menuIcon}
-              />
-              <Text
-                style={[
-                  styles.menuLabel,
-                  item.isDestructive && { color: colors.error.DEFAULT },
-                ]}
+        <View style={styles.menu} pointerEvents="box-none">
+          <Pressable style={styles.menuDismiss} onPress={closeMenu} accessibilityLabel="Close menu" />
+          <View style={styles.menuList}>
+            {menuItems.map((item) => (
+              <Pressable
+                key={item.label}
+                style={styles.menuItem}
+                onPress={item.onPress}
+                accessibilityRole="button"
+                accessibilityLabel={item.label}
               >
-                {item.label}
-              </Text>
-            </Pressable>
-          ))}
-          {/* Dismiss-on-outside-tap catcher */}
-          <Pressable style={styles.menuDismiss} onPress={closeMenu} />
+                <Ionicons
+                  name={item.icon}
+                  size={rf(16)}
+                  color={item.isDestructive ? colors.error.DEFAULT : colors.text.secondary}
+                  style={styles.menuIcon}
+                />
+                <Text
+                  style={[
+                    styles.menuLabel,
+                    item.isDestructive && { color: colors.error.DEFAULT },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {item.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
       )}
-
-      {/* Elevation shadow when dragging (prop-driven for external drag state) */}
-      {isDraggingProp && <View style={styles.dragOverlay} pointerEvents="none" />}
     </View>
   );
 };
@@ -596,11 +593,11 @@ const styles = StyleSheet.create({
     paddingVertical: rp(1),
   },
   muscleChipText: {
-    color: colors.text.secondary,
+    color: colors.text.primary,
     fontSize: rf(typography.fontSize.micro),
   },
   metaText: {
-    color: colors.text.tertiary,
+    color: colors.text.secondary,
     fontSize: rf(typography.fontSize.micro),
     flexShrink: 1,
   },
@@ -622,7 +619,7 @@ const styles = StyleSheet.create({
     width: rw(8),
     height: rw(8),
     borderRadius: borderRadius.full,
-    marginHorizontal: rp(spacing.xxs),
+    marginRight: 0,
   },
   // Swipe actions (behind row)
   actionsLayer: {
@@ -645,6 +642,15 @@ const styles = StyleSheet.create({
   // Kebab menu
   menu: {
     position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 50,
+    elevation: 8,
+  },
+  menuList: {
+    position: "absolute",
     top: rp(spacing.sm),
     right: rp(spacing.sm),
     backgroundColor: colors.background.tertiary,
@@ -652,7 +658,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.glass.border,
     paddingVertical: rp(spacing.xs),
-    zIndex: 50,
     minWidth: rw(140),
     shadowColor: "#000",
     shadowOpacity: 0.3,
@@ -666,6 +671,7 @@ const styles = StyleSheet.create({
     paddingVertical: rp(spacing.sm),
     paddingHorizontal: rp(spacing.md),
     gap: rp(spacing.sm),
+    minHeight: Math.max(rp(44), 44),
   },
   menuIcon: {
     width: rw(18),
@@ -675,20 +681,7 @@ const styles = StyleSheet.create({
     fontSize: rf(typography.fontSize.caption),
   },
   menuDismiss: {
-    position: "absolute",
-    top: 0, left: 0, right: 0, bottom: 0,
-    zIndex: -1,
-  },
-  dragOverlay: {
-    position: "absolute",
-    top: 0, left: 0, right: 0, bottom: 0,
-    borderRadius: borderRadius.lg,
-    backgroundColor: "transparent",
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
+    ...StyleSheet.absoluteFillObject,
   },
 });
 

@@ -126,7 +126,12 @@ export const ExercisePickerCard: React.FC<ExercisePickerCardProps> = ({
 
       {/* Name + muscles + meta */}
       <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={1}>
+        <Text
+          style={styles.name}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.7}
+        >
           {exercise.name}
         </Text>
         <View style={styles.chipRow}>
@@ -244,9 +249,10 @@ const styles = StyleSheet.create({
     paddingVertical: rp(1),
   },
   muscleChipText: {
-    color: colors.text.secondary,
+    color: colors.text.primary,
     fontSize: rf(typography.fontSize.micro),
-  },
+    fontWeight: String(typography.fontWeight.medium) as TextStyleWeight,
+  } as TextStyle,
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -254,19 +260,21 @@ const styles = StyleSheet.create({
     marginTop: rp(spacing.xxs),
   },
   metaText: {
-    color: colors.text.tertiary,
+    color: colors.text.secondary,
     fontSize: rf(typography.fontSize.micro),
   },
   metaDot: {
-    color: colors.text.tertiary,
+    color: colors.text.secondary,
     fontSize: rf(typography.fontSize.micro),
   },
   favBtn: {
     padding: rp(spacing.xxs),
+    minHeight: Math.max(rp(44), 44),
+    justifyContent: "center",
   },
   addBtn: {
     minWidth: rw(44),
-    minHeight: rw(36),
+    minHeight: Math.max(rw(44), 44),
     paddingHorizontal: 0,
   },
 });

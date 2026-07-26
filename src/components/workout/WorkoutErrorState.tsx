@@ -67,7 +67,10 @@ const styles = StyleSheet.create({
     width: rw(72),
     height: rw(72),
     borderRadius: rw(36),
-    backgroundColor: colors.glassSurface,
+    // Tinted backdrop (was bare glassSurface — the error/primary icon had
+    // borderline contrast on the dark glass). A subtle tint gives the icon
+    // a clearer semantic anchor.
+    backgroundColor: colors.errorTint,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: spacing.lg,
@@ -87,5 +90,6 @@ const styles = StyleSheet.create({
   },
   errorButton: {
     minWidth: rw(120),
+    minHeight: 44,
   },
 });

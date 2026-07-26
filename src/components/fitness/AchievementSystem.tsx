@@ -4,14 +4,36 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  TouchableOpacity,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../ui";
+import { AuroraSpinner } from "../ui/aurora";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rbr, rs } from "../../utils/responsive";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../services/supabase";
 import { useAchievementStore } from "../../stores/achievementStore";
+
+/**
+ * Map stored achievement.icon (legacy emoji strings) to Ionicons names.
+ * The DB column still holds emoji strings for backwards compatibility; we
+ * translate at render time so the UI stops mixing emoji + Ionicons.
+ */
+const ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
+  "🎯": "trophy-outline",
+  "🌟": "star-outline",
+  "💪": "fitness-outline",
+  "🏆": "trophy",
+  "🥇": "medal-outline",
+  "🔥": "flame-outline",
+  "🌋": "flame",
+  "⚡": "flash-outline",
+  "🎨": "color-palette-outline",
+};
+const iconToIonicons = (icon: string): keyof typeof Ionicons.glyphMap =>
+  ICON_MAP[icon] ?? "trophy-outline";
 
 interface Achievement {
   id: string;
@@ -90,7 +112,7 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
         type: "first_workout",
         title: "First Steps",
         description: "Completed your first workout!",
-        icon: "🎯",
+        icon: "trophy-outline",
         value: 10,
       });
     }
@@ -102,7 +124,7 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
         type: "workouts_5",
         title: "Getting Started",
         description: "Completed 5 workouts",
-        icon: "🌟",
+        icon: "star-outline",
         value: 25,
       },
       {
@@ -110,7 +132,7 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
         type: "workouts_10",
         title: "Consistent",
         description: "Completed 10 workouts",
-        icon: "💪",
+        icon: "fitness-outline",
         value: 50,
       },
       {
@@ -118,7 +140,7 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
         type: "workouts_25",
         title: "Dedicated",
         description: "Completed 25 workouts",
-        icon: "🏆",
+        icon: "trophy",
         value: 100,
       },
       {
@@ -126,7 +148,7 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
         type: "workouts_50",
         title: "Committed",
         description: "Completed 50 workouts",
-        icon: "🥇",
+        icon: "medal-outline",
         value: 200,
       },
     ];
@@ -154,7 +176,7 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
         type: "calories_1k",
         title: "Calorie Crusher",
         description: "Burned 1,000 calories",
-        icon: "🔥",
+        icon: "flame-outline",
         value: 50,
       },
       {
@@ -162,7 +184,7 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
         type: "calories_5k",
         title: "Inferno",
         description: "Burned 5,000 calories",
-        icon: "🌋",
+        icon: "flame",
         value: 150,
       },
       {
@@ -170,7 +192,7 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
         type: "calories_10k",
         title: "Furnace",
         description: "Burned 10,000 calories",
-        icon: "⚡",
+        icon: "flash-outline",
         value: 300,
       },
     ];
@@ -201,7 +223,7 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
         type: "variety",
         title: "Well-Rounded",
         description: "Tried 3 different workout types",
-        icon: "🎨",
+        icon: "color-palette-outline",
         value: 75,
       });
     }
@@ -216,7 +238,7 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
         if (!error) {
           const titles = newAchievements.map((a) => a.title).join(", ");
           crossPlatformAlert(
-            "🎉 Achievement Unlocked!",
+            "Achievement Unlocked!",
             `Congratulations! You earned: ${titles}`,
             [{ text: "Awesome!" }],
           );
@@ -265,7 +287,10 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
   if (loading) {
     return (
       <Card style={styles.container} variant="elevated">
-        <Text style={styles.loadingText}>Loading achievements...</Text>
+        <View style={styles.stateWrap}>
+          <AuroraSpinner size="md" />
+          <Text style={styles.loadingText}>Loading achievements...</Text>
+        </View>
       </Card>
     );
   }
@@ -273,7 +298,18 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
   if (error) {
     return (
       <Card style={styles.container} variant="elevated">
-        <Text style={styles.errorText}>⚠️ {error}</Text>
+        <View style={styles.stateWrap}>
+          <Ionicons name="alert-circle-outline" size={rf(32)} color={colors.error} />
+          <Text style={styles.errorText}>Couldn't load achievements</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={loadAchievements}
+            accessibilityRole="button"
+            accessibilityLabel="Retry loading achievements"
+          >
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
       </Card>
     );
   }
@@ -282,35 +318,40 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
     <Card style={styles.container} variant="elevated">
       <View style={styles.header}>
         <Text style={styles.title}>Achievements</Text>
-        <View style={styles.pointsBadge}>
+        <View style={styles.pointsBadge} accessibilityRole="text">
           <Text style={styles.pointsText}>{getTotalPoints()} pts</Text>
         </View>
       </View>
 
       {achievements.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>🏆</Text>
+          <Ionicons name="trophy" size={rf(48)} color={colors.primary} />
           <Text style={styles.emptyTitle}>No Achievements Yet</Text>
           <Text style={styles.emptyDescription}>
             Complete workouts to start earning achievements and points!
           </Text>
         </View>
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
           <View style={styles.achievementsList}>
             {achievements.map((achievement) => (
               <View key={achievement.id} style={styles.achievementItem}>
                 <View style={styles.achievementIcon}>
-                  <Text style={styles.achievementEmoji}>
-                    {achievement.icon}
-                  </Text>
+                  <Ionicons
+                    name={iconToIonicons(achievement.icon)}
+                    size={rf(24)}
+                    color={colors.primary}
+                  />
                 </View>
 
                 <View style={styles.achievementContent}>
-                  <Text style={styles.achievementTitle}>
+                  <Text style={styles.achievementTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                     {achievement.title}
                   </Text>
-                  <Text style={styles.achievementDescription}>
+                  <Text style={styles.achievementDescription} numberOfLines={2}>
                     {achievement.description}
                   </Text>
                   <Text style={styles.achievementDate}>
@@ -318,7 +359,7 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
                   </Text>
                 </View>
 
-                <View style={styles.achievementValue}>
+                <View style={styles.achievementValue} accessibilityRole="text">
                   <Text style={styles.achievementPoints}>
                     +{achievement.value}
                   </Text>
@@ -336,6 +377,7 @@ const styles = StyleSheet.create({
   container: {
     padding: spacing.lg,
     margin: spacing.md,
+    maxHeight: rs(560),
   },
 
   header: {
@@ -355,7 +397,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
+    minHeight: 28,
     borderRadius: borderRadius.lg,
+    justifyContent: "center",
   },
 
   pointsText: {
@@ -367,11 +411,6 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: "center",
     paddingVertical: spacing.xl,
-  },
-
-  emptyIcon: {
-    fontSize: rf(48),
-    marginBottom: spacing.md,
   },
 
   emptyTitle: {
@@ -386,6 +425,10 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(20),
+  },
+
+  scrollContent: {
+    paddingBottom: spacing.lg,
   },
 
   achievementsList: {
@@ -404,14 +447,10 @@ const styles = StyleSheet.create({
     width: rs(48),
     height: rs(48),
     borderRadius: rbr(24),
-    backgroundColor: colors.primary + "20",
+    backgroundColor: "rgba(255, 107, 53, 0.2)",
     justifyContent: "center",
     alignItems: "center",
     marginRight: spacing.md,
-  },
-
-  achievementEmoji: {
-    fontSize: rf(24),
   },
 
   achievementContent: {
@@ -431,9 +470,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
 
+  // colors.textMuted (#8A8A8A) for xs text was below WCAG AA — use secondary.
   achievementDate: {
     fontSize: fontSize.xs,
-    color: colors.textMuted,
+    color: colors.textSecondary,
   },
 
   achievementValue: {
@@ -446,17 +486,38 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
 
+  stateWrap: {
+    alignItems: "center",
+    paddingVertical: spacing.xl,
+  },
+
   loadingText: {
     fontSize: fontSize.md,
     color: colors.textSecondary,
     textAlign: "center",
-    paddingVertical: spacing.xl,
+    marginTop: spacing.sm,
   },
 
   errorText: {
     fontSize: fontSize.md,
     color: colors.error,
     textAlign: "center",
-    paddingVertical: spacing.xl,
+    marginTop: spacing.sm,
+    marginBottom: spacing.md,
+  },
+
+  retryButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    minHeight: 44,
+    borderRadius: borderRadius.md,
+    justifyContent: "center",
+  },
+
+  retryButtonText: {
+    color: colors.surface,
+    fontSize: fontSize.sm,
+    fontWeight: "600",
   },
 });

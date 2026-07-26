@@ -22,6 +22,8 @@ import {
   Text,
   StyleSheet,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
   type TextStyle,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -186,6 +188,11 @@ export const TemplateRatingSheet: React.FC<TemplateRatingSheetProps> = ({
       initialSnapIndex={1}
       testID={testID}
     >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
+        style={styles.kavWrap}
+      >
       <View style={styles.container} testID={`${testID ?? "rating-sheet"}-${template.id}`}>
         {/* Header */}
         <Animated.View entering={FadeInDown.delay(40).duration(300)}>
@@ -282,7 +289,7 @@ export const TemplateRatingSheet: React.FC<TemplateRatingSheetProps> = ({
               label="Cancel"
               onPress={onClose}
               variant="secondary"
-              fullWidth
+              style={styles.actionBtn}
               hapticType="light"
               disabled={submitting}
               testID="rating-cancel-button"
@@ -292,7 +299,7 @@ export const TemplateRatingSheet: React.FC<TemplateRatingSheetProps> = ({
               onPress={handleSubmit}
               variant="primary"
               icon="star"
-              fullWidth
+              style={styles.actionBtn}
               loading={submitting}
               disabled={rating < 1}
               hapticType="medium"
@@ -310,6 +317,7 @@ export const TemplateRatingSheet: React.FC<TemplateRatingSheetProps> = ({
           </Animated.View>
         )}
       </View>
+      </KeyboardAvoidingView>
     </DetentBottomSheet>
   );
 };
@@ -416,10 +424,15 @@ const styles = StyleSheet.create({
     paddingVertical: rp(spacing.sm),
   },
   starBtn: {
-    minWidth: rw(48),
-    minHeight: rw(48),
+    flex: 1,
+    minWidth: Math.max(rw(44), 44),
+    minHeight: Math.max(rw(44), 44),
+    maxWidth: rw(56),
     alignItems: "center",
     justifyContent: "center",
+  },
+  kavWrap: {
+    flex: 1,
   },
   ratingLabel: {
     color: colors.textSecondary,
@@ -459,6 +472,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: rp(spacing.sm),
     marginTop: rp(spacing.xs),
+  },
+  actionBtn: {
+    flex: 1,
   },
   successWrap: {
     alignItems: "center",

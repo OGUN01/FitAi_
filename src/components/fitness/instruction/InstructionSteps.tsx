@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr, rs } from "../../../utils/responsive";
 
@@ -12,8 +13,8 @@ export const InstructionSteps: React.FC<InstructionStepsProps> = ({
 }) => {
   if (!instructions?.length) {
     return (
-      <View style={styles.noDataContainer}>
-        <Text style={styles.noDataEmoji}>i</Text>
+      <View style={styles.noDataContainer} accessibilityRole="text">
+        <Ionicons name="information-circle-outline" size={rf(48)} color={colors.textTertiary} />
         <Text style={styles.noDataText}>
           No detailed instructions available
         </Text>
@@ -32,10 +33,10 @@ export const InstructionSteps: React.FC<InstructionStepsProps> = ({
           key={`step-${index}-${instruction.substring(0, 20)}`}
           style={styles.instructionItem}
         >
-          <View style={styles.stepNumber}>
+          <View style={styles.stepNumber} accessibilityRole="text">
             <Text style={styles.stepNumberText}>{index + 1}</Text>
           </View>
-          <Text style={styles.instructionText}>
+          <Text style={styles.instructionText} numberOfLines={5}>
             {instruction.replace(/^Step:\d+\s*/, "")}
           </Text>
         </View>
@@ -91,15 +92,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xl,
   },
 
-  noDataEmoji: {
-    fontSize: rf(48),
-    marginBottom: spacing.md,
-  },
-
   noDataText: {
     fontSize: fontSize.md,
     fontWeight: "600",
     color: colors.textSecondary,
+    marginTop: spacing.md,
     marginBottom: spacing.sm,
   },
 

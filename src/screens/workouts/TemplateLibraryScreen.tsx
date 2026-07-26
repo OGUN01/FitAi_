@@ -11,12 +11,12 @@ import {
   Text,
   FlatList,
   StyleSheet,
-  SafeAreaView,
   TextInput,
   Pressable,
   type TextStyle,
   type ViewStyle,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
@@ -454,11 +454,12 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
   const handleUseInSchedule = useCallback(
     (template: WorkoutTemplate) => {
       setDetailVisible(false);
-      // v1: minimal wiring — navigate to WeeklyBuilder. Phase 9 will pre-load
-      // the template into the builder draft (buildDayWorkoutFromTemplate +
-      // hydrateFromPlan).
-      navigation.navigate("WeeklyBuilder");
-      void template;
+      // TODO(Phase 9): pre-load `template` into the WeeklyBuilder draft via
+      // buildDayWorkoutFromTemplate + hydrateFromPlan so the user lands on a
+      // builder seeded with this template's exercises. For now the button is a
+      // routing affordance only — the template is intentionally unused here so
+      // its presence in the dependency array keeps the callback stable.
+      navigation.navigate("WeeklyBuilder", { sourceTemplateId: template.id });
     },
     [navigation],
   );
@@ -583,7 +584,12 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
   if (loading) {
     return (
       <AuroraBackground theme="space">
-        <SafeAreaView style={styles.flex}>
+        <SafeAreaView style={styles.flex} edges={["top"]}>
+          <GlassHeader
+            title="Template Library"
+            onBack={() => navigation.goBack()}
+            backAccessibilityLabel="Go back"
+          />
           <View style={styles.loader}>
             <AuroraSpinner size="lg" />
           </View>
@@ -595,10 +601,11 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <AuroraBackground theme="space">
-      <SafeAreaView style={styles.flex}>
+      <SafeAreaView style={styles.flex} edges={["top"]}>
         <GlassHeader
           title="Template Library"
           onBack={() => navigation.goBack()}
+          backAccessibilityLabel="Go back"
           rightAction={
             <View style={styles.headerActions}>
               <AnimatedPressable
@@ -607,15 +614,19 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
                 testID="schedule-builder-button"
                 accessibilityRole="button"
                 accessibilityLabel="Build schedule"
+                accessibilityHint="Open the schedule builder"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <Text style={styles.scheduleBtnText}>Schedule</Text>
+                <Text style={styles.scheduleBtnText} numberOfLines={1}>Schedule</Text>
               </AnimatedPressable>
               <AnimatedPressable
                 onPress={() => navigation.navigate("CreateWorkout")}
                 testID="add-template-button"
                 accessibilityRole="button"
                 accessibilityLabel="Add template"
+                accessibilityHint="Create a new workout template"
                 style={styles.addButton}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Ionicons name="add" size={rf(26)} color={colors.primary.DEFAULT} />
               </AnimatedPressable>
@@ -650,6 +661,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
                 hitSlop={12}
                 accessibilityRole="button"
                 accessibilityLabel="Clear search"
+                accessibilityHint="Remove the search query"
               >
                 <Ionicons
                   name="close-circle"
@@ -666,6 +678,8 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
             testID="view-toggle-button"
             accessibilityRole="button"
             accessibilityLabel={`Switch to ${viewMode === "grid" ? "list" : "grid"} view`}
+            accessibilityHint="Toggle between grid and list layouts"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons
               name={viewMode === "grid" ? "list-outline" : "grid-outline"}
@@ -917,7 +931,15 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
             }
             contentContainerStyle={styles.list}
             numColumns={viewMode === "grid" ? 2 : 1}
-            key={viewMode}
+            extraData={viewMode}
+            columnWrapperStyle={
+              viewMode === "grid"
+                ? {
+                    gap: rp(spacing.sm),
+                    paddingHorizontal: rp(spacing.md),
+                  }
+                : undefined
+            }
             testID="template-list"
             showsVerticalScrollIndicator={false}
           />
@@ -926,7 +948,13 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
 
       {/* Shared template detail sheet — lazy-loaded (Skia dep deferred). */}
       {detailVisible ? (
-        <Suspense fallback={null}>
+        <Suspense
+          fallback={
+            <View style={styles.sheetFallback} pointerEvents="none">
+              <AuroraSpinner size="md" />
+            </View>
+          }
+        >
           <TemplateDetailSheet
             visible={detailVisible}
             onClose={handleCloseDetail}
@@ -1159,12 +1187,19 @@ const TemplateGridCard: React.FC<GridCardProps> = ({
           {!multiSelect ? (
             <Pressable
               onPress={() => onStart(template)}
+              disabled={template.exercises.length === 0}
               style={({ pressed }) => [
                 styles.gridStartBtn,
+                template.exercises.length === 0 && styles.gridStartBtnDisabled,
                 pressed && styles.gridStartBtnPressed,
               ]}
               accessibilityRole="button"
               accessibilityLabel={`Start ${template.name}`}
+              accessibilityHint={
+                template.exercises.length === 0
+                  ? "Template has no exercises yet"
+                  : "Begin a workout session from this template"
+              }
               testID={`start-button-${template.id}`}
             >
               <Text style={styles.gridStartBtnText}>Start</Text>
@@ -1438,11 +1473,20 @@ const TemplateListRow: React.FC<ListRowProps> = ({
               {/* Start button */}
               {!multiSelect ? (
                 <AnimatedPressable
-                  style={styles.startButton}
+                  style={[
+                    styles.startButton,
+                    template.exercises.length === 0 && styles.startButtonDisabled,
+                  ]}
                   onPress={() => onStart(template)}
+                  disabled={template.exercises.length === 0}
                   testID={`start-button-${template.id}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Start ${template.name}`}
+                  accessibilityHint={
+                    template.exercises.length === 0
+                      ? "Template has no exercises yet"
+                      : "Begin a workout session from this template"
+                  }
                   hapticType="medium"
                 >
                   <Text style={styles.startButtonText}>Start</Text>
@@ -1463,11 +1507,19 @@ const TemplateListRow: React.FC<ListRowProps> = ({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
+  sheetFallback: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.4)",
+    zIndex: 1300,
+    elevation: 1300,
+  },
   // Header
   headerActions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: rp(spacing.sm),
+    gap: rp(spacing.xs),
   },
   scheduleBtn: {
     backgroundColor: colors.glass.background,
@@ -1475,6 +1527,9 @@ const styles = StyleSheet.create({
     borderColor: colors.primary.DEFAULT,
     paddingHorizontal: rp(spacing.sm),
     paddingVertical: rp(spacing.xs),
+    minHeight: Math.max(rw(36), 36),
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: borderRadius.md,
   },
   scheduleBtnText: {
@@ -1483,8 +1538,8 @@ const styles = StyleSheet.create({
     fontWeight: fw(typography.fontWeight.semibold),
   },
   addButton: {
-    width: rw(40),
-    height: rw(40),
+    width: Math.max(rw(40), 44),
+    height: Math.max(rw(40), 44),
     borderRadius: 999,
     backgroundColor: colors.glass.background,
     alignItems: "center",
@@ -1519,8 +1574,8 @@ const styles = StyleSheet.create({
     minHeight: rf(22),
   },
   viewToggle: {
-    width: rw(44),
-    height: rw(44),
+    width: Math.max(rw(44), 44),
+    height: Math.max(rw(44), 44),
     borderRadius: 999,
     backgroundColor: colors.glass.background,
     borderWidth: 1,
@@ -1534,6 +1589,7 @@ const styles = StyleSheet.create({
   },
   tabsContent: {
     paddingHorizontal: rp(spacing.md),
+    paddingRight: rp(spacing.md),
     gap: rp(spacing.xs),
   },
   tabChip: {
@@ -1546,7 +1602,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.glass.backgroundDark,
     borderWidth: 1,
     borderColor: colors.glass.border,
-    minHeight: rp(40),
+    minHeight: Math.max(rp(spacing.xl), 44),
   },
   tabChipActive: {
     backgroundColor: `${colors.primary.DEFAULT}26`,
@@ -1566,7 +1622,7 @@ const styles = StyleSheet.create({
     fontWeight: fw(typography.fontWeight.semibold),
   },
   tabChipTextLocked: {
-    color: colors.text.tertiary,
+    color: colors.text.secondary,
   },
   tabLockIcon: {
     marginLeft: rp(spacing.xxs),
@@ -1578,6 +1634,9 @@ const styles = StyleSheet.create({
   collectionChip: {
     paddingVertical: rp(spacing.xs),
     paddingHorizontal: rp(spacing.md),
+    minHeight: Math.max(rp(spacing.xl), 44),
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: borderRadius.full,
     backgroundColor: colors.glass.backgroundDark,
     borderWidth: 1,
@@ -1609,6 +1668,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.primary.DEFAULT,
     borderRadius: borderRadius.lg,
+    zIndex: 50,
+    elevation: 50,
   },
   multiBarText: {
     flex: 1,
@@ -1622,8 +1683,8 @@ const styles = StyleSheet.create({
     gap: rp(spacing.sm),
   },
   multiBarBtn: {
-    width: rw(36),
-    height: rw(36),
+    width: Math.max(rw(36), 44),
+    height: Math.max(rw(36), 44),
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
@@ -1639,9 +1700,9 @@ const styles = StyleSheet.create({
   },
   // Grid card
   gridItem: {
-    flex: 1,
-    margin: rp(spacing.xs),
-    maxWidth: "50%" as unknown as number,
+    flexBasis: "48%",
+    margin: 0,
+    marginBottom: rp(spacing.sm),
   },
   gridCardWrap: {
     flex: 1,
@@ -1677,8 +1738,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: rp(spacing.xs),
     right: rp(spacing.xs),
-    width: rw(32),
-    height: rw(32),
+    width: Math.max(rw(32), 44),
+    height: Math.max(rw(32), 44),
     borderRadius: 999,
     backgroundColor: "rgba(0,0,0,0.35)",
     alignItems: "center",
@@ -1687,13 +1748,15 @@ const styles = StyleSheet.create({
   // Bookmark icon on list row (Phase 10) — inline in the header row.
   listBookmarkBtn: {
     paddingLeft: rp(spacing.sm),
-    minWidth: rw(36),
+    minWidth: Math.max(rw(36), 44),
+    minHeight: Math.max(rw(36), 44),
     alignItems: "center",
     justifyContent: "center",
   },
   gridBody: {
     padding: rp(spacing.sm),
-    gap: rp(spacing.xs),
+    paddingBottom: rp(spacing.md),
+    gap: rp(spacing.sm),
   },
   gridName: {
     fontSize: rf(typography.fontSize.caption),
@@ -1726,12 +1789,17 @@ const styles = StyleSheet.create({
     marginHorizontal: rp(spacing.sm),
     marginBottom: rp(spacing.sm),
     paddingVertical: rp(spacing.sm),
+    minHeight: Math.max(rp(spacing.xl), 44),
+    justifyContent: "center",
     backgroundColor: colors.primary.DEFAULT,
     borderRadius: borderRadius.md,
     alignItems: "center",
   },
   gridStartBtnPressed: {
     opacity: 0.85,
+  },
+  gridStartBtnDisabled: {
+    opacity: 0.5,
   },
   gridStartBtnText: {
     color: colors.text.primary,
@@ -1780,7 +1848,7 @@ const styles = StyleSheet.create({
     height: rw(22),
     borderRadius: 999,
     borderWidth: 2,
-    borderColor: colors.text.tertiary,
+    borderColor: colors.text.secondary,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1815,7 +1883,8 @@ const styles = StyleSheet.create({
   menuBtn: {
     paddingLeft: rp(spacing.sm),
     paddingVertical: rp(spacing.xs),
-    minWidth: rw(44),
+    minWidth: Math.max(rw(44), 44),
+    minHeight: Math.max(rw(44), 44),
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1841,7 +1910,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: rp(spacing.xs),
+    paddingVertical: rp(spacing.sm),
+    minHeight: Math.max(rp(spacing.xl), 44),
     borderBottomWidth: 1,
     borderBottomColor: colors.glass.backgroundDark,
   },
@@ -1857,8 +1927,9 @@ const styles = StyleSheet.create({
   },
   moreExercises: {
     fontSize: rf(typography.fontSize.micro),
-    color: colors.text.tertiary,
+    color: colors.text.secondary,
     marginTop: rp(spacing.xxs),
+    paddingLeft: rp(spacing.xs),
     textAlign: "right",
   },
   // Menu
@@ -1867,12 +1938,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.DEFAULT,
     borderRadius: borderRadius.md,
     overflow: "hidden",
+    zIndex: 50,
+    elevation: 50,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: rp(spacing.sm),
     paddingVertical: rp(spacing.sm),
+    minHeight: Math.max(rp(spacing.xl), 44),
     paddingHorizontal: rp(spacing.md),
   },
   menuItemText: {
@@ -1885,8 +1959,15 @@ const styles = StyleSheet.create({
     marginTop: rp(spacing.md),
     backgroundColor: colors.primary.DEFAULT,
     paddingVertical: rp(spacing.md),
+    minHeight: Math.max(rp(spacing.xl), 44),
+    justifyContent: "center",
+    maxWidth: rw(320),
+    alignSelf: "stretch",
     borderRadius: borderRadius.lg,
     alignItems: "center",
+  },
+  startButtonDisabled: {
+    opacity: 0.5,
   },
   startButtonText: {
     fontSize: rf(typography.fontSize.caption),

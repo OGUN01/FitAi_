@@ -8,6 +8,7 @@ import {
   StatusBar,
 } from "react-native";
 import { Image } from "expo-image";
+import { Ionicons } from "@expo/vector-icons";
 import { spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr, rs, dimensions } from "../../../utils/responsive";
 
@@ -48,10 +49,17 @@ export const FullscreenModal: React.FC<FullscreenModalProps> = ({
             accessibilityRole="button"
             accessibilityLabel={`Close ${displayName} fullscreen view`}
           >
-            <Text style={styles.closeButtonText}>X</Text>
+            <Ionicons name="close" size={rf(20)} color="white" />
           </TouchableOpacity>
 
-          <Text style={styles.fullscreenTitle}>{displayName}</Text>
+          <Text
+            style={styles.fullscreenTitle}
+            numberOfLines={2}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
+            {displayName}
+          </Text>
 
           <Image
             source={{ uri: gifUrl }}
@@ -65,7 +73,7 @@ export const FullscreenModal: React.FC<FullscreenModalProps> = ({
           />
 
           <Text style={styles.fullscreenHint}>
-            Maximum quality view - tap X to close
+            Tap the close button to exit
           </Text>
         </View>
       </View>
@@ -91,18 +99,13 @@ const styles = StyleSheet.create({
     top: rp(20),
     right: rp(20),
     zIndex: 10,
+    elevation: 10,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: Math.max(rbr(20), 22),
     width: Math.max(rs(40), 44),
     height: Math.max(rs(40), 44),
     justifyContent: "center",
     alignItems: "center",
-  },
-
-  closeButtonText: {
-    color: "white",
-    fontSize: rf(20),
-    fontWeight: "bold",
   },
 
   fullscreenTitle: {
@@ -122,7 +125,7 @@ const styles = StyleSheet.create({
   },
 
   fullscreenHint: {
-    color: "rgba(255, 255, 255, 0.7)",
+    color: "rgba(255, 255, 255, 0.85)",
     fontSize: fontSize.sm,
     textAlign: "center",
     marginTop: spacing.md,

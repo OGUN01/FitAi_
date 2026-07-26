@@ -44,6 +44,29 @@ const DAY_KEYS: DayName[] = [
   "sunday",
 ];
 
+// rest-day violet (no theme token available; closest is colors.purple #9333EA
+// but visually too dark for the rest-day moon accent). Leave as hardcoded hex
+// pending a dedicated rest-day token.
+const REST_DAY_VIOLET = "#A78BFA";
+
+/** Compute the current ISO 8601 week number (1..53). Used only as a fallback
+ *  for the subtitle when the plan has no explicit week number/duration. */
+const computeISOWeekNumber = (): number => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  return (
+    1 +
+    Math.round(
+      ((d.getTime() - week1.getTime()) / 86400000 -
+        3 +
+        ((week1.getDay() + 6) % 7)) /
+        7,
+    )
+  );
+};
+
 export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
   plan,
   workoutProgress,
@@ -148,28 +171,18 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.planTitle} numberOfLines={1}>
+            <Text
+              style={styles.planTitle}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.75}
+            >
               {plan.planTitle || "Weekly Workout Plan"}
             </Text>
-            <Text style={styles.planSubtitle}>
+            <Text style={styles.planSubtitle} numberOfLines={1}>
               {plan.duration
                 ? String(plan.duration)
-                : `Week ${plan.weekNumber ?? (() => {
-                    // Compute real ISO week number when plan.weekNumber is missing
-                    const d = new Date();
-                    d.setHours(0, 0, 0, 0);
-                    d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
-                    const week1 = new Date(d.getFullYear(), 0, 4);
-                    return (
-                      1 +
-                      Math.round(
-                        ((d.getTime() - week1.getTime()) / 86400000 -
-                          3 +
-                          ((week1.getDay() + 6) % 7)) /
-                          7,
-                      )
-                    );
-                  })()}`}
+                : `Week ${plan.weekNumber || computeISOWeekNumber()}`}
             </Text>
           </View>
           <View style={styles.headerActions}>
@@ -179,7 +192,9 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
               disabled={isRegenerating}
               accessibilityRole="button"
               accessibilityLabel="Regenerate plan"
+              accessibilityState={{ disabled: isRegenerating }}
               style={styles.regenerateButton}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <View style={styles.regenerateButtonInner}>
                 <Ionicons
@@ -191,7 +206,10 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
                       : colors.primary
                   }
                 />
-                <Text style={[styles.regenerateText, isRegenerating && styles.regenerateTextDisabled]}>
+                <Text
+                  style={[styles.regenerateText, isRegenerating && styles.regenerateTextDisabled]}
+                  numberOfLines={1}
+                >
                   {isRegenerating ? "Generating..." : "Regenerate"}
                 </Text>
               </View>
@@ -202,9 +220,10 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
               scaleValue={0.95}
               hapticFeedback={true}
               hapticType="light"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <View style={styles.seeAllButton}>
-                <Text style={styles.seeAllText}>View All</Text>
+                <Text style={styles.seeAllText} numberOfLines={1}>View All</Text>
                 <Ionicons
                   name="chevron-forward"
                   size={rf(14)}
@@ -251,7 +270,7 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
                   {status.isCompleted ? (
                     <Ionicons name="checkmark" size={rf(14)} color={colors.successAlt} />
                   ) : status.isRestDay ? (
-                    <Ionicons name="moon" size={rf(12)} color={colors.primary} />
+                    <Ionicons name="moon" size={rf(12)} color={REST_DAY_VIOLET} />
                   ) : status.hasWorkout ? (
                     <View
                       style={[
@@ -271,17 +290,17 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
         {/* Stats Row */}
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>
+            <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit={true} minimumFontScale={0.7}>
               {stats.completedWorkouts}/{stats.totalWorkouts}
             </Text>
-            <Text style={styles.statLabel}>Workouts</Text>
+            <Text style={styles.statLabel} numberOfLines={1}>Workouts</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>
+            <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit={true} minimumFontScale={0.7}>
               {Math.round(stats.totalCalories)}
             </Text>
-            <Text style={styles.statLabel}>Est. Calories</Text>
+            <Text style={styles.statLabel} numberOfLines={1}>Est. Calories</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
@@ -290,10 +309,13 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
                 styles.statValue,
                 { color: colors.primary },
               ]}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.7}
             >
               {stats.progressPercent}%
             </Text>
-            <Text style={styles.statLabel}>Progress</Text>
+            <Text style={styles.statLabel} numberOfLines={1}>Progress</Text>
           </View>
         </View>
       </GlassCard>
@@ -347,15 +369,14 @@ const styles = StyleSheet.create({
   regenerateTextDisabled: {
     color: colors.textSecondary,
   },
-  spinning: {
-    // Animation will be added via Reanimated
-  },
   seeAllButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: rp(2),
     minHeight: 44,
     justifyContent: "center",
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
   },
   seeAllText: {
     fontSize: rf(12),

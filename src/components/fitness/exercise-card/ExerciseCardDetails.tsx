@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rw } from "../../../utils/responsive";
 import { Exercise, WorkoutSet } from "../../../types/workout";
@@ -11,6 +12,13 @@ interface ExerciseCardDetailsProps {
   getDifficultyIcon: (difficulty: string) => string;
 }
 
+const getDifficultyIconName = (icon: string): keyof typeof Ionicons.glyphMap => {
+  // The parent's getDifficultyIcon returns an icon name (post-fix); fall back
+  // to a generic shape if it's still the legacy "ellipse" string.
+  if (icon === "ellipse" || icon === "ellipse-outline") return "ellipse-outline";
+  return icon as keyof typeof Ionicons.glyphMap;
+};
+
 export const ExerciseCardDetails: React.FC<ExerciseCardDetailsProps> = ({
   exercise,
   workoutSet,
@@ -20,16 +28,14 @@ export const ExerciseCardDetails: React.FC<ExerciseCardDetailsProps> = ({
   return (
     <View style={styles.detailsSection}>
       <View style={styles.detailRow}>
-        <Text style={styles.detailIcon}>🎯</Text>
+        <Ionicons name={getDifficultyIconName(getDifficultyIcon(exercise.difficulty))} size={rf(16)} color={colors.textSecondary} style={styles.detailIcon} />
         <Text style={styles.detailLabel}>Difficulty:</Text>
-        <Text style={styles.detailValue}>
-          {getDifficultyIcon(exercise.difficulty)} {exercise.difficulty}
-        </Text>
+        <Text style={styles.detailValue}>{exercise.difficulty}</Text>
       </View>
 
       {workoutSet.restTime && (
         <View style={styles.detailRow}>
-          <Text style={styles.detailIcon}>⏱️</Text>
+          <Ionicons name="timer-outline" size={rf(16)} color={colors.textSecondary} style={styles.detailIcon} />
           <Text style={styles.detailLabel}>Rest time:</Text>
           <Text style={styles.detailValue}>
             {formatTime(workoutSet.restTime)}
@@ -39,7 +45,7 @@ export const ExerciseCardDetails: React.FC<ExerciseCardDetailsProps> = ({
 
       {exercise.calories && (
         <View style={styles.detailRow}>
-          <Text style={styles.detailIcon}>🔥</Text>
+          <Ionicons name="flame-outline" size={rf(16)} color={colors.textSecondary} style={styles.detailIcon} />
           <Text style={styles.detailLabel}>Calories:</Text>
           <Text style={styles.detailValue}>{exercise.calories} per set</Text>
         </View>
@@ -60,7 +66,6 @@ const styles = StyleSheet.create({
   },
 
   detailIcon: {
-    fontSize: rf(16),
     marginRight: spacing.sm,
     width: rw(20),
   },

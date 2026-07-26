@@ -56,8 +56,10 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1,
     paddingVertical: spacing.sm,
+    minHeight: 44,
     borderRadius: borderRadius.md,
     alignItems: "center",
+    justifyContent: "center",
   },
 
   activeTab: {
@@ -67,7 +69,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: fontSize.sm,
     fontWeight: "600",
-    color: colors.textSecondary,
+    color: colors.text,
   },
 
   activeTabText: {

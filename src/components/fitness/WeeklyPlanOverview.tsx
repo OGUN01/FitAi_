@@ -135,19 +135,27 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.planTitle} numberOfLines={1}>
-              {plan.planTitle}
+            <Text
+              style={styles.planTitle}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.75}
+            >
+              {plan.planTitle || "Weekly Workout Plan"}
             </Text>
-            <Text style={styles.planSubtitle}>{plan.duration}</Text>
+            <Text style={styles.planSubtitle} numberOfLines={1}>
+              {plan.duration ? String(plan.duration) : "—"}
+            </Text>
           </View>
           <AnimatedPressable
             onPress={onViewFullPlan}
             scaleValue={0.95}
             hapticFeedback={true}
             hapticType="light"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <View style={styles.seeAllButton}>
-              <Text style={styles.seeAllText}>View All</Text>
+              <Text style={styles.seeAllText} numberOfLines={1}>View All</Text>
               <Ionicons
                 name="chevron-forward"
                 size={rf(14)}
@@ -213,17 +221,17 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
         {/* Stats Row */}
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>
+            <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit={true} minimumFontScale={0.7}>
               {stats.completedWorkouts}/{stats.totalWorkouts}
             </Text>
-            <Text style={styles.statLabel}>Workouts</Text>
+            <Text style={styles.statLabel} numberOfLines={1}>Workouts</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>
+            <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit={true} minimumFontScale={0.7}>
               {Math.round(stats.totalCalories)}
             </Text>
-            <Text style={styles.statLabel}>Est. Calories</Text>
+            <Text style={styles.statLabel} numberOfLines={1}>Est. Calories</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
@@ -232,10 +240,13 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
                 styles.statValue,
                 { color: colors.primary },
               ]}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.7}
             >
               {stats.progressPercent}%
             </Text>
-            <Text style={styles.statLabel}>Progress</Text>
+            <Text style={styles.statLabel} numberOfLines={1}>Progress</Text>
           </View>
         </View>
       </GlassCard>
@@ -252,11 +263,13 @@ const styles = StyleSheet.create({
   },
   headerLeft: {
     flex: 1,
+    minWidth: 0,
   },
   planTitle: {
     fontSize: rf(15),
     fontWeight: "700",
     color: colors.text,
+    flexShrink: 1,
   },
   planSubtitle: {
     fontSize: rf(12),
@@ -267,6 +280,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center" as const,
     gap: rp(2),
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
   },
   seeAllText: {
     fontSize: rf(12),
@@ -297,9 +314,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   dayCircle: {
-    width: rw(36),
-    height: rw(36),
-    borderRadius: rw(18),
+    width: Math.max(rw(36), 44),
+    height: Math.max(rw(36), 44),
+    borderRadius: Math.max(rw(18), 22),
     backgroundColor: colors.glassSurface,
     justifyContent: "center" as const,
     alignItems: "center" as const,

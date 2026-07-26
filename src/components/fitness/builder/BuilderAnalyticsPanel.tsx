@@ -214,6 +214,7 @@ const Sparkline: React.FC<SparklineProps> = ({ data, unit, color, testID }) => {
             <View
               key={`bar_${i}`}
               style={sparkStyles.barWrap}
+              accessibilityRole="text"
               accessibilityLabel={`${d.label}: ${Math.round(d.value)} ${unit}`}
             >
               <View
@@ -382,7 +383,14 @@ export const BuilderAnalyticsPanel: React.FC<BuilderAnalyticsPanelProps> = ({
           testID={`${testID ?? "builder-analytics"}-header`}
         >
           <Ionicons name="analytics-outline" size={rf(18)} color={colors.primary.DEFAULT} />
-          <Text style={styles.headerTitle}>Training Analytics</Text>
+          <Text
+            style={styles.headerTitle}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
+            Training Analytics
+          </Text>
           <Ionicons
             name={expanded ? "chevron-up" : "chevron-down"}
             size={rf(18)}
@@ -471,10 +479,17 @@ export const BuilderAnalyticsPanel: React.FC<BuilderAnalyticsPanelProps> = ({
                   {topEx.map((ex, i) => (
                     <View key={`freq_${i}`} style={styles.freqRow}>
                       <Text style={styles.freqRank}>{i + 1}.</Text>
-                      <Text style={styles.freqName} numberOfLines={1}>
+                      <Text
+                        style={styles.freqName}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.7}
+                      >
                         {ex.name}
                       </Text>
-                      <Text style={styles.freqSets}>{ex.sets} sets</Text>
+                      <Text style={styles.freqSets} numberOfLines={1}>
+                        {ex.sets} sets
+                      </Text>
                     </View>
                   ))}
                 </View>
@@ -489,13 +504,20 @@ export const BuilderAnalyticsPanel: React.FC<BuilderAnalyticsPanelProps> = ({
                   {personalRecords.slice(0, 10).map((pr, i) => (
                     <View key={`pr_${i}`} style={styles.prRow}>
                       <Ionicons name="trophy" size={rf(14)} color={colors.warning.DEFAULT} />
-                      <Text style={styles.prName} numberOfLines={1}>
+                      <Text
+                        style={styles.prName}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.7}
+                      >
                         {pr.exerciseName}
                       </Text>
-                      <Text style={styles.prValue}>
+                      <Text style={styles.prValue} numberOfLines={1}>
                         {pr.weightKg > 0 ? `${pr.weightKg}kg` : `${pr.reps} reps`}
                       </Text>
-                      <Text style={styles.prDate}>{formatDate(pr.achievedAt)}</Text>
+                      <Text style={styles.prDate} numberOfLines={1}>
+                        {formatDate(pr.achievedAt)}
+                      </Text>
                     </View>
                   ))}
                 </View>
@@ -523,10 +545,14 @@ interface StatTileProps {
 }
 
 const StatTile: React.FC<StatTileProps> = ({ icon, label, value, accent, testID }) => (
-  <View style={styles.statTile} testID={testID}>
+  <View style={styles.statTile} testID={testID} accessible={false}>
     <Ionicons name={icon} size={rf(16)} color={accent} />
-    <Text style={styles.statValue}>{value}</Text>
-    <Text style={styles.statLabel}>{label}</Text>
+    <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+      {value}
+    </Text>
+    <Text style={styles.statLabel} numberOfLines={1}>
+      {label}
+    </Text>
   </View>
 );
 
@@ -641,9 +667,11 @@ const styles = StyleSheet.create({
     fontSize: rf(typography.fontSize.caption),
     fontWeight: fw(typography.fontWeight.bold),
     width: rw(20),
+    flexShrink: 0,
   } as TextStyle,
   freqName: {
     flex: 1,
+    flexShrink: 1,
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.caption),
   },
@@ -651,6 +679,7 @@ const styles = StyleSheet.create({
     color: colors.secondary.DEFAULT,
     fontSize: rf(typography.fontSize.caption),
     fontWeight: fw(typography.fontWeight.semibold),
+    flexShrink: 0,
   } as TextStyle,
   prList: {
     gap: rp(spacing.xs),
@@ -663,6 +692,7 @@ const styles = StyleSheet.create({
   },
   prName: {
     flex: 1,
+    flexShrink: 1,
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.caption),
   },
@@ -670,10 +700,12 @@ const styles = StyleSheet.create({
     color: colors.primary.DEFAULT,
     fontSize: rf(typography.fontSize.caption),
     fontWeight: fw(typography.fontWeight.bold),
+    flexShrink: 0,
   } as TextStyle,
   prDate: {
     color: colors.text.tertiary,
     fontSize: rf(typography.fontSize.micro),
+    flexShrink: 0,
   },
   emptyState: {
     alignItems: "center",
@@ -691,7 +723,7 @@ const styles = StyleSheet.create({
     fontSize: rf(typography.fontSize.caption),
     textAlign: "center",
     paddingHorizontal: rp(spacing.md),
-    lineHeight: rf(typography.fontSize.body) * typography.lineHeight.normal,
+    lineHeight: rf(typography.fontSize.caption) * typography.lineHeight.normal,
   },
   emptyHint: {
     color: colors.text.tertiary,

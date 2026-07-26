@@ -37,7 +37,12 @@ export const NextExercisePreview: React.FC<NextExercisePreviewProps> = ({
       />
       <Text style={styles.nextExerciseTitle}>Next Up</Text>
     </View>
-    <Text style={styles.nextExerciseName} numberOfLines={1}>
+    <Text
+      style={styles.nextExerciseName}
+      numberOfLines={1}
+      adjustsFontSizeToFit
+      minimumFontScale={0.7}
+    >
       {exerciseName}
     </Text>
   </GlassCard>

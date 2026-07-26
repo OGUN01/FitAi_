@@ -45,7 +45,12 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
     >
       {/* Left: Greeting */}
       <View style={styles.textContainer}>
-        <Text style={styles.greeting}>
+        <Text
+          style={styles.greeting}
+          numberOfLines={1}
+          adjustsFontSizeToFit={true}
+          minimumFontScale={0.7}
+        >
           {getGreeting()}, {userName}
         </Text>
         <View style={styles.subtitleRow}>
@@ -65,7 +70,10 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
         </View>
       </View>
 
-      {/* Right: Calendar Button */}
+      {/* Right: Notifications / Calendar quick access.
+          Kept as a circular glass button with a progress % badge in the corner
+          per the target design. Bell icon surfaces the week's workout progress;
+          tap opens the calendar view (existing handler). */}
       <AnimatedPressable
         onPress={onCalendarPress}
         scaleValue={0.92}
@@ -77,7 +85,7 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
       >
         <View style={styles.calendarIconContainer}>
           <Ionicons
-            name="calendar"
+            name="notifications-outline"
             size={rf(20)}
             color={colors.text}
           />
@@ -86,6 +94,15 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
               <Text style={styles.progressIndicatorText}>
                 {progressPercent}%
               </Text>
+            </View>
+          )}
+          {progressPercent === 100 && (
+            <View style={[styles.progressIndicator, styles.progressIndicatorDone]}>
+              <Ionicons
+                name="checkmark"
+                size={rf(10)}
+                color={colors.white}
+              />
             </View>
           )}
         </View>
@@ -161,9 +178,16 @@ const styles = StyleSheet.create({
     borderRadius: rbr(8),
     minWidth: rw(28),
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.background,
+  },
+  progressIndicatorDone: {
+    backgroundColor: colors.successAlt,
+    minWidth: rw(18),
+    paddingHorizontal: rp(2),
   },
   progressIndicatorText: {
-    fontSize: rf(9),
+    fontSize: rf(10),
     fontWeight: "700",
     color: colors.white,
   },

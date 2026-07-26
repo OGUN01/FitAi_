@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr, rs } from "../../../utils/responsive";
 import { Exercise, WorkoutSet } from "../../../types/workout";
@@ -35,6 +36,9 @@ export const ExerciseCardHeader: React.FC<ExerciseCardHeaderProps> = ({
             styles.exerciseName,
             isCompleted && styles.exerciseNameCompleted,
           ]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.7}
         >
           {exercise.name}
         </Text>
@@ -56,12 +60,17 @@ export const ExerciseCardHeader: React.FC<ExerciseCardHeaderProps> = ({
 
       <View style={styles.statusSection}>
         {isCompleted ? (
-          <View style={styles.completedBadge}>
-            <Text style={styles.completedIcon}>✓</Text>
+          <View style={styles.completedBadge} accessibilityRole="text">
+            <Ionicons name="checkmark" size={rf(16)} color={colors.white} />
           </View>
         ) : (
-          <TouchableOpacity style={styles.playButton} onPress={onStart}>
-            <Text style={styles.playIcon}>▶️</Text>
+          <TouchableOpacity
+            style={styles.playButton}
+            onPress={onStart}
+            accessibilityRole="button"
+            accessibilityLabel={`Start ${exercise.name}`}
+          >
+            <Ionicons name="play" size={rf(14)} color={colors.textSecondary} />
           </TouchableOpacity>
         )}
       </View>
@@ -130,22 +139,12 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
   },
 
-  completedIcon: {
-    color: colors.white,
-    fontSize: rf(16),
-    fontWeight: "bold",
-  },
-
   playButton: {
-    width: 44,
-    height: 44,
+    width: Math.max(rs(44), 44),
+    height: Math.max(rs(44), 44),
     borderRadius: rbr(22),
     backgroundColor: colors.backgroundSecondary,
     justifyContent: "center" as const,
     alignItems: "center" as const,
-  },
-
-  playIcon: {
-    fontSize: rf(14),
   },
 });

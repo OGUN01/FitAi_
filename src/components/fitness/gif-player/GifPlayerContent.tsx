@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Image } from "expo-image";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr, rs } from "../../../utils/responsive";
 
@@ -41,9 +42,9 @@ export const GifPlayerContent: React.FC<GifPlayerContentProps> = ({
 }) => {
   if (!exercise || !exercise.gifUrl) {
     return (
-      <View style={[styles.placeholder, { height, width }]}>
+      <View style={[styles.placeholder, { height, width }]} accessibilityRole="text">
         <Text style={styles.placeholderText}>Exercise Not Found</Text>
-        <Text style={styles.placeholderSubtext}>ID: {exerciseId}</Text>
+        <Text style={styles.placeholderSubtext}>No demo available</Text>
       </View>
     );
   }
@@ -59,9 +60,14 @@ export const GifPlayerContent: React.FC<GifPlayerContentProps> = ({
 
       {hasError ? (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorEmoji}>!</Text>
+          <Ionicons name="alert-circle-outline" size={rf(32)} color={colors.error} />
           <Text style={styles.errorText}>Failed to load demonstration</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={onRetry}
+            accessibilityRole="button"
+            accessibilityLabel="Retry loading exercise demonstration"
+          >
             <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
@@ -71,6 +77,8 @@ export const GifPlayerContent: React.FC<GifPlayerContentProps> = ({
             onPress={onToggleFullscreen}
             activeOpacity={0.8}
             style={styles.gifTouchArea}
+            accessibilityRole="button"
+            accessibilityLabel="Open fullscreen demonstration"
           >
             <Image
               source={{ uri: exercise.gifUrl }}
@@ -99,9 +107,15 @@ export const GifPlayerContent: React.FC<GifPlayerContentProps> = ({
             style={styles.playbackOverlay}
             onPress={onTogglePlayback}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={isPlaying ? "Pause demonstration" : "Play demonstration"}
           >
             <View style={styles.playbackButton}>
-              <Text style={styles.playbackIcon}>{isPlaying ? "||" : ">"}</Text>
+              <Ionicons
+                name={isPlaying ? "pause" : "play"}
+                size={rf(16)}
+                color="white"
+              />
             </View>
           </TouchableOpacity>
         </>
@@ -120,7 +134,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: borderRadius.lg,
     alignSelf: "center",
     borderWidth: 1,
-    borderColor: colors.primary + "20",
+    borderColor: "rgba(255, 107, 53, 0.2)",
     shadowColor: colors.text,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -132,9 +146,9 @@ const styles = StyleSheet.create({
   gif: {
     borderTopLeftRadius: borderRadius.lg,
     borderTopRightRadius: borderRadius.lg,
-    backgroundColor: colors.backgroundSecondary,
-    borderWidth: 0.5,
-    borderColor: colors.primary + "10",
+    backgroundColor: "transparent",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255, 107, 53, 0.1)",
   },
 
   loadingOverlay: {
@@ -164,15 +178,11 @@ const styles = StyleSheet.create({
 
   playbackButton: {
     backgroundColor: "rgba(0, 0, 0, 0.6)",
-    borderRadius: rbr(20),
-    width: rs(40),
-    height: rs(40),
+    borderRadius: Math.max(rbr(20), 22),
+    width: Math.max(rs(40), 44),
+    height: Math.max(rs(40), 44),
     justifyContent: "center",
     alignItems: "center",
-  },
-
-  playbackIcon: {
-    fontSize: rf(16),
   },
 
   placeholder: {
@@ -203,23 +213,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  errorEmoji: {
-    fontSize: rf(32),
-    marginBottom: spacing.sm,
-  },
-
   errorText: {
     fontSize: fontSize.sm,
     color: colors.error,
     textAlign: "center",
     marginBottom: spacing.md,
+    marginTop: spacing.sm,
   },
 
   retryButton: {
     backgroundColor: colors.primary,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
+    minHeight: 44,
     borderRadius: borderRadius.md,
+    justifyContent: "center",
   },
 
   retryButtonText: {
@@ -242,8 +250,10 @@ const styles = StyleSheet.create({
     borderRadius: rbr(12),
   },
 
+  // White text on dark rgba(0,0,0,0.7) — colors.text (dark) was failing
+  // contrast on this dark overlay.
   zoomHintText: {
-    color: colors.text,
+    color: "white",
     fontSize: rf(10),
     fontWeight: "500",
   },

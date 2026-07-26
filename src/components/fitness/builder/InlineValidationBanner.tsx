@@ -152,7 +152,11 @@ export const InlineValidationBanner: React.FC = () => {
   }, [warnings]);
 
   // ── Empty state: render a subtle "balanced" chip ──
+  // Only claim "balanced" when validation has actually run (draft exists). If
+  // the draft is null we surface a neutral "No plan to validate yet" chip so
+  // we don't falsely claim balance.
   if (warnings.length === 0) {
+    const hasDraft = Boolean(draft);
     return (
       <Animated.View
         entering={FadeInDown.springify()}
@@ -160,11 +164,13 @@ export const InlineValidationBanner: React.FC = () => {
       >
         <View style={styles.balancedChip}>
           <Ionicons
-            name="checkmark-circle"
+            name={hasDraft ? "checkmark-circle" : "information-circle-outline"}
             size={rf(14)}
-            color={colors.success.DEFAULT}
+            color={hasDraft ? colors.success.DEFAULT : colors.text.secondary}
           />
-          <Text style={styles.balancedText}>Plan looks balanced</Text>
+          <Text style={styles.balancedText}>
+            {hasDraft ? "Plan looks balanced" : "No plan to validate yet"}
+          </Text>
         </View>
       </Animated.View>
     );
@@ -386,13 +392,14 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.xs),
+    minHeight: Math.max(rp(36), 36),
     borderRadius: borderRadius.full,
-    backgroundColor: "rgba(76, 175, 80, 0.12)",
-    borderWidth: rw(1),
-    borderColor: "rgba(76, 175, 80, 0.3)",
+    backgroundColor: "rgba(76, 175, 80, 0.18)",
+    borderWidth: 1,
+    borderColor: "rgba(76, 175, 80, 0.4)",
   },
   balancedText: {
-    color: colors.success.light,
+    color: colors.text.primary,
     fontSize: rf(typography.fontSize.micro),
     fontWeight: fw(typography.fontWeight.semibold),
   },
@@ -404,28 +411,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: rp(spacing.xs),
     paddingVertical: rp(spacing.xxs),
+    minHeight: Math.max(rp(44), 44),
   },
   severityDot: {
     width: rw(6),
     height: rw(6),
     borderRadius: borderRadius.full,
+    flexShrink: 0,
   },
   headerLabel: {
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.caption),
     fontWeight: fw(typography.fontWeight.bold),
+    flexShrink: 0,
   },
   topMessage: {
     flex: 1,
+    flexShrink: 1,
     color: colors.text.secondary,
     fontSize: rf(typography.fontSize.micro),
     marginLeft: rp(spacing.xs),
   },
   chevron: {
     marginLeft: rp(spacing.xs),
+    flexShrink: 0,
   },
   listScroll: {
     marginTop: rp(spacing.sm),
+    maxHeight: rp(240),
   },
   listContent: {
     gap: rp(spacing.xs),
@@ -457,7 +470,7 @@ const styles = StyleSheet.create({
   },
   fixBtn: {
     alignSelf: "flex-start",
-    minHeight: rf(32),
+    minHeight: Math.max(rf(32), 44),
   },
   fixBtnText: {
     fontSize: rf(typography.fontSize.micro),

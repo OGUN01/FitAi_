@@ -175,7 +175,7 @@ export const CustomPlanEmptyState: React.FC<CustomPlanEmptyStateProps> = ({
             style={styles.topText}
           >
             <Text style={styles.headline}>No Custom Schedule</Text>
-            <Text style={styles.explanation}>
+            <Text style={styles.explanation} numberOfLines={4}>
               Build your own weekly workout schedule — pick exercises for each
               day, or start from a template.
             </Text>
@@ -329,11 +329,11 @@ interface PreviewStatProps {
 }
 
 const PreviewStat: React.FC<PreviewStatProps> = ({ value, label, icon, tint }) => (
-  <View style={styles.previewStat}>
+  <View style={styles.previewStat} accessibilityRole="text">
     <View style={[styles.previewStatIcon, { backgroundColor: `${tint}1F` }]}>
       <Ionicons name={icon} size={rf(15)} color={tint} />
     </View>
-    <Text style={styles.previewStatValue} numberOfLines={1}>
+    <Text style={styles.previewStatValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
       {value}
     </Text>
     <Text style={styles.previewStatLabel} numberOfLines={1}>
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
   explanation: {
     color: colors.textSecondary,
     fontSize: rf(typography.fontSize.caption),
-    lineHeight: typography.fontSize.caption * typography.lineHeight.normal,
+    lineHeight: rf(typography.fontSize.caption) * (typography.lineHeight.normal ?? 1.4),
   },
   ctaRow: {
     flexDirection: "row",
@@ -386,30 +386,31 @@ const styles = StyleSheet.create({
     fontSize: rf(typography.fontSize.micro),
     fontWeight: fw(typography.fontWeight.semibold),
     letterSpacing: 1.2,
+    textTransform: "uppercase",
     marginTop: rp(spacing.lg),
     marginBottom: rp(spacing.sm),
     paddingHorizontal: rp(spacing.xs),
   },
   libraryBody: {
-    padding: spacing.lg,
+    padding: rp(spacing.lg),
   },
   libraryGrid: {
     flexDirection: "row",
-    gap: spacing.sm,
+    gap: rp(spacing.sm),
   },
   previewStat: {
     flex: 1,
     backgroundColor: colors.glassSurface,
     borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.sm,
+    paddingVertical: rp(spacing.md),
+    paddingHorizontal: rp(spacing.sm),
     alignItems: "flex-start",
     borderWidth: 1,
     borderColor: colors.glassBorder,
   },
   previewStatIcon: {
-    width: rw(28),
-    height: rw(28),
+    width: rw(32),
+    height: rw(32),
     borderRadius: borderRadius.full,
     justifyContent: "center",
     alignItems: "center",
@@ -420,9 +421,11 @@ const styles = StyleSheet.create({
     fontWeight: fw(typography.fontWeight.bold),
     color: colors.text,
   },
+  // Use colors.text (primary) for WCAG AA on glassSurface — colors.textSecondary
+  // (#B0B0B0) on glassSurface was ~3.5:1, below AA.
   previewStatLabel: {
     fontSize: rf(typography.fontSize.micro),
-    color: colors.textSecondary,
+    color: colors.text,
     marginTop: rp(2),
   },
   lastEditedRow: {
@@ -444,7 +447,7 @@ const styles = StyleSheet.create({
   libraryEmptySubtitle: {
     color: colors.textSecondary,
     fontSize: rf(typography.fontSize.caption),
-    lineHeight: typography.fontSize.caption * typography.lineHeight.normal,
+    lineHeight: rf(typography.fontSize.caption) * (typography.lineHeight.normal ?? 1.4),
     marginBottom: rp(spacing.md),
   },
   emptyActions: {
@@ -454,6 +457,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: rp(spacing.sm),
+    minHeight: 44,
     paddingVertical: rp(spacing.sm),
     paddingHorizontal: rp(spacing.md),
     backgroundColor: colors.glassSurface,

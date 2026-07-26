@@ -239,13 +239,18 @@ const WorkoutHistoryCard: React.FC<{
 
               {/* Info */}
               <View style={styles.infoContainer}>
-                <Text style={styles.date}>
+                <Text style={styles.date} numberOfLines={1}>
                   {getRelativeDate(workout.completedAt)}
                 </Text>
-                <Text style={styles.title} numberOfLines={1}>
+                <Text
+                  style={styles.title}
+                  numberOfLines={2}
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.8}
+                >
                   {workout.title}
                 </Text>
-                <Text style={styles.meta}>
+                <Text style={styles.meta} numberOfLines={1}>
                   {workout.duration} min • {workout.caloriesBurned} cal
                 </Text>
               </View>
@@ -262,7 +267,9 @@ const WorkoutHistoryCard: React.FC<{
                   </View>
                 ) : (
                   <View style={styles.progressBadge}>
-                    <Text style={styles.progressText}>{workout.progress}%</Text>
+                    <Text style={styles.progressText} numberOfLines={1} adjustsFontSizeToFit={true} minimumFontScale={0.7}>
+                      {workout.progress}%
+                    </Text>
                   </View>
                 )}
               </View>
@@ -361,7 +368,7 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     position: "relative",
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   actionsContainer: {
     position: "absolute",
@@ -378,6 +385,7 @@ const styles = StyleSheet.create({
   actionContent: {
     width: rw(48),
     height: "100%",
+    minHeight: 44,
     justifyContent: "center",
     alignItems: "center",
     borderRadius: borderRadius.md,
@@ -390,12 +398,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.errorAlt,
   },
   actionText: {
-    fontSize: rf(9),
+    fontSize: rf(10),
     fontWeight: "600",
     color: colors.white,
   },
   cardContainer: {
     backgroundColor: colors.background,
+    zIndex: 2,
+    elevation: 2,
   },
   cardContent: {
     flexDirection: "row",
@@ -436,7 +446,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
   },
   progressBadge: {
-    backgroundColor: "rgba(255, 142, 83, 0.15)",
+    backgroundColor: "rgba(255, 142, 83, 0.25)",
     paddingHorizontal: spacing.sm,
     paddingVertical: rp(4),
     borderRadius: borderRadius.full,

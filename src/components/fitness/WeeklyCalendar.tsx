@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw, rh, rs } from "../../utils/responsive";
 import { getLocalDateString } from "../../utils/weekUtils";
@@ -117,6 +118,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   };
 
   const days = getDaysOfWeek(currentWeekOffset);
+  const todayIndex = days.findIndex((d) => d.isToday);
 
   return (
     <View style={styles.container}>
@@ -130,7 +132,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         </TouchableOpacity>
 
         <View style={styles.weekInfo}>
-          <Text style={styles.weekTitle}>
+          <Text style={styles.weekTitle} numberOfLines={1}>
             {currentWeekOffset === 0
               ? "This Week"
               : currentWeekOffset === -1
@@ -139,7 +141,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                   ? "Next Week"
                   : `Week ${currentWeekOffset > 0 ? "+" : ""}${currentWeekOffset}`}
           </Text>
-          <Text style={styles.weekRange}>{getWeekDateRange(days)}</Text>
+          <Text style={styles.weekRange} numberOfLines={1}>{getWeekDateRange(days)}</Text>
         </View>
 
         <TouchableOpacity
@@ -156,6 +158,10 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         showsHorizontalScrollIndicator={false}
         style={styles.daysContainer}
         contentContainerStyle={styles.daysContent}
+        contentOffset={{
+          x: Math.max(0, (todayIndex - 1) * (rw(80) + spacing.sm)),
+          y: 0,
+        }}
       >
         {days.map((day) => (
           <TouchableOpacity
@@ -208,7 +214,11 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
               )}
               {day.isRestDay && !day.hasWorkout && (
                 <View style={styles.restIndicator}>
-                  <Text style={styles.restIndicatorText}>😴</Text>
+                  <Ionicons
+                    name="moon"
+                    size={rf(12)}
+                    color={colors.textSecondary}
+                  />
                 </View>
               )}
             </View>
@@ -234,9 +244,9 @@ const styles = StyleSheet.create({
   },
 
   weekNavButton: {
-    width: rs(40),
-    height: rs(40),
-    borderRadius: rbr(20),
+    width: Math.max(rs(40), 44),
+    height: Math.max(rs(40), 44),
+    borderRadius: rbr(22),
     backgroundColor: colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
@@ -297,7 +307,7 @@ const styles = StyleSheet.create({
 
   dayButtonRest: {
     backgroundColor: colors.backgroundTertiary,
-    opacity: 0.7,
+    opacity: 0.85,
   },
 
   dayLabel: {

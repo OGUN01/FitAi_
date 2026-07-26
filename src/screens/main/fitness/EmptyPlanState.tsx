@@ -83,20 +83,37 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
                   size={rf(16)}
                   color={colors.primary}
                 />
-                <Text style={styles.previewText}>
+                <Text
+                  style={styles.previewText}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.7}
+                >
                   {planDetails.workouts} workouts
                 </Text>
               </View>
               <View style={styles.previewItem}>
                 <Ionicons name="time-outline" size={rf(16)} color={colors.primary} />
-                <Text style={styles.previewText}>{planDetails.duration}</Text>
+                <Text
+                  style={styles.previewText}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.7}
+                >
+                  {planDetails.duration}
+                </Text>
               </View>
             </View>
 
             <View style={styles.previewRow}>
               <View style={styles.previewItem}>
                 <Ionicons name="trophy-outline" size={rf(16)} color={colors.primary} />
-                <Text style={styles.previewText} numberOfLines={1}>
+                <Text
+                  style={styles.previewText}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.7}
+                >
                   {experienceLevel.charAt(0).toUpperCase() +
                     experienceLevel.slice(1)}{" "}
                   level
@@ -105,7 +122,12 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
               {primaryGoals.length > 0 && (
                 <View style={styles.previewItem}>
                   <Ionicons name="flag-outline" size={rf(16)} color={colors.primary} />
-                  <Text style={styles.previewText} numberOfLines={1}>
+                  <Text
+                    style={styles.previewText}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit={true}
+                    minimumFontScale={0.7}
+                  >
                     {primaryGoals[0].replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
                   </Text>
                 </View>
@@ -152,7 +174,7 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
             >
               <LinearGradient
                 colors={
-                  isGenerating ? ["#6b7280", "#4b5563"] : [colors.primary, colors.primaryDark]
+                  isGenerating ? [colors.muted, colors.neutral] : [colors.primary, colors.primaryDark]
                 }
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
@@ -161,14 +183,14 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
                 {isGenerating ? (
                   <>
                     <Ionicons name="sync" size={rf(20)} color={colors.white} />
-                    <Text style={styles.generateButtonText}>
+                    <Text style={styles.generateButtonText} numberOfLines={1} adjustsFontSizeToFit={true} minimumFontScale={0.7}>
                       Finding best exercises for you...
                     </Text>
                   </>
                 ) : (
                   <>
                     <Ionicons name="sparkles" size={rf(20)} color={colors.white} />
-                    <Text style={styles.generateButtonText}>
+                    <Text style={styles.generateButtonText} numberOfLines={1} adjustsFontSizeToFit={true} minimumFontScale={0.7}>
                       Generate AI Workout
                     </Text>
                   </>
@@ -189,6 +211,7 @@ const styles = StyleSheet.create({
   iconWrapper: {
     position: "relative",
     marginBottom: spacing.xl,
+    overflow: "visible",
   },
   iconContainer: {
     width: rw(80),
@@ -204,7 +227,7 @@ const styles = StyleSheet.create({
     width: rw(36),
     height: rw(36),
     borderRadius: rw(18),
-    backgroundColor: "rgba(255, 107, 107, 0.15)",
+    backgroundColor: colors.errorTint,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
@@ -281,6 +304,7 @@ const styles = StyleSheet.create({
     width: "100%",
     borderRadius: borderRadius.lg,
     overflow: "hidden",
+    minHeight: 48,
   },
   generateButtonGradient: {
     flexDirection: "row",

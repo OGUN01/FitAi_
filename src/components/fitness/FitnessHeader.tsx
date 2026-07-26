@@ -45,7 +45,12 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
     >
       {/* Left: Greeting */}
       <View style={styles.textContainer}>
-        <Text style={styles.greeting}>
+        <Text
+          style={styles.greeting}
+          numberOfLines={1}
+          adjustsFontSizeToFit={true}
+          minimumFontScale={0.7}
+        >
           {getGreeting()}, {userName}
         </Text>
         <View style={styles.subtitleRow}>
@@ -105,12 +110,14 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     flex: 1,
+    minWidth: 0,
   },
   greeting: {
     fontSize: rf(22),
     fontWeight: "700",
     color: colors.text,
     letterSpacing: -0.5,
+    flexShrink: 1,
   },
   subtitleRow: {
     flexDirection: "row",
@@ -143,11 +150,11 @@ const styles = StyleSheet.create({
     width: rw(44),
     height: rw(44),
     borderRadius: rw(22),
-    backgroundColor: colors.glassBorder,
+    backgroundColor: colors.primaryTint,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: colors.glassHighlight,
+    borderColor: `${colors.primary}60`,
   },
   progressIndicator: {
     position: "absolute",
@@ -159,9 +166,11 @@ const styles = StyleSheet.create({
     borderRadius: rbr(8),
     minWidth: rp(28),
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.background,
   },
   progressIndicatorText: {
-    fontSize: rf(9),
+    fontSize: rf(10),
     fontWeight: "700",
     color: colors.white,
   },

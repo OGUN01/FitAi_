@@ -166,7 +166,26 @@ const WorkoutHistoryCard: React.FC<{
     }
   };
 
+  // Category tint map — teal for strength, coral for cardio, pink for HIIT,
+  // orange for flexibility. Falls back to primary.
+  const getCategoryTint = (): string => {
+    switch (workout.category?.toLowerCase()) {
+      case "strength":
+        return colors.teal;
+      case "cardio":
+        return colors.errorLight;
+      case "hiit":
+        return colors.pink;
+      case "flexibility":
+      case "yoga":
+        return colors.primary;
+      default:
+        return colors.primary;
+    }
+  };
+
   const isCompleted = workout.progress === 100;
+  const categoryTint = getCategoryTint();
 
   return (
     <AnimatedRN.View
@@ -219,50 +238,65 @@ const WorkoutHistoryCard: React.FC<{
             borderRadius="lg"
           >
             <View style={styles.cardContent}>
-              {/* Icon */}
+              {/* Category icon tile — tinted by category */}
               <View
                 style={[
                   styles.iconContainer,
-                  {
-                    backgroundColor: isCompleted
-                      ? `${colors.successAlt}25`
-                      : colors.errorTint,
-                  },
+                  { backgroundColor: `${categoryTint}25` },
                 ]}
               >
                 <Ionicons
                   name={getCategoryIcon()}
                   size={rf(20)}
-                  color={isCompleted ? colors.successAlt : colors.errorLight}
+                  color={categoryTint}
                 />
               </View>
 
               {/* Info */}
               <View style={styles.infoContainer}>
-                <Text style={styles.date}>
+                <Text style={styles.date} numberOfLines={1}>
                   {getRelativeDate(workout.completedAt)}
                 </Text>
-                <Text style={styles.title} numberOfLines={2}>
+                <Text
+                  style={styles.title}
+                  numberOfLines={2}
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.8}
+                >
                   {workout.title}
                 </Text>
-                <Text style={styles.meta}>
-                  {workout.duration || 0} min - {workout.caloriesBurned || 0} cal
+                <Text style={styles.meta} numberOfLines={1}>
+                  {workout.duration || 0} min  •  {workout.caloriesBurned || 0} cal
                 </Text>
               </View>
 
-              {/* Status */}
+              {/* Circular completion ring — green check when complete, % ring otherwise */}
               <View style={styles.statusContainer}>
                 {isCompleted ? (
-                  <View style={styles.completedBadge}>
+                  <View style={styles.completedRing}>
                     <Ionicons
-                      name="checkmark-circle"
-                      size={rf(18)}
-                      color={colors.success}
+                      name="checkmark"
+                      size={rf(16)}
+                      color={colors.successAlt}
                     />
                   </View>
                 ) : (
-                  <View style={styles.progressBadge}>
-                    <Text style={styles.progressText}>{workout.progress}%</Text>
+                  <View
+                    style={[
+                      styles.progressRing,
+                      {
+                        borderColor: `${colors.primary}80`,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={styles.progressText}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit={true}
+                      minimumFontScale={0.6}
+                    >
+                      {workout.progress}%
+                    </Text>
                   </View>
                 )}
               </View>
@@ -327,9 +361,9 @@ export const WorkoutHistoryList: React.FC<WorkoutHistoryListProps> = ({
             size={rf(18)}
             color={colors.text}
           />
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
+          <Text style={styles.sectionTitle} numberOfLines={1}>Recent Activity</Text>
         </View>
-        <Text style={styles.sectionCount}>{workouts.length} workouts</Text>
+        <Text style={styles.sectionCount} numberOfLines={1}>{workouts.length} workouts</Text>
       </View>
 
       {/* Workout Cards */}
@@ -373,7 +407,7 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     position: "relative",
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   actionsContainer: {
     position: "absolute",
@@ -390,6 +424,7 @@ const styles = StyleSheet.create({
   actionContent: {
     width: rw(48),
     height: "100%",
+    minHeight: 44,
     justifyContent: "center",
     alignItems: "center",
     borderRadius: borderRadius.md,
@@ -402,12 +437,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.errorAlt,
   },
   actionText: {
-    fontSize: rf(9),
+    fontSize: rf(10),
     fontWeight: "600",
     color: colors.white,
   },
   cardContainer: {
     backgroundColor: colors.background,
+    zIndex: 2,
+    elevation: 2,
   },
   cardContent: {
     flexDirection: "row",
@@ -445,21 +482,29 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     flexShrink: 0,
   },
-  completedBadge: {
-    backgroundColor: `${colors.successAlt}25`,
-    padding: spacing.xs,
-    borderRadius: borderRadius.full,
+  completedRing: {
+    width: rw(34),
+    height: rw(34),
+    borderRadius: rw(17),
+    borderWidth: 2,
+    borderColor: colors.successAlt,
+    backgroundColor: `${colors.successAlt}20`,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  progressBadge: {
-    backgroundColor: colors.primaryTint,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: rp(4),
-    borderRadius: borderRadius.full,
+  progressRing: {
+    width: rw(34),
+    height: rw(34),
+    borderRadius: rw(17),
+    borderWidth: 2,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "transparent",
   },
   progressText: {
-    fontSize: rf(11),
+    fontSize: rf(10),
     fontWeight: "700",
-    color: colors.accent,
+    color: colors.primary,
   },
   emptyState: {
     alignItems: "center",

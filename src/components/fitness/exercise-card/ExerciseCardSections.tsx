@@ -63,7 +63,7 @@ export const ExerciseCardSections: React.FC<ExerciseCardSectionsProps> = ({
               style={styles.instructionItem}
             >
               <Text style={styles.instructionNumber}>{index + 1}.</Text>
-              <Text style={styles.instructionText}>{instruction}</Text>
+              <Text style={styles.instructionText} numberOfLines={5}>{instruction}</Text>
             </View>
           ))}
         </View>
@@ -72,10 +72,10 @@ export const ExerciseCardSections: React.FC<ExerciseCardSectionsProps> = ({
       {/* Tips */}
       {exercise.tips && exercise.tips.length > 0 && (
         <View style={styles.tipsSection}>
-          <Text style={styles.sectionTitle}>💡 Tips</Text>
+          <Text style={styles.sectionTitle}>Tips</Text>
           {exercise.tips.map((tip) => (
             <Text key={`tip-${tip.substring(0, 30)}`} style={styles.tipText}>
-              • {tip}
+              - {tip}
             </Text>
           ))}
         </View>
@@ -108,10 +108,12 @@ const styles = StyleSheet.create({
     borderRadius: rbr(12),
   },
 
+  // Dark text on the muscle-group tint (some tints are very light — e.g.
+  // triceps yellow — and fail contrast with white text).
   muscleGroupText: {
-    color: colors.white,
+    color: colors.text,
     fontSize: fontSize.xs,
-    fontWeight: typography.fontWeight.medium,
+    fontWeight: typography.fontWeight.semibold,
     textTransform: "capitalize",
   },
 

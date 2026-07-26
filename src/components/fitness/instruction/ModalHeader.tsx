@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rbr, rs } from "../../../utils/responsive";
 
@@ -15,10 +16,15 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({
   return (
     <View style={styles.header}>
       <View style={styles.headerContent}>
-        <Text style={styles.modalTitle} numberOfLines={2}>
+        <Text
+          style={styles.modalTitle}
+          numberOfLines={2}
+          adjustsFontSizeToFit
+          minimumFontScale={0.7}
+        >
           {displayName}
         </Text>
-        <View style={styles.qualityBadge}>
+        <View style={styles.qualityBadge} accessibilityRole="text">
           <Text style={styles.qualityBadgeText}>Verified</Text>
         </View>
       </View>
@@ -29,7 +35,7 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({
         accessibilityRole="button"
         accessibilityLabel={`Close ${displayName}`}
       >
-        <Text style={styles.closeButtonText}>X</Text>
+        <Ionicons name="close" size={rf(18)} color={colors.textSecondary} />
       </TouchableOpacity>
     </View>
   );
@@ -60,7 +66,7 @@ const styles = StyleSheet.create({
   },
 
   qualityBadge: {
-    backgroundColor: colors.success + "20",
+    backgroundColor: "rgba(76, 175, 80, 0.2)",
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.sm,
@@ -80,11 +86,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
-  },
-
-  closeButtonText: {
-    fontSize: rf(18),
-    color: colors.textSecondary,
-    fontWeight: "bold",
   },
 });

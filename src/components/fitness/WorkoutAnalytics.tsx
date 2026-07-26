@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../ui";
+import { AuroraSpinner } from "../ui/aurora";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp } from "../../utils/responsive";
 import { useFitnessData } from "../../hooks/useFitnessData";
@@ -53,7 +55,10 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
   if (statsLoading) {
     return (
       <Card style={styles.container} variant="elevated">
-        <Text style={styles.loadingText}>Loading analytics...</Text>
+        <View style={styles.stateWrap}>
+          <AuroraSpinner size="md" />
+          <Text style={styles.loadingText}>Loading analytics...</Text>
+        </View>
       </Card>
     );
   }
@@ -61,7 +66,18 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
   if (statsError) {
     return (
       <Card style={styles.container} variant="elevated">
-        <Text style={styles.errorText}>Error: {statsError}</Text>
+        <View style={styles.stateWrap}>
+          <Ionicons name="alert-circle-outline" size={rf(32)} color={colors.error} />
+          <Text style={styles.errorText}>Couldn't load analytics</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => loadWorkoutStats(selectedRange)}
+            accessibilityRole="button"
+            accessibilityLabel="Retry loading analytics"
+          >
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
       </Card>
     );
   }
@@ -229,6 +245,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
+    minHeight: 44,
     borderRadius: borderRadius.sm,
   },
 
@@ -250,6 +267,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     marginBottom: spacing.lg,
+    gap: spacing.sm,
   },
 
   statItem: {
@@ -330,13 +348,34 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     color: colors.textSecondary,
     textAlign: "center",
-    paddingVertical: spacing.xl,
+    marginTop: spacing.sm,
   },
 
   errorText: {
     fontSize: fontSize.md,
     color: colors.error,
     textAlign: "center",
+    marginTop: spacing.sm,
+    marginBottom: spacing.md,
+  },
+
+  stateWrap: {
+    alignItems: "center",
     paddingVertical: spacing.xl,
+  },
+
+  retryButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    minHeight: 44,
+    borderRadius: borderRadius.md,
+    justifyContent: "center",
+  },
+
+  retryButtonText: {
+    color: colors.surface,
+    fontSize: fontSize.sm,
+    fontWeight: "600",
   },
 });

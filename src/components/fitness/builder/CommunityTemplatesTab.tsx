@@ -403,7 +403,12 @@ const CommunityCard: React.FC<CommunityCardProps> = ({
 
           {/* Body */}
           <View style={styles.cardBody}>
-            <Text style={styles.cardName} numberOfLines={1}>
+            <Text
+              style={styles.cardName}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
               {template.name}
             </Text>
 
@@ -478,8 +483,8 @@ interface StatPillProps {
 }
 
 const StatPill: React.FC<StatPillProps> = ({ icon, value, tint }) => (
-  <View style={styles.statPill}>
-    <Ionicons name={icon} size={rf(11)} color={tint} />
+  <View style={styles.statPill} accessible={false}>
+    <Ionicons name={icon} size={rf(12)} color={tint} />
     <Text style={[styles.statPillText, { color: tint }]} numberOfLines={1}>
       {value}
     </Text>
@@ -552,7 +557,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundTertiary,
     borderWidth: 1,
     borderColor: colors.borderLight,
-    minHeight: rp(40),
+    minHeight: Math.max(rp(40), 44),
   },
   sortChipActive: {
     backgroundColor: `${colors.primary}26`,
@@ -621,7 +626,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: rp(spacing.xxs),
-    backgroundColor: colors.glassSurface,
+    backgroundColor: "rgba(255, 255, 255, 0.18)",
     paddingHorizontal: rp(spacing.xs),
     paddingVertical: rp(spacing.xxs),
     borderRadius: borderRadius.full,

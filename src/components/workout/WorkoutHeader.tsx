@@ -77,6 +77,7 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
         springConfig="snappy"
         hapticType="medium"
         style={styles.exitButton}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityRole="button"
         accessibilityLabel="Exit workout"
       >
@@ -105,17 +106,17 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
 
       <View style={styles.headerRight}>
         <View style={styles.statBlock}>
-          <Text style={styles.statLabel}>TIME</Text>
-          <Text style={styles.timerText}>{formatSeconds(duration)}</Text>
+          <Text style={styles.statLabel} numberOfLines={1}>TIME</Text>
+          <Text style={styles.timerText} numberOfLines={1}>{formatSeconds(duration)}</Text>
         </View>
         <View style={styles.statBlock}>
-          <Text style={styles.statLabel}>CAL</Text>
-          <Text style={styles.caloriesText}>{safeString(calories)}</Text>
+          <Text style={styles.statLabel} numberOfLines={1}>CAL</Text>
+          <Text style={styles.caloriesText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{safeString(calories)}</Text>
         </View>
         {sessionVolume != null ? (
           <View style={styles.statBlock}>
-            <Text style={styles.statLabel}>VOL</Text>
-            <Text style={styles.volumeText}>
+            <Text style={styles.statLabel} numberOfLines={1}>VOL</Text>
+            <Text style={styles.volumeText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
               {Math.round(sessionVolume).toLocaleString()}
             </Text>
           </View>
@@ -142,8 +143,9 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   exitButton: {
-    width: rw(40),
-    height: rw(40),
+    // Clamp to 44px minimum touch target (rw(40) drops below on small screens).
+    width: Math.max(rw(40), 44),
+    height: Math.max(rw(40), 44),
     borderRadius: rbr(20),
     backgroundColor: `${colors.error.DEFAULT}20`,
     justifyContent: "center",
@@ -196,11 +198,13 @@ const styles = StyleSheet.create({
     fontVariant: ["tabular-nums"],
   },
   statLabel: {
-    fontSize: 9,
+    // Use responsive font size (was hardcoded 9px). Bump color from tertiary
+    // to secondary and drop the opacity:0.7 — combined with the tiny size it
+    // failed WCAG AA on the dark glass header.
+    fontSize: rf(typography.fontSize.micro),
     fontWeight: String(typography.fontWeight.bold) as any,
-    color: colors.text.tertiary,
+    color: colors.text.secondary,
     letterSpacing: 0.8,
-    opacity: 0.7,
     marginTop: rp(spacing.xxs),
   },
   caloriesText: {

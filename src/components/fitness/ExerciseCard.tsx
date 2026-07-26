@@ -62,6 +62,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
     return reps.toString();
   };
 
+  // TODO: tokenize — these muscle-group colors are hardcoded hex and bypass
+  // the aurora token system (CLAUDE.md rule 12 — don't invent tokens here).
+  // Replace with semantic tokens once a muscle-group palette is added.
   const getMuscleGroupColor = (group: string) => {
     const colors: Record<string, string> = {
       chest: "#FF6B6B",
@@ -83,11 +86,11 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
   ): keyof typeof Ionicons.glyphMap => {
     switch (difficulty) {
       case "beginner":
-        return "ellipse";
+        return "trending-up-outline";
       case "intermediate":
-        return "ellipse";
+        return "trending-up";
       case "advanced":
-        return "ellipse";
+        return "flame";
       default:
         return "ellipse-outline";
     }
@@ -269,7 +272,12 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                     style={styles.instructionItem}
                   >
                     <Text style={styles.instructionNumber}>{index + 1}.</Text>
-                    <Text style={styles.instructionText}>{instruction}</Text>
+                    <Text
+                      style={styles.instructionText}
+                      numberOfLines={5}
+                    >
+                      {instruction}
+                    </Text>
                   </View>
                 ))}
               </View>
@@ -306,7 +314,13 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
           </View>
         )}
 
-        <Pressable onPress={handleToggleExpand} style={styles.expandIndicator}>
+        <Pressable
+          onPress={handleToggleExpand}
+          style={styles.expandIndicator}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel={isExpanded ? "Collapse exercise details" : "Expand exercise details"}
+        >
           <Ionicons
             name={isExpanded ? "chevron-up" : "chevron-down"}
             size={rf(14)}
@@ -399,8 +413,8 @@ const styles = StyleSheet.create({
   },
 
   playButton: {
-    width: 44,
-    height: 44,
+    width: Math.max(rs(44), 44),
+    height: Math.max(rs(44), 44),
     borderRadius: rbr(22),
     backgroundColor: colors.backgroundSecondary,
     justifyContent: "center" as const,
@@ -412,15 +426,17 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
 
+  // Tinted amber bg with warningAlt text — passes WCAG AA where solid
+  // amber + white text failed (was ~2.6:1).
   timerDisplay: {
-    backgroundColor: colors.warning,
+    backgroundColor: "rgba(245, 158, 11, 0.2)",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
   },
 
   timerText: {
-    color: colors.white,
+    color: colors.warningAlt,
     fontSize: fontSize.md,
     fontWeight: typography.fontWeight.bold,
   },
@@ -483,10 +499,12 @@ const styles = StyleSheet.create({
     borderRadius: rbr(12),
   },
 
+  // Dark text on the muscle-group tint (some tints are very light — e.g.
+  // triceps #FFEAA7 yellow — and fail contrast with white text.
   muscleGroupText: {
-    color: colors.white,
+    color: colors.text,
     fontSize: fontSize.xs,
-    fontWeight: typography.fontWeight.medium,
+    fontWeight: typography.fontWeight.semibold,
     textTransform: "capitalize",
   },
 
@@ -582,6 +600,8 @@ const styles = StyleSheet.create({
 
   expandIndicator: {
     alignItems: "center" as const,
+    justifyContent: "center" as const,
     marginTop: spacing.sm,
+    minHeight: 44,
   },
 });

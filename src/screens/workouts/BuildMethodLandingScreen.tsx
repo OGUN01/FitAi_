@@ -48,6 +48,8 @@ import {
 import { rf, rw, rp } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
+import { usePaywall } from "../../hooks/usePaywall";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 interface BuildMethodLandingScreenProps {
   navigation: {
@@ -128,14 +130,29 @@ const METHODS: BuildMethod[] = [
 export const BuildMethodLandingScreen: React.FC<BuildMethodLandingScreenProps> = ({
   navigation,
 }) => {
-  // Defense-in-depth premium gate. For v1 the Community card still routes to
-  // the template library regardless — the lock badge is purely a visual cue.
-  // Phase 7 will gate the real Community tab.
+  // Defense-in-depth premium gate. The Community card is locked for free-tier
+  // users — tapping it surfaces the paywall via usePaywall().triggerPaywall()
+  // instead of routing to TemplateLibrary. Unlocked cards route normally.
   const isPremiumFn = useSubscriptionStore((s) => s.isPremium);
   const isPremium = isPremiumFn();
+  const { triggerPaywall } = usePaywall();
 
   const handleSelect = (method: BuildMethod) => {
     haptics.buttonPress();
+    if (method.id === "community" && !isPremium) {
+      // Free-tier user tapped the locked Community card — surface the paywall
+      // instead of routing. The chevron stays for visual continuity.
+      triggerPaywall("community_templates");
+      crossPlatformAlert(
+        "Premium feature",
+        "Import community templates is available with a Premium subscription. Upgrade to browse, fork, and rate community templates.",
+        [
+          { text: "Maybe later", style: "cancel" },
+          { text: "View plans", onPress: () => navigation.navigate("Profile") },
+        ],
+      );
+      return;
+    }
     navigation.navigate(method.nextScreen);
   };
 
@@ -171,6 +188,12 @@ export const BuildMethodLandingScreen: React.FC<BuildMethodLandingScreenProps> =
               onSelect={() => handleSelect(method)}
             />
           ))}
+          {/* Helper line below Community card explaining the lock */}
+          {!isPremium ? (
+            <Text style={styles.lockedHint}>
+              Community templates require Premium. Tap to upgrade.
+            </Text>
+          ) : null}
 
           <View style={styles.bottomSpacer} />
         </ScrollView>
@@ -199,8 +222,9 @@ const MethodCard: React.FC<MethodCardProps> = ({
       springConfig="smooth"
       hapticType="light"
       accessibilityRole="button"
-      accessibilityLabel={`${method.title}${method.badge ? `, ${method.badge}` : ""}`}
-      accessibilityHint={locked ? "Premium feature — tap to browse available templates" : "Tap to continue"}
+      accessibilityLabel={`${method.title}${method.badge ? `, ${method.badge}` : ""}${locked ? ", locked" : ""}`}
+      accessibilityHint={locked ? "Premium feature — tap to view upgrade options" : "Tap to continue"}
+      accessibilityState={{ disabled: false }}
       style={styles.methodCardOuter}
     >
       <GlassCard
@@ -208,6 +232,7 @@ const MethodCard: React.FC<MethodCardProps> = ({
         blurIntensity="default"
         padding="lg"
         borderRadius="xl"
+        contentStyle={locked ? styles.methodCardLockedContent : undefined}
       >
         <View style={styles.methodRow}>
           {/* Accent gradient icon disc */}
@@ -229,7 +254,14 @@ const MethodCard: React.FC<MethodCardProps> = ({
 
           <View style={styles.methodText}>
             <View style={styles.titleRow}>
-              <Text style={styles.title}>{method.title}</Text>
+              <Text
+                style={styles.title}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+              >
+                {method.title}
+              </Text>
               {method.badge ? (
                 <View
                   style={[
@@ -250,13 +282,19 @@ const MethodCard: React.FC<MethodCardProps> = ({
                   ) : null}
                   <Text
                     style={[styles.badgeText, { color: method.badgeTint }]}
+                    numberOfLines={1}
                   >
                     {method.badge}
                   </Text>
                 </View>
               ) : null}
             </View>
-            <Text style={styles.description}>{method.description}</Text>
+            <Text
+              style={styles.description}
+              numberOfLines={3}
+            >
+              {method.description}
+            </Text>
           </View>
 
           <Ionicons
@@ -297,6 +335,10 @@ const styles = StyleSheet.create({
   },
   methodCardOuter: {
     marginBottom: rp(spacing.md),
+    minHeight: Math.max(rp(spacing.xxl), 64),
+  },
+  methodCardLockedContent: {
+    opacity: 0.6,
   },
   methodRow: {
     flexDirection: "row",
@@ -313,17 +355,20 @@ const styles = StyleSheet.create({
   },
   methodText: {
     flex: 1,
+    minWidth: 0,
   },
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: rp(spacing.sm),
     marginBottom: rp(2),
+    flexWrap: "wrap",
   },
   title: {
     color: colors.text,
     fontSize: rf(typography.fontSize.body),
     fontWeight: fw(typography.fontWeight.semibold),
+    flexShrink: 1,
   },
   description: {
     color: colors.textSecondary,
@@ -335,8 +380,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: rp(2),
     paddingHorizontal: rp(spacing.sm),
+    minHeight: 22,
     borderRadius: borderRadius.sm,
     borderWidth: 1,
+    flexShrink: 0,
   },
   badgeLock: {
     marginRight: rp(2),
@@ -347,7 +394,13 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
   chevron: {
-    marginLeft: rp(2),
+    marginLeft: rp(spacing.xs),
+  },
+  lockedHint: {
+    color: colors.textSecondary,
+    fontSize: rf(typography.fontSize.caption),
+    textAlign: "center",
+    marginBottom: rp(spacing.md),
   },
   bottomSpacer: {
     height: rp(spacing.xl),

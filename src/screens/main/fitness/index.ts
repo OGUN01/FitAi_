@@ -10,4 +10,5 @@ export { WorkoutHistoryList } from './WorkoutHistoryList';
 export { SuggestedWorkouts } from '../../../components/fitness/SuggestedWorkouts';
 export { EmptyPlanState } from './EmptyPlanState';
 export { RecoveryTipsModal } from './RecoveryTipsModal';
+export { MyWorkoutsCard } from './MyWorkoutsCard';
 

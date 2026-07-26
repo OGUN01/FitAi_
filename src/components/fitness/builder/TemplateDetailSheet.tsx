@@ -388,16 +388,10 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {template ? (
           <View testID={`${testID ?? "template-detail"}-${template.id}`}>
-            {/* Confetti overlay (fires on fork success) */}
-            <Confetti
-              trigger={confettiTrigger}
-              onComplete={handleConfettiComplete}
-              style={styles.confetti}
-            />
-
             {/* Header */}
             <Animated.View entering={FadeInDown.delay(60).duration(300)}>
               <Text style={styles.name}>{template.name}</Text>
@@ -505,7 +499,7 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
                 <Text style={styles.sectionTitle}>Muscle Balance</Text>
                 <MuscleBalanceRadar
                   data={radarData}
-                  size={rs(220)}
+                  size={Math.min(rs(220), rp(240))}
                   accessibilityLabel={`${template.name} muscle balance`}
                 />
               </Animated.View>
@@ -630,6 +624,14 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
           </View>
         ) : null}
       </ScrollView>
+
+      {/* Confetti overlay — mounted at sheet root (not inside ScrollView) so it
+          stays fixed over the viewport instead of scrolling with the content. */}
+      <Confetti
+        trigger={confettiTrigger}
+        onComplete={handleConfettiComplete}
+        style={styles.confetti}
+      />
 
       {/* Embedded rating sheet — community templates only. Renders above this
           detail sheet so the rating flow stays within the preview context. */}
@@ -757,8 +759,10 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: rp(200),
-    zIndex: 10,
+    bottom: 0,
+    zIndex: 100,
+    elevation: 12,
+    pointerEvents: "none",
   },
   name: {
     color: colors.text,
@@ -833,6 +837,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderColor: colors.glassBorder,
+    minHeight: rp(96),
   },
   statTileIcon: {
     width: rw(32),
@@ -855,6 +860,7 @@ const styles = StyleSheet.create({
   radarWrap: {
     alignItems: "center",
     marginBottom: rp(spacing.lg),
+    maxWidth: "100%",
   },
   sectionTitle: {
     color: colors.text,
@@ -868,7 +874,7 @@ const styles = StyleSheet.create({
   exerciseRow: {
     paddingVertical: rp(spacing.sm),
     paddingHorizontal: rp(spacing.md),
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.glassBorder,
   },
   exerciseRowLast: {
@@ -909,7 +915,7 @@ const styles = StyleSheet.create({
   descriptionText: {
     color: colors.textSecondary,
     fontSize: rf(typography.fontSize.body),
-    lineHeight: typography.fontSize.body * typography.lineHeight.normal,
+    lineHeight: rf(typography.fontSize.body) * typography.lineHeight.normal,
     marginBottom: rp(spacing.lg),
   },
   actions: {

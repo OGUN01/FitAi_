@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf } from "../../../utils/responsive";
 import { ExerciseTipsCard } from "./ExerciseTipsCard";
@@ -18,8 +19,8 @@ export const ExerciseDetails: React.FC<ExerciseDetailsProps> = ({
 }) => {
   if (!exercise) {
     return (
-      <View style={styles.noDataContainer}>
-        <Text style={styles.noDataEmoji}>?</Text>
+      <View style={styles.noDataContainer} accessibilityRole="text">
+        <Ionicons name="help-circle-outline" size={rf(48)} color={colors.textTertiary} />
         <Text style={styles.noDataText}>No exercise details available</Text>
       </View>
     );
@@ -43,22 +44,21 @@ export const ExerciseDetails: React.FC<ExerciseDetailsProps> = ({
         </View>
       )}
 
-      {exercise.secondaryMuscles?.length &&
-        exercise.secondaryMuscles.length > 0 && (
-          <View style={styles.detailSection}>
-            <Text style={styles.detailSectionTitle}>Secondary Muscles</Text>
-            <View style={styles.chipContainer}>
-              {exercise.secondaryMuscles.map((muscle) => (
-                <View
-                  key={`secondary-${muscle}`}
-                  style={[styles.chip, styles.secondaryChip]}
-                >
-                  <Text style={styles.secondaryChipText}>{muscle}</Text>
-                </View>
-              ))}
-            </View>
+      {exercise.secondaryMuscles && exercise.secondaryMuscles.length > 0 && (
+        <View style={styles.detailSection}>
+          <Text style={styles.detailSectionTitle}>Secondary Muscles</Text>
+          <View style={styles.chipContainer}>
+            {exercise.secondaryMuscles.map((muscle) => (
+              <View
+                key={`secondary-${muscle}`}
+                style={[styles.chip, styles.secondaryChip]}
+              >
+                <Text style={styles.secondaryChipText}>{muscle}</Text>
+              </View>
+            ))}
           </View>
-        )}
+        </View>
+      )}
 
       {exercise.equipments.length > 0 && (
         <View style={styles.detailSection}>
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   },
 
   primaryChip: {
-    backgroundColor: colors.primary + "20",
+    backgroundColor: "rgba(255, 107, 53, 0.2)",
   },
 
   primaryChipText: {
@@ -138,18 +138,18 @@ const styles = StyleSheet.create({
   },
 
   secondaryChip: {
-    backgroundColor: colors.warning + "20",
+    backgroundColor: "rgba(245, 158, 11, 0.2)",
   },
 
   secondaryChipText: {
-    color: colors.warning,
+    color: colors.warningAlt,
     fontSize: fontSize.sm,
     fontWeight: "600",
     textTransform: "capitalize",
   },
 
   equipmentChip: {
-    backgroundColor: colors.info + "20",
+    backgroundColor: "rgba(33, 150, 243, 0.2)",
   },
 
   equipmentChipText: {
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   },
 
   bodyPartChip: {
-    backgroundColor: colors.success + "20",
+    backgroundColor: "rgba(76, 175, 80, 0.2)",
   },
 
   bodyPartChipText: {
@@ -170,33 +170,16 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
 
-  tipContainer: {
-    backgroundColor: colors.backgroundSecondary,
-    padding: spacing.lg,
-    borderRadius: borderRadius.lg,
-  },
-
-  tipText: {
-    fontSize: fontSize.sm,
-    color: colors.text,
-    lineHeight: rf(20),
-    marginBottom: spacing.sm,
-  },
-
   noDataContainer: {
     alignItems: "center",
     paddingVertical: spacing.xl,
-  },
-
-  noDataEmoji: {
-    fontSize: rf(48),
-    marginBottom: spacing.md,
   },
 
   noDataText: {
     fontSize: fontSize.md,
     fontWeight: "600",
     color: colors.textSecondary,
+    marginTop: spacing.md,
     marginBottom: spacing.sm,
   },
 });

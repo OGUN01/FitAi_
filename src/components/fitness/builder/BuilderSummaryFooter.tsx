@@ -244,25 +244,11 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
             label="Exercises"
             value={String(totalExercises)}
           />
-          <Divider />
-          <Stat
-            icon="time-outline"
-            label="Duration"
-            value={totalDuration > 0 ? `${totalDuration}m` : "—"}
-          />
-          <Divider />
-          <Stat
-            icon="flame-outline"
-            label="Calories"
-            value={totalCalories > 0 ? String(Math.round(totalCalories)) : "—"}
-          />
-          <Divider />
           <Stat
             icon="scale-outline"
             label="Volume"
             value={totalVolume > 0 ? `${Math.round(totalVolume)}kg` : "—"}
           />
-          <Divider />
           <Stat
             icon="fitness-outline"
             label="Balance"
@@ -279,8 +265,12 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
 
         <View style={styles.bottomRow}>
           <View style={styles.difficultyCell}>
-            <Text style={styles.difficultyLabel}>Difficulty</Text>
-            <Text style={styles.difficultyValue}>{difficulty}</Text>
+            <Text style={styles.difficultyLabel} numberOfLines={1}>
+              Difficulty
+            </Text>
+            <Text style={styles.difficultyValue} numberOfLines={1}>
+              {difficulty}
+            </Text>
           </View>
 
           {/* Phase 9 — AI kebab menu */}
@@ -331,7 +321,11 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
               <Ionicons name="calendar-outline" size={rf(16)} color={colors.primary.light} />
               <Text style={styles.aiMenuItemText}>Generate Full Week</Text>
               {filledDayCount < 2 && (
-                <Text style={styles.aiMenuItemHint}>{filledDayCount}/2 days</Text>
+                <Text style={styles.aiMenuItemHint}>
+                  {filledDayCount === 0
+                    ? "Add to 2 days first"
+                    : `${filledDayCount}/2 days`}
+                </Text>
               )}
             </Pressable>
             <Pressable
@@ -439,8 +433,8 @@ const Stat: React.FC<{
   </View>
 );
 
-const Divider: React.FC = () => <View style={styles.divider} />;
-
+// NOTE: Divider removed — statsRow now uses 3 cells without dividers per
+// audit fix (5 stats + 4 dividers overflowed on 360px screens).
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
@@ -449,6 +443,8 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: rp(spacing.md),
     paddingTop: rp(spacing.sm),
+    zIndex: 1100,
+    elevation: 11,
   },
   card: {
     backgroundColor: colors.glass.backgroundDark,
@@ -468,12 +464,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: rp(spacing.xxs),
+    gap: rp(spacing.sm),
   },
   statCell: {
     flex: 1,
     alignItems: "center",
     gap: rp(2),
+    minHeight: Math.max(rp(44), 44),
+    justifyContent: "center",
   },
   statValue: {
     color: colors.text.primary,
@@ -483,11 +481,6 @@ const styles = StyleSheet.create({
   statLabel: {
     color: colors.text.tertiary,
     fontSize: rf(typography.fontSize.micro),
-  },
-  divider: {
-    width: rw(1),
-    height: rp(28),
-    backgroundColor: colors.glass.border,
   },
   bottomRow: {
     flexDirection: "row",
@@ -508,17 +501,17 @@ const styles = StyleSheet.create({
     fontSize: rf(typography.fontSize.body),
     fontWeight: String(typography.fontWeight.semibold) as any,
     marginTop: rp(2),
-  },
+  } as TextStyle,
   saveBtn: {
     flexShrink: 0,
   },
   // Phase 9 — AI menu
   aiMenuBtn: {
-    width: rw(40),
-    height: rw(40),
+    width: Math.max(rw(40), 44),
+    height: Math.max(rw(40), 44),
     borderRadius: borderRadius.lg,
     backgroundColor: "rgba(255, 107, 53, 0.12)",
-    borderWidth: rw(1),
+    borderWidth: 1,
     borderColor: "rgba(255, 107, 53, 0.3)",
     alignItems: "center",
     justifyContent: "center",
@@ -529,11 +522,13 @@ const styles = StyleSheet.create({
   aiMenu: {
     marginTop: rp(spacing.sm),
     backgroundColor: colors.glass.background,
-    borderWidth: rw(1),
+    borderWidth: 1,
     borderColor: colors.glass.border,
     borderRadius: borderRadius.lg,
     padding: rp(spacing.xs),
     gap: rp(2),
+    zIndex: 1200,
+    elevation: 12,
   },
   aiMenuItem: {
     flexDirection: "row",
@@ -542,6 +537,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(spacing.sm),
     paddingVertical: rp(spacing.sm),
     borderRadius: borderRadius.md,
+    minHeight: Math.max(rp(44), 44),
   },
   aiMenuItemDisabled: {
     opacity: 0.4,
@@ -564,6 +560,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 1200,
+    elevation: 12,
   },
 });
 

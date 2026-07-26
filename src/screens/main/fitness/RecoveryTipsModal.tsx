@@ -4,7 +4,7 @@
  */
 
 import React, { useMemo } from "react";
-import { View, Text, StyleSheet, Modal, ScrollView } from "react-native";
+import { View, Text, StyleSheet, Modal, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, {
   FadeIn,
@@ -211,12 +211,16 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
       statusBarTranslucent
     >
       <View style={styles.overlay}>
-        <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-          <Animated.View
-            entering={FadeInUp.duration(400).springify()}
+        <SafeAreaView style={styles.safeArea} edges={["top"]}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
             style={styles.modalContainer}
           >
-            <View style={styles.modalContent}>
+            <Animated.View
+              entering={FadeInUp.duration(400).springify()}
+              style={styles.modalContent}
+            >
               {/* Header */}
               <View style={styles.header}>
                 <LinearGradient
@@ -228,8 +232,8 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
                   <Ionicons name="leaf" size={rf(24)} color={colors.white} />
                 </LinearGradient>
                 <View style={styles.headerText}>
-                  <Text style={styles.headerTitle}>Recovery Tips</Text>
-                  <Text style={styles.headerSubtitle}>
+                  <Text style={styles.headerTitle} numberOfLines={1}>Recovery Tips</Text>
+                  <Text style={styles.headerSubtitle} numberOfLines={1}>
                     Rest Day Recommendations
                   </Text>
                 </View>
@@ -312,8 +316,8 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
                   </LinearGradient>
                 </AnimatedPressable>
               </View>
-            </View>
-          </Animated.View>
+            </Animated.View>
+          </KeyboardAvoidingView>
         </SafeAreaView>
       </View>
     </Modal>
@@ -323,7 +327,7 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -349,7 +353,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: spacing.lg,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "rgba(255, 255, 255, 0.1)",
   },
   headerIconContainer: {
@@ -362,6 +366,7 @@ const styles = StyleSheet.create({
   headerText: {
     flex: 1,
     marginLeft: spacing.md,
+    minWidth: 0,
   },
   headerTitle: {
     fontSize: rf(18),
@@ -377,12 +382,13 @@ const styles = StyleSheet.create({
     width: Math.max(rw(36), 44),
     height: Math.max(rw(36), 44),
     borderRadius: Math.max(rw(18), 22),
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
     justifyContent: "center",
     alignItems: "center",
+    flexShrink: 0,
   },
   scrollView: {
-    maxHeight: rh(400),
+    maxHeight: rh(560),
   },
   scrollContent: {
     padding: spacing.lg,
@@ -391,7 +397,7 @@ const styles = StyleSheet.create({
   introCard: {
     flexDirection: "row",
     alignItems: "flex-start",
-    backgroundColor: "rgba(255, 215, 0, 0.15)",
+    backgroundColor: "rgba(255, 215, 0, 0.18)",
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     marginBottom: spacing.lg,
@@ -405,7 +411,7 @@ const styles = StyleSheet.create({
   },
   tipCard: {
     marginBottom: spacing.md,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
     borderRadius: borderRadius.lg,
     overflow: "hidden",
   },
@@ -445,7 +451,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: rp(3),
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
     paddingHorizontal: spacing.xs,
     paddingVertical: rp(2),
     borderRadius: borderRadius.sm,
@@ -465,7 +471,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderLeftWidth: 3,
     borderLeftColor: colors.primary,
-    backgroundColor: "rgba(255, 107, 53, 0.15)",
+    backgroundColor: "rgba(255, 107, 53, 0.18)",
     borderRadius: borderRadius.md,
   },
   quoteText: {
@@ -481,12 +487,13 @@ const styles = StyleSheet.create({
   },
   footer: {
     padding: spacing.lg,
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: "rgba(255, 255, 255, 0.1)",
   },
   gotItButton: {
     borderRadius: borderRadius.lg,
     overflow: "hidden",
+    minHeight: 48,
   },
   gotItButtonGradient: {
     flexDirection: "row",

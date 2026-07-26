@@ -91,7 +91,9 @@ const styles = StyleSheet.create({
   progressBarContainer: {
     height: rh(6),
     backgroundColor: colors.glass.backgroundDark,
-    marginHorizontal: rp(spacing.lg),
+    // Removed marginHorizontal:rp(spacing.lg) — parent WorkoutHeader already
+    // applies paddingHorizontal, so the extra horizontal margin double-padded
+    // and narrowed the progress bar.
     borderRadius: borderRadius.sm,
     overflow: "hidden",
   },
@@ -105,8 +107,9 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   progressPercentage: {
-    textAlign: "right",
-    marginRight: rp(spacing.lg),
+    // Aligned to the progress bar's right edge (no horizontal margin so
+    // "100%" doesn't overflow on narrow screens).
+    alignSelf: "flex-end",
     marginBottom: rp(spacing.xxs),
     fontSize: rf(typography.fontSize.micro),
     color: colors.text.tertiary,

@@ -37,6 +37,8 @@ import {
   Pressable,
   ViewStyle,
   LayoutChangeEvent,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
@@ -396,24 +398,18 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
 
   // ── Group with sibling exercise (superset/circuit target picker) ──
   const handleGroupWithSibling = useCallback(
-    (siblingExerciseId: string, siblingName: string) => {
+    (siblingExerciseId: string, _siblingName: string) => {
       if (!exercise) return;
       // Assign the same group id to both exercises. We only write our own
       // exercise here; the sibling's update is the caller's responsibility
       // (Phase 8 will wire cross-exercise grouping). For v1 we just stamp our
       // own group id so the UI reflects the intent.
+      void _siblingName;
       const groupId =
         groupMode === "superset"
           ? exercise.supersetId ?? `ss_${Date.now().toString(36)}`
           : exercise.circuitId ?? `circuit_${Date.now().toString(36)}`;
       haptics.selection();
-      console.log(
-        "[ExerciseEditorSheet] group with sibling:",
-        siblingExerciseId,
-        siblingName,
-        "→ groupId:",
-        groupId,
-      );
       if (groupMode === "superset") {
         patchExercise({ supersetId: groupId });
       } else if (groupMode === "circuit") {
@@ -499,6 +495,11 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
       initialSnapIndex={1}
       testID={testID}
     >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
+        style={styles.kavWrap}
+      >
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -522,18 +523,23 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
           </View>
           {(muscleGroups.length > 0 || equipment.length > 0) && (
             <View style={styles.chipRow}>
-              {muscleGroups.slice(0, 4).map((m) => (
+              {muscleGroups.slice(0, 3).map((m) => (
                 <View key={`mg_${m}`} style={styles.muscleChip}>
-                  <Text style={styles.muscleChipText}>{m}</Text>
+                  <Text style={styles.muscleChipText} numberOfLines={1}>{m}</Text>
                 </View>
               ))}
-              {equipment.slice(0, 2).map((e) => (
+              {muscleGroups.length > 3 && (
+                <View style={styles.muscleChip}>
+                  <Text style={styles.muscleChipText}>+{muscleGroups.length - 3}</Text>
+                </View>
+              )}
+              {equipment.slice(0, 1).map((e) => (
                 <View key={`eq_${e}`} style={styles.equipChip}>
-                  <Text style={styles.equipChipText}>{e}</Text>
+                  <Text style={styles.equipChipText} numberOfLines={1}>{e}</Text>
                 </View>
               ))}
               <View style={styles.difficultyChip}>
-                <Text style={styles.difficultyChipText}>{difficulty}</Text>
+                <Text style={styles.difficultyChipText} numberOfLines={1}>{difficulty}</Text>
               </View>
             </View>
           )}
@@ -736,10 +742,7 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
                     </ScrollView>
                   )}
                   <Text style={styles.groupIdDisplay}>
-                    Group id:{" "}
-                    {groupMode === "superset"
-                      ? exercise.supersetId ?? "—"
-                      : exercise.circuitId ?? "—"}
+                    {groupMode === "superset" ? "Superset" : "Circuit"} assigned
                   </Text>
                 </View>
               )}
@@ -783,19 +786,8 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
                   ? "Alternative set"
                   : "No alternative set"}
               </Text>
-              <GlassButton
-                label="Change"
-                onPress={() => {
-                  // Phase 4 ExercisePickerSheet is not wired yet; log so the
-                  // flow is traceable without silently no-op'ing.
-                  console.log(
-                    "[ExerciseEditorSheet] alternative picker not wired (Phase 4)",
-                  );
-                  haptics.selection();
-                }}
-                variant="secondary"
-                style={styles.altBtn}
-              />
+              {/* TODO(Phase 4): wire the ExercisePickerSheet in "replace"
+                  mode to surface an alternative exercise picker here. */}
             </View>
           )}
         </Section>
@@ -845,8 +837,8 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
                   currentLabel="Latest"
                   targetLabel="Target"
                   unit="kg"
-                  width={rw(280)}
-                  height={rw(180)}
+                  width={Math.min(rw(280), rp(280))}
+                  height={Math.min(rw(160), rp(160))}
                 />
               )}
             </View>
@@ -855,6 +847,7 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Confetti overlay (PR celebration) */}
       <Confetti
@@ -930,6 +923,7 @@ const Section: React.FC<SectionProps> = ({
         style={styles.sectionHeader}
         accessibilityRole="button"
         accessibilityLabel={`${collapsed ? "Expand" : "Collapse"} ${title} section`}
+        accessibilityState={{ expanded: !collapsed }}
       >
         <Text style={styles.sectionTitle}>{title}</Text>
         <Animated.View style={chevronStyle} pointerEvents="none">
@@ -999,6 +993,9 @@ const styles = StyleSheet.create({
   scroll: {
     flex: 1,
   },
+  kavWrap: {
+    flex: 1,
+  },
   scrollContent: {
     paddingBottom: rp(spacing.xl),
     gap: rp(spacing.xs),
@@ -1041,8 +1038,9 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.h3),
     fontWeight: String(typography.fontWeight.bold) as TextStyleWeight,
-    paddingVertical: rp(spacing.xs),
+    paddingVertical: rp(spacing.sm),
     paddingHorizontal: rp(spacing.sm),
+    minHeight: Math.max(rp(44), 44),
     backgroundColor: colors.glass.backgroundDark,
     borderRadius: borderRadius.md,
     borderWidth: 1,
@@ -1103,6 +1101,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary.DEFAULT,
     borderStyle: "dashed",
     backgroundColor: "rgba(255, 107, 53, 0.08)",
+    minHeight: Math.max(rp(44), 44),
   },
   addSetLabel: {
     color: colors.primary.DEFAULT,
@@ -1183,6 +1182,7 @@ const styles = StyleSheet.create({
   },
   siblingScroll: {
     flexDirection: "row",
+    paddingRight: rp(spacing.md),
   },
   siblingChip: {
     paddingHorizontal: rp(spacing.sm),
@@ -1276,11 +1276,11 @@ const styles = StyleSheet.create({
     borderColor: colors.glass.border,
     padding: rp(spacing.sm),
     zIndex: 50,
+    elevation: 5,
     shadowColor: "#000",
     shadowOpacity: 0.3,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
   },
   tooltipTitle: {
     color: colors.text.primary,

@@ -92,7 +92,7 @@ export const WeekDaySelector: React.FC<WeekDaySelectorProps> = ({
         contentOffset={{
           x: Math.max(
             0,
-            (todayIndex - 1) * (rw(56) + spacing.sm),
+            (todayIndex - 1) * (rw(56) + spacing.sm) + spacing.lg,
           ),
           y: 0,
         }}
@@ -174,12 +174,12 @@ const styles = StyleSheet.create({
     width: rw(56),
     height: rh(80),
     borderRadius: borderRadius.lg,
-    backgroundColor: "rgba(255,255,255,0.03)",
+    backgroundColor: "rgba(255,255,255,0.08)",
     justifyContent: "center" as const,
     alignItems: "center" as const,
     position: "relative",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.05)",
+    borderColor: "rgba(255,255,255,0.1)",
   },
   dayItemSelected: {
     backgroundColor: colors.primary,
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   dayLabelPast: {
-    color: "rgba(255,255,255,0.3)",
+    color: colors.textSecondary,
   },
   dayDate: {
     fontSize: rf(18),
@@ -210,12 +210,12 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   dayDatePast: {
-    color: "rgba(255,255,255,0.4)",
+    color: colors.textSecondary,
   },
   mealIndicator: {
     position: "absolute",
-    bottom: rh(6),
-    backgroundColor: "rgba(255, 107, 53, 0.2)",
+    bottom: rh(4),
+    backgroundColor: "rgba(255, 107, 53, 0.25)",
     paddingHorizontal: rp(6),
     paddingVertical: rp(2),
     borderRadius: rbr(8),
@@ -225,8 +225,8 @@ const styles = StyleSheet.create({
   },
   mealCount: {
     fontSize: rf(9),
-    fontWeight: "600",
-    color: colors.primary,
+    fontWeight: "700",
+    color: colors.white,
   },
   mealCountSelected: {
     color: colors.white,

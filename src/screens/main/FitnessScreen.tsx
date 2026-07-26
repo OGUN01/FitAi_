@@ -18,6 +18,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import Animated, { FadeIn } from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import {
   WorkoutStartDialog,
@@ -130,7 +131,7 @@ const WorkoutCardItem = React.memo<WorkoutCardItemProps>(
     );
 
     return (
-      <View style={{ marginBottom: isLast ? 0 : 16 }}>
+      <View style={{ marginBottom: isLast ? 0 : rp(spacing.md) }}>
         <TodayWorkoutCard
           workout={workout}
           isRestDay={false}
@@ -291,7 +292,14 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
                 regeneration failures surface even when a plan is present. */}
             {planError && (
               <View style={styles.errorCard}>
-                <Text style={styles.errorTitle}>Plan Generation Failed</Text>
+                <View style={styles.errorHeader}>
+                  <Ionicons
+                    name="alert-circle"
+                    size={rf(20)}
+                    color={colors.error.DEFAULT}
+                  />
+                  <Text style={styles.errorTitle}>Plan Generation Failed</Text>
+                </View>
                 <Text style={styles.errorMessage}>{planError}</Text>
               </View>
             )}
@@ -427,11 +435,17 @@ const styles = StyleSheet.create({
     borderColor: `${colors.error.DEFAULT}59`,
     ...shadows.level2,
   },
+  errorHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(spacing.xs),
+    marginBottom: rp(4),
+  },
   errorTitle: {
     fontSize: rf(15),
     fontWeight: "600",
     color: colors.error.DEFAULT,
-    marginBottom: rp(4),
+    flex: 1,
   },
   errorMessage: {
     fontSize: rf(13),
@@ -445,9 +459,11 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     zIndex: 100,
+    elevation: 100,
   },
   planToggleContainer: {
     paddingHorizontal: rp(spacing.lg),
+    paddingTop: rp(spacing.xs),
     marginBottom: rp(12),
   },
 });

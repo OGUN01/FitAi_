@@ -97,8 +97,6 @@ export interface SetRowProps {
   onDelete: () => void;
   /** Fires on drag end with from/to indices (1-based setNumber space). */
   onReorder: (from: number, to: number) => void;
-  /** Whether this row is the active drag target (drives elevation styling). */
-  isDragging?: boolean;
   /** Test ID prefix. */
   testID?: string;
 }
@@ -119,7 +117,6 @@ export const SetRow: React.FC<SetRowProps> = ({
   onChange,
   onDelete,
   onReorder,
-  isDragging: isDraggingProp = false,
   testID,
 }) => {
   const reduceMotion = useReducedMotion();
@@ -332,7 +329,11 @@ export const SetRow: React.FC<SetRowProps> = ({
           </View>
 
           {/* Set number badge */}
-          <View style={styles.setNumberBadge}>
+          <View
+            style={styles.setNumberBadge}
+            accessibilityRole="text"
+            accessibilityLabel={`Set ${setNumber}`}
+          >
             <Text style={styles.setNumberText}>{setNumber}</Text>
           </View>
 
@@ -431,8 +432,6 @@ export const SetRow: React.FC<SetRowProps> = ({
           />
         </Animated.View>
       )}
-
-      {isDraggingProp && <View style={styles.dragOverlay} pointerEvents="none" />}
     </Animated.View>
   );
 };
@@ -565,17 +564,20 @@ const styles = StyleSheet.create({
   },
   typeChip: {
     paddingHorizontal: rp(spacing.xs),
-    paddingVertical: rp(spacing.xxs),
+    paddingVertical: rp(spacing.xs),
     borderRadius: borderRadius.full,
     borderWidth: 1.5,
+    minHeight: Math.max(rp(28), 32),
+    alignItems: "center",
+    justifyContent: "center",
   },
   typeChipText: {
     fontSize: rf(typography.fontSize.micro),
     fontWeight: String(typography.fontWeight.semibold) as TextStyleWeight,
   },
   deleteBtn: {
-    width: rw(28),
-    height: rw(28),
+    width: Math.max(rw(28), 44),
+    height: Math.max(rw(28), 44),
     borderRadius: borderRadius.full,
     backgroundColor: colors.glass.backgroundDark,
     alignItems: "center",
@@ -586,7 +588,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: rp(spacing.xxs),
-    marginLeft: rw(24 + 28 + spacing.xs), // indent past handle + badge
+    marginLeft: rp(24 + 28 + spacing.xs), // indent past handle + badge (rp-scaled)
     gap: rp(spacing.xs),
     paddingHorizontal: rp(spacing.sm),
     paddingVertical: rp(spacing.xxs),
@@ -605,20 +607,6 @@ const styles = StyleSheet.create({
   },
   dropRepsInput: {
     flex: 1,
-  },
-  dragOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: borderRadius.lg,
-    backgroundColor: "transparent",
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
   },
 });
 

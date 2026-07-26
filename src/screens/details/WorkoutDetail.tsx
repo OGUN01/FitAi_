@@ -14,7 +14,7 @@ import {
   EmptyState,
   AnimatedPressable,
 } from "../../components/ui/aurora";
-import { colors, spacing, typography } from "../../theme/aurora-tokens";
+import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
 import { rp, rf, rw } from "../../utils/responsive";
 import { useWorkoutDetailLogic } from "../../hooks/useWorkoutDetailLogic";
 import { WorkoutInfoCard } from "../../components/details/WorkoutInfoCard";
@@ -46,6 +46,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
       <AuroraBackground theme="space">
         <View style={styles.loadingContainer}>
           <AuroraSpinner size="lg" />
+          <Text style={styles.loadingText}>Loading workout…</Text>
         </View>
       </AuroraBackground>
     );
@@ -91,6 +92,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
 
       <ScrollView
         style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <WorkoutInfoCard
@@ -141,15 +143,23 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    gap: rp(spacing.md),
+  },
+  loadingText: {
+    color: colors.text.secondary,
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.medium) as any,
   },
   emptyWrap: {
     flex: 1,
     justifyContent: "center",
   },
   favoriteButton: {
-    width: rw(44),
-    height: rw(44),
-    borderRadius: 999,
+    // Clamp to 44px minimum touch target (rw(44) drops below on small screens).
+    width: Math.max(rw(44), 44),
+    height: Math.max(rw(44), 44),
+    // Use borderRadius.full token (was hardcoded magic 999).
+    borderRadius: borderRadius.full,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.glass.background,
@@ -157,6 +167,10 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     paddingHorizontal: rp(spacing.md),
+  },
+  scrollContent: {
+    // Bottom padding so the last exercise clears the bottom CTA.
+    paddingBottom: rp(spacing.xxl),
   },
   exercisesSection: {
     marginBottom: rp(spacing.xxl),

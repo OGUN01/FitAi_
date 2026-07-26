@@ -74,9 +74,9 @@ export const CheckmarkMorph: React.FC<CheckmarkMorphProps> = ({
   const reduceMotion = useReducedMotion();
 
   // Sanitize size (avoid NaN on Android native)
-  const size = Number.isFinite(rawSize) ? Math.round(rawSize) : 28;
+  const size = Number.isFinite(rawSize) ? Math.max(Math.round(rawSize), 16) : 28;
   const strokeWidth = Math.max(2, Math.round(size / 10));
-  const radius = Math.round((size - strokeWidth) / 2);
+  const radius = Math.max(2, Math.round((size - strokeWidth * 2) / 2));
   const circumference = Math.round(radius * 2 * Math.PI);
   const centerX = Math.round(size / 2);
   const centerY = Math.round(size / 2);

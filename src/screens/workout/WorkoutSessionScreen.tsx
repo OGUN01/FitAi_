@@ -3,9 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
-  Pressable,
   BackHandler,
   Platform,
 } from "react-native";
@@ -13,6 +11,7 @@ import Animated, {
   useAnimatedStyle,
 } from "react-native-reanimated";
 import { AuroraBackground, GlassCard, AnimatedPressable, GlassButton } from "../../components/ui/aurora";
+import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rp, rf } from "../../utils/responsive";
 import { DayWorkout } from "../../types/ai";
@@ -28,7 +27,7 @@ import { completeExtraWorkout } from "../../services/extraWorkoutService";
 // P1-8 / P0-1). The previous in-memory analyticsHelpers call duplicated that
 // write and could double/triple-count on re-fired realtime events.
 import { useFitnessStore } from "../../stores/fitnessStore";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { exerciseFilterService } from "../../services/exerciseFilterService";
 import { getCurrentUserId } from "../../services/authUtils";
 import { supabase } from "../../services/supabase";
@@ -182,14 +181,15 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     personalInfo?.units === "imperial" ? "lbs" : "kg";
   const bodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
   // Gate the weight-unavailable warning behind a one-shot ref so it fires at
-  // most once per session instead of on every render (was a console.warn in a
-  // render body, which fired repeatedly and is disallowed by CLAUDE.md in
-  // production paths).
+  // most once per session. Moved out of the render body (was a console.warn in
+  // a render body, which is disallowed by CLAUDE.md in production paths).
   const weightWarnedRef = useRef(false);
-  if (!bodyAnalysis?.current_weight_kg && !weightWarnedRef.current) {
-    weightWarnedRef.current = true;
-    console.warn('[WorkoutSession] User weight unavailable — calorie calculation will return 0');
-  }
+  useEffect(() => {
+    if (!bodyAnalysis?.current_weight_kg && !weightWarnedRef.current) {
+      weightWarnedRef.current = true;
+      console.warn('[WorkoutSession] User weight unavailable — calorie calculation will return 0');
+    }
+  }, [bodyAnalysis?.current_weight_kg]);
   const userWeightKg = bodyAnalysis?.current_weight_kg || 0;
   const experienceLevel: 'beginner' | 'intermediate' | 'advanced' =
     workoutPreferences?.intensity ?? 'beginner';
@@ -730,7 +730,10 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 
   return (
     <AuroraBackground theme="space">
-    <SafeAreaView style={styles.container}>
+    {/* edges={['bottom']} — top inset is handled by WorkoutHeader's paddingTop
+        (passing insets.top) so its glass surface extends under the status bar.
+        Using edges={['top']} here would double-pad the top. */}
+    <SafeAreaView style={styles.container} edges={["bottom"]}>
       <WorkoutHeader
         workoutTitle={workout.title}
         currentExercise={
@@ -770,6 +773,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         style={styles.content}
         showsVerticalScrollIndicator={false}
         bounces={false}
+        keyboardShouldPersistTaps="handled"
       >
         <Animated.View
           style={[styles.exerciseContainer, exerciseContainerStyle]}
@@ -805,8 +809,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
               key={session.currentExerciseIndex}
               exerciseId={safeString(session.currentExercise.exerciseId, "")}
               exerciseName={safeString(session.currentExercise.name, "")}
-              height={280}
-              width={320}
+              height={rp(240)}
+              width={rp(300)}
               showTitle={false}
               showInstructions={true}
               onInstructionsPress={() => session.setShowInstructionModal(true)}
@@ -924,8 +928,12 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
                   style={styles.prevExButton}
                   onPress={goToPreviousExercise}
                   hapticType="light"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Previous exercise"
                 >
-                  <Text style={styles.prevExText}>← Previous</Text>
+                  <Ionicons name="chevron-back" size={rf(16)} color={colors.text.tertiary} />
+                  <Text style={styles.prevExText}>Previous</Text>
                 </AnimatedPressable>
               )}
             </View>
@@ -1080,8 +1088,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   setDot: {
-    width: 10,
-    height: 10,
+    // Responsive dot size (was hardcoded 10px — tiny on high-DPI screens).
+    width: rp(10),
+    height: rp(10),
     borderRadius: borderRadius.full,
     backgroundColor: colors.glass.backgroundDark,
     borderWidth: 1,
@@ -1102,8 +1111,15 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   prevExButton: {
+    // Clamp to 44px minimum touch target (paddingVertical:12 + ~14px text
+    // was ~36-40px tall, below the 44px accessibility minimum).
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(spacing.xxs),
     paddingVertical: 12,
     paddingHorizontal: 16,
+    minHeight: 44,
+    justifyContent: "center",
   },
   prevExText: {
     color: colors.text.tertiary,
@@ -1117,6 +1133,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
     paddingVertical: 8,
+    // Enforce 44px minimum touch target (paddingVertical:8 + ~20px text was
+    // ~32px tall, below the 44px accessibility minimum).
+    minHeight: 44,
     marginBottom: 4,
   },
   exerciseNameTap: {
@@ -1128,7 +1147,8 @@ const styles = StyleSheet.create({
   exerciseHistoryHint: {
     fontSize: fontSize.xs,
     color: colors.text.tertiary,
-    marginLeft: 8,
+    // Use spacing token (was hardcoded marginLeft:8).
+    marginLeft: spacing.sm,
   },
   // Warm-up sets panel — now a GlassCard; these styles style the inner content.
   warmupContainer: {
@@ -1139,7 +1159,8 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   warmupHeader: {
-    fontSize: 10,
+    // Responsive (was hardcoded fontSize:10).
+    fontSize: rf(10),
     fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.warning.DEFAULT,
     letterSpacing: 1,
@@ -1160,7 +1181,8 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.medium,
   },
   warmupPercent: {
-    fontSize: 10,
+    // Responsive (was hardcoded fontSize:10).
+    fontSize: rf(10),
     color: colors.text.tertiary,
     marginTop: 1,
   },
@@ -1169,6 +1191,10 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     paddingHorizontal: 16,
     paddingVertical: 10,
+    // Clamp to 44px minimum touch target (paddingVertical:10 + ~14px text
+    // was ~32-36px tall, below the 44px accessibility minimum).
+    minHeight: 44,
+    justifyContent: "center",
     borderWidth: 1,
     borderColor: colors.glass.border,
   },
@@ -1187,7 +1213,8 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   warmupWorkingLabel: {
-    fontSize: 10,
+    // Responsive (was hardcoded fontSize:10).
+    fontSize: rf(10),
     fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.primary.DEFAULT,
     letterSpacing: 1,

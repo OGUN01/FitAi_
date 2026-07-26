@@ -30,7 +30,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { GestureDetector } from "react-native-gesture-handler";
 import Animated, { useAnimatedStyle } from "react-native-reanimated";
-import { AuroraBackground, GlassHeader } from "../../components/ui/aurora";
+import { AuroraBackground, GlassHeader, AuroraSpinner } from "../../components/ui/aurora";
 import { SegmentedControl, SegmentOption } from "../../components/ui/SegmentedControl";
 import { CustomDialog } from "../../components/ui/CustomDialog";
 import { DayBlock } from "../../components/fitness/builder/DayBlock";
@@ -346,9 +346,14 @@ export default function WeeklyBuilderScreen({ navigation }: Props) {
     return (
       <AuroraBackground theme="space">
         <SafeAreaView style={styles.flex} edges={["top"]}>
-          <GlassHeader title="Weekly Schedule" onBack={handleBack} />
+          <GlassHeader
+            title="Weekly Schedule"
+            onBack={handleBack}
+            backAccessibilityLabel="Go back (discard or keep changes)"
+          />
           <View style={styles.centered}>
-            <Text style={styles.loadingText}>Loading…</Text>
+            <AuroraSpinner size="lg" />
+            <Text style={styles.loadingText}>Loading your weekly schedule…</Text>
           </View>
         </SafeAreaView>
       </AuroraBackground>
@@ -376,7 +381,11 @@ export default function WeeklyBuilderScreen({ navigation }: Props) {
         <GestureDetector gesture={pullToRefreshGesture}>
           <Animated.View style={[styles.scrollWrap, pullAnimatedStyle]}>
             {/* Pull-to-refresh indicator (Phase 8) */}
-            <View style={styles.refreshIndicator} pointerEvents="none">
+            <View
+              style={styles.refreshIndicator}
+              pointerEvents="none"
+              accessibilityLiveRegion="polite"
+            >
               {pullIsRefreshing.value ? (
                 <Text style={styles.refreshText}>Recalculating insights…</Text>
               ) : (
@@ -462,11 +471,15 @@ export default function WeeklyBuilderScreen({ navigation }: Props) {
 
       {/* Exercise picker — Phase 4 overlay. Mounted once at screen level and
           driven by pickerOpen/pickerContext on the workoutBuilderStore. */}
-      <ExercisePickerSheet />
+      <View style={styles.pickerLayer}>
+        <ExercisePickerSheet />
+      </View>
 
       {/* Exercise editor — Phase 5 overlay. Mounted once at screen level and
           driven by editorOpen/editorContext on the workoutBuilderStore. */}
-      <ExerciseEditorSheet />
+      <View style={styles.editorLayer}>
+        <ExerciseEditorSheet />
+      </View>
     </AuroraBackground>
   );
 }
@@ -479,10 +492,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    gap: rp(spacing.md),
   },
   loadingText: {
     color: colors.text.secondary,
     fontSize: rf(typography.fontSize.body),
+    marginTop: rp(spacing.sm),
   },
   pickerWrap: {
     paddingHorizontal: rp(spacing.md),
@@ -506,10 +521,18 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   refreshText: {
-    color: colors.text.tertiary,
+    color: colors.text.secondary,
     fontSize: rf(typography.fontSize.micro),
   },
   footerSpacer: {
-    height: rp(140),
+    height: rp(180),
+  },
+  pickerLayer: {
+    zIndex: 1200,
+    elevation: 1200,
+  },
+  editorLayer: {
+    zIndex: 1300,
+    elevation: 1300,
   },
 });

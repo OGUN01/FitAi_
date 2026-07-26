@@ -104,9 +104,8 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
     } else {
       setIsLoading(false);
       setHasError(true);
-      console.error(
-        `🚨 EXERCISE NOT FOUND: ID "${exerciseId}" not in database`,
-      );
+      // Silent: not-found state is surfaced via the placeholder UI below
+      // (CLAUDE.md: no console.log/error in render paths).
     }
   }, [exercise, exerciseId]);
 
@@ -117,20 +116,16 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
 
   const handleImageError = () => {
     setIsLoading(false);
-    // If we haven't tried a fallback yet, swap to a Giphy-based fallback URL silently
+    // If we haven't tried a fallback yet, swap to a Giphy-based fallback URL silently.
+    // (CLAUDE.md: no console.warn/error in production paths — the placeholder
+    // UI surfaces the failure after the fallback also fails.)
     if (!fallbackUrl) {
       const fb = getFallbackGifUrl(displayName || exerciseId);
-      console.warn(
-        `⚠️ GIF load failed for "${exerciseId}", trying fallback: ${fb}`,
-      );
       setFallbackUrl(fb);
       setIsLoading(true); // show spinner while fallback loads
     } else {
       // Fallback also failed — show error UI
       setHasError(true);
-      console.error(
-        `🚨 GIF LOAD ERROR: Both primary and fallback GIFs failed for exercise ID "${exerciseId}"`,
-      );
     }
   };
 
@@ -171,10 +166,17 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
               accessibilityRole="button"
               accessibilityLabel={`Close ${displayName} fullscreen view`}
             >
-              <Text style={styles.closeButtonText}>X</Text>
+              <Ionicons name="close" size={rf(20)} color="white" />
             </TouchableOpacity>
 
-            <Text style={styles.fullscreenTitle}>{displayName}</Text>
+            <Text
+              style={styles.fullscreenTitle}
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              {displayName}
+            </Text>
 
             <Image
               source={{ uri: exercise.gifUrl }}
@@ -281,12 +283,13 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
 
         {hasError ? (
           <View style={styles.errorContainer}>
-            <Text style={styles.errorEmoji}>!</Text>
+            <Ionicons name="alert-circle-outline" size={rf(32)} color={colors.error} />
             <Text style={styles.errorText}>Failed to load demonstration</Text>
             <TouchableOpacity
               style={styles.retryButton}
               onPress={() => {
                 setHasError(false);
+                setFallbackUrl(null);
                 setIsLoading(true);
               }}
               accessibilityRole="button"
@@ -380,9 +383,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: borderRadius.lg,
     borderTopRightRadius: borderRadius.lg,
     alignSelf: "center",
-    // Enhanced visual quality perception
+    // Fixed 1px border (was rw(1) — scaled with screen width).
     borderWidth: 1,
-    borderColor: colors.primary + "20",
+    borderColor: "rgba(255, 107, 53, 0.2)",
     shadowColor: colors.text,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -394,10 +397,10 @@ const styles = StyleSheet.create({
   gif: {
     borderTopLeftRadius: borderRadius.lg,
     borderTopRightRadius: borderRadius.lg,
-    // Enhanced sharpness perception
-    backgroundColor: "#ffffff",
-    borderWidth: 0.5,
-    borderColor: colors.primary + "10",
+    // Transparent so it adapts to dark mode (was hardcoded #ffffff).
+    backgroundColor: "transparent",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255, 107, 53, 0.1)",
   },
 
   loadingOverlay: {
@@ -463,16 +466,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  errorEmoji: {
-    fontSize: rf(32),
-    marginBottom: spacing.sm,
-  },
-
   errorText: {
     fontSize: fontSize.sm,
     color: colors.error,
     textAlign: "center",
     marginBottom: spacing.md,
+    marginTop: spacing.sm,
   },
 
   retryButton: {
@@ -510,7 +509,7 @@ const styles = StyleSheet.create({
   },
 
   qualityIndicator: {
-    backgroundColor: colors.success + "20",
+    backgroundColor: "rgba(76, 175, 80, 0.2)",
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.sm,
@@ -543,9 +542,9 @@ const styles = StyleSheet.create({
   },
 
   instructionsButton: {
-    backgroundColor: colors.primary + "10",
+    backgroundColor: "rgba(255, 107, 53, 0.1)",
     borderWidth: 1,
-    borderColor: colors.primary + "30",
+    borderColor: "rgba(255, 107, 53, 0.3)",
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     minHeight: 44,
@@ -598,18 +597,13 @@ const styles = StyleSheet.create({
     top: rp(20),
     right: rp(20),
     zIndex: 10,
+    elevation: 10,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: Math.max(rbr(20), 22),
     width: Math.max(rs(40), 44),
     height: Math.max(rs(40), 44),
     justifyContent: "center",
     alignItems: "center",
-  },
-
-  closeButtonText: {
-    color: "white",
-    fontSize: rf(20),
-    fontWeight: "bold",
   },
 
   fullscreenTitle: {

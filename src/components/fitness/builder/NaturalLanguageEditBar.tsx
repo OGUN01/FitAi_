@@ -21,6 +21,9 @@ import {
   TextInput,
   StyleSheet,
   Pressable,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
   type TextStyle,
   type NativeSyntheticEvent,
   type TextInputChangeEventData,
@@ -154,93 +157,105 @@ export const NaturalLanguageEditBar: React.FC = () => {
 
   // ── Expanded: input + Apply button ──
   return (
-    <Animated.View entering={FadeInDown.springify()} style={styles.container}>
-      <GlassCard
-        blurIntensity="default"
-        elevation={2}
-        padding="sm"
-        borderRadius="lg"
-        showBorder
-        style={styles.card}
-      >
-        <View style={styles.headerRow}>
-          <View style={styles.titleRow}>
-            <Ionicons name="sparkles" size={rf(14)} color={colors.primary.DEFAULT} />
-            <Text style={styles.title}>AI Edit</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
+      style={styles.container}
+    >
+      <Animated.View entering={FadeInDown.springify()} style={styles.container}>
+        <GlassCard
+          blurIntensity="default"
+          elevation={2}
+          padding="sm"
+          borderRadius="lg"
+          showBorder
+          style={styles.card}
+        >
+          <View style={styles.headerRow}>
+            <View style={styles.titleRow}>
+              <Ionicons name="sparkles" size={rf(14)} color={colors.primary.DEFAULT} />
+              <Text style={styles.title}>AI Edit</Text>
+            </View>
+            <Pressable
+              hitSlop={10}
+              onPress={handleExpand}
+              accessibilityRole="button"
+              accessibilityLabel="Collapse AI edit bar"
+              style={styles.closeBtn}
+            >
+              <Ionicons name="close" size={rf(16)} color={colors.text.tertiary} />
+            </Pressable>
           </View>
-          <Pressable
-            hitSlop={10}
-            onPress={handleExpand}
-            accessibilityRole="button"
-            accessibilityLabel="Collapse AI edit bar"
-            style={styles.closeBtn}
-          >
-            <Ionicons name="close" size={rf(16)} color={colors.text.tertiary} />
-          </Pressable>
-        </View>
 
-        <View style={styles.inputRow}>
-          <View style={styles.inputWrap}>
-            <TextInput
-              ref={inputRef}
-              style={styles.input}
-              value={instruction}
-              onChange={handleChange}
-              onSubmitEditing={handleSubmitEditing}
-              placeholder={PLACEHOLDER}
-              placeholderTextColor={colors.text.tertiary}
-              returnKeyType="done"
-              editable={!loading}
-              accessibilityLabel="Natural language workout instruction"
-              accessibilityHint="Type an instruction like 'Make Friday heavier'"
-              maxLength={500}
+          <View style={styles.inputRow}>
+            <View style={styles.inputWrap}>
+              <TextInput
+                ref={inputRef}
+                style={styles.input}
+                value={instruction}
+                onChange={handleChange}
+                onSubmitEditing={handleSubmitEditing}
+                placeholder={PLACEHOLDER}
+                placeholderTextColor={colors.text.tertiary}
+                returnKeyType="done"
+                editable={!loading}
+                accessibilityLabel="Natural language workout instruction"
+                accessibilityHint="Type an instruction like 'Make Friday heavier'"
+                maxLength={500}
+              />
+            </View>
+            <GlassButton
+              label="Apply"
+              onPress={handleSubmit}
+              loading={loading}
+              disabled={loading || instruction.trim().length < 3}
+              variant="primary"
+              icon="sparkles"
+              hapticType="medium"
+              style={styles.applyBtn}
+              textStyle={styles.applyBtnText}
             />
           </View>
-          <GlassButton
-            label="Apply"
-            onPress={handleSubmit}
-            loading={loading}
-            disabled={loading || instruction.trim().length < 3}
-            variant="primary"
-            icon="sparkles"
-            hapticType="medium"
-            style={styles.applyBtn}
-            textStyle={styles.applyBtnText}
-          />
-        </View>
 
-        {error.length > 0 && (
-          <Text style={styles.errorText} numberOfLines={2}>
-            {error}
-          </Text>
-        )}
-        {summary.length > 0 && !loading && (
-          <Text style={styles.summaryText} numberOfLines={2}>
-            {summary}
-          </Text>
-        )}
+          {/* Error and summary are mutually exclusive — error takes precedence
+              so the user sees what went wrong, not a stale success summary. */}
+          {error.length > 0 ? (
+            <Text style={styles.errorText} numberOfLines={2}>
+              {error}
+            </Text>
+          ) : summary.length > 0 && !loading ? (
+            <Text style={styles.summaryText} numberOfLines={2}>
+              {summary}
+            </Text>
+          ) : null}
 
-        {/* Example instruction chips (tap to prefill) */}
-        {instruction.length === 0 && !loading && (
-          <View style={styles.examplesRow}>
-            {EXAMPLE_INSTRUCTIONS.map((ex) => (
-              <Pressable
-                key={ex}
-                onPress={() => {
-                  setInstruction(ex);
-                  haptics.selection();
-                }}
-                accessibilityRole="button"
-                accessibilityLabel={`Prefill: ${ex}`}
-                style={styles.exampleChip}
-              >
-                <Text style={styles.exampleText}>{ex}</Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
-      </GlassCard>
-    </Animated.View>
+          {/* Example instruction chips (tap to prefill) */}
+          {instruction.length === 0 && !loading && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.examplesScroll}
+              contentContainerStyle={styles.examplesRow}
+            >
+              {EXAMPLE_INSTRUCTIONS.map((ex) => (
+                <Pressable
+                  key={ex}
+                  onPress={() => {
+                    setInstruction(ex);
+                    haptics.selection();
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Prefill: ${ex}`}
+                  style={styles.exampleChip}
+                >
+                  <Text style={styles.exampleText} numberOfLines={1}>{ex}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          )}
+        </GlassCard>
+      </Animated.View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -265,20 +280,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: rp(spacing.xs),
     paddingHorizontal: rp(spacing.md),
-    paddingVertical: rp(spacing.xs),
+    paddingVertical: rp(spacing.sm),
+    minHeight: Math.max(rp(36), 44),
     borderRadius: borderRadius.full,
-    backgroundColor: "rgba(255, 107, 53, 0.12)",
-    borderWidth: rw(1),
-    borderColor: "rgba(255, 107, 53, 0.3)",
+    backgroundColor: "rgba(255, 107, 53, 0.18)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 107, 53, 0.4)",
   },
   chipText: {
-    color: colors.primary.light,
+    color: colors.primary.DEFAULT,
     fontSize: rf(typography.fontSize.caption),
     fontWeight: fw(typography.fontWeight.semibold),
   },
   summaryChip: {
     flex: 1,
-    color: colors.text.tertiary,
+    color: colors.text.secondary,
     fontSize: rf(typography.fontSize.micro),
     fontStyle: "italic",
   },
@@ -297,13 +313,16 @@ const styles = StyleSheet.create({
     gap: rp(spacing.xs),
   },
   title: {
-    color: colors.primary.light,
+    color: colors.primary.DEFAULT,
     fontSize: rf(typography.fontSize.caption),
     fontWeight: fw(typography.fontWeight.bold),
     textTransform: "uppercase",
   },
   closeBtn: {
-    padding: rp(spacing.xxs),
+    width: Math.max(rw(36), 44),
+    height: Math.max(rw(36), 44),
+    alignItems: "center",
+    justifyContent: "center",
   },
   inputRow: {
     flexDirection: "row",
@@ -313,7 +332,7 @@ const styles = StyleSheet.create({
   inputWrap: {
     flex: 1,
     backgroundColor: colors.glass.background,
-    borderWidth: rw(1),
+    borderWidth: 1,
     borderColor: colors.glass.border,
     borderRadius: borderRadius.lg,
     paddingHorizontal: rp(spacing.sm),
@@ -322,10 +341,11 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.caption),
     paddingVertical: rp(spacing.sm),
+    minHeight: Math.max(rp(44), 44),
   },
   applyBtn: {
     minWidth: rw(100),
-    minHeight: rf(40),
+    minHeight: Math.max(rf(40), 44),
   },
   applyBtnText: {
     fontSize: rf(typography.fontSize.caption),
@@ -340,19 +360,24 @@ const styles = StyleSheet.create({
     fontSize: rf(typography.fontSize.micro),
     marginTop: rp(spacing.xs),
   },
+  examplesScroll: {
+    marginTop: rp(spacing.sm),
+  },
   examplesRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: rp(spacing.xs),
-    marginTop: rp(spacing.sm),
+    paddingRight: rp(spacing.md),
   },
   exampleChip: {
     backgroundColor: colors.glass.backgroundLight,
     borderRadius: borderRadius.full,
     paddingHorizontal: rp(spacing.sm),
-    paddingVertical: rp(spacing.xxs),
-    borderWidth: rw(1),
+    paddingVertical: rp(spacing.xs),
+    minHeight: Math.max(rp(36), 36),
+    borderWidth: 1,
     borderColor: "transparent",
+    alignItems: "center",
+    justifyContent: "center",
   },
   exampleText: {
     color: colors.text.secondary,

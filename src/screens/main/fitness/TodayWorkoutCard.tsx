@@ -36,6 +36,33 @@ const formatDayName = (day: string): string => {
   return day.charAt(0).toUpperCase() + day.slice(1);
 };
 
+// Map a day-of-week key ("monday" … "sunday") to its 1-based plan day number
+// (Monday = Day 1 … Sunday = Day 7). Falls back to null when unknown.
+const DAY_NUMBER_BY_KEY: Record<string, number> = {
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+  sunday: 7,
+};
+
+// Map a JS getDay() index (0=Sun … 6=Sat) to a day key.
+const DAY_KEY_BY_JS_INDEX: Record<number, string> = {
+  0: "sunday",
+  1: "monday",
+  2: "tuesday",
+  3: "wednesday",
+  4: "thursday",
+  5: "friday",
+  6: "saturday",
+};
+
+// Bullet separator used between meta items (kept as a constant so it's easy to
+// tweak and stays visually consistent across the card).
+const META_BULLET = "  •  ";
+
 export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
   workout,
   isRestDay,
@@ -74,7 +101,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
         color: colors.errorLight,
         gradient: [colors.errorLight, "#FF8E53"] as [string, string],
         label: `${progress}% Complete`,
-        buttonText: "Continue",
+        buttonText: "Continue Workout",
       };
     }
     return {
@@ -88,6 +115,19 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
 
   const config = getStatusConfig();
   const exerciseCount = workout?.exercises?.length || 0;
+
+  // Compute the plan "Day N" label (Monday=1 … Sunday=7).
+  // Prefer the workout's dayOfWeek; otherwise use the selectedDay; otherwise
+  // fall back to today's real weekday when viewing "today".
+  const computeDayNumber = (): number | null => {
+    const dayKey =
+      workout?.dayOfWeek || selectedDay || (isToday ? DAY_KEY_BY_JS_INDEX[new Date().getDay()] : null);
+    if (!dayKey) return null;
+    return DAY_NUMBER_BY_KEY[dayKey.toLowerCase()] ?? null;
+  };
+
+  const dayNumber = computeDayNumber();
+  const todayLabel = dayNumber ? `TODAY • DAY ${dayNumber}` : "TODAY";
 
   return (
     <Animated.View entering={FadeInDown.delay(200).duration(400)}>
@@ -119,7 +159,17 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
 
               {/* Middle: Workout Info */}
               <View style={styles.infoContainer}>
-                {/* Day indicator when not viewing today */}
+                {/* Uppercase "TODAY • DAY [N]" label row */}
+                <Text
+                  style={styles.todayLabel}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.7}
+                >
+                  {isToday ? todayLabel : (selectedDay ? formatDayName(selectedDay).toUpperCase() : "TODAY")}
+                </Text>
+
+                {/* Day indicator when not viewing today (legacy chip, kept for non-today context) */}
                 {!isToday && selectedDay && (
                   <View style={styles.dayIndicator}>
                     <Ionicons
@@ -127,13 +177,23 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                       size={rf(12)}
                       color={colors.primary}
                     />
-                    <Text style={styles.dayIndicatorText}>
+                    <Text
+                      style={styles.dayIndicatorText}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit={true}
+                      minimumFontScale={0.7}
+                    >
                       {formatDayName(selectedDay)}
                     </Text>
                   </View>
                 )}
                 <View style={styles.titleRow}>
-                  <Text style={styles.title} numberOfLines={2}>
+                  <Text
+                    style={styles.title}
+                    numberOfLines={2}
+                    adjustsFontSizeToFit={true}
+                    minimumFontScale={0.75}
+                  >
                     {isRestDay
                       ? "Rest & Recover"
                       : workout?.title ||
@@ -151,47 +211,32 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                         { backgroundColor: config.color },
                       ]}
                     />
-                    <Text style={[styles.statusText, { color: config.color }]}>
+                    <Text
+                      style={[styles.statusText, { color: config.color }]}
+                      numberOfLines={1}
+                    >
                       {config.label}
                     </Text>
                   </View>
                 </View>
 
                   {!isRestDay && workout && (
-                  <View style={styles.metaRow}>
-                    <View style={styles.metaItem}>
-                      <Ionicons
-                        name="time-outline"
-                        size={rf(14)}
-                        color={colors.textSecondary}
-                      />
-                      <Text style={styles.metaText}>
-                        {workout.duration} min
-                      </Text>
-                    </View>
-                    <View style={styles.metaItem}>
-                      <Ionicons
-                        name="flame-outline"
-                        size={rf(14)}
-                        color={colors.textSecondary}
-                      />
-                      <Text style={styles.metaText}>
-                        {displayCalories !== undefined
-                          ? displayCalories
-                          : (workout.estimatedCalories || 0)} cal
-                      </Text>
-                    </View>
-                    <View style={styles.metaItem}>
-                      <Ionicons
-                        name="barbell-outline"
-                        size={rf(14)}
-                        color={colors.textSecondary}
-                      />
-                      <Text style={styles.metaText}>
-                        {exerciseCount} exercises
-                      </Text>
-                    </View>
-                  </View>
+                  <Text style={styles.metaRow} numberOfLines={2}>
+                    <Text style={styles.metaText}>
+                      <Ionicons name="time-outline" size={rf(11)} color={colors.textSecondary} /> {workout.duration} min
+                    </Text>
+                    <Text style={styles.metaText}>{META_BULLET}</Text>
+                    <Text style={styles.metaText}>
+                      {exerciseCount} exercises
+                    </Text>
+                    <Text style={styles.metaText}>{META_BULLET}</Text>
+                    <Text style={styles.metaText}>
+                      <Ionicons name="flame-outline" size={rf(11)} color={colors.textSecondary} />{" "}
+                      {displayCalories !== undefined
+                        ? displayCalories
+                        : (workout.estimatedCalories || 0)}{" "}kcal
+                    </Text>
+                  </Text>
                 )}
 
                 {/* GAP-15: Last performed context */}
@@ -297,6 +342,14 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  todayLabel: {
+    fontSize: rf(11),
+    fontWeight: "700",
+    color: colors.primary,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: spacing.xs,
+  },
   dayIndicator: {
     flexDirection: "row",
     alignItems: "center",
@@ -333,6 +386,7 @@ const styles = StyleSheet.create({
     paddingVertical: rp(4),
     borderRadius: borderRadius.full,
     flexShrink: 0,
+    minHeight: 24,
   },
   statusDot: {
     width: rw(6),
@@ -344,24 +398,16 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: spacing.md,
+    fontSize: rf(12),
     marginTop: spacing.sm,
-  },
-  metaItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rp(4),
   },
   metaText: {
     fontSize: rf(12),
-    color: "rgba(255,255,255,0.65)",
+    color: colors.textSecondary,
   },
   restDaySubtitle: {
     fontSize: rf(12),
-    color: "rgba(255,255,255,0.6)",
+    color: colors.textSecondary,
     marginTop: spacing.xs,
     lineHeight: rf(18),
   },
@@ -385,7 +431,7 @@ const styles = StyleSheet.create({
   // GAP-15: last performed label
   lastPerformedText: {
     fontSize: rf(11),
-    color: 'rgba(255,255,255,0.4)',
+    color: colors.textSecondary,
     marginTop: spacing.xs,
     fontStyle: 'italic',
   },

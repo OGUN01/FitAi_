@@ -10,6 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+import { AuroraSpinner } from "../ui/aurora";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../utils/responsive";
 import { ExtraWorkoutTemplate } from "../../stores/fitness/types";
@@ -207,10 +208,13 @@ export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
 
                 {/* Action Button — START / RESUME / COMPLETED */}
                 {isGenerating && status === 'idle' ? (
-                  <Text style={styles.generatingText}>Generating...</Text>
+                  <View style={styles.generatingRow}>
+                    <AuroraSpinner size="sm" />
+                    <Text style={styles.generatingText}>Generating...</Text>
+                  </View>
                 ) : status === 'completed' ? (
                   <View style={styles.completedButton}>
-                    <Ionicons name="checkmark-circle" size={rf(13)} color="#10b981" />
+                    <Ionicons name="checkmark-circle" size={rf(13)} color={colors.successAlt} />
                     <Text style={styles.completedButtonText}>COMPLETED</Text>
                   </View>
                 ) : status === 'in_progress' ? (
@@ -312,6 +316,7 @@ const styles = StyleSheet.create({
   startButton: {
     width: "100%",
     paddingVertical: spacing.sm,
+    minHeight: 44,
     borderRadius: borderRadius.md,
     alignItems: "center",
     flexDirection: "row",
@@ -328,26 +333,35 @@ const styles = StyleSheet.create({
   completedButton: {
     width: "100%",
     paddingVertical: spacing.sm,
+    minHeight: 44,
     borderRadius: borderRadius.md,
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "center",
     gap: rp(4),
-    backgroundColor: "rgba(16, 185, 129, 0.12)",
+    backgroundColor: "rgba(16, 185, 129, 0.2)",
     borderWidth: 1,
-    borderColor: "rgba(16, 185, 129, 0.3)",
+    borderColor: "rgba(16, 185, 129, 0.5)",
   },
   completedButtonText: {
     fontSize: rf(11),
     fontWeight: "700",
-    color: "#10b981",
+    color: colors.successAlt,
     letterSpacing: 0.5,
+  },
+  generatingRow: {
+    width: "100%",
+    paddingVertical: spacing.sm,
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: rp(6),
   },
   generatingText: {
     fontSize: rf(11),
     fontWeight: "600",
     color: colors.textSecondary,
-    paddingVertical: spacing.sm,
     textAlign: "center",
   },
 });

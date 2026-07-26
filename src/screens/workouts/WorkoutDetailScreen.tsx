@@ -42,7 +42,7 @@ import {
   type TextStyle,
   type ViewStyle,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
@@ -274,6 +274,10 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
   const inProgress = progress > 0 && progress < 100;
   const isCompleted = progress >= 100;
 
+  // Bottom inset so the sticky Start CTA clears the home indicator on devices
+  // without gesture nav (SafeAreaView uses edges={['top']} only — see below).
+  const insets = useSafeAreaInsets();
+
   // ── Start workout ──
   const [starting, setStarting] = useState(false);
   const handleStartWorkout = useCallback(async () => {
@@ -342,6 +346,7 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
           testID={`${testID ?? "workout-detail"}-scroll`}
         >
           {/* ── Sticky progress + title hero ── */}
@@ -388,7 +393,12 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
                 </ProgressRing>
 
                 <View style={styles.heroInfo}>
-                  <Text style={styles.heroTitle} numberOfLines={2}>
+                  <Text
+                    style={styles.heroTitle}
+                    numberOfLines={2}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
+                  >
                     {workout.title || "Custom Workout"}
                   </Text>
                   {!!workout.description && (
@@ -646,6 +656,7 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
             duration={stats.duration}
             calories={stats.calories}
             onStart={handleStartWorkout}
+            bottomInset={insets.bottom}
             testID={`${testID ?? "workout-detail"}-bottom-start`}
           />
         )}
@@ -958,6 +969,8 @@ interface BottomStartBarProps {
   duration: number;
   calories: number;
   onStart: () => void;
+  /** Bottom safe-area inset so the CTA clears the home indicator. */
+  bottomInset?: number;
   testID?: string;
 }
 
@@ -966,9 +979,13 @@ const BottomStartBar: React.FC<BottomStartBarProps> = ({
   duration,
   calories,
   onStart,
+  bottomInset = 0,
   testID,
 }) => (
-  <View style={styles.bottomBar} pointerEvents="box-none">
+  <View
+    style={[styles.bottomBar, { paddingBottom: bottomInset }]}
+    pointerEvents="box-none"
+  >
     <GlassCard
       blurIntensity="heavy"
       elevation={5}
@@ -1115,7 +1132,8 @@ const styles = StyleSheet.create({
     fontSize: rf(typography.fontSize.micro),
   },
   statDivider: {
-    width: rw(1),
+    // Fixed 1px (was rw(1) — scales border with screen width).
+    width: StyleSheet.hairlineWidth,
     height: rp(28),
     backgroundColor: colors.glass.border,
   },
@@ -1322,7 +1340,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: rp(spacing.sm),
     paddingVertical: rp(spacing.sm),
-    borderBottomWidth: rw(1),
+    // Fixed 1px (was rw(1) — scales border with screen width).
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.glass.border,
   },
   cooldownThumb: {
@@ -1380,6 +1399,9 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: rp(spacing.md),
     paddingTop: rp(spacing.sm),
+    // Sticky footer z-index + elevation so it renders above scroll content.
+    zIndex: 1100,
+    elevation: 11,
   },
   bottomBarCard: {
     backgroundColor: colors.glass.backgroundDark,
@@ -1401,7 +1423,8 @@ const styles = StyleSheet.create({
     fontWeight: fw(typography.fontWeight.semibold),
   },
   bottomDivider: {
-    width: rw(1),
+    // Fixed 1px (was rw(1) — scales border with screen width).
+    width: StyleSheet.hairlineWidth,
     height: rp(16),
     backgroundColor: colors.glass.border,
   },

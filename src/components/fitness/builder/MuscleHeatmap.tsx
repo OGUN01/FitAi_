@@ -19,6 +19,7 @@ import {
   Text,
   StyleSheet,
   Pressable,
+  ScrollView,
   type TextStyle,
   type ViewStyle,
 } from "react-native";
@@ -57,12 +58,18 @@ export interface MuscleHeatmapProps {
 // COLOR INTENSITY — green (low) → orange (mid) → red (high)
 // ----------------------------------------------------------------------------
 
-/** Map a 0..1 intensity to a fill color. 0 = empty glass, 1 = max red. */
+/** Map a 0..1 intensity to a fill color. 0 = empty glass, 1 = primary orange. */
 function intensityColor(intensity: number): string {
   if (intensity <= 0) return colors.glass.backgroundLight;
   if (intensity < 0.34) return colors.success.DEFAULT; // green
   if (intensity < 0.67) return colors.warning.DEFAULT; // orange
-  return colors.error.DEFAULT; // red
+  return colors.primary.DEFAULT; // primary (neutral "high", not red "bad")
+}
+
+/** Whether a cell color is "light" enough to require dark text for contrast. */
+function isLightCell(color: string): boolean {
+  // Light backgrounds (low intensity green) need dark text per WCAG AA.
+  return color === colors.success.DEFAULT;
 }
 
 /** Human-readable volume label. */
@@ -114,67 +121,85 @@ export const MuscleHeatmap: React.FC<MuscleHeatmapProps> = ({
   }
 
   return (
-    <View style={styles.container} testID={testID ?? "muscle-heatmap"}>
-      {/* Column headers (weeks) */}
-      <View style={styles.headerRow}>
-        <View style={styles.muscleLabelCol} />
-        {weekLabels.map((label, i) => (
-          <View key={`wk_${i}`} style={styles.weekHeaderCell}>
-            <Text style={styles.weekHeaderText}>{label}</Text>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.scrollContainer}
+      contentContainerStyle={styles.scrollContent}
+    >
+      <View style={styles.container} testID={testID ?? "muscle-heatmap"}>
+        {/* Column headers (weeks) */}
+        <View style={styles.headerRow}>
+          <View style={styles.muscleLabelCol} />
+          {weekLabels.map((label, i) => (
+            <View key={`wk_${i}`} style={styles.weekHeaderCell}>
+              <Text style={styles.weekHeaderText}>{label}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Rows: one per muscle group */}
+        {data.map((entry, muscleIndex) => (
+          <View key={`muscle_${entry.muscle}`} style={styles.row}>
+            <View style={styles.muscleLabelCol}>
+              <Text
+                style={styles.muscleLabelText}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
+                {capitalize(entry.muscle)}
+              </Text>
+            </View>
+            {entry.weeklyVolumes.map((volume, weekIndex) => {
+              const intensity = volume / maxVolume;
+              const cellColor = intensityColor(intensity);
+              const isActive =
+                activeCell?.muscleIndex === muscleIndex &&
+                activeCell?.weekIndex === weekIndex;
+              return (
+                <Pressable
+                  key={`cell_${muscleIndex}_${weekIndex}`}
+                  onPress={() => handleCellPress(muscleIndex, weekIndex)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${capitalize(entry.muscle)} week ${weekLabels[weekIndex] ?? weekIndex + 1}: ${formatVolume(volume)}`}
+                  accessibilityHint="Double tap to see exact volume"
+                  style={[
+                    styles.cell,
+                    {
+                      backgroundColor: cellColor,
+                      opacity: reduceMotion ? 1 : isActive ? 1 : 0.92,
+                    },
+                  ]}
+                  testID={`${testID ?? "muscle-heatmap"}-cell-${muscleIndex}-${weekIndex}`}
+                >
+                  {isActive && (
+                    <Text
+                      style={[
+                        styles.cellValueText,
+                        isLightCell(cellColor) && styles.cellValueTextDark,
+                      ]}
+                    >
+                      {formatVolume(volume)}
+                    </Text>
+                  )}
+                </Pressable>
+              );
+            })}
           </View>
         ))}
-      </View>
 
-      {/* Rows: one per muscle group */}
-      {data.map((entry, muscleIndex) => (
-        <View key={`muscle_${entry.muscle}`} style={styles.row}>
-          <View style={styles.muscleLabelCol}>
-            <Text style={styles.muscleLabelText} numberOfLines={1}>
-              {capitalize(entry.muscle)}
-            </Text>
-          </View>
-          {entry.weeklyVolumes.map((volume, weekIndex) => {
-            const intensity = volume / maxVolume;
-            const isActive =
-              activeCell?.muscleIndex === muscleIndex &&
-              activeCell?.weekIndex === weekIndex;
-            return (
-              <Pressable
-                key={`cell_${muscleIndex}_${weekIndex}`}
-                onPress={() => handleCellPress(muscleIndex, weekIndex)}
-                accessibilityRole="button"
-                accessibilityLabel={`${capitalize(entry.muscle)} week ${weekLabels[weekIndex] ?? weekIndex + 1}: ${formatVolume(volume)}`}
-                accessibilityHint="Double tap to see exact volume"
-                style={[
-                  styles.cell,
-                  {
-                    backgroundColor: intensityColor(intensity),
-                    opacity: reduceMotion ? 1 : isActive ? 1 : 0.92,
-                  },
-                ]}
-                testID={`${testID ?? "muscle-heatmap"}-cell-${muscleIndex}-${weekIndex}`}
-              >
-                {isActive && (
-                  <Text style={styles.cellValueText}>
-                    {formatVolume(volume)}
-                  </Text>
-                )}
-              </Pressable>
-            );
-          })}
+        {/* Legend */}
+        <View style={styles.legend}>
+          <Text style={styles.legendText}>Less</Text>
+          <View style={[styles.legendSwatch, { backgroundColor: colors.glass.backgroundLight }]} />
+          <View style={[styles.legendSwatch, { backgroundColor: colors.success.DEFAULT }]} />
+          <View style={[styles.legendSwatch, { backgroundColor: colors.warning.DEFAULT }]} />
+          <View style={[styles.legendSwatch, { backgroundColor: colors.primary.DEFAULT }]} />
+          <Text style={styles.legendText}>More</Text>
         </View>
-      ))}
-
-      {/* Legend */}
-      <View style={styles.legend}>
-        <Text style={styles.legendText}>Less</Text>
-        <View style={[styles.legendSwatch, { backgroundColor: colors.glass.backgroundLight }]} />
-        <View style={[styles.legendSwatch, { backgroundColor: colors.success.DEFAULT }]} />
-        <View style={[styles.legendSwatch, { backgroundColor: colors.warning.DEFAULT }]} />
-        <View style={[styles.legendSwatch, { backgroundColor: colors.error.DEFAULT }]} />
-        <Text style={styles.legendText}>More</Text>
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -196,11 +221,18 @@ const fw = (
   w: (typeof typography.fontWeight)[keyof typeof typography.fontWeight],
 ): TextStyle["fontWeight"] => String(w) as TextStyle["fontWeight"];
 
-const cellSize = rw(40);
+const cellSize = Math.max(rw(40), 40);
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    width: "100%",
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
   container: {
     width: "100%",
+    overflow: "hidden",
   },
   headerRow: {
     flexDirection: "row",
@@ -216,7 +248,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   weekHeaderText: {
-    color: colors.text.tertiary,
+    color: colors.text.secondary,
     fontSize: rf(typography.fontSize.micro),
     fontWeight: fw(typography.fontWeight.semibold),
   } as TextStyle,
@@ -225,9 +257,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: rp(spacing.xxs),
     minHeight: rp(44), // tap target ≥ 44dp
+    overflow: "hidden",
   },
   muscleLabelText: {
-    color: colors.text.secondary,
+    color: colors.text.primary,
     fontSize: rf(typography.fontSize.micro),
     fontWeight: fw(typography.fontWeight.medium),
   } as TextStyle,
@@ -246,15 +279,18 @@ const styles = StyleSheet.create({
     fontSize: rf(typography.fontSize.micro),
     fontWeight: fw(typography.fontWeight.bold),
   } as TextStyle,
+  cellValueTextDark: {
+    color: colors.text.primary,
+  } as TextStyle,
   legend: {
     flexDirection: "row",
     alignItems: "center",
-    gap: rp(spacing.xxs),
+    gap: rp(spacing.sm),
     marginTop: rp(spacing.sm),
     alignSelf: "flex-end",
   },
   legendText: {
-    color: colors.text.tertiary,
+    color: colors.text.secondary,
     fontSize: rf(typography.fontSize.micro),
   },
   legendSwatch: {
@@ -269,7 +305,7 @@ const styles = StyleSheet.create({
     gap: rp(spacing.xs),
   },
   emptyText: {
-    color: colors.text.tertiary,
+    color: colors.text.secondary,
     fontSize: rf(typography.fontSize.caption),
     textAlign: "center",
   },

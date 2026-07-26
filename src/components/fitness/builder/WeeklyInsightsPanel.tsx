@@ -211,9 +211,16 @@ export const WeeklyInsightsPanel: React.FC = () => {
           <Ionicons
             name="pulse-outline"
             size={rf(20)}
-            color={colors.primary[400]}
+            color={colors.primary.DEFAULT}
           />
-          <Text style={styles.headerTitle}>Weekly Insights</Text>
+          <Text
+            style={styles.headerTitle}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
+            Weekly Insights
+          </Text>
           {isComputing && (
             <View style={styles.computingRow}>
               <AuroraSpinner customSize={rf(14)} theme="primary" />
@@ -431,7 +438,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: rp(spacing.sm),
-    paddingVertical: rp(spacing.xs),
+    paddingVertical: rp(spacing.sm),
+    minHeight: Math.max(rp(44), 44),
   },
   headerTitle: {
     flex: 1,
@@ -473,12 +481,13 @@ const styles = StyleSheet.create({
   statTile: {
     flexBasis: "47%",
     flexGrow: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
     borderRadius: borderRadius.md,
     padding: rp(spacing.sm),
     gap: rp(spacing.xs),
-    borderWidth: rw(1),
+    borderWidth: 1,
     borderColor: colors.glass.border,
+    minHeight: Math.max(rp(72), 72),
   },
   statIconRow: {
     flexDirection: "row",
@@ -510,6 +519,8 @@ const styles = StyleSheet.create({
   },
   coverageSection: {
     gap: rp(spacing.xs),
+    maxHeight: rp(280),
+    overflow: "hidden",
   },
   sectionLabel: {
     color: colors.text.secondary,

@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../utils/responsive";
 import AchievementCelebration from "../achievements/AchievementCelebration";
@@ -29,6 +30,9 @@ export const AchievementNotifications: React.FC<
   miniToastText,
   miniToastAnim,
 }) => {
+  // Top inset so toasts clear the status bar on notched devices (was a fixed
+  // rp(60)/rp(120) top that underlapped the status bar on notched phones).
+  const insets = useSafeAreaInsets();
   return (
     <>
       <AchievementCelebration
@@ -44,6 +48,7 @@ export const AchievementNotifications: React.FC<
           style={[
             styles.achievementToast,
             {
+              top: rp(60) + insets.top,
               opacity: achievementToastAnim,
               transform: [
                 {
@@ -57,9 +62,11 @@ export const AchievementNotifications: React.FC<
           ]}
         >
           <View style={styles.achievementToastContent}>
-            <Text style={styles.achievementToastIcon}>
-              {toastAchievement.icon}
-            </Text>
+            <View style={styles.achievementToastIconWrap}>
+              <Text style={styles.achievementToastIcon}>
+                {toastAchievement.icon}
+              </Text>
+            </View>
             <View style={styles.achievementToastText}>
               <Text style={styles.achievementToastTitle}>
                 Achievement Unlocked!
@@ -79,6 +86,7 @@ export const AchievementNotifications: React.FC<
           style={[
             styles.miniToast,
             {
+              top: rp(120) + insets.top,
               opacity: miniToastAnim,
               transform: [
                 {
@@ -104,7 +112,9 @@ const styles = StyleSheet.create({
     top: rp(60),
     left: spacing.lg,
     right: spacing.lg,
-    zIndex: 1000,
+    // Toasts sit above sticky footers (1100) and below modal dialogs (1300).
+    zIndex: 1200,
+    elevation: 12,
   },
 
   achievementToastContent: {
@@ -122,9 +132,17 @@ const styles = StyleSheet.create({
     boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
   },
 
+  achievementToastIconWrap: {
+    // Fixed-width wrapper so multi-char emoji icons don't shift the toast
+    // layout when the icon string length varies between achievements.
+    width: rf(36),
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.sm,
+  },
+
   achievementToastIcon: {
     fontSize: rf(28),
-    marginRight: spacing.sm,
   },
 
   achievementToastText: {
@@ -140,25 +158,29 @@ const styles = StyleSheet.create({
 
   achievementToastDescription: {
     fontSize: fontSize.xs,
-    color: colors.white + "CC",
+    // Explicit rgba (was colors.white + "CC" — fragile hex append breaks
+    // if colors.white isn't a 6-digit hex string).
+    color: "rgba(255, 255, 255, 0.85)",
   },
 
   miniToast: {
     position: "absolute",
     top: rp(120),
     alignSelf: "center",
-    backgroundColor: colors.primary + "E6",
+    // Explicit rgba (was colors.primary + "E6" — fragile hex append).
+    backgroundColor: "rgba(255, 107, 53, 0.9)",
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: rbr(20),
-    zIndex: 999,
+    // Toasts sit above sticky footers (1100) and below modal dialogs (1300).
+    zIndex: 1200,
+    elevation: 12,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.2)",
     shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 5,
     boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.2)',
   },
 

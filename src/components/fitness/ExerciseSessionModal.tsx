@@ -44,6 +44,7 @@ import { useReducedMotion } from "../../utils/accessibility/hooks";
 import { animations } from "../../theme/animations";
 import { ExerciseGifPlayer } from "./ExerciseGifPlayer";
 import { parseTimedExercise, formatDuration } from "../../utils/exerciseDuration";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -380,6 +381,7 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
 
   return (
     <View style={styles.overlay}>
+      <SafeAreaView edges={["top"]} style={styles.safeArea}>
       <View style={styles.cardWrapper}>
         <GlassCard
           elevation={6}
@@ -446,7 +448,14 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
           )}
 
           {/* Exercise name */}
-          <Text style={styles.exerciseName} numberOfLines={2}>{exerciseName}</Text>
+          <Text
+            style={styles.exerciseName}
+            numberOfLines={2}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
+            {exerciseName}
+          </Text>
 
           {/* Motivational / instructional text */}
           <Text style={styles.motivationText}>
@@ -505,6 +514,7 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
           </View>
         </GlassCard>
       </View>
+      </SafeAreaView>
     </View>
   );
 };
@@ -520,7 +530,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.8)",
     justifyContent: "flex-start",
     alignItems: "center",
-    paddingTop: rp(48),
+  },
+  safeArea: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
   },
   /** Outer wrapper — plain View so position:absolute on overlays works correctly. */
   cardWrapper: {
@@ -661,6 +676,7 @@ const styles = StyleSheet.create({
   },
   progressDots: {
     flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "center",
     gap: rp(spacing.sm),
   },
@@ -673,10 +689,12 @@ const styles = StyleSheet.create({
   progressDotCompleted: {
     backgroundColor: colors.primary.DEFAULT,
   },
+  // Slightly larger + ring so the active dot is distinguishable at high DPI
+  // (was rs(13) vs pending rs(10) — 3px difference barely visible).
   progressDotActive: {
     backgroundColor: colors.primary.DEFAULT,
-    width: rs(13),
-    height: rs(13),
+    width: rs(14),
+    height: rs(14),
     borderRadius: rbr(7),
     borderWidth: 2,
     borderColor: colors.text.primary,

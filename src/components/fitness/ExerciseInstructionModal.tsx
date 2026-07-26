@@ -19,6 +19,8 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
@@ -107,7 +109,7 @@ export const ExerciseInstructionModal: React.FC<
   const renderInstructions = () => {
     if (!exercise?.instructions?.length) {
       return (
-        <View style={styles.noDataContainer}>
+        <View style={styles.noDataContainer} accessibilityRole="text">
           <Ionicons name="information-circle-outline" size={rf(48)} color={colors.text.tertiary} />
           <Text style={styles.noDataText}>
             No detailed instructions available
@@ -127,10 +129,13 @@ export const ExerciseInstructionModal: React.FC<
             key={`step-${index}-${instruction.substring(0, 20)}`}
             style={styles.instructionItem}
           >
-            <View style={styles.stepNumber}>
+            <View style={styles.stepNumber} accessibilityRole="text">
               <Text style={styles.stepNumberText}>{index + 1}</Text>
             </View>
-            <Text style={styles.instructionText}>
+            <Text
+              style={styles.instructionText}
+              numberOfLines={5}
+            >
               {instruction.replace(/^Step:\d+\s*/, "")}
             </Text>
           </View>
@@ -142,7 +147,7 @@ export const ExerciseInstructionModal: React.FC<
   const renderDetails = () => {
     if (!exercise) {
       return (
-        <View style={styles.noDataContainer}>
+        <View style={styles.noDataContainer} accessibilityRole="text">
           <Ionicons name="help-circle-outline" size={rf(48)} color={colors.text.tertiary} />
           <Text style={styles.noDataText}>No exercise details available</Text>
         </View>
@@ -235,7 +240,11 @@ export const ExerciseInstructionModal: React.FC<
       closeOnOverlayPress
     >
       <View style={styles.verifiedRow}>
-        <View style={styles.qualityBadge}>
+        <View
+          style={styles.qualityBadge}
+          accessibilityRole="text"
+          accessibilityLabel="Verified exercise"
+        >
           <Ionicons name="checkmark-circle" size={rf(12)} color={colors.success.DEFAULT} />
           <Text style={styles.qualityBadgeText}>Verified</Text>
         </View>
@@ -244,17 +253,22 @@ export const ExerciseInstructionModal: React.FC<
       {renderGifSection()}
       {renderTabs()}
 
-      <ScrollView
+      <KeyboardAvoidingView
+        behavior="padding"
+        keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
         style={styles.content}
-        showsVerticalScrollIndicator={false}
-        bounces={false}
       >
-        <View style={styles.tabContent}>
-          {activeTab === "instructions"
-            ? renderInstructions()
-            : renderDetails()}
-        </View>
-      </ScrollView>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
+          <View style={styles.tabContent}>
+            {activeTab === "instructions"
+              ? renderInstructions()
+              : renderDetails()}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </BottomSheet>
   );
 };
@@ -281,6 +295,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  tabContentScroll: {},
   gifSection: {
     backgroundColor: colors.glass.backgroundDark,
     paddingVertical: rp(spacing.lg),
@@ -290,6 +305,8 @@ const styles = StyleSheet.create({
   },
   modalGif: {
     width: "80%",
+    aspectRatio: 1,
+    maxWidth: rh(200),
     height: rh(200),
     borderRadius: borderRadius.lg,
   },
@@ -303,7 +320,7 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1,
     paddingVertical: rp(spacing.sm),
-    minHeight: rp(44),
+    minHeight: Math.max(rp(44), 44),
     borderRadius: borderRadius.md,
     alignItems: "center",
     justifyContent: "center",

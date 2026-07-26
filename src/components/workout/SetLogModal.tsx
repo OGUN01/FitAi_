@@ -449,7 +449,12 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
       >
       {/* ── Exercise name + PR preview ── */}
       <View style={styles.headerRow}>
-        <Text style={styles.exerciseName} numberOfLines={1}>
+        <Text
+          style={styles.exerciseName}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.7}
+        >
           {exerciseName}
         </Text>
         {prPreview && (prPreview.isWeightPR || prPreview.is1RMPR) && (
@@ -570,7 +575,9 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
               placeholderTextColor={colors.text.tertiary}
               autoFocus
               returnKeyType="next"
+              blurOnSubmit={false}
               onSubmitEditing={() => repsRef.current?.focus()}
+              maxLength={7}
             />
             <AnimatedPressable
               onPress={() => bumpWeight(WEIGHT_STEP_KG)}
@@ -617,6 +624,9 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
             placeholderTextColor={colors.text.tertiary}
             autoFocus={isBodyweight}
             returnKeyType="done"
+            blurOnSubmit={false}
+            onSubmitEditing={() => repsRef.current?.blur()}
+            maxLength={5}
           />
           <AnimatedPressable
             onPress={() => bumpReps(1)}
@@ -647,7 +657,7 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
           accessibilityLabel="Easy — save set with RPE easy"
         >
           <Ionicons name="happy-outline" size={rf(22)} color={colors.success.DEFAULT} />
-          <Text style={styles.rpeText}>Easy</Text>
+          <Text style={styles.rpeText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Easy</Text>
         </AnimatedPressable>
 
         <AnimatedPressable
@@ -660,7 +670,7 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
           accessibilityLabel="Just right — save set with RPE just right"
         >
           <Ionicons name="thumbs-up-outline" size={rf(22)} color={colors.warning.DEFAULT} />
-          <Text style={styles.rpeText}>Just Right</Text>
+          <Text style={styles.rpeText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Just Right</Text>
         </AnimatedPressable>
 
         <AnimatedPressable
@@ -673,7 +683,7 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
           accessibilityLabel="Hard — save set with RPE hard"
         >
           <Ionicons name="flame-outline" size={rf(22)} color={colors.error.DEFAULT} />
-          <Text style={styles.rpeText}>Hard</Text>
+          <Text style={styles.rpeText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Hard</Text>
         </AnimatedPressable>
       </View>
 
@@ -837,8 +847,9 @@ const styles = StyleSheet.create({
     gap: rp(spacing.xs),
   },
   setTypeBadge: {
-    width: rp(36),
-    height: rp(36),
+    // Clamp to 44px minimum touch target (rp(36) drops below on small screens).
+    width: Math.max(rp(36), 44),
+    height: Math.max(rp(36), 44),
     borderRadius: borderRadius.full,
     alignItems: "center",
     justifyContent: "center",
@@ -874,8 +885,9 @@ const styles = StyleSheet.create({
     gap: rp(spacing.xs),
   },
   stepperBtn: {
-    width: rp(40),
-    height: rp(40),
+    // Clamp to 44px minimum touch target (rp(40) drops below on small screens).
+    width: Math.max(rp(40), 44),
+    height: Math.max(rp(40), 44),
     borderRadius: borderRadius.md,
     backgroundColor: colors.glass.background,
     borderWidth: 1,

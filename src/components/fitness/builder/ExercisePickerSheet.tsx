@@ -521,16 +521,8 @@ export const ExercisePickerSheet: React.FC = () => {
             </Pressable>
           )}
         </View>
-        {/* Voice search (v1 placeholder — no real voice) */}
-        <Pressable
-          hitSlop={10}
-          onPress={() => haptics.selection()}
-          accessibilityRole="button"
-          accessibilityLabel="Voice search (coming soon)"
-          style={styles.iconBtn}
-        >
-          <Ionicons name="mic-outline" size={rf(20)} color={colors.text.secondary} />
-        </Pressable>
+        {/* Voice search placeholder removed — TODO(Phase 4): wire real voice
+            search before re-enabling this control. */}
         {/* Filter toggle */}
         <Pressable
           hitSlop={10}
@@ -557,7 +549,7 @@ export const ExercisePickerSheet: React.FC = () => {
             {selectedIds.size} selected
           </Text>
           <GlassButton
-            label={`Add ${selectedIds.size || ""}`.trim()}
+            label={selectedIds.size > 0 ? `Add ${selectedIds.size}` : "Add"}
             onPress={handleAddSelected}
             variant="primary"
             disabled={selectedIds.size === 0}
@@ -614,7 +606,7 @@ export const ExercisePickerSheet: React.FC = () => {
           data={searchResults.length > 0 ? searchResults : (hasActiveFilters ? allExercises : [])}
           keyExtractor={keyExtractor}
           renderItem={renderSearchResult}
-          ListEmptyComponent={renderEmpty}
+          ListEmptyComponent={hasQuery || hasActiveFilters ? renderEmpty : null}
           contentContainerStyle={styles.listContent}
           onEndReachedThreshold={0.5}
         />
@@ -820,7 +812,10 @@ const styles = StyleSheet.create({
     fontWeight: String(typography.fontWeight.bold) as TextStyleWeight,
   } as TextStyle,
   multiToggle: {
-    padding: rp(spacing.xs),
+    width: Math.max(rw(36), 44),
+    height: Math.max(rw(36), 44),
+    alignItems: "center",
+    justifyContent: "center",
   },
   searchRow: {
     flexDirection: "row",
@@ -851,8 +846,8 @@ const styles = StyleSheet.create({
     padding: rp(spacing.xxs),
   },
   iconBtn: {
-    width: rw(40),
-    height: rw(40),
+    width: Math.max(rw(40), 44),
+    height: Math.max(rw(40), 44),
     borderRadius: borderRadius.lg,
     backgroundColor: colors.glass.background,
     borderWidth: 1,
@@ -910,9 +905,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.glass.backgroundLight,
     borderRadius: borderRadius.full,
     paddingHorizontal: rp(spacing.sm),
-    paddingVertical: rp(spacing.xxs),
+    paddingVertical: rp(spacing.xs),
     borderWidth: 1,
     borderColor: "transparent",
+    minHeight: Math.max(rp(36), 36),
+    alignItems: "center",
+    justifyContent: "center",
   },
   filterChipActive: {
     backgroundColor: colors.primary.DEFAULT,
@@ -978,7 +976,7 @@ const styles = StyleSheet.create({
   emptyWrap: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: rp(spacing.xxl),
+    paddingVertical: rp(spacing.xl),
     gap: rp(spacing.sm),
   },
   emptyTitle: {
@@ -998,11 +996,13 @@ const styles = StyleSheet.create({
   aiSection: {
     marginBottom: rp(spacing.md),
     padding: rp(spacing.sm),
-    backgroundColor: "rgba(255, 107, 53, 0.08)",
-    borderWidth: rw(1),
-    borderColor: "rgba(255, 107, 53, 0.25)",
+    backgroundColor: "rgba(255, 107, 53, 0.2)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 107, 53, 0.4)",
     borderRadius: borderRadius.lg,
     gap: rp(spacing.xs),
+    maxHeight: rp(220),
+    overflow: "hidden",
   },
   aiSectionHeader: {
     flexDirection: "row",
@@ -1011,7 +1011,7 @@ const styles = StyleSheet.create({
   },
   aiSectionTitle: {
     flex: 1,
-    color: colors.primary.light,
+    color: colors.primary.DEFAULT,
     fontSize: rf(typography.fontSize.caption),
     fontWeight: String(typography.fontWeight.bold) as TextStyleWeight,
     textTransform: "uppercase",
@@ -1028,7 +1028,7 @@ const styles = StyleSheet.create({
   },
   aiSuggestionCard: {
     backgroundColor: colors.glass.backgroundLight,
-    borderWidth: rw(1),
+    borderWidth: 1,
     borderColor: colors.glass.border,
     borderRadius: borderRadius.md,
     padding: rp(spacing.sm),
@@ -1068,7 +1068,7 @@ const styles = StyleSheet.create({
   },
   aiApplyBtn: {
     marginTop: rp(spacing.xs),
-    minHeight: rf(36),
+    minHeight: Math.max(rf(36), 44),
   },
   aiApplyBtnText: {
     fontSize: rf(typography.fontSize.caption),
