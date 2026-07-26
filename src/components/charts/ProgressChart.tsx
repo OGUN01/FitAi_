@@ -7,11 +7,13 @@ import {
   TouchableOpacity,
   StyleProp,
   ViewStyle,
+  useWindowDimensions,
 } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { ChartTooltip } from "../ui/ChartTooltip";
 import { hapticSelection } from "../../utils/haptics";
+import { rh } from "../../utils/responsive";
 
 // REMOVED: Module-level Dimensions.get() causes crash
 // const { width: screenWidth } = Dimensions.get('window');
@@ -80,6 +82,10 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
   };
 
   const filteredData = getFilteredData();
+  // Use measured window width so the chart fits the container (hardcoded 350
+  // overflowed 320px screens).
+  const screenWidth = useWindowDimensions().width;
+  const chartWidth = Math.max(screenWidth - spacing.md * 2, 300);
 
   // Prepare chart data
   const chartData = {
@@ -98,7 +104,9 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
     }),
     datasets: [
       {
-        data: filteredData.map((point) => point[metric] || 0),
+        // Use ?? (not ||) so a legitimate 0 value is preserved; missing data
+        // is filtered out upstream so the chart doesn't show flat lines at 0.
+        data: filteredData.map((point) => point[metric] ?? 0),
         color: (opacity = 1) => colors.primary,
         strokeWidth: 3,
       },
@@ -244,8 +252,8 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <LineChart
             data={chartData}
-            width={Math.max(350, filteredData.length * 50)} // Fixed min width
-            height={220}
+            width={Math.max(chartWidth, filteredData.length * 50)}
+            height={rh(220)}
             chartConfig={chartConfig}
             bezier
             style={styles.chart}
@@ -313,13 +321,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
-    padding: spacing.xs / 2,
+    padding: spacing.xs,
   },
 
   periodButton: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.sm,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   periodButtonActive: {

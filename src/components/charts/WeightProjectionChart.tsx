@@ -15,7 +15,7 @@ import Animated, {
   cancelAnimation,
 } from "react-native-reanimated";
 import Svg, { Path, Circle, Line, G, Text as SvgText } from "react-native-svg";
-import { rf, rp, rh, rw } from "../../utils/responsive";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
 import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -59,7 +59,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
   // column on web/tablet via rw()) until onLayout fires.
   const actualWidth = containerWidth > 0 ? containerWidth : rw(300);
 
-  const padding = 40;
+  const padding = rw(40);
   const chartWidth = Math.round(actualWidth - padding * 2);
   const chartHeight = Math.round(height - padding * 2);
 
@@ -75,9 +75,15 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
     });
   }
 
-  // Convert weight to Y coordinate - round all values to prevent precision errors
-  const minWeight = Math.min(currentWeight, targetWeight) - 5;
-  const maxWeight = Math.max(currentWeight, targetWeight) + 5;
+  // Convert weight to Y coordinate - round all values to prevent precision errors.
+  // Use percentage-based padding (10% of the data range) so large weight values
+  // get proportional headroom instead of a hardcoded ±5kg.
+  const dataMin = Math.min(currentWeight, targetWeight);
+  const dataMax = Math.max(currentWeight, targetWeight);
+  const dataRange = Math.max(dataMax - dataMin, 1);
+  const paddingAmount = dataRange * 0.1 + 1;
+  const minWeight = dataMin - paddingAmount;
+  const maxWeight = dataMax + paddingAmount;
   const weightRange = maxWeight - minWeight;
 
   const getY = (weight: number) => {
@@ -117,7 +123,8 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
     };
   });
 
-  // Milestone points
+  // Milestone points — filter out weeks that don't match a data point so we
+  // never dereference a null `point!.x`.
   const milestonePoints = milestones
     .map((week) => {
       const point = points.find((p) => p.week === week);
@@ -129,7 +136,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
         weight: point.weight,
       };
     })
-    .filter(Boolean);
+    .filter((p): p is { x: number; y: number; week: number; weight: number } => p !== null);
 
   // Don't render until we have a valid width
   if (containerWidth === 0) {
@@ -174,7 +181,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
         <Circle
           cx={getX(0)}
           cy={getY(currentWeight)}
-          r={6}
+          r={rs(6)}
           fill={colors.primary}
           stroke={colors.white}
           strokeWidth={2}
@@ -184,7 +191,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
         <Circle
           cx={getX(weeks)}
           cy={getY(targetWeight)}
-          r={6}
+          r={rs(6)}
           fill={colors.success}
           stroke={colors.white}
           strokeWidth={2}
@@ -194,9 +201,9 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
         {milestonePoints.map((point, index) => (
           <G key={`milestone-${index}`}>
             <Circle
-              cx={point!.x}
-              cy={point!.y}
-              r={4}
+              cx={point.x}
+              cy={point.y}
+              r={rs(4)}
               fill={colors.info}
               stroke={colors.white}
               strokeWidth={1.5}
@@ -289,9 +296,9 @@ const styles = StyleSheet.create({
   },
 
   legendDot: {
-    width: rf(8),
-    height: rf(8),
-    borderRadius: rf(4),
+    width: rs(8),
+    height: rs(8),
+    borderRadius: rs(4),
   },
 
   legendText: {

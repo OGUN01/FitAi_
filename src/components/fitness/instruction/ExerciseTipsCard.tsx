@@ -7,10 +7,18 @@
  * styled with aurora tokens.
  */
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, type TextStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, borderRadius, typography } from "../../../theme/aurora-tokens";
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../../theme/aurora-tokens";
 import { rf, rp } from "../../../utils/responsive";
+
+/** Narrow a typography.fontWeight token to RN's literal fontWeight union. */
+const fw = (w: string): TextStyle["fontWeight"] => w as TextStyle["fontWeight"];
 
 const STANDARD_TIPS: { icon: keyof typeof Ionicons.glyphMap; text: string }[] = [
   { icon: "fitness-outline", text: "Focus on proper form over speed or weight" },
@@ -26,7 +34,7 @@ export const ExerciseTipsCard: React.FC = () => {
       <View style={styles.tipContainer}>
         {STANDARD_TIPS.map((tip, index) => (
           <View key={`tip-${index}`} style={styles.tipRow}>
-            <Ionicons name={tip.icon} size={rf(14)} color={colors.secondary.DEFAULT} />
+            <Ionicons name={tip.icon} size={rf(14)} color={colors.secondary} />
             <Text style={styles.tipText}>{tip.text}</Text>
           </View>
         ))}
@@ -41,12 +49,12 @@ const styles = StyleSheet.create({
   },
   detailSectionTitle: {
     fontSize: rf(typography.fontSize.body),
-    fontWeight: String(typography.fontWeight.bold) as any,
-    color: colors.text.primary,
+    fontWeight: fw(typography.fontWeight.bold),
+    color: colors.text,
     marginBottom: rp(spacing.md),
   },
   tipContainer: {
-    backgroundColor: colors.glass.backgroundDark,
+    backgroundColor: colors.glassSurface,
     padding: rp(spacing.lg),
     borderRadius: borderRadius.lg,
     gap: rp(spacing.sm),
@@ -59,7 +67,7 @@ const styles = StyleSheet.create({
   tipText: {
     flex: 1,
     fontSize: rf(typography.fontSize.caption),
-    color: colors.text.secondary,
+    color: colors.textSecondary,
     lineHeight: rf(20),
   },
 });

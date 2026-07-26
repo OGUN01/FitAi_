@@ -3,9 +3,17 @@
  * Beautiful CTA when no weekly workout plan exists
  */
 
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, {
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  Easing,
+  cancelAnimation,
+} from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
@@ -26,6 +34,25 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
   isGenerating,
   onGeneratePlan,
 }) => {
+  // Spin the sync icon while generating — gives progressive feedback instead
+  // of a static icon next to "Finding best exercises for you...".
+  const rotation = useSharedValue(0);
+  useEffect(() => {
+    if (isGenerating) {
+      rotation.value = withRepeat(
+        withTiming(360, { duration: 1000, easing: Easing.linear }),
+        -1,
+        false,
+      );
+    } else {
+      cancelAnimation(rotation);
+      rotation.value = 0;
+    }
+  }, [isGenerating, rotation]);
+  const spinStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
+
   const getPlanDetails = () => {
     switch (experienceLevel) {
       case "beginner":
@@ -124,7 +151,7 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
                   <Ionicons name="flag-outline" size={rf(16)} color={colors.primary} />
                   <Text
                     style={styles.previewText}
-                    numberOfLines={1}
+                    numberOfLines={2}
                     adjustsFontSizeToFit={true}
                     minimumFontScale={0.7}
                   >
@@ -155,7 +182,7 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
                 <Ionicons
                   name={feature.icon as keyof typeof Ionicons.glyphMap}
                   size={rf(16)}
-                  color={colors.successAlt}
+                  color={colors.primary}
                 />
                 <Text style={styles.featureText}>{feature.text}</Text>
               </View>
@@ -182,7 +209,9 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
               >
                 {isGenerating ? (
                   <>
-                    <Ionicons name="sync" size={rf(20)} color={colors.white} />
+                    <Animated.View style={spinStyle}>
+                      <Ionicons name="sync" size={rf(20)} color={colors.white} />
+                    </Animated.View>
                     <Text style={styles.generateButtonText} numberOfLines={1} adjustsFontSizeToFit={true} minimumFontScale={0.7}>
                       Finding best exercises for you...
                     </Text>
@@ -313,6 +342,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: spacing.md + 2,
     paddingHorizontal: spacing.xl,
+    minHeight: 48,
   },
   generateButtonText: {
     fontSize: rf(15),

@@ -135,13 +135,20 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
     const workoutTitle = isRestDay ? "Rest Day" : day.title || "Custom Workout";
 
     // ── Intensity chip color ──
+    // Rest state uses backgroundTertiary + primary text color so white-on-grey
+    // (~2.5:1) doesn't fail WCAG AA; high/mod keep their tinted chips with
+    // primary text which meets AA on saturated orange/amber backgrounds.
     const intensityLevel = (day.intensityLevel ?? "rest").toLowerCase();
-    const intensityColor =
-      intensityLevel === "intense" || intensityLevel === "high"
+    const isRestState =
+      intensityLevel !== "intense" &&
+      intensityLevel !== "high" &&
+      intensityLevel !== "moderate" &&
+      intensityLevel !== "medium";
+    const intensityColor = isRestState
+      ? colors.background.tertiary
+      : intensityLevel === "intense" || intensityLevel === "high"
         ? colors.primary.DEFAULT // orange
-        : intensityLevel === "moderate" || intensityLevel === "medium"
-          ? colors.warning.DEFAULT // amber
-          : colors.text.secondary; // grey for rest (darker for contrast)
+        : colors.warning.DEFAULT; // amber
     const intensityLabel =
       intensityLevel === "intense" || intensityLevel === "high"
         ? "HIGH"
@@ -327,143 +334,145 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
                   layout={Layout.springify()}
                   style={styles.expanded}
                 >
-                  {planned.length === 0 ? (
-                    <Text style={styles.emptyHint}>
-                      No exercises yet. Tap "Add Exercise" below.
-                    </Text>
-                  ) : (
-                    <View style={styles.exerciseList}>
-                      {planned.map((ex, idx) => (
-                        <ExerciseRow
-                          key={`${ex.exerciseId}_${idx}`}
-                          exercise={ex}
-                          dayIndex={dayIndex}
-                          exerciseIndex={idx}
-                          onOpenEditor={onOpenEditor}
-                          onDuplicate={onDuplicateExercise}
-                          onRemove={onRemoveExercise}
-                          onReplace={onReplaceExercise}
-                          onMoveTo={onMoveExerciseTo}
-                          onReorder={onReorderExercise}
-                          testID={`${testID}-ex-${idx}`}
-                        />
-                      ))}
-                    </View>
-                  )}
-
-                  {/* Add Exercise */}
-                  <GlassButton
-                    label="Add Exercise"
-                    icon="add-circle-outline"
-                    onPress={() => {
-                      haptics.buttonPress();
-                      onAddExercise(dayIndex);
-                    }}
-                    variant="primary"
-                    fullWidth
-                    style={styles.addBtn}
-                  />
-
-                  {/* Notes */}
                   <KeyboardAvoidingView
                     behavior={Platform.OS === "ios" ? "padding" : undefined}
-                    style={styles.notesSection}
+                    style={styles.expandedKAV}
                   >
-                    <Text style={styles.notesLabel}>Notes</Text>
-                    <TextInput
-                      style={styles.notesInput}
-                      value={day.description ?? ""}
-                      placeholder="Add notes for this day…"
-                      placeholderTextColor={colors.text.tertiary}
-                      multiline
-                      onChangeText={(text) => onUpdateNotes(dayIndex, text)}
-                      accessibilityLabel={`Notes for ${dayLabel}`}
-                    />
-                  </KeyboardAvoidingView>
-
-                  {/* Rest timer indicator (display-only for v1) */}
-                  {planned.length > 0 && (
-                    <View style={styles.restTimerRow}>
-                      <Ionicons name="timer-outline" size={rf(14)} color={colors.text.tertiary} />
-                      <Text style={styles.restTimerText}>
-                        Rest: {planned[0]?.restSeconds ?? 60}s between sets
+                    {planned.length === 0 ? (
+                      <Text style={styles.emptyHint}>
+                        No exercises yet. Tap "Add Exercise" below.
                       </Text>
-                    </View>
-                  )}
-
-                  {/* Day actions (kebab menu trigger) */}
-                  <View style={styles.dayActions}>
-                    <Pressable
-                      hitSlop={8}
-                      onPress={() => {
-                        haptics.selection();
-                        setMenuOpen((v) => !v);
-                      }}
-                      accessibilityRole="button"
-                      accessibilityLabel="Day actions"
-                      style={styles.kebabBtn}
-                    >
-                      <Ionicons name="ellipsis-horizontal" size={rf(18)} color={colors.text.secondary} />
-                    </Pressable>
-                  </View>
-
-                  {menuOpen && (
-                    <View style={styles.dayMenu} pointerEvents="box-none">
-                      <Pressable
-                        style={styles.menuDismiss}
-                        onPress={() => setMenuOpen(false)}
-                        accessibilityLabel="Close menu"
-                      />
-                      <View style={styles.dayMenuList}>
-                        {DAY_LABELS.map((label, targetIdx) => {
-                          if (targetIdx === dayIndex) return null;
-                          return (
-                            <Pressable
-                              key={label}
-                              style={styles.dayMenuItem}
-                              onPress={() => {
-                                setMenuOpen(false);
-                                haptics.success();
-                                onDuplicateDay(dayIndex, targetIdx);
-                              }}
-                              accessibilityRole="button"
-                              accessibilityLabel={`Copy ${dayLabel} to ${label}`}
-                            >
-                              <Ionicons
-                                name="copy-outline"
-                                size={rf(14)}
-                                color={colors.text.secondary}
-                                style={styles.dayMenuIcon}
-                              />
-                              <Text style={styles.dayMenuLabel}>
-                                Copy to {label}
-                              </Text>
-                            </Pressable>
-                          );
-                        })}
-                        <Pressable
-                          style={[styles.dayMenuItem, { borderTopWidth: 1, borderTopColor: colors.glass.border }]}
-                          onPress={() => {
-                            setMenuOpen(false);
-                            haptics.warning();
-                            onClearDay(dayIndex);
-                          }}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Clear ${dayLabel}`}
-                        >
-                          <Ionicons
-                            name="trash-outline"
-                            size={rf(14)}
-                            color={colors.error.DEFAULT}
-                            style={styles.dayMenuIcon}
+                    ) : (
+                      <View style={styles.exerciseList}>
+                        {planned.map((ex, idx) => (
+                          <ExerciseRow
+                            key={`${ex.exerciseId}_${idx}`}
+                            exercise={ex}
+                            dayIndex={dayIndex}
+                            exerciseIndex={idx}
+                            onOpenEditor={onOpenEditor}
+                            onDuplicate={onDuplicateExercise}
+                            onRemove={onRemoveExercise}
+                            onReplace={onReplaceExercise}
+                            onMoveTo={onMoveExerciseTo}
+                            onReorder={onReorderExercise}
+                            testID={`${testID}-ex-${idx}`}
                           />
-                          <Text style={[styles.dayMenuLabel, { color: colors.error.DEFAULT }]}>
-                            Clear Day
-                          </Text>
-                        </Pressable>
+                        ))}
                       </View>
+                    )}
+
+                    {/* Add Exercise */}
+                    <GlassButton
+                      label="Add Exercise"
+                      icon="add-circle-outline"
+                      onPress={() => {
+                        haptics.buttonPress();
+                        onAddExercise(dayIndex);
+                      }}
+                      variant="primary"
+                      fullWidth
+                      style={styles.addBtn}
+                    />
+
+                    {/* Notes */}
+                    <View style={styles.notesSection}>
+                      <Text style={styles.notesLabel}>Notes</Text>
+                      <TextInput
+                        style={styles.notesInput}
+                        value={day.description ?? ""}
+                        placeholder="Add notes for this day…"
+                        placeholderTextColor={colors.text.tertiary}
+                        multiline
+                        onChangeText={(text) => onUpdateNotes(dayIndex, text)}
+                        accessibilityLabel={`Notes for ${dayLabel}`}
+                      />
                     </View>
-                  )}
+
+                    {/* Rest timer indicator (display-only for v1) */}
+                    {planned.length > 0 && (
+                      <View style={styles.restTimerRow}>
+                        <Ionicons name="timer-outline" size={rf(14)} color={colors.text.tertiary} />
+                        <Text style={styles.restTimerText}>
+                          Rest: {planned[0]?.restSeconds ?? 60}s between sets
+                        </Text>
+                      </View>
+                    )}
+
+                    {/* Day actions (kebab menu trigger) */}
+                    <View style={styles.dayActions}>
+                      <Pressable
+                        hitSlop={8}
+                        onPress={() => {
+                          haptics.selection();
+                          setMenuOpen((v) => !v);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Day actions"
+                        style={styles.kebabBtn}
+                      >
+                        <Ionicons name="ellipsis-horizontal" size={rf(18)} color={colors.text.secondary} />
+                      </Pressable>
+                    </View>
+
+                    {menuOpen && (
+                      <View style={styles.dayMenu} pointerEvents="box-none">
+                        <Pressable
+                          style={styles.menuDismiss}
+                          onPress={() => setMenuOpen(false)}
+                          accessibilityLabel="Close menu"
+                        />
+                        <View style={styles.dayMenuList}>
+                          {DAY_LABELS.map((label, targetIdx) => {
+                            if (targetIdx === dayIndex) return null;
+                            return (
+                              <Pressable
+                                key={label}
+                                style={styles.dayMenuItem}
+                                onPress={() => {
+                                  setMenuOpen(false);
+                                  haptics.success();
+                                  onDuplicateDay(dayIndex, targetIdx);
+                                }}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Copy ${dayLabel} to ${label}`}
+                              >
+                                <Ionicons
+                                  name="copy-outline"
+                                  size={rf(14)}
+                                  color={colors.text.secondary}
+                                  style={styles.dayMenuIcon}
+                                />
+                                <Text style={styles.dayMenuLabel}>
+                                  Copy to {label}
+                                </Text>
+                              </Pressable>
+                            );
+                          })}
+                          <Pressable
+                            style={[styles.dayMenuItem, { borderTopWidth: 1, borderTopColor: colors.glass.border }]}
+                            onPress={() => {
+                              setMenuOpen(false);
+                              haptics.warning();
+                              onClearDay(dayIndex);
+                            }}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Clear ${dayLabel}`}
+                          >
+                            <Ionicons
+                              name="trash-outline"
+                              size={rf(14)}
+                              color={colors.error.DEFAULT}
+                              style={styles.dayMenuIcon}
+                            />
+                            <Text style={[styles.dayMenuLabel, { color: colors.error.DEFAULT }]}>
+                              Clear Day
+                            </Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    )}
+                  </KeyboardAvoidingView>
                 </Animated.View>
               )}
             </GlassCard>
@@ -487,39 +496,52 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
           </Pressable>
         </Animated.View>
 
-        {/* Copy-to-day picker (simple inline list) */}
+        {/* Copy-to-day picker — rendered as an absolute overlay so it does NOT
+            push subsequent DayBlocks down (layout shift). Positioned over the
+            current day block, above siblings via zIndex. */}
         {showCopyPicker && (
-          <View style={styles.copyPicker}>
-            <Text style={styles.copyPickerTitle}>Copy {dayLabel} to:</Text>
-            {DAY_LABELS.map((label, targetIdx) => {
-              if (targetIdx === dayIndex) return null;
-              return (
-                <Pressable
-                  key={label}
-                  style={styles.copyPickerItem}
-                  onPress={() => {
-                    setShowCopyPicker(false);
-                    haptics.success();
-                    onDuplicateDay(dayIndex, targetIdx);
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Copy to ${label}`}
-                >
-                  <Text style={styles.copyPickerItemText}>{label}</Text>
-                </Pressable>
-              );
-            })}
+          <View style={styles.copyPickerOverlay} pointerEvents="box-none">
             <Pressable
-              style={styles.copyPickerCancel}
+              style={styles.copyPickerBackdrop}
               onPress={() => {
                 haptics.selection();
                 setShowCopyPicker(false);
               }}
-              accessibilityRole="button"
               accessibilityLabel="Cancel copy"
-            >
-              <Text style={styles.copyPickerCancelText}>Cancel</Text>
-            </Pressable>
+              accessibilityRole="button"
+            />
+            <View style={styles.copyPicker}>
+              <Text style={styles.copyPickerTitle}>Copy {dayLabel} to:</Text>
+              {DAY_LABELS.map((label, targetIdx) => {
+                if (targetIdx === dayIndex) return null;
+                return (
+                  <Pressable
+                    key={label}
+                    style={styles.copyPickerItem}
+                    onPress={() => {
+                      setShowCopyPicker(false);
+                      haptics.success();
+                      onDuplicateDay(dayIndex, targetIdx);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Copy to ${label}`}
+                  >
+                    <Text style={styles.copyPickerItemText}>{label}</Text>
+                  </Pressable>
+                );
+              })}
+              <Pressable
+                style={styles.copyPickerCancel}
+                onPress={() => {
+                  haptics.selection();
+                  setShowCopyPicker(false);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel copy"
+              >
+                <Text style={styles.copyPickerCancelText}>Cancel</Text>
+              </Pressable>
+            </View>
           </View>
         )}
       </Animated.View>
@@ -602,6 +624,13 @@ const styles = StyleSheet.create({
     paddingTop: rp(spacing.xs),
     position: "relative",
   } as ViewStyle,
+  // KAV wraps the entire expanded section so the keyboard never covers the
+  // notes input OR the buttons below it (Add Exercise / kebab). Previously it
+  // only wrapped the notes input, leaving the rest of the expanded content
+  // un-offset when the keyboard opened.
+  expandedKAV: {
+    flex: 1,
+  } as ViewStyle,
   emptyHint: {
     color: colors.text.tertiary,
     fontSize: rf(typography.fontSize.caption),
@@ -665,6 +694,8 @@ const styles = StyleSheet.create({
   },
   menuDismiss: {
     ...StyleSheet.absoluteFillObject,
+    // Lower than dayMenuList so menu items receive taps on Android.
+    zIndex: 40,
   } as ViewStyle,
   dayMenuList: {
     backgroundColor: colors.background.tertiary,
@@ -678,6 +709,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 5,
+    // Explicitly above menuDismiss so taps on items always win on Android.
+    zIndex: 41,
   },
   dayMenuItem: {
     flexDirection: "row",
@@ -716,16 +749,31 @@ const styles = StyleSheet.create({
     fontSize: rf(typography.fontSize.micro),
     fontWeight: String(typography.fontWeight.semibold) as any,
   },
-  // Copy-to picker
+  // Copy-to picker — absolute overlay so it does not push siblings down.
+  copyPickerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 200,
+    elevation: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  } as ViewStyle,
+  copyPickerBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  } as ViewStyle,
   copyPicker: {
     backgroundColor: colors.background.tertiary,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: colors.glass.border,
     padding: rp(spacing.md),
-    marginTop: rp(spacing.xs),
-    zIndex: 60,
-    elevation: 6,
+    minWidth: rw(220),
+    zIndex: 201,
+    elevation: 11,
   },
   copyPickerTitle: {
     color: colors.text.primary,

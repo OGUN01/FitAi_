@@ -69,6 +69,8 @@ export interface WorkoutBuilderState {
   aiSuggestions: AiSuggestion[];
   insights: WeeklyInsights | null;
   isComputingInsights: boolean;
+  /** True after validation has actually run at least once (guards against falsely claiming "balanced" before first check). */
+  hasValidationRun: boolean;
 
   // ── Actions ───────────────────────────────────────────────────────────
 
@@ -243,6 +245,7 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
   aiSuggestions: [],
   insights: null,
   isComputingInsights: false,
+  hasValidationRun: false,
   aiLoading: false,
 
   hydrateFromCustomPlan: async () => {
@@ -533,7 +536,7 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
 
   setDragState: (state) => set({ dragState: state }),
 
-  setValidationWarnings: (warnings) => set({ validationWarnings: warnings }),
+  setValidationWarnings: (warnings) => set({ validationWarnings: warnings, hasValidationRun: true }),
   setAiSuggestions: (suggestions) => set({ aiSuggestions: suggestions }),
   setAiLoading: (loading) => set({ aiLoading: loading }),
 

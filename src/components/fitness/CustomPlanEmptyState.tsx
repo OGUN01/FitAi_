@@ -263,7 +263,7 @@ export const CustomPlanEmptyState: React.FC<CustomPlanEmptyStateProps> = ({
 
               <View style={styles.emptyActions}>
                 <AnimatedPressable
-                  onPress={onBrowseTemplates}
+                  onPress={onBuildSchedule}
                   scaleValue={0.97}
                   springConfig="snappy"
                   hapticType="light"
@@ -372,7 +372,9 @@ const styles = StyleSheet.create({
   explanation: {
     color: colors.textSecondary,
     fontSize: rf(typography.fontSize.caption),
-    lineHeight: rf(typography.fontSize.caption) * (typography.lineHeight.normal ?? 1.4),
+    // Hardcoded rf(20) — was rf(caption) * lineHeight.normal which is fine
+    // when normal is a number, but defensive against future type drift.
+    lineHeight: rf(20),
   },
   ctaRow: {
     flexDirection: "row",

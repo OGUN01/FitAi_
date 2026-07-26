@@ -391,13 +391,20 @@ const RecoveryTile: React.FC<RecoveryTileProps> = ({ score, band }) => {
 /** Build GradientBarChart data for the muscle coverage list. */
 function buildCoverageBars(insights: WeeklyInsights): BarData[] {
   const bars: BarData[] = [];
+  // Dynamic max so high-volume muscle groups (>20 sets) don't clip at the old
+  // hardcoded ceiling. We floor at 20 so low-volume weeks still render bars at
+  // a readable scale rather than all-maxing against a tiny ceiling.
+  const maxSets = Math.max(
+    20,
+    ...MAJOR_MUSCLE_GROUPS.map((m) => insights.muscleCoverage[m] ?? 0),
+  );
   for (const muscle of MAJOR_MUSCLE_GROUPS) {
     const sets = insights.muscleCoverage[muscle] ?? 0;
     const underHit = sets > 0 && sets < 2;
     bars.push({
       label: capitalize(muscle),
       value: sets,
-      maxValue: 20, // soft cap for the bar; bars over 20 will clip visually (rare)
+      maxValue: maxSets,
       gradient: underHit
         ? [colors.warning.light, colors.warning.DEFAULT]
         : [colors.primary[400], colors.primary[700]],
@@ -519,8 +526,9 @@ const styles = StyleSheet.create({
   },
   coverageSection: {
     gap: rp(spacing.xs),
-    maxHeight: rp(280),
-    overflow: "hidden",
+    // No maxHeight: the chart height is computed from the muscle-group count
+    // (coverageBarHeight). A fixed maxHeight of rp(280) clipped the last ~2
+    // muscle groups on screens with 10 major groups (360px of bars).
   },
   sectionLabel: {
     color: colors.text.secondary,
@@ -543,7 +551,9 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     fontSize: rf(typography.fontSize.caption),
     textAlign: "center",
-    lineHeight: rf(typography.fontSize.body) * typography.lineHeight.normal,
+    // lineHeight was previously rf(body)*normal which was far too loose for a
+    // caption-sized font; use caption × normal so leading matches the font size.
+    lineHeight: rf(typography.fontSize.caption) * typography.lineHeight.normal,
   },
 });
 

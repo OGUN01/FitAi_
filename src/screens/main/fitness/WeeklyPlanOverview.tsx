@@ -221,8 +221,9 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
               hapticFeedback={true}
               hapticType="light"
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.seeAllButton}
             >
-              <View style={styles.seeAllButton}>
+              <View style={styles.seeAllContent}>
                 <Text style={styles.seeAllText} numberOfLines={1}>View All</Text>
                 <Ionicons
                   name="chevron-forward"
@@ -248,6 +249,7 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
                 hapticFeedback={true}
                 hapticType="light"
                 style={styles.dayContainer}
+                hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
               >
                 <Text
                   style={[
@@ -370,13 +372,15 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   seeAllButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rp(2),
     minHeight: 44,
     justifyContent: "center",
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.xs,
+  },
+  seeAllContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(2),
   },
   seeAllText: {
     fontSize: rf(12),
@@ -407,9 +411,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   dayCircle: {
-    width: Math.max(rw(36), 44),
-    height: Math.max(rw(36), 44),
-    borderRadius: rbr(22),
+    width: rw(36),
+    height: rw(36),
+    borderRadius: rbr(18),
     backgroundColor: colors.glassSurface,
     justifyContent: "center",
     alignItems: "center",
@@ -457,7 +461,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   statLabel: {
-    fontSize: rf(10),
+    fontSize: rf(11),
     color: colors.textSecondary,
     marginTop: rp(2),
   },

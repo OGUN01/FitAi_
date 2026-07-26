@@ -25,12 +25,13 @@ export const FullscreenModal: React.FC<FullscreenModalProps> = ({
   gifUrl,
   displayName,
 }) => {
-  // Use the clamped dimensions from responsive.ts so the GIF stays phone-sized
-  // on web/desktop (capped to 480x900) instead of sizing against a 1920x1080
-  // browser window. The fullscreen dark overlay itself (flex:1) still covers
-  // the whole viewport; only the inset image is clamped.
-  const modalWidth = dimensions.screenWidth * 0.9;
-  const modalHeight = dimensions.screenHeight * 0.7;
+  // Clamp to the phone-sized viewport caps (480x900) so on web/desktop the GIF
+  // doesn't balloon to the full browser window. The comment in the previous
+  // version claimed this was already happening via `dimensions`, but
+  // `dimensions.screenWidth/screenHeight` returned the raw screen size —
+  // Math.min enforces the cap explicitly here.
+  const modalWidth = Math.min(dimensions.screenWidth, 480) * 0.9;
+  const modalHeight = Math.min(dimensions.screenHeight, 900) * 0.7;
 
   return (
     <Modal
@@ -71,10 +72,6 @@ export const FullscreenModal: React.FC<FullscreenModalProps> = ({
             transition={300}
             cachePolicy="memory-disk"
           />
-
-          <Text style={styles.fullscreenHint}>
-            Tap the close button to exit
-          </Text>
         </View>
       </View>
     </Modal>
@@ -122,12 +119,5 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
-  },
-
-  fullscreenHint: {
-    color: "rgba(255, 255, 255, 0.85)",
-    fontSize: fontSize.sm,
-    textAlign: "center",
-    marginTop: spacing.md,
   },
 });

@@ -2,7 +2,8 @@ import React from "react";
 import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
-import { colors } from "../../theme/aurora-tokens";
+import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
+import { colors, spacing } from "../../theme/aurora-tokens";
 import { rh, rw } from "../../utils/responsive";
 
 // Hook
@@ -31,6 +32,7 @@ export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
   const {
     selectedPeriod,
     refreshing,
+    loading,
     metricsHistory,
     calculatedMetrics,
     weightTrend,
@@ -85,37 +87,46 @@ export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
               refreshing={refreshing}
               onRefresh={handleRefresh}
               tintColor={colors.primary.DEFAULT}
+              colors={[colors.primary.DEFAULT]}
             />
           }
           showsVerticalScrollIndicator={false}
         >
-          <SummaryCard
-            selectedPeriod={selectedPeriod}
-            workoutTrend={workoutTrend}
-            metricsHistory={metricsHistory}
-          />
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <AuroraSpinner size="lg" />
+            </View>
+          ) : (
+            <>
+              <SummaryCard
+                selectedPeriod={selectedPeriod}
+                workoutTrend={workoutTrend}
+                metricsHistory={metricsHistory}
+              />
 
-          <SimpleTrendCard
-            title="Weight Trend"
-            icon="scale-outline"
-            trend={displayWeightTrend}
-            unit={weightUnit}
-            color={colors.success.DEFAULT}
-          />
+              <SimpleTrendCard
+                title="Weight Trend"
+                icon="scale-outline"
+                trend={displayWeightTrend}
+                unit={weightUnit}
+                color={colors.success.DEFAULT}
+              />
 
-          <SimpleTrendCard
-            title="Calorie Intake"
-            icon="flame-outline"
-            trend={calorieTrend}
-            unit="kcal"
-            color={colors.warning.DEFAULT}
-          />
+              <SimpleTrendCard
+                title="Calorie Intake"
+                icon="flame-outline"
+                trend={calorieTrend}
+                unit="kcal"
+                color={colors.warning.DEFAULT}
+              />
 
-          <GoalProgressCard
-            calculatedMetrics={calculatedMetrics}
-            profilePersonalInfo={profilePersonalInfo}
-            bodyAnalysis={bodyAnalysis}
-          />
+              <GoalProgressCard
+                calculatedMetrics={calculatedMetrics}
+                profilePersonalInfo={profilePersonalInfo}
+                bodyAnalysis={bodyAnalysis}
+              />
+            </>
+          )}
         </ScrollView>
       </View>
     </AuroraBackground>
@@ -130,15 +141,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   periodSelectorContainer: {
-    paddingHorizontal: rw(20),
+    paddingHorizontal: spacing.lg,
     marginBottom: rh(15),
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: rw(20),
+    paddingHorizontal: spacing.lg,
     gap: rh(15),
+  },
+  loadingContainer: {
+    minHeight: rh(400),
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: spacing.xxl,
   },
 });
 

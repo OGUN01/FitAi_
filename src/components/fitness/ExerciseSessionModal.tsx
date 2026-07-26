@@ -31,6 +31,8 @@ import Animated, {
   withSequence,
   withTiming,
   cancelAnimation,
+  FadeIn,
+  FadeOut,
 } from "react-native-reanimated";
 import {
   GlassCard,
@@ -141,12 +143,12 @@ const arcStyles = StyleSheet.create({
     fontVariant: ["tabular-nums"],
   },
   pausedLabel: {
-    fontSize: rf(7),
+    fontSize: rf(typography.fontSize.micro),
     color: colors.text.tertiary,
     marginTop: 1,
   },
   sideLabel: {
-    fontSize: rf(7),
+    fontSize: rf(typography.fontSize.micro),
     color: colors.primary.DEFAULT,
     marginTop: 1,
     textAlign: "center",
@@ -163,12 +165,17 @@ interface SwitchBannerProps {
 }
 
 function SwitchBanner({ side2Label, secondsLeft }: SwitchBannerProps) {
+  // FadeIn/FadeOut so the banner doesn't jarringly cover the GIF instantly.
   return (
-    <View style={bannerStyles.container}>
+    <Animated.View
+      entering={FadeIn.duration(200)}
+      exiting={FadeOut.duration(200)}
+      style={bannerStyles.container}
+    >
       <Ionicons name="swap-horizontal" size={rf(36)} color={colors.secondary.DEFAULT} />
       <Text style={bannerStyles.title}>Switch to {side2Label}</Text>
       <Text style={bannerStyles.sub}>Starting in {secondsLeft}s...</Text>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -433,8 +440,8 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
               <ExerciseGifPlayer
                 exerciseId={exerciseId}
                 exerciseName={exerciseName}
-                height={180}
-                width={180}
+                height={rs(180)}
+                width={rs(180)}
                 showTitle={false}
                 showInstructions={false}
                 showControls={false}
@@ -496,22 +503,30 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
             </AnimatedPressable>
           </View>
 
-          {/* Progress dots — 3 states: completed / active / pending */}
-          <View style={styles.progressDots}>
-            {Array.from({ length: totalSets }, (_, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.progressDot,
-                  i < currentSet - 1
-                    ? styles.progressDotCompleted
-                    : i === currentSet - 1
-                    ? styles.progressDotActive
-                    : {},
-                ]}
-              />
-            ))}
-          </View>
+          {/* Progress dots — 3 states: completed / active / pending.
+              For >7 sets the dot row wraps and misaligns, so switch to a
+              compact "Set X of Y" text indicator instead. */}
+          {totalSets > 7 ? (
+            <Text style={styles.setsIndicatorText}>
+              Set {currentSet} of {totalSets}
+            </Text>
+          ) : (
+            <View style={styles.progressDots}>
+              {Array.from({ length: totalSets }, (_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.progressDot,
+                    i < currentSet - 1
+                      ? styles.progressDotCompleted
+                      : i === currentSet - 1
+                      ? styles.progressDotActive
+                      : {},
+                  ]}
+                />
+              ))}
+            </View>
+          )}
         </GlassCard>
       </View>
       </SafeAreaView>
@@ -526,7 +541,6 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.8)",
     justifyContent: "flex-start",
     alignItems: "center",
@@ -680,22 +694,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: rp(spacing.sm),
   },
+  setsIndicatorText: {
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: String(typography.fontWeight.semibold) as any,
+    color: colors.text.secondary,
+    textAlign: "center",
+  },
   progressDot: {
     width: rs(10),
     height: rs(10),
     borderRadius: rbr(5),
     backgroundColor: colors.glass.backgroundDark,
   },
+  // Completed: orange fill, no ring.
   progressDotCompleted: {
     backgroundColor: colors.primary.DEFAULT,
   },
-  // Slightly larger + ring so the active dot is distinguishable at high DPI
-  // (was rs(13) vs pending rs(10) — 3px difference barely visible).
+  // Active: orange fill + white ring (same size as completed; ring distinguishes state).
   progressDotActive: {
     backgroundColor: colors.primary.DEFAULT,
-    width: rs(14),
-    height: rs(14),
-    borderRadius: rbr(7),
     borderWidth: 2,
     borderColor: colors.text.primary,
   },

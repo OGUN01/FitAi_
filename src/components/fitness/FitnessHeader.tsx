@@ -82,7 +82,7 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
       >
         <View style={styles.calendarIconContainer}>
           <Ionicons
-            name="calendar"
+            name="calendar-outline"
             size={rf(20)}
             color={colors.text}
           />

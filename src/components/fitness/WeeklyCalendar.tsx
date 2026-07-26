@@ -207,9 +207,11 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                       : styles.workoutPending,
                   ]}
                 >
-                  <Text style={styles.workoutIndicatorText}>
-                    {day.isCompleted ? "✓" : "•"}
-                  </Text>
+                  <Ionicons
+                    name={day.isCompleted ? "checkmark" : "ellipse"}
+                    size={rf(10)}
+                    color={colors.white}
+                  />
                 </View>
               )}
               {day.isRestDay && !day.hasWorkout && (
@@ -217,7 +219,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                   <Ionicons
                     name="moon"
                     size={rf(12)}
-                    color={colors.textSecondary}
+                    color={colors.text}
                   />
                 </View>
               )}
@@ -307,7 +309,7 @@ const styles = StyleSheet.create({
 
   dayButtonRest: {
     backgroundColor: colors.backgroundTertiary,
-    opacity: 0.85,
+    opacity: 1.0,
   },
 
   dayLabel: {
@@ -364,7 +366,7 @@ const styles = StyleSheet.create({
   },
 
   workoutIndicatorText: {
-    fontSize: rf(10),
+    fontSize: rf(11),
     fontWeight: "bold",
     color: colors.white,
   },
@@ -372,9 +374,5 @@ const styles = StyleSheet.create({
   restIndicator: {
     justifyContent: "center",
     alignItems: "center",
-  },
-
-  restIndicatorText: {
-    fontSize: rf(12),
   },
 });

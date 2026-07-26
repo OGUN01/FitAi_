@@ -38,6 +38,10 @@ import { getCurrentUserId } from "../../../services/authUtils";
 interface MyWorkoutsCardProps {
   navigation: {
     navigate: (screen: string, params?: Record<string, unknown>) => void;
+    addListener?: (
+      event: "focus",
+      cb: () => void,
+    ) => () => void;
   };
 }
 
@@ -91,30 +95,36 @@ export const MyWorkoutsCard: React.FC<MyWorkoutsCardProps> = ({ navigation }) =>
     };
   }, [completedSessions]);
 
-  // Templates count loaded async on mount. "-" while loading.
+  // Templates count loaded async on mount AND on navigation focus — without the
+  // focus listener, returning from TemplateLibrary after creating a template
+  // shows a stale count (the effect only ran once on initial mount).
   const [templateCount, setTemplateCount] = useState<number | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadTemplates = React.useCallback(() => {
     const userId = getCurrentUserId();
     if (!userId) {
-      // No authenticated user yet — show 0 rather than a stuck loading state.
       setTemplateCount(0);
       return;
     }
     workoutTemplateService
       .getTemplates(userId)
       .then((templates) => {
-        if (!cancelled) setTemplateCount(templates.length);
+        setTemplateCount(templates.length);
       })
       .catch(() => {
         // Service already logs the Supabase error; just surface a safe value.
-        if (!cancelled) setTemplateCount(0);
+        setTemplateCount(0);
       });
-    return () => {
-      cancelled = true;
-    };
   }, []);
+
+  useEffect(() => {
+    loadTemplates();
+    // Refresh on screen focus — covers "created template elsewhere, returned".
+    const unsubscribe = navigation.addListener?.("focus", loadTemplates);
+    return () => {
+      unsubscribe?.();
+    };
+  }, [loadTemplates, navigation]);
 
   const handleViewAll = () => navigation.navigate("TemplateLibrary");
 
@@ -147,7 +157,7 @@ export const MyWorkoutsCard: React.FC<MyWorkoutsCardProps> = ({ navigation }) =>
                 />
                 <Text style={styles.title} numberOfLines={1}>My Workouts</Text>
               </View>
-              <View style={styles.viewAll}>
+              <View style={styles.viewAll} pointerEvents="none">
                 <Text style={styles.viewAllText}>View All</Text>
                 <Ionicons
                   name="arrow-forward"
@@ -210,8 +220,6 @@ const StatTile: React.FC<StatTileProps> = ({ icon, value, label, tint }) => (
     <Text
       style={styles.statValue}
       numberOfLines={1}
-      adjustsFontSizeToFit={true}
-      minimumFontScale={0.7}
     >
       {value}
     </Text>
@@ -279,8 +287,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: spacing.xs,
   },
+  // Fixed rf(14) so values like "10,000" don't shrink visually while "0"
+  // renders at full size (was adjustsFontSizeToFit jumping between tiles).
   statValue: {
-    fontSize: rf(18),
+    fontSize: rf(14),
     fontWeight: "700",
     color: colors.text,
   },

@@ -43,16 +43,16 @@ export const ExerciseCardHeader: React.FC<ExerciseCardHeaderProps> = ({
           {exercise.name}
         </Text>
         <View style={styles.metaRow}>
-          <Text style={styles.metaText}>
-            {workoutSet.sets} sets × {formatReps(workoutSet.reps)} reps
+          <Text style={styles.metaText} numberOfLines={1}>
+            {workoutSet.sets} sets - {formatReps(workoutSet.reps)} reps
           </Text>
           {workoutSet.weight && (
-            <Text style={styles.metaText}> • {workoutSet.weight}kg</Text>
+            <Text style={styles.metaText}> - {workoutSet.weight}kg</Text>
           )}
           {workoutSet.duration && (
             <Text style={styles.metaText}>
               {" "}
-              • {formatTime(workoutSet.duration)}
+              - {formatTime(workoutSet.duration)}
             </Text>
           )}
         </View>
@@ -131,9 +131,9 @@ const styles = StyleSheet.create({
   },
 
   completedBadge: {
-    width: rs(32),
-    height: rs(32),
-    borderRadius: rbr(16),
+    width: Math.max(rs(44), 44),
+    height: Math.max(rs(44), 44),
+    borderRadius: rbr(22),
     backgroundColor: colors.success,
     justifyContent: "center" as const,
     alignItems: "center" as const,

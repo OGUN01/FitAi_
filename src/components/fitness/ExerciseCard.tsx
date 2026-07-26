@@ -14,6 +14,7 @@ import { Card } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw, rs } from "../../utils/responsive";
 import { Exercise, WorkoutSet } from "../../types/workout";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -43,9 +44,13 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
   style,
 }) => {
   const [isExpanded, setIsExpanded] = useState(expanded);
+  const [expandedInstructions, setExpandedInstructions] = useState<Set<number>>(new Set());
+  const reduceMotion = useReducedMotion();
 
   const handleToggleExpand = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (!reduceMotion) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    }
     const newExpanded = !isExpanded;
     setIsExpanded(newExpanded);
     onToggleExpand?.();
@@ -131,11 +136,14 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                   styles.exerciseName,
                   isCompleted && styles.exerciseNameCompleted,
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
               >
                 {exercise.name}
               </Text>
               <View style={styles.metaRow}>
-                <Text style={styles.metaText}>
+                <Text style={styles.metaText} numberOfLines={1}>
                   {workoutSet.sets} sets x {formatReps(workoutSet.reps)} reps
                 </Text>
                 {workoutSet.weight && (
@@ -266,20 +274,46 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
             {exercise.instructions && exercise.instructions.length > 0 && (
               <View style={styles.instructionsSection}>
                 <Text style={styles.sectionTitle}>Instructions</Text>
-                {exercise.instructions.map((instruction, index) => (
-                  <View
-                    key={`instruction-${index}-${instruction.substring(0, 20)}`}
-                    style={styles.instructionItem}
-                  >
-                    <Text style={styles.instructionNumber}>{index + 1}.</Text>
-                    <Text
-                      style={styles.instructionText}
-                      numberOfLines={5}
+                {exercise.instructions.map((instruction, index) => {
+                  const isInstrExpanded = expandedInstructions.has(index);
+                  return (
+                    <View
+                      key={`instruction-${index}-${instruction.substring(0, 20)}`}
+                      style={styles.instructionItem}
                     >
-                      {instruction}
-                    </Text>
-                  </View>
-                ))}
+                      <Text style={styles.instructionNumber}>{index + 1}.</Text>
+                      <View style={styles.instructionTextWrapper}>
+                        <Text
+                          style={styles.instructionText}
+                          numberOfLines={isInstrExpanded ? undefined : 5}
+                        >
+                          {instruction}
+                        </Text>
+                        <Pressable
+                          onPress={() =>
+                            setExpandedInstructions((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(index)) {
+                                next.delete(index);
+                              } else {
+                                next.add(index);
+                              }
+                              return next;
+                            })
+                          }
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          accessibilityRole="button"
+                          accessibilityLabel={isInstrExpanded ? "Show less" : "Show more"}
+                          style={styles.showMoreButton}
+                        >
+                          <Text style={styles.showMoreText}>
+                            {isInstrExpanded ? "Show less" : "Show more"}
+                          </Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  );
+                })}
               </View>
             )}
 
@@ -404,9 +438,9 @@ const styles = StyleSheet.create({
   },
 
   completedBadge: {
-    width: rs(32),
-    height: rs(32),
-    borderRadius: rbr(16),
+    width: Math.max(rs(44), 44),
+    height: Math.max(rs(44), 44),
+    borderRadius: rbr(22),
     backgroundColor: colors.success,
     justifyContent: "center" as const,
     alignItems: "center" as const,
@@ -426,17 +460,18 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
 
-  // Tinted amber bg with warningAlt text — passes WCAG AA where solid
-  // amber + white text failed (was ~2.6:1).
+  // Solid amber bg + white text — passes WCAG AA consistently across themes
+  // (was rgba amber tint + amber text ~2.8:1 fail; tinted variants now use
+  // the warningTint token only when paired with dark text).
   timerDisplay: {
-    backgroundColor: "rgba(245, 158, 11, 0.2)",
+    backgroundColor: colors.warning,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
   },
 
   timerText: {
-    color: colors.warningAlt,
+    color: colors.white,
     fontSize: fontSize.md,
     fontWeight: typography.fontWeight.bold,
   },
@@ -554,6 +589,21 @@ const styles = StyleSheet.create({
     color: colors.text,
     flex: 1,
     lineHeight: rf(20),
+  },
+
+  instructionTextWrapper: {
+    flex: 1,
+  },
+
+  showMoreButton: {
+    marginTop: rp(4),
+    alignSelf: "flex-start",
+  },
+
+  showMoreText: {
+    fontSize: fontSize.xs,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.semibold,
   },
 
   tipsSection: {

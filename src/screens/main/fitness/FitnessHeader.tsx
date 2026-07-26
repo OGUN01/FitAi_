@@ -48,8 +48,7 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
         <Text
           style={styles.greeting}
           numberOfLines={1}
-          adjustsFontSizeToFit={true}
-          minimumFontScale={0.7}
+          ellipsizeMode="tail"
         >
           {getGreeting()}, {userName}
         </Text>
@@ -70,10 +69,8 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
         </View>
       </View>
 
-      {/* Right: Notifications / Calendar quick access.
-          Kept as a circular glass button with a progress % badge in the corner
-          per the target design. Bell icon surfaces the week's workout progress;
-          tap opens the calendar view (existing handler). */}
+      {/* Right: Calendar quick access. Icon, label, and handler all unified
+          on calendar semantics. */}
       <AnimatedPressable
         onPress={onCalendarPress}
         scaleValue={0.92}
@@ -85,7 +82,7 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
       >
         <View style={styles.calendarIconContainer}>
           <Ionicons
-            name="notifications-outline"
+            name="calendar-outline"
             size={rf(20)}
             color={colors.text}
           />
@@ -167,6 +164,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1.5,
     borderColor: `${colors.primary}60`,
+    // Allow the progress badge (bottom:-4/right:-4) to render outside the
+    // container bounds without being clipped.
+    overflow: "visible",
   },
   progressIndicator: {
     position: "absolute",
@@ -183,11 +183,11 @@ const styles = StyleSheet.create({
   },
   progressIndicatorDone: {
     backgroundColor: colors.successAlt,
-    minWidth: rw(18),
+    minWidth: rw(28),
     paddingHorizontal: rp(2),
   },
   progressIndicatorText: {
-    fontSize: rf(10),
+    fontSize: rf(11),
     fontWeight: "700",
     color: colors.white,
   },

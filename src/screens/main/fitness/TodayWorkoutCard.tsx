@@ -199,43 +199,34 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                       : workout?.title ||
                         (isToday ? "Today's Workout" : "No Workout")}
                   </Text>
+                </View>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    { backgroundColor: `${config.color}20` },
+                  ]}
+                >
                   <View
                     style={[
-                      styles.statusBadge,
-                      { backgroundColor: `${config.color}20` },
+                      styles.statusDot,
+                      { backgroundColor: config.color },
                     ]}
+                  />
+                  <Text
+                    style={[styles.statusText, { color: config.color }]}
+                    numberOfLines={1}
                   >
-                    <View
-                      style={[
-                        styles.statusDot,
-                        { backgroundColor: config.color },
-                      ]}
-                    />
-                    <Text
-                      style={[styles.statusText, { color: config.color }]}
-                      numberOfLines={1}
-                    >
-                      {config.label}
-                    </Text>
-                  </View>
+                    {config.label}
+                  </Text>
                 </View>
 
-                  {!isRestDay && workout && (
+                {!isRestDay && workout && (
                   <Text style={styles.metaRow} numberOfLines={2}>
-                    <Text style={styles.metaText}>
-                      <Ionicons name="time-outline" size={rf(11)} color={colors.textSecondary} /> {workout.duration} min
-                    </Text>
-                    <Text style={styles.metaText}>{META_BULLET}</Text>
-                    <Text style={styles.metaText}>
-                      {exerciseCount} exercises
-                    </Text>
-                    <Text style={styles.metaText}>{META_BULLET}</Text>
-                    <Text style={styles.metaText}>
-                      <Ionicons name="flame-outline" size={rf(11)} color={colors.textSecondary} />{" "}
-                      {displayCalories !== undefined
+                    {`${workout.duration} min${META_BULLET}${exerciseCount} exercises${META_BULLET}${
+                      displayCalories !== undefined
                         ? displayCalories
-                        : (workout.estimatedCalories || 0)}{" "}kcal
-                    </Text>
+                        : workout.estimatedCalories || 0
+                    } kcal`}
                   </Text>
                 )}
 
@@ -347,7 +338,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.primary,
     textTransform: "uppercase",
-    letterSpacing: 1,
+    letterSpacing: 0.5,
     marginBottom: spacing.xs,
   },
   dayIndicator: {
@@ -369,6 +360,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: spacing.sm,
     flexWrap: "nowrap",
+    marginBottom: rp(2),
   },
   title: {
     fontSize: rf(17),
@@ -381,11 +373,12 @@ const styles = StyleSheet.create({
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
+    alignSelf: "flex-start",
     gap: rp(5),
     paddingHorizontal: spacing.sm,
     paddingVertical: rp(4),
     borderRadius: borderRadius.full,
-    flexShrink: 0,
+    marginBottom: spacing.sm,
     minHeight: 24,
   },
   statusDot: {
@@ -399,6 +392,7 @@ const styles = StyleSheet.create({
   },
   metaRow: {
     fontSize: rf(12),
+    color: colors.textSecondary,
     marginTop: spacing.sm,
   },
   metaText: {
@@ -430,8 +424,8 @@ const styles = StyleSheet.create({
   },
   // GAP-15: last performed label
   lastPerformedText: {
-    fontSize: rf(11),
-    color: colors.textSecondary,
+    fontSize: rf(12),
+    color: colors.text,
     marginTop: spacing.xs,
     fontStyle: 'italic',
   },
@@ -446,6 +440,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: spacing.md + 2,
     paddingHorizontal: spacing.lg,
+    minHeight: 44,
   },
   actionButtonText: {
     fontSize: rf(15),

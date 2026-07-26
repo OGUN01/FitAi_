@@ -72,8 +72,17 @@ export const calculateChartBounds = (data: Array<{ value: number }>) => {
   return { chartMax, chartMin, chartRange };
 };
 
+/**
+ * Calculate the trend for a chart dataset.
+ *
+ * @param data     Array of `{ value }` points.
+ * @param lowerIsBetter  When true (e.g. weight-loss goals), a negative trend
+ *                       (value decreasing) is treated as positive progress.
+ *                       Defaults to false (gain = positive).
+ */
 export const calculateTrend = (
   data: Array<{ value: number }>,
+  lowerIsBetter: boolean = false,
 ): {
   trend: number;
   trendPercent: string;
@@ -90,7 +99,8 @@ export const calculateTrend = (
   const trend = data[data.length - 1].value - data[0].value;
   const trendPercent =
     data[0].value > 0 ? ((trend / data[0].value) * 100).toFixed(1) : "0";
-  const isPositiveTrend = trend >= 0;
+  // Goal-aware: for weight-loss contexts, a downward trend is good.
+  const isPositiveTrend = lowerIsBetter ? trend <= 0 : trend >= 0;
 
   return { trend, trendPercent, isPositiveTrend };
 };

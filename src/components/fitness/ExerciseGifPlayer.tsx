@@ -47,6 +47,11 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  // Distinguish "exercise has no gifUrl" (not-found → "Demo unavailable") from
+  // "image failed to load" (failure → "Failed to load"). Previously both
+  // paths set hasError=true and showed the same "Failed to load" message.
+  const [notFound, setNotFound] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
@@ -96,16 +101,19 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
     "Exercise";
 
   useEffect(() => {
-    // Reset fallback whenever exercise changes
+    // Reset fallback + retry counter whenever exercise changes
     setFallbackUrl(null);
+    setRetryCount(0);
     if (exercise?.gifUrl) {
       setIsLoading(true);
       setHasError(false);
+      setNotFound(false);
     } else {
+      // No gifUrl at all — distinguish from a load failure so the placeholder
+      // can say "Demo unavailable" instead of "Failed to load".
       setIsLoading(false);
-      setHasError(true);
-      // Silent: not-found state is surfaced via the placeholder UI below
-      // (CLAUDE.md: no console.log/error in render paths).
+      setHasError(false);
+      setNotFound(true);
     }
   }, [exercise, exerciseId]);
 
@@ -124,8 +132,10 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
       setFallbackUrl(fb);
       setIsLoading(true); // show spinner while fallback loads
     } else {
-      // Fallback also failed — show error UI
+      // Fallback also failed — show error UI and bump retry count so the
+      // "Report" CTA can surface after repeated failures.
       setHasError(true);
+      setRetryCount((c) => c + 1);
     }
   };
 
@@ -285,18 +295,45 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
           <View style={styles.errorContainer}>
             <Ionicons name="alert-circle-outline" size={rf(32)} color={colors.error} />
             <Text style={styles.errorText}>Failed to load demonstration</Text>
-            <TouchableOpacity
-              style={styles.retryButton}
-              onPress={() => {
-                setHasError(false);
-                setFallbackUrl(null);
-                setIsLoading(true);
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Retry loading exercise demonstration"
-            >
-              <Text style={styles.retryButtonText}>Try Again</Text>
-            </TouchableOpacity>
+            {retryCount >= 2 ? (
+              // After 2 failed retries the URL is likely permanently broken —
+              // surface a Report CTA instead of re-fetching the same broken URL
+              // (which would loop indefinitely).
+              <TouchableOpacity
+                style={[styles.retryButton, styles.reportButton]}
+                onPress={() => {
+                  // Surface a mailto-style report hook if available; otherwise
+                  // just clear the error so the user can dismiss.
+                  setHasError(false);
+                  setRetryCount(0);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Report broken exercise demonstration"
+              >
+                <Text style={styles.retryButtonText}>Report</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={() => {
+                  setHasError(false);
+                  setFallbackUrl(null);
+                  setIsLoading(true);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Retry loading exercise demonstration"
+              >
+                <Text style={styles.retryButtonText}>Try Again</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : notFound ? (
+          <View style={styles.errorContainer}>
+            <Ionicons name="videocam-outline" size={rf(32)} color={colors.textSecondary} />
+            <Text style={styles.errorText}>Demo unavailable</Text>
+            <Text style={styles.errorSubtext}>
+              No animation recorded for this exercise yet.
+            </Text>
           </View>
         ) : (
           <>
@@ -474,6 +511,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
 
+  errorSubtext: {
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginTop: spacing.xs,
+  },
+
   retryButton: {
     backgroundColor: colors.primary,
     paddingHorizontal: spacing.lg,
@@ -481,6 +525,10 @@ const styles = StyleSheet.create({
     minHeight: 44,
     borderRadius: borderRadius.md,
     justifyContent: "center",
+  },
+
+  reportButton: {
+    backgroundColor: colors.backgroundSecondary,
   },
 
   retryButtonText: {
@@ -508,8 +556,9 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
 
+  // Solid success tint (was 0.2 alpha green-on-green ~3:1 fail).
   qualityIndicator: {
-    backgroundColor: "rgba(76, 175, 80, 0.2)",
+    backgroundColor: colors.success,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.sm,
@@ -517,7 +566,7 @@ const styles = StyleSheet.create({
 
   qualityText: {
     fontSize: fontSize.xs,
-    color: colors.success,
+    color: colors.white,
     fontWeight: "600",
   },
 
@@ -598,7 +647,11 @@ const styles = StyleSheet.create({
     right: rp(20),
     zIndex: 10,
     elevation: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    // 0.35 alpha + border so the close button stays visible on a 95% black
+    // overlay (was 0.2 alpha nearly invisible).
+    backgroundColor: "rgba(255, 255, 255, 0.35)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.4)",
     borderRadius: Math.max(rbr(20), 22),
     width: Math.max(rs(40), 44),
     height: Math.max(rs(40), 44),

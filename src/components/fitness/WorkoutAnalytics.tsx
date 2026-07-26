@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../ui";
 import { AuroraSpinner } from "../ui/aurora";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { rf, rp } from "../../utils/responsive";
+import { rf, rp, rh } from "../../utils/responsive";
 import { useFitnessData } from "../../hooks/useFitnessData";
 
 interface WorkoutAnalyticsProps {
@@ -110,7 +110,7 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollArea}>
         <View style={styles.statsGrid}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>
@@ -145,26 +145,30 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
           </View>
         </View>
 
-        {workoutStats?.workoutsByType &&
-          Object.keys(workoutStats.workoutsByType).length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Workout Types</Text>
-              <View style={styles.workoutTypesContainer}>
-                {Object.entries(workoutStats.workoutsByType).map(
-                  ([type, count]) => (
-                    <View key={type} style={styles.workoutTypeItem}>
-                      <View style={styles.workoutTypeHeader}>
-                        <Text style={styles.workoutTypeName}>
-                          {getWorkoutTypeLabel(type)}
-                        </Text>
-                      </View>
-                      <Text style={styles.workoutTypeCount}>{count}</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Workout Types</Text>
+          <View style={styles.workoutTypesContainer}>
+            {workoutStats?.workoutsByType &&
+            Object.keys(workoutStats.workoutsByType).length > 0 ? (
+              Object.entries(workoutStats.workoutsByType).map(
+                ([type, count]) => (
+                  <View key={type} style={styles.workoutTypeItem}>
+                    <View style={styles.workoutTypeHeader}>
+                      <Text style={styles.workoutTypeName}>
+                        {getWorkoutTypeLabel(type)}
+                      </Text>
                     </View>
-                  ),
-                )}
-              </View>
-            </View>
-          )}
+                    <Text style={styles.workoutTypeCount}>{count}</Text>
+                  </View>
+                ),
+              )
+            ) : (
+              <Text style={styles.emptySectionText}>
+                No workout types yet. Complete a workout to see your breakdown.
+              </Text>
+            )}
+          </View>
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Insights</Text>
@@ -199,12 +203,18 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
                 )}
 
                 {workoutStats &&
-                  Object.keys(workoutStats.workoutsByType).length > 2 && (
-                    <Text style={styles.insightText}>
-                      Excellent variety. You're training different muscle
-                      groups and fitness aspects.
-                    </Text>
-                  )}
+                Object.keys(workoutStats.workoutsByType).length > 2 ? (
+                  <Text style={styles.insightText}>
+                    Excellent variety. You're training different muscle
+                    groups and fitness aspects.
+                  </Text>
+                ) : (
+                  // Fallback insight — without this the section title renders
+                  // with no content when none of the above conditions hit.
+                  <Text style={styles.insightText}>
+                    Keep going — every workout moves you closer to your goals.
+                  </Text>
+                )}
               </>
             )}
           </View>
@@ -270,8 +280,23 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
 
+  // Cap the scroll area so the analytics card doesn't grow to fill the whole
+  // screen when nested inside a parent ScrollView.
+  scrollArea: {
+    maxHeight: rh(400),
+  },
+
+  emptySectionText: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    textAlign: "center",
+    paddingVertical: spacing.md,
+  },
+
+  // flexBasis 48% (not 50%) leaves room for the row gap so two-per-row never
+  // overflows to a third column on narrow screens.
   statItem: {
-    width: "50%",
+    flexBasis: "48%",
     alignItems: "center",
     paddingVertical: spacing.md,
   },

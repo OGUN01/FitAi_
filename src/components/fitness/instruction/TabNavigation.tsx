@@ -1,6 +1,7 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
+import { AnimatedPressable } from "../../ui/aurora/AnimatedPressable";
 
 interface TabNavigationProps {
   activeTab: "instructions" | "details";
@@ -13,9 +14,15 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
 }) => {
   return (
     <View style={styles.tabContainer}>
-      <TouchableOpacity
+      <AnimatedPressable
         style={[styles.tab, activeTab === "instructions" && styles.activeTab]}
         onPress={() => onTabChange("instructions")}
+        scaleValue={0.96}
+        springConfig="snappy"
+        hapticType="selection"
+        accessibilityRole="tab"
+        accessibilityState={{ selected: activeTab === "instructions" }}
+        accessibilityLabel="Show instructions tab"
       >
         <Text
           style={[
@@ -25,10 +32,16 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
         >
           Instructions
         </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
+      </AnimatedPressable>
+      <AnimatedPressable
         style={[styles.tab, activeTab === "details" && styles.activeTab]}
         onPress={() => onTabChange("details")}
+        scaleValue={0.96}
+        springConfig="snappy"
+        hapticType="selection"
+        accessibilityRole="tab"
+        accessibilityState={{ selected: activeTab === "details" }}
+        accessibilityLabel="Show details tab"
       >
         <Text
           style={[
@@ -38,7 +51,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
         >
           Details
         </Text>
-      </TouchableOpacity>
+      </AnimatedPressable>
     </View>
   );
 };
@@ -72,7 +85,9 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
 
+  // White text on the orange primary background — colors.surface (dark) was
+  // ~3.2:1 borderline; white gives >4.5:1 AA pass.
   activeTabText: {
-    color: colors.surface,
+    color: colors.white,
   },
 });

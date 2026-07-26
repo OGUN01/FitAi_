@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import Animated, {
   useAnimatedStyle,
+  useSharedValue,
   withSpring,
   withDelay,
 } from "react-native-reanimated";
@@ -29,14 +30,22 @@ interface ZoneRowProps {
 }
 
 const ZoneRow: React.FC<ZoneRowProps> = ({ zone, index }) => {
-  const animatedStyle = useAnimatedStyle(() => ({
-    width: withDelay(
+  // Reanimated's withSpring animates numbers, not strings — pass the numeric
+  // percentage and interpolate to a width string at render.
+  const animatedWidth = useSharedValue(0);
+
+  useEffect(() => {
+    animatedWidth.value = withDelay(
       index * 100,
-      withSpring(`${zone.percentage}%`, {
+      withSpring(zone.percentage, {
         damping: 20,
         stiffness: 90,
       }),
-    ),
+    );
+  }, [index, zone.percentage, animatedWidth]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    width: `${animatedWidth.value}%`,
   }));
 
   return (
@@ -58,7 +67,16 @@ const ZoneRow: React.FC<ZoneRowProps> = ({ zone, index }) => {
           ]}
         >
           {zone.percentage > 10 && (
-            <Text style={styles.zonePercentage}>
+            <Text
+              style={[
+                styles.zonePercentage,
+                // White text fails AA on yellow/warning zones — use dark text.
+                (zone.color === colors.warning ||
+                  zone.color === colors.warningAlt)
+                  ? styles.zonePercentageDark
+                  : null,
+              ]}
+            >
               {zone.percentage}%
             </Text>
           )}
@@ -113,7 +131,7 @@ export const HEART_RATE_ZONE_COLORS = {
   zone1: colors.info, // Light blue - Recovery
   zone2: colors.success, // Green - Fat burn
   zone3: colors.warning, // Yellow - Cardio
-  zone4: colors.warning, // Orange - Hard
+  zone4: colors.warningAlt, // Orange - Hard (distinct from zone3)
   zone5: colors.error, // Red - Max
 };
 
@@ -180,7 +198,8 @@ const styles = StyleSheet.create({
   },
 
   zoneInfo: {
-    width: rp(100),
+    flexShrink: 0,
+    minWidth: rp(100),
   },
 
   zoneNumber: {
@@ -222,6 +241,10 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
 
+  zonePercentageDark: {
+    color: colors.black,
+  },
+
   zonePercentageOutside: {
     fontSize: fontSize.xs,
     fontWeight: typography.fontWeight.semibold,
@@ -247,7 +270,7 @@ const styles = StyleSheet.create({
   },
 
   legendGrid: {
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
 
   legendItem: {

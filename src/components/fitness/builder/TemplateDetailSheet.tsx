@@ -100,6 +100,28 @@ export interface TemplateDetailSheetProps {
 const fw = (w: string): TextStyle["fontWeight"] =>
   w as TextStyle["fontWeight"];
 
+/**
+ * Convert a hex color (`#RRGGBB` or `#RGB`) to an `rgba()` string with the
+ * given alpha. Replaces fragile `${color}1F` hex-append which silently breaks
+ * if the input is ever switched to an `rgba()`/named color.
+ */
+function hexToRgba(hex: string, alpha: number): string {
+  let h = hex.replace("#", "");
+  if (h.length === 3) {
+    h = h
+      .split("")
+      .map((c) => c + c)
+      .join("");
+  }
+  const r = parseInt(h.slice(0, 2), 16) || 0;
+  const g = parseInt(h.slice(2, 4), 16) || 0;
+  const b = parseInt(h.slice(4, 6), 16) || 0;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+/** 12% tint for badge backgrounds (was `${tint}1F`). */
+const BADGE_TINT_ALPHA = 0.12;
+
 const DIFFICULTY_TINT: Record<
   NonNullable<WorkoutTemplate["difficulty"]>,
   string
@@ -394,7 +416,14 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
           <View testID={`${testID ?? "template-detail"}-${template.id}`}>
             {/* Header */}
             <Animated.View entering={FadeInDown.delay(60).duration(300)}>
-              <Text style={styles.name}>{template.name}</Text>
+              <Text
+                style={styles.name}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
+                {template.name}
+              </Text>
 
               {/* Author (community templates) — v2 author profiles placeholder.
                   Tap is a no-op; the row is styled to look disabled with a
@@ -550,7 +579,9 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
               </Animated.View>
             ) : null}
 
-            {/* Actions */}
+            {/* Actions — primary actions stay full-width; secondary actions
+                (Fork/Rate/Share) collapse into a 2-column grid so the section
+                doesn't grow to 5 stacked full-width buttons. */}
             <Animated.View
               entering={FadeInDown.delay(420).duration(300)}
               style={styles.actions}
@@ -577,47 +608,44 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
                 />
               </View>
 
-              {isCommunity ? (
-                <View style={styles.actionRow}>
-                  <GlassButton
-                    label={forked ? "Forked ✓" : "Fork to Library"}
-                    onPress={handleFork}
-                    variant={forked ? "success" : "secondary"}
-                    icon={forked ? "checkmark-circle-outline" : "git-branch-outline"}
-                    loading={forking}
-                    disabled={forked}
-                    fullWidth
-                    hapticType="medium"
-                    testID="detail-fork-button"
-                  />
-                </View>
-              ) : null}
-
-              {isCommunity ? (
-                <View style={styles.actionRow}>
-                  <GlassButton
-                    label="Rate this template"
-                    onPress={handleOpenRating}
-                    variant="secondary"
-                    icon="star-outline"
-                    fullWidth
-                    hapticType="light"
-                    testID="detail-rate-button"
-                  />
-                </View>
-              ) : null}
-
-              {isOwned ? (
-                <View style={styles.actionRow}>
-                  <GlassButton
-                    label={shared ? "Shared ✓" : "Share"}
-                    onPress={handleShare}
-                    variant={shared ? "success" : "secondary"}
-                    icon={shared ? "checkmark-circle-outline" : "share-outline"}
-                    fullWidth
-                    hapticType="light"
-                    testID="detail-share-button"
-                  />
+              {/* Secondary actions grid (2 per row). Hidden if none apply. */}
+              {isCommunity || isOwned ? (
+                <View style={styles.secondaryActionsGrid}>
+                  {isCommunity ? (
+                    <GlassButton
+                      label={forked ? "Forked ✓" : "Fork"}
+                      onPress={handleFork}
+                      variant={forked ? "success" : "secondary"}
+                      icon={forked ? "checkmark-circle-outline" : "git-branch-outline"}
+                      loading={forking}
+                      disabled={forked}
+                      hapticType="medium"
+                      style={styles.secondaryActionBtn}
+                      testID="detail-fork-button"
+                    />
+                  ) : null}
+                  {isCommunity ? (
+                    <GlassButton
+                      label="Rate"
+                      onPress={handleOpenRating}
+                      variant="secondary"
+                      icon="star-outline"
+                      hapticType="light"
+                      style={styles.secondaryActionBtn}
+                      testID="detail-rate-button"
+                    />
+                  ) : null}
+                  {isOwned ? (
+                    <GlassButton
+                      label={shared ? "Shared ✓" : "Share"}
+                      onPress={handleShare}
+                      variant={shared ? "success" : "secondary"}
+                      icon={shared ? "checkmark-circle-outline" : "share-outline"}
+                      hapticType="light"
+                      style={styles.secondaryActionBtn}
+                      testID="detail-share-button"
+                    />
+                  ) : null}
                 </View>
               ) : null}
             </Animated.View>
@@ -713,7 +741,7 @@ interface BadgeProps {
 }
 
 const Badge: React.FC<BadgeProps> = ({ label, tint }) => (
-  <View style={[styles.badge, { backgroundColor: `${tint}1F` }]}>
+  <View style={[styles.badge, { backgroundColor: hexToRgba(tint, BADGE_TINT_ALPHA) }]}>
     <Text style={[styles.badgeText, { color: tint }]}>{label}</Text>
   </View>
 );
@@ -731,7 +759,7 @@ interface StatTileProps {
 
 const StatTile: React.FC<StatTileProps> = ({ icon, value, label, tint }) => (
   <View style={styles.statTile}>
-    <View style={[styles.statTileIcon, { backgroundColor: `${tint}1F` }]}>
+    <View style={[styles.statTileIcon, { backgroundColor: hexToRgba(tint, BADGE_TINT_ALPHA) }]}>
       <Ionicons name={icon} size={rf(typography.fontSize.body)} color={tint} />
     </View>
     <Text style={styles.statTileValue} numberOfLines={1}>
@@ -924,6 +952,19 @@ const styles = StyleSheet.create({
   },
   actionRow: {
     marginTop: rp(spacing.sm),
+  },
+  // Secondary actions (Fork/Rate/Share) lay out 2-per-row so the section
+  // doesn't stack 5 full-width buttons into an over-tall tail.
+  secondaryActionsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: rp(spacing.sm),
+    marginTop: rp(spacing.sm),
+  },
+  secondaryActionBtn: {
+    flexGrow: 1,
+    flexBasis: rp(140),
+    minWidth: rp(120),
   },
 });
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, PropsWithChildren } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Platform, KeyboardAvoidingView } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Modal } from "react-native";
 import { Card } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rs, rh } from "../../utils/responsive";
@@ -90,13 +90,16 @@ export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
     }
   };
 
-  // Calculate progress percentage (guard against zero duration)
-  const safeDuration = Math.max(1, Number.isFinite(duration) ? duration : 0);
+  // Calculate progress percentage (guard against zero duration). When duration
+  // is 0 the timer has no work to do — render null instead of showing "100%
+  // Complete" misleadingly.
+  if (!isVisible) return null;
+  if (!duration || duration <= 0 || !Number.isFinite(duration)) return null;
+
+  const safeDuration = Math.max(1, duration);
   const progressPercentage =
     ((safeDuration - Math.min(timeRemaining, safeDuration)) / safeDuration) *
     100;
-
-  if (!isVisible) return null;
 
   return (
     <Modal
@@ -105,11 +108,7 @@ export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
       animationType="fade"
       onRequestClose={onCancel}
     >
-      <KeyboardAvoidingView
-        behavior="padding"
-        keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
-        style={styles.overlay}
-      >
+        <View style={styles.overlay}>
         <View style={styles.overlayInner}>
           <Card style={styles.timerCard} variant="elevated">
             <View style={styles.timerContent}>
@@ -125,8 +124,14 @@ export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
                   <View
                     style={[
                       styles.progressFill,
+                      // Merge baseline -90deg with the progress rotation in a
+                      // single transform array — the previous inline
+                      // `transform: [{ rotate }]` overwrote the baseline.
                       {
-                        transform: [{ rotate: `${progressPercentage * 3.6}deg` }],
+                        transform: [
+                          { rotate: "-90deg" },
+                          { rotate: `${progressPercentage * 3.6}deg` },
+                        ],
                       },
                     ]}
                   />
@@ -230,7 +235,7 @@ export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
             </View>
           </Card>
         </View>
-      </KeyboardAvoidingView>
+        </View>
     </Modal>
   );
 };
@@ -304,7 +309,9 @@ const styles = StyleSheet.create({
     fontSize: rf(48),
     fontWeight: typography.fontWeight.bold,
     color: colors.text,
-    fontFamily: "monospace",
+    // "monospace" family may not exist on all platforms; fontVariant keeps the
+    // digits tabular so the countdown doesn't jitter.
+    fontVariant: ["tabular-nums"],
   },
 
   timeLabel: {

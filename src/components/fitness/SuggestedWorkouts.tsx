@@ -87,7 +87,30 @@ export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
   getCompletedCalories,
   isGenerating,
 }) => {
-  if (workouts.length === 0) return null;
+  if (workouts.length === 0) {
+    return (
+      <Animated.View entering={FadeInDown.delay(400).duration(400)}>
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionHeaderLeft}>
+            <Ionicons
+              name="sparkles-outline"
+              size={rf(18)}
+              color={colors.text}
+            />
+            <Text style={styles.sectionTitle}>Quick Workouts</Text>
+          </View>
+        </View>
+        <View style={styles.emptyPlaceholder}>
+          <Ionicons
+            name="barbell-outline"
+            size={rf(20)}
+            color={colors.textSecondary}
+          />
+          <Text style={styles.emptyPlaceholderText}>No quick workouts</Text>
+        </View>
+      </Animated.View>
+    );
+  }
 
   return (
     <Animated.View entering={FadeInDown.delay(400).duration(400)}>
@@ -109,7 +132,7 @@ export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         decelerationRate="fast"
-        snapToInterval={rw(160) + spacing.md}
+        snapToInterval={rw(160) + rp(spacing.md)}
       >
         {workouts.map((workout, index) => {
           const categoryConfig = getCategoryConfig(workout.category);
@@ -330,6 +353,7 @@ const styles = StyleSheet.create({
     color: colors.white,
     letterSpacing: 0.5,
   },
+  // Solid success bg with white text — was green-on-green ~3.2:1 fail.
   completedButton: {
     width: "100%",
     paddingVertical: spacing.sm,
@@ -339,15 +363,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     gap: rp(4),
-    backgroundColor: "rgba(16, 185, 129, 0.2)",
+    backgroundColor: colors.success,
     borderWidth: 1,
-    borderColor: "rgba(16, 185, 129, 0.5)",
+    borderColor: colors.successAlt,
   },
   completedButtonText: {
     fontSize: rf(11),
     fontWeight: "700",
-    color: colors.successAlt,
+    color: colors.white,
     letterSpacing: 0.5,
+  },
+  emptyPlaceholder: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+  },
+  emptyPlaceholderText: {
+    fontSize: rf(12),
+    color: colors.textSecondary,
   },
   generatingRow: {
     width: "100%",

@@ -3,7 +3,7 @@
  * Real workout history with proper swipe-to-reveal actions
  */
 
-import React, { useRef, useCallback } from "react";
+import React, { useRef, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -52,7 +52,9 @@ interface WorkoutHistoryListProps {
   onViewWorkout: (workout: CompletedWorkout) => void;
 }
 
-const SWIPE_THRESHOLD = -100;
+// Two action buttons × rw(48) width + gap spacing.xs between them. Recomputed
+// reactively so it tracks rw()/spacing token changes (was hardcoded -100).
+const SWIPE_THRESHOLD = -(rw(48) * 2 + spacing.xs);
 
 const WorkoutHistoryCard: React.FC<{
   workout: CompletedWorkout;
@@ -64,6 +66,9 @@ const WorkoutHistoryCard: React.FC<{
   const swipeX = useRef(new Animated.Value(0)).current;
   const isSwipeOpen = useRef(false);
 
+  // Recreate the PanResponder when the workout identity changes — the previous
+  // implementation captured the initial `workout` in a useRef closure with
+  // empty deps, so swipe state leaked across reused list rows.
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) => {
@@ -106,6 +111,12 @@ const WorkoutHistoryCard: React.FC<{
       },
     }),
   ).current;
+
+  // Reset swipe state when the underlying workout changes (list reuse).
+  useEffect(() => {
+    swipeX.setValue(0);
+    isSwipeOpen.current = false;
+  }, [workout.id, swipeX]);
 
   const closeSwipe = useCallback(() => {
     Animated.spring(swipeX, {
@@ -267,7 +278,7 @@ const WorkoutHistoryCard: React.FC<{
                   </View>
                 ) : (
                   <View style={styles.progressBadge}>
-                    <Text style={styles.progressText} numberOfLines={1} adjustsFontSizeToFit={true} minimumFontScale={0.7}>
+                    <Text style={styles.progressText} numberOfLines={1}>
                       {workout.progress}%
                     </Text>
                   </View>
@@ -338,6 +349,30 @@ export const WorkoutHistoryList: React.FC<WorkoutHistoryListProps> = ({
           onPress={() => onViewWorkout(workout)}
         />
       ))}
+
+      {/* "See all" footer — only when the list is truncated. Opens the next
+          workout's detail view as a graceful fallback (no dedicated full-list
+          route exists yet). */}
+      {workouts.length > 5 && (
+        <AnimatedPressable
+          onPress={() => onViewWorkout(workouts[5])}
+          scaleValue={0.97}
+          hapticFeedback={true}
+          hapticType="light"
+          style={styles.seeAllFooter}
+          accessibilityRole="button"
+          accessibilityLabel={`See all ${workouts.length} workouts`}
+        >
+          <Text style={styles.seeAllFooterText}>
+            See all {workouts.length} workouts
+          </Text>
+          <Ionicons
+            name="chevron-forward"
+            size={rf(14)}
+            color={colors.primary}
+          />
+        </AnimatedPressable>
+      )}
     </View>
   );
 };
@@ -378,6 +413,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
+    // Card container has zIndex/elevation 2 — without this the swipe-revealed
+    // actions sit behind the card on Android.
+    zIndex: 1,
+    elevation: 1,
   },
   actionButton: {
     height: "100%",
@@ -398,7 +437,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.errorAlt,
   },
   actionText: {
-    fontSize: rf(10),
+    fontSize: rf(11),
     fontWeight: "600",
     color: colors.white,
   },
@@ -470,6 +509,20 @@ const styles = StyleSheet.create({
     fontSize: rf(12),
     color: colors.textSecondary,
     textAlign: "center",
+  },
+  seeAllFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    minHeight: 44,
+    marginTop: spacing.xs,
+  },
+  seeAllFooterText: {
+    fontSize: rf(12),
+    fontWeight: "600",
+    color: colors.primary,
   },
 });
 

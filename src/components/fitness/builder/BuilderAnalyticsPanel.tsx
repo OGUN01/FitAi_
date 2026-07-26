@@ -36,6 +36,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInDown, Layout } from "react-native-reanimated";
 import { GlassCard } from "../../ui/aurora/GlassCard";
 import { MuscleHeatmap, type MuscleVolumeEntry } from "./MuscleHeatmap";
+import { CURATED_EXERCISES } from "../../../data/curatedExercises";
 import { useAnalyticsStore } from "../../../stores/analyticsStore";
 import { useFitnessStore } from "../../../stores/fitnessStore";
 import { haptics } from "../../../utils/haptics";
@@ -64,6 +65,12 @@ interface BuilderAnalyticsPanelProps {
 const fw = (
   w: (typeof typography.fontWeight)[keyof typeof typography.fontWeight],
 ): TextStyle["fontWeight"] => String(w) as TextStyle["fontWeight"];
+
+// Module-level lookup map so the heatmap can resolve muscle groups per
+// exercise id without scanning the full curated array per history entry.
+const CURATED_EXERCISES_BY_ID: ReadonlyMap<string, (typeof CURATED_EXERCISES)[number]> = new Map(
+  CURATED_EXERCISES.map((c) => [c.id, c]),
+);
 
 /** ISO date → YYYY-MM-DD week-start (Monday) bucket key. */
 function weekStartKey(dateStr: string): string {
@@ -284,8 +291,17 @@ export const BuilderAnalyticsPanel: React.FC<BuilderAnalyticsPanelProps> = ({
     [exerciseVolumeHistory],
   );
 
+  // ── Heatmap lookup: resolve muscle groups for each history entry via the
+  // curated exercise library. Falls back to an empty list when the exercise
+  // isn't in the curated set (e.g. user-deleted or custom entries) so those
+  // rows simply don't contribute to the heatmap rather than crashing.
   const heatmapData = useMemo(
-    () => aggregateMuscleHeatmap(exerciseVolumeHistory, () => [], 4),
+    () =>
+      aggregateMuscleHeatmap(
+        exerciseVolumeHistory,
+        (exerciseId) => CURATED_EXERCISES_BY_ID.get(exerciseId)?.muscleGroups ?? [],
+        4,
+      ),
     [exerciseVolumeHistory],
   );
 
@@ -407,7 +423,6 @@ export const BuilderAnalyticsPanel: React.FC<BuilderAnalyticsPanelProps> = ({
               style={styles.body}
               contentContainerStyle={styles.bodyContent}
               showsVerticalScrollIndicator={false}
-              scrollEnabled={false}
             >
               {/* (d) Consistency + streak + (e) estimated growth + (f) time invested */}
               <View style={styles.statRow}>

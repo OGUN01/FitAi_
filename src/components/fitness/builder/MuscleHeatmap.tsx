@@ -68,8 +68,14 @@ function intensityColor(intensity: number): string {
 
 /** Whether a cell color is "light" enough to require dark text for contrast. */
 function isLightCell(color: string): boolean {
-  // Light backgrounds (low intensity green) need dark text per WCAG AA.
-  return color === colors.success.DEFAULT;
+  // All non-empty intensity colors (green / orange / primary-orange) are
+  // light-hued enough that white text drops below WCAG AA. Use dark text on
+  // every filled cell. Empty glass cells keep the default light text.
+  return (
+    color === colors.success.DEFAULT ||
+    color === colors.warning.DEFAULT ||
+    color === colors.primary.DEFAULT
+  );
 }
 
 /** Human-readable volume label. */
@@ -221,7 +227,7 @@ const fw = (
   w: (typeof typography.fontWeight)[keyof typeof typography.fontWeight],
 ): TextStyle["fontWeight"] => String(w) as TextStyle["fontWeight"];
 
-const cellSize = Math.max(rw(40), 40);
+const cellSize = Math.max(rw(40), 44);
 
 const styles = StyleSheet.create({
   scrollContainer: {
@@ -280,7 +286,10 @@ const styles = StyleSheet.create({
     fontWeight: fw(typography.fontWeight.bold),
   } as TextStyle,
   cellValueTextDark: {
-    color: colors.text.primary,
+    // Dark text required for WCAG AA contrast on the light-hued filled cells
+    // (green / orange / primary-orange). The default text.primary (#FFFFFF)
+    // drops below 4.5:1 on these backgrounds.
+    color: "#1A1A1A",
   } as TextStyle,
   legend: {
     flexDirection: "row",

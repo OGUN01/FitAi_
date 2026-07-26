@@ -27,6 +27,7 @@ import {
   StyleSheet,
   Pressable,
   FlatList,
+  ScrollView,
   type ListRenderItemInfo,
   type NativeSyntheticEvent,
   type TextInputChangeEventData,
@@ -601,12 +602,22 @@ export const ExercisePickerSheet: React.FC = () => {
 
       {/* ── BODY ── */}
       {hasQuery || hasActiveFilters ? (
-        // Search / filter results
+        // Search / filter results. When the query returns no matches but
+        // filters are active we still show the filtered set (allExercises
+        // already reflects the active filters via searchExercises("", filter)).
+        // When BOTH the query AND the filtered set are empty we surface the
+        // empty state so the user is not left staring at a blank list.
         <FlatList
-          data={searchResults.length > 0 ? searchResults : (hasActiveFilters ? allExercises : [])}
+          data={
+            searchResults.length > 0
+              ? searchResults
+              : hasActiveFilters
+                ? allExercises
+                : []
+          }
           keyExtractor={keyExtractor}
           renderItem={renderSearchResult}
-          ListEmptyComponent={hasQuery || hasActiveFilters ? renderEmpty : null}
+          ListEmptyComponent={renderEmpty}
           contentContainerStyle={styles.listContent}
           onEndReachedThreshold={0.5}
         />
@@ -677,32 +688,43 @@ export const ExercisePickerSheet: React.FC = () => {
                           {aiReasoning}
                         </Text>
                       )}
-                      {aiSuggestions.map((s, i) => (
-                        <Pressable
-                          key={`ai-${s.exerciseId}-${i}`}
-                          onPress={() => handleAddAiSuggestion(s)}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Add AI suggestion: ${s.name}`}
-                          style={styles.aiSuggestionCard}
-                        >
-                          <View style={styles.aiSuggestionHeader}>
-                            <Text style={styles.aiSuggestionName} numberOfLines={1}>
-                              {s.name}
-                            </Text>
-                            <View style={styles.confidenceBadge}>
-                              <Text style={styles.confidenceText}>
-                                {Math.round(s.confidence * 100)}%
+                      {/* Suggestions render inside a ScrollView so a long list
+                          is not clipped by the section's maxHeight. Without
+                          this the cards beyond the height limit are invisible
+                          and unreachable. */}
+                      <ScrollView
+                        style={styles.aiSuggestionsScroll}
+                        contentContainerStyle={styles.aiSuggestionsContent}
+                        showsVerticalScrollIndicator={false}
+                        nestedScrollEnabled
+                      >
+                        {aiSuggestions.map((s, i) => (
+                          <Pressable
+                            key={`ai-${s.exerciseId}-${i}`}
+                            onPress={() => handleAddAiSuggestion(s)}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Add AI suggestion: ${s.name}`}
+                            style={styles.aiSuggestionCard}
+                          >
+                            <View style={styles.aiSuggestionHeader}>
+                              <Text style={styles.aiSuggestionName} numberOfLines={1}>
+                                {s.name}
                               </Text>
+                              <View style={styles.confidenceBadge}>
+                                <Text style={styles.confidenceText}>
+                                  {Math.round(s.confidence * 100)}%
+                                </Text>
+                              </View>
                             </View>
-                          </View>
-                          <Text style={styles.aiSuggestionReason} numberOfLines={2}>
-                            {s.reason}
-                          </Text>
-                          <Text style={styles.aiSuggestionMeta}>
-                            {s.sets} sets · {s.reps} reps · {s.muscleGroup}
-                          </Text>
-                        </Pressable>
-                      ))}
+                            <Text style={styles.aiSuggestionReason} numberOfLines={2}>
+                              {s.reason}
+                            </Text>
+                            <Text style={styles.aiSuggestionMeta}>
+                              {s.sets} sets · {s.reps} reps · {s.muscleGroup}
+                            </Text>
+                          </Pressable>
+                        ))}
+                      </ScrollView>
                       {aiSuggestions.length > 1 && (
                         <GlassButton
                           label="Apply AI Recommendation"
@@ -908,7 +930,7 @@ const styles = StyleSheet.create({
     paddingVertical: rp(spacing.xs),
     borderWidth: 1,
     borderColor: "transparent",
-    minHeight: Math.max(rp(36), 36),
+    minHeight: Math.max(rp(36), 44),
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1004,6 +1026,14 @@ const styles = StyleSheet.create({
     maxHeight: rp(220),
     overflow: "hidden",
   },
+  // Inner ScrollView holds the suggestion cards so a long list scrolls instead
+  // of being clipped by aiSection.maxHeight.
+  aiSuggestionsScroll: {
+    flexGrow: 0,
+  },
+  aiSuggestionsContent: {
+    gap: rp(spacing.xs),
+  },
   aiSectionHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -1011,7 +1041,7 @@ const styles = StyleSheet.create({
   },
   aiSectionTitle: {
     flex: 1,
-    color: colors.primary.DEFAULT,
+    color: colors.text.primary,
     fontSize: rf(typography.fontSize.caption),
     fontWeight: String(typography.fontWeight.bold) as TextStyleWeight,
     textTransform: "uppercase",

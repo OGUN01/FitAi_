@@ -364,7 +364,7 @@ export const SetRow: React.FC<SetRowProps> = ({
           {/* Set-type chip */}
           <Pressable
             onPress={cycleSetType}
-            hitSlop={6}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
             accessibilityRole="button"
             accessibilityLabel={`Set type: ${typeMeta.label}. Tap to cycle.`}
             accessibilityHint="Cycles through Normal, Warmup, Failure, Drop, Superset, Circuit"
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
     paddingVertical: rp(spacing.xs),
     borderRadius: borderRadius.full,
     borderWidth: 1.5,
-    minHeight: Math.max(rp(28), 32),
+    minHeight: Math.max(rp(28), 44),
     alignItems: "center",
     justifyContent: "center",
   },

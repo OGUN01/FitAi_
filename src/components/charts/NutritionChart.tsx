@@ -1,14 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   StyleProp,
   ViewStyle,
+  LayoutChangeEvent,
 } from "react-native";
 import { PieChart } from "react-native-chart-kit";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { rf, rs, rbr, rh } from "../../utils/responsive";
+import { rf, rs, rbr, rh, rw } from "../../utils/responsive";
 
 // REMOVED: Module-level Dimensions.get() causes crash
 // const { width: screenWidth } = Dimensions.get('window');
@@ -33,6 +34,16 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
 }) => {
   // Calculate percentages and prepare chart data
   const totalMacros = data.carbs + data.protein + data.fat;
+
+  // Measure container width so the PieChart is responsive (hardcoded 300
+  // overflowed 320px screens).
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const handleLayout = (e: LayoutChangeEvent) => {
+    const { width } = e.nativeEvent.layout;
+    if (width > 0) setContainerWidth(width);
+  };
+  const chartWidth = containerWidth > 0 ? containerWidth : rw(300);
+  const chartHeight = rh(180);
 
   const chartData = [
     {
@@ -102,44 +113,49 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
   ];
 
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.container, style]} onLayout={handleLayout}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Nutrition Breakdown</Text>
         <View style={styles.caloriesContainer}>
           <Text style={styles.caloriesValue}>{data.calories}</Text>
-          <Text style={styles.caloriesLabel}>/ {targetCalories} cal</Text>
+          <Text style={styles.caloriesLabel}>
+            {targetCalories != null ? `/ ${targetCalories} cal` : "cal"}
+          </Text>
         </View>
       </View>
 
-      {/* Calories Progress Bar */}
-      <View style={styles.progressContainer}>
-        <View style={styles.progressBar}>
-          <View
-            style={[
-              styles.progressFill,
-              {
-                width: `${Math.min(caloriesProgress, 100)}%`,
-                backgroundColor:
-                  caloriesProgress > 100
-                    ? colors.error
-                    : colors.primary,
-              },
-            ]}
-          />
+      {/* Calories Progress Bar — only show when a target is set, otherwise
+          "0% of daily goal" is misleading. */}
+      {targetCalories != null && targetCalories > 0 && (
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBar}>
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  width: `${Math.min(caloriesProgress, 100)}%`,
+                  backgroundColor:
+                    caloriesProgress > 100
+                      ? colors.error
+                      : colors.primary,
+                },
+              ]}
+            />
+          </View>
+          <Text style={styles.progressText}>
+            {caloriesProgress.toFixed(0)}% of daily goal
+          </Text>
         </View>
-        <Text style={styles.progressText}>
-          {caloriesProgress.toFixed(0)}% of daily goal
-        </Text>
-      </View>
+      )}
 
       {/* Pie Chart */}
       {totalMacros > 0 ? (
         <View style={styles.chartContainer}>
           <PieChart
             data={chartData}
-            width={300} // Fixed width for charts
-            height={180}
+            width={chartWidth}
+            height={chartHeight}
             chartConfig={chartConfig}
             accessor="population"
             backgroundColor="transparent"
@@ -293,7 +309,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text,
-    marginBottom: spacing.xs / 2,
+    marginBottom: spacing.xs,
   },
 
   macroPercentage: {

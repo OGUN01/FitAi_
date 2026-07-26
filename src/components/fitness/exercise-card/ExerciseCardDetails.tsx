@@ -10,6 +10,7 @@ interface ExerciseCardDetailsProps {
   workoutSet: WorkoutSet;
   formatTime: (seconds: number) => string;
   getDifficultyIcon: (difficulty: string) => string;
+  getDifficultyColor: (difficulty: string) => string;
 }
 
 const getDifficultyIconName = (icon: string): keyof typeof Ionicons.glyphMap => {
@@ -24,11 +25,12 @@ export const ExerciseCardDetails: React.FC<ExerciseCardDetailsProps> = ({
   workoutSet,
   formatTime,
   getDifficultyIcon,
+  getDifficultyColor,
 }) => {
   return (
     <View style={styles.detailsSection}>
       <View style={styles.detailRow}>
-        <Ionicons name={getDifficultyIconName(getDifficultyIcon(exercise.difficulty))} size={rf(16)} color={colors.textSecondary} style={styles.detailIcon} />
+        <Ionicons name={getDifficultyIconName(getDifficultyIcon(exercise.difficulty))} size={rf(16)} color={getDifficultyColor(exercise.difficulty)} style={styles.detailIcon} />
         <Text style={styles.detailLabel}>Difficulty:</Text>
         <Text style={styles.detailValue}>{exercise.difficulty}</Text>
       </View>

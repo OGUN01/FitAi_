@@ -34,7 +34,7 @@ import { colors, flatColors } from "../../theme/aurora-tokens";
 import { springConfig } from "../../theme/animations";
 import { haptics } from "../../utils/haptics";
 import { useReducedMotion } from "../../utils/accessibility/hooks";
-import { rf, rs } from "../../utils/responsive";
+import { rf, rs, rp, rbr } from "../../utils/responsive";
 
 // ============================================================================
 // TYPES
@@ -245,8 +245,10 @@ export const MuscleBalanceRadar: React.FC<MuscleBalanceRadarProps> = ({
   // Tooltip state (lightweight - tap an axis label to highlight it).
   const [activeAxis, setActiveAxis] = useState<number | null>(null);
 
-  // Font (resolved via matchFont - memoized by size).
-  const axisFont = useMemo(() => buildAxisFont(rf(11)), []);
+  // Font (resolved via matchFont - memoized by size). Re-resolves when the
+  // responsive font size changes (font scale).
+  const axisFontSize = rf(11);
+  const axisFont = useMemo(() => buildAxisFont(axisFontSize), [axisFontSize]);
 
   // Precompute static grid + spoke paths (don't animate).
   const { gridPath, spokesPath } = useMemo(() => {
@@ -402,14 +404,24 @@ export const MuscleBalanceRadar: React.FC<MuscleBalanceRadarProps> = ({
         })}
       </View>
 
-      {/* Tooltip overlay (RN Text - crisp, accessible, sits above canvas) */}
+      {/* Tooltip overlay (RN Text - crisp, accessible, sits above canvas).
+          Clamp position so the tooltip can't overflow the canvas edges. */}
       {activeAxis !== null && activeValue !== null && (
         <View
           style={[
             styles.tooltip,
             {
-              left: labelPositions[activeAxis].x + rf(4),
-              top: labelPositions[activeAxis].y - rf(40),
+              left: Math.max(
+                0,
+                Math.min(
+                  size - rp(80),
+                  labelPositions[activeAxis].x + rf(4),
+                ),
+              ),
+              top: Math.max(
+                0,
+                labelPositions[activeAxis].y - rf(40),
+              ),
             },
           ]}
           pointerEvents="none"
@@ -434,7 +446,7 @@ const styles = StyleSheet.create({
   tooltip: {
     position: "absolute",
     backgroundColor: flatColors.backgroundTertiary,
-    borderRadius: 8,
+    borderRadius: rbr(8),
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderWidth: 1,

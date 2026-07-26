@@ -144,7 +144,7 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
               {plan.planTitle || "Weekly Workout Plan"}
             </Text>
             <Text style={styles.planSubtitle} numberOfLines={1}>
-              {plan.duration ? String(plan.duration) : "—"}
+              {plan.duration ? String(plan.duration) : "Flexible duration"}
             </Text>
           </View>
           <AnimatedPressable
@@ -153,8 +153,9 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
             hapticFeedback={true}
             hapticType="light"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={styles.seeAllButton}
           >
-            <View style={styles.seeAllButton}>
+            <View style={styles.seeAllContent}>
               <Text style={styles.seeAllText} numberOfLines={1}>View All</Text>
               <Ionicons
                 name="chevron-forward"
@@ -179,6 +180,7 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
                 hapticFeedback={true}
                 hapticType="light"
                 style={styles.dayContainer}
+                hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
               >
                 <Text
                   style={[
@@ -277,13 +279,15 @@ const styles = StyleSheet.create({
     marginTop: rp(2),
   },
   seeAllButton: {
-    flexDirection: "row",
-    alignItems: "center" as const,
-    gap: rp(2),
     minHeight: 44,
     justifyContent: "center",
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.xs,
+  },
+  seeAllContent: {
+    flexDirection: "row",
+    alignItems: "center" as const,
+    gap: rp(2),
   },
   seeAllText: {
     fontSize: rf(12),
@@ -314,9 +318,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   dayCircle: {
-    width: Math.max(rw(36), 44),
-    height: Math.max(rw(36), 44),
-    borderRadius: Math.max(rw(18), 22),
+    width: rw(36),
+    height: rw(36),
+    borderRadius: rw(18),
     backgroundColor: colors.glassSurface,
     justifyContent: "center" as const,
     alignItems: "center" as const,
@@ -364,7 +368,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   statLabel: {
-    fontSize: rf(10),
+    fontSize: rf(11),
     color: colors.textSecondary,
     marginTop: rp(2),
   },

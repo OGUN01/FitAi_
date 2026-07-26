@@ -59,6 +59,6 @@ export const PlanSection: React.FC<PlanSectionProps> = ({
 const styles = StyleSheet.create({
   section: {
     paddingHorizontal: rp(spacing.lg),
-    marginBottom: spacing.lg,
+    marginBottom: rp(spacing.lg),
   },
 });

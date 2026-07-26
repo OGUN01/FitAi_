@@ -27,7 +27,7 @@
  * Reduce-motion is respected on the section chevron rotation and any
  * spring-based decorative motion.
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -39,6 +39,7 @@ import {
   LayoutChangeEvent,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
@@ -219,22 +220,6 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
 
   // ── Confetti / PR celebration ──
   const [confettiTrigger, setConfettiTrigger] = useState(false);
-  const prevMaxWeightRef = useRef<number | null>(null);
-  useEffect(() => {
-    // Track the max weight across sets when the editor opens; if the user
-    // raises it above the existing PR, fire confetti on close.
-    if (!editorOpen || !exercise) {
-      prevMaxWeightRef.current = null;
-      return;
-    }
-    const maxWeight = exercise.sets.reduce(
-      (max, s) => Math.max(max, s.weightKg ?? 0),
-      0,
-    );
-    if (prevMaxWeightRef.current === null) {
-      prevMaxWeightRef.current = maxWeight;
-    }
-  }, [editorOpen, exercise]);
 
   // ── Patch helper: write through to the store ──
   const patchExercise = useCallback(
@@ -397,29 +382,50 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
   );
 
   // ── Group with sibling exercise (superset/circuit target picker) ──
+  // Stamps the shared group id on BOTH this exercise and the chosen sibling
+  // so the UI ("Superset assigned") matches the sibling's state. Uses the same
+  // `updateExercise` store action for both writes so the draft stays the SSOT.
   const handleGroupWithSibling = useCallback(
     (siblingExerciseId: string, _siblingName: string) => {
-      if (!exercise) return;
-      // Assign the same group id to both exercises. We only write our own
-      // exercise here; the sibling's update is the caller's responsibility
-      // (Phase 8 will wire cross-exercise grouping). For v1 we just stamp our
-      // own group id so the UI reflects the intent.
+      if (!exercise || !editorContext || !draft) return;
       void _siblingName;
       const groupId =
         groupMode === "superset"
           ? exercise.supersetId ?? `ss_${Date.now().toString(36)}`
           : exercise.circuitId ?? `circuit_${Date.now().toString(36)}`;
       haptics.selection();
+      // Stamp this exercise.
       if (groupMode === "superset") {
         patchExercise({ supersetId: groupId });
       } else if (groupMode === "circuit") {
         patchExercise({ circuitId: groupId });
       }
+      // Stamp the sibling so both sides of the grouping agree. We locate the
+      // sibling by exerciseId (ids are unique within a day) so the correct
+      // index is updated even if the list reordered.
+      const day = draft.workouts[editorContext.dayIndex];
+      const planned = day?.plannedExercises ?? [];
+      const siblingIdx = planned.findIndex((p) => p.exerciseId === siblingExerciseId);
+      if (siblingIdx < 0) return;
+      const sibling = planned[siblingIdx];
+      const siblingUpdate: PlannedExercise = { ...sibling };
+      if (groupMode === "superset") {
+        siblingUpdate.supersetId = groupId;
+        siblingUpdate.circuitId = undefined;
+      } else if (groupMode === "circuit") {
+        siblingUpdate.circuitId = groupId;
+        siblingUpdate.supersetId = undefined;
+      }
+      updateExercise(editorContext.dayIndex, siblingIdx, siblingUpdate);
     },
-    [exercise, groupMode, patchExercise],
+    [exercise, editorContext, draft, groupMode, patchExercise, updateExercise],
   );
 
   // ── Close: PR celebration if a set weight beats the existing PR ──
+  // Only the "beat existing PR" path is reachable. The "no prior PR" branch
+  // was dead code: prevMaxWeightRef is initialised to the editor-open maxWeight
+  // (line ~235), so it's never 0 when a meaningful weight is present — the
+  // dead branch has been removed.
   const handleClose = useCallback(() => {
     if (exercise && pr) {
       const maxWeight = exercise.sets.reduce(
@@ -430,22 +436,6 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
         setConfettiTrigger(true);
         haptics.celebration();
         // Defer the actual close so the confetti has time to render.
-        setTimeout(() => {
-          setConfettiTrigger(false);
-          closeEditor();
-        }, 1200);
-        return;
-      }
-    }
-    if (exercise && !pr) {
-      // No existing PR — if the user set a meaningful weight, celebrate too.
-      const maxWeight = exercise.sets.reduce(
-        (max, s) => Math.max(max, s.weightKg ?? 0),
-        0,
-      );
-      if (maxWeight > 0 && prevMaxWeightRef.current === 0) {
-        setConfettiTrigger(true);
-        haptics.celebration();
         setTimeout(() => {
           setConfettiTrigger(false);
           closeEditor();
@@ -772,26 +762,6 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
           )}
         </Section>
 
-        {/* ── Alternative exercise ── */}
-        <Section
-          title="Alternative Exercise"
-          collapsible
-          collapsed={collapsed.alt}
-          onToggle={() => toggleSection("alt")}
-        >
-          {!collapsed.alt && (
-            <View style={styles.altRow}>
-              <Text style={styles.altLabel}>
-                {exercise.alternativeExerciseId
-                  ? "Alternative set"
-                  : "No alternative set"}
-              </Text>
-              {/* TODO(Phase 4): wire the ExercisePickerSheet in "replace"
-                  mode to surface an alternative exercise picker here. */}
-            </View>
-          )}
-        </Section>
-
         {/* ── Personal record ── */}
         <Section
           title="Personal Record"
@@ -953,8 +923,26 @@ const Section: React.FC<SectionProps> = ({
 
 const TempoTooltip: React.FC = () => {
   const [open, setOpen] = useState(false);
+  const [anchor, setAnchor] = useState<{ x: number; y: number; w: number }>({
+    x: 0,
+    y: 0,
+    w: 0,
+  });
+
+  const handleLayout = (e: LayoutChangeEvent) => {
+    // Capture the info icon's screen position so the Modal-portal tooltip can
+    // anchor to it. The tooltip itself renders via a transparent Modal so it
+    // is NOT clipped by the parent GlassCard's overflow:"hidden" (which
+    // otherwise crops the bubble when the keyboard is open).
+    setAnchor({
+      x: e.nativeEvent.layout.x,
+      y: e.nativeEvent.layout.y,
+      w: e.nativeEvent.layout.width,
+    });
+  };
+
   return (
-    <View style={styles.tooltipWrap}>
+    <View style={styles.tooltipWrap} onLayout={handleLayout}>
       <Pressable
         onPress={() => {
           haptics.selection();
@@ -970,8 +958,25 @@ const TempoTooltip: React.FC = () => {
           color={colors.text.tertiary}
         />
       </Pressable>
-      {open && (
-        <View style={styles.tooltipBubble}>
+      <Modal
+        visible={open}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOpen(false)}
+      >
+        <Pressable
+          style={styles.tooltipBackdrop}
+          onPress={() => setOpen(false)}
+          accessibilityLabel="Close tempo tooltip"
+          accessibilityRole="button"
+        />
+        <View
+          style={[
+            styles.tooltipBubble,
+            // Anchor below the info icon, aligned to its right edge.
+            { top: anchor.y + anchor.w + rp(4), right: rp(spacing.md) },
+          ]}
+        >
           <Text style={styles.tooltipTitle}>Tempo Format</Text>
           <Text style={styles.tooltipBody}>
             {"4 numbers (seconds):\n• Eccentric (lowering)\n• Pause at bottom\n• Concentric (lifting)\n• Pause at top"}
@@ -980,7 +985,7 @@ const TempoTooltip: React.FC = () => {
             Example: 2-0-2-0 = 2s down, no pause, 2s up, no pause.
           </Text>
         </View>
-      )}
+      </Modal>
     </View>
   );
 };
@@ -1219,21 +1224,6 @@ const styles = StyleSheet.create({
     borderColor: colors.glass.border,
     textAlignVertical: "top",
   },
-  // Alternative
-  altRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: rp(spacing.sm),
-  },
-  altLabel: {
-    color: colors.text.secondary,
-    fontSize: rf(typography.fontSize.caption),
-    flex: 1,
-  },
-  altBtn: {
-    minWidth: rw(100),
-  },
   // PR
   prRow: {
     flexDirection: "row",
@@ -1265,18 +1255,20 @@ const styles = StyleSheet.create({
   tooltipWrap: {
     position: "relative",
   },
+  tooltipBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.35)",
+  } as ViewStyle,
   tooltipBubble: {
     position: "absolute",
-    top: rp(28),
-    right: 0,
     width: rw(220),
     backgroundColor: colors.background.tertiary,
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.glass.border,
     padding: rp(spacing.sm),
-    zIndex: 50,
-    elevation: 5,
+    zIndex: 1000,
+    elevation: 24,
     shadowColor: "#000",
     shadowOpacity: 0.3,
     shadowRadius: 8,

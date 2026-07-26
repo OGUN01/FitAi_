@@ -19,8 +19,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Platform,
-  KeyboardAvoidingView,
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
@@ -46,6 +44,7 @@ export const ExerciseInstructionModal: React.FC<
   const [activeTab, setActiveTab] = useState<"instructions" | "details">(
     "instructions",
   );
+  const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set());
 
   // Direct lookup by exercise ID
   const exercise = exerciseFilterService.getExerciseById(exerciseId);
@@ -124,22 +123,47 @@ export const ExerciseInstructionModal: React.FC<
     return (
       <View style={styles.instructionsContainer}>
         <Text style={styles.sectionTitle}>Step-by-Step Instructions</Text>
-        {exercise.instructions.map((instruction, index) => (
-          <View
-            key={`step-${index}-${instruction.substring(0, 20)}`}
-            style={styles.instructionItem}
-          >
-            <View style={styles.stepNumber} accessibilityRole="text">
-              <Text style={styles.stepNumberText}>{index + 1}</Text>
-            </View>
-            <Text
-              style={styles.instructionText}
-              numberOfLines={5}
+        {exercise.instructions.map((instruction, index) => {
+          const isExpanded = expandedSteps.has(index);
+          return (
+            <View
+              key={`step-${index}-${instruction.substring(0, 20)}`}
+              style={styles.instructionItem}
             >
-              {instruction.replace(/^Step:\d+\s*/, "")}
-            </Text>
-          </View>
-        ))}
+              <View style={styles.stepNumber} accessibilityRole="text">
+                <Text style={styles.stepNumberText}>{index + 1}</Text>
+              </View>
+              <View style={styles.instructionTextWrapper}>
+                <Text
+                  style={styles.instructionText}
+                  numberOfLines={isExpanded ? undefined : 5}
+                >
+                  {instruction.replace(/^Step:\d+\s*/, "")}
+                </Text>
+                <AnimatedPressable
+                  onPress={() =>
+                    setExpandedSteps((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(index)) {
+                        next.delete(index);
+                      } else {
+                        next.add(index);
+                      }
+                      return next;
+                    })
+                  }
+                  accessibilityRole="button"
+                  accessibilityLabel={isExpanded ? "Show less" : "Show more"}
+                  style={styles.showMoreButton}
+                >
+                  <Text style={styles.showMoreText}>
+                    {isExpanded ? "Show less" : "Show more"}
+                  </Text>
+                </AnimatedPressable>
+              </View>
+            </View>
+          );
+        })}
       </View>
     );
   };
@@ -253,14 +277,10 @@ export const ExerciseInstructionModal: React.FC<
       {renderGifSection()}
       {renderTabs()}
 
-      <KeyboardAvoidingView
-        behavior="padding"
-        keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
-        style={styles.content}
-      >
         <ScrollView
           showsVerticalScrollIndicator={false}
           bounces={false}
+          style={styles.content}
         >
           <View style={styles.tabContent}>
             {activeTab === "instructions"
@@ -268,7 +288,6 @@ export const ExerciseInstructionModal: React.FC<
               : renderDetails()}
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
     </BottomSheet>
   );
 };
@@ -320,7 +339,7 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1,
     paddingVertical: rp(spacing.sm),
-    minHeight: Math.max(rp(44), 44),
+    minHeight: 44,
     borderRadius: borderRadius.md,
     alignItems: "center",
     justifyContent: "center",
@@ -373,6 +392,18 @@ const styles = StyleSheet.create({
     fontSize: rf(typography.fontSize.body),
     color: colors.text.primary,
     lineHeight: rf(22),
+  },
+  instructionTextWrapper: {
+    flex: 1,
+  },
+  showMoreButton: {
+    marginTop: rp(spacing.xs),
+    alignSelf: "flex-start",
+  },
+  showMoreText: {
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.primary.DEFAULT,
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
   detailsContainer: {
     paddingBottom: rp(spacing.xl),

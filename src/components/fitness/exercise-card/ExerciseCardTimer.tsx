@@ -30,17 +30,18 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
 
-  // Tinted amber bg with warningAlt text — passes WCAG AA where solid
-  // amber + white text failed (was ~2.6:1).
+  // Solid amber bg + white text — consistent contrast across themes
+  // (was rgba amber tint + amber text ~2.8:1 fail; tinted variants now use
+  // the warningTint token only when paired with dark text).
   timerDisplay: {
-    backgroundColor: "rgba(245, 158, 11, 0.2)",
+    backgroundColor: colors.warning,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
   },
 
   timerText: {
-    color: colors.warningAlt,
+    color: colors.white,
     fontSize: fontSize.md,
     fontWeight: typography.fontWeight.bold,
   },

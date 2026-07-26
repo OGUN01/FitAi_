@@ -83,6 +83,7 @@ const SEVERITY_STYLES: Record<ValidationWarning["severity"], SeverityStyle> = {
 
 export const InlineValidationBanner: React.FC = () => {
   const warnings = useWorkoutBuilderStore((s) => s.validationWarnings);
+  const hasValidationRun = useWorkoutBuilderStore((s) => s.hasValidationRun);
   const openPicker = useWorkoutBuilderStore((s) => s.openPicker);
   const draft = useWorkoutBuilderStore((s) => s.draft);
   const applyAiSuggestions = useWorkoutBuilderStore((s) => s.applyAiSuggestions);
@@ -152,11 +153,11 @@ export const InlineValidationBanner: React.FC = () => {
   }, [warnings]);
 
   // ── Empty state: render a subtle "balanced" chip ──
-  // Only claim "balanced" when validation has actually run (draft exists). If
-  // the draft is null we surface a neutral "No plan to validate yet" chip so
-  // we don't falsely claim balance.
+  // Only claim "balanced" when validation has actually run AND found no
+  // warnings. If validation hasn't run yet (fresh draft, no profile loaded),
+  // surface a neutral "Validating…" chip so we never falsely claim balance.
   if (warnings.length === 0) {
-    const hasDraft = Boolean(draft);
+    const canClaimBalance = hasValidationRun && Boolean(draft);
     return (
       <Animated.View
         entering={FadeInDown.springify()}
@@ -164,12 +165,12 @@ export const InlineValidationBanner: React.FC = () => {
       >
         <View style={styles.balancedChip}>
           <Ionicons
-            name={hasDraft ? "checkmark-circle" : "information-circle-outline"}
+            name={canClaimBalance ? "checkmark-circle" : "time-outline"}
             size={rf(14)}
-            color={hasDraft ? colors.success.DEFAULT : colors.text.secondary}
+            color={canClaimBalance ? colors.success.DEFAULT : colors.text.secondary}
           />
           <Text style={styles.balancedText}>
-            {hasDraft ? "Plan looks balanced" : "No plan to validate yet"}
+            {canClaimBalance ? "Plan looks balanced" : "Validation pending"}
           </Text>
         </View>
       </Animated.View>
@@ -392,7 +393,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.xs),
-    minHeight: Math.max(rp(36), 36),
+    minHeight: Math.max(rp(36), 44),
     borderRadius: borderRadius.full,
     backgroundColor: "rgba(76, 175, 80, 0.18)",
     borderWidth: 1,
@@ -470,7 +471,7 @@ const styles = StyleSheet.create({
   },
   fixBtn: {
     alignSelf: "flex-start",
-    minHeight: Math.max(rf(32), 44),
+    minHeight: Math.max(rp(32), 44),
   },
   fixBtnText: {
     fontSize: rf(typography.fontSize.micro),

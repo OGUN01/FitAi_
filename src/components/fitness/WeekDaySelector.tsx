@@ -198,8 +198,9 @@ const styles = StyleSheet.create({
   dayLabelSelected: {
     color: colors.white,
   },
+  // colors.textSecondary on rgba(0.08) bg was ~3.5:1 — use colors.text for AA.
   dayLabelPast: {
-    color: colors.textSecondary,
+    color: colors.text,
   },
   dayDate: {
     fontSize: rf(18),
@@ -214,7 +215,7 @@ const styles = StyleSheet.create({
   },
   mealIndicator: {
     position: "absolute",
-    bottom: rh(4),
+    bottom: rh(6),
     backgroundColor: "rgba(255, 107, 53, 0.25)",
     paddingHorizontal: rp(6),
     paddingVertical: rp(2),

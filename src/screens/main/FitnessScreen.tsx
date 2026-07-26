@@ -20,6 +20,7 @@ import {
 import Animated, { FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
+import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import {
   WorkoutStartDialog,
 } from "../../components/ui/CustomDialog";
@@ -198,7 +199,7 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
-      <SafeAreaView style={styles.container} edges={["top"]}>
+      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
         <Animated.View
           entering={Platform.OS !== "web" ? FadeIn.duration(300) : undefined}
           style={styles.animatedContainer}
@@ -301,6 +302,22 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
                   <Text style={styles.errorTitle}>Plan Generation Failed</Text>
                 </View>
                 <Text style={styles.errorMessage}>{planError}</Text>
+                <AnimatedPressable
+                  onPress={actions.handleRegeneratePlan}
+                  scaleValue={0.96}
+                  hapticFeedback={true}
+                  hapticType="medium"
+                  style={styles.errorRetryButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Retry plan generation"
+                >
+                  <Ionicons
+                    name="refresh"
+                    size={rf(14)}
+                    color="#ffffff"
+                  />
+                  <Text style={styles.errorRetryText}>Retry</Text>
+                </AnimatedPressable>
               </View>
             )}
 
@@ -355,16 +372,6 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
           </Animated.ScrollView>
         </Animated.View>
 
-        {/* Guest Sign Up Overlay */}
-        {state.showGuestSignUp && (
-          <View style={styles.guestSignUpOverlay}>
-            <GuestSignUpScreen
-              onBack={handleGuestBack}
-              onSignUpSuccess={handleGuestSignUpSuccess}
-            />
-          </View>
-        )}
-
         <WorkoutStartDialog
           visible={state.showWorkoutStartDialog}
           workoutTitle={state.selectedWorkout?.title || ""}
@@ -375,6 +382,18 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
           onCancel={actions.handleWorkoutStartCancel}
           onConfirm={actions.handleWorkoutStartConfirm}
         />
+
+        {/* Guest Sign Up Overlay — rendered last so it sits above all other
+            overlays (incl. WorkoutStartDialog) without relying on zIndex
+            stacking alone. */}
+        {state.showGuestSignUp && (
+          <View style={styles.guestSignUpOverlay}>
+            <GuestSignUpScreen
+              onBack={handleGuestBack}
+              onSignUpSuccess={handleGuestSignUpSuccess}
+            />
+          </View>
+        )}
 
         {/* Recovery Tips Modal */}
         <RecoveryTipsModal
@@ -451,6 +470,24 @@ const styles = StyleSheet.create({
     fontSize: rf(13),
     color: colors.error.DEFAULT,
     lineHeight: rf(18),
+  },
+  errorRetryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: rp(spacing.xs),
+    marginTop: rp(spacing.md),
+    paddingVertical: rp(spacing.sm),
+    paddingHorizontal: rp(spacing.lg),
+    borderRadius: rbr(8),
+    backgroundColor: colors.error.DEFAULT,
+    minHeight: 44,
+    alignSelf: "flex-start",
+  },
+  errorRetryText: {
+    fontSize: rf(13),
+    fontWeight: "600",
+    color: "#ffffff",
   },
   guestSignUpOverlay: {
     position: "absolute" as const,

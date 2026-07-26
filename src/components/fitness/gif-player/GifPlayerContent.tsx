@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
@@ -50,7 +51,15 @@ export const GifPlayerContent: React.FC<GifPlayerContentProps> = ({
   }
 
   return (
-    <View style={[styles.gifContainer, { height, width }]}>
+    <View
+      style={[
+        styles.gifContainer,
+        { height, width },
+        // boxShadow is web-only; native uses shadow* props above. Including it
+        // on native logs a warning, so gate via Platform.
+        Platform.OS === "web" && { boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)" },
+      ]}
+    >
       {isLoading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -135,12 +144,13 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     borderWidth: 1,
     borderColor: "rgba(255, 107, 53, 0.2)",
+    // Native shadow props (ignored on web — web gets boxShadow via inline style
+    // at the call site to avoid the RN warning).
     shadowColor: colors.text,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
   },
 
   gif: {

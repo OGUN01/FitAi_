@@ -127,18 +127,18 @@ const styles = StyleSheet.create({
   },
 
   primaryChip: {
-    backgroundColor: "rgba(255, 107, 53, 0.2)",
+    backgroundColor: "rgba(255, 107, 53, 0.3)",
   },
 
   primaryChipText: {
-    color: colors.primary,
+    color: colors.primaryLight,
     fontSize: fontSize.sm,
     fontWeight: "600",
     textTransform: "capitalize",
   },
 
   secondaryChip: {
-    backgroundColor: "rgba(245, 158, 11, 0.2)",
+    backgroundColor: "rgba(245, 158, 11, 0.3)",
   },
 
   secondaryChipText: {
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   },
 
   equipmentChip: {
-    backgroundColor: "rgba(33, 150, 243, 0.2)",
+    backgroundColor: "rgba(33, 150, 243, 0.3)",
   },
 
   equipmentChipText: {
@@ -160,11 +160,11 @@ const styles = StyleSheet.create({
   },
 
   bodyPartChip: {
-    backgroundColor: "rgba(76, 175, 80, 0.2)",
+    backgroundColor: "rgba(76, 175, 80, 0.3)",
   },
 
   bodyPartChipText: {
-    color: colors.success,
+    color: colors.successLight,
     fontSize: fontSize.sm,
     fontWeight: "600",
     textTransform: "capitalize",

@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
     paddingHorizontal: rp(spacing.sm),
     paddingVertical: rp(spacing.xs),
-    minHeight: Math.max(rp(36), 36),
+    minHeight: Math.max(rp(36), 44),
     borderWidth: 1,
     borderColor: "transparent",
     alignItems: "center",

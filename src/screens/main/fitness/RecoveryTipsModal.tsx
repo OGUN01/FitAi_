@@ -4,7 +4,7 @@
  */
 
 import React, { useMemo } from "react";
-import { View, Text, StyleSheet, Modal, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, StyleSheet, Modal, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, {
   FadeIn,
@@ -212,11 +212,6 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
     >
       <View style={styles.overlay}>
         <SafeAreaView style={styles.safeArea} edges={["top"]}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
-            style={styles.modalContainer}
-          >
             <Animated.View
               entering={FadeInUp.duration(400).springify()}
               style={styles.modalContent}
@@ -317,7 +312,6 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
                 </AnimatedPressable>
               </View>
             </Animated.View>
-          </KeyboardAvoidingView>
         </SafeAreaView>
       </View>
     </Modal>
@@ -348,6 +342,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
+    flex: 1,
   },
   header: {
     flexDirection: "row",
@@ -388,7 +383,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   scrollView: {
-    maxHeight: rh(560),
+    flex: 1,
   },
   scrollContent: {
     padding: spacing.lg,

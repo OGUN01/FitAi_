@@ -364,7 +364,7 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
       {/* The row itself — draggable + swipeable + tappable */}
       <GestureDetector gesture={Gesture.Simultaneous(dragGesture, swipeGesture)}>
         <Animated.View
-          style={[styles.row, dragAnimatedStyle]}
+          style={[styles.row, dragAnimatedStyle, swipeAnimatedStyle]}
           accessibilityRole="button"
           accessibilityLabel={`${exercise.name}. ${setCount} sets of ${repsLabel}. Double-tap to favorite, swipe left for actions, long-press to drag.`}
           accessibilityHint="Double tap to enter reorder mode, then swipe up/down to move. Swipe left to reveal duplicate, replace, delete actions."
@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
   },
   supersetChipText: {
     color: colors.text.primary,
-    fontSize: rf(9),
+    fontSize: rf(typography.fontSize.micro),
     fontWeight: String(typography.fontWeight.bold) as any,
   },
   chipRow: {
@@ -664,6 +664,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 5,
+    // Explicitly above menuDismiss so taps on items always win on Android.
+    zIndex: 41,
   },
   menuItem: {
     flexDirection: "row",
@@ -682,6 +684,8 @@ const styles = StyleSheet.create({
   },
   menuDismiss: {
     ...StyleSheet.absoluteFillObject,
+    // Lower than menuList so menu items receive taps on Android.
+    zIndex: 40,
   },
 });
 

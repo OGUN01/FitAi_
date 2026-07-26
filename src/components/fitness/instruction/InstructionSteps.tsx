@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useState } from "react";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr, rs } from "../../../utils/responsive";
@@ -8,9 +8,29 @@ interface InstructionStepsProps {
   instructions?: string[];
 }
 
+/**
+ * Strip a leading "Step:N" prefix if present. The previous strip regex only
+ * matched the literal format "Step:1 " — most stored instructions use "1. "
+ * or "Step 1: " formats. Handle both, and pass everything else through
+ * unchanged.
+ */
+const stripStepPrefix = (instruction: string): string => {
+  // "Step:1 ..." or "Step:12 ..."
+  let s = instruction.replace(/^Step:\d+\s*/, "");
+  if (s !== instruction) return s;
+  // "Step 1: ..." or "Step 12: ..."
+  s = instruction.replace(/^Step\s+\d+:\s*/i, "");
+  if (s !== instruction) return s;
+  // "1. ..." leading numeric prefix
+  s = instruction.replace(/^\d+\.\s*/, "");
+  return s;
+};
+
 export const InstructionSteps: React.FC<InstructionStepsProps> = ({
   instructions,
 }) => {
+  const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set());
+
   if (!instructions?.length) {
     return (
       <View style={styles.noDataContainer} accessibilityRole="text">
@@ -28,19 +48,48 @@ export const InstructionSteps: React.FC<InstructionStepsProps> = ({
   return (
     <View style={styles.instructionsContainer}>
       <Text style={styles.sectionTitle}>Step-by-Step Instructions</Text>
-      {instructions.map((instruction, index) => (
-        <View
-          key={`step-${index}-${instruction.substring(0, 20)}`}
-          style={styles.instructionItem}
-        >
-          <View style={styles.stepNumber} accessibilityRole="text">
-            <Text style={styles.stepNumberText}>{index + 1}</Text>
+      {instructions.map((instruction, index) => {
+        const isExpanded = expandedSteps.has(index);
+        return (
+          <View
+            key={`step-${index}-${instruction.substring(0, 20)}`}
+            style={styles.instructionItem}
+          >
+            <View style={styles.stepNumber} accessibilityRole="text">
+              <Text style={styles.stepNumberText}>{index + 1}</Text>
+            </View>
+            <View style={styles.instructionTextWrapper}>
+              <Text
+                style={styles.instructionText}
+                numberOfLines={isExpanded ? undefined : 5}
+              >
+                {stripStepPrefix(instruction)}
+              </Text>
+              <Pressable
+                onPress={() =>
+                  setExpandedSteps((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(index)) {
+                      next.delete(index);
+                    } else {
+                      next.add(index);
+                    }
+                    return next;
+                  })
+                }
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel={isExpanded ? "Show less" : "Show more"}
+                style={styles.showMoreButton}
+              >
+                <Text style={styles.showMoreText}>
+                  {isExpanded ? "Show less" : "Show more"}
+                </Text>
+              </Pressable>
+            </View>
           </View>
-          <Text style={styles.instructionText} numberOfLines={5}>
-            {instruction.replace(/^Step:\d+\s*/, "")}
-          </Text>
-        </View>
-      ))}
+        );
+      })}
     </View>
   );
 };
@@ -77,7 +126,7 @@ const styles = StyleSheet.create({
   stepNumberText: {
     fontSize: fontSize.sm,
     fontWeight: "bold",
-    color: colors.surface,
+    color: colors.white,
   },
 
   instructionText: {
@@ -85,6 +134,21 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     color: colors.text,
     lineHeight: rf(22),
+  },
+
+  instructionTextWrapper: {
+    flex: 1,
+  },
+
+  showMoreButton: {
+    marginTop: rp(spacing.xs),
+    alignSelf: "flex-start",
+  },
+
+  showMoreText: {
+    fontSize: fontSize.sm,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.semibold,
   },
 
   noDataContainer: {

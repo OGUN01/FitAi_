@@ -44,6 +44,12 @@ interface LineChartProps {
   unit?: string;
   showValues?: boolean;
   showHeader?: boolean;
+  /** Empty-state message title. Defaults to "No data recorded". */
+  emptyTitle?: string;
+  /** Empty-state message subtitle. Defaults to "Start tracking to see progress". */
+  emptySubtitle?: string;
+  /** When true, weight gain is treated as a negative trend (weight-loss goal). */
+  weightLossGoal?: boolean;
 }
 
 export const LineChart: React.FC<LineChartProps> = ({
@@ -52,6 +58,9 @@ export const LineChart: React.FC<LineChartProps> = ({
   unit = "",
   showValues = true,
   showHeader = true,
+  emptyTitle = "No data recorded",
+  emptySubtitle = "Start tracking to see progress",
+  weightLossGoal = false,
 }) => {
   const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
   const animationProgress = useSharedValue(0);
@@ -134,7 +143,7 @@ export const LineChart: React.FC<LineChartProps> = ({
 
   if (!hasData) {
     return (
-      <View style={styles.emptyChart}>
+      <View style={styles.emptyChart} onLayout={handleLayout}>
         <View style={styles.emptyChartIconContainer}>
           <LinearGradient
             colors={["rgba(156, 39, 176, 0.2)", "rgba(156, 39, 176, 0.05)"]}
@@ -146,10 +155,8 @@ export const LineChart: React.FC<LineChartProps> = ({
             color="rgba(156, 39, 176, 0.6)"
           />
         </View>
-        <Text style={styles.emptyChartText}>No weight data recorded</Text>
-        <Text style={styles.emptyChartSubtext}>
-          Log your weight to see your progress journey
-        </Text>
+        <Text style={styles.emptyChartText}>{emptyTitle}</Text>
+        <Text style={styles.emptyChartSubtext}>{emptySubtitle}</Text>
         <View style={styles.emptyChartHint}>
           <Ionicons
             name="add-circle-outline"
@@ -164,7 +171,10 @@ export const LineChart: React.FC<LineChartProps> = ({
     );
   }
 
-  const { trend, trendPercent, isPositiveTrend } = calculateTrend(data);
+  // Goal-aware trend: for weight-loss goals, weight gain (positive trend) is
+  // semantically negative. For other metrics or weight-gain goals, positive
+  // trend is positive.
+  const { trend, trendPercent, isPositiveTrend } = calculateTrend(data, weightLossGoal);
 
   return (
     <View style={styles.premiumChartContainer} onLayout={handleLayout}>
@@ -172,7 +182,12 @@ export const LineChart: React.FC<LineChartProps> = ({
       {showHeader && <View style={styles.chartStatsHeader}>
         <View style={styles.currentValueContainer}>
           <Text style={styles.currentValueLabel}>Current</Text>
-          <Text style={[styles.currentValue, { color }]}>
+          <Text
+            style={[styles.currentValue, { color }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
             {data[data.length - 1].value.toFixed(1)}
             {unit}
           </Text>
@@ -206,7 +221,7 @@ export const LineChart: React.FC<LineChartProps> = ({
         </View>
       </View>}
 
-      {/* SVG Chart */}
+      {/* SVG Chart — render with fallback width (rw(300)) until measured */}
       <Svg width={CHART_WIDTH} height={CHART_HEIGHT}>
         <Defs>
           <SvgLinearGradient

@@ -318,7 +318,7 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
               accessibilityLabel="Generate full week from partial plan"
               style={[styles.aiMenuItem, (filledDayCount < 2 || aiLoading) && styles.aiMenuItemDisabled]}
             >
-              <Ionicons name="calendar-outline" size={rf(16)} color={colors.primary.light} />
+              <Ionicons name="calendar-outline" size={rf(16)} color={colors.primary.DEFAULT} />
               <Text style={styles.aiMenuItemText}>Generate Full Week</Text>
               {filledDayCount < 2 && (
                 <Text style={styles.aiMenuItemHint}>
@@ -333,9 +333,10 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
               disabled={aiLoading || priorPerformance.length === 0}
               accessibilityRole="button"
               accessibilityLabel="Apply progressive overload"
+              accessibilityState={{ disabled: aiLoading || priorPerformance.length === 0 }}
               style={[styles.aiMenuItem, (aiLoading || priorPerformance.length === 0) && styles.aiMenuItemDisabled]}
             >
-              <Ionicons name="trending-up-outline" size={rf(16)} color={colors.success.light} />
+              <Ionicons name="trending-up-outline" size={rf(16)} color={colors.primary.DEFAULT} />
               <Text style={styles.aiMenuItemText}>Apply Progressive Overload</Text>
             </Pressable>
             <Pressable
@@ -349,7 +350,7 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
               accessibilityLabel="Deload week"
               style={[styles.aiMenuItem, aiLoading && styles.aiMenuItemDisabled]}
             >
-              <Ionicons name="fitness-outline" size={rf(16)} color={colors.warning.light} />
+              <Ionicons name="fitness-outline" size={rf(16)} color={colors.primary.DEFAULT} />
               <Text style={styles.aiMenuItemText}>Deload Week</Text>
             </Pressable>
           </View>

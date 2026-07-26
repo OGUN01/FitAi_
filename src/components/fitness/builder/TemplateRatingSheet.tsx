@@ -423,11 +423,15 @@ const styles = StyleSheet.create({
     gap: rp(spacing.xs),
     paddingVertical: rp(spacing.sm),
   },
+  // Star buttons: flex:1 + minWidth:44 guarantees the 44px tap target per
+  // star while letting them shrink on narrow screens. The previous maxWidth
+  // forced ~50px each; on 320px screens with sheet padding that overflowed
+  // (5×50 + 4 gaps = ~266px vs ~288px available — borderline, clipped on
+  // denser layouts). Dropping maxWidth lets flex:1 distribute width evenly.
   starBtn: {
     flex: 1,
     minWidth: Math.max(rw(44), 44),
     minHeight: Math.max(rw(44), 44),
-    maxWidth: rw(56),
     alignItems: "center",
     justifyContent: "center",
   },
@@ -454,6 +458,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.md),
     minHeight: rp(96),
+    maxHeight: rp(200),
     borderWidth: 1,
     borderColor: colors.glassBorder,
   },

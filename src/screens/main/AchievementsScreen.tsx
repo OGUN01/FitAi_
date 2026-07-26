@@ -22,7 +22,7 @@ import {
   AchievementCategory,
   Achievement,
 } from "../../services/achievements/types";
-import { colors, typography } from "../../theme/aurora-tokens";
+import { colors, typography, flatColors } from "../../theme/aurora-tokens";
 import { rh, rw, rf, rbr } from "../../utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -232,12 +232,12 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
             >
               <Ionicons
                 name="arrow-back"
-                size={24}
+                size={rf(24)}
                 color={colors.text.primary}
               />
             </AnimatedPressable>
           )}
-          <Text style={styles.headerTitle}>Achievements</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>Achievements</Text>
           <View style={styles.placeholder} />
         </View>
 
@@ -272,7 +272,7 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
                 numberOfLines={1}
                 adjustsFontSizeToFit
               >
-                🪙 {stats.totalFitCoins}
+                <Ionicons name="ribbon-outline" size={rf(16)} color={flatColors.gold} /> {stats.totalFitCoins}
               </Text>
               <Text style={styles.statLabel}>FitCoins</Text>
             </View>
@@ -360,11 +360,14 @@ const styles = StyleSheet.create({
     height: Math.max(rw(10), 44),
     justifyContent: "center",
     alignItems: "center",
+    borderRadius: rbr(12),
   },
   headerTitle: {
     fontSize: rf(20),
     fontWeight: "700",
     color: colors.text.primary,
+    flex: 1,
+    textAlign: "center",
   },
   placeholder: {
     width: Math.max(rw(10), 44),
@@ -397,7 +400,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   statLabel: {
-    fontSize: rf(10),
+    fontSize: rf(11),
     color: colors.text.tertiary,
     marginTop: rh(2),
     textTransform: "uppercase",
@@ -405,7 +408,7 @@ const styles = StyleSheet.create({
   },
   statDivider: {
     width: 1,
-    height: rh(32),
+    alignSelf: "stretch",
     backgroundColor: colors.glass.border,
   },
   sectionHeader: {
@@ -426,7 +429,7 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
   },
   loadingContainer: {
-    flex: 1,
+    minHeight: rh(400),
     alignItems: "center",
     justifyContent: "center",
     marginTop: rh(80),

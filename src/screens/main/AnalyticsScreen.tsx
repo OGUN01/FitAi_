@@ -716,7 +716,12 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
         <SafeAreaView style={styles.container} edges={["top"]}>
           <View style={styles.lockedContainer}>
             <View style={styles.lockedIconContainer}>
-              <Ionicons name="analytics-outline" size={rf(40)} color={colors.primary.light} />
+              <Ionicons
+                name="analytics-outline"
+                size={rf(40)}
+                color={colors.primary.light}
+                accessibilityLabel="Analytics is a premium feature"
+              />
             </View>
             <Text style={styles.lockedTitle}>Premium Feature</Text>
             <Text style={styles.lockedDescription}>
@@ -779,6 +784,8 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
                 <Text style={styles.loadingText}>Loading analytics...</Text>
               </View>
             )}
+
+            {/* Bottom content placeholder removed — see bottom spacing below */}
 
             {/* Error State */}
             {dataError && !showLoading && (
@@ -852,8 +859,8 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
               </>
             )}
 
-            {/* Bottom Spacing */}
-            <View style={{ height: insets.bottom + rh(100) }} />
+            {/* Bottom spacing — rely on scrollContent.paddingBottom only
+                (was previously double-counted with an inline spacer View). */}
           </Animated.ScrollView>
         </Animated.View>
       </SafeAreaView>
@@ -879,7 +886,7 @@ const styles = StyleSheet.create({
     position: "relative" as const,
   },
   loadingContainer: {
-    flex: 1,
+    minHeight: rh(400),
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: spacing.xxl,
@@ -902,20 +909,20 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.caption,
     fontWeight: "600",
     color: colors.text.primary,
-    marginBottom: 10,
+    marginBottom: spacing.sm,
   },
   breakdownRow: {
     flexDirection: "row" as const,
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
-    paddingVertical: 4,
+    paddingVertical: spacing.xs,
   },
   breakdownLabel: {
-    fontSize: 13,
+    fontSize: rf(13),
     color: colors.text.secondary,
   },
   breakdownValue: {
-    fontSize: 13,
+    fontSize: rf(13),
     fontWeight: "600",
     color: colors.text.primary,
   },

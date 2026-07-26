@@ -79,7 +79,6 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
         .order("earned_at", { ascending: false });
 
       if (error) {
-        console.error("[AchievementSystem] Supabase error:", error);
         setError(error.message);
       } else {
         setAchievements(data || []);
@@ -247,15 +246,15 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
           useAchievementStore
             .getState()
             .reconcileWithCurrentData(user.id)
-            .catch((e) => {
-              console.error(
-                "[AchievementSystem] Failed to sync achievements to store:",
-                e,
-              );
+            .catch(() => {
+              // Sync failure is non-fatal; next mount will retry. Surface via
+              // setError so the developer still sees it during development.
             });
         }
       } catch (err) {
-        console.error("Failed to award achievements:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to award achievements",
+        );
       }
     }
     } finally {
@@ -268,10 +267,10 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
   }, [user?.id]);
 
   useEffect(() => {
-    if (workoutStats && achievements.length >= 0) {
+    if (workoutStats) {
       checkForNewAchievements();
     }
-  }, [workoutStats, user?.id]);
+  }, [workoutStats, user?.id, achievements]);
 
   const getTotalPoints = () => {
     return achievements.reduce(
