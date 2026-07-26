@@ -1,7 +1,9 @@
 import React from "react";
-import { Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import Animated from "react-native-reanimated";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+import { hexToRgba } from "../../../utils/colors";
 
 interface SwipeIndicatorsProps {
   leftIndicatorStyle: any;
@@ -17,13 +19,19 @@ export const SwipeIndicators: React.FC<SwipeIndicatorsProps> = ({
       <Animated.View
         style={[styles.swipeIndicator, styles.swipeLeft, leftIndicatorStyle]}
       >
-        <Text style={styles.swipeIndicatorText}>👎 SKIP</Text>
+        <View style={styles.indicatorContent}>
+          <Ionicons name="thumbs-down" size={fontSize.md} color={colors.white} />
+          <Text style={styles.swipeIndicatorText}>SKIP</Text>
+        </View>
       </Animated.View>
 
       <Animated.View
         style={[styles.swipeIndicator, styles.swipeRight, rightIndicatorStyle]}
       >
-        <Text style={styles.swipeIndicatorText}>👍 LIKE</Text>
+        <View style={styles.indicatorContent}>
+          <Ionicons name="thumbs-up" size={fontSize.md} color={colors.white} />
+          <Text style={styles.swipeIndicatorText}>LIKE</Text>
+        </View>
       </Animated.View>
     </>
   );
@@ -40,14 +48,20 @@ const styles = StyleSheet.create({
 
   swipeLeft: {
     left: spacing.sm,
-    borderColor: "#FF4444",
-    backgroundColor: "rgba(255, 68, 68, 0.2)",
+    borderColor: colors.error,
+    backgroundColor: hexToRgba(colors.error, 0.2),
   },
 
   swipeRight: {
     right: spacing.sm,
-    borderColor: "#44FF44",
-    backgroundColor: "rgba(68, 255, 68, 0.2)",
+    borderColor: colors.success,
+    backgroundColor: hexToRgba(colors.success, 0.2),
+  },
+
+  indicatorContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
   },
 
   swipeIndicatorText: {

@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: rh(20),
-    backgroundColor: "rgba(255,255,255,0.03)",
+    backgroundColor: hexToRgba(colors.white, 0.03),
     padding: rw(16),
     borderRadius: rbr(16),
   },

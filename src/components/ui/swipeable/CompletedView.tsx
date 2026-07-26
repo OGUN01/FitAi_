@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf } from "../../../utils/responsive";
 
@@ -10,7 +11,9 @@ interface CompletedViewProps {
 export const CompletedView: React.FC<CompletedViewProps> = ({ totalCards }) => {
   return (
     <View style={styles.completedContainer}>
-      <Text style={styles.completedIcon}>✅</Text>
+      <View style={styles.completedIconWrap}>
+        <Ionicons name="checkmark-circle" size={rf(64)} color={colors.success} />
+      </View>
       <Text style={styles.completedText}>All cards reviewed!</Text>
       <Text style={styles.completedSubtext}>
         You've gone through all {totalCards} options
@@ -26,8 +29,7 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
 
-  completedIcon: {
-    fontSize: rf(64),
+  completedIconWrap: {
     marginBottom: spacing.md,
   },
 

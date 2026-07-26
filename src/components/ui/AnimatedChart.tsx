@@ -14,6 +14,7 @@ import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, 
 import { ChartTooltip } from "./ChartTooltip";
 import { hapticSelection } from "../../utils/haptics";
 import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../utils/colors";
+import { Ionicons } from "@expo/vector-icons";
 
 interface DataPoint {
   label: string;
@@ -230,7 +231,7 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
         </View>
 
         <View style={styles.arrow}>
-          <Text style={styles.arrowText}>→</Text>
+          <Ionicons name="arrow-forward" size={rf(24)} color={colors.primary} />
           <Text style={styles.changeText}>{changeText}</Text>
         </View>
 
@@ -360,9 +361,12 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
       {/* Timeline info */}
       {showProgress && (
         <View style={styles.timeline}>
-          <Text style={styles.timelineText}>
-            📅 {progressWeeks}-week progression plan
-          </Text>
+          <View style={styles.timelineRow}>
+            <Ionicons name="calendar-outline" size={fontSize.sm} color={colors.text} />
+            <Text style={styles.timelineText}>
+              {progressWeeks}-week progression plan
+            </Text>
+          </View>
           <Text style={styles.timelineSubtext}>
             {progressWeeks > 0
               ? (Math.abs(currentValue - targetValue) / progressWeeks).toFixed(
@@ -417,11 +421,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
   },
 
-  arrowText: {
-    fontSize: rf(24),
-    color: colors.primary,
-  },
-
   changeText: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
@@ -434,6 +433,12 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
     borderRadius: borderRadius.md,
+  },
+
+  timelineRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
   },
 
   timelineText: {

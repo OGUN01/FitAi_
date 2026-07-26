@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import {
   useSharedValue,
   withRepeat,
@@ -218,9 +219,12 @@ export const BodySilhouette: React.FC<BodySilhouetteProps> = ({
 
       {/* Legend */}
       <View style={styles.legend}>
-        <Text style={styles.legendText}>
-          💡 Tap measurement points to update values
-        </Text>
+        <View style={styles.legendRow}>
+          <Ionicons name="bulb-outline" size={fontSize.xs} color={colors.textSecondary} />
+          <Text style={styles.legendText}>
+            Tap measurement points to update values
+          </Text>
+        </View>
       </View>
     </View>
   );
@@ -281,6 +285,12 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
     borderRadius: borderRadius.md,
+  },
+
+  legendRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
   },
 
   legendText: {

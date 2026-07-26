@@ -253,7 +253,7 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
                     ? colors.gold
                     : index % 3 === 1
                       ? colors.errorLight
-                      : "#4FC3F7",
+                      : colors.info,
                 transform: [
                   { translateX: item.x },
                   { translateY: item.y },

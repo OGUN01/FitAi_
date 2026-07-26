@@ -392,7 +392,7 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
             </View>
             <View style={detailStyles.divider} />
             <View style={detailStyles.statItem}>
-              <Ionicons name="flame-outline" size={rf(18)} color="#FF6B35" />
+              <Ionicons name="flame-outline" size={rf(18)} color={colors.primary} />
               <Text style={detailStyles.statValue}>{calories ?? "N/A"}</Text>
               <Text style={detailStyles.statLabel}>Calories</Text>
             </View>
@@ -422,7 +422,7 @@ const detailStyles = StyleSheet.create({
     borderRadius: rbr(20),
     padding: spacing.xl,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: colors.glassBorder,
   },
   header: {
     flexDirection: "row",
@@ -445,6 +445,10 @@ const detailStyles = StyleSheet.create({
     color: colors.text,
   },
   closeBtn: {
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
     padding: 4,
   },
   descScroll: {
@@ -470,7 +474,7 @@ const detailStyles = StyleSheet.create({
   },
   divider: {
     width: 1,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: colors.glassBorder,
     marginVertical: 4,
   },
   statValue: {
@@ -491,7 +495,7 @@ const detailStyles = StyleSheet.create({
   closeButtonText: {
     fontSize: rf(15),
     fontWeight: "600",
-    color: "#fff",
+    color: colors.white,
   },
 });
 
@@ -587,7 +591,7 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
                     <Ionicons
                       name={star <= rating ? "star" : "star-outline"}
                       size={rf(28)}
-                      color={star <= rating ? "#F59E0B" : colors.textSecondary}
+                      color={star <= rating ? colors.warningAlt : colors.textSecondary}
                     />
                   </TouchableOpacity>
                 ))}

@@ -205,7 +205,13 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
     return (
       <View style={[styles.container, style]}>
         <View style={styles.completedContainer}>
-          <Text style={styles.completedIcon}>✅</Text>
+          <View style={styles.completedIconWrap}>
+            <Ionicons
+              name="checkmark-circle"
+              size={rf(64)}
+              color={colors.success}
+            />
+          </View>
           <Text style={styles.completedText}>All cards reviewed!</Text>
           <Text style={styles.completedSubtext}>
             You've gone through all {cards.length} options
@@ -257,7 +263,10 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
                 leftIndicatorStyle,
               ]}
             >
-              <Text style={styles.swipeIndicatorText}>👎 SKIP</Text>
+              <View style={styles.indicatorContent}>
+                <Ionicons name="thumbs-down" size={fontSize.md} color={colors.white} />
+                <Text style={styles.swipeIndicatorText}>SKIP</Text>
+              </View>
             </Animated.View>
 
             <Animated.View
@@ -267,7 +276,10 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
                 rightIndicatorStyle,
               ]}
             >
-              <Text style={styles.swipeIndicatorText}>👍 LIKE</Text>
+              <View style={styles.indicatorContent}>
+                <Ionicons name="thumbs-up" size={fontSize.md} color={colors.white} />
+                <Text style={styles.swipeIndicatorText}>LIKE</Text>
+              </View>
             </Animated.View>
 
             {/* Card content */}
@@ -322,7 +334,10 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
                   leftIndicatorStyle,
                 ]}
               >
-                <Text style={styles.swipeIndicatorText}>👎 SKIP</Text>
+                <View style={styles.indicatorContent}>
+                  <Ionicons name="thumbs-down" size={fontSize.md} color={colors.white} />
+                  <Text style={styles.swipeIndicatorText}>SKIP</Text>
+                </View>
               </Animated.View>
 
               <Animated.View
@@ -332,7 +347,10 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
                   rightIndicatorStyle,
                 ]}
               >
-                <Text style={styles.swipeIndicatorText}>👍 LIKE</Text>
+                <View style={styles.indicatorContent}>
+                  <Ionicons name="thumbs-up" size={fontSize.md} color={colors.white} />
+                  <Text style={styles.swipeIndicatorText}>LIKE</Text>
+                </View>
               </Animated.View>
 
               {/* Card content */}
@@ -376,7 +394,7 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
       {/* Instructions */}
       <View style={styles.instructions}>
         <Text style={styles.instructionText}>
-          ← Swipe left to skip • Swipe right to like →
+          Swipe left to skip, right to like
         </Text>
       </View>
     </View>
@@ -475,6 +493,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.successTint,
   },
 
+  indicatorContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+
   swipeIndicatorText: {
     fontSize: fontSize.xs, // Reduced from md
     fontWeight: typography.fontWeight.bold,
@@ -515,8 +539,7 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
 
-  completedIcon: {
-    fontSize: rf(64),
+  completedIconWrap: {
     marginBottom: spacing.md,
   },
 

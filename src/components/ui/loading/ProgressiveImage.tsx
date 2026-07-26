@@ -18,6 +18,7 @@ import {
   ImageResizeMode,
   Easing,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { AuroraSpinner } from "./AuroraSpinner";
 import { rf, rp } from "../../../utils/responsive";
 
@@ -235,7 +236,7 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
       {imageError && (
         <View style={[styles.errorContainer, imageStyle]}>
           <View style={styles.errorContent}>
-            <Animated.Text style={styles.errorIcon}>⚠️</Animated.Text>
+            <Ionicons name="warning-outline" size={rf(32)} color="rgba(255, 255, 255, 0.5)" />
             <Animated.Text style={styles.errorText}>
               Failed to load image
             </Animated.Text>
@@ -419,10 +420,7 @@ const styles = StyleSheet.create({
   },
   errorContent: {
     alignItems: "center" as const,
-  },
-  errorIcon: {
-    fontSize: rf(32),
-    marginBottom: rp(8),
+    gap: rp(8),
   },
   errorText: {
     fontSize: rf(12),

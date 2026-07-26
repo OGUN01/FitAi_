@@ -49,6 +49,7 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.8}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       accessibilityLabel={`${achievement.title}, ${achievement.tier} tier achievement. ${isCompleted ? "Earned" : "Locked"}.`}
       accessibilityRole="button"
       accessibilityHint={isCompleted ? "Tap to view achievement details" : "Tap to view progress and how to unlock"}
@@ -158,7 +159,7 @@ const styles = StyleSheet.create({
     height: rw(48),
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: colors.glassSurface,
     borderRadius: rw(12),
     marginRight: rw(12),
   },
@@ -167,7 +168,7 @@ const styles = StyleSheet.create({
   },
   iconLocked: {
     opacity: 0.6,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    backgroundColor: colors.glassHighlight,
   },
   checkBadge: {
     position: "absolute",
@@ -227,7 +228,7 @@ const styles = StyleSheet.create({
   progressTrack: {
     flex: 1,
     height: rh(6),
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: colors.glassHighlight,
     borderRadius: rs(3),
     marginRight: rw(8),
     overflow: "hidden",

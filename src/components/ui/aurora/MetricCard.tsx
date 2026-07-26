@@ -6,6 +6,7 @@
 
 import React, { useEffect } from "react";
 import { StyleSheet, View, Text, ViewStyle, TextStyle } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
@@ -15,7 +16,7 @@ import Animated, {
 import { GlassCard } from "./GlassCard";
 import { colors, typography, spacing } from "../../../theme/aurora-tokens";
 import { easingFunctions } from "../../../theme/animations";
-import { rbr } from "../../../utils/responsive";
+import { rbr, rf } from "../../../utils/responsive";
 
 const AnimatedText = Animated.createAnimatedComponent(Text);
 
@@ -137,16 +138,16 @@ export const MetricCard: React.FC<MetricCardProps> = ({
     } as { text: string };
   });
 
-  // Get trend indicator symbol and color
+  // Get trend indicator icon name and color
   const getTrendIndicator = () => {
     switch (trend) {
       case "up":
-        return { symbol: "↑", color: colors.success.DEFAULT };
+        return { icon: "arrow-up" as keyof typeof Ionicons.glyphMap, color: colors.success.DEFAULT };
       case "down":
-        return { symbol: "↓", color: colors.error.DEFAULT };
+        return { icon: "arrow-down" as keyof typeof Ionicons.glyphMap, color: colors.error.DEFAULT };
       case "neutral":
       default:
-        return { symbol: "−", color: colors.text.muted };
+        return { icon: "remove" as keyof typeof Ionicons.glyphMap, color: colors.text.muted };
     }
   };
 
@@ -237,9 +238,11 @@ export const MetricCard: React.FC<MetricCardProps> = ({
               {label}
             </Text>
             {trend !== "neutral" && (
-              <Text style={[styles.trend, { color: trendIndicator.color }]}>
-                {trendIndicator.symbol}
-              </Text>
+              <Ionicons
+                name={trendIndicator.icon}
+                size={typography.fontSize.h3}
+                color={trendIndicator.color}
+              />
             )}
           </View>
         </View>
@@ -289,10 +292,6 @@ const styles = StyleSheet.create({
   label: {
     fontWeight: typography.fontWeight.regular as TextStyle['fontWeight'],
     color: colors.text.secondary,
-  },
-  trend: {
-    fontWeight: typography.fontWeight.bold as TextStyle['fontWeight'],
-    fontSize: typography.fontSize.h3,
   },
 });
 
