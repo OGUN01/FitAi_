@@ -19,6 +19,7 @@ import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressab
 import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr, rw, rh } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
 
 interface ProfileSection {
   id: string;
@@ -225,7 +226,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderWidth: 1,
-    borderColor: "rgba(255, 152, 0, 0.2)",
+    borderColor: hexToRgba(colors.warning, 0.2),
   },
   header: {
     flexDirection: "row",
@@ -308,7 +309,7 @@ const styles = StyleSheet.create({
     width: rw(24),
     height: rw(24),
     borderRadius: rw(12),
-    backgroundColor: "rgba(255, 152, 0, 0.15)",
+    backgroundColor: hexToRgba(colors.warning, TINT_ALPHA_LOW),
     justifyContent: "center",
     alignItems: "center",
   },

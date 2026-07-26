@@ -11,8 +11,6 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { SettingsModalWrapper } from "../components/SettingsModalWrapper";
 import { GlassFormInput } from "../components/GlassFormInput";
 import { GlassFormPicker } from "../components/GlassFormPicker";

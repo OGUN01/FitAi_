@@ -15,7 +15,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
-import { rf, rp, rbr, rw } from "../../../utils/responsive";
+import { rf, rp, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 
 interface GuestPromptCardProps {

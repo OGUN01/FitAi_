@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
-import { rf, rp, rbr, rw, rh } from "../../../utils/responsive";
+import { rf, rp, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 
 interface ConnectedAccount {
@@ -95,6 +95,8 @@ export const ConnectedAccountsCard: React.FC<ConnectedAccountsCardProps> = ({
               }}
               scaleValue={0.98}
               hapticFeedback={false}
+              accessibilityRole="button"
+              accessibilityLabel={`${account.name} ${account.isConnected ? "connected" : "connect"}`}
             >
               <View style={styles.row}>
                 {/* Provider Icon */}
@@ -181,6 +183,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
+    // Guarantee the WCAG 44px touch floor across the connect/disconnect row.
+    minHeight: 44,
   },
   iconContainer: {
     width: rw(36),

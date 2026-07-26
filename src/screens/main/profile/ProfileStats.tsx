@@ -17,7 +17,7 @@ import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressab
 import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw, rp } from '../../../utils/responsive';
 import { haptics } from "../../../utils/haptics";
-import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_SOFT, TINT_ALPHA_MEDIUM } from "../../../utils/colors";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
 
 interface StatItem {
   id: string;
@@ -82,7 +82,12 @@ const StatCard: React.FC<{
           </View>
 
           {/* Value */}
-          <Text style={[styles.statValue, { color: stat.color }]}>
+          <Text
+            style={[styles.statValue, { color: stat.color }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
             {formatValue(stat.value)}
             {stat.suffix && (
               <Text style={styles.statSuffix}>{stat.suffix}</Text>
@@ -192,6 +197,8 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     borderWidth: 1,
     width: "100%",
+    // Guarantee the WCAG 44px touch floor even when the value/label are short.
+    minHeight: Math.max(rw(44), 44),
     backgroundColor: "rgba(255, 255, 255, 0.03)",
   },
   iconContainer: {

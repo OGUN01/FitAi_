@@ -17,6 +17,7 @@ import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPres
 import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../../../utils/colors";
 
 interface PickerOption {
   value: string;
@@ -103,6 +104,9 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
                 onPress={() => handleSelect(option.value)}
                 scaleValue={0.95}
                 hapticFeedback={false}
+                accessibilityRole="button"
+                accessibilityLabel={option.label}
+                accessibilityState={selected ? { selected: true } : undefined}
               >
                 <View
                   style={[
@@ -113,8 +117,8 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
                   {selected && (
                     <LinearGradient
                       colors={[
-                        "rgba(255, 107, 53, 0.2)",
-                        "rgba(229, 90, 43, 0.15)",
+                        hexToRgba(colors.primary, 0.2),
+                        hexToRgba(colors.primaryDark, 0.15),
                       ]}
                       style={StyleSheet.absoluteFill}
                     />
@@ -229,7 +233,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   optionButtonSelected: {
-    borderColor: "rgba(255, 107, 53, 0.4)",
+    borderColor: hexToRgba(colors.primary, 0.4),
   },
   optionContent: {
     flexDirection: "row",
@@ -247,7 +251,7 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   optionIconSelected: {
-    backgroundColor: "rgba(255, 107, 53, 0.15)",
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
   },
   optionTextContainer: {
     flex: 1,
@@ -271,7 +275,7 @@ const styles = StyleSheet.create({
     width: rw(22),
     height: rw(22),
     borderRadius: rw(11),
-    backgroundColor: "rgba(255, 107, 53, 0.2)",
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
     justifyContent: "center",
     alignItems: "center",
   },

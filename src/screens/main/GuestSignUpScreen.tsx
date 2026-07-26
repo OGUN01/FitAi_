@@ -240,6 +240,9 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
               style={styles.backButton}
               onPress={onBack}
               scaleValue={0.97}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
             >
               <Ionicons
                 name="arrow-back"
@@ -331,6 +334,9 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
                   onPress={handleForgotPassword}
                   scaleValue={0.97}
                   style={styles.forgotPasswordContainer}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Forgot password"
                 >
                   <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
                 </AnimatedPressable>
@@ -363,6 +369,11 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
                   setFormData({ email: "", password: "", confirmPassword: "" });
                 }}
                 scaleValue={0.97}
+                hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  mode === "signup" ? "Switch to sign in" : "Switch to sign up"
+                }
               >
                 <Text style={styles.footerLink}>
                   {mode === "signup" ? "Sign In instead" : "Sign Up instead"}
@@ -401,7 +412,10 @@ const styles = StyleSheet.create({
     left: spacing.lg,
     top: spacing.lg,
     zIndex: 1,
-    padding: spacing.sm,
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   title: {
@@ -486,7 +500,10 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end' as const,
     marginTop: spacing.xs,
     marginBottom: spacing.sm,
-    padding: spacing.xs,
+    // Meet the 44px WCAG touch floor (padding:xs alone left ~28px).
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: spacing.sm,
   },
 
   forgotPasswordText: {

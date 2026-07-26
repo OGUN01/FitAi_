@@ -357,28 +357,28 @@ export const BodyMeasurementsEditModal: React.FC<
                   <View
                     style={[
                       styles.bmiScaleSegment,
-                      { backgroundColor: "#2196F3", flex: 3.5 },
+                      { backgroundColor: colors.info, flex: 3.5 },
                     ]}
                   />
                   {/* 18.5-25 = 6.5 units */}
                   <View
                     style={[
                       styles.bmiScaleSegment,
-                      { backgroundColor: "#4CAF50", flex: 6.5 },
+                      { backgroundColor: colors.success, flex: 6.5 },
                     ]}
                   />
                   {/* 25-30 = 5 units */}
                   <View
                     style={[
                       styles.bmiScaleSegment,
-                      { backgroundColor: "#FF9800", flex: 5 },
+                      { backgroundColor: colors.warning, flex: 5 },
                     ]}
                   />
                   {/* 30-40 = 10 units */}
                   <View
                     style={[
                       styles.bmiScaleSegment,
-                      { backgroundColor: "#F44336", flex: 10 },
+                      { backgroundColor: colors.error, flex: 10 },
                     ]}
                   />
                 </View>
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
   },
   bmiUnit: {
     fontSize: rf(11),
-    color: colors.textMuted,
+    color: colors.textSecondary,
   },
   bmiScale: {
     marginTop: spacing.sm,
@@ -607,10 +607,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.primary,
     marginLeft: rp(-5),
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
+    // boxShadow only — avoids the duplicate native-shadow props that warn
+    // on web and conflict with elevation on Android.
     boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.3)',
     elevation: 3,
   },
@@ -624,8 +622,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(2),
   },
   bmiScaleLabel: {
-    fontSize: rf(9),
-    color: colors.textMuted,
+    // rf(10) keeps the scale labels legible above the WCAG AA floor for
+    // non-body text (was rf(9), which clipped on dense layouts).
+    fontSize: Math.max(rf(10), 10),
+    color: colors.textSecondary,
   },
   infoCard: {
     marginTop: spacing.md,

@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
-import { rf, rw, rh } from "../../../utils/responsive";
+import { rf, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 
 interface LogoutButtonProps {

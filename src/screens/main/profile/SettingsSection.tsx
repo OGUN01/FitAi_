@@ -93,6 +93,10 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
               scaleValue={0.98}
               hapticFeedback={false}
               disabled={item.disabled}
+              accessibilityRole="button"
+              accessibilityLabel={item.title}
+              accessibilityHint={item.subtitle}
+              accessibilityState={{ disabled: item.disabled }}
             >
               <View
                 style={[
@@ -299,11 +303,13 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: rf(12),
-    color: "rgba(255, 255, 255, 0.65)",
+    // WCAG AA: body text needs alpha >= 0.7 against the dark glass surface
+    // (was 0.65, which fell below the contrast floor on the dimmest cards).
+    color: "rgba(255, 255, 255, 0.7)",
     marginTop: rp(2),
   },
   premiumSubtitle: {
-    color: "rgba(255, 215, 0, 0.7)",
+    color: "rgba(255, 215, 0, 0.85)",
   },
   disabledSubtitle: {
     color: colors.textMuted,

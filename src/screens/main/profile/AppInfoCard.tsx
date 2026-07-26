@@ -14,7 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
-import { rf, rp, rbr, rw, rh } from "../../../utils/responsive";
+import { rf, rp, rw } from "../../../utils/responsive";
 
 interface AppInfoCardProps {
   version?: string;
