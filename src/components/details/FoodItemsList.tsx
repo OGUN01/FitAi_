@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   foodCaloriesUnit: {
     fontSize: fontSize.xs,
     color: colors.textSecondary,
-    marginTop: 2,
+    marginTop: spacing.xs / 2,
   },
 
   foodMacros: {

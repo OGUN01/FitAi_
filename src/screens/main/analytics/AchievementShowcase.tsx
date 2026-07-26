@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     fontSize: rf(11),
     fontWeight: "600",
     color: colors.textMuted,
-    backgroundColor: "rgba(255,255,255,0.07)",
+    backgroundColor: hexToRgba("#FFFFFF", 0.07),
     paddingHorizontal: rp(8),
     paddingVertical: rp(3),
     borderRadius: rp(10),
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   },
   rowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.06)",
+    borderBottomColor: hexToRgba("#FFFFFF", 0.06),
   },
   iconWrap: {
     width: rw(36),
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   progressTrack: {
     flex: 1,
     height: rp(3),
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: hexToRgba("#FFFFFF", 0.1),
     borderRadius: rp(2),
     overflow: "hidden",
   },

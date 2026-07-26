@@ -135,7 +135,7 @@ export const useMealDetailLogic = (mealId: string) => {
 
     if (mealData.totalProtein >= 20) {
       insights.push({
-        icon: "check",
+        icon: "checkmark-circle",
         text: "Good protein content for muscle maintenance",
       });
     } else if (mealData.totalProtein < 10) {
@@ -159,7 +159,7 @@ export const useMealDetailLogic = (mealId: string) => {
       carbsRatio <= 55
     ) {
       insights.push({
-        icon: "check",
+        icon: "checkmark-circle",
         text: "Balanced macronutrient distribution",
       });
     }
@@ -170,26 +170,26 @@ export const useMealDetailLogic = (mealId: string) => {
     );
     if (totalFiber < 5) {
       insights.push({
-        icon: "⚠️",
+        icon: "alert-circle-outline",
         text: "Consider adding more fiber-rich foods",
       });
     } else if (totalFiber >= 8) {
       insights.push({
-        icon: "✅",
+        icon: "checkmark-circle",
         text: "Good fiber content for digestive health",
       });
     }
 
     if (mealData.totalCalories >= 300 && mealData.totalCalories <= 600) {
       insights.push({
-        icon: "✅",
+        icon: "flame-outline",
         text: "Appropriate calorie range for a main meal",
       });
     }
 
     return insights.length > 0
       ? insights
-      : [{ icon: "ℹ️", text: "Log more meals to get personalized insights" }];
+      : [{ icon: "bulb-outline", text: "Log more meals to get personalized insights" }];
   };
 
   const insights = meal ? generateInsights(meal) : [];

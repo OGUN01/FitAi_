@@ -17,6 +17,7 @@ import { flatColors as colors, spacing, borderRadius } from "../../../theme/auro
 import { rf, rw } from "../../../utils/responsive";
 import { useHealthDataStore } from "../../../stores/healthDataStore";
 import { haptics } from "../../../utils/haptics";
+import { hexToRgba } from "../../../utils/colors";
 
 interface SyncStatusIndicatorProps {
   onPress?: () => void;
@@ -192,7 +193,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: hexToRgba("#FFFFFF", 0.05),
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,

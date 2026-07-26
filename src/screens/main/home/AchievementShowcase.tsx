@@ -11,6 +11,7 @@ import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressab
 import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../../utils/responsive";
 import { AchievementViewModel } from "../../../utils/achievementViewModel";
+import { hexToRgba } from "../../../utils/colors";
 
 interface AchievementShowcaseProps {
   achievements: AchievementViewModel[];
@@ -75,7 +76,7 @@ const ProgressBadge: React.FC<{
       <Ionicons
         name={resolveIconName(iconName)}
         size={rf(18)}
-        color="rgba(156, 39, 176, 0.6)"
+        color={hexToRgba("#9C27B0", 0.6)}
       />
       <View style={styles.progressRing}>
         <View
@@ -245,7 +246,7 @@ const styles = StyleSheet.create({
     width: rw(28),
     height: rw(28),
     borderRadius: rw(14),
-    backgroundColor: "rgba(255, 179, 0, 0.15)",
+    backgroundColor: hexToRgba(colors.amber, 0.15),
     justifyContent: "center",
     alignItems: "center",
   },
@@ -287,12 +288,12 @@ const styles = StyleSheet.create({
     width: rw(48),
     height: rw(48),
     borderRadius: rw(24),
-    backgroundColor: "rgba(255, 179, 0, 0.12)",
+    backgroundColor: hexToRgba(colors.amber, 0.12),
     justifyContent: "center",
     alignItems: "center",
     marginBottom: spacing.xs,
     borderWidth: 1.5,
-    borderColor: "rgba(255, 179, 0, 0.25)",
+    borderColor: hexToRgba(colors.amber, 0.25),
   },
   badgeTitle: {
     fontSize: rf(10),
@@ -309,7 +310,7 @@ const styles = StyleSheet.create({
     width: rw(48),
     height: rw(48),
     borderRadius: rw(24),
-    backgroundColor: "rgba(156, 39, 176, 0.08)",
+    backgroundColor: hexToRgba("#9C27B0", 0.08),
     justifyContent: "center",
     alignItems: "center",
     marginBottom: spacing.xs,
@@ -323,7 +324,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     borderRadius: rw(24),
     borderWidth: 2,
-    borderColor: "rgba(156, 39, 176, 0.15)",
+    borderColor: hexToRgba("#9C27B0", 0.15),
   },
   progressRingFill: {
     position: "absolute",

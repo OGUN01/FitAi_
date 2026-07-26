@@ -33,6 +33,24 @@ const resolveInsightIcon = (raw: unknown): keyof typeof Ionicons.glyphMap =>
     ? (raw as keyof typeof Ionicons.glyphMap)
     : FALLBACK_INSIGHT_ICON;
 
+// Map each known insight icon to a semantic color so warnings read as
+// warnings, positives as success, neutral as info — instead of every icon
+// defaulting to the info tint. Falls back to the card's info color.
+const INSIGHT_ICON_COLOR: Record<string, string> = {
+  "checkmark-circle": colors.success,
+  "warning": colors.warning,
+  "alert-circle-outline": colors.warning,
+  "flame-outline": colors.primary,
+  "trending-up-outline": colors.success,
+  "trending-down-outline": colors.warning,
+  "bulb-outline": colors.info,
+};
+
+const resolveInsightColor = (raw: unknown): string =>
+  typeof raw === "string" && INSIGHT_ICON_COLOR[raw]
+    ? INSIGHT_ICON_COLOR[raw]
+    : colors.info;
+
 export const MealInsights: React.FC<MealInsightsProps> = ({
   insights,
   notes,
@@ -66,7 +84,7 @@ export const MealInsights: React.FC<MealInsightsProps> = ({
                 <Ionicons
                   name={resolveInsightIcon(insight.icon)}
                   size={rf(16)}
-                  color={colors.info}
+                  color={resolveInsightColor(insight.icon)}
                   style={styles.insightIcon}
                 />
                 <Text

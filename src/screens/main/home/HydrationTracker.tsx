@@ -384,18 +384,18 @@ const styles = StyleSheet.create({
   quickAddButton: {
     flex: 1,
     alignItems: "center",
-    backgroundColor: "rgba(33, 150, 243, 0.08)",
+    backgroundColor: hexToRgba("#2196F3", 0.08),
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md, // Increased horizontal padding
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: "rgba(33, 150, 243, 0.15)",
+    borderColor: hexToRgba("#2196F3", 0.15),
   },
   quickAddIconContainer: {
     width: rw(32),
     height: rw(32),
     borderRadius: rw(16),
-    backgroundColor: "rgba(33, 150, 243, 0.15)",
+    backgroundColor: hexToRgba("#2196F3", 0.15),
     justifyContent: "center",
     alignItems: "center",
     marginBottom: rp(4),

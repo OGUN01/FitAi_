@@ -31,6 +31,7 @@ import { EmptyState } from "../../components/ui/aurora/EmptyState";
 import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
+import { hexToRgba } from "../../utils/colors";
 
 // Subscription gate
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
@@ -503,30 +504,6 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
           value: count,
         };
       });
-    } else if ((selectedPeriod as string) === "__month_legacy__") {
-      // Show completions grouped by week (W1-W4) within last 30 days
-      const now = new Date();
-      workoutData = ["W1", "W2", "W3", "W4"].map((label, weekIndex) => {
-        const weekStart = new Date(now);
-        weekStart.setDate(now.getDate() - 28 + weekIndex * 7);
-        weekStart.setHours(0, 0, 0, 0);
-        // Last bucket must include today — extend to start of tomorrow
-        const weekEnd =
-          weekIndex === 3
-            ? new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
-            : (() => {
-                const d = new Date(weekStart);
-                d.setDate(weekStart.getDate() + 7);
-                return d;
-              })();
-
-        const count = completedSessions.filter((s) => {
-          if (!s.completedAt) return false;
-          const d = new Date(s.completedAt);
-          return d >= weekStart && d < weekEnd;
-        }).length;
-        return { label, value: count };
-      });
     } else if (selectedPeriod === "quarter") {
       const monthLabels = Array.from({ length: 3 }, (_, i) => {
         const d = new Date(
@@ -542,24 +519,6 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
           periodBoundaries.quarterStart.getMonth() + i,
           1,
         );
-        const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
-        const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-        const count = completedSessions.filter((s) => {
-          if (!s.completedAt) return false;
-          const cd = new Date(s.completedAt);
-          return cd >= monthStart && cd < monthEnd;
-        }).length;
-        return { label, value: count };
-      });
-    } else if ((selectedPeriod as string) === "__quarter_legacy__") {
-      // Group by month (last 3 months)
-      const now = new Date();
-      const monthLabels = Array.from({ length: 3 }, (_, i) => {
-        const d = new Date(now.getFullYear(), now.getMonth() - (2 - i), 1);
-        return d.toLocaleDateString("en-US", { month: "short" });
-      });
-      workoutData = monthLabels.map((label, i) => {
-        const d = new Date(now.getFullYear(), now.getMonth() - (2 - i), 1);
         const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
         const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 1);
         const count = completedSessions.filter((s) => {
@@ -589,20 +548,6 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
           periodBoundaries.yearStart.getMonth() + i * 2 + 2,
           1,
         );
-        const count = completedSessions.filter((s) => {
-          if (!s.completedAt) return false;
-          const cd = new Date(s.completedAt);
-          return cd >= monthStart && cd < monthEnd;
-        }).length;
-        return { label, value: count };
-      });
-    } else {
-      // year: group by bi-month
-      const now = new Date();
-      const yearLabels = ["Jan", "Mar", "May", "Jul", "Sep", "Nov"];
-      workoutData = yearLabels.map((label, i) => {
-        const monthStart = new Date(now.getFullYear(), i * 2, 1);
-        const monthEnd = new Date(now.getFullYear(), i * 2 + 2, 1);
         const count = completedSessions.filter((s) => {
           if (!s.completedAt) return false;
           const cd = new Date(s.completedAt);
@@ -940,12 +885,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: rw(32),
   },
   lockedIconContainer: {
-    backgroundColor: "rgba(255, 138, 92, 0.15)",
+    backgroundColor: hexToRgba("#FF8A5C", 0.15),
     borderRadius: rw(40),
     padding: rw(20),
     marginBottom: rh(20),
     borderWidth: 1,
-    borderColor: "rgba(255, 138, 92, 0.3)",
+    borderColor: hexToRgba("#FF8A5C", 0.3),
   },
   lockedTitle: {
     fontSize: rf(22),

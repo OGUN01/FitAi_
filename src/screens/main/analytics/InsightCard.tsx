@@ -37,41 +37,41 @@ const getInsightConfig = (type: InsightType) => {
       return {
         icon: "checkmark-circle" as const,
         color: colors.success,
-        gradientColors: [colors.successTint, "rgba(76,175,80,0.05)"] as [
+        gradientColors: [colors.successTint, hexToRgba("#4CAF50", 0.05)] as [
           string,
           string,
         ],
-        borderColor: "rgba(76,175,80,0.3)",
+        borderColor: hexToRgba("#4CAF50", 0.3),
       };
     case "negative":
       return {
         icon: "alert-circle" as const,
         color: colors.error,
-        gradientColors: [colors.errorTint, "rgba(244,67,54,0.05)"] as [
+        gradientColors: [colors.errorTint, hexToRgba("#F44336", 0.05)] as [
           string,
           string,
         ],
-        borderColor: "rgba(244,67,54,0.3)",
+        borderColor: hexToRgba("#F44336", 0.3),
       };
     case "neutral":
       return {
         icon: "information-circle" as const,
         color: colors.warning,
-        gradientColors: [colors.warningTint, "rgba(255,152,0,0.05)"] as [
+        gradientColors: [colors.warningTint, hexToRgba("#FF9800", 0.05)] as [
           string,
           string,
         ],
-        borderColor: "rgba(255,152,0,0.3)",
+        borderColor: hexToRgba("#FF9800", 0.3),
       };
     case "achievement":
       return {
         icon: "trophy" as const,
         color: colors.gold,
-        gradientColors: ["rgba(255,215,0,0.15)", "rgba(255,215,0,0.05)"] as [
+        gradientColors: [hexToRgba("#FFD700", 0.15), hexToRgba("#FFD700", 0.05)] as [
           string,
           string,
         ],
-        borderColor: "rgba(255,215,0,0.3)",
+        borderColor: hexToRgba("#FFD700", 0.3),
       };
     case "recommendation":
       return {
@@ -79,19 +79,19 @@ const getInsightConfig = (type: InsightType) => {
         color: colors.primary,
         gradientColors: [
           colors.primaryTint,
-          "rgba(255, 107, 53, 0.05)",
+          hexToRgba("#FF6B35", 0.05),
         ] as [string, string],
-        borderColor: "rgba(255, 107, 53, 0.3)",
+        borderColor: hexToRgba("#FF6B35", 0.3),
       };
     default:
       return {
         icon: "information-circle" as const,
         color: colors.neutral,
         gradientColors: [
-          "rgba(158,158,158,0.15)",
-          "rgba(158,158,158,0.05)",
+          hexToRgba("#9E9E9E", 0.15),
+          hexToRgba("#9E9E9E", 0.05),
         ] as [string, string],
-        borderColor: "rgba(158,158,158,0.3)",
+        borderColor: hexToRgba("#9E9E9E", 0.3),
       };
   }
 };

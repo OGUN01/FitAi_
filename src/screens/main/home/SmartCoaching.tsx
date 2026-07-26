@@ -18,33 +18,34 @@ import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 
 // Tip types and their visual styling
 const TIP_STYLES = {
   workout: {
     icon: "fitness" as const,
     gradient: [colors.errorLight, "#FF8E53"] as [string, string],
-    bgColor: "rgba(255, 107, 107, 0.1)",
+    bgColor: hexToRgba("#FF6B6B", 0.1),
   },
   recovery: {
     icon: "bed" as const,
     gradient: [colors.primary, colors.primaryDark] as [string, string],
-    bgColor: "rgba(255, 107, 53, 0.1)",
+    bgColor: hexToRgba("#FF6B35", 0.1),
   },
   nutrition: {
     icon: "nutrition" as const,
     gradient: ["#11998e", "#38ef7d"] as [string, string],
-    bgColor: "rgba(17, 153, 142, 0.1)",
+    bgColor: hexToRgba("#11998E", 0.1),
   },
   hydration: {
     icon: "water" as const,
     gradient: [colors.info, "#03A9F4"] as [string, string],
-    bgColor: "rgba(33, 150, 243, 0.1)",
+    bgColor: hexToRgba("#2196F3", 0.1),
   },
   motivation: {
     icon: "flash" as const,
     gradient: [colors.gold, "#FFA500"] as [string, string],
-    bgColor: "rgba(255, 215, 0, 0.1)",
+    bgColor: hexToRgba("#FFD700", 0.1),
   },
 };
 
@@ -358,7 +359,7 @@ const styles = StyleSheet.create({
     width: rw(24),
     height: rw(24),
     borderRadius: rw(12),
-    backgroundColor: "rgba(255, 215, 0, 0.15)",
+    backgroundColor: hexToRgba(colors.gold, 0.15),
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },

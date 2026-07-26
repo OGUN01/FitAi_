@@ -20,6 +20,7 @@ import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../../utils/responsive";
 import { PeriodSelector, Period } from "./PeriodSelector";
 import { haptics } from "../../../utils/haptics";
+import { hexToRgba } from "../../../utils/colors";
 
 interface AnalyticsHeaderProps {
   selectedPeriod: Period;
@@ -184,14 +185,14 @@ const styles = StyleSheet.create({
   badge: {
     height: Math.max(rw(24), 30),
     borderRadius: Math.max(rw(12), 15),
-    backgroundColor: "rgba(255, 193, 7, 0.14)",
+    backgroundColor: hexToRgba(colors.amber, 0.14),
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing.sm,
     gap: spacing.xs,
     borderWidth: 1,
-    borderColor: "rgba(255, 193, 7, 0.25)",
+    borderColor: hexToRgba(colors.amber, 0.25),
   },
   badgeDot: {
     width: rw(6),
