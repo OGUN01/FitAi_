@@ -166,17 +166,17 @@ export const showDialog = {
 
   success: (title: string, message?: string, _actions?: DialogAction[]) => {
     const buttons = _actions?.map((a) => ({ text: a.text, onPress: a.onPress, style: a.style })) ?? [{ text: "OK" }];
-    crossPlatformAlert(`✅ ${title}`, message ?? "", buttons);
+    crossPlatformAlert(title, message ?? "", buttons);
   },
 
   warning: (title: string, message?: string, _actions?: DialogAction[]) => {
     const buttons = _actions?.map((a) => ({ text: a.text, onPress: a.onPress, style: a.style })) ?? [{ text: "OK" }];
-    crossPlatformAlert(`⚠️ ${title}`, message ?? "", buttons);
+    crossPlatformAlert(title, message ?? "", buttons);
   },
 
   error: (title: string, message?: string, _actions?: DialogAction[]) => {
     const buttons = _actions?.map((a) => ({ text: a.text, onPress: a.onPress, style: a.style })) ?? [{ text: "OK" }];
-    crossPlatformAlert(`❌ ${title}`, message ?? "", buttons);
+    crossPlatformAlert(title, message ?? "", buttons);
   },
 };
 

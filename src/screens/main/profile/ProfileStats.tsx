@@ -17,6 +17,7 @@ import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressab
 import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { rf, rw, rp } from '../../../utils/responsive';
 import { haptics } from "../../../utils/haptics";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_SOFT, TINT_ALPHA_MEDIUM } from "../../../utils/colors";
 
 interface StatItem {
   id: string;
@@ -65,16 +66,16 @@ const StatCard: React.FC<{
         hapticFeedback={false}
       >
         <LinearGradient
-          colors={[`${stat.color}15`, `${stat.color}08`]}
+          colors={[hexToRgba(stat.color, 0.08), hexToRgba(stat.color, 0.03)]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={[styles.statCard, { borderColor: `${stat.color}35` }]}
+          style={[styles.statCard, { borderColor: hexToRgba(stat.color, 0.21) }]}
         >
           {/* Icon */}
           <View
             style={[
               styles.iconContainer,
-              { backgroundColor: `${stat.color}20` },
+              { backgroundColor: hexToRgba(stat.color, TINT_ALPHA_LOW) },
             ]}
           >
             <Ionicons name={stat.icon} size={rf(20)} color={stat.color} />

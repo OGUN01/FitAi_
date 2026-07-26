@@ -18,6 +18,7 @@ import Animated, {
 import { LinearGradient } from "expo-linear-gradient";
 import { rf, rp, rw } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../utils/colors";
 
 interface ToggleCardProps {
   title: string;
@@ -55,7 +56,7 @@ export const ToggleCard: React.FC<ToggleCardProps> = ({
     const backgroundColor = interpolateColor(
       toggleAnimation.value,
       [0, 1],
-      [colors.backgroundSecondary, `${gradient[0]}15`],
+      [colors.backgroundSecondary, hexToRgba(gradient[0], TINT_ALPHA_LOW)],
     );
 
     return {

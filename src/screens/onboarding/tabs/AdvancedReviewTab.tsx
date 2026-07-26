@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rbr, rh } from "../../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_SOFT, TINT_ALPHA_MEDIUM } from "../../../utils/colors";
 
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { HeroSection } from "../../../components/ui/aurora";
@@ -104,18 +105,11 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
   const selectedAlternativeId = useMemo(() => {
     // Primary: exact card ID from this session's tap
     if (selectedCardId && smartAlternatives?.alternatives?.some(a => a.id === selectedCardId)) {
-      if (__DEV__) console.warn('[PACE MATCH] session ID ->', selectedCardId);
       return selectedCardId;
     }
     // Fallback: minimum-distance rate match
     const goal = workoutPreferences?.weekly_weight_loss_goal;
     if (!goal || !smartAlternatives?.alternatives?.length) return null;
-    if (__DEV__) {
-      console.warn(
-        '[PACE MATCH] fallback - goal =', goal, 'kg/wk',
-        '| cards:', smartAlternatives.alternatives.map(a => `${a.id}(${a.weeklyRate})`).join(', '),
-      );
-    }
     let bestMatch: SmartAlternative | null = null;
     let bestDiff = Infinity;
     for (const alt of smartAlternatives.alternatives) {
@@ -124,9 +118,6 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         bestMatch = alt;
         bestDiff = diff;
       }
-    }
-    if (__DEV__) {
-      console.warn('[PACE MATCH] fallback result ->', bestMatch?.id ?? 'NO MATCH');
     }
     return bestMatch?.id ?? null;
   }, [selectedCardId, workoutPreferences?.weekly_weight_loss_goal, smartAlternatives]);
@@ -171,7 +162,9 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             <Text style={styles.errorText}>{calculationError}</Text>
             <Pressable
               onPress={() => performCalculations()}
-              style={{ paddingHorizontal: rp(12), paddingVertical: rp(6), borderRadius: rbr(8), borderWidth: 1, borderColor: colors.error }}
+              style={{ paddingHorizontal: rp(16), paddingVertical: rp(10), borderRadius: rbr(8), borderWidth: 1, borderColor: colors.error, minHeight: 44, justifyContent: "center" }}
+              accessibilityRole="button"
+              accessibilityLabel="Retry calculation"
             >
               <Text style={{ color: colors.error, fontSize: rf(14) }}>Retry</Text>
             </Pressable>
@@ -229,7 +222,12 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
       </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable style={styles.backButtonCompact} onPress={onBack}>
+        <Pressable
+          style={styles.backButtonCompact}
+          onPress={onBack}
+          accessibilityRole="button"
+          accessibilityLabel="Go back to previous step"
+        >
           <Ionicons name="chevron-back" size={rf(18)} color={colors.text} />
           <Text style={styles.backButtonText}>Back</Text>
         </Pressable>
@@ -245,6 +243,8 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
           ]}
           onPress={onComplete}
           disabled={!isComplete || isCalculating || !!calculationError || ((validationResults?.warnings?.length ?? 0) > 0 && !warningsAcknowledged) || ((validationResults?.errors?.length ?? 0) > 0)}
+          accessibilityRole="button"
+          accessibilityLabel="Complete setup"
           accessibilityHint="Complete all required sections to enable"
         >
           <Text style={styles.completeButtonText}>
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     backgroundColor: colors.background,
     borderTopWidth: 1,
-    borderTopColor: `${colors.white}0F`,
+    borderTopColor: hexToRgba(colors.white, 0.06),
     elevation: 4,
   },
   backButtonCompact: {
@@ -377,9 +377,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: rp(12),
-    backgroundColor: `${colors.success}20`,
+    backgroundColor: hexToRgba(colors.success, TINT_ALPHA_LOW),
     borderWidth: 1,
-    borderColor: `${colors.success}40`,
+    borderColor: hexToRgba(colors.success, TINT_ALPHA_MEDIUM),
   },
   successText: {
     flex: 1,
@@ -395,14 +395,14 @@ const styles = StyleSheet.create({
   },
   heroSubtitle: {
     fontSize: rf(16),
-    color: `${colors.white}CC`,
+    color: hexToRgba(colors.white, 0.8),
     textAlign: "center",
     marginBottom: rp(20),
   },
   errorCard: {
     margin: rp(20),
-    backgroundColor: `${colors.error}1A`,
-    borderColor: `${colors.error}4D`,
+    backgroundColor: hexToRgba(colors.error, 0.1),
+    borderColor: hexToRgba(colors.error, 0.3),
     borderWidth: 1,
     padding: rp(16),
     alignItems: "center",

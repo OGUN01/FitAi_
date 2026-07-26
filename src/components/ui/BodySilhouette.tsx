@@ -11,6 +11,7 @@ import {
 import Svg, { Path, Circle, Line, G, Text as SvgText } from "react-native-svg";
 import { rf } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_SOFT } from "../../utils/colors";
 
 interface MeasurementPoint {
   id: string;
@@ -140,7 +141,7 @@ export const BodySilhouette: React.FC<BodySilhouetteProps> = ({
             cx={width / 2}
             cy={width * 0.12 + 10}
             r={width * 0.12}
-            fill={`${colors.primary}20`}
+            fill={hexToRgba(colors.primary, TINT_ALPHA_LOW)}
             stroke={colors.primary}
             strokeWidth="2"
           />
@@ -148,7 +149,7 @@ export const BodySilhouette: React.FC<BodySilhouetteProps> = ({
           {/* Body */}
           <Path
             d={bodyPath}
-            fill={`${colors.primary}15`}
+            fill={hexToRgba(colors.primary, TINT_ALPHA_SOFT)}
             stroke={colors.primary}
             strokeWidth="2"
           />
@@ -278,7 +279,7 @@ const styles = StyleSheet.create({
   legend: {
     marginTop: spacing.md,
     padding: spacing.sm,
-    backgroundColor: `${colors.primary}10`,
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
     borderRadius: borderRadius.md,
   },
 

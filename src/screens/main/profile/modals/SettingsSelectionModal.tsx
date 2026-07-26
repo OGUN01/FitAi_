@@ -18,7 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
-import { hexToRgba, TINT_ALPHA_MEDIUM } from "../../../../utils/colors";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../../../utils/colors";
 import { rf, rp, rbr, rw, rh } from "../../../../utils/responsive";
 
 export interface SelectionOption {
@@ -77,7 +77,7 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
                   <View
                     style={[
                       styles.headerIconWrap,
-                      { backgroundColor: `${iconColor}20` },
+                      { backgroundColor: hexToRgba(iconColor, TINT_ALPHA_LOW) },
                     ]}
                   >
                     <Ionicons name={icon} size={rf(22)} color={iconColor} />
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   divider: {
-    height: rp(1),
+    height: 1,
     backgroundColor: "rgba(255, 255, 255, 0.08)",
     marginVertical: spacing.sm,
   },

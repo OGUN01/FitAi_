@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     paddingBottom: rp(40),
   },
   bottomSpacing: {
-    height: rh(100),
+    height: rp(100),
   },
 });
 

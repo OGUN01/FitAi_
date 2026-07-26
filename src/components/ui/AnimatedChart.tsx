@@ -13,6 +13,7 @@ import { rf } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { ChartTooltip } from "./ChartTooltip";
 import { hapticSelection } from "../../utils/haptics";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 
 interface DataPoint {
   label: string;
@@ -431,7 +432,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: spacing.md,
     padding: spacing.sm,
-    backgroundColor: `${colors.primary}10`,
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
     borderRadius: borderRadius.md,
   },
 

@@ -35,11 +35,11 @@ export const FoodRecognitionTest: React.FC = () => {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [selectedMealType, setSelectedMealType] = useState<MealType>("lunch");
 
-  const mealTypes: { type: MealType; label: string; emoji: string }[] = [
-    { type: "breakfast", label: "Breakfast", emoji: "🌅" },
-    { type: "lunch", label: "Lunch", emoji: "☀️" },
-    { type: "dinner", label: "Dinner", emoji: "🌙" },
-    { type: "snack", label: "Snack", emoji: "🍎" },
+  const mealTypes: { type: MealType; label: string; icon: string }[] = [
+    { type: "breakfast", label: "Breakfast", icon: "sunny-outline" },
+    { type: "lunch", label: "Lunch", icon: "sunny" },
+    { type: "dinner", label: "Dinner", icon: "moon-outline" },
+    { type: "snack", label: "Snack", icon: "nutrition-outline" },
   ];
 
   const requestPermissions = async () => {
@@ -93,7 +93,7 @@ export const FoodRecognitionTest: React.FC = () => {
         setTestResults((prev) => [testResult, ...prev]);
 
         crossPlatformAlert(
-          "✅ Test Completed",
+          "Test Completed",
           `Food recognition completed in ${(processingTime / 1000).toFixed(2)}s\\n\\n` +
             `Detected: ${recognitionResult.foods?.length || 0} food items\\n` +
             `Accuracy: ${recognitionResult.overallConfidence || 0}%`,
@@ -113,7 +113,7 @@ export const FoodRecognitionTest: React.FC = () => {
         setTestResults((prev) => [testResult, ...prev]);
 
         crossPlatformAlert(
-          "❌ Test Failed",
+          "Test Failed",
           `Error: ${error.message || "Unknown error"}\n\n` +
             `Processing time: ${(processingTime / 1000).toFixed(2)}s`,
           [{ text: "OK" }],
@@ -157,7 +157,7 @@ export const FoodRecognitionTest: React.FC = () => {
         {/* Meal Type Selection */}
         <Text style={styles.sectionTitle}>Select Meal Type:</Text>
         <View style={styles.mealTypeContainer}>
-          {mealTypes.map(({ type, label, emoji }) => (
+          {mealTypes.map(({ type, label, icon }) => (
             <TouchableOpacity
               key={type}
               onPress={() => setSelectedMealType(type)}
@@ -171,6 +171,12 @@ export const FoodRecognitionTest: React.FC = () => {
               accessibilityLabel={`Select ${label} meal type`}
               accessibilityState={{ selected: selectedMealType === type }}
             >
+              <Ionicons
+                name={icon as any}
+                size={rf(14)}
+                color={selectedMealType === type ? colors.white : colors.textMuted}
+                style={styles.mealTypeIcon}
+              />
               <Text
                 style={[
                   styles.mealTypeText,
@@ -180,7 +186,7 @@ export const FoodRecognitionTest: React.FC = () => {
                 ]}
                 numberOfLines={1}
               >
-                {emoji} {label}
+                {label}
               </Text>
             </TouchableOpacity>
           ))}
@@ -340,12 +346,19 @@ const styles = StyleSheet.create({
     marginBottom: rp(24),
   },
   mealTypeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(6),
     minHeight: Math.max(rp(44), 44),
     justifyContent: "center",
     paddingHorizontal: rp(16),
     paddingVertical: rp(8),
     borderRadius: rbr(20),
     borderWidth: 2,
+  },
+
+  mealTypeIcon: {
+    marginRight: 0,
   },
   mealTypeButtonSelected: {
     backgroundColor: colors.info,

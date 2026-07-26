@@ -18,6 +18,7 @@ import Animated, {
 import { LinearGradient } from "expo-linear-gradient";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, flatShadows as shadows, typography } from "../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../utils/colors";
 
 // Hoist outside component — expensive factory should only run once
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
@@ -219,7 +220,7 @@ const styles = StyleSheet.create({
     ...shadows.md,
   },
   outline: {
-    backgroundColor: `${colors.primary}15`,
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
     borderWidth: 1.5,
     borderColor: colors.primary,
   },

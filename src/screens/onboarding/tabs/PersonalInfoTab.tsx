@@ -11,6 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { rf } from "../../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
 import {
   AnimatedPressable,
   AnimatedSection,
@@ -165,6 +166,8 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             style={styles.backButtonCompact}
             onPress={onBack}
             scaleValue={0.96}
+            accessibilityRole="button"
+            accessibilityLabel="Go back to previous step"
           >
             <Ionicons
               name="chevron-back"
@@ -193,6 +196,9 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
               }
             }}
             scaleValue={0.96}
+            accessibilityRole="button"
+            accessibilityLabel={isEditingFromReview ? "Return to review" : "Continue to next step"}
+            accessibilityState={{ disabled: !!(validationResult && !validationResult.is_valid) }}
           >
             <Text style={styles.nextButtonText}>
               {isEditingFromReview ? "Review" : "Next"}
@@ -246,7 +252,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.xs,
     alignSelf: "flex-start",
-    backgroundColor: `${colors.success}20`,
+    backgroundColor: hexToRgba(colors.success, TINT_ALPHA_LOW),
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.md,

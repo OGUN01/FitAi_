@@ -27,6 +27,7 @@ import { resolveCurrentWeightForUser } from "../../../../services/currentWeight"
 import { flatColors as colors, spacing } from "../../../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../../../utils/colors";
 import { crossPlatformAlert } from "../../../../utils/crossPlatformAlert";
 import { convertWeight, toDisplayWeight, parseLocalFloat } from "../../../../utils/units";
 
@@ -312,7 +313,7 @@ export const BodyMeasurementsEditModal: React.FC<
             style={styles.bmiCard}
           >
             <LinearGradient
-              colors={[`${bmiCategory.color}15`, "transparent"]}
+              colors={[hexToRgba(bmiCategory.color, 0.08), "transparent"]}
               style={StyleSheet.absoluteFill}
             />
             <View style={styles.bmiContent}>
@@ -320,7 +321,7 @@ export const BodyMeasurementsEditModal: React.FC<
                 <View
                   style={[
                     styles.bmiIcon,
-                    { backgroundColor: `${bmiCategory.color}20` },
+                    { backgroundColor: hexToRgba(bmiCategory.color, TINT_ALPHA_LOW) },
                   ]}
                 >
                   <Ionicons

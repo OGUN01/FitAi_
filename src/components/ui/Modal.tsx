@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
 
   bottomSheetHandle: {
     width: rw(40),
-    height: rh(4),
+    height: 4,
     backgroundColor: colors.textMuted,
     borderRadius: borderRadius.full,
     alignSelf: "center",

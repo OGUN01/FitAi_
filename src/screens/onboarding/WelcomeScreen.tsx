@@ -18,6 +18,7 @@ import { rf, rp, rh, rw, rs } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { LoginCredentials } from "../../types/user";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_SOFT, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 
 interface WelcomeScreenProps {
   onGetStarted: () => void;
@@ -288,7 +289,13 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 <Text style={styles.footerText}>
                   {"Don't have an account? "}
                 </Text>
-                <AnimatedPressable onPress={onGetStarted} scaleValue={0.97}>
+                <AnimatedPressable
+                  onPress={onGetStarted}
+                  scaleValue={0.97}
+                  accessibilityRole="link"
+                  accessibilityLabel="Sign up for a new account"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
                   <Text style={styles.footerLink}>Sign Up</Text>
                 </AnimatedPressable>
               </View>
@@ -361,12 +368,25 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
           <View style={styles.signInPromptRow}>
             <Text style={styles.footerText}>Already have an account? </Text>
-            <AnimatedPressable onPress={switchToSignIn} scaleValue={0.97}>
+            <AnimatedPressable
+              onPress={switchToSignIn}
+              scaleValue={0.97}
+              accessibilityRole="link"
+              accessibilityLabel="Sign in to your account"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
               <Text style={styles.footerLink}>Sign In</Text>
             </AnimatedPressable>
           </View>
           <View style={styles.signInPromptRow}>
-            <AnimatedPressable onPress={handleContinueAsGuest} scaleValue={0.97}>
+            <AnimatedPressable
+              onPress={handleContinueAsGuest}
+              scaleValue={0.97}
+              accessibilityRole="button"
+              accessibilityLabel="Continue as guest"
+              accessibilityHint="Explore the app without creating an account"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
               <Text style={styles.footerLink}>Continue as Guest</Text>
             </AnimatedPressable>
           </View>
@@ -411,9 +431,9 @@ const styles = StyleSheet.create({
     width: rw(76),
     height: rw(76),
     borderRadius: rw(22),
-    backgroundColor: `${colors.primary}18`,
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
     borderWidth: 1.5,
-    borderColor: `${colors.primary}40`,
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
     alignItems: "center",
     justifyContent: "center",
   },
@@ -452,28 +472,22 @@ const styles = StyleSheet.create({
   featureCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: `${colors.surface}CC`,
+    backgroundColor: hexToRgba(colors.surface, 0.8),
     borderWidth: 1,
-    borderColor: `${colors.border}80`,
+    borderColor: hexToRgba(colors.border, 0.5),
     borderRadius: borderRadius.xl,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     gap: spacing.md,
   },
 
-  featureEmoji: {
-    fontSize: rf(26),
-    width: rw(36),
-    textAlign: "center",
-  },
-
   featureIconWrap: {
     width: rw(44),
     height: rw(44),
     borderRadius: rw(22),
-    backgroundColor: `${colors.primary}18`,
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
     borderWidth: 1.5,
-    borderColor: `${colors.primary}40`,
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
     alignItems: "center",
     justifyContent: "center",
   },
@@ -501,7 +515,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
     gap: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: `${colors.border}40`,
+    borderTopColor: hexToRgba(colors.border, 0.25),
   },
 
   signInPromptRow: {
@@ -522,7 +536,10 @@ const styles = StyleSheet.create({
     left: spacing.lg,
     top: spacing.lg,
     zIndex: 1,
-    padding: spacing.sm,
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   signInTitleBlock: {
@@ -593,7 +610,7 @@ const styles = StyleSheet.create({
 
   dividerLine: {
     flex: 1,
-    height: rh(1),
+    height: 1,
     backgroundColor: colors.border,
     opacity: 0.3,
   },
@@ -618,7 +635,10 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
     marginTop: spacing.xs,
     marginBottom: spacing.sm,
-    padding: spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    minHeight: 44,
+    justifyContent: "center",
   },
 
   forgotPasswordText: {

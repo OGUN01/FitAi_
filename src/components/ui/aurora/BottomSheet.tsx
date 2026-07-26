@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
   },
   grabber: {
     width: rp(40),
-    height: rf(4),
+    height: 4,
     borderRadius: borderRadius.full,
     backgroundColor: colors.text.tertiary,
   },

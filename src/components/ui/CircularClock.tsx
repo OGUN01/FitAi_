@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import Svg, { Circle, Path, Text as SvgText } from "react-native-svg";
 import { rf, rw, rh } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 
 interface CircularClockProps {
   sleepTime: string; // Format: "HH:MM" (24-hour)
@@ -130,7 +131,7 @@ export const CircularClock: React.FC<CircularClockProps> = ({
           cx={centerX}
           cy={centerY}
           r={clockRadius}
-          fill={`${colors.surface}30`}
+          fill={hexToRgba(colors.surface, TINT_ALPHA_MEDIUM)}
           stroke={colors.border}
           strokeWidth="1"
           opacity={0.5}
@@ -142,7 +143,7 @@ export const CircularClock: React.FC<CircularClockProps> = ({
           cy={centerY}
           r={clockRadius}
           fill="transparent"
-          stroke={`${colors.warning}50`}
+          stroke={hexToRgba(colors.warning, TINT_ALPHA_MEDIUM)}
           strokeWidth={arcWidth}
         />
 
@@ -238,7 +239,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginTop: spacing.lg,
-    backgroundColor: `${colors.surface}30`,
+    backgroundColor: hexToRgba(colors.surface, TINT_ALPHA_MEDIUM),
     borderRadius: borderRadius.lg,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
@@ -275,7 +276,7 @@ const styles = StyleSheet.create({
   legendDivider: {
     width: 1,
     height: rh(30),
-    backgroundColor: `${colors.border}50`,
+    backgroundColor: hexToRgba(colors.border, TINT_ALPHA_MEDIUM),
     marginHorizontal: spacing.sm,
   },
 });

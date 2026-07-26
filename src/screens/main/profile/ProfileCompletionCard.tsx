@@ -267,9 +267,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   completionBar: {
-    height: rh(4),
+    height: 4,
     backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: rh(2),
+    borderRadius: 2,
     overflow: "hidden",
     marginBottom: rp(4),
   },

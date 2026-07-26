@@ -9,8 +9,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rh } from "../../../utils/responsive";
+import { rf, rh, rp } from "../../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
 import {
   AnimatedPressable,
   AnimatedSection,
@@ -115,7 +116,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingBottom: rh(100) }}
+          contentContainerStyle={{ paddingBottom: rp(100) }}
         >
           {/* Hero Section */}
           <HeroSection
@@ -205,6 +206,8 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
             style={styles.backButtonCompact}
             onPress={onBack}
             scaleValue={0.96}
+            accessibilityRole="button"
+            accessibilityLabel="Go back to previous step"
           >
             <Ionicons
               name="chevron-back"
@@ -233,6 +236,8 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
               }
             }}
             scaleValue={0.96}
+            accessibilityRole="button"
+            accessibilityLabel={isEditingFromReview ? "Return to review" : "Continue to next step"}
           >
             <Text style={styles.nextButtonText}>
               {isEditingFromReview ? "Review" : "Next"}
@@ -283,7 +288,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
-    backgroundColor: `${colors.success}20`,
+    backgroundColor: hexToRgba(colors.success, TINT_ALPHA_LOW),
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.md,

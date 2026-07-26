@@ -20,6 +20,7 @@ import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressab
 import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr, rw, rh } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
 
 export interface SettingItem {
   id: string;
@@ -105,7 +106,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
                   style={[
                     styles.iconContainer,
                     {
-                      backgroundColor: `${item.iconColor || colors.primary}18`,
+                      backgroundColor: hexToRgba(item.iconColor || colors.primary, TINT_ALPHA_LOW),
                     },
                     item.isDestructive && styles.destructiveIconBg,
                     item.isPremium && styles.premiumIconBg,
@@ -338,7 +339,7 @@ const styles = StyleSheet.create({
     paddingLeft: rw(36) + spacing.md * 2,
   },
   divider: {
-    height: rp(1),
+    height: 1,
     backgroundColor: "rgba(255, 255, 255, 0.06)",
   },
 });

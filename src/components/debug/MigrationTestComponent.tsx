@@ -49,7 +49,7 @@ export const MigrationTestComponent: React.FC = () => {
       const result = await testFunction();
       addTestResult(testName, result, true);
     } catch (error) {
-      console.error(`❌ Test failed: ${testName}`, error);
+      console.error(`Test failed: ${testName}`, error);
       addTestResult(
         testName,
         error instanceof Error ? error.message : "Unknown error",
@@ -164,7 +164,7 @@ export const MigrationTestComponent: React.FC = () => {
         "All migration tests have been completed. Check the results below.",
       );
     } catch (error) {
-      console.error("❌ Test suite failed:", error);
+      console.error("Test suite failed:", error);
       crossPlatformAlert("Test Failed", "The test suite encountered an error.");
     } finally {
       setIsRunning(false);

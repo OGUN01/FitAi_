@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     paddingLeft: rw(36) + spacing.md * 2,
   },
   divider: {
-    height: rp(1),
+    height: 1,
     backgroundColor: "rgba(255, 255, 255, 0.06)",
   },
 });
